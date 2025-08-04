@@ -1,70 +1,132 @@
-# Getting Started with Create React App
+# AI 互动教育平台
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+基于 AI 生成的互动教学内容平台，支持创建、编辑、收藏和分享教育内容。
 
-## Available Scripts
+## 🚀 快速部署
 
-In the project directory, you can run:
+### 部署到 Vercel
 
-### `npm start`
+1. **克隆项目**
+```bash
+git clone <your-repo-url>
+cd edu
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+2. **配置环境变量**
+```bash
+cp .env.example .env
+# 编辑 .env 文件，填入你的配置
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+3. **部署**
+```bash
+# 安装 Vercel CLI
+npm i -g vercel
 
-### `npm test`
+# 部署
+vercel --prod
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 环境变量配置
 
-### `npm run build`
+在 Vercel 项目设置中配置以下环境变量：
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+#### 必需变量
+- `NEXT_PUBLIC_API_BASE_URL`: 后端API地址
+- `SUPABASE_URL`: Supabase 项目URL
+- `SUPABASE_SERVICE_KEY`: Supabase 服务密钥
+- `SUPABASE_ANON_KEY`: Supabase 匿名密钥
+- `JWT_SECRET`: JWT 密钥
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+#### 可选变量
+- `KIMI_API_KEY`: KIMI AI API 密钥
+- `KIMI_MODEL`: KIMI 模型名称
+- `ALLOWED_ORIGINS`: CORS 允许的域名
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🛠️ 本地开发
 
-### `npm run eject`
+### 环境要求
+- Node.js >= 18.0.0
+- npm >= 8.0.0
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 安装依赖
+```bash
+# 安装后端依赖
+cd backend
+npm install
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# 安装前端依赖
+cd ../frontend
+npm install
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 启动服务
+```bash
+# 启动后端 (端口 3001)
+cd backend
+npm start
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# 启动前端 (端口 3000)
+cd frontend
+npm run dev
+```
 
-## Learn More
+## 📁 项目结构
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+edu/
+├── backend/          # 后端服务 (Express.js)
+├── frontend/         # 前端应用 (Next.js)
+├── doc/             # 项目文档
+├── .env             # 环境变量
+├── .env.example     # 环境变量示例
+├── vercel.json      # Vercel 配置
+└── deploy.sh        # 部署脚本
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🔧 主要功能
 
-### Code Splitting
+- **内容管理**: 创建、编辑、删除教育内容
+- **AI 生成**: 基于知识点和学习阶段生成互动内容
+- **收藏系统**: 收藏和管理喜欢的内容
+- **用户认证**: JWT 认证系统
+- **响应式设计**: 支持移动端和桌面端
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 📚 API 文档
 
-### Analyzing the Bundle Size
+### 认证 API
+- `POST /api/auth/login` - 用户登录
+- `POST /api/auth/register` - 用户注册
+- `GET /api/auth/me` - 获取当前用户信息
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### 内容 API
+- `GET /api/content` - 获取内容列表
+- `POST /api/content` - 创建内容
+- `PUT /api/content/:id` - 更新内容
+- `DELETE /api/content/:id` - 删除内容
 
-### Making a Progressive Web App
+### 用户内容互动 API
+- `POST /api/user_content/:contentId/like` - 喜欢内容
+- `DELETE /api/user_content/:contentId/like` - 取消喜欢
+- `GET /api/user_content/liked` - 获取喜欢的内容
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### 收藏 API
+- `GET /api/user_collections/group/:groupId` - 获取收藏内容
+- `POST /api/user_collections` - 添加到收藏
+- `DELETE /api/user_collections/:contentId/:listId` - 从收藏移除
 
-### Advanced Configuration
+## 🚀 部署检查清单
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- [ ] 环境变量配置完成
+- [ ] 数据库连接正常
+- [ ] API 端点可访问
+- [ ] 前端构建成功
+- [ ] CORS 配置正确
+- [ ] 域名配置完成
 
-### Deployment
+## 📞 支持
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+如有问题，请查看：
+- [项目文档](./doc/)
+- [架构说明](./doc/ARCHITECTURE.md)
+- [环境配置](./doc/ENVIRONMENT_SETUP.md) 
