@@ -100,7 +100,7 @@ export default function AiLoadingAnimation({
 
   // 渐隐渐显效果
   const fadeMessage = (message: string) => {
-    console.log('开始渐隐渐显效果，消息:', message);
+    //console.log('开始渐隐渐显效果，消息:', message);
     
     // 清理之前的定时器
     if (fadeIntervalRef.current) {

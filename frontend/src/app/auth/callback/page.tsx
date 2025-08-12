@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -11,11 +12,6 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       try {
         setStatus('正在验证登录状态...');
-        
-        console.log('Auth callback - 开始处理');
-        console.log('当前URL:', window.location.href);
-        console.log('Hash:', window.location.hash);
-        console.log('Search:', window.location.search);
         
         // 从URL hash中提取token参数
         const hash = window.location.hash.substring(1);
@@ -27,15 +23,7 @@ export default function AuthCallback() {
         const expiresIn = params.get('expires_in');
         const tokenType = params.get('token_type');
         
-        console.log('提取的参数:', { 
-          hasAccessToken: !!accessToken, 
-          hasRefreshToken: !!refreshToken,
-          expiresAt,
-          expiresIn 
-        });
-        
         if (!accessToken) {
-          console.error('未找到access_token');
           setStatus('认证失败: 未找到访问令牌');
           setTimeout(() => {
             router.push('/login?error=no_token');
@@ -53,7 +41,6 @@ export default function AuthCallback() {
         });
         
         if (!userResponse.ok) {
-          console.error('获取用户信息失败:', userResponse.status);
           setStatus('认证失败: 无法获取用户信息');
           setTimeout(() => {
             router.push('/login?error=user_fetch_failed');
@@ -62,7 +49,6 @@ export default function AuthCallback() {
         }
         
         const userData = await userResponse.json();
-        console.log('用户信息获取成功:', userData.email);
         
         // 保存session到localStorage
         const sessionData = {
@@ -73,7 +59,12 @@ export default function AuthCallback() {
           token_type: tokenType
         };
         localStorage.setItem('sb-zayoczhybuegvtpcsgso-auth-token', JSON.stringify(sessionData));
-        console.log('Session已保存到localStorage');
+        
+        // 重要：同步设置 API 客户端的 token
+        api.setToken(accessToken);
+        
+        // 触发自定义事件，通知 useAuth 重新检查认证状态
+        window.dispatchEvent(new Event('sessionChanged'));
         
         // 确保用户信息已保存到数据库
         try {
@@ -95,24 +86,23 @@ export default function AuthCallback() {
           });
           
           if (userInsertResponse.ok) {
-            console.log('用户信息保存成功');
+            // 用户信息保存成功
           } else {
-            console.warn('保存用户信息失败:', userInsertResponse.status);
+            // 即使保存失败，也不影响登录流程
           }
         } catch (profileError) {
-          console.warn('保存用户信息时出错:', profileError);
+          // 即使保存失败，也不影响登录流程
         }
         
         setStatus('登录成功，正在跳转...');
         
         // 延迟跳转，确保状态更新
         setTimeout(() => {
-          console.log('跳转到 /content');
-          router.replace('/content');
-        }, 1000);
+          // 使用 window.location.href 而不是 router.replace，确保完全重新加载
+          window.location.href = '/content';
+        }, 1500);
         
       } catch (error) {
-        console.error('处理认证回调时出错:', error);
         setStatus('处理登录时出错: ' + (error as Error).message);
         setTimeout(() => {
           router.push('/login?error=callback_failed');

@@ -100,48 +100,35 @@ router.get('/me', async (req, res, next) => {
     const jwt = require('jsonwebtoken');
     const config = require('../config');
 
-    jwt.verify(token, config.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        return res.status(401).json({ 
-          error: '令牌无效',
-          message: '请重新登录' 
-        });
-      }
-
-      try {
-        console.log('🔍 获取用户信息:', decoded.userId);
-        
-        // 从数据库获取用户信息
-        const userResult = await DatabaseService.getUserById(decoded.userId);
-        
-        if (!userResult.data) {
-          return res.status(404).json({ 
-            error: '用户不存在',
-            message: '用户账户已被删除' 
-          });
-        }
-        
-        const userInfo = {
-          id: userResult.data.id,
-          email: userResult.data.email,
-          name: userResult.data.name || userResult.data.email?.split('@')[0] || '用户',
-          role: userResult.data.role || 'user'
-        };
-        
-        console.log('✅ 获取用户信息成功:', userInfo.email);
-        
-        res.json({
-          success: true,
-          data: userInfo
-        });
-      } catch (error) {
-        console.error('获取用户信息失败:', error);
-        res.status(500).json({ 
-          error: '服务器错误',
+    try {
+      const decoded = jwt.verify(token, config.JWT_SECRET);
+      const userId = decoded.userId;
+      
+      // 从数据库获取用户信息
+      const { data: userInfo, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        return res.status(500).json({ 
+          success: false, 
           message: '获取用户信息失败' 
         });
       }
-    });
+      
+      return res.json({
+        success: true,
+        data: userInfo
+      });
+      
+    } catch (error) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '验证令牌失败' 
+      });
+    }
   } catch (error) {
     console.error('验证令牌失败:', error);
     res.status(500).json({ 

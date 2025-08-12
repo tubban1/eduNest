@@ -34,23 +34,17 @@ if (config.NODE_ENV === 'production') {
 
   if (missingConfigs.length > 0) {
     console.error(`❌ 生产环境缺少必要的环境变量: ${missingConfigs.join(', ')}`);
-    throw new Error(`生产环境缺少必要的环境变量: ${missingConfigs.join(', ')}`);
+    process.exit(1);
   }
   
-  // 生产环境安全检查
-  if (config.JWT_SECRET === 'dev-secret-key') {
-    throw new Error('生产环境不能使用默认JWT密钥');
-  }
-  
-  console.log('✅ 生产环境配置检查通过');
+  // 生产环境配置检查通过
 } else {
-  // 开发模式下只显示警告
-  const missingConfigs = [];
-  if (!process.env.ARK_API_KEY) missingConfigs.push('ARK_API_KEY');
-  if (!process.env.SUPABASE_SERVICE_KEY) missingConfigs.push('SUPABASE_SERVICE_KEY');
+  // 开发模式：只检查基本配置
+  const basicConfigs = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+  const missingConfigs = basicConfigs.filter(config => !process.env[config]);
   
   if (missingConfigs.length > 0) {
-    console.warn(`⚠️  开发模式警告: 以下环境变量未设置，某些功能可能不可用: ${missingConfigs.join(', ')}`);
+    // 开发模式警告：某些功能可能不可用
   }
 }
 

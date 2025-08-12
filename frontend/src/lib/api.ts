@@ -9,25 +9,30 @@ class ApiClient {
   constructor(baseUrl: string = config.API_BASE_URL) {
     this.baseUrl = baseUrl;
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      if (token) {
-        this.token = token;
+      // 修复：使用与 useAuth 相同的 token 存储 key
+      const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
+      if (sessionStr) {
+        try {
+          const session = JSON.parse(sessionStr);
+          if (session.access_token) {
+            this.token = session.access_token;
+          }
+        } catch (error) {
+          // 静默处理解析失败
+        }
       }
     }
   }
 
   setToken(token: string) {
     this.token = token;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', token);
-    }
+    // 注意：这里不直接存储到 localStorage，因为 useAuth 已经存储了
+    // 我们只需要在内存中保存 token 引用
   }
 
   clearToken() {
     this.token = null;
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-    }
+    // 注意：这里不直接清除 localStorage，因为 useAuth 会处理
   }
 
   // 公共请求方法
@@ -133,6 +138,7 @@ class ApiClient {
     getFiltered: async (filters: {
       knowledge_point?: string[];
       language?: string;
+      created_by?: string; // 添加 created_by 支持
     }) => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
@@ -204,26 +210,33 @@ class ApiClient {
   }
 
   async removeContentFromList(contentId: string, listId: string) {
-    return this._request<{ success: boolean }>(`/user_collections/${contentId}/${listId}`, {
+    return this._request<{ success: boolean; deleted: string }>(`/user_collections/${contentId}/${listId}`, {
       method: 'DELETE',
     });
   }
 
-  async getContentCollections(contentId: string) {
-    const data = await this._request<{ success: boolean; data: any[] }>(`/user_collections/content/${contentId}`);
-    return data.success ? data.data : [];
+  async getUserCollections(userId: string) {
+    return this._request<{ success: boolean; data: any[] }>(`/user_collections/group/${userId}`);
   }
 
-  async getCollectionGroups() {
-    const data = await this._request<{ success: boolean; data: any[] }>('/user_collections/groups');
-    return data.success ? data.data : [];
+  async getCollectionLists() {
+    return this._request<{ success: boolean; data: any[] }>('/collection_lists');
   }
 
-  async getCollectionsByGroup(groupId: string) {
-    const data = await this._request<{ success: boolean; data: any[] }>(`/user_collections/group/${groupId}`);
-    return data.success ? data.data : [];
+  async updateCollectionOrder(orders: { id: string; order: number }[]) {
+    return this._request<{ success: boolean; data: any }>('/collection_lists/order', {
+      method: 'PUT',
+      body: JSON.stringify({ orders }),
+    });
   }
 
+  async deleteCollectionList(id: string) {
+    return this._request<{ success: boolean; deleted: string }>(`/collection_lists/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // User Content API
   async likeContent(contentId: string) {
     return this._request<{ success: boolean; data: any }>(`/user_content/${contentId}/like`, {
       method: 'POST',
@@ -231,118 +244,73 @@ class ApiClient {
   }
 
   async unlikeContent(contentId: string) {
-    return this._request<{ success: boolean }>(`/user_content/${contentId}/like`, {
+    return this._request<{ success: boolean; data: any }>(`/user_content/${contentId}/like`, {
       method: 'DELETE',
     });
-  }
-
-  async getContentLikeStatus(contentId: string) {
-    return this._request<{ success: boolean; data: { isLiked: boolean } }>(`/user_content/${contentId}/like`);
   }
 
   async getLikedContent() {
     return this._request<{ success: boolean; data: any[] }>('/user_content/liked');
   }
 
-  async getUserCollections(userId: string) {
-    const data = await this._request<{ success: boolean; data: any[] }>(`/collections/user/${userId}`);
-    return data.success ? data.data : [];
-  }
-
-  async addToCollection(collection: any) {
-    const data = await this._request<{ success: boolean; data: any }>('/collections', {
-      method: 'POST',
-      body: JSON.stringify(collection),
-    });
-    return data.success ? data.data : null;
-  }
-
-  async removeFromCollection(id: string) {
-    await this._request(`/collections/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
   // Rating API
-  rating = {
-    getContentRatings: async (contentId: string) => {
-      const data = await this._request<{ success: boolean; data: any[] }>(`/ratings/content/${contentId}`);
-      return data.success ? data.data : [];
-    },
+  async rateContent(contentId: string, rating: number) {
+    return this._request<{ success: boolean; data: any }>(`/ratings/${contentId}`, {
+      method: 'POST',
+      body: JSON.stringify({ rating }),
+    });
+  }
 
-    addRating: async (rating: any) => {
-      const data = await this._request<{ success: boolean; data: any }>('/ratings', {
-        method: 'POST',
-        body: JSON.stringify(rating),
-      });
-      return data.success ? data.data : null;
-    },
+  async getContentRating(contentId: string) {
+    return this._request<{ success: boolean; data: any }>(`/ratings/${contentId}`);
+  }
 
-    getRatingStats: async (contentId: string) => {
-      const data = await this._request<{ success: boolean; data: any }>(`/ratings/stats/${contentId}`);
-      return data.success ? data.data : null;
-    },
-  };
+  async getUserRating(contentId: string) {
+    return this._request<{ success: boolean; data: any }>(`/ratings/${contentId}/user`);
+  }
 
-  // AI相关API
-  ai = {
-    generate: async (data: { knowledgePoint: string; learningStage: string; description?: string }) => {
-      return this._request<{ success: boolean; data: any }>('/ai/generate', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-    },
+  // AI API
+  async generateContent(prompt: string, options: any = {}) {
+    return this._request<{ success: boolean; data: any }>('/ai/generate', {
+      method: 'POST',
+      body: JSON.stringify({ prompt, ...options }),
+    });
+  }
 
-    getLearningStages: async () => {
-      return this._request<{ success: boolean; data: any[] }>('/ai/learning-stages');
-    },
+  async fixContent(contentId: string, issue: string) {
+    return this._request<{ success: boolean; data: any }>(`/ai/fix/${contentId}`, {
+      method: 'POST',
+      body: JSON.stringify({ issue }),
+    });
+  }
 
-    getLearningStageDescription: async (stage: string) => {
-      return this._request<{ success: boolean; data: any }>(`/ai/learning-stage/${stage}/description`);
-    },
-  };
-
-  // 用户收藏相关API
+  async simplifyContent(contentId: string) {
+    return this._request<{ success: boolean; data: any }>(`/ai/simplify/${contentId}`, {
+      method: 'POST',
+    });
+  }
 }
 
-// 创建API实例
+// 创建并导出 API 实例
 export const api = new ApiClient();
 
-// 类型定义
+// 导出类型
 export interface Content {
   id: string;
-  short_id?: string;
+  short_id: string;
   title: string;
-  grade?: string;
-  subject?: string;
-  knowledge_point: string[];
+  description?: string;
   tags?: string[];
-  language: string;
-  content_type: string;
-  content_data: any;
+  knowledge_point?: string[];
   created_at: string;
   updated_at: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-}
-
-export interface UserCollection {
-  id: string;
-  user_id: string;
-  content_id: string;
-  created_at: string;
-}
-
-export interface Rating {
-  id: string;
-  user_id: string;
-  content_id: string;
-  rating: number;
-  comment?: string;
-  created_at: string;
+  code_html?: string;
+  code_css?: string;
+  code_js?: string;
+  external_links?: string[];
+  language?: string;
+  content_type?: string;
+  created_by?: string;
+  rating?: number;
+  user_rating?: number;
 } 

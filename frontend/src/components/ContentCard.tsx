@@ -31,8 +31,8 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
     try {
       await api.createCollection({ name, visibility });
       if (refreshLists) await refreshLists(); // 新建后刷新
-    } catch (error: any) {
-      console.error('创建收藏列表失败:', error);
+    } catch (error) {
+      // 创建收藏列表失败处理
       throw error; // 重新抛出错误，让 NewListDialog 处理
     }
   };

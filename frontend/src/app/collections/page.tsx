@@ -58,7 +58,6 @@ export default function CollectionsPage() {
     } catch (error: any) {
       const errorMessage = error.message || '获取收藏列表失败';
       setError(errorMessage);
-      console.error('获取收藏列表失败:', error);
     } finally {
       setLoading(false);
     }
@@ -69,7 +68,6 @@ export default function CollectionsPage() {
     try {
       setLoading(true);
       setError('');
-      console.log('正在获取收藏内容，listId:', listId);
       
       let response;
       
@@ -81,18 +79,14 @@ export default function CollectionsPage() {
         response = await api.request<{ success: boolean; data: CollectionContent[]; error?: string }>(`/user_collections/group/${listId}`);
       }
       
-      console.log('收藏内容响应:', response);
-      
       if (response.success) {
         setCollections(response.data);
-        console.log('收藏内容获取成功，数量:', response.data.length);
       } else {
         throw new Error((response as any).error || '获取收藏内容失败');
       }
     } catch (error: any) {
       const errorMessage = error.message || '获取收藏内容失败';
       setError(errorMessage);
-      console.error('获取收藏内容失败:', error);
     } finally {
       setLoading(false);
     }
@@ -101,52 +95,40 @@ export default function CollectionsPage() {
   // 处理收藏操作
   const handleCollectionAction = async (action: string, contentId: string, listId?: string) => {
     try {
-      console.log('handleCollectionAction:', action, contentId, listId);
-      switch (action) {
-        case 'remove':
-          if (!listId) {
-            console.error('移除操作需要 listId');
-            return;
-          }
-          await api.removeContentFromList(contentId, listId);
-          // 刷新数据
-          if (activeList) {
-            fetchCollections(activeList);
-          }
-          break;
-        case 'like':
-          console.log('调用点赞 API:', contentId);
-          try {
-            const likeResult = await api.likeContent(contentId);
-            console.log('点赞API结果:', likeResult);
-          } catch (error) {
-            console.error('点赞API调用失败:', error);
-            throw error;
-          }
-          // 喜欢操作不刷新数据，让子组件自己处理状态
-          break;
-        case 'unlike':
-          console.log('调用取消点赞 API:', contentId);
-          try {
-            const unlikeResult = await api.unlikeContent(contentId);
-            console.log('取消点赞API结果:', unlikeResult);
-          } catch (error) {
-            console.error('取消点赞API调用失败:', error);
-            throw error;
-          }
-          // 取消喜欢操作不刷新数据，让子组件自己处理状态
-          break;
-        case 'copy':
-          // 复制功能 - 可以复制到剪贴板或创建副本
-          const content = collections.find(c => c.content.id === contentId)?.content;
-          if (content) {
-            await navigator.clipboard.writeText(content.title);
-            // 可以显示一个toast提示
-          }
-          break;
+      if (action === 'remove' && !listId) {
+        // 移除操作需要 listId
+        return;
       }
+
+      let result;
+      if (action === 'like') {
+        const likeResult = await api.likeContent(contentId);
+        if (likeResult.success) {
+          // 更新本地状态
+          setCollections(prev => prev.map(item => 
+            item.id === contentId ? { ...item, is_liked: true } : item
+          ));
+        }
+      } else if (action === 'unlike') {
+        const unlikeResult = await api.unlikeContent(contentId);
+        if (unlikeResult.success) {
+          // 更新本地状态
+          setCollections(prev => prev.map(item => 
+            item.id === contentId ? { ...item, is_liked: false } : item
+          ));
+        }
+      } else if (action === 'remove' && listId) {
+        result = await api.removeContentFromList(contentId, listId);
+        if (result.success) {
+          // 从本地状态中移除
+          setCollections(prev => prev.filter(item => item.id !== contentId));
+        }
+      }
+
+      // 刷新收藏列表
+      fetchCollections(activeList);
     } catch (error) {
-      console.error('操作失败:', error);
+      // 操作失败处理
     }
   };
 

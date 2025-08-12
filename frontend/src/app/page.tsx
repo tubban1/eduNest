@@ -47,7 +47,6 @@ export default function HomePage() {
           setContents(shuffled);
         }
       } catch (error) {
-        console.error('获取内容失败:', error);
         // 如果获取失败，使用空数组
         setContents([]);
       } finally {
@@ -64,7 +63,7 @@ export default function HomePage() {
       await signOut();
       window.location.reload();
     } catch (error) {
-      console.error('登出失败:', error);
+      // 登出失败处理
     } finally {
       setIsLoadingSignOut(false);
     }

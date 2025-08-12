@@ -138,70 +138,32 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
       throw new Error('AI返回内容为空');
     }
 
-    let parsedData;
-    let jsonMatch = null; // 声明在外部作用域
-    try {
-      // 尝试多种JSON匹配模式
-      jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      
-      if (!jsonMatch) {
-        // 尝试找到包含JSON的代码块
-        const codeBlockMatch = aiResponse.match(/```json\s*(\{[\s\S]*?\})\s*```/);
-        if (codeBlockMatch) {
-          jsonMatch = [codeBlockMatch[1]];
-        }
+    // 尝试从AI响应中提取JSON
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      try {
+        const parsedData = JSON.parse(jsonMatch[0]);
+        
+        return {
+          success: true,
+          data: parsedData
+        };
+      } catch (parseError) {
+        return {
+          success: false,
+          error: 'JSON解析失败',
+          details: parseError.message
+        };
       }
-      
-      if (!jsonMatch) {
-        // 尝试找到最后一个完整的JSON对象
-        const matches = aiResponse.match(/\{[\s\S]*?\}/g);
-        if (matches && matches.length > 0) {
-          jsonMatch = [matches[matches.length - 1]];
-        }
-      }
-      
-      if (!jsonMatch) {
-        // 最后尝试：查找任何可能的JSON结构
-        const possibleJson = aiResponse.match(/\{[^{}]*"[^{}]*"[^{}]*\}/);
-        if (possibleJson) {
-          jsonMatch = [possibleJson[0]];
-        }
-      }
-      
-      if (jsonMatch) {
-        console.log('找到JSON匹配，长度:', jsonMatch[0].length);
-        console.log('JSON内容:', jsonMatch[0]);
-        parsedData = JSON.parse(jsonMatch[0]);
-        console.log('解析后的数据:', parsedData);
-      } else {
-        console.error('无法找到JSON结构，原始内容:', aiResponse);
-        throw new Error('无法解析AI返回的JSON，请检查AI返回的格式');
-      }
-    } catch (parseError) {
-      console.error('JSON解析错误:', parseError);
-      console.error('尝试解析的内容:', jsonMatch ? jsonMatch[0] : '未找到JSON');
-      throw new Error(`AI返回内容格式错误: ${parseError.message}`);
+    } else {
+      return {
+        success: false,
+        error: '未找到JSON格式',
+        details: 'AI返回的内容中没有找到有效的JSON结构'
+      };
     }
 
-    // 验证必要字段
-    if (!parsedData.html || !parsedData.css || !parsedData.js) {
-      throw new Error('AI返回的内容缺少必要字段(html, css, js)');
-    }
-
-    return {
-      success: true,
-      data: {
-        html: parsedData.html,
-        css: parsedData.css,
-        js: parsedData.js,
-        title: parsedData.title || 'AI生成的内容',
-        description: parsedData.description || description,
-        tags: parsedData.tags || [],
-        external_links: parsedData.external_links || [],
-        content_type: parsedData.content_type || 'vue',
-        language: parsedData.language || 'zh-CN'
-      }
-    };
   } catch (error) {
     return {
       success: false,
@@ -213,8 +175,6 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
 // 简化的AI生成测试
 const generateSimpleContent = async (knowledgePoint, learningStage) => {
   try {
-    console.log('简化AI生成开始:', { knowledgePoint, learningStage });
-
     if (!ARK_API_KEY || ARK_API_KEY === 'your_ark_api_key_here') {
       throw new Error('ARK_API_KEY未配置或使用默认值，请在.env文件中配置真实的API密钥');
     }
@@ -235,8 +195,6 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
   "language": "zh-CN"
 }`;
 
-    console.log('发送简化请求到AI');
-
     const response = await fetch(ARK_URL, {
       method: 'POST',
       headers: {
@@ -251,8 +209,6 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       })
     });
 
-    console.log('AI API响应状态:', response.status, response.statusText);
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error('AI API错误:', errorText);
@@ -260,16 +216,13 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
     }
 
     const data = await response.json();
-    console.log('AI API原始响应:', JSON.stringify(data, null, 2));
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       throw new Error('AI API返回格式错误');
     }
 
     const aiResponse = data.choices[0].message.content;
-    console.log('AI原始响应:', aiResponse);
-    console.log('AI响应长度:', aiResponse.length);
-
+    
     // 解析AI返回的JSON
     let parsedData;
     let jsonMatch = null; // 声明在外部作用域
@@ -302,10 +255,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       }
       
       if (jsonMatch) {
-        console.log('找到JSON匹配，长度:', jsonMatch[0].length);
-        console.log('JSON内容:', jsonMatch[0]);
         parsedData = JSON.parse(jsonMatch[0]);
-        console.log('解析后的数据:', parsedData);
       } else {
         console.error('未找到JSON格式，完整响应:', aiResponse);
         throw new Error('无法解析AI返回的JSON，请检查AI返回的格式');
@@ -389,9 +339,6 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
       return { success: false, error: 'AI返回内容为空' };
     }
     
-    console.log('AI修复原始返回内容:', aiResponse);
-    console.log('AI修复返回内容长度:', aiResponse.length);
-    
     let parsed;
     let jsonMatch = null; // 声明在外部作用域
     try {
@@ -423,7 +370,6 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
       }
       
       if (jsonMatch) {
-        console.log('找到修复JSON匹配:', jsonMatch[0]);
         parsed = JSON.parse(jsonMatch[0]);
       } else {
         console.error('无法找到修复JSON结构，原始内容:', aiResponse);

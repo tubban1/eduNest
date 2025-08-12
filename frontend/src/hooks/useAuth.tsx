@@ -31,28 +31,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuthStatus = async () => {
     try {
       const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
-      console.log('检查session:', sessionStr ? '存在' : '不存在');
-      console.log('Session内容:', sessionStr);
       
       if (!sessionStr) {
-        console.log('没有session，设置用户为null');
         setUser(null);
         setLoading(false);
+        // 清除 API 客户端的 token
+        api.clearToken();
         return;
       }
 
       const session = JSON.parse(sessionStr);
-      console.log('解析的session:', session);
       
       if (!session.access_token) {
-        console.log('session中没有access_token，清除session');
         localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
         setUser(null);
         setLoading(false);
+        // 清除 API 客户端的 token
+        api.clearToken();
         return;
       }
 
-      console.log('开始验证token...');
       // 验证token并获取用户信息
       const response = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/user', {
         headers: {
@@ -61,20 +59,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      console.log('Token验证响应状态:', response.status);
-      console.log('Token验证响应:', response);
-
       if (!response.ok) {
-        console.log('Token验证失败，清除session');
         localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
         setUser(null);
         setLoading(false);
+        // 清除 API 客户端的 token
+        api.clearToken();
         return;
       }
 
       const userData = await response.json();
-      console.log('用户验证成功:', userData.email);
-      console.log('完整用户数据:', userData);
 
       // 获取用户角色信息
       const roleResponse = await fetch(`https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users?id=eq.${userData.id}&select=role`, {
@@ -88,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (roleResponse.ok) {
         const roleData = await roleResponse.json();
         role = roleData[0]?.role || 'user';
-        console.log('用户角色:', role);
       }
 
       const authUser: AuthUser = {
@@ -99,19 +92,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: role
       };
 
-      console.log('设置用户状态:', authUser);
       setUser(authUser);
+      
+      // 重要：同步设置 API 客户端的 token
       api.setToken(session.access_token);
-      console.log('用户状态已设置');
 
     } catch (error: any) {
-      console.error('认证检查错误:', error);
       localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
       setUser(null);
+      // 清除 API 客户端的 token
+      api.clearToken();
     } finally {
       setLoading(false);
     }
   };
+
+  // 监听 localStorage 变化
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sb-zayoczhybuegvtpcsgso-auth-token') {
+        if (e.newValue) {
+          // 有新的 session，重新检查
+          checkAuthStatus();
+        } else {
+          // session 被清除，清除用户状态
+          setUser(null);
+          api.clearToken();
+        }
+      }
+    };
+
+    // 监听其他标签页的 localStorage 变化
+    window.addEventListener('storage', handleStorageChange);
+
+    // 监听当前页面的 localStorage 变化（通过自定义事件）
+    const handleCustomStorageChange = () => {
+      checkAuthStatus();
+    };
+
+    window.addEventListener('sessionChanged', handleCustomStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sessionChanged', handleCustomStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     checkAuthStatus();
@@ -120,9 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 邮箱密码登录
   const signInWithEmail = async (email: string, password: string) => {
     try {
-      console.log('开始邮箱登录...');
-      console.log('登录邮箱:', email);
-      
       const response = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/token?grant_type=password', {
         method: 'POST',
         headers: {
@@ -133,18 +155,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password })
       });
 
-      console.log('登录响应状态:', response.status);
-      console.log('登录响应:', response);
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('登录失败:', errorData);
         return { error: errorData.error_description || '登录失败' };
       }
 
       const loginData = await response.json();
-      console.log('登录成功，获取到的数据:', loginData);
-      console.log('保存session');
 
       // 保存session
       const sessionData = {
@@ -154,17 +170,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         expires_at: loginData.expires_at,
         token_type: loginData.token_type
       };
-      console.log('要保存的session数据:', sessionData);
       localStorage.setItem('sb-zayoczhybuegvtpcsgso-auth-token', JSON.stringify(sessionData));
-      console.log('Session已保存到localStorage');
 
       // 重新检查认证状态
-      console.log('重新检查认证状态...');
       await checkAuthStatus();
 
       return { error: null };
     } catch (error: any) {
-      console.error('邮箱登录错误:', error);
       return { error: error.message || '登录失败' };
     }
   };
@@ -172,16 +184,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Google登录
   const signInWithGoogle = async () => {
     try {
-      console.log('开始Google登录流程...');
-      
       const oauthUrl = `https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin + '/auth/callback')}`;
       
-      console.log('跳转到Google OAuth:', oauthUrl);
       window.location.href = oauthUrl;
       
       return { error: null };
     } catch (error: any) {
-      console.error('Google登录错误:', error);
       return { error: error.message || '登录失败' };
     }
   };
@@ -203,22 +211,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           });
         } catch (error) {
-          console.warn('退出登录API调用失败:', error);
+          // 静默处理退出登录API调用失败
         }
       }
       
       // 清除本地数据
       localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
       setUser(null);
+      // 清除 API 客户端的 token
       api.clearToken();
       
       return { error: null };
     } catch (error: any) {
-      console.error('退出登录错误:', error);
-      
       // 即使API调用失败，也要清除本地数据
       localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
       setUser(null);
+      // 清除 API 客户端的 token
       api.clearToken();
       
       return { error: error.message || '退出登录失败' };

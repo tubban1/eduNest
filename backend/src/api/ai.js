@@ -197,12 +197,6 @@ router.get('/test-key', async (req, res) => {
     const ARK_MODEL = process.env.ARK_MODEL || 'kimi-k2-250711';
     const ARK_URL = process.env.ARK_URL || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
 
-    console.log('API配置:', {
-      ARK_API_KEY: ARK_API_KEY ? `${ARK_API_KEY.substring(0, 8)}...` : '未设置',
-      ARK_MODEL,
-      ARK_URL
-    });
-
     if (!ARK_API_KEY) {
       return res.status(500).json({
         success: false,
@@ -225,11 +219,8 @@ router.get('/test-key', async (req, res) => {
       })
     });
 
-    console.log('API测试响应状态:', response.status, response.statusText);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API测试错误:', errorText);
       return res.status(500).json({
         success: false,
         error: `API测试失败: ${response.status} ${response.statusText}`,
@@ -238,7 +229,6 @@ router.get('/test-key', async (req, res) => {
     }
 
     const data = await response.json();
-    console.log('API测试成功，响应:', JSON.stringify(data, null, 2));
 
     res.json({
       success: true,
@@ -247,7 +237,6 @@ router.get('/test-key', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('API测试错误:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'API测试失败'

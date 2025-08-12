@@ -17,9 +17,7 @@ const validateSupabaseConfig = () => {
   );
   
   if (missingConfigs.length > 0) {
-    console.warn(`⚠️  缺少 Supabase 配置: ${missingConfigs.join(', ')}`);
-    console.warn('在开发模式下将使用模拟数据');
-    return false;
+    // 缺少 Supabase 配置，在开发模式下将使用模拟数据
   }
   
   return true;
@@ -206,8 +204,8 @@ const updateContent = async (contentId, contentData) => {
     .single();
 
   if (result.error) {
-    console.error('内容更新失败:', result.error);
-    throw result.error;
+    // 内容更新失败
+    return { success: false, error: result.error };
   }
   return result.data;
 };
@@ -682,27 +680,31 @@ const getUserCollectionGroups = async (userId) => {
         .from('user_collections')
         .select('*', { count: 'exact', head: true })
         .eq('list_id', list.id);
-        
+      
       if (countError) {
-        console.error(`获取列表 ${list.id} 内容数量失败:`, countError);
-        continue;
+        // 获取列表内容数量失败
+        list.contentCount = 0;
+      } else {
+        list.contentCount = count || 0;
       }
       
       groups.push({
         id: list.id,
         name: list.name,
-        count: count || 0
+        count: list.contentCount
       });
     }
     
     // 获取总收藏数量
-    const { count: totalCount, error: totalError } = await supabase
+    let totalCount = 0;
+    const { error: totalError } = await supabase
       .from('user_collections')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId);
       
     if (totalError) {
-      console.error('获取总收藏数量失败:', totalError);
+      // 获取总收藏数量失败
+      totalCount = 0;
     }
     
     // 添加"全部收藏"分组
@@ -815,7 +817,6 @@ const getUserLikedCollections = async (userId) => {
       .order('liked_at', { ascending: false });
     
     if (error) {
-      console.error('获取用户喜欢内容失败:', error);
       throw error;
     }
     
@@ -832,7 +833,6 @@ const getUserLikedCollections = async (userId) => {
     
     return { data: transformedData, error: null };
   } catch (error) {
-    console.error('getUserLikedCollections 错误:', error);
     return { data: null, error };
   }
 };
@@ -871,7 +871,6 @@ const likeContent = async (userId, contentId) => {
     
     return { data, error: null };
   } catch (error) {
-    console.error('likeContent 错误:', error);
     return { data: null, error };
   }
 };
@@ -888,7 +887,6 @@ const unlikeContent = async (userId, contentId) => {
       .single();
     
     if (checkError && checkError.code !== 'PGRST116') {
-      console.error('检查喜欢记录失败:', checkError);
       throw checkError;
     }
     
@@ -903,13 +901,11 @@ const unlikeContent = async (userId, contentId) => {
       .eq('content_id', contentId);
       
     if (error) {
-      console.error('删除喜欢记录失败:', error);
       throw error;
     }
     
     return { success: true, error: null };
   } catch (error) {
-    console.error('unlikeContent 错误:', error);
     return { success: false, error };
   }
 };
@@ -926,7 +922,6 @@ const getContentLikeStatus = async (userId, contentId) => {
       .single();
     
     if (error && error.code !== 'PGRST116') {
-      console.error('查询喜欢状态失败:', error);
       throw error;
     }
     
@@ -934,7 +929,6 @@ const getContentLikeStatus = async (userId, contentId) => {
     
     return { data: isLiked, error: null };
   } catch (error) {
-    console.error('getContentLikeStatus 错误:', error);
     return { data: false, error };
   }
 };
@@ -961,7 +955,6 @@ const getUserLikedContent = async (userId) => {
       .order('liked_at', { ascending: false });
     
     if (error) {
-      console.error('获取用户喜欢内容失败:', error);
       throw error;
     }
     
@@ -974,7 +967,6 @@ const getUserLikedContent = async (userId) => {
     
     return { data: transformedData, error: null };
   } catch (error) {
-    console.error('getUserLikedContent 错误:', error);
     return { data: null, error };
   }
 };

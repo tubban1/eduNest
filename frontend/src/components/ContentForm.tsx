@@ -130,11 +130,6 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
   const [aiGenerating, setAiGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false); // 新增：标记是否已经生成过内容
   
-  // 调试：监听aiGenerating状态变化
-  useEffect(() => {
-    console.log('aiGenerating状态变化:', aiGenerating);
-  }, [aiGenerating]);
-  
   // AI修复相关状态
   const [fixError, setFixError] = useState("");
   const [showFix, setShowFix] = useState(false);
@@ -410,21 +405,16 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
     setError('');
 
     try {
-      const response = await api.ai.generate({
-        knowledgePoint: knowledgePoint.trim(),
+      const prompt = `生成一个关于"${knowledgePoint.trim()}"的${learningStage}学习内容。${description ? `具体要求：${description}` : ''}`;
+      
+      const response = await api.generateContent(prompt, {
+        knowledgePoint,
         learningStage,
+        description
       });
 
       if (response.success && response.data) {
         const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language: generatedLanguage } = response.data;
-        
-        // 添加调试日志
-        console.log('AI生成的数据:', response.data);
-        console.log('提取的字段:', {
-          generatedDescription,
-          generatedContentType,
-          generatedLanguage
-        });
         
         // 更新表单内容
         setHtml(html || DEFAULT_HTML);
@@ -546,23 +536,15 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
         language,
       };
       
-      // 添加调试日志
-      console.log('保存的内容数据:', content);
-      
       if (mode === 'edit' && contentId) {
         const result = await api.content.update(contentId, content);
-        console.log('更新内容结果:', result);
         if (result && result.short_id) {
           setSavedContentId(result.short_id);
         }
       } else {
         const result = await api.content.create(content);
-        console.log('创建内容结果:', result);
         if (result && result.short_id) {
           setSavedContentId(result.short_id);
-          console.log('设置savedContentId:', result.short_id);
-        } else {
-          console.log('创建内容失败或没有short_id:', result);
         }
       }
       router.push('/content');
@@ -585,25 +567,22 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
             <button 
               className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition" 
               onClick={() => {
-                console.log('打开按钮被点击，mode:', mode, 'contentId:', contentId, 'savedContentId:', savedContentId, 'contentShortId:', contentShortId);
-                let targetId = null;
-                
-                if (mode === 'edit') {
-                  // edit模式下使用从数据库加载的short_id
-                  targetId = contentShortId;
-                } else {
-                  // create模式下使用保存后返回的short_id
-                  targetId = savedContentId;
-                }
-                
-                if (targetId) {
-                  console.log('打开页面:', `/content/${targetId}`);
-                  window.open(`/content/${targetId}`, '_blank');
-                } else {
-                  console.log('无法打开：没有可用的short_id');
-                  alert('请先保存内容后再打开');
-                }
-              }}
+                  let targetId = null;
+                  
+                  if (mode === 'edit') {
+                    // edit模式下使用从数据库加载的short_id
+                    targetId = contentShortId;
+                  } else {
+                    // create模式下使用保存后返回的short_id
+                    targetId = savedContentId;
+                  }
+                  
+                  if (targetId) {
+                    window.open(`/content/${targetId}`, '_blank');
+                  } else {
+                    alert('请先保存内容后再打开');
+                  }
+                }}
               type="button"
             >
               {mode === 'create' ? '保存后打开' : '打开'}
@@ -852,7 +831,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
         isActive={aiGenerating}
         knowledgePoint={knowledgePoint}
         onComplete={() => {
-          console.log('AI生成完成');
+          // AI生成完成
         }}
       />
     </div>

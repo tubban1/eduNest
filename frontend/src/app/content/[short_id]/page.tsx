@@ -37,7 +37,6 @@ export default function ContentViewPage({ params }: { params: { short_id: string
         }
       } catch (error) {
         setError('加载内容失败');
-        console.error('加载内容失败:', error);
       } finally {
         setLoading(false);
       }
@@ -222,7 +221,7 @@ export default function ContentViewPage({ params }: { params: { short_id: string
   <script>
     // 全局错误处理
     window.addEventListener('error', function(e) {
-      console.error('Script error:', e.error);
+      // console.error('Script error:', e.error);
     });
     
     // Tone.js 音频上下文处理
@@ -232,7 +231,7 @@ export default function ContentViewPage({ params }: { params: { short_id: string
         const startAudioContext = () => {
           if (Tone.context.state !== 'running') {
             Tone.context.resume();
-            console.log('Tone.js 音频上下文已启动');
+            // console.log('Tone.js 音频上下文已启动');
           }
         };
         
@@ -267,9 +266,9 @@ export default function ContentViewPage({ params }: { params: { short_id: string
             if (typeof VueKinesis !== 'undefined') {
               try {
                 Vue.use(VueKinesis);
-                console.log('VueKinesis 注册成功');
+                // console.log('VueKinesis 注册成功');
               } catch (error) {
-                console.error('VueKinesis 注册失败:', error);
+                // console.error('VueKinesis 注册失败:', error);
               }
             }
           }
@@ -277,7 +276,7 @@ export default function ContentViewPage({ params }: { params: { short_id: string
           // 执行用户代码
           ${content.code_js}
         } catch (error) {
-          console.error('User script error:', error);
+          // console.error('User script error:', error);
         }
       }, 100);
     });

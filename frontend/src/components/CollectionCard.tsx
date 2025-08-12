@@ -55,59 +55,59 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
         setCollectionLists((response as any).data);
       }
     } catch (error) {
-      console.error('加载收藏列表失败:', error);
+      // 加载收藏列表失败
     }
   };
 
   const handleAction = async (action: string) => {
     try {
-      console.log('CollectionCard handleAction:', action, content.id, '当前isLiked状态:', isLiked);
-      
-      if (action === 'like' || action === 'unlike') {
-        // 立即更新本地状态，提供即时反馈
-        if (action === 'like') {
-          console.log('设置喜欢状态为 true');
-          setIsLiked(true);
-        } else if (action === 'unlike') {
-          console.log('设置喜欢状态为 false');
+      if (action === 'like') {
+        // 乐观更新
+        setIsLiked(true);
+        
+        const result = await api.likeContent(content.id);
+        if (!result.success) {
+          // 回滚状态
           setIsLiked(false);
         }
+      } else if (action === 'unlike') {
+        // 乐观更新
+        setIsLiked(false);
         
-        // 然后调用API
-        console.log('调用API:', action, content.id);
-        await onAction(action, content.id);
-        console.log('API调用完成');
+        const result = await api.unlikeContent(content.id);
+        if (!result.success) {
+          // 回滚状态
+          setIsLiked(true);
+        }
       } else if (action === 'collect') {
         setShowCollectionDialog(true);
       }
-    } catch (error) {
-      console.error('操作失败:', error);
-      // 如果API调用失败，回滚状态
-      if (action === 'like') {
-        console.log('回滚喜欢状态为 false');
-        setIsLiked(false);
-      } else if (action === 'unlike') {
-        console.log('回滚喜欢状态为 true');
-        setIsLiked(true);
+      
+      // 刷新收藏列表
+      if (refreshLists) {
+        await refreshLists();
       }
+    } catch (error) {
+      // 操作失败处理
     }
   };
 
-  const handleCopy = async () => {
+  const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(content.title);
-      console.log('已复制到剪贴板');
+      await navigator.clipboard.writeText(text);
+      // 已复制到剪贴板
     } catch (error) {
-      console.error('复制失败:', error);
+      // 复制失败处理
     }
   };
 
-  const handleCreateList = async (list: any) => {
+  const createNewList = async (name: string, visibility: string) => {
     try {
-      await api.createCollection(list);
-      await loadCollectionLists();
+      await api.createCollection({ name, visibility });
+      if (refreshLists) await refreshLists(); // 新建后刷新
     } catch (error) {
-      console.error('创建列表失败:', error);
+      // 创建收藏列表失败处理
+      throw error; // 重新抛出错误，让 NewListDialog 处理
     }
   };
 
@@ -167,7 +167,7 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
                 编辑
               </Link>
               <button
-                onClick={handleCopy}
+                onClick={() => copyToClipboard(content.title)}
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
               >
                 <Copy className="w-4 h-4 mr-2" />
@@ -223,7 +223,6 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
               <button
                 onClick={async () => {
                   const newAction = isLiked ? 'unlike' : 'like';
-                  console.log('点击喜欢按钮，当前状态:', isLiked, '新操作:', newAction);
                   await handleAction(newAction);
                 }}
                 className={`flex items-center text-sm transition-colors ${
@@ -253,7 +252,7 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
         onClose={() => setShowCollectionDialog(false)}
         lists={collectionLists}
         onSave={() => {}}
-        onCreateList={handleCreateList}
+        onCreateList={createNewList}
         refreshLists={handleRefreshLists}
         contentId={content.id}
       />

@@ -21,7 +21,7 @@ export default function Sidebar() {
       // 登出后重定向到首页
       window.location.href = '/';
     } catch (error) {
-      console.error('登出失败:', error);
+      // 登出失败处理
     }
   };
 

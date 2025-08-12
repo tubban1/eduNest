@@ -57,7 +57,6 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
       setTitle('');
       onClose();
     } catch (error: any) {
-      console.error('创建列表失败:', error);
       setError(error.message || '创建列表失败，请重试');
     } finally {
       setLoading(false);
@@ -175,7 +174,7 @@ export default function CollectionListDialog({
       const listIds = collections.map((col: any) => col.list_id);
       setCollectedLists(new Set(listIds));
     } catch (error) {
-      console.error('加载收藏状态失败:', error);
+      // 加载收藏状态失败处理
     } finally {
       setLoading(false);
     }
@@ -200,7 +199,6 @@ export default function CollectionListDialog({
         setCollectedLists(prev => new Set(prev).add(listId));
       }
     } catch (error) {
-      console.error('切换收藏状态失败:', error);
       // 可以显示错误提示
     }
   };

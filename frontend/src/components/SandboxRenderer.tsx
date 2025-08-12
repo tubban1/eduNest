@@ -237,25 +237,12 @@ export default function SandboxRenderer({
   <script>
     // 全局错误处理
     window.addEventListener('error', function(e) {
-      console.error('Sandbox error:', e.error);
-      e.preventDefault();
-      
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'sandbox-error';
-      errorDiv.innerHTML = '<span class="close-btn" onclick="this.parentElement.remove()">&times;</span><strong>脚本错误:</strong><br>' + e.message;
-      document.body.appendChild(errorDiv);
-      
-      setTimeout(() => {
-        if (errorDiv.parentNode) {
-          errorDiv.parentNode.removeChild(errorDiv);
-        }
-      }, 10000);
+      // 静默处理沙盒错误
     });
     
     // 捕获未处理的Promise拒绝
     window.addEventListener('unhandledrejection', function(e) {
-      console.error('Unhandled promise rejection:', e.reason);
-      e.preventDefault();
+      // 静默处理未处理的 Promise 拒绝
     });
     
     // 安全执行用户代码
@@ -268,18 +255,7 @@ export default function SandboxRenderer({
         const userFunction = new Function(code);
         userFunction();
       } catch (error) {
-        console.error('User code execution error:', error);
-        
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'sandbox-error';
-        errorDiv.innerHTML = '<span class="close-btn" onclick="this.parentElement.remove()">&times;</span><strong>代码执行错误:</strong><br>' + error.message;
-        document.body.appendChild(errorDiv);
-        
-        setTimeout(() => {
-          if (errorDiv.parentNode) {
-            errorDiv.parentNode.removeChild(errorDiv);
-          }
-        }, 10000);
+        // 静默处理用户代码执行错误
       }
     }
     
@@ -314,7 +290,7 @@ export default function SandboxRenderer({
               try {
                 Vue.use(VueKinesis);
               } catch (error) {
-                console.error('VueKinesis registration failed:', error);
+                // VueKinesis 注册失败
               }
             }
           }
@@ -325,7 +301,7 @@ export default function SandboxRenderer({
           // 通知父窗口加载完成
           parent.postMessage({ type: 'SANDBOX_LOADED' }, '*');
         } catch (error) {
-          console.error('Initialization error:', error);
+          // 初始化错误处理
           parent.postMessage({ type: 'SANDBOX_ERROR', error: error.message }, '*');
         }
       }, 100);

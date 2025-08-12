@@ -124,9 +124,6 @@ export default function ContentPage() {
   const [tab, setTab] = useState<'my-content' | 'my-collections'>('my-content');
   const [lists, setLists] = useState<any[]>([]);
 
-  // 添加调试信息
-  console.log('ContentPage - 认证状态:', { user, authLoading });
-
   // 获取收藏夹列表
   const fetchLists = async () => {
     if (!user) return;
@@ -137,7 +134,6 @@ export default function ContentPage() {
       const listsData = (res as any)?.success ? (res as any).data : [];
       setLists(listsData);
     } catch (error) {
-      console.error('获取收藏列表失败:', error);
       setLists([]);
     }
   };
@@ -147,7 +143,6 @@ export default function ContentPage() {
   }, [user]);
 
   if (authLoading) {
-    console.log('ContentPage - 认证加载中...');
     return (
       <div className="text-center text-gray-400 py-12">
         <div>加载中...</div>
@@ -162,7 +157,6 @@ export default function ContentPage() {
   }
   
   if (!user) {
-    console.log('ContentPage - 用户未登录，显示登录要求');
     return (
       <LoginRequired 
         title="请先登录"
@@ -172,7 +166,6 @@ export default function ContentPage() {
     );
   }
 
-  console.log('ContentPage - 用户已登录，显示内容页面');
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-900">
       <Sidebar />
