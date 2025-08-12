@@ -124,6 +124,9 @@ export default function ContentPage() {
   const [tab, setTab] = useState<'my-content' | 'my-collections'>('my-content');
   const [lists, setLists] = useState<any[]>([]);
 
+  // 添加调试信息
+  console.log('ContentPage - 认证状态:', { user, authLoading });
+
   // 获取收藏夹列表
   const fetchLists = async () => {
     if (!user) return;
@@ -131,7 +134,6 @@ export default function ContentPage() {
       const res = await api.request('/collection_lists', {
         method: 'GET'
       });
-      // 修复：正确处理 API 响应格式
       const listsData = (res as any)?.success ? (res as any).data : [];
       setLists(listsData);
     } catch (error) {
@@ -144,14 +146,33 @@ export default function ContentPage() {
     if (user) fetchLists();
   }, [user]);
 
-  if (authLoading) return <div className="text-center text-gray-400 py-12">加载中...</div>;
-  if (!user) return (
-    <LoginRequired 
-      title="请先登录"
-      description="登录后查看您的内容"
-      showSidebar={true}
-    />
-  );
+  if (authLoading) {
+    console.log('ContentPage - 认证加载中...');
+    return (
+      <div className="text-center text-gray-400 py-12">
+        <div>加载中...</div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          刷新页面
+        </button>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    console.log('ContentPage - 用户未登录，显示登录要求');
+    return (
+      <LoginRequired 
+        title="请先登录"
+        description="登录后查看您的内容"
+        showSidebar={true}
+      />
+    );
+  }
+
+  console.log('ContentPage - 用户已登录，显示内容页面');
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-900">
       <Sidebar />

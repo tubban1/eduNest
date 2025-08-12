@@ -1,33 +1,122 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 
 export default function AuthCallback() {
   const router = useRouter();
+  const [status, setStatus] = useState('处理中...');
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        setStatus('正在验证登录状态...');
         
-        if (error) {
-          console.error('认证回调错误:', error);
-          router.push('/login?error=auth_failed');
+        console.log('Auth callback - 开始处理');
+        console.log('当前URL:', window.location.href);
+        console.log('Hash:', window.location.hash);
+        console.log('Search:', window.location.search);
+        
+        // 从URL hash中提取token参数
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const expiresAt = params.get('expires_at');
+        const expiresIn = params.get('expires_in');
+        const tokenType = params.get('token_type');
+        
+        console.log('提取的参数:', { 
+          hasAccessToken: !!accessToken, 
+          hasRefreshToken: !!refreshToken,
+          expiresAt,
+          expiresIn 
+        });
+        
+        if (!accessToken) {
+          console.error('未找到access_token');
+          setStatus('认证失败: 未找到访问令牌');
+          setTimeout(() => {
+            router.push('/login?error=no_token');
+          }, 2000);
           return;
         }
-
-        if (data.session) {
-          console.log('认证成功，用户:', data.session.user.email);
-          router.push('/content');
-        } else {
-          console.log('未找到会话');
-          router.push('/login');
+        
+        // 验证token并获取用户信息
+        setStatus('正在获取用户信息...');
+        const userResponse = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/user', {
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        
+        if (!userResponse.ok) {
+          console.error('获取用户信息失败:', userResponse.status);
+          setStatus('认证失败: 无法获取用户信息');
+          setTimeout(() => {
+            router.push('/login?error=user_fetch_failed');
+          }, 2000);
+          return;
         }
+        
+        const userData = await userResponse.json();
+        console.log('用户信息获取成功:', userData.email);
+        
+        // 保存session到localStorage
+        const sessionData = {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_in: expiresIn,
+          expires_at: expiresAt,
+          token_type: tokenType
+        };
+        localStorage.setItem('sb-zayoczhybuegvtpcsgso-auth-token', JSON.stringify(sessionData));
+        console.log('Session已保存到localStorage');
+        
+        // 确保用户信息已保存到数据库
+        try {
+          const userInsertResponse = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users', {
+            method: 'POST',
+            headers: {
+              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'resolution=merge-duplicates'
+            },
+            body: JSON.stringify({
+              id: userData.id,
+              email: userData.email,
+              name: userData.user_metadata?.full_name || userData.user_metadata?.name,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+          });
+          
+          if (userInsertResponse.ok) {
+            console.log('用户信息保存成功');
+          } else {
+            console.warn('保存用户信息失败:', userInsertResponse.status);
+          }
+        } catch (profileError) {
+          console.warn('保存用户信息时出错:', profileError);
+        }
+        
+        setStatus('登录成功，正在跳转...');
+        
+        // 延迟跳转，确保状态更新
+        setTimeout(() => {
+          console.log('跳转到 /content');
+          router.replace('/content');
+        }, 1000);
+        
       } catch (error) {
         console.error('处理认证回调时出错:', error);
-        router.push('/login?error=callback_failed');
+        setStatus('处理登录时出错: ' + (error as Error).message);
+        setTimeout(() => {
+          router.push('/login?error=callback_failed');
+        }, 2000);
       }
     };
 
@@ -38,7 +127,8 @@ export default function AuthCallback() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-        <p className="text-gray-600">正在处理登录...</p>
+        <p className="text-gray-600">{status}</p>
+        <p className="text-gray-400 text-sm mt-2">请稍候...</p>
       </div>
     </div>
   );

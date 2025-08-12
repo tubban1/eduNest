@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
 
 export default function LoginPage() {
@@ -10,30 +10,43 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signInWithGoogle } = useAuth();
+  const { signInWithEmail, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError('');
-    
-    const result = await signInWithGoogle();
-    
-    if (result.error) {
-      setError(result.error);
+    try {
+      setLoading(true);
+      setError('');
+      const result = await signInWithGoogle();
+      if (result.error) {
+        setError(result.error);
+      }
+    } catch (error: any) {
+      setError(error.message || 'Google登录失败');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailPasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    // 这里可以保留原有的邮箱密码登录逻辑
-    // 或者直接使用Google登录
-    await handleGoogleLogin();
+    try {
+      const result = await signInWithEmail(email, password);
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        // 登录成功，跳转到内容页面
+        router.push('/content');
+      }
+    } catch (error: any) {
+      setError(error.message || '登录失败');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,10 +57,10 @@ export default function LoginPage() {
         <div className="text-center mb-2">
           <Logo size="md" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">登录</h1>
-          <p className="text-gray-500 text-sm">使用Google账号登录</p>
+          <p className="text-gray-500 text-sm">使用邮箱密码或Google账号登录</p>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleEmailPasswordLogin} className="space-y-4">
           <div>
             <input
               type="email"
@@ -57,6 +70,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
+              required
             />
           </div>
           <div>
@@ -68,6 +82,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
+              required
             />
           </div>
           <button
@@ -75,7 +90,7 @@ export default function LoginPage() {
             className="w-full py-2 px-4 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            {loading ? '登录中...' : '登录'}
+            {loading ? '登录中...' : '邮箱密码登录'}
           </button>
         </form>
         
@@ -90,8 +105,8 @@ export default function LoginPage() {
         
         <button
           onClick={handleGoogleLogin}
+          className="w-full py-2 px-4 rounded-full border border-gray-300 bg-white text-gray-700 font-medium shadow hover:bg-gray-50 transition flex items-center justify-center gap-2"
           disabled={loading}
-          className="w-full py-2 px-4 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium shadow hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -99,7 +114,7 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          {loading ? '登录中...' : '使用Google登录'}
+          使用Google登录
         </button>
         
         {error && (
@@ -107,10 +122,6 @@ export default function LoginPage() {
             {error}
           </div>
         )}
-        
-        <button className="text-black hover:underline text-sm mt-2">
-          没有账号？去注册
-        </button>
       </div>
     </div>
   );

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Supabase 认证测试</h1>
+        
+        <div class="form-group">
+            <label for="email">邮箱:</label>
+            <input type="email" id="email" value="test@example.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">密码:</label>
+            <input type="password" id="password" value="password123">
+        </div>
+        
+        <div class="form-group">
+            <button onclick="testLogin()">测试登录</button>
+            <button onclick="checkAuthStatus()">检查认证状态</button>
+            <button onclick="clearSession()">清除会话</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://zayoczhybuegvtpcsgso.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheW9jemh5YnVlZ3Z0cGNzZ3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5NTA1MDksImV4cCI6MjA2MzUyNjUwOX0.ptIKB-kR6q9hvQo5dYiU-wPC5EY2PQf1zidmo9w5nU8';
+
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            showResult('正在登录...', 'info');
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                console.log('登录响应状态:', response.status);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    showResult(`登录失败: ${JSON.stringify(errorData)}`, 'error');
+                    return;
+                }
+
+                const loginData = await response.json();
+                console.log('登录成功:', loginData);
+                
+                // 保存session
+                const sessionData = {
+                    access_token: loginData.access_token,
+                    refresh_token: loginData.refresh_token,
+                    expires_in: loginData.expires_in,
+                    expires_at: loginData.expires_at,
+                    token_type: loginData.token_type
+                };
+                
+                localStorage.setItem('sb-zayoczhybuegvtpcsgso-auth-token', JSON.stringify(sessionData));
+                showResult(`登录成功! 用户ID: ${loginData.user?.id}, 邮箱: ${loginData.user?.email}`, 'success');
+                
+            } catch (error) {
+                showResult(`登录错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkAuthStatus() {
+            const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
+            
+            if (!sessionStr) {
+                showResult('没有找到会话', 'info');
+                return;
+            }
+
+            try {
+                const session = JSON.parse(sessionStr);
+                showResult(`找到会话: ${JSON.stringify(session, null, 2)}`, 'info');
+                
+                if (session.access_token) {
+                    // 验证token
+                    const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${session.access_token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const userData = await response.json();
+                        showResult(`Token有效! 用户: ${userData.email}`, 'success');
+                    } else {
+                        showResult('Token无效', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                showResult(`检查认证状态错误: ${error.message}`, 'error');
+            }
+        }
+
+        function clearSession() {
+            localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
+            showResult('会话已清除', 'info');
+        }
+
+        // 页面加载时检查认证状态
+        window.onload = function() {
+            checkAuthStatus();
+        };
+    </script>
+</body>
+</html> 

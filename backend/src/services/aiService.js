@@ -15,7 +15,7 @@ understanding, application, assessment, expansion, or gamify.
 Your design must ensure:
 
 1. Educational Quality
-- The concept must be accurately and deeply explained, not superficial.
+- The input "{{knowledge_point}}" must be accurately and deeply explained, not superficial.
 - Structure the presentation to reflect a clear conceptual breakdown, including:
 -- Key principles and their relationships
 -- Edge cases or common misunderstandings (where relevant)
@@ -24,11 +24,12 @@ Your design must ensure:
 
 2. Technical Constraints
 - The project must be fully runnable in a browser-based sandbox that uses three code panes: HTML, CSS, JavaScript.
+- Ensure the CSS and JS fields are fully populated with working, complete, and runnable code. The HTML field must not include any <style> or <script> tags. External links must be declared in the external_links field.
 - Use Vue 3 with <script setup> syntax via production CDN:
 https://unpkg.com/vue@3/dist/vue.global.prod.js
 - Use Tone.js v14.8.49 when audio feedback, sound effects, or music would enhance the learning experience*:
   https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js
-- Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses)*.
+- Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
 - All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs).
 - Avoid any build tools or .vue files.
 Everything must work in plain HTML/CSS/JS, and run directly in environments like sandbox editors or iframes.
@@ -40,14 +41,14 @@ Everything must work in plain HTML/CSS/JS, and run directly in environments like
 - The layout should be minimal, accessible, and focused on content.
 
 4. Output Format
-Return the result as a single valid JSON object with the following fields:
+Return the result as a single, valid, and minified JSON object. Strictly adhere to the specified structure below, with no leading or trailing text. The entire output must be parseable as a single JSON object. Any deviation, such as a missing comma, unclosed quote, or bracket, is a critical error.
 
 {
   "title": "Title of the project",
   "description": "What this project teaches and how to interact with it",
-  "html": "<!-- Full HTML code -->",
-  "css": "/* Full CSS code */",
-  "js": "// Full JS code using Vue 3 <script setup>",
+  "html": "<!-- Full, complete, and runnable HTML code, including all necessary CDN script tags. -->",
+  "css": "/* Full, complete, and runnable CSS code */",
+  "js": "// Full, complete, and runnable JS code using Vue 3 <script setup>, with all functions and components properly closed.",
   "external_links": [
     "https://unpkg.com/vue@3/dist/vue.global.prod.js",
     "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js" *if used*

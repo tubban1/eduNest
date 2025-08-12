@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import LoginRequired from './LoginRequired';
 import Logo from './Logo';
+import AiLoadingAnimation from './AiLoadingAnimation';
 
 const DEFAULT_HTML = '<div id="app">{{ message }}</div>';
 const DEFAULT_CSS = 'body { font-family: sans-serif; } #app { padding: 20px; }';
@@ -129,6 +130,11 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
   const [aiGenerating, setAiGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false); // 新增：标记是否已经生成过内容
   
+  // 调试：监听aiGenerating状态变化
+  useEffect(() => {
+    console.log('aiGenerating状态变化:', aiGenerating);
+  }, [aiGenerating]);
+  
   // AI修复相关状态
   const [fixError, setFixError] = useState("");
   const [showFix, setShowFix] = useState(false);
@@ -138,6 +144,9 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
 
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  
+  // 检查用户是否为普通用户（role === 'user'）
+  const isRegularUser = user?.role === 'user';
 
   // 统一的表单禁用状态
   const isFormDisabled = loading || aiGenerating || fixLoading;
@@ -710,16 +719,18 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-2">
-                  <div>
-                    <label className="block font-semibold mb-1 text-gray-700">内容类型</label>
-                    <input
-                      className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
-                      value={content_type}
-                      onChange={e => setContentType(e.target.value)}
-                      placeholder="例如：react, vanilla，python"
-                      disabled={isAiFormDisabled}
-                    />
-                  </div>
+                  {!isRegularUser && (
+                    <div>
+                      <label className="block font-semibold mb-1 text-gray-700">内容类型</label>
+                      <input
+                        className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
+                        value={content_type}
+                        onChange={e => setContentType(e.target.value)}
+                        placeholder="例如：react, vanilla，python"
+                        disabled={isAiFormDisabled}
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block font-semibold mb-1 text-gray-700">语言</label>
                     <input
@@ -760,41 +771,45 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                     ))}
                   </div>
                 </div>
-                <div className="mt-2">
-                  <label className="block font-semibold mb-1 text-gray-700">外部依赖（每行一个CDN链接，支持JS/CSS）</label>
-                  <textarea className="w-full border border-gray-200 p-2 rounded-lg h-16 focus:outline-none focus:ring-2 focus:ring-black bg-gray-50 font-mono text-xs" value={external_links} onChange={e => handleExternalLinksChange(e.target.value)} placeholder="如：https://unpkg.com/vue@3/dist/vue.global.js\nhttps://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" disabled={isAiFormDisabled} />
-                  {externalLinksError && <div className="text-red-600 text-xs mt-1">{externalLinksError}</div>}
-                </div>
+                {!isRegularUser && (
+                  <div className="mt-2">
+                    <label className="block font-semibold mb-1 text-gray-700">外部依赖（每行一个CDN链接，支持JS/CSS）</label>
+                    <textarea className="w-full border border-gray-200 p-2 rounded-lg h-16 focus:outline-none focus:ring-2 focus:ring-black bg-gray-50 font-mono text-xs" value={external_links} onChange={e => handleExternalLinksChange(e.target.value)} placeholder="如：https://unpkg.com/vue@3/dist/vue.global.js\nhttps://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" disabled={isAiFormDisabled} />
+                    {externalLinksError && <div className="text-red-600 text-xs mt-1">{externalLinksError}</div>}
+                  </div>
+                )}
               </div>
               {/* 代码编辑Tabs */}
-              <div className="bg-white/80 rounded-xl shadow border border-gray-100 p-0 flex flex-col">
-                <div className="flex gap-2 border-b border-gray-100 px-4 pt-2">
-                  {TABS.map(tab => (
-                    <button
-                      key={tab.key}
-                      className={`px-5 py-1 text-sm font-medium rounded-t transition-all duration-150 cursor-pointer ${activeTab === tab.key ? 'bg-black text-white shadow' : 'text-gray-500 hover:text-black bg-gray-100'}`}
-                      onClick={() => {
-                        setActiveTab(tab.key);
-                      }}
-                      type="button"
-                      disabled={isAiFormDisabled}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
+              {!isRegularUser && (
+                <div className="bg-white/80 rounded-xl shadow border border-gray-100 p-0 flex flex-col">
+                  <div className="flex gap-2 border-b border-gray-100 px-4 pt-2">
+                    {TABS.map(tab => (
+                      <button
+                        key={tab.key}
+                        className={`px-5 py-1 text-sm font-medium rounded-t transition-all duration-150 cursor-pointer ${activeTab === tab.key ? 'bg-black text-white shadow' : 'text-gray-500 hover:text-black bg-gray-100'}`}
+                        onClick={() => {
+                          setActiveTab(tab.key);
+                        }}
+                        type="button"
+                        disabled={isAiFormDisabled}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="px-4 pb-4 pt-2">
+                    {activeTab === 'html' && (
+                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_html} onChange={e => setHtml(e.target.value)} placeholder="请输入HTML代码" disabled={isAiFormDisabled} />
+                    )}
+                    {activeTab === 'css' && (
+                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_css} onChange={e => setCss(e.target.value)} placeholder="请输入CSS代码" disabled={isAiFormDisabled} />
+                    )}
+                    {activeTab === 'js' && (
+                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_js} onChange={e => setJs(e.target.value)} placeholder="请输入JS代码" disabled={isAiFormDisabled} />
+                    )}
+                  </div>
                 </div>
-                <div className="px-4 pb-4 pt-2">
-                  {activeTab === 'html' && (
-                    <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_html} onChange={e => setHtml(e.target.value)} placeholder="请输入HTML代码" disabled={isAiFormDisabled} />
-                  )}
-                  {activeTab === 'css' && (
-                    <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_css} onChange={e => setCss(e.target.value)} placeholder="请输入CSS代码" disabled={isAiFormDisabled} />
-                  )}
-                  {activeTab === 'js' && (
-                    <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_js} onChange={e => setJs(e.target.value)} placeholder="请输入JS代码" disabled={isAiFormDisabled} />
-                  )}
-                </div>
-              </div>
+              )}
               {error && <div className="text-red-600 text-center mt-2">{error}</div>}
             </div>
             {/* 右侧：实时预览区 */}
@@ -831,6 +846,15 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
           </div>
         </div>
       </div>
+      
+      {/* AI Loading动画 */}
+      <AiLoadingAnimation 
+        isActive={aiGenerating}
+        knowledgePoint={knowledgePoint}
+        onComplete={() => {
+          console.log('AI生成完成');
+        }}
+      />
     </div>
   );
 } 
