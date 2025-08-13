@@ -481,7 +481,6 @@ module.exports = {
   validateLearningStage,
   LEARNING_STAGE_NAMES,
   fixEducationalContent,
-  generateSimpleContent,
   safeReplace,  // 导出安全替换函数供测试使用
   testSafeReplace  // 导出测试函数
 }; 

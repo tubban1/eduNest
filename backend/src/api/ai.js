@@ -58,50 +58,6 @@ router.post('/generate', [
   }
 });
 
-// 简化AI生成测试（不需要认证）
-router.post('/simple', [
-  body('knowledgePoint').isString().isLength({ min: 1, max: 200 }).withMessage('知识点不能为空且长度不能超过200字'),
-  body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        error: '参数验证失败', 
-        details: errors.array() 
-      });
-    }
-
-    const { knowledgePoint, learningStage } = req.body;
-
-    logger.info(`简化AI生成: 知识点=${knowledgePoint}, 学习阶段=${learningStage}`);
-
-    const result = await aiService.generateSimpleContent(knowledgePoint, learningStage);
-
-    if (result.success) {
-      logger.info(`简化AI生成成功`);
-      res.json({
-        success: true,
-        data: result.data,
-        learningStage: result.learningStage
-      });
-    } else {
-      logger.error(`简化AI生成失败: ${result.error}`);
-      res.status(500).json({
-        success: false,
-        error: result.error
-      });
-    }
-
-  } catch (error) {
-    logger.error('简化AI生成API错误:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || '简化AI生成失败'
-    });
-  }
-});
-
 // 测试AI API（不需要认证）
 router.post('/test', [
   body('knowledgePoint').isString().isLength({ min: 1, max: 200 }).withMessage('知识点不能为空且长度不能超过200字'),
