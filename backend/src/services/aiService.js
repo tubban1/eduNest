@@ -1,6 +1,26 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 
+// 安全的变量替换函数
+const safeReplace = (template, placeholder, value) => {
+  if (typeof value !== 'string') {
+    value = String(value);
+  }
+  
+  // 只转义必要的特殊字符，防止 JSON 注入和模板破坏
+  const escapedValue = value
+    .replace(/\\/g, '\\\\')  // 反斜杠
+    .replace(/"/g, '\\"')    // 双引号
+    .replace(/'/g, "\\'")    // 单引号
+    .replace(/\n/g, '\\n')   // 换行符
+    .replace(/\r/g, '\\r')   // 回车符
+    .replace(/\t/g, '\\t');  // 制表符
+  
+  // 使用正则表达式进行全局替换，转义正则表达式特殊字符
+  const escapedPlaceholder = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return template.replace(new RegExp(escapedPlaceholder, 'g'), escapedValue);
+};
+
 // AI服务配置
 const ARK_API_KEY = process.env.ARK_API_KEY;
 const ARK_MODEL = process.env.ARK_MODEL || 'kimi-k2-250711';
@@ -109,8 +129,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     }
 
     // 构建完整的提示词
-    const userPrompt = LEARNING_STAGE_PROMPTS[learningStage].replace('{{knowledge_point}}', knowledgePoint);
-    const systemPromptWithKnowledge = SYSTEM_PROMPT.replace('{{knowledge_point}}', knowledgePoint);
+    const userPrompt = safeReplace(LEARNING_STAGE_PROMPTS[learningStage], '{{knowledge_point}}', knowledgePoint);
+    const systemPromptWithKnowledge = safeReplace(SYSTEM_PROMPT, '{{knowledge_point}}', knowledgePoint);
 
     const response = await fetch(ARK_URL, {
       method: 'POST',
@@ -180,7 +200,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
     }
 
     // 简化的提示词
-    const simplePrompt = `请为知识点"${knowledgePoint}"创建一个简单的Vue 3交互式教育项目。学习阶段：${learningStage}。
+    const simplePrompt = safeReplace(`请为知识点"{{knowledge_point}}"创建一个简单的Vue 3交互式教育项目。学习阶段：{{learning_stage}}。
 
 请返回一个简单的JSON格式：
 {
@@ -193,7 +213,9 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
   "tags": ["测试", "Vue3"],
   "content_type": "vue",
   "language": "zh-CN"
-}`;
+}`, '{{knowledge_point}}', knowledgePoint);
+
+    const finalPrompt = safeReplace(simplePrompt, '{{learning_stage}}', learningStage);
 
     const response = await fetch(ARK_URL, {
       method: 'POST',
@@ -204,7 +226,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       body: JSON.stringify({
         model: ARK_MODEL,
         messages: [
-          { role: 'user', content: simplePrompt }
+          { role: 'user', content: finalPrompt }
         ]
       })
     });
@@ -314,7 +336,13 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
       If you receive a user modification note, apply it as a functional update or enhancement.
       Do not change project structure or title. Focus only on fixing code or updating interactivity/behavior.`;
       
-    const USER_PROMPT = `The current Vue 3 project has the following issue or user request:\n${note}\n\nCurrent code:\n{\n  \"html\": \"${html.replace(/"/g, '\\"')}\",\n  \"css\": \"${css ? css.replace(/"/g, '\\"') : ''}\",\n  \"js\": \"${js.replace(/"/g, '\\"')}\",\n  \"external_links\": ${JSON.stringify(external_links || [])}\n}`;
+    const USER_PROMPT = safeReplace(`The current Vue 3 project has the following issue or user request:\n{{note}}\n\nCurrent code:\n{\n  \"html\": \"{{html}}\",\n  \"css\": \"{{css}}\",\n  \"js\": \"{{js}}\",\n  \"external_links\": {{external_links}}\n}`, '{{note}}', note);
+
+    const finalUserPrompt = safeReplace(USER_PROMPT, '{{html}}', html)
+      .replace('{{css}}', css ? css : '')
+      .replace('{{js}}', js)
+      .replace('{{external_links}}', JSON.stringify(external_links || []));
+
     const response = await fetch(process.env.ARK_URL, {
       method: 'POST',
       headers: {
@@ -325,7 +353,7 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
         model: process.env.ARK_MODEL,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: USER_PROMPT }
+          { role: 'user', content: finalUserPrompt }
         ]
       })
     });
@@ -411,6 +439,41 @@ const validateLearningStage = (stage) => {
   return Object.keys(LEARNING_STAGE_PROMPTS).includes(stage);
 };
 
+// 测试安全替换函数（开发环境使用）
+const testSafeReplace = () => {
+  const testCases = [
+    {
+      template: '知识点：{{knowledge_point}}',
+      placeholder: '{{knowledge_point}}',
+      value: 'JavaScript中的"引号"和\'单引号\'',
+      expected: '知识点：JavaScript中的\\"引号\\"和\\\'单引号\\\''
+    },
+    {
+      template: 'HTML: {{knowledge_point}}',
+      placeholder: '{{knowledge_point}}',
+      value: '<script>alert("xss")</script>',
+      expected: 'HTML: <script>alert(\\"xss\\")</script>'
+    },
+    {
+      template: 'SQL: {{knowledge_point}}',
+      placeholder: '{{knowledge_point}}',
+      value: '\'; DROP TABLE users; --',
+      expected: 'SQL: \\\'; DROP TABLE users; --'
+    }
+  ];
+
+  console.log('测试安全替换函数:');
+  testCases.forEach((testCase, index) => {
+    const result = safeReplace(testCase.template, testCase.placeholder, testCase.value);
+    const passed = result === testCase.expected;
+    console.log(`测试 ${index + 1}: ${passed ? '✅ 通过' : '❌ 失败'}`);
+    console.log(`  输入: ${testCase.value}`);
+    console.log(`  输出: ${result}`);
+    console.log(`  期望: ${testCase.expected}`);
+    console.log('');
+  });
+};
+
 module.exports = {
   generateEducationalContent,
   getSupportedLearningStages,
@@ -418,5 +481,7 @@ module.exports = {
   validateLearningStage,
   LEARNING_STAGE_NAMES,
   fixEducationalContent,
-  generateSimpleContent
+  generateSimpleContent,
+  safeReplace,  // 导出安全替换函数供测试使用
+  testSafeReplace  // 导出测试函数
 }; 
