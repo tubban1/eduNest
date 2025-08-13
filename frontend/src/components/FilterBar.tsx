@@ -3,13 +3,11 @@
 import { useState } from 'react';
 
 interface FilterBarProps {
-  onFilterChange: (filters: { language: string }) => void;
+  onFilterChange: (filters: { language_code: string }) => void;
 }
 
 export default function FilterBar({ onFilterChange }: FilterBarProps) {
-  const [filters, setFilters] = useState({
-    language: 'zh-CN'
-  });
+  const [filters, setFilters] = useState({ language_code: 'zh-CN' });
 
   const handleFilterChange = (key: string, value: string) => {
     const newFilters = { ...filters, [key]: value };
@@ -18,7 +16,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   };
 
   const clearFilters = () => {
-    const newFilters = { language: 'zh-CN' };
+    const newFilters = { language_code: 'zh-CN' };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -34,8 +32,8 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
             语言
           </label>
           <select
-            value={filters.language}
-            onChange={(e) => handleFilterChange('language', e.target.value)}
+            value={filters.language_code}
+            onChange={(e) => handleFilterChange('language_code', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="zh-CN">中文</option>

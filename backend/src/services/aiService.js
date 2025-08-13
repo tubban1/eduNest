@@ -77,14 +77,14 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
     "3–7 high-quality tags that reflect subject, domain, format, or interaction style"
   ],
   "content_type": "vue",
-  "language": "zh-CN"
+  "language_code": "BCP47 Code of Language"
 }
 
 5. Language
-If no explicit language is provided, you must automatically infer the correct output language by analyzing the input "{{knowledge_point}}".  
-Ensure that all output text—including the title, description, UI strings, and comments—is written in the same language that best matches the "{{knowledge_point}}".
-Do not default to any single language (e.g., Chinese or English). Use your best judgment to match the language of the "{{knowledge_point}}".
-The final JSON must also include the "language" field in BCP 47 format (e.g., zh-CN, en-US, de-CH) based on your inferred language.
+- First, analyze the input {{knowledge_point}} to detect if it explicitly specifies a target language. If a language is clearly indicated in the input, use that language for all output.
+- Only if no language is specified in the input, use the fallback language: {{fallback_language}}.
+- The language_code must be included as a field in the final JSON output and must be a valid BCP 47 code string (e.g., "zh-CN", "en-US", "de-CH").
+- All text values in the JSON (including title, description, UI strings, tags and comments) must match the language indicated by language_code.
 
 6. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.`;
 
@@ -122,7 +122,7 @@ const LEARNING_STAGE_NAMES = {
 };
 
 // 生成教育交互内容
-const generateEducationalContent = async (knowledgePoint, learningStage, description = '') => {
+const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '') => {
   try {
     if (!ARK_API_KEY || ARK_API_KEY === 'your_ark_api_key_here') {
       throw new Error('ARK_API_KEY未配置或使用默认值，请在.env文件中配置真实的API密钥');
@@ -130,7 +130,15 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
 
     // 构建完整的提示词
     const userPrompt = safeReplace(LEARNING_STAGE_PROMPTS[learningStage], '{{knowledge_point}}', knowledgePoint);
-    const systemPromptWithKnowledge = safeReplace(SYSTEM_PROMPT, '{{knowledge_point}}', knowledgePoint);
+    let systemPromptWithKnowledge = safeReplace(SYSTEM_PROMPT, '{{knowledge_point}}', knowledgePoint);
+    
+    // 如果前端传入 languageCode，替换 fallback_language 占位符
+    if (languageCode) {
+      systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', languageCode);
+    } else {
+      // 如果没有传入 languageCode，使用默认值
+      systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', 'zh-CN');
+    }
 
     const response = await fetch(ARK_URL, {
       method: 'POST',
@@ -158,29 +166,43 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
       throw new Error('AI返回内容为空');
     }
 
+    // 记录AI返回的原始内容到日志
+    console.log('AI返回的原始内容:', aiResponse);
+
     // 尝试从AI响应中提取JSON
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     
     if (jsonMatch) {
       try {
-        const parsedData = JSON.parse(jsonMatch[0]);
+        const parsedDataRaw = JSON.parse(jsonMatch[0]);
+        // 兼容旧字段名 language => 统一映射为 language_code
+        const parsedData = {
+          ...parsedDataRaw,
+          language_code: parsedDataRaw.language_code || languageCode || 'zh-CN'
+        };
         
         return {
           success: true,
           data: parsedData
         };
       } catch (parseError) {
+        console.error('JSON解析失败，AI返回的内容:', aiResponse);
+        console.error('JSON解析错误详情:', parseError);
+        console.error('尝试解析的JSON字符串:', jsonMatch[0]);
         return {
           success: false,
           error: 'JSON解析失败',
-          details: parseError.message
+          details: `解析错误: ${parseError.message}，AI返回内容长度: ${aiResponse.length}`
         };
       }
     } else {
+      console.error('未找到JSON格式，AI返回的完整内容:', aiResponse);
+      console.error('AI返回内容长度:', aiResponse.length);
+      console.error('AI返回内容前100字符:', aiResponse.substring(0, 100));
       return {
         success: false,
         error: '未找到JSON格式',
-        details: 'AI返回的内容中没有找到有效的JSON结构'
+        details: `AI返回的内容中没有找到有效的JSON结构，内容长度: ${aiResponse.length}`
       };
     }
 
@@ -212,7 +234,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
   "external_links": ["https://unpkg.com/vue@3/dist/vue.global.prod.js"],
   "tags": ["测试", "Vue3"],
   "content_type": "vue",
-  "language": "zh-CN"
+  "language_code": "zh-CN"
 }`, '{{knowledge_point}}', knowledgePoint);
 
     const finalPrompt = safeReplace(simplePrompt, '{{learning_stage}}', learningStage);
@@ -304,7 +326,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
 };
 
 // AI修复接口
-const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language, title, description }) => {
+const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language_code, title, description }) => {
   try {
     // 构建修复prompt
     const SYSTEM_PROMPT = `You are an expert Vue 3 frontend developer and educational UI engineer.

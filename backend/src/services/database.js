@@ -54,7 +54,7 @@ const mockData = {
       id: 'mock-content-1',
       short_id: 'c1234567',
       title: '示例内容',
-      language: 'zh-CN',
+      language_code: 'zh-CN',
       tags: ['示例'],
       knowledge_point: ['测试'],
       created_at: new Date().toISOString()
@@ -89,6 +89,9 @@ const getContents = async (filters = {}) => {
     }
     if (filters.language) {
       query = query.eq('language', filters.language);
+    }
+    if (filters.language_code) {
+      query = query.eq('language_code', filters.language_code);
     }
     if (filters.tag) {
       query = query.contains('tag', [filters.tag]);
@@ -150,12 +153,12 @@ function generateShortId() {
 
 const createContent = async (contentData, userId) => {
   try {
-    const { title, code_html, code_css, code_js, tags, external_links, description, content_type, language } = contentData;
+    const { title, code_html, code_css, code_js, tags, external_links, description, content_type, language_code } = contentData;
     
     const result = await supabase
       .from('content')
       .insert({
-        title, code_html, code_css, code_js, tags, external_links, description, content_type, language,
+        title, code_html, code_css, code_js, tags, external_links, description, content_type, language_code,
         created_by: userId,
         short_id: generateShortId(),
         created_at: new Date().toISOString(),
@@ -182,7 +185,7 @@ const updateContent = async (contentId, contentData) => {
     external_links,
     description,
     content_type,
-    language
+    language_code
   } = contentData;
 
   const result = await supabase
@@ -196,7 +199,7 @@ const updateContent = async (contentId, contentData) => {
       external_links,
       description,
       content_type,
-      language,
+      language_code,
       updated_at: new Date().toISOString()
     })
     .eq('id', contentId)
@@ -738,7 +741,7 @@ const getUserCollectionsByGroup = async (userId, groupId) => {
           id,
           short_id,
           title,
-          language,
+          language_code,
           tags,
           created_at
         )
@@ -808,7 +811,7 @@ const getUserLikedCollections = async (userId) => {
           id,
           short_id,
           title,
-          language,
+          language_code,
           tags,
           created_at
         )
@@ -946,7 +949,7 @@ const getUserLikedContent = async (userId) => {
           id,
           short_id,
           title,
-          language,
+          language_code,
           tags,
           created_at
         )

@@ -21,7 +21,7 @@ interface CollectionContent {
     id: string;
     short_id?: string;
     title: string;
-    language: string;
+    language_code: string;
     tags?: string[];
     knowledge_point?: string[];
     created_at: string;

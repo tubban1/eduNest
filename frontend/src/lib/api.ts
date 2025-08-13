@@ -308,7 +308,7 @@ export interface Content {
   code_css?: string;
   code_js?: string;
   external_links?: string[];
-  language?: string;
+  language_code?: string;
   content_type?: string;
   created_by?: string;
   rating?: number;

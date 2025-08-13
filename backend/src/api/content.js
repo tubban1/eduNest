@@ -15,7 +15,7 @@ router.post('/', authenticateToken, [
   body('external_links').isArray().withMessage('外部链接必须是数组'),
   body('description').optional().isString().withMessage('描述必须是字符串'),
   body('content_type').optional().isString().withMessage('内容类型必须是字符串'),
-  body('language').optional().isString().withMessage('语言必须是字符串'),
+  body('language_code').optional().isString().withMessage('语言必须是字符串（BCP 47）'),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -125,7 +125,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: '参数验证失败', details: errors.array() });
     }
 
-    const { title, code_html, code_css, code_js, tags, external_links, description, content_type, language } = req.body;
+    const { title, code_html, code_css, code_js, tags, external_links, description, content_type, language_code } = req.body;
     
     if (!title || title.trim().length === 0) {
       return res.status(400).json({ error: '标题不能为空' });
@@ -140,7 +140,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       external_links: Array.isArray(external_links) ? external_links : [],
       description: description || '',
       content_type: content_type || 'vue',
-      language: language || 'zh-CN'
+      language_code: language_code || 'zh-CN'
     };
 
     const result = await DatabaseService.updateContent(req.params.id, updateData);

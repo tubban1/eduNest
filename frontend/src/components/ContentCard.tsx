@@ -11,7 +11,7 @@ interface ContentCardProps {
     id: string;
     short_id?: string;
     title: string;
-    language: string;
+    language_code: string;
     tags?: string[];
     knowledge_point?: string[];
     created_at: string;
@@ -63,7 +63,7 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
           </h3>
           <div className="flex flex-wrap gap-2 mb-2">
             <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
-              {content.language === 'zh-CN' ? '中文' : 'English'}
+              {content.language_code === 'zh-CN' ? '中文' : 'English'}
             </span>
           </div>
           {/* 标签块状显示，优先显示tags，没有则回退knowledge_point */}

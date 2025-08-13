@@ -149,6 +149,54 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
   // AI 表单禁用状态（只有 AI 生成和修复时锁定）
   const isAiFormDisabled = aiGenerating || fixLoading;
 
+  // 语言选择器状态与工具
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [languageSearch, setLanguageSearch] = useState('');
+ 
+  // AI生成的语言代码，与输出语言选择器分开
+  const [aiGeneratedLanguage, setAiGeneratedLanguage] = useState('');
+
+  const LANGUAGE_OPTIONS: { code: string; name: string }[] = [
+    { code: 'zh-CN', name: '中文（中国）' },
+    { code: 'zh-TW', name: '中文（台湾）' },
+    { code: 'en-US', name: 'English (United States)' },
+    { code: 'en-GB', name: 'English (United Kingdom)' },
+    { code: 'de-DE', name: 'Deutsch (Deutschland)' },
+    { code: 'de-CH', name: 'Deutsch (Schweiz)' },
+    { code: 'fr-FR', name: 'Français (France)' },
+    { code: 'fr-CH', name: 'Français (Suisse)' },
+    { code: 'es-ES', name: 'Español (España)' },
+    { code: 'it-IT', name: 'Italiano (Italia)' },
+    { code: 'pt-BR', name: 'Português (Brasil)' },
+    { code: 'pt-PT', name: 'Português (Portugal)' },
+    { code: 'ja-JP', name: '日本語（日本）' },
+    { code: 'ko-KR', name: '한국어(대한민국)' },
+    { code: 'ru-RU', name: 'Русский (Россия)' },
+    { code: 'ar-SA', name: 'العربية (السعودية)' },
+    { code: 'hi-IN', name: 'हिन्दी (भारत)' },
+    { code: 'nl-NL', name: 'Nederlands (Nederland)' },
+    { code: 'sv-SE', name: 'Svenska (Sverige)' },
+  ];
+
+  const normalizeBCP47 = (tag: string): string => {
+    if (!tag) return '';
+    const parts = tag.split('-');
+    return parts
+      .map((p, idx) => {
+        if (idx === 0) return p.toLowerCase();
+        if (p.length === 2 || p.length === 3) return p.toUpperCase();
+        if (p.length === 4) return p[0].toUpperCase() + p.slice(1).toLowerCase();
+        return p;
+      })
+      .join('-');
+  };
+
+  const filteredLanguages = LANGUAGE_OPTIONS.filter(l => {
+    const q = languageSearch.trim().toLowerCase();
+    if (!q) return true;
+    return l.code.toLowerCase().includes(q) || l.name.toLowerCase().includes(q);
+  });
+
   useEffect(() => {
     if (mode === 'edit' && contentId) {
       setLoading(true);
@@ -163,6 +211,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
           setDescription(data.description || '');
           setContentType(data.content_type || '');
           setLanguage(data.language || '');
+          setAiGeneratedLanguage(data.language_code || data.language || '');
           // 外部依赖显示为一行一个链接
           if (Array.isArray(data.external_links)) {
             setExternalLinks(data.external_links.join('\n'));
@@ -193,6 +242,15 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
       setContentShortId(null);
     }
   }, [mode, contentId]);
+
+  useEffect(() => {
+    // 初始化语言为浏览器首选语言
+    if (!language) {
+      const nav = typeof navigator !== 'undefined' ? navigator : null;
+      const browserLang = normalizeBCP47(nav?.language || (Array.isArray(nav?.languages) ? nav?.languages[0] : '') || '');
+      if (browserLang) setLanguage(browserLang);
+    }
+  }, []);
 
   // 监听iframe错误
   useEffect(() => {
@@ -410,11 +468,12 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
       const response = await api.generateContent(prompt, {
         knowledgePoint,
         learningStage,
-        description
+        description,
+        language_code: language
       });
 
       if (response.success && response.data) {
-        const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language: generatedLanguage } = response.data;
+        const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = response.data;
         
         // 更新表单内容
         setHtml(html || DEFAULT_HTML);
@@ -424,7 +483,8 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
         setDescription(generatedDescription || description);
         // 只有当用户没有手动输入时才使用 AI 生成的值
         setContentType(content_type || generatedContentType || '');
-        setLanguage(language || generatedLanguage || '');
+        // 将AI生成的语言代码存储到专门的字段中
+        setAiGeneratedLanguage(generatedLanguageCode || legacyLanguage || '');
         
         if (generatedLinks && Array.isArray(generatedLinks)) {
           setExternalLinks(generatedLinks.join('\n'));
@@ -490,7 +550,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
       } else {
         // 如果是创建模式，添加其他必要参数
         requestBody.content_type = content_type || 'vue';
-        requestBody.language = language || 'zh-CN';
+        requestBody.language_code = aiGeneratedLanguage || 'zh-CN';
         requestBody.title = title || '未命名内容';
         requestBody.description = description || '';
       }
@@ -533,7 +593,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
         external_links: externalLinksArr,
         description,
         content_type,
-        language,
+        language_code: aiGeneratedLanguage,
       };
       
       if (mode === 'edit' && contentId) {
@@ -650,6 +710,28 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                             ))}
                           </select>
                         </div>
+                        <div>
+                          <label className="block font-semibold mb-1 text-gray-700">输出语言</label>
+                          <div className="flex gap-2">
+                            <input
+                              className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              value={language}
+                              readOnly
+                              placeholder="请通过选择器选择输出语言（BCP 47）"
+                              disabled={isAiFormDisabled}
+                            />
+                            <button
+                              type="button"
+                              className="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+                              onClick={() => setShowLanguagePicker(true)}
+                              disabled={isAiFormDisabled}
+                              aria-label="选择输出语言"
+                              title="选择输出语言"
+                            >
+                              🌐
+                            </button>
+                          </div>
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -711,14 +793,16 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                     </div>
                   )}
                   <div>
-                    <label className="block font-semibold mb-1 text-gray-700">语言</label>
-                    <input
-                      className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
-                      value={language}
-                      onChange={e => setLanguage(e.target.value)}
-                      placeholder="例如：zh-CN, en-US"
-                      disabled={isAiFormDisabled}
-                    />
+                    <label className="block font-semibold mb-1 text-gray-700">语言代码</label>
+                    <div className="flex gap-2">
+                      <input
+                        className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
+                        value={aiGeneratedLanguage}
+                        readOnly
+                        placeholder="AI生成后自动填充语言代码（BCP 47）"
+                        disabled={isAiFormDisabled}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="mt-2">
@@ -834,6 +918,52 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
           // AI生成完成
         }}
       />
+      {/* 语言选择器弹窗 */}
+      {showLanguagePicker && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowLanguagePicker(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">选择输出语言</h3>
+              <button className="text-gray-500 hover:text-black" onClick={() => setShowLanguagePicker(false)}>✕</button>
+            </div>
+            <input
+              className="w-full border border-gray-200 p-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-black"
+              placeholder="搜索语言或输入 BCP 47 代码（如 zh-CN, en-US）"
+              value={languageSearch}
+              onChange={e => setLanguageSearch(e.target.value)}
+            />
+            <div className="max-h-72 overflow-auto border border-gray-100 rounded-lg">
+              {filteredLanguages.map(item => (
+                <button
+                  key={item.code}
+                  className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between ${language === item.code ? 'bg-gray-50' : ''}`}
+                  onClick={() => {
+                    setLanguage(item.code);
+                    setShowLanguagePicker(false);
+                    setLanguageSearch('');
+                  }}
+                >
+                  <span>{item.name}</span>
+                  <span className="text-gray-500 text-sm">{item.code}</span>
+                </button>
+              ))}
+              {filteredLanguages.length === 0 && (
+                <div className="p-3 text-sm text-gray-500">未找到匹配的语言</div>
+              )}
+            </div>
+            <div className="mt-3 flex gap-2 justify-end">
+              <button
+                className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+                onClick={() => setShowLanguagePicker(false)}
+              >取消</button>
+              <button
+                className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
+                onClick={() => setShowLanguagePicker(false)}
+              >确定</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

@@ -92,7 +92,7 @@
   },
   {
     "table_name": "content",
-    "column_name": "language",
+    "column_name": "language_code",
     "data_type": "text",
     "is_nullable": "NO",
     "column_default": "'zh-CN'::text"

@@ -12,7 +12,8 @@ router.post('/generate', [
   authenticateToken,
   body('knowledgePoint').isString().isLength({ min: 1, max: 200 }).withMessage('知识点不能为空且长度不能超过200字'),
   body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
-  body('description').optional().isString().isLength({ max: 1000 }).withMessage('描述长度不能超过1000字')
+  body('description').optional().isString().isLength({ max: 1000 }).withMessage('描述长度不能超过1000字'),
+  body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -23,29 +24,36 @@ router.post('/generate', [
       });
     }
 
-    const { knowledgePoint, learningStage, description } = req.body;
+    const { knowledgePoint, learningStage, description, language_code } = req.body;
 
     // 验证学习阶段
     if (!aiService.validateLearningStage(learningStage)) {
       return res.status(400).json({ error: '不支持的学习阶段' });
     }
 
-    logger.info(`开始AI生成内容: 知识点=${knowledgePoint}, 学习阶段=${learningStage}`);
+    logger.info(`开始AI生成内容: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${language_code || '未指定'}`);
 
-    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description);
+    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code);
 
     if (result.success) {
-      logger.info(`AI生成成功: 知识点=${knowledgePoint}, 学习阶段=${learningStage}`);
+      logger.info(`AI生成成功: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${result.data?.language_code || language_code || '未知'}`);
       res.json({
         success: true,
         data: result.data,
         learningStage: result.learningStage
       });
     } else {
-      logger.error(`AI生成失败: ${result.error}`);
+      logger.error(`AI生成失败: ${result.error}`, {
+        knowledgePoint,
+        learningStage,
+        language_code,
+        error: result.error,
+        details: result.details
+      });
       res.status(500).json({
         success: false,
-        error: result.error
+        error: result.error,
+        details: result.details
       });
     }
 
@@ -86,10 +94,16 @@ router.post('/test', [
         learningStage: result.learningStage
       });
     } else {
-      logger.error(`AI测试生成失败: ${result.error}`);
+      logger.error(`AI测试生成失败: ${result.error}`, {
+        knowledgePoint,
+        learningStage,
+        error: result.error,
+        details: result.details
+      });
       res.status(500).json({
         success: false,
-        error: result.error
+        error: result.error,
+        details: result.details
       });
     }
 
