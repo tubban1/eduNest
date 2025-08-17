@@ -7,24 +7,11 @@ import { useRouter } from 'next/navigation';
 import LoginRequired from './LoginRequired';
 import Logo from './Logo';
 import AiLoadingAnimation from './AiLoadingAnimation';
+import { useTranslation } from 'react-i18next';
 
 const DEFAULT_HTML = '<div id="app">{{ message }}</div>';
 const DEFAULT_CSS = 'body { font-family: sans-serif; } #app { padding: 20px; }';
 const DEFAULT_JS = 'const { createApp } = Vue;\n\ncreateApp({\n  data() {\n    return {\n      message: "Hello World!"\n    }\n  }\n}).mount("#app");\n\n// VueKinesis示例\n// const { createApp } = Vue;\n// createApp({\n//   data() {\n//     return {\n//       message: "Hello VueKinesis!"\n//     }\n//   }\n// }).mount("#app");';
-
-const TABS = [
-  { key: 'html', label: 'HTML' },
-  { key: 'css', label: 'CSS' },
-  { key: 'js', label: 'JS' },
-];
-
-const LEARNING_STAGES = [
-  { value: 'understanding', label: '理核心原理和逻辑' },
-  { value: 'application', label: '知识点应用' },
-  { value: 'assessment', label: '练习与考试' },
-  { value: 'expansion', label: '跨学科应用' },
-  { value: 'gamify', label: '游戏化学习' },
-];
 
 function renderExternalLinks(links: string | string[]) {
   let arr: string[] = [];
@@ -52,7 +39,7 @@ function renderExternalLinks(links: string | string[]) {
   return `${cssLinks}\n${jsScripts}`;
 }
 
-function FixForm({ error, onSubmit, loading }: { error: string; onSubmit: (note: string) => void; loading: boolean }) {
+function FixForm({ error, onSubmit, loading, t }: { error: string; onSubmit: (note: string) => void; loading: boolean; t: any }) {
   const [note, setNote] = useState(error || "");
   useEffect(() => { setNote(error || ""); }, [error]);
   
@@ -62,7 +49,7 @@ function FixForm({ error, onSubmit, loading }: { error: string; onSubmit: (note:
     <form className="flex flex-col gap-2" onSubmit={e => { e.preventDefault(); onSubmit(note); }}>
       <div className="flex justify-between items-center mb-2">
         <label className="font-semibold text-gray-700">
-          {hasError ? "错误信息/修改需求" : "优化需求"}
+          {hasError ? t('fixForm.errorMessage', { ns: 'content', defaultValue: 'Error message/Modification request' }) : t('fixForm.optimizationRequest', { ns: 'content', defaultValue: 'Optimization request' })}
         </label>
         {hasError && (
           <button
@@ -73,7 +60,7 @@ function FixForm({ error, onSubmit, loading }: { error: string; onSubmit: (note:
             }}
             disabled={loading}
           >
-            ✕ 关闭
+            ✕ {t('fixForm.close', { ns: 'content', defaultValue: 'Close' })}
           </button>
         )}
       </div>
@@ -84,8 +71,8 @@ function FixForm({ error, onSubmit, loading }: { error: string; onSubmit: (note:
         rows={3} 
         placeholder={
           hasError 
-            ? "错误信息已自动填充，您可以补充修改要求..." 
-            : "例如：添加背景动画、优化交互效果、修复样式问题、增强用户体验..."
+            ? t('fixForm.errorMessagePlaceholder', { ns: 'content', defaultValue: 'Error message has been automatically filled, you can supplement modification requirements...' })
+            : t('fixForm.exampleOptimizationRequest', { ns: 'content', defaultValue: 'For example: Add background animation, optimize interaction effects, fix style issues, enhance user experience...' })
         }
         disabled={loading}
       />
@@ -93,10 +80,10 @@ function FixForm({ error, onSubmit, loading }: { error: string; onSubmit: (note:
         {loading ? (
           <>
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            修复中...
+            {t('fixForm.fixing', { ns: 'content', defaultValue: 'Fixing...' })}
           </>
         ) : (
-          hasError ? "提交修复" : "提交优化"
+          hasError ? t('fixForm.submitFix', { ns: 'content', defaultValue: 'Submit fix' }) : t('fixForm.submitOptimization', { ns: 'content', defaultValue: 'Submit optimization' })
         )}
       </button>
     </form>
@@ -104,6 +91,9 @@ function FixForm({ error, onSubmit, loading }: { error: string; onSubmit: (note:
 }
 
 export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edit'; contentId?: string }) {
+  const { t } = useTranslation(['content', 'common', 'auth']);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [title, setTitle] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tagList, setTagList] = useState<string[]>([]);
@@ -156,26 +146,27 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
   // AI生成的语言代码，与输出语言选择器分开
   const [aiGeneratedLanguage, setAiGeneratedLanguage] = useState('');
 
+  // 多语言LANGUAGE_OPTIONS
   const LANGUAGE_OPTIONS: { code: string; name: string }[] = [
-    { code: 'zh-CN', name: '中文（中国）' },
-    { code: 'zh-TW', name: '中文（台湾）' },
-    { code: 'en-US', name: 'English (United States)' },
-    { code: 'en-GB', name: 'English (United Kingdom)' },
-    { code: 'de-DE', name: 'Deutsch (Deutschland)' },
-    { code: 'de-CH', name: 'Deutsch (Schweiz)' },
-    { code: 'fr-FR', name: 'Français (France)' },
-    { code: 'fr-CH', name: 'Français (Suisse)' },
-    { code: 'es-ES', name: 'Español (España)' },
-    { code: 'it-IT', name: 'Italiano (Italia)' },
-    { code: 'pt-BR', name: 'Português (Brasil)' },
-    { code: 'pt-PT', name: 'Português (Portugal)' },
-    { code: 'ja-JP', name: '日本語（日本）' },
-    { code: 'ko-KR', name: '한국어(대한민국)' },
-    { code: 'ru-RU', name: 'Русский (Россия)' },
-    { code: 'ar-SA', name: 'العربية (السعودية)' },
-    { code: 'hi-IN', name: 'हिन्दी (भारत)' },
-    { code: 'nl-NL', name: 'Nederlands (Nederland)' },
-    { code: 'sv-SE', name: 'Svenska (Sverige)' },
+    { code: 'zh-CN', name: mounted ? t('languageOptions.zhCN', { ns: 'content', defaultValue: 'Chinese (China)' }) : 'Chinese (China)' },
+    { code: 'zh-TW', name: mounted ? t('languageOptions.zhTW', { ns: 'content', defaultValue: 'Chinese (Taiwan)' }) : 'Chinese (Taiwan)' },
+    { code: 'en-US', name: mounted ? t('languageOptions.enUS', { ns: 'content', defaultValue: 'English (United States)' }) : 'English (United States)' },
+    { code: 'en-GB', name: mounted ? t('languageOptions.enGB', { ns: 'content', defaultValue: 'English (United Kingdom)' }) : 'English (United Kingdom)' },
+    { code: 'de-DE', name: mounted ? t('languageOptions.deDE', { ns: 'content', defaultValue: 'German (Germany)' }) : 'German (Germany)' },
+    { code: 'de-CH', name: mounted ? t('languageOptions.deCH', { ns: 'content', defaultValue: 'German (Switzerland)' }) : 'German (Switzerland)' },
+    { code: 'fr-FR', name: mounted ? t('languageOptions.frFR', { ns: 'content', defaultValue: 'French (France)' }) : 'French (France)' },
+    { code: 'fr-CH', name: mounted ? t('languageOptions.frCH', { ns: 'content', defaultValue: 'French (Switzerland)' }) : 'French (Switzerland)' },
+    { code: 'es-ES', name: mounted ? t('languageOptions.esES', { ns: 'content', defaultValue: 'Spanish (Spain)' }) : 'Spanish (Spain)' },
+    { code: 'it-IT', name: mounted ? t('languageOptions.itIT', { ns: 'content', defaultValue: 'Italian (Italy)' }) : 'Italian (Italy)' },
+    { code: 'pt-BR', name: mounted ? t('languageOptions.ptBR', { ns: 'content', defaultValue: 'Portuguese (Brazil)' }) : 'Portuguese (Brazil)' },
+    { code: 'pt-PT', name: mounted ? t('languageOptions.ptPT', { ns: 'content', defaultValue: 'Portuguese (Portugal)' }) : 'Portuguese (Portugal)' },
+    { code: 'ja-JP', name: mounted ? t('languageOptions.jaJP', { ns: 'content', defaultValue: 'Japanese (Japan)' }) : 'Japanese (Japan)' },
+    { code: 'ko-KR', name: mounted ? t('languageOptions.koKR', { ns: 'content', defaultValue: 'Korean (South Korea)' }) : 'Korean (South Korea)' },
+    { code: 'ru-RU', name: mounted ? t('languageOptions.ruRU', { ns: 'content', defaultValue: 'Russian (Russia)' }) : 'Russian (Russia)' },
+    { code: 'ar-SA', name: mounted ? t('languageOptions.arSA', { ns: 'content', defaultValue: 'Arabic (Saudi Arabia)' }) : 'Arabic (Saudi Arabia)' },
+    { code: 'hi-IN', name: mounted ? t('languageOptions.hiIN', { ns: 'content', defaultValue: 'Hindi (India)' }) : 'Hindi (India)' },
+    { code: 'nl-NL', name: mounted ? t('languageOptions.nlNL', { ns: 'content', defaultValue: 'Dutch (Netherlands)' }) : 'Dutch (Netherlands)' },
+    { code: 'sv-SE', name: mounted ? t('languageOptions.svSE', { ns: 'content', defaultValue: 'Swedish (Sweden)' }) : 'Swedish (Sweden)' },
   ];
 
   const normalizeBCP47 = (tag: string): string => {
@@ -221,11 +212,11 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
           // 保存short_id用于打开按钮
           setContentShortId(data.short_id || null);
         } else {
-          setError('内容不存在');
+          setError(t('contentNotFound', { ns: 'content', defaultValue: 'Content not found' }));
         }
         setLoading(false);
       }).catch((e: any) => {
-        setError(e.message || '加载内容失败');
+        setError(e.message || t('loadContentFailed', { ns: 'content', defaultValue: 'Failed to load content' }));
         setLoading(false);
       });
     } else if (mode === 'create') {
@@ -243,14 +234,71 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
     }
   }, [mode, contentId]);
 
+  // ContentForm组件内部
+  // 1. 定义getRecommendedLanguage函数
+  function getRecommendedLanguage({ contentLanguage, lastUsed, uiLanguage, browserLanguage, defaultLanguage }: { contentLanguage?: string, lastUsed?: string, uiLanguage?: string, browserLanguage?: string, defaultLanguage: string }) {
+    return (
+      contentLanguage ||
+      lastUsed ||
+      uiLanguage ||
+      browserLanguage ||
+      defaultLanguage
+    );
+  }
+
+  // 2. 在ContentForm内部useEffect初始化language
   useEffect(() => {
-    // 初始化语言为浏览器首选语言
-    if (!language) {
-      const nav = typeof navigator !== 'undefined' ? navigator : null;
-      const browserLang = normalizeBCP47(nav?.language || (Array.isArray(nav?.languages) ? nav?.languages[0] : '') || '');
-      if (browserLang) setLanguage(browserLang);
+    let browserLang = '';
+    if (typeof navigator !== 'undefined') {
+      browserLang = normalizeBCP47(navigator.language || (Array.isArray(navigator.languages) ? navigator.languages[0] : ''));
     }
-  }, []);
+    const lastUsed = typeof window !== 'undefined' ? localStorage.getItem('output_language_last_used') || '' : '';
+    if (mode === 'edit' && contentId) {
+      // 编辑模式下，优先用内容本身language
+      if (language) return;
+      setLanguage(getRecommendedLanguage({
+        contentLanguage: aiGeneratedLanguage || language,
+        lastUsed,
+        uiLanguage: t('languageOptions.enUS', { ns: 'content', defaultValue: 'English (United States)' }), // Assuming a default for UI language
+        browserLanguage: browserLang,
+        defaultLanguage: 'en-US' // Default to English
+      }));
+    } else if (mode === 'create') {
+      setLanguage(getRecommendedLanguage({
+        lastUsed,
+        uiLanguage: t('languageOptions.enUS', { ns: 'content', defaultValue: 'English (United States)' }), // Assuming a default for UI language
+        browserLanguage: browserLang,
+        defaultLanguage: 'en-US' // Default to English
+      }));
+    }
+  }, [mode, contentId, aiGeneratedLanguage, language, t]);
+
+  // 3. 用户每次选择output language时，保存到localStorage
+  const handleLanguageSelect = (code: string) => {
+    setLanguage(code);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('output_language_last_used', code);
+    }
+    setShowLanguagePicker(false);
+    setLanguageSearch('');
+  };
+
+  // 4. 选择器弹窗内按钮onClick={() => handleLanguageSelect(item.code)}
+  // 5. 支持自定义输入，校验BCP 47格式
+  const isValidBCP47 = (code: string) => {
+    const parts = code.split('-');
+    if (parts.length < 2) return false;
+    const languagePart = parts[0];
+    const regionPart = parts[1];
+
+    // 检查语言部分是否为2或3个字母
+    if (!/^[a-z]{2,3}$/.test(languagePart)) return false;
+
+    // 检查区域部分是否为2或3个字母，或者数字
+    if (!/^[a-z]{2,3}$/.test(regionPart) && !/^[0-9]{1,3}$/.test(regionPart)) return false;
+
+    return true;
+  };
 
   // 监听iframe错误
   useEffect(() => {
@@ -279,7 +327,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">验证中...</p>
+          <p className="text-gray-600">{mounted ? t('verifying', { ns: 'common', defaultValue: 'Verifying...' }) : 'Verifying...'}</p>
         </div>
       </div>
     );
@@ -288,8 +336,8 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
   if (!user) {
     return (
       <LoginRequired 
-        title="请先登录"
-        description="登录后创建和编辑内容"
+        title={mounted ? t('loginRequired', { ns: 'auth', defaultValue: 'Please login' }) : 'Please login'}
+        description={mounted ? t('loginRequiredDesc', { ns: 'auth', defaultValue: 'Login to create and edit content' }) : 'Login to create and edit content'}
       />
     );
   }
@@ -396,7 +444,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
     if (value && !tagList.includes(value)) {
       // 检查标签长度，超过20个字符的标签会被忽略
       if (value.length > 20) {
-        setError('标签长度不能超过20个字符');
+        setError(t('tagLengthExceeded', { ns: 'content', defaultValue: 'Tag length cannot exceed 20 characters' }));
         return;
       }
       setTagList([...tagList, value]);
@@ -425,10 +473,10 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
     
     linkArray.forEach(link => {
       if (!link.startsWith('http://') && !link.startsWith('https://')) {
-        errors.push(`链接 "${link}" 不是有效的URL`);
+        errors.push(t('invalidUrl', { ns: 'content', defaultValue: `Link "${link}" is not a valid URL` }));
       }
       if (!link.endsWith('.js') && !link.endsWith('.css')) {
-        errors.push(`链接 "${link}" 不是有效的JS或CSS文件`);
+        errors.push(t('invalidFileType', { ns: 'content', defaultValue: `Link "${link}" is not a valid JS or CSS file` }));
       }
     });
     
@@ -455,7 +503,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
   // AI生成处理函数
   const handleAiGenerate = async () => {
     if (!knowledgePoint.trim()) {
-      setError('请输入知识点');
+      setError(t('pleaseEnterKnowledgePoint', { ns: 'content', defaultValue: 'Please enter a knowledge point' }));
       return;
     }
 
@@ -463,7 +511,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
     setError('');
 
     try {
-      const prompt = `生成一个关于"${knowledgePoint.trim()}"的${learningStage}学习内容。${description ? `具体要求：${description}` : ''}`;
+      const prompt = `${t('aiGenerateContentPrompt', { ns: 'content', defaultValue: `Generate a ${learningStage} learning content about "${knowledgePoint.trim()}".${description ? `Specific requirements: ${description}` : ''}` })}`;
       
       const response = await api.generateContent(prompt, {
         knowledgePoint,
@@ -523,10 +571,10 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
         setError('');
         setHasGenerated(true); // 设置已生成标记
       } else {
-        throw new Error('AI生成失败');
+        throw new Error('AI generation failed');
       }
     } catch (error: any) {
-      setError(error.message || 'AI生成失败，请稍后重试');
+      setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
     } finally {
       setAiGenerating(false);
     }
@@ -551,7 +599,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
         // 如果是创建模式，添加其他必要参数
         requestBody.content_type = content_type || 'vue';
         requestBody.language_code = aiGeneratedLanguage || 'zh-CN';
-        requestBody.title = title || '未命名内容';
+        requestBody.title = title || 'Unnamed content';
         requestBody.description = description || '';
       }
       
@@ -570,7 +618,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
       setFixError(""); // 清空错误信息，表示修复成功
       setPreviewKey(prev => prev + 1);
     } catch (e: any) {
-      setFixError(e.message || "修复失败");
+      setFixError(e.message || t('fixFailed', { ns: 'content', defaultValue: 'Fix failed' }));
     } finally {
       setFixLoading(false);
     }
@@ -609,11 +657,24 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
       }
       router.push('/content');
     } catch (e: any) {
-      setError(e.message || '保存失败');
+      setError(e.message || t('saveFailed', { ns: 'content', defaultValue: 'Save failed' }));
     } finally {
       setLoading(false);
     }
   };
+
+  const TABS = [
+    { key: 'html', label: mounted ? t('tabs.html', { ns: 'content', defaultValue: 'HTML' }) : 'HTML' },
+    { key: 'css', label: mounted ? t('tabs.css', { ns: 'content', defaultValue: 'CSS' }) : 'CSS' },
+    { key: 'js', label: mounted ? t('tabs.js', { ns: 'content', defaultValue: 'JS' }) : 'JS' },
+  ];
+  const LEARNING_STAGES = [
+    { value: 'understanding', label: mounted ? t('learningStage.understanding', { ns: 'content', defaultValue: 'Understanding core principles and logic' }) : 'Understanding core principles and logic' },
+    { value: 'application', label: mounted ? t('learningStage.application', { ns: 'content', defaultValue: 'Knowledge application' }) : 'Knowledge application' },
+    { value: 'assessment', label: mounted ? t('learningStage.assessment', { ns: 'content', defaultValue: 'Practice and assessment' }) : 'Practice and assessment' },
+    { value: 'expansion', label: mounted ? t('learningStage.expansion', { ns: 'content', defaultValue: 'Interdisciplinary application' }) : 'Interdisciplinary application' },
+    { value: 'gamify', label: mounted ? t('learningStage.gamify', { ns: 'content', defaultValue: 'Gamified learning' }) : 'Gamified learning' },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center py-8">
@@ -622,7 +683,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
           <Logo size="md" />
         </div>
         <div className="flex justify-between items-center px-6 pt-6 pb-2 border-b border-gray-100">
-          <button onClick={() => router.push('/content')} className="text-gray-400 hover:text-black text-sm font-medium transition">← 返回列表</button>
+          <button onClick={() => router.push('/content')} className="text-gray-400 hover:text-black text-sm font-medium transition">{mounted ? t('backToList', { ns: 'common', defaultValue: '← Back to List' }) : '← Back to List'}</button>
           <div className="flex gap-2">
             <button 
               className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition" 
@@ -640,15 +701,15 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                   if (targetId) {
                     window.open(`/content/${targetId}`, '_blank');
                   } else {
-                    alert('请先保存内容后再打开');
+                    alert(mounted ? t('saveFirst', { ns: 'content', defaultValue: 'Please save content first' }) : 'Please save content first');
                   }
                 }}
               type="button"
             >
-              {mode === 'create' ? '保存后打开' : '打开'}
+              {mode === 'create' ? (mounted ? t('openAfterSave', { ns: 'content', defaultValue: 'Open after save' }) : 'Open after save') : (mounted ? t('open', { ns: 'common', defaultValue: 'Open' }) : 'Open')}
             </button>
-            <button className="px-6 py-2 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition" onClick={handlePreview} type="button">预览</button>
-            <button className="px-6 py-2 rounded-full bg-gradient-to-r from-gray-900 to-gray-700 text-white font-medium shadow hover:from-gray-800 hover:to-gray-600 transition" onClick={handleSave} type="button" disabled={loading}>{loading ? '保存中...' : '保存'}</button>
+            <button className="px-6 py-2 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition" onClick={handlePreview} type="button">{mounted ? t('preview', { ns: 'content', defaultValue: 'Preview' }) : 'Preview'}</button>
+            <button className="px-6 py-2 rounded-full bg-gradient-to-r from-gray-900 to-gray-700 text-white font-medium shadow hover:from-gray-800 hover:to-gray-600 transition" onClick={handleSave} type="button" disabled={loading}>{loading ? (mounted ? t('saving', { ns: 'common', defaultValue: 'Saving...' }) : 'Saving...') : (mounted ? t('save', { ns: 'common', defaultValue: 'Save' }) : 'Save')}</button>
           </div>
         </div>
         <div className="px-6 pt-4 pb-8">
@@ -660,43 +721,41 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                 <>
                   {hasGenerated ? (
                     <div className="flex flex-col gap-2 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow border border-purple-100 p-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">🔧 AI智能修复/优化</h3>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">{mounted ? t('aiFixOptimize', { ns: 'content', defaultValue: '🔧 AI Smart Fix/Optimization' }) : '🔧 AI Smart Fix/Optimization'}</h3>
                       {/* 错误信息显示 */}
                       {fixError && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                           <div className="flex items-start gap-2">
                             <div className="text-red-600 text-sm">⚠️</div>
                             <div className="flex-1">
-                              <div className="text-sm text-red-800 font-medium mb-1">检测到错误</div>
+                              <div className="text-sm text-red-800 font-medium mb-1">{mounted ? t('detectedError', { ns: 'content', defaultValue: 'Detected Error' }) : 'Detected Error'}</div>
                               <div className="text-xs text-red-700 bg-red-100 p-2 rounded border font-mono whitespace-pre-wrap">
                                 {fixError}
                               </div>
-                              <div className="text-xs text-red-600 mt-2">
-                                请复制上述错误信息到下方表单中进行修复
-                              </div>
+                              <div className="text-xs text-red-600 mt-2">{mounted ? t('copyErrorToForm', { ns: 'content', defaultValue: 'Please copy the error message above to the form below for repair' }) : 'Please copy the error message above to the form below for repair'}</div>
                             </div>
                           </div>
                         </div>
                       )}
-                      <FixForm error={fixError} onSubmit={handleFix} loading={fixLoading} />
+                      <FixForm error={fixError} onSubmit={handleFix} loading={fixLoading} t={t} />
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl shadow border border-blue-100 p-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">🤖 AI智能生成</h3>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">{mounted ? t('aiGenerate', { ns: 'content', defaultValue: '🤖 AI Smart Generation' }) : '🤖 AI Smart Generation'}</h3>
                       <div className="grid grid-cols-1 gap-4">
                         <div>
-                          <label className="block font-semibold mb-1 text-gray-700">知识点 <span className="text-red-500">*</span></label>
+                          <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('knowledgePoint', { ns: 'content', defaultValue: 'Knowledge Point' }) : 'Knowledge Point'} <span className="text-red-500">*</span></label>
                           <textarea
                             className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-20"
                             value={knowledgePoint}
                             onChange={e => setKnowledgePoint(e.target.value)}
-                            placeholder="例如：分数运算、细胞结构、牛顿定律..."
+                            placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
                             required
                             disabled={isAiFormDisabled}
                           />
                         </div>
                         <div>
-                          <label className="block font-semibold mb-1 text-gray-700">学习阶段</label>
+                          <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('learningStage', { ns: 'content', defaultValue: 'Learning Stage' }) : 'Learning Stage'}</label>
                           <select
                             className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                             value={learningStage}
@@ -711,13 +770,13 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                           </select>
                         </div>
                         <div>
-                          <label className="block font-semibold mb-1 text-gray-700">输出语言</label>
+                          <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('outputLanguage', { ns: 'content', defaultValue: 'Output Language' }) : 'Output Language'}</label>
                           <div className="flex gap-2">
                             <input
                               className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                               value={language}
                               readOnly
-                              placeholder="请通过选择器选择输出语言（BCP 47）"
+                              placeholder={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Please select output language (BCP 47) through the selector' }) : 'Please select output language (BCP 47) through the selector'}
                               disabled={isAiFormDisabled}
                             />
                             <button
@@ -725,8 +784,8 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                               className="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
                               onClick={() => setShowLanguagePicker(true)}
                               disabled={isAiFormDisabled}
-                              aria-label="选择输出语言"
-                              title="选择输出语言"
+                              aria-label={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select output language' }) : 'Select output language'}
+                              title={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select output language' }) : 'Select output language'}
                             >
                               🌐
                             </button>
@@ -742,10 +801,10 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                         {aiGenerating ? (
                           <>
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                            🤖 AI生成中...
+                            🤖 AI generating...
                           </>
                         ) : (
-                          '🚀 AI生成内容'
+                          '🚀 AI generate content'
                         )}
                       </button>
                     </div>
@@ -753,67 +812,67 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                 </>
               ) : (
                 showFix && (
-                  <FixForm error={fixError} onSubmit={handleFix} loading={fixLoading} />
+                  <FixForm error={fixError} onSubmit={handleFix} loading={fixLoading} t={t} />
                 )
               )}
               
               <div className="flex flex-col gap-2 bg-white/80 rounded-xl shadow border border-gray-100 p-4">
                 <div className="mt-2">
-                  <label className="block font-semibold mb-1 text-gray-700">标题 <span className="text-red-500">*</span></label>
+                  <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('title', { ns: 'content', defaultValue: 'Title' }) : 'Title'} <span className="text-red-500">*</span></label>
                   <input
                     className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
-                    placeholder="请输入内容标题"
+                    placeholder={mounted ? t('inputTitlePlaceholder', { ns: 'content', defaultValue: 'Please enter content title' }) : 'Please enter content title'}
                     required
                     disabled={isAiFormDisabled}
                   />
                 </div>
                 <div className="mt-2">
-                  <label className="block font-semibold mb-1 text-gray-700">描述</label>
+                  <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('description', { ns: 'content', defaultValue: 'Description' }) : 'Description'}</label>
                   <textarea
                     className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50 resize-none h-16"
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    placeholder="请输入内容描述"
+                    placeholder={mounted ? t('inputDescriptionPlaceholder', { ns: 'content', defaultValue: 'Please enter content description' }) : 'Please enter content description'}
                     disabled={isAiFormDisabled}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   {!isRegularUser && (
                     <div>
-                      <label className="block font-semibold mb-1 text-gray-700">内容类型</label>
+                      <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('contentType', { ns: 'content', defaultValue: 'Content Type' }) : 'Content Type'}</label>
                       <input
                         className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
                         value={content_type}
                         onChange={e => setContentType(e.target.value)}
-                        placeholder="例如：react, vanilla，python"
+                        placeholder={mounted ? t('exampleContentType', { ns: 'content', defaultValue: 'For example: react, vanilla, python' }) : 'For example: react, vanilla, python'}
                         disabled={isAiFormDisabled}
                       />
                     </div>
                   )}
                   <div>
-                    <label className="block font-semibold mb-1 text-gray-700">语言代码</label>
+                    <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('languageCode', { ns: 'content', defaultValue: 'Language Code' }) : 'Language Code'}</label>
                     <div className="flex gap-2">
                       <input
                         className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
                         value={aiGeneratedLanguage}
                         readOnly
-                        placeholder="AI生成后自动填充语言代码（BCP 47）"
+                        placeholder={mounted ? t('aiGeneratedLanguagePlaceholder', { ns: 'content', defaultValue: 'AI generated language code (BCP 47) will be filled automatically after generation' }) : 'AI generated language code (BCP 47) will be filled automatically after generation'}
                         disabled={isAiFormDisabled}
                       />
                     </div>
                   </div>
                 </div>
                 <div className="mt-2">
-                  <label className="block font-semibold mb-1 text-gray-700">标签（单行输入，按回车或点击添加）</label>
+                  <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('tags', { ns: 'content', defaultValue: 'Tags (single line input, press Enter or click to add)' }) : 'Tags (single line input, press Enter or click to add)'}</label>
                   <div className="flex gap-2">
                     <input
                       className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
                       value={tagInput}
                       onChange={e => setTagInput(e.target.value)}
                       onKeyDown={handleTagInputKeyDown}
-                      placeholder="输入标签后回车或点击添加（最多20个字符）"
+                      placeholder={mounted ? t('inputTagPlaceholder', { ns: 'content', defaultValue: 'Enter tag and press Enter or click to add (max 20 characters)' }) : 'Enter tag and press Enter or click to add (max 20 characters)'}
                       maxLength={20}
                       disabled={isAiFormDisabled}
                     />
@@ -822,7 +881,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                       onClick={handleAddTag}
                       disabled={isAiFormDisabled}
-                    >添加</button>
+                    >{mounted ? t('addTag', { ns: 'content', defaultValue: 'Add' }) : 'Add'}</button>
                   </div>
                   {/* 块状标签实时预览，可删除 */}
                   <div className="flex flex-wrap gap-2 mt-2">
@@ -836,8 +895,8 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                 </div>
                 {!isRegularUser && (
                   <div className="mt-2">
-                    <label className="block font-semibold mb-1 text-gray-700">外部依赖（每行一个CDN链接，支持JS/CSS）</label>
-                    <textarea className="w-full border border-gray-200 p-2 rounded-lg h-16 focus:outline-none focus:ring-2 focus:ring-black bg-gray-50 font-mono text-xs" value={external_links} onChange={e => handleExternalLinksChange(e.target.value)} placeholder="如：https://unpkg.com/vue@3/dist/vue.global.js\nhttps://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" disabled={isAiFormDisabled} />
+                    <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('externalDependencies', { ns: 'content', defaultValue: 'External Dependencies (one CDN link per line, supports JS/CSS)' }) : 'External Dependencies (one CDN link per line, supports JS/CSS)'}</label>
+                    <textarea className="w-full border border-gray-200 p-2 rounded-lg h-16 focus:outline-none focus:ring-2 focus:ring-black bg-gray-50 font-mono text-xs" value={external_links} onChange={e => handleExternalLinksChange(e.target.value)} placeholder={mounted ? 'For example: https://unpkg.com/vue@3/dist/vue.global.js\nhttps://cdn.jsdelivr.net/npm/axios/dist/axios.min.js' : 'For example: https://unpkg.com/vue@3/dist/vue.global.js\nhttps://cdn.jsdelivr.net/npm/axios/dist/axios.min.js'} disabled={isAiFormDisabled} />
                     {externalLinksError && <div className="text-red-600 text-xs mt-1">{externalLinksError}</div>}
                   </div>
                 )}
@@ -862,13 +921,13 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                   </div>
                   <div className="px-4 pb-4 pt-2">
                     {activeTab === 'html' && (
-                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_html} onChange={e => setHtml(e.target.value)} placeholder="请输入HTML代码" disabled={isAiFormDisabled} />
+                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_html} onChange={e => setHtml(e.target.value)} placeholder={mounted ? 'Please enter HTML code' : 'Please enter HTML code'} disabled={isAiFormDisabled} />
                     )}
                     {activeTab === 'css' && (
-                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_css} onChange={e => setCss(e.target.value)} placeholder="请输入CSS代码" disabled={isAiFormDisabled} />
+                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_css} onChange={e => setCss(e.target.value)} placeholder={mounted ? 'Please enter CSS code' : 'Please enter CSS code'} disabled={isAiFormDisabled} />
                     )}
                     {activeTab === 'js' && (
-                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_js} onChange={e => setJs(e.target.value)} placeholder="请输入JS代码" disabled={isAiFormDisabled} />
+                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_js} onChange={e => setJs(e.target.value)} placeholder={mounted ? 'Please enter JS code' : 'Please enter JS code'} disabled={isAiFormDisabled} />
                     )}
                   </div>
                 </div>
@@ -877,7 +936,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
             </div>
             {/* 右侧：实时预览区 */}
             <div className="bg-gradient-to-br from-gray-100 to-white border border-gray-200 rounded-xl shadow flex flex-col h-[40rem]">
-              <div className="text-xs text-gray-400 px-4 py-2 border-b border-gray-100 bg-white/80 rounded-t-xl">实时预览</div>
+              <div className="text-xs text-gray-400 px-4 py-2 border-b border-gray-100 bg-white/80 rounded-t-xl">{mounted ? t('realTimePreview', { ns: 'content', defaultValue: 'Real-time Preview' }) : 'Real-time Preview'}</div>
               <iframe
                 ref={iframeRef}
                 key={previewKey}
@@ -899,7 +958,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                   <div className="flex items-start gap-2">
                     <div className="text-green-600 text-sm">🔧</div>
                     <div className="flex-1">
-                      <div className="text-xs text-gray-500 font-medium mb-1">AI修复摘要</div>
+                      <div className="text-xs text-gray-500 font-medium mb-1">{mounted ? t('aiFixSummary', { ns: 'content', defaultValue: 'AI Fix Summary' }) : 'AI Fix Summary'}</div>
                       <div className="text-sm text-gray-700">{fixed}</div>
                     </div>
                   </div>
@@ -923,12 +982,12 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowLanguagePicker(false)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">选择输出语言</h3>
-              <button className="text-gray-500 hover:text-black" onClick={() => setShowLanguagePicker(false)}>✕</button>
+              <h3 className="text-lg font-semibold">{mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select Output Language' }) : 'Select Output Language'}</h3>
+              <button className="text-gray-500 hover:text-black" onClick={() => setShowLanguagePicker(false)}>{mounted ? '✕' : '✕'}</button>
             </div>
             <input
               className="w-full border border-gray-200 p-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="搜索语言或输入 BCP 47 代码（如 zh-CN, en-US）"
+              placeholder={mounted ? 'Search language or enter BCP 47 code (e.g., zh-CN, en-US)' : 'Search language or enter BCP 47 code (e.g., zh-CN, en-US)'}
               value={languageSearch}
               onChange={e => setLanguageSearch(e.target.value)}
             />
@@ -937,29 +996,26 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                 <button
                   key={item.code}
                   className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between ${language === item.code ? 'bg-gray-50' : ''}`}
-                  onClick={() => {
-                    setLanguage(item.code);
-                    setShowLanguagePicker(false);
-                    setLanguageSearch('');
-                  }}
+                  onClick={() => handleLanguageSelect(item.code)}
                 >
                   <span>{item.name}</span>
                   <span className="text-gray-500 text-sm">{item.code}</span>
                 </button>
               ))}
               {filteredLanguages.length === 0 && (
-                <div className="p-3 text-sm text-gray-500">未找到匹配的语言</div>
+                <div className="p-3 text-sm text-gray-500">{mounted ? 'No matching language found' : 'No matching language found'}</div>
               )}
             </div>
             <div className="mt-3 flex gap-2 justify-end">
               <button
                 className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
                 onClick={() => setShowLanguagePicker(false)}
-              >取消</button>
+              >{mounted ? 'Cancel' : 'Cancel'}</button>
               <button
                 className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
-                onClick={() => setShowLanguagePicker(false)}
-              >确定</button>
+                onClick={() => handleLanguageSelect(languageSearch)}
+                disabled={!isValidBCP47(languageSearch)}
+              >{mounted ? 'OK' : 'OK'}</button>
             </div>
           </div>
         </div>
