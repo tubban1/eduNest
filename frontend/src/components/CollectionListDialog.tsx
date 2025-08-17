@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CollectionList {
   id?: string;
@@ -143,7 +144,7 @@ function renderCollectionCheckbox(isCollected: boolean, onToggle: () => void) {
 }
 
 export default function CollectionListDialog({
-  open, onClose, lists = [], onSave, onCreateList, refreshLists, contentId
+  open, onClose, lists: propLists = [], onSave, onCreateList, refreshLists, contentId
 }: {
   open: boolean;
   onClose: () => void;
@@ -153,32 +154,30 @@ export default function CollectionListDialog({
   refreshLists: () => void;
   contentId?: string;
 }) {
+  const { user } = useAuth();
   const [showNewList, setShowNewList] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, item: CollectionList | null }>({ open: false, item: null });
   const [collectedLists, setCollectedLists] = useState<Set<string>>(new Set());
+  // 优先用props.lists作为初始userLists，提升初始渲染速度
+  const [userLists, setUserLists] = useState<CollectionList[]>(propLists);
   const [loading, setLoading] = useState(false);
 
-  // 加载当前内容的收藏状态
+  // 弹窗打开时并行请求用户lists和content被收藏到的lists
   useEffect(() => {
     if (open && contentId) {
-      loadContentCollections();
-    }
-  }, [open, contentId]);
-
-  const loadContentCollections = async () => {
-    if (!contentId) return;
-    
-    try {
+      // 弹窗每次打开时，先用props.lists渲染，后异步刷新
+      setUserLists(propLists || []);
       setLoading(true);
-      const collections = await api.getContentCollections(contentId);
-      const listIds = collections.map((col: any) => col.list_id);
-      setCollectedLists(new Set(listIds));
-    } catch (error) {
-      // 加载收藏状态失败处理
-    } finally {
-      setLoading(false);
+      Promise.all([
+        api.request('/collection_lists'), // 当前用户的lists
+        api.getCollectionsByContent(contentId)
+      ]).then(([userListsRes, collections]) => {
+        setUserLists(userListsRes?.data || []); // 接口返回后刷新
+        const listIds = (collections?.data || []).map((col: any) => col.list_id);
+        setCollectedLists(new Set(listIds));
+      }).finally(() => setLoading(false));
     }
-  };
+  }, [open, contentId, propLists]);
 
   // 处理收藏切换
   const handleCollectionToggle = async (listId: string) => {
@@ -207,7 +206,7 @@ export default function CollectionListDialog({
   const handleMoveUp = async (item: CollectionList) => {
     if (!item.id) return;
     
-    const sortedLists = lists.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    const sortedLists = userLists.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
     const idx = sortedLists.findIndex(l => l.id === item.id);
     if (idx <= 0) return;
     
@@ -229,7 +228,7 @@ export default function CollectionListDialog({
   const handleMoveDown = async (item: CollectionList) => {
     if (!item.id) return;
     
-    const sortedLists = lists.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    const sortedLists = userLists.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
     const idx = sortedLists.findIndex(l => l.id === item.id);
     if (idx === -1 || idx === sortedLists.length - 1) return;
     
@@ -262,9 +261,9 @@ export default function CollectionListDialog({
     }
   };
 
-  // 渲染单层列表
+  // 渲染时只用userLists
   function renderLists(): JSX.Element[] {
-    const sortedLists = lists.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    const sortedLists = userLists.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
     
     return sortedLists.map((item, idx) => {
       const canMoveUp = idx > 0;
