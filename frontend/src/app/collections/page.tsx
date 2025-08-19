@@ -136,6 +136,11 @@ export default function CollectionsPage() {
     }
   };
 
+  // 新建收藏列表函数（可根据实际逻辑实现）
+  const createNewList = async (name: string, visibility: string) => {
+    // TODO: 实现新建收藏列表逻辑
+  };
+
   useEffect(() => {
     if (user) {
       fetchCollectionLists();
@@ -261,6 +266,7 @@ export default function CollectionsPage() {
                   }}
                   onAction={handleCollectionAction}
                   refreshLists={async () => {}}
+                  onCreateList={list => createNewList(list.name, list.visibility)}
                 />
               ))}
             </div>
