@@ -260,7 +260,7 @@ export default function CollectionsPage() {
                     is_liked: item.is_liked
                   }}
                   onAction={handleCollectionAction}
-                  refreshLists={refreshLists || (async () => {})}
+                  refreshLists={async () => {}}
                 />
               ))}
             </div>
