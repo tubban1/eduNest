@@ -81,7 +81,7 @@ function CollectionTree({ userId }: { userId: string }) {
       api.getUserCollections(userId)
     ]).then(([listRes, colRes]) => {
       setLists(listRes.success ? listRes.data : []);
-      setCollections(colRes as UserCollection[]);
+      setCollections(colRes && Array.isArray(colRes.data) ? colRes.data : []);
       setLoading(false);
     }).catch((e: any) => {
       setError(e.message || t('fetchCollectionsError', { ns: 'content', defaultValue: '获取收藏失败' }));
