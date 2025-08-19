@@ -172,8 +172,8 @@ export default function CollectionListDialog({
         api.request('/collection_lists'), // 当前用户的lists
         api.getCollectionsByContent(contentId)
       ]).then(([userListsRes, collections]) => {
-        setUserLists(userListsRes?.data || []); // 接口返回后刷新
-        const listIds = (collections?.data || []).map((col: any) => col.list_id);
+        setUserLists((userListsRes && 'data' in userListsRes) ? userListsRes.data : []); // 接口返回后刷新
+        const listIds = (collections && 'data' in collections ? collections.data : []).map((col: any) => col.list_id);
         setCollectedLists(new Set(listIds));
       }).finally(() => setLoading(false));
     }
