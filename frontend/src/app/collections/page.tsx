@@ -266,7 +266,6 @@ export default function CollectionsPage() {
                   }}
                   onAction={handleCollectionAction}
                   refreshLists={async () => {}}
-                  onCreateList={list => createNewList(list.name, list.visibility)}
                 />
               ))}
             </div>
