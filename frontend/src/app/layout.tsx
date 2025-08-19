@@ -1,26 +1,20 @@
 import './globals.css'
-import { AuthProvider } from '../hooks/useAuth'
+import AppClientProviders from '../components/AppClientProviders';
 
+// 如需多语言SEO，建议采用 next-intl 或 next-i18next 路由方案实现动态meta
 export const metadata = {
-  title: 'AI 互动教育平台',
-  description: '探索基于 AI 生成的互动教学内容，让学习变得更加生动有趣',
-  icons: {
-    icon: '/favicon.ico',
-  },
-}
+  title: 'AI Education Platform',
+  description: 'Explore interactive AI-generated educational content and make learning more engaging.',
+};
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN">
+    <html lang="en">
       <body>
-        <AuthProvider>
+        <AppClientProviders>
           {children}
-        </AuthProvider>
+        </AppClientProviders>
       </body>
     </html>
-  )
+  );
 }

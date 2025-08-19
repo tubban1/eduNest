@@ -974,6 +974,35 @@ const getUserLikedContent = async (userId) => {
   }
 };
 
+// 记录AI使用日志
+const logAIUsage = async (log) => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_usage_logs')
+      .insert({
+        user_id: log.user_id || null,
+        model_name: log.model_name || null,
+        user_query: log.user_query || null,
+        action_type: log.action_type || null,
+        input_tokens: typeof log.input_tokens === 'number' ? log.input_tokens : 0,
+        output_tokens: typeof log.output_tokens === 'number' ? log.output_tokens : 0,
+        total_tokens: typeof log.total_tokens === 'number' ? log.total_tokens : 0,
+        request_payload: log.request_payload || null,
+        response_metadata: log.response_metadata || null,
+        created_at: log.created_at ? new Date(log.created_at) : new Date(),
+        is_json_valid: typeof log.is_json_valid === 'boolean' ? log.is_json_valid : false,
+        is_render_success: typeof log.is_render_success === 'boolean' ? log.is_render_success : false,
+        error_message: log.error_message || null
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
 // 检查数据库状态
 const checkDatabaseStatus = async () => {
   try {
@@ -1035,5 +1064,6 @@ module.exports = {
   unlikeContent,
   getContentLikeStatus,
   getUserLikedContent,
-  checkDatabaseStatus
+  checkDatabaseStatus,
+  logAIUsage
 }; 

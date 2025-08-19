@@ -10,7 +10,8 @@ router.post('/', async (req, res) => {
     if (!html || !js) {
       return res.status(400).json({ error: 'html, js 必填' });
     }
-    
+    // 获取当前用户id（如有）
+    const user_id = req.user && req.user.id ? req.user.id : null;
     // 如果是编辑模式，需要验证 content_id 并获取原始内容
     if (content_id) {
       const { data: original, error: dbErr } = await DatabaseService.getContentById(content_id);
@@ -23,7 +24,8 @@ router.post('/', async (req, res) => {
         content_type: original.content_type,
         language: original.language_code,
         title: original.title,
-        description: original.description
+        description: original.description,
+        user_id
       });
       if (!aiResult.success) {
         return res.status(500).json({ error: aiResult.error });
@@ -37,7 +39,8 @@ router.post('/', async (req, res) => {
         content_type: content_type || 'vue',
         language: language_code || 'zh-CN',
         title: title || '未命名内容',
-        description: description || ''
+        description: description || '',
+        user_id
       });
       if (!aiResult.success) {
         return res.status(500).json({ error: aiResult.error });

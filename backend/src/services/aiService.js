@@ -1,5 +1,9 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
+const { logAIUsage } = require('./database');
+const express = require('express');
+const router = express.Router();
+const { supabase } = require('./database');
 
 // 安全的变量替换函数
 const safeReplace = (template, placeholder, value) => {
@@ -60,7 +64,13 @@ Everything must work in plain HTML/CSS/JS, and run directly in environments like
 - Use sound and visual feedback where pedagogically helpful for user interactions (e.g., success, fail, progress, guidance).
 - The layout should be minimal, accessible, and focused on content.
 
-4. Output Format
+4. Output Language Constraint
+- If language_code is provided, you MUST use it for ALL output fields (title, description, html, css, js, tags, content_type, language_code, etc.), regardless of the knowledge point’s language. Do NOT infer the output language from the knowledge point or any other input. Only use language_code for all output.
+- If language_code is not provided, use the fallback language: {{fallback_language}}.
+- The language_code must be included as a field in the final JSON output and must be a valid BCP 47 code string (e.g., "zh-CN", "en-US", "de-CH").
+- All text values in the JSON (including title, description, UI strings, tags and comments) must match the language indicated by language_code.
+
+5. Output Format
 Return the result as a single, valid, and minified JSON object. Strictly adhere to the specified structure below, with no leading or trailing text. The entire output must be parseable as a single JSON object. Any deviation, such as a missing comma, unclosed quote, or bracket, is a critical error.
 
 {
@@ -77,14 +87,8 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
     "3–7 high-quality tags that reflect subject, domain, format, or interaction style"
   ],
   "content_type": "vue",
-  "language_code": "BCP47 Code of Language"
+  "language_code": "MUST match the language_code input parameter exactly as per Constraint 4"
 }
-
-5. Language
-- First, analyze the input {{knowledge_point}} to detect if it explicitly specifies a target language. If a language is clearly indicated in the input, use that language for all output.
-- Only if no language is specified in the input, use the fallback language: {{fallback_language}}.
-- The language_code must be included as a field in the final JSON output and must be a valid BCP 47 code string (e.g., "zh-CN", "en-US", "de-CH").
-- All text values in the JSON (including title, description, UI strings, tags and comments) must match the language indicated by language_code.
 
 6. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.`;
 
@@ -122,73 +126,127 @@ const LEARNING_STAGE_NAMES = {
 };
 
 // 生成教育交互内容
-const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '') => {
+const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate') => {
+  let logId = null;
+  let logParams = {};
   try {
     if (!ARK_API_KEY || ARK_API_KEY === 'your_ark_api_key_here') {
       throw new Error('ARK_API_KEY未配置或使用默认值，请在.env文件中配置真实的API密钥');
     }
-
     // 构建完整的提示词
     const userPrompt = safeReplace(LEARNING_STAGE_PROMPTS[learningStage], '{{knowledge_point}}', knowledgePoint);
     let systemPromptWithKnowledge = safeReplace(SYSTEM_PROMPT, '{{knowledge_point}}', knowledgePoint);
-    
-    // 如果前端传入 languageCode，替换 fallback_language 占位符
     if (languageCode) {
       systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', languageCode);
     } else {
-      // 如果没有传入 languageCode，使用默认值
-      systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', 'zh-CN');
+      systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', 'en-US');
     }
-
+    const requestPayload = {
+      model: ARK_MODEL,
+      messages: [
+        { role: 'system', content: systemPromptWithKnowledge },
+        { role: 'user', content: userPrompt }
+      ],
+      max_tokens: 24000
+    };
     const response = await fetch(ARK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${ARK_API_KEY}`,
       },
-      body: JSON.stringify({
-        model: ARK_MODEL,
-        messages: [
-          { role: 'system', content: systemPromptWithKnowledge },
-          { role: 'user', content: userPrompt }
-        ]
-      })
+      body: JSON.stringify(requestPayload)
     });
-
+    const createdAt = Date.now() / 1000;
     if (!response.ok) {
+      // 记录失败日志
+      await logAIUsage({
+        user_id: userId,
+        model_name: ARK_MODEL,
+        user_query: knowledgePoint,
+        action_type: actionType,
+        input_tokens: 0,
+        output_tokens: 0,
+        total_tokens: 0,
+        request_payload: requestPayload,
+        response_metadata: { status: response.status, statusText: response.statusText },
+        created_at: new Date(),
+        is_json_valid: false,
+        is_render_success: false,
+        error_message: `AI API请求失败: ${response.status} ${response.statusText}`
+      });
       throw new Error(`AI API请求失败: ${response.status} ${response.statusText}`);
     }
-
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content;
-
+    // tokens字段名修正，全部用prompt_tokens/completion_tokens/total_tokens
+    const usage = data.usage || {};
+    const inputTokens = usage.prompt_tokens || 0;
+    const outputTokens = usage.completion_tokens || 0;
+    const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
+      await logAIUsage({
+        user_id: userId,
+        model_name: ARK_MODEL,
+        user_query: knowledgePoint,
+        action_type: actionType,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: totalTokens,
+        request_payload: requestPayload,
+        response_metadata: data,
+        created_at: new Date(),
+        is_json_valid: false,
+        is_render_success: false,
+        error_message: 'AI返回内容为空'
+      });
       throw new Error('AI返回内容为空');
     }
-
-    // 记录AI返回的原始内容到日志
-    console.log('AI返回的原始内容:', aiResponse);
-
     // 尝试从AI响应中提取JSON
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-    
     if (jsonMatch) {
       try {
         const parsedDataRaw = JSON.parse(jsonMatch[0]);
-        // 兼容旧字段名 language => 统一映射为 language_code
         const parsedData = {
           ...parsedDataRaw,
           language_code: parsedDataRaw.language_code || languageCode || 'zh-CN'
         };
-        
-        return {
-          success: true,
+        // 日志：成功解析JSON
+        await logAIUsage({
+          user_id: userId,
+          model_name: ARK_MODEL,
+          user_query: knowledgePoint,
+          action_type: actionType,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          total_tokens: totalTokens,
+          request_payload: requestPayload,
+          response_metadata: data,
+          created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+          is_json_valid: true,
+          is_render_success: false,
+          error_message: null
+        });
+    return {
+      success: true,
           data: parsedData
         };
       } catch (parseError) {
-        console.error('JSON解析失败，AI返回的内容:', aiResponse);
-        console.error('JSON解析错误详情:', parseError);
-        console.error('尝试解析的JSON字符串:', jsonMatch[0]);
+        await logAIUsage({
+          user_id: userId,
+          model_name: ARK_MODEL,
+          user_query: knowledgePoint,
+          action_type: actionType,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          total_tokens: totalTokens,
+          request_payload: requestPayload,
+          response_metadata: data,
+          created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+          is_json_valid: false,
+          is_render_success: false,
+          error_message: `JSON解析失败: ${parseError.message}`
+        });
         return {
           success: false,
           error: 'JSON解析失败',
@@ -196,17 +254,44 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         };
       }
     } else {
-      console.error('未找到JSON格式，AI返回的完整内容:', aiResponse);
-      console.error('AI返回内容长度:', aiResponse.length);
-      console.error('AI返回内容前100字符:', aiResponse.substring(0, 100));
+      await logAIUsage({
+        user_id: userId,
+        model_name: ARK_MODEL,
+        user_query: knowledgePoint,
+        action_type: actionType,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: totalTokens,
+        request_payload: requestPayload,
+        response_metadata: data,
+        created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+        is_json_valid: false,
+        is_render_success: false,
+        error_message: '未找到JSON格式'
+      });
       return {
         success: false,
         error: '未找到JSON格式',
         details: `AI返回的内容中没有找到有效的JSON结构，内容长度: ${aiResponse.length}`
       };
     }
-
   } catch (error) {
+    // 捕获主流程异常
+    await logAIUsage({
+      user_id: null,
+      model_name: ARK_MODEL,
+      user_query: null,
+      action_type: 'generate',
+      input_tokens: 0,
+      output_tokens: 0,
+      total_tokens: 0,
+      request_payload: null,
+      response_metadata: null,
+      created_at: new Date(),
+      is_json_valid: false,
+      is_render_success: false,
+      error_message: error.message || 'AI生成失败'
+    });
     return {
       success: false,
       error: error.message || 'AI生成失败'
@@ -266,7 +351,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
     }
 
     const aiResponse = data.choices[0].message.content;
-    
+
     // 解析AI返回的JSON
     let parsedData;
     let jsonMatch = null; // 声明在外部作用域
@@ -326,7 +411,8 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
 };
 
 // AI修复接口
-const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language_code, title, description }) => {
+const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language_code, title, description, user_id = null }) => {
+  let logParams = {};
   try {
     // 构建修复prompt
     const SYSTEM_PROMPT = `You are an expert Vue 3 frontend developer and educational UI engineer.
@@ -376,62 +462,152 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: finalUserPrompt }
-        ]
+        ],
+        max_tokens: 24000
       })
     });
+    const createdAt = Date.now() / 1000;
     if (!response.ok) {
+      const usage = data.usage || {};
+      const promptTokens = usage.prompt_tokens || 0;
+      const completionTokens = usage.completion_tokens || 0;
+      const totalTokens = usage.total_tokens || 0;
+      await logAIUsage({
+        user_id,
+        model_name: process.env.ARK_MODEL,
+        user_query: note,
+        action_type: 'fix',
+        input_tokens: promptTokens,
+        output_tokens: completionTokens,
+        total_tokens: totalTokens,
+        request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
+        response_metadata: { status: response.status, statusText: response.statusText },
+        created_at: new Date(),
+        is_json_valid: false,
+        is_render_success: false,
+        error_message: `AI API请求失败: ${response.status} ${response.statusText}`
+      });
       return { success: false, error: `AI API请求失败: ${response.status}` };
     }
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content;
-    
+    const usage = data.usage || {};
+    const promptTokens = usage.prompt_tokens || 0;
+    const completionTokens = usage.completion_tokens || 0;
+    const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
+      await logAIUsage({
+        user_id,
+        model_name: process.env.ARK_MODEL,
+        user_query: note,
+        action_type: 'fix',
+        input_tokens: promptTokens,
+        output_tokens: completionTokens,
+        total_tokens: totalTokens,
+        request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
+        response_metadata: data,
+        created_at: new Date(),
+        is_json_valid: false,
+        is_render_success: false,
+        error_message: 'AI返回内容为空'
+      });
       return { success: false, error: 'AI返回内容为空' };
     }
-    
     let parsed;
-    let jsonMatch = null; // 声明在外部作用域
+    let jsonMatch = null;
     try {
-      // 尝试多种JSON匹配模式
       jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      
       if (!jsonMatch) {
-        // 尝试找到包含JSON的代码块
         const codeBlockMatch = aiResponse.match(/```json\s*(\{[\s\S]*?\})\s*```/);
         if (codeBlockMatch) {
           jsonMatch = [codeBlockMatch[1]];
         }
       }
-      
       if (!jsonMatch) {
-        // 尝试找到最后一个完整的JSON对象
         const matches = aiResponse.match(/\{[\s\S]*?\}/g);
         if (matches && matches.length > 0) {
           jsonMatch = [matches[matches.length - 1]];
         }
       }
-      
       if (!jsonMatch) {
-        // 最后尝试：查找任何可能的JSON结构
         const possibleJson = aiResponse.match(/\{[^{}]*"[^{}]*"[^{}]*\}/);
         if (possibleJson) {
           jsonMatch = [possibleJson[0]];
         }
       }
-      
       if (jsonMatch) {
         parsed = JSON.parse(jsonMatch[0]);
+        await logAIUsage({
+          user_id,
+          model_name: process.env.ARK_MODEL,
+          user_query: note,
+          action_type: 'fix',
+          input_tokens: promptTokens,
+          output_tokens: completionTokens,
+          total_tokens: totalTokens,
+          request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
+          response_metadata: data,
+          created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+          is_json_valid: true,
+          is_render_success: false,
+          error_message: null
+        });
       } else {
+        await logAIUsage({
+          user_id,
+          model_name: process.env.ARK_MODEL,
+          user_query: note,
+          action_type: 'fix',
+          input_tokens: promptTokens,
+          output_tokens: completionTokens,
+          total_tokens: totalTokens,
+          request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
+          response_metadata: data,
+          created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+          is_json_valid: false,
+          is_render_success: false,
+          error_message: '未找到JSON格式'
+        });
         console.error('无法找到修复JSON结构，原始内容:', aiResponse);
         throw new Error('AI返回内容无法解析，请检查AI返回的格式');
       }
     } catch (e) {
+      await logAIUsage({
+        user_id,
+        model_name: process.env.ARK_MODEL,
+        user_query: note,
+        action_type: 'fix',
+        input_tokens: promptTokens,
+        output_tokens: completionTokens,
+        total_tokens: totalTokens,
+        request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
+        response_metadata: data,
+        created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+        is_json_valid: false,
+        is_render_success: false,
+        error_message: `JSON解析失败: ${e.message}`
+      });
       console.error('修复JSON解析错误:', e);
       console.error('尝试解析的内容:', jsonMatch ? jsonMatch[0] : '未找到JSON');
       return { success: false, error: `AI返回内容格式错误: ${e.message}` };
     }
     return { success: true, data: parsed };
   } catch (e) {
+    await logAIUsage({
+      user_id: null,
+      model_name: process.env.ARK_MODEL,
+      user_query: null,
+      action_type: 'fix',
+      input_tokens: 0,
+      output_tokens: 0,
+      total_tokens: 0,
+      request_payload: null,
+      response_metadata: null,
+      created_at: new Date(),
+      is_json_valid: false,
+      is_render_success: false,
+      error_message: e.message || 'AI修复失败'
+    });
     return { success: false, error: e.message };
   }
 };
@@ -495,6 +671,27 @@ const testSafeReplace = () => {
     console.log('');
   });
 };
+
+// 记录前端渲染结果API
+router.post('/api/ai/log_render_status', async (req, res) => {
+  const { log_id, is_render_success, error_message } = req.body;
+  if (!log_id) return res.status(400).json({ error: 'log_id required' });
+  try {
+    const { data, error } = await supabase
+      .from('ai_usage_logs')
+      .update({
+        is_render_success: !!is_render_success,
+        error_message: error_message || null
+      })
+      .eq('id', log_id)
+      .select()
+      .single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ success: true, data });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = {
   generateEducationalContent,

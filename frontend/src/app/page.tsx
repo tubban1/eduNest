@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -26,6 +27,9 @@ interface Content {
 }
 
 export default function HomePage() {
+  const { t } = useTranslation(['home', 'common', 'content', 'navigation']);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const { user, signOut } = useAuth();
   const [contents, setContents] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,14 +114,14 @@ export default function HomePage() {
                     href="/content"
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
                   >
-                    进入平台
+                    {t('navigation.enter_platform')}
                   </Link>
                   <button
                     onClick={handleSignOut}
                     disabled={isLoadingSignOut}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                   >
-                    {isLoadingSignOut ? '退出中...' : '退出'}
+                    {isLoadingSignOut ? t('common.signing_out') : t('common.sign_out')}
                   </button>
                 </div>
               ) : (
@@ -125,7 +129,7 @@ export default function HomePage() {
                   href="/login"
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  登录
+                  {t('navigation.login')}
                 </Link>
               )}
             </div>
@@ -138,13 +142,14 @@ export default function HomePage() {
         {/* 英雄区域 */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6 leading-tight">
-            让学习
+            {t('home.make_learning')}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              {' '}生动有趣
+              {' '}
+              {t('home.dynamic_and_interesting')}
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto mb-8 leading-relaxed">
-            基于AI生成的互动教学内容，让每个知识点都变得可视化、可交互、可体验
+            {t('home.based_on_ai_generated_interactive_content_makes_each_knowledge_point_visualizable_interactive_and_experiential')}
           </p>
           
           {!user && (
@@ -153,13 +158,13 @@ export default function HomePage() {
                 href="/login"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 text-lg font-semibold shadow-lg"
               >
-                立即开始学习
+                {t('home.start_learning_now')}
               </Link>
               <Link
                 href="/content"
                 className="bg-white text-gray-700 px-8 py-4 rounded-xl hover:bg-gray-50 transition-all border-2 border-gray-200 text-lg font-semibold"
               >
-                浏览内容
+                {t('home.browse_content')}
               </Link>
             </div>
           )}
@@ -170,25 +175,31 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 hover:shadow-lg transition-all">
               <div className="text-4xl mb-4">🎯</div>
-              <h3 className="text-xl font-bold text-gray-800 mb-3">个性化学习</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">
+                {t('home.personalized_learning')}
+              </h3>
               <p className="text-gray-600">
-                AI根据学习阶段和知识点自动生成最适合的互动内容，让学习更高效
+                {t('home.ai_automatically_generates_the_most_suitable_interactive_content_based_on_learning_stage_and_knowledge_points_making_learning_more_efficient')}
               </p>
             </div>
             
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 hover:shadow-lg transition-all">
               <div className="text-4xl mb-4">🎮</div>
-              <h3 className="text-xl font-bold text-gray-800 mb-3">互动体验</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">
+                {t('home.interactive_experience')}
+              </h3>
               <p className="text-gray-600">
-                通过动画、游戏、模拟实验等丰富形式，让抽象概念变得具体可感
+                {t('home.through_animation_games_and_simulated_experiments_etc_abstract_concepts_become_concrete_and_tangible')}
               </p>
             </div>
             
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 hover:shadow-lg transition-all">
               <div className="text-4xl mb-4">📚</div>
-              <h3 className="text-xl font-bold text-gray-800 mb-3">多学科覆盖</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">
+                {t('home.multi_disciplinary_coverage')}
+              </h3>
               <p className="text-gray-600">
-                涵盖数学、物理、化学、生物、地理等多个学科，满足不同学习需求
+                {t('home.covers_mathematics_physics_chemistry_biology_and_geography_etc_meeting_different_learning_needs')}
               </p>
             </div>
           </div>
@@ -198,10 +209,10 @@ export default function HomePage() {
         <div className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              精选互动内容
+              {t('home.selected_interactive_content')}
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              体验AI生成的优质教学内容，每个内容都经过精心设计
+              {t('home.experience_ai_generated_high_quality_teaching_content_each_content_is_carefully_designed')}
             </p>
           </div>
           
@@ -227,7 +238,7 @@ export default function HomePage() {
                       {content.title}
                     </h3>
                     <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {content.description || '暂无描述'}
+                      {content.description || ''}
                     </p>
                     <div className="flex flex-wrap gap-1 mb-4">
                       {(content.tags || []).slice(0, 3).map((tag, index) => (
@@ -241,7 +252,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>点击查看</span>
+                    <span>{t('home.click_to_view')}</span>
                     <span>{new Date(content.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -250,8 +261,12 @@ export default function HomePage() {
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📚</div>
-              <p className="text-gray-600 text-lg">暂无内容</p>
-              <p className="text-gray-500 text-sm mt-2">请先创建一些互动内容</p>
+              <p className="text-gray-600 text-lg">
+                {t('home.no_content')}
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                {t('home.please_create_some_interactive_content')}
+              </p>
             </div>
           )}
           
@@ -260,7 +275,7 @@ export default function HomePage() {
               href="/content"
               className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 font-semibold"
             >
-              查看更多内容
+              {t('home.view_more_content')}
             </Link>
           </div>
         </div>
@@ -270,27 +285,39 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl font-bold text-blue-600 mb-2">{contents.length}+</div>
-              <div className="text-gray-600">互动内容</div>
+              <div className="text-gray-600">
+                {t('home.interactive_content')}
+              </div>
             </div>
             <div>
               <div className="text-3xl font-bold text-purple-600 mb-2">6+</div>
-              <div className="text-gray-600">学科领域</div>
+              <div className="text-gray-600">
+                {t('home.subject_areas')}
+              </div>
             </div>
             <div>
               <div className="text-3xl font-bold text-green-600 mb-2">24/7</div>
-              <div className="text-gray-600">AI生成</div>
+              <div className="text-gray-600">
+                {t('home.ai_generation')}
+              </div>
             </div>
             <div>
               <div className="text-3xl font-bold text-orange-600 mb-2">∞</div>
-              <div className="text-gray-600">学习可能</div>
+              <div className="text-gray-600">
+                {t('home.learning_possibilities')}
+              </div>
             </div>
           </div>
         </div>
 
         {/* 页脚 */}
         <footer className="text-center text-gray-500 py-8">
-          <p className="mb-2">© 2024 AI互动教育平台. 让学习更生动有趣.</p>
-          <p className="text-sm">基于AI技术，为教育赋能</p>
+          <p className="mb-2">
+            {t('common.copyright')} 2024 AI互动教育平台. {t('home.makes_learning_more_dynamic_and_interesting')}
+          </p>
+          <p className="text-sm">
+            {t('home.based_on_ai_technology_empowers_education')}
+          </p>
         </footer>
       </div>
     </div>

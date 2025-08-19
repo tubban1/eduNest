@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CollectionListDialog from './CollectionListDialog';
@@ -23,7 +24,10 @@ interface ContentCardProps {
 }
 
 export default function ContentCard({ content, isAuthenticated, editMode, lists, refreshLists }: ContentCardProps) {
+  const { t } = useTranslation(['content', 'common']);
   const [showDialog, setShowDialog] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const router = useRouter();
 
   // 新增：实现handleCreateList并传递给CollectionListDialog
@@ -63,7 +67,7 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
           </h3>
           <div className="flex flex-wrap gap-2 mb-2">
             <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
-              {content.language_code === 'zh-CN' ? '中文' : 'English'}
+              {mounted ? t(`languages.${content.language_code === 'zh-CN' ? 'zhCN' : 'enUS'}`, { ns: 'content', defaultValue: content.language_code === 'zh-CN' ? '中文' : 'English' }) : (content.language_code === 'zh-CN' ? '中文' : 'English')}
             </span>
           </div>
           {/* 标签块状显示，优先显示tags，没有则回退knowledge_point */}
@@ -85,7 +89,9 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
               <button
                 onClick={handleCollectionClick}
                 className="px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-blue-100 hover:text-blue-700 text-xs transition"
-              >收藏</button>
+              >
+                {mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
+              </button>
             )}
           </div>
           {editMode && (
@@ -94,7 +100,7 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
                 onClick={handleEditClick}
                 className="block w-full px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700 transition-colors text-sm"
               >
-                编辑
+                {mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
               </button>
             </div>
           )}

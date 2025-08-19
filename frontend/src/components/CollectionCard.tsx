@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Heart, BookOpen, Edit3, Copy, Trash2, ThumbsUp, X, Eye, Bookmark } from 'lucide-react';
 import CollectionListDialog from './CollectionListDialog';
 import { api } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 interface CollectionContent {
   id: string;
@@ -28,13 +29,17 @@ interface CollectionCardProps {
   content: CollectionContent;
   collectionInfo: CollectionInfo;
   onAction: (action: string, contentId: string, listId?: string) => Promise<void>;
+  refreshLists?: () => Promise<void>;
 }
 
-export default function CollectionCard({ content, collectionInfo, onAction }: CollectionCardProps) {
+export default function CollectionCard({ content, collectionInfo, onAction, refreshLists }: CollectionCardProps) {
+  const { t } = useTranslation(['content', 'common']);
   const [isLiked, setIsLiked] = useState(collectionInfo.is_liked || false);
   const [showActions, setShowActions] = useState(false);
   const [showCollectionDialog, setShowCollectionDialog] = useState(false);
   const [collectionLists, setCollectionLists] = useState<any[]>([]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // 监听 collectionInfo 的变化，更新喜欢状态
   useEffect(() => {
@@ -130,8 +135,8 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
   };
 
   return (
-    <>
-      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group">
+    <Link href={`/content/${content.short_id || content.id}`} className="block">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer">
         {/* 封面 */}
         <div className={`h-32 ${getCoverColor()} relative overflow-hidden`}>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -143,6 +148,7 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
               <button
                 onClick={() => setShowActions(!showActions)}
                 className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
+                title={mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
               >
                 <Edit3 className="w-4 h-4" />
               </button>
@@ -157,28 +163,30 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                查看
+                {mounted ? t('view', { ns: 'common', defaultValue: 'View' }) : 'View'}
               </Link>
               <Link
                 href={`/content/edit/${content.id}`}
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
-                编辑
+                {mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
               </Link>
               <button
                 onClick={() => copyToClipboard(content.title)}
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                title={mounted ? t('copy', { ns: 'common', defaultValue: 'Copy' }) : 'Copy'}
               >
                 <Copy className="w-4 h-4 mr-2" />
-                复制
+                {mounted ? t('copy', { ns: 'common', defaultValue: 'Copy' }) : 'Copy'}
               </button>
               <button
                 onClick={() => handleAction('collect')}
                 className="flex items-center w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                title={mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
               >
                 <Bookmark className="w-4 h-4 mr-2" />
-                收藏
+                {mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
               </button>
             </div>
           )}
@@ -212,16 +220,11 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
 
           {/* 快速操作按钮 */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-            <Link
-              href={`/content/${content.short_id || content.id}`}
-              className="flex items-center text-sm text-blue-600 hover:text-blue-700 transition-colors"
-            >
-              <Eye className="w-4 h-4 mr-1" />
-              查看
-            </Link>
+            {/* 删除“查看”按钮，这里只保留edit和like/collect等 */}
             <div className="flex items-center space-x-3">
               <button
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.preventDefault();
                   const newAction = isLiked ? 'unlike' : 'like';
                   await handleAction(newAction);
                 }}
@@ -230,17 +233,31 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
                     ? 'text-red-600 hover:text-red-700' 
                     : 'text-gray-600 hover:text-gray-700'
                 }`}
+                title={isLiked ? (mounted ? t('liked', { ns: 'content', defaultValue: 'Liked' }) : 'Liked') : (mounted ? t('like', { ns: 'content', defaultValue: 'Like' }) : 'Like')}
               >
                 <Heart className={`w-4 h-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
-                {isLiked ? '已喜欢' : '喜欢'}
+                {isLiked ? (mounted ? t('liked', { ns: 'content', defaultValue: 'Liked' }) : 'Liked') : (mounted ? t('like', { ns: 'content', defaultValue: 'Like' }) : 'Like')}
               </button>
               <button
-                onClick={() => handleAction('collect')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleAction('collect');
+                }}
                 className="flex items-center text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                title={mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
               >
                 <Bookmark className="w-4 h-4 mr-1" />
-                收藏
+                {mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
               </button>
+              {/* edit按钮不变 */}
+              <Link
+                href={`/content/edit/${content.id}`}
+                className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                onClick={e => e.stopPropagation()}
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                {mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
+              </Link>
             </div>
           </div>
         </div>
@@ -256,6 +273,6 @@ export default function CollectionCard({ content, collectionInfo, onAction }: Co
         refreshLists={handleRefreshLists}
         contentId={content.id}
       />
-    </>
+    </Link>
   );
 } 

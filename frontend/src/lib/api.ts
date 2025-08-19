@@ -289,6 +289,10 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  async getCollectionsByContent(contentId: string) {
+    return this._request<{ success: boolean; data: any[] }>(`/user_collections/content/${contentId}`);
+  }
 }
 
 // 创建并导出 API 实例

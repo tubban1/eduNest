@@ -7,6 +7,7 @@ import Logo from '@/components/Logo';
 import LoginRequired from '@/components/LoginRequired';
 import CollectionCard from '@/components/CollectionCard';
 import { api } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 interface CollectionList {
   id: string;
@@ -33,12 +34,15 @@ interface CollectionContent {
 }
 
 export default function CollectionsPage() {
+  const { t } = useTranslation(['content', 'common', 'navigation']);
   const { user, loading: authLoading } = useAuth();
   const [collectionLists, setCollectionLists] = useState<CollectionList[]>([]);
   const [collections, setCollections] = useState<CollectionContent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeList, setActiveList] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // 获取收藏列表
   const fetchCollectionLists = async () => {
@@ -150,7 +154,7 @@ export default function CollectionsPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">验证中...</p>
+          <p className="text-gray-600">{mounted ? t('verifying', { ns: 'common', defaultValue: '验证中...' }) : 'Verifying...'}</p>
         </div>
       </div>
     );
@@ -160,130 +164,132 @@ export default function CollectionsPage() {
   if (!user) {
     return (
       <LoginRequired 
-        title="请先登录"
-        description="登录后查看您的收藏内容"
+        title={mounted ? t('loginRequired', { ns: 'auth', defaultValue: '请先登录' }) : 'Please login'}
+        description={mounted ? t('loginRequiredDesc', { ns: 'auth', defaultValue: '登录后查看您的收藏内容' }) : 'Login to view your collections'}
         showSidebar={true}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        {/* 左侧栏 */}
+    <div className="flex min-h-screen bg-gray-50">
+      {/* 左侧栏 */}
+      <div className="h-screen sticky top-0 left-0 z-30">
         <Sidebar />
-        
-        {/* 右侧主区 */}
-        <div className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto">
-            {/* Logo */}
-            <div className="flex justify-center mb-6">
-              <Logo size="md" />
-            </div>
-            
-            {/* 页面标题 */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">我的收藏</h1>
-              <p className="text-gray-600">管理您收藏的所有内容</p>
-            </div>
-
-            {/* 收藏列表选择 */}
-            <div className="mb-6">
-              <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm">
-                {/* 全部收藏 Tab */}
+      </div>
+      {/* 右侧主区 */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <Logo size="md" />
+          </div>
+          {/* 页面标题 */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{mounted ? t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }) : 'My Collections'}</h1>
+            <p className="text-gray-600">{mounted ? t('manageCollections', { ns: 'content', defaultValue: 'Manage all your collected content' }) : 'Manage all your collected content'}</p>
+          </div>
+          {/* 收藏列表选择 */}
+          <div className="mb-6">
+            <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm">
+              {/* 全部收藏 Tab */}
+              <button
+                onClick={() => setActiveList('all')}
+                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeList === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {mounted ? t('allCollections', { ns: 'navigation', defaultValue: 'All Collections' }) : 'All Collections'}
+              </button>
+              {/* 我的喜欢 Tab */}
+              <button
+                onClick={() => setActiveList('liked')}
+                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  activeList === 'liked'
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {mounted ? t('myLikes', { ns: 'content', defaultValue: 'My Likes' }) : 'My Likes'}
+              </button>
+              {/* 各个收藏夹 Tab */}
+              {collectionLists.map((list) => (
                 <button
-                  onClick={() => setActiveList('all')}
+                  key={list.id}
+                  onClick={() => setActiveList(list.id)}
                   className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    activeList === 'all'
+                    activeList === list.id
                       ? 'bg-blue-600 text-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
-                  全部收藏
+                  {list.name}
                 </button>
-                {/* 我的喜欢 Tab */}
-                <button
-                  onClick={() => setActiveList('liked')}
-                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    activeList === 'liked'
-                      ? 'bg-red-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  我的喜欢
-                </button>
-                {/* 各个收藏夹 Tab */}
-                {collectionLists.map((list) => (
-                  <button
-                    key={list.id}
-                    onClick={() => setActiveList(list.id)}
-                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      activeList === list.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    {list.name}
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
-
-            {/* 错误信息 */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600">{error}</p>
-              </div>
-            )}
-
-            {/* 加载状态 */}
-            {loading && (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            )}
-
-            {/* 内容网格 */}
-            {!loading && collections.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {collections.map((item) => (
-                  <CollectionCard
-                    key={item.id}
-                    content={item.content}
-                    collectionInfo={{
-                      id: item.id,
-                      added_at: item.added_at,
-                      list_id: item.list_id,
-                      list_name: item.list_name,
-                      is_liked: item.is_liked
-                    }}
-                    onAction={handleCollectionAction}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* 空状态 */}
-            {!loading && collections.length === 0 && activeList && (
-              <div className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {activeList === 'all' ? '暂无收藏内容' : activeList === 'liked' ? '暂无喜欢内容' : '暂无收藏内容'}
-                </h3>
-                <p className="text-gray-500">
-                  {activeList === 'all' 
-                    ? '您还没有收藏任何内容，快去发现精彩内容吧！' 
-                    : activeList === 'liked'
-                    ? '您还没有喜欢任何内容，快去点赞精彩内容吧！'
-                    : '这个收藏列表还没有内容'}
-                </p>
-              </div>
-            )}
           </div>
+
+          {/* 错误信息 */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* 加载状态 */}
+          {loading && (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          )}
+
+          {/* 内容网格 */}
+          {!loading && collections.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {collections.map((item) => (
+                <CollectionCard
+                  key={item.id}
+                  content={item.content}
+                  collectionInfo={{
+                    id: item.id,
+                    added_at: item.added_at,
+                    list_id: item.list_id,
+                    list_name: item.list_name,
+                    is_liked: item.is_liked
+                  }}
+                  onAction={handleCollectionAction}
+                  refreshLists={refreshLists || (async () => {})}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* 空状态 */}
+          {!loading && collections.length === 0 && activeList && (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {activeList === 'all'
+                  ? (mounted ? t('noCollections', { ns: 'content', defaultValue: 'No collections yet' }) : 'No collections yet')
+                  : activeList === 'liked'
+                  ? (mounted ? t('noLikes', { ns: 'content', defaultValue: 'No likes yet' }) : 'No likes yet')
+                  : (mounted ? t('noCollections', { ns: 'content', defaultValue: 'No collections yet' }) : 'No collections yet')}
+              </h3>
+              <p className="text-gray-500">
+                {activeList === 'all'
+                  ? (mounted ? t('noCollectionsDesc', { ns: 'content', defaultValue: 'You have not collected any content yet, go discover something!' }) : 'You have not collected any content yet, go discover something!')
+                  : activeList === 'liked'
+                  ? (mounted ? t('noLikesDesc', { ns: 'content', defaultValue: 'You have not liked any content yet, go like something!' }) : 'You have not liked any content yet, go like something!')
+                  : (mounted ? t('noCollectionsListDesc', { ns: 'content', defaultValue: 'This collection list is empty' }) : 'This collection list is empty')}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
