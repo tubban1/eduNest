@@ -8,11 +8,15 @@ import LoginRequired from '@/components/LoginRequired';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/hooks/useAuth';
 import { api, Content } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 function MyContentList({ userId, lists, refreshLists }: { userId: string, lists: any[], refreshLists: () => Promise<void> }) {
+  const { t } = useTranslation(['content', 'common']);
   const [myContent, setMyContent] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
@@ -22,19 +26,19 @@ function MyContentList({ userId, lists, refreshLists }: { userId: string, lists:
       setMyContent(list);
       setLoading(false);
     }).catch((e: any) => {
-      setError(e.message || '获取内容失败');
+      setError(e.message || t('fetchContentError', { ns: 'content', defaultValue: '获取内容失败' }));
       setLoading(false);
     });
   }, [userId]);
-  if (loading) return <div className="text-gray-400">加载中...</div>;
+  if (loading) return <div className="text-gray-400">{mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...'}</div>;
   if (error) return <div className="text-red-600">{error}</div>;
-  if (!myContent.length) return <div className="text-gray-400">暂无创作内容</div>;
+  if (!myContent.length) return <div className="text-gray-400">{mounted ? t('noContent', { ns: 'content', defaultValue: '暂无创作内容' }) : 'No content yet'}</div>;
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {myContent.map(item => (
         <div key={item.id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 flex flex-col gap-2">
           <ContentCard 
-            content={item} 
+            content={{ ...item, language_code: item.language_code || 'zh-CN' }}
             isAuthenticated={true} 
             editMode={true} 
             lists={lists} 
@@ -62,10 +66,13 @@ interface UserCollection {
 }
 
 function CollectionTree({ userId }: { userId: string }) {
+  const { t } = useTranslation(['content', 'common']);
   const [lists, setLists] = useState<CollectionList[]>([]);
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
@@ -77,7 +84,7 @@ function CollectionTree({ userId }: { userId: string }) {
       setCollections(colRes as UserCollection[]);
       setLoading(false);
     }).catch((e: any) => {
-      setError(e.message || '获取收藏失败');
+      setError(e.message || t('fetchCollectionsError', { ns: 'content', defaultValue: '获取收藏失败' }));
       setLoading(false);
     });
   }, [userId]);
@@ -96,7 +103,7 @@ function CollectionTree({ userId }: { userId: string }) {
           {collections.filter(c => c.list_id === node.id).map(c => (
             <div key={c.content_id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 flex flex-col gap-2">
               <ContentCard 
-                content={c.content} 
+                content={{ ...c.content, language_code: c.content.language_code || 'zh-CN' }}
                 isAuthenticated={true} 
                 editMode={false}
                 lists={[]}
@@ -113,18 +120,18 @@ function CollectionTree({ userId }: { userId: string }) {
       </div>
     ));
   }
-  if (loading) return <div className="text-gray-400">加载中...</div>;
+  if (loading) return <div className="text-gray-400">{mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...'}</div>;
   if (error) return <div className="text-red-600">{error}</div>;
-  if (!lists.length) return <div className="text-gray-400">暂无收藏列表</div>;
+  if (!lists.length) return <div className="text-gray-400">{mounted ? t('noCollections', { ns: 'content', defaultValue: '暂无收藏列表' }) : 'No collections yet'}</div>;
   return <div>{renderTree(buildTree(lists))}</div>;
 }
 
 export default function ContentPage() {
+  const { t } = useTranslation(['content', 'common', 'navigation']);
   const { user, loading: authLoading } = useAuth();
-  const [tab, setTab] = useState<'my-content' | 'my-collections'>('my-content');
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [lists, setLists] = useState<any[]>([]);
-
-  // 获取收藏夹列表
   const fetchLists = async () => {
     if (!user) return;
     try {
@@ -137,60 +144,46 @@ export default function ContentPage() {
       setLists([]);
     }
   };
-
   useEffect(() => {
     if (user) fetchLists();
   }, [user]);
-
   if (authLoading) {
     return (
       <div className="text-center text-gray-400 py-12">
-        <div>加载中...</div>
+        <div>{mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...'}</div>
         <button 
           onClick={() => window.location.reload()} 
           className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
         >
-          刷新页面
+          {mounted ? t('refresh', { ns: 'common', defaultValue: '刷新页面' }) : 'Refresh' }
         </button>
       </div>
     );
   }
-  
   if (!user) {
     return (
       <LoginRequired 
-        title="请先登录"
-        description="登录后查看您的内容"
+        title={mounted ? t('loginRequired', { ns: 'auth', defaultValue: '请先登录' }) : 'Please login'}
+        description={mounted ? t('loginRequiredDesc', { ns: 'auth', defaultValue: '登录后查看您的内容' }) : 'Login to view your content'}
         showSidebar={true}
       />
     );
   }
-
+  // 只保留“我的创作”内容列表
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-900">
-      <Sidebar />
-      <main className="flex-1 p-8 bg-white">
+      <div className="h-screen sticky top-0 left-0 z-30">
+        <Sidebar />
+      </div>
+      <main className="flex-1 p-8 bg-white overflow-y-auto">
         <div className="flex justify-center mb-6">
           <Logo size="md" />
         </div>
-        {tab === 'my-content' && (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">我创作的内容</h2>
-              <a href="/content/create" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">新建内容</a>
-            </div>
-            <MyContentList userId={user.id} lists={lists} refreshLists={fetchLists} />
-          </>
-        )}
-        {tab === 'my-collections' && (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">我的收藏列表</h2>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">新建分组</button>
-            </div>
-            <CollectionTree userId={user.id} />
-          </>
-        )}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">{mounted ? t('myContent', { ns: 'navigation', defaultValue: '我创作的内容' }) : 'My Creations'}</h2>
+          <a href="/content/create" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">{mounted ? t('createContent', { ns: 'navigation', defaultValue: '新建内容' }) : 'Create Content'}</a>
+        </div>
+        <MyContentList userId={user.id} lists={lists} refreshLists={fetchLists} />
       </main>
     </div>
   );
