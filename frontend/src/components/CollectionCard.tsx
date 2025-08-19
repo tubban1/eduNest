@@ -269,7 +269,7 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
         onClose={() => setShowCollectionDialog(false)}
         lists={collectionLists}
         onSave={() => {}}
-        onCreateList={createNewList}
+        onCreateList={list => createNewList(list.name, list.visibility)}
         refreshLists={handleRefreshLists}
         contentId={content.id}
       />
