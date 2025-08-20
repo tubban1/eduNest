@@ -1,14 +1,7 @@
 // 前端环境配置
 export const config = {
-  // API 配置 - 强制修复生产环境URL，确保包含www前缀
-  API_BASE_URL: (() => {
-    // 强制检查并修复生产环境URL
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-      // 生产环境强制使用www.edunest.app
-      return 'https://www.edunest.app/api';
-    }
-    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
-  })(),
+  // API 配置 - 使用环境变量，生产环境应该设置为 https://www.edunest.app/api
+  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://www.edunest.app/api' : 'http://localhost:3001/api'),
   
   // Supabase 配置 - 添加默认值避免undefined
   SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zayoczhybuegvtpcsgso.supabase.co',
@@ -61,39 +54,4 @@ export const config = {
     TITLE_MIN_LENGTH: 2,
     TITLE_MAX_LENGTH: 100,
   },
-};
-
-// 环境检查
-export const validateEnvironment = () => {
-  const requiredEnvVars = [
-    'NEXT_PUBLIC_API_BASE_URL',
-    'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY'
-  ];
-  
-  const missingVars = requiredEnvVars.filter(
-    varName => !process.env[varName]
-  );
-  
-  if (missingVars.length > 0) {
-    console.warn('缺少环境变量:', missingVars);
-    return false;
-  }
-  
-  return true;
-};
-
-// 生产环境强制检查 - 改为警告而不是错误
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  if (!validateEnvironment()) {
-    console.warn('生产环境缺少必要的环境变量，使用默认值');
-  }
-  
-  // 强制输出生产环境API URL
-  console.log('生产环境强制API URL:', config.API_BASE_URL);
-}
-
-// 开发环境检查
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  validateEnvironment();
-} 
+}; 
