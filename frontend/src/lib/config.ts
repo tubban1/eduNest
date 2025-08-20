@@ -3,9 +3,9 @@ export const config = {
   // API 配置 - 移除硬编码的localhost
   API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://eduNest.app/api' : 'http://localhost:3001/api'),
   
-  // Supabase 配置
-  SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  // Supabase 配置 - 添加默认值避免undefined
+  SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zayoczhybuegvtpcsgso.supabase.co',
+  SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheW9jeWh5YnVlZ3Z0cGNzZ3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5NTA1MDksImV4cCI6MjA2MzUyNjUwOX0.ptIKB-kR6q9hvQo5dYiU-wPC5EY2PQf1zidmo9w5nU8',
   
   // 应用配置
   APP_NAME: 'AI 互动教育平台',
@@ -76,10 +76,10 @@ export const validateEnvironment = () => {
   return true;
 };
 
-// 生产环境强制检查
+// 生产环境强制检查 - 改为警告而不是错误
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
   if (!validateEnvironment()) {
-    console.error('生产环境缺少必要的环境变量');
+    console.warn('生产环境缺少必要的环境变量，使用默认值');
   }
 }
 

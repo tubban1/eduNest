@@ -40,7 +40,21 @@ const resources = {
     content: zhCN_content,
     home: zhCN_home,
   },
+  'zh': {  // 添加zh别名，映射到zh-CN
+    common: zhCN_common,
+    navigation: zhCN_navigation,
+    auth: zhCN_auth,
+    content: zhCN_content,
+    home: zhCN_home,
+  },
   'en-US': {
+    common: enUS_common,
+    navigation: enUS_navigation,
+    auth: enUS_auth,
+    content: enUS_content,
+    home: enUS_home,
+  },
+  'en': {  // 添加en别名，映射到en-US
     common: enUS_common,
     navigation: enUS_navigation,
     auth: enUS_auth,
@@ -54,7 +68,21 @@ const resources = {
     content: deDE_content,
     home: deDE_home,
   },
+  'de': {  // 添加de别名，映射到de-DE
+    common: deDE_common,
+    navigation: deDE_navigation,
+    auth: deDE_auth,
+    content: deDE_content,
+    home: deDE_home,
+  },
   'fr-FR': {
+    common: frFR_common,
+    navigation: frFR_navigation,
+    auth: frFR_auth,
+    content: frFR_content,
+    home: frFR_home,
+  },
+  'fr': {  // 添加fr别名，映射到fr-FR
     common: frFR_common,
     navigation: frFR_navigation,
     auth: frFR_auth,
@@ -69,16 +97,32 @@ i18n
   .init({
     resources,
     fallbackLng: DEFAULT_LANGUAGE,
-    supportedLngs: SUPPORTED_LANGUAGES.map(l => l.code),
+    supportedLngs: SUPPORTED_LANGUAGES.map(l => l.code).concat(['zh', 'en', 'de', 'fr']), // 包含别名
     ns: ['common', 'navigation', 'auth', 'content', 'home'],
     defaultNS: 'common',
     interpolation: { escapeValue: false },
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
+      // 添加语言映射
+      lookupLocalStorage: 'i18nextLng',
+      lookupQuerystring: 'lng',
+      lookupCookie: 'i18next',
+      lookupSessionStorage: 'i18nextLng',
+      lookupFromPathIndex: 0,
+      lookupFromSubdomainIndex: 0,
+      // 语言标准化
+      convertDetectedLanguage: (lng: string) => {
+        // 将zh映射到zh-CN，en映射到en-US等
+        if (lng === 'zh') return 'zh-CN';
+        if (lng === 'en') return 'en-US';
+        if (lng === 'de') return 'de-DE';
+        if (lng === 'fr') return 'fr-FR';
+        return lng;
+      }
     },
     react: { useSuspense: false },
-    debug: true,
+    debug: process.env.NODE_ENV === 'development', // 只在开发环境开启debug
   });
 
 export default i18n;
