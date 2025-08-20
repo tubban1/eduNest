@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 interface AuthUser {
   id: string;
@@ -181,13 +182,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Google登录
+  // Google登录（使用supabase-js发起，保证PKCE流程）
   const signInWithGoogle = async () => {
     try {
-      const oauthUrl = `https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin + '/auth/callback')}`;
-      
-      window.location.href = oauthUrl;
-      
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: 'select_account' }
+        }
+      });
       return { error: null };
     } catch (error: any) {
       return { error: error.message || '登录失败' };
