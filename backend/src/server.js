@@ -23,7 +23,9 @@ const { supabase } = require('./services/database');
 // 验证配置
 if (!config.isConfigValid) {
   logger.error('配置验证失败，请检查环境变量');
-  process.exit(1);
+  if (!process.env.VERCEL) {
+    process.exit(1);
+  }
 }
 
 const app = express();
@@ -115,40 +117,35 @@ app.use('*', (req, res) => {
 // 错误处理中间件
 app.use(errorHandler);
 
-const PORT = config.PORT || 3001;
-
-// 启动服务器
-const startServer = async () => {
-  try {
-    // 在Vercel环境中，不需要启动HTTP服务器
-    if (process.env.VERCEL) {
-      logger.info('在Vercel环境中运行，跳过HTTP服务器启动');
-      return;
-    }
-    
-    // 验证数据库连接（仅在非Vercel环境中）
+// 在Vercel环境中，不需要启动HTTP服务器
+if (!process.env.VERCEL) {
+  const PORT = config.PORT || 3001;
+  
+  // 启动服务器
+  const startServer = async () => {
     try {
-      const DatabaseService = require('./services/database');
-      await DatabaseService.getContents();
-      logger.info('数据库连接验证成功');
-    } catch (dbError) {
-      logger.warn('数据库连接验证失败，但继续启动服务器:', dbError.message);
-    }
-    
-    app.listen(PORT, () => {
-      logger.info(`服务器运行在端口 ${PORT}`);
-      logger.info(`环境: ${config.NODE_ENV}`);
-      logger.info(`API 文档: http://localhost:${PORT}/api/docs`);
-      logger.info('✅ 服务器启动成功');
-    });
-  } catch (error) {
-    logger.error('服务器启动失败:', error.message);
-    if (!process.env.VERCEL) {
+      // 验证数据库连接（仅在非Vercel环境中）
+      try {
+        const DatabaseService = require('./services/database');
+        await DatabaseService.getContents();
+        logger.info('数据库连接验证成功');
+      } catch (dbError) {
+        logger.warn('数据库连接验证失败，但继续启动服务器:', dbError.message);
+      }
+      
+      app.listen(PORT, () => {
+        logger.info(`服务器运行在端口 ${PORT}`);
+        logger.info(`环境: ${config.NODE_ENV}`);
+        logger.info(`API 文档: http://localhost:${PORT}/api/docs`);
+        logger.info('✅ 服务器启动成功');
+      });
+    } catch (error) {
+      logger.error('服务器启动失败:', error.message);
       process.exit(1);
     }
-  }
-};
-
-startServer();
+  };
+  
+  startServer();
+}
 
 module.exports = app; 
