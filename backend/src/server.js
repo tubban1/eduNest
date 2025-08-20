@@ -74,6 +74,29 @@ app.get('/health', (req, res) => {
   });
 });
 
+// 简单诊断端点 - 测试基本功能
+app.get('/api/diagnose', (req, res) => {
+  try {
+    res.json({
+      message: '诊断端点工作正常',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'unknown',
+      vercel: !!process.env.VERCEL,
+      config: {
+        isValid: config.isConfigValid,
+        hasSupabase: !!config.SUPABASE_URL,
+        hasJwt: !!config.JWT_SECRET
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: '诊断端点失败',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // API 测试端点
 app.get('/api/test', (req, res) => {
   try {
