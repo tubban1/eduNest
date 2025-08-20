@@ -1,7 +1,14 @@
 // 前端环境配置
 export const config = {
-  // API 配置 - 修复生产环境URL，确保包含www前缀
-  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://www.edunest.app/api' : 'http://localhost:3001/api'),
+  // API 配置 - 强制修复生产环境URL，确保包含www前缀
+  API_BASE_URL: (() => {
+    // 强制检查并修复生产环境URL
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+      // 生产环境强制使用www.edunest.app
+      return 'https://www.edunest.app/api';
+    }
+    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
+  })(),
   
   // Supabase 配置 - 添加默认值避免undefined
   SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zayoczhybuegvtpcsgso.supabase.co',
@@ -81,6 +88,9 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
   if (!validateEnvironment()) {
     console.warn('生产环境缺少必要的环境变量，使用默认值');
   }
+  
+  // 强制输出生产环境API URL
+  console.log('生产环境强制API URL:', config.API_BASE_URL);
 }
 
 // 开发环境检查
