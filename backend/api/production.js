@@ -50,6 +50,26 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// 环境变量检查端点
+app.get('/api/debug/env', (req, res) => {
+  res.json({
+    message: '环境变量检查',
+    timestamp: new Date().toISOString(),
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      SUPABASE_URL: process.env.SUPABASE_URL ? '已设置' : '未设置',
+      SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY ? '已设置' : '未设置',
+      JWT_SECRET: process.env.JWT_SECRET ? '已设置' : '未设置',
+      ARK_API_KEY: process.env.ARK_API_KEY ? '已设置' : '未设置'
+    },
+    supabase: {
+      connected: !!supabase,
+      url: process.env.SUPABASE_URL || '未设置',
+      keyLength: process.env.SUPABASE_SERVICE_KEY ? process.env.SUPABASE_SERVICE_KEY.length : 0
+    }
+  });
+});
+
 // 集合列表端点
 app.get('/api/collection_lists', async (req, res) => {
   try {
