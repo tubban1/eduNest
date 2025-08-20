@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -12,101 +13,82 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       try {
         setStatus('正在验证登录状态...');
-        
-        // 从URL hash中提取token参数
+
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get('code');
+        const errorDesc = url.searchParams.get('error_description') || url.searchParams.get('error');
+
+        // 1) 优先处理 PKCE code flow
+        if (errorDesc) {
+          setStatus('认证失败: ' + errorDesc);
+          setTimeout(() => router.push('/login?error=oauth_error'), 1500);
+          return;
+        }
+
+        if (code) {
+          // 通过 Supabase 交换 code 为 session
+          const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+          if (error) {
+            setStatus('认证失败: 无法交换会话');
+            setTimeout(() => router.push('/login?error=exchange_failed'), 1500);
+            return;
+          }
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token || '';
+          if (!accessToken) {
+            setStatus('认证失败: 会话为空');
+            setTimeout(() => router.push('/login?error=no_session'), 1500);
+            return;
+          }
+          // 同步API客户端token
+          api.setToken(accessToken);
+          window.dispatchEvent(new Event('sessionChanged'));
+          setStatus('登录成功，正在跳转...');
+          setTimeout(() => { window.location.href = '/content'; }, 800);
+          return;
+        }
+
+        // 2) 兼容旧的 hash fragment 流程（#access_token=...）
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
-        
         const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        const expiresAt = params.get('expires_at');
-        const expiresIn = params.get('expires_in');
-        const tokenType = params.get('token_type');
-        
+        const refreshToken = params.get('refresh_token') || '';
+
         if (!accessToken) {
           setStatus('认证失败: 未找到访问令牌');
-          setTimeout(() => {
-            router.push('/login?error=no_token');
-          }, 2000);
+          setTimeout(() => { router.push('/login?error=no_token'); }, 1500);
           return;
         }
-        
-        // 验证token并获取用户信息
-        setStatus('正在获取用户信息...');
-        const userResponse = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/user', {
-          headers: {
-            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
-        
-        if (!userResponse.ok) {
-          setStatus('认证失败: 无法获取用户信息');
-          setTimeout(() => {
-            router.push('/login?error=user_fetch_failed');
-          }, 2000);
-          return;
-        }
-        
-        const userData = await userResponse.json();
-        
-        // 保存session到localStorage
-        const sessionData = {
+
+        // 设置 Supabase 会话
+        const { error: setErr } = await supabase.auth.setSession({
           access_token: accessToken,
-          refresh_token: refreshToken,
-          expires_in: expiresIn,
-          expires_at: expiresAt,
-          token_type: tokenType
-        };
-        localStorage.setItem('sb-zayoczhybuegvtpcsgso-auth-token', JSON.stringify(sessionData));
-        
-        // 重要：同步设置 API 客户端的 token
-        api.setToken(accessToken);
-        
-        // 触发自定义事件，通知 useAuth 重新检查认证状态
-        window.dispatchEvent(new Event('sessionChanged'));
-        
-        // 确保用户信息已保存到数据库
-        try {
-          const userInsertResponse = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users', {
-            method: 'POST',
-            headers: {
-              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'resolution=merge-duplicates'
-            },
-            body: JSON.stringify({
-              id: userData.id,
-              email: userData.email,
-              name: userData.user_metadata?.full_name || userData.user_metadata?.name,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-          });
-          
-          if (userInsertResponse.ok) {
-            // 用户信息保存成功
-          } else {
-            // 即使保存失败，也不影响登录流程
-          }
-        } catch (profileError) {
-          // 即使保存失败，也不影响登录流程
+          refresh_token: refreshToken
+        });
+        if (setErr) {
+          setStatus('认证失败: 无法建立会话');
+          setTimeout(() => router.push('/login?error=set_session_failed'), 1500);
+          return;
         }
-        
+
+        // 获取用户信息
+        setStatus('正在获取用户信息...');
+        const { data: userRes, error: userErr } = await supabase.auth.getUser();
+        if (userErr || !userRes?.user) {
+          setStatus('认证失败: 无法获取用户信息');
+          setTimeout(() => router.push('/login?error=user_fetch_failed'), 1500);
+          return;
+        }
+
+        // 同步设置 API 客户端的 token
+        api.setToken(accessToken);
+        window.dispatchEvent(new Event('sessionChanged'));
+
         setStatus('登录成功，正在跳转...');
-        
-        // 延迟跳转，确保状态更新
-        setTimeout(() => {
-          // 使用 window.location.href 而不是 router.replace，确保完全重新加载
-          window.location.href = '/content';
-        }, 1500);
-        
+        setTimeout(() => { window.location.href = '/content'; }, 800);
       } catch (error) {
         setStatus('处理登录时出错: ' + (error as Error).message);
-        setTimeout(() => {
-          router.push('/login?error=callback_failed');
-        }, 2000);
+        setTimeout(() => { router.push('/login?error=callback_failed'); }, 1500);
       }
     };
 
