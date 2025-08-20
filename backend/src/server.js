@@ -124,6 +124,12 @@ if (!process.env.VERCEL) {
   // 启动服务器
   const startServer = async () => {
     try {
+      // 在Vercel环境中，不需要启动HTTP服务器
+      if (process.env.VERCEL) {
+        logger.info('在Vercel环境中运行，跳过HTTP服务器启动');
+        return;
+      }
+      
       // 验证数据库连接（仅在非Vercel环境中）
       try {
         const DatabaseService = require('./services/database');
@@ -141,7 +147,9 @@ if (!process.env.VERCEL) {
       });
     } catch (error) {
       logger.error('服务器启动失败:', error.message);
-      process.exit(1);
+      if (!process.env.VERCEL) {
+        process.exit(1);
+      }
     }
   };
   
