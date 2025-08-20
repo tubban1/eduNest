@@ -74,21 +74,48 @@ app.get('/api/debug/env', (req, res) => {
 app.get('/api/collection_lists', async (req, res) => {
   try {
     if (supabase) {
+      // 使用真实数据库
       const { data, error } = await supabase
         .from('collection_lists')
         .select('*')
         .order('order_index', { ascending: true });
       
       if (error) throw error;
-      res.json(data || []);
+      
+      // 返回前端期望的格式
+      res.json({
+        success: true,
+        data: data || []
+      });
     } else {
-      res.json([
-        { id: 'default', name: '默认收藏夹', visibility: 'public', order_index: 0 }
-      ]);
+      // 使用模拟数据
+      res.json({
+        success: true,
+        data: [
+          {
+            id: 'default',
+            name: '默认收藏夹',
+            visibility: 'public',
+            order_index: 0,
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'personal',
+            name: '个人收藏',
+            visibility: 'private',
+            order_index: 1,
+            created_at: new Date().toISOString()
+          }
+        ]
+      });
     }
   } catch (error) {
     console.error('集合列表错误:', error);
-    res.status(500).json({ error: '获取收藏夹失败', message: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: '获取收藏夹失败',
+      message: error.message 
+    });
   }
 });
 
@@ -104,15 +131,172 @@ app.get('/api/content', async (req, res) => {
       
       const { data, error } = await query;
       if (error) throw error;
-      res.json(data || []);
+      
+      // 返回前端期望的格式
+      res.json({
+        success: true,
+        data: data || []
+      });
     } else {
-      res.json([
-        { id: 'mock-1', title: '示例内容', language_code: 'zh-CN', created_by: 'mock-user' }
-      ]);
+      // 使用模拟数据
+      res.json({
+        success: true,
+        data: [
+          { id: 'mock-1', title: '示例内容', language_code: 'zh-CN', created_by: 'mock-user' }
+        ]
+      });
     }
   } catch (error) {
     console.error('内容获取错误:', error);
-    res.status(500).json({ error: '获取内容失败', message: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: '获取内容失败',
+      message: error.message 
+    });
+  }
+});
+
+// 用户内容端点
+app.get('/api/user_content', async (req, res) => {
+  try {
+    const { user_id } = req.query;
+    
+    if (supabase && user_id) {
+      // 使用真实数据库
+      const { data, error } = await supabase
+        .from('content')
+        .select('*')
+        .eq('created_by', user_id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      res.json({
+        success: true,
+        data: data || []
+      });
+    } else {
+      // 使用模拟数据
+      res.json({
+        success: true,
+        data: [
+          {
+            id: 'user-content-1',
+            short_id: 'uc1234567',
+            title: '用户创建的内容',
+            language_code: 'zh-CN',
+            created_by: user_id || 'mock-user',
+            created_at: new Date().toISOString()
+          }
+        ]
+      });
+    }
+  } catch (error) {
+    console.error('用户内容错误:', error);
+    res.status(500).json({ 
+      success: false,
+      error: '获取用户内容失败',
+      message: error.message 
+    });
+  }
+});
+
+// 用户收藏端点
+app.get('/api/user_collections', async (req, res) => {
+  try {
+    const { user_id } = req.query;
+    
+    if (supabase && user_id) {
+      // 使用真实数据库
+      const { data, error } = await supabase
+        .from('user_collections')
+        .select(`
+          *,
+          content:content_id(*),
+          list:list_id(*)
+        `)
+        .eq('user_id', user_id)
+        .order('added_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      res.json({
+        success: true,
+        data: data || []
+      });
+    } else {
+      // 使用模拟数据
+      res.json({
+        success: true,
+        data: [
+          {
+            id: 'user-collection-1',
+            user_id: user_id || 'mock-user',
+            content_id: 'mock-content-1',
+            list_id: 'default',
+            added_at: new Date().toISOString()
+          }
+        ]
+      });
+    }
+  } catch (error) {
+    console.error('用户收藏错误:', error);
+    res.status(500).json({ 
+      success: false,
+      error: '获取用户收藏失败',
+      message: error.message 
+    });
+  }
+});
+
+// 用户收藏分组端点（支持前端的分组功能）
+app.get('/api/user_collections/group/:listId', async (req, res) => {
+  try {
+    const { listId } = req.params;
+    const { user_id } = req.query;
+    
+    if (supabase && user_id && listId !== 'all') {
+      // 使用真实数据库
+      const { data, error } = await supabase
+        .from('user_collections')
+        .select(`
+          *,
+          content:content_id(*)
+        `)
+        .eq('user_id', user_id)
+        .eq('list_id', listId)
+        .order('added_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      res.json({
+        success: true,
+        data: data || []
+      });
+    } else {
+      // 使用模拟数据
+      res.json({
+        success: true,
+        data: [
+          {
+            id: 'user-collection-1',
+            content: {
+              id: 'mock-content-1',
+              title: '示例收藏内容',
+              language_code: 'zh-CN'
+            },
+            added_at: new Date().toISOString()
+          }
+        ]
+      });
+    }
+  } catch (error) {
+    console.error('用户收藏分组错误:', error);
+    res.status(500).json({ 
+      success: false,
+      error: '获取用户收藏分组失败',
+      message: error.message 
+    });
   }
 });
 
