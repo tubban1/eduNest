@@ -2,8 +2,16 @@ const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 const config = require('../config');
 
-// 确保环境变量在验证之前加载
-require('dotenv').config({ path: '/Users/wahaha/Documents/Me/Project/cursor/edu/.env' });
+// 确保环境变量在验证之前加载 - 修复硬编码路径问题
+const envPath = process.env.NODE_ENV === 'production' 
+  ? undefined  // 生产环境让dotenv自动查找
+  : path.resolve(__dirname, '../../../.env');
+
+if (envPath) {
+  require('dotenv').config({ path: envPath });
+} else {
+  require('dotenv').config(); // 生产环境自动查找
+}
 
 // Supabase 配置验证
 const validateSupabaseConfig = () => {
@@ -17,10 +25,11 @@ const validateSupabaseConfig = () => {
   );
   
   if (missingConfigs.length > 0) {
+    console.warn('⚠️ 缺少 Supabase 配置:', missingConfigs);
     // 缺少 Supabase 配置，在开发模式下将使用模拟数据
   }
   
-  return true;
+  return missingConfigs.length === 0;
 };
 
 // 创建 Supabase 客户端

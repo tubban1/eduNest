@@ -72,6 +72,28 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API 测试端点
+app.get('/api/test', (req, res) => {
+  try {
+    res.json({ 
+      message: 'API 工作正常',
+      timestamp: new Date().toISOString(),
+      environment: config.NODE_ENV,
+      config: {
+        hasSupabaseUrl: !!config.SUPABASE_URL,
+        hasSupabaseKey: !!config.SUPABASE_SERVICE_KEY,
+        hasJwtSecret: !!config.JWT_SECRET,
+        hasArkKey: !!config.ARK_API_KEY
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'API 测试失败',
+      message: error.message 
+    });
+  }
+});
+
 // API 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/content', contentRoutes);
@@ -98,10 +120,20 @@ const PORT = config.PORT || 3001;
 // 启动服务器
 const startServer = async () => {
   try {
-    // 验证数据库连接
-    const DatabaseService = require('./services/database');
-    await DatabaseService.getContents();
-    logger.info('数据库连接验证成功');
+    // 在Vercel环境中，不需要启动HTTP服务器
+    if (process.env.VERCEL) {
+      logger.info('在Vercel环境中运行，跳过HTTP服务器启动');
+      return;
+    }
+    
+    // 验证数据库连接（仅在非Vercel环境中）
+    try {
+      const DatabaseService = require('./services/database');
+      await DatabaseService.getContents();
+      logger.info('数据库连接验证成功');
+    } catch (dbError) {
+      logger.warn('数据库连接验证失败，但继续启动服务器:', dbError.message);
+    }
     
     app.listen(PORT, () => {
       logger.info(`服务器运行在端口 ${PORT}`);
@@ -111,7 +143,9 @@ const startServer = async () => {
     });
   } catch (error) {
     logger.error('服务器启动失败:', error.message);
-    process.exit(1);
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   }
 };
 
