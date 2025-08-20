@@ -43,6 +43,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// 添加Supabase客户端调试
+console.log('Supabase客户端创建完成:', {
+  hasAuth: !!supabase.auth,
+  hasStorage: typeof window !== 'undefined',
+  storageKey: 'sb-zayoczhybuegvtpcsgso-auth-token'
+});
+
 // 认证类型
 export type AuthUser = {
   id: string;
