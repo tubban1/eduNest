@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Logo from '../components/Logo';
 import Link from 'next/link';
+import { config } from '@/lib/config';
 
 // 定义内容类型
 interface Content {
@@ -37,17 +38,26 @@ export default function HomePage() {
 
   // 从数据库获取内容数据
   useEffect(() => {
-    const fetchContents = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
-          (process.env.NODE_ENV === 'production' ? 'https://eduNest.app/api' : 'http://localhost:3001/api');
-        const response = await fetch(`${apiUrl}/content/public?limit=6`);
-        const data = await response.json();
         
-        if (data.success && data.data && Array.isArray(data.data)) {
+        // 使用config中的API_BASE_URL
+        const apiBaseUrl = config.API_BASE_URL;
+        
+        const [contentRes, userRes] = await Promise.all([
+          fetch(`${apiBaseUrl}/content/public?limit=6`),
+          fetch(`${apiBaseUrl}/auth/me`, {
+            credentials: 'include'
+          })
+        ]);
+
+        const contentData = await contentRes.json();
+        const userData = await userRes.json();
+
+        if (contentData.success && contentData.data && Array.isArray(contentData.data)) {
           // 随机打乱内容顺序
-          const shuffled = data.data.sort(() => Math.random() - 0.5);
+          const shuffled = contentData.data.sort(() => Math.random() - 0.5);
           setContents(shuffled);
         }
       } catch (error) {
@@ -58,7 +68,7 @@ export default function HomePage() {
       }
     };
 
-    fetchContents();
+    fetchData();
   }, []);
 
   const handleSignOut = async () => {

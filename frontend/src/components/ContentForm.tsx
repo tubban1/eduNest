@@ -8,6 +8,7 @@ import LoginRequired from './LoginRequired';
 import Logo from './Logo';
 import AiLoadingAnimation from './AiLoadingAnimation';
 import { useTranslation } from 'react-i18next';
+import { config } from '@/lib/config';
 
 const DEFAULT_HTML = '<div id="app">{{ message }}</div>';
 const DEFAULT_CSS = 'body { font-family: sans-serif; } #app { padding: 20px; }';
@@ -603,7 +604,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
         requestBody.description = description || '';
       }
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://eduNest.app/api' : 'http://localhost:3001/api')}/content/fix`, {
+      const res = await fetch(`${config.API_BASE_URL}/content/fix`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody)

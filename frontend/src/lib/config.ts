@@ -1,7 +1,7 @@
 // 前端环境配置
 export const config = {
-  // API 配置 - 移除硬编码的localhost
-  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://eduNest.app/api' : 'http://localhost:3001/api'),
+  // API 配置 - 修复生产环境URL，确保包含www前缀
+  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://www.edunest.app/api' : 'http://localhost:3001/api'),
   
   // Supabase 配置 - 添加默认值避免undefined
   SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zayoczhybuegvtpcsgso.supabase.co',
