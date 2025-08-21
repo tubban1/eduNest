@@ -1,9 +1,9 @@
-'use client';
-import { useParams } from 'next/navigation';
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
+
 import ContentForm from '@/components/ContentForm';
 
-export default function EditPage() {
-  const params = useParams();
-  const contentId = params?.uuid as string;
-  return <ContentForm mode="edit" contentId={contentId} />;
+export default function EditPage({ params }: { params: { uuid: string } }) {
+	return <ContentForm mode="edit" contentId={params.uuid} />;
 } 
