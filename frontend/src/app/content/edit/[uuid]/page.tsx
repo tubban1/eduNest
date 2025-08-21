@@ -1,5 +1,9 @@
-import EditClient from './client';
+'use client';
+import { useParams } from 'next/navigation';
+import ContentForm from '@/components/ContentForm';
 
-export default function EditPage({ params }: { params: { uuid: string } }) {
-	return <EditClient uuid={params.uuid} />;
+export default function EditPage() {
+  const params = useParams();
+  const contentId = params?.uuid as string;
+  return <ContentForm mode="edit" contentId={contentId} />;
 } 
