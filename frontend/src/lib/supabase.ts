@@ -17,19 +17,23 @@ const supabaseAnonKey = config.SUPABASE_ANON_KEY;
 
 // 检查配置
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase 配置无效:', {
-    url: supabaseUrl,
-    keyLength: supabaseAnonKey?.length || 0
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Supabase 配置无效:', {
+      url: supabaseUrl,
+      keyLength: supabaseAnonKey?.length || 0
+    });
+  }
   throw new Error('Supabase配置无效');
 }
 
-// 添加调试信息
-console.log('Supabase客户端配置:', {
-  url: supabaseUrl,
-  keyLength: supabaseAnonKey?.length || 0,
-  keyPrefix: supabaseAnonKey?.substring(0, 20) + '...'
-});
+// 添加调试信息（仅开发环境）
+if (process.env.NODE_ENV === 'development') {
+  console.log('Supabase客户端配置:', {
+    url: supabaseUrl,
+    keyLength: supabaseAnonKey?.length || 0,
+    keyPrefix: supabaseAnonKey?.substring(0, 20) + '...'
+  });
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -46,12 +50,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// 添加Supabase客户端调试
-console.log('Supabase客户端创建完成:', {
-  hasAuth: !!supabase.auth,
-  hasStorage: typeof window !== 'undefined',
-  storageKey: 'sb-zayoczhybuegvtpcsgso-auth-token'
-});
+// 添加Supabase客户端调试（仅开发环境）
+if (process.env.NODE_ENV === 'development') {
+  console.log('Supabase客户端创建完成:', {
+    hasAuth: !!supabase.auth,
+    hasStorage: typeof window !== 'undefined',
+    storageKey: 'sb-zayoczhybuegvtpcsgso-auth-token'
+  });
+}
 
 // 认证类型
 export type AuthUser = {

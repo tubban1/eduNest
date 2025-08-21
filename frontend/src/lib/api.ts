@@ -10,12 +10,14 @@ class ApiClient {
   constructor(baseUrl: string = config.API_BASE_URL) {
     this.baseUrl = baseUrl;
     
-    // 添加调试信息
-    console.log('API客户端初始化:', {
-      baseUrl: this.baseUrl,
-      isProduction: process.env.NODE_ENV === 'production',
-      configApiUrl: config.API_BASE_URL
-    });
+    // 添加调试信息（仅开发环境）
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API客户端初始化:', {
+        baseUrl: this.baseUrl,
+        isProduction: process.env.NODE_ENV === 'production',
+        configApiUrl: config.API_BASE_URL
+      });
+    }
     
     if (typeof window !== 'undefined') {
       // 修复：使用与 useAuth 相同的 token 存储 key
