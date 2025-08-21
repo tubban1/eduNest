@@ -71,6 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userData = await response.json();
 
+      // 注入 API 客户端令牌（关键修复）
+      api.setToken(session.access_token);
+
       // 获取用户角色信息
       const roleResponse = await fetch(`https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users?id=eq.${userData.id}&select=role`, {
         headers: {
@@ -82,107 +85,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let role = 'user';
       if (roleResponse.ok) {
         const roleData = await roleResponse.json();
-        role = roleData[0]?.role || 'user';
+        role = roleData?.[0]?.role || 'user';
       }
 
-      const authUser: AuthUser = {
+      setUser({
         id: userData.id,
         email: userData.email,
-        name: userData.user_metadata?.full_name || userData.user_metadata?.name,
+        name: userData.user_metadata?.name,
         avatar_url: userData.user_metadata?.avatar_url,
-        role: role
-      };
-
-      setUser(authUser);
-      
-      // 重要：同步设置 API 客户端的 token
-      api.setToken(session.access_token);
-
-    } catch (error: any) {
-      localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
+        role,
+      });
+      setLoading(false);
+    } catch (error) {
       setUser(null);
-      // 清除 API 客户端的 token
+      setLoading(false);
       api.clearToken();
+    }
+  };
+
+  useEffect(() => {
+    checkAuthStatus();
+
+    // 监听会话变化，实时注入/清除 token（关键修复）
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.access_token) {
+        api.setToken(session.access_token);
+      } else {
+        api.clearToken();
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const signInWithEmail = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: error.message };
+      // 登录成功后刷新状态与 token
+      await checkAuthStatus();
+      return { error: null };
+    } catch (e: any) {
+      return { error: e.message || '登录失败' };
     } finally {
       setLoading(false);
     }
   };
 
-  // 监听 localStorage 变化
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sb-zayoczhybuegvtpcsgso-auth-token') {
-        if (e.newValue) {
-          // 有新的 session，重新检查
-          checkAuthStatus();
-        } else {
-          // session 被清除，清除用户状态
-          setUser(null);
-          api.clearToken();
-        }
-      }
-    };
-
-    // 监听其他标签页的 localStorage 变化
-    window.addEventListener('storage', handleStorageChange);
-
-    // 监听当前页面的 localStorage 变化（通过自定义事件）
-    const handleCustomStorageChange = () => {
-      checkAuthStatus();
-    };
-
-    window.addEventListener('sessionChanged', handleCustomStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('sessionChanged', handleCustomStorageChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  // 邮箱密码登录
-  const signInWithEmail = async (email: string, password: string) => {
-    try {
-      const response = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/token?grant_type=password', {
-        method: 'POST',
-        headers: {
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.error_description || '登录失败' };
-      }
-
-      const loginData = await response.json();
-
-      // 保存session
-      const sessionData = {
-        access_token: loginData.access_token,
-        refresh_token: loginData.refresh_token,
-        expires_in: loginData.expires_in,
-        expires_at: loginData.expires_at,
-        token_type: loginData.token_type
-      };
-      localStorage.setItem('sb-zayoczhybuegvtpcsgso-auth-token', JSON.stringify(sessionData));
-
-      // 重新检查认证状态
-      await checkAuthStatus();
-
-      return { error: null };
-    } catch (error: any) {
-      return { error: error.message || '登录失败' };
-    }
-  };
-
-  // Google登录（使用supabase-js发起，保证PKCE流程）
   const signInWithGoogle = async () => {
     try {
       await supabase.auth.signInWithOAuth({
@@ -198,55 +150,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 退出登录
   const signOut = async () => {
     try {
-      const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
-      if (sessionStr) {
-        const session = JSON.parse(sessionStr);
-        
-        // 调用退出登录API
-        try {
-          await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/logout', {
-            method: 'POST',
-            headers: {
-              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-              'Authorization': `Bearer ${session.access_token}`
-            }
-          });
-        } catch (error) {
-          // 静默处理退出登录API调用失败
-        }
-      }
-      
-      // 清除本地数据
-      localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
-      setUser(null);
-      // 清除 API 客户端的 token
+      await supabase.auth.signOut();
       api.clearToken();
-      
+      setUser(null);
+      router.push('/login');
       return { error: null };
     } catch (error: any) {
-      // 即使API调用失败，也要清除本地数据
-      localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
-      setUser(null);
-      // 清除 API 客户端的 token
-      api.clearToken();
-      
-      return { error: error.message || '退出登录失败' };
+      return { error: error.message || '登出失败' };
     }
   };
 
-  const value = {
-    user,
-    loading,
-    signInWithEmail,
-    signInWithGoogle,
-    signOut
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, loading, signInWithEmail, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
