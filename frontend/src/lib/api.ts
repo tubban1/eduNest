@@ -14,7 +14,6 @@ class ApiClient {
     if (process.env.NODE_ENV === 'development') {
       console.log('API客户端初始化:', {
         baseUrl: this.baseUrl,
-        isProduction: process.env.NODE_ENV === 'production',
         configApiUrl: config.API_BASE_URL
       });
     }
@@ -322,7 +321,7 @@ class ApiClient {
 
   async simplifyContent(contentId: string) {
     return this._request<{ success: boolean; data: any }>(`/ai/simplify/${contentId}`, {
-      method: 'POST',
+        method: 'POST',
     });
   }
 
