@@ -59,7 +59,7 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
   const contentUrl = content.short_id ? `/content/${content.short_id}` : `/content/${content.id}`;
 
   return (
-    <Link href={contentUrl} className="block">
+    <Link href={contentUrl} prefetch={false} className="block">
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-64 min-w-56 max-w-xs mx-auto cursor-pointer">
         <div className="p-4">
           <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
