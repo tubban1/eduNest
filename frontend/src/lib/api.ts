@@ -1,5 +1,6 @@
 import { config } from './config';
 import { errorHandler, logError } from './errorHandler';
+import { supabase } from './supabase';
 
 // 统一的API客户端
 class ApiClient {
@@ -21,9 +22,11 @@ class ApiClient {
       const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
       if (sessionStr) {
         try {
-          const session = JSON.parse(sessionStr);
-          if (session.access_token) {
-            this.token = session.access_token;
+          const parsed = JSON.parse(sessionStr);
+          // 兼容不同结构：session.access_token 或 currentSession.access_token 或 session.session.access_token
+          const possibleToken = parsed?.access_token || parsed?.currentSession?.access_token || parsed?.session?.access_token;
+          if (possibleToken) {
+            this.token = possibleToken as string;
           }
         } catch (error) {
           // 静默处理解析失败
@@ -43,6 +46,27 @@ class ApiClient {
     // 注意：这里不直接清除 localStorage，因为 useAuth 会处理
   }
 
+  private async ensureToken(): Promise<void> {
+    if (this.token || typeof window === 'undefined') return;
+    try {
+      const { data } = await supabase.auth.getSession();
+      const t = data?.session?.access_token;
+      if (t) {
+        this.token = t;
+        return;
+      }
+      // 再次兜底读取本地存储
+      const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
+      if (sessionStr) {
+        const parsed = JSON.parse(sessionStr);
+        const possibleToken = parsed?.access_token || parsed?.currentSession?.access_token || parsed?.session?.access_token;
+        if (possibleToken) this.token = possibleToken as string;
+      }
+    } catch (e) {
+      // 忽略，维持无token状态
+    }
+  }
+
   // 公共请求方法
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     return this._request<T>(endpoint, options);
@@ -52,6 +76,8 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    // 确保在请求前拥有最新的访问令牌
+    await this.ensureToken();
     const url = `${this.baseUrl}${endpoint}`;
     
     const headers: Record<string, string> = {
