@@ -135,7 +135,7 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
   };
 
   return (
-    <Link href={`/content/${content.short_id || content.id}`} className="block">
+    <div className="block">
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer">
         {/* 封面 */}
         <div className={`h-32 ${getCoverColor()} relative overflow-hidden`}>
@@ -158,15 +158,28 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
           {/* 展开的操作菜单 */}
           {showActions && (
             <div className="absolute top-10 right-2 bg-white rounded-lg shadow-lg p-2 space-y-1 min-w-32">
-              <Link
-                href={`/content/${content.short_id || content.id}`}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                {mounted ? t('view', { ns: 'common', defaultValue: 'View' }) : 'View'}
-              </Link>
+              {content.short_id ? (
+                <Link
+                  href={`/content/${content.short_id}`}
+                  prefetch={false}
+                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  {mounted ? t('view', { ns: 'common', defaultValue: 'View' }) : 'View'}
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="flex items-center w-full px-3 py-2 text-sm text-gray-400 cursor-not-allowed rounded"
+                  title={mounted ? t('view', { ns: 'common', defaultValue: 'View' }) : 'View'}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  {mounted ? t('view', { ns: 'common', defaultValue: 'View' }) : 'View'}
+                </button>
+              )}
               <Link
                 href={`/content/edit/${content.id}`}
+                prefetch={false}
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
@@ -273,6 +286,6 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
         refreshLists={handleRefreshLists}
         contentId={content.id}
       />
-    </Link>
+    </div>
   );
 } 
