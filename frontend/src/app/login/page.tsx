@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '@/components/LanguageSelector';
 
-export default function LoginPage() {
+function LoginForm() {
   const { t } = useTranslation(['auth', 'common', 'home']);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -109,7 +109,7 @@ export default function LoginPage() {
             className="w-full py-2 px-4 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            {loading ? t('loading', { ns: 'common', defaultValue: '登录中...' }) : t('loginWithEmail', { ns: 'auth', defaultValue: '邮箱密码登录' })}
+            {loading ? t('loggingIn', { ns: 'auth', defaultValue: '登录中...' }) : t('login', { ns: 'auth', defaultValue: '登录' })}
           </button>
         </form>
         
@@ -164,5 +164,23 @@ export default function LoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-8">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border p-8 flex flex-col gap-6">
+          <div className="text-center mb-2">
+            <Logo size="md" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">登录</h1>
+            <p className="text-gray-500 text-sm">加载中...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 } 
