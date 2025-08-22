@@ -169,7 +169,7 @@ export default function CollectionListDialog({
       setUserLists(propLists || []);
       setLoading(true);
       Promise.all([
-        api.request('/collection_lists'), // 当前用户的lists
+        api.get('/collection_lists'), // 当前用户的lists
         api.getCollectionsByContent(contentId)
       ]).then(([userListsRes, collections]) => {
         setUserLists(
@@ -222,14 +222,10 @@ export default function CollectionListDialog({
     if (!prev.id) return;
     
     // 交换order_index
-    await api.request('/collection_lists/order', {
-      method: 'PUT',
-      body: JSON.stringify({ orders: [
-        { id: item.id, order_index: prev.order_index },
-        { id: prev.id, order_index: item.order_index }
-      ] }),
-      headers: { 'Content-Type': 'application/json' }
-    });
+    await api.put('/collection_lists/order', { orders: [
+      { id: item.id, order_index: prev.order_index },
+      { id: prev.id, order_index: item.order_index }
+    ] });
     await refreshLists();
   };
 
@@ -243,14 +239,10 @@ export default function CollectionListDialog({
     const next = sortedLists[idx + 1];
     if (!next.id) return;
     
-    await api.request('/collection_lists/order', {
-      method: 'PUT',
-      body: JSON.stringify({ orders: [
-        { id: item.id, order_index: next.order_index },
-        { id: next.id, order_index: item.order_index }
-      ] }),
-      headers: { 'Content-Type': 'application/json' }
-    });
+    await api.put('/collection_lists/order', { orders: [
+      { id: item.id, order_index: next.order_index },
+      { id: next.id, order_index: item.order_index }
+    ] });
     await refreshLists();
   };
 

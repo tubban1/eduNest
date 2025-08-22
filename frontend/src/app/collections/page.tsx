@@ -50,7 +50,7 @@ export default function CollectionsPage() {
       setLoading(true);
       setError('');
       
-      const response = await api.request<{ success: boolean; data: CollectionList[]; error?: string }>('/collection_lists');
+      const response = await api.get('/collection_lists');
       
       if (response.success) {
         setCollectionLists(response.data);
@@ -80,7 +80,7 @@ export default function CollectionsPage() {
         response = await api.getLikedContent();
       } else {
         // 获取收藏的内容
-        response = await api.request<{ success: boolean; data: CollectionContent[]; error?: string }>(`/user_collections/group/${listId}`);
+        response = await api.get(`/user_collections/group/${listId}`);
       }
       
       if (response.success) {

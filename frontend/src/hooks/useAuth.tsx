@@ -18,6 +18,9 @@ interface AuthContextType {
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
+  signUpWithEmail: (email: string, password: string, name?: string) => Promise<{ error: string | null; message?: string }>;
+  sendResetPasswordEmail: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<{ error: string | null }>;
 }
 
@@ -150,6 +153,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signUpWithEmail = async (email: string, password: string, name?: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: name ? { name } : undefined
+        }
+      });
+      
+      if (error) {
+        return { error: error.message };
+      }
+      
+      // 检查是否需要邮件确认
+      if (data?.user && !data?.session) {
+        return { error: null, message: '注册成功！请检查您的邮箱完成验证。' };
+      }
+      
+      // 如果直接创建了会话（不需要邮件确认）
+      if (data?.session) {
+        return { error: null, message: '注册成功！您已自动登录。' };
+      }
+      
+      return { error: null, message: '注册完成，请检查您的邮箱。' };
+    } catch (e: any) {
+      return { error: e.message || '注册失败' };
+    }
+  };
+
+  const sendResetPasswordEmail = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/update-password`
+      });
+      
+      if (error) return { error: error.message };
+      
+      return { error: null };
+    } catch (e: any) {
+      return { error: e.message || '发送重置邮件失败' };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      
+      if (error) return { error: error.message };
+      
+      return { error: null };
+    } catch (e: any) {
+      return { error: e.message || '设置新密码失败' };
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -163,7 +223,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithEmail, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      signInWithEmail, 
+      signInWithGoogle, 
+      signUpWithEmail,
+      sendResetPasswordEmail,
+      updatePassword,
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );

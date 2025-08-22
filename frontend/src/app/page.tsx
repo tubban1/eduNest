@@ -135,12 +135,20 @@ export default function HomePage() {
                   </button>
                 </div>
               ) : (
-                <Link
-                  href="/login"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  {t('navigation.login')}
-                </Link>
+                <div className="flex items-center space-x-3">
+                  <Link
+                    href="/signup"
+                    className="bg-white text-blue-600 border border-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+                  >
+                    注册
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {t('navigation.login')}
+                  </Link>
+                </div>
               )}
             </div>
           </div>
@@ -169,6 +177,12 @@ export default function HomePage() {
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 text-lg font-semibold shadow-lg"
               >
                 {t('home.start_learning_now')}
+              </Link>
+              <Link
+                href="/signup"
+                className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 transition-all text-lg font-semibold"
+              >
+                注册账号
               </Link>
               <Link
                 href="/content"

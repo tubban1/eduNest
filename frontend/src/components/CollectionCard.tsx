@@ -55,7 +55,7 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
 
   const loadCollectionLists = async () => {
     try {
-      const response = await api.request('/collection_lists');
+      const response = await api.get('/collection_lists');
       if (response && typeof response === 'object' && 'success' in response && response.success) {
         setCollectionLists((response as any).data);
       }

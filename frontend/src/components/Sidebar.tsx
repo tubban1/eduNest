@@ -28,7 +28,7 @@ export default function Sidebar() {
   return (
     <div className="w-64 h-screen bg-white shadow-sm border-r border-gray-200 flex flex-col">
       <div className="p-6 flex-1">
-        <h1 className="text-xl font-bold text-gray-900 mb-2">{t('platformTitle', { ns: 'common', defaultValue: 'AI Education Platform' })}</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">{t('platformTitle', { ns: 'common', defaultValue: 'EduNest AI' })}</h1>
         <LanguageSelector variant="button" />
         {/* 用户信息 */}
         {user && (

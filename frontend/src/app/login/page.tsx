@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
 import { useTranslation } from 'react-i18next';
@@ -13,8 +13,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const { signInWithEmail, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // 处理URL参数中的消息
+  useEffect(() => {
+    const messageParam = searchParams.get('message');
+    if (messageParam === 'signup_success') {
+      setMessage('注册成功！请检查您的邮箱完成验证。');
+    } else if (messageParam === 'reset_email_sent') {
+      setMessage('重置密码邮件已发送，请检查您的邮箱。');
+    } else if (messageParam === 'password_updated') {
+      setMessage('密码更新成功！现在可以使用新密码登录。');
+    }
+  }, [searchParams]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -35,6 +49,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setMessage('');
     
     try {
       const result = await signInWithEmail(email, password);
@@ -121,9 +136,30 @@ export default function LoginPage() {
           {t('loginWithGoogle', { ns: 'auth', defaultValue: '使用Google登录' })}
         </button>
         
+        <div className="flex justify-between text-sm">
+          <button 
+            onClick={() => router.push('/signup')}
+            className="text-black hover:underline font-medium"
+          >
+            注册账号
+          </button>
+          <button 
+            onClick={() => router.push('/auth/forgot')}
+            className="text-gray-500 hover:text-black"
+          >
+            忘记密码？
+          </button>
+        </div>
+        
         {error && (
           <div className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg">
             {error}
+          </div>
+        )}
+        
+        {message && (
+          <div className="text-green-600 text-sm text-center bg-green-50 p-3 rounded-lg">
+            {message}
           </div>
         )}
       </div>

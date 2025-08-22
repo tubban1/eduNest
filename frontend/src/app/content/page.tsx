@@ -77,7 +77,7 @@ function CollectionTree({ userId }: { userId: string }) {
     if (!userId) return;
     setLoading(true);
     Promise.all([
-      api.request<{ success: boolean; data: CollectionList[] }>('/collection_lists'),
+      api.get('/collection_lists'),
       api.getUserCollections(userId)
     ]).then(([listRes, colRes]) => {
       setLists(listRes.success ? listRes.data : []);
@@ -135,9 +135,7 @@ export default function ContentPage() {
   const fetchLists = async () => {
     if (!user) return;
     try {
-      const res = await api.request('/collection_lists', {
-        method: 'GET'
-      });
+      const res = await api.get('/collection_lists');
       const listsData = (res as any)?.success ? (res as any).data : [];
       setLists(listsData);
     } catch (error) {
