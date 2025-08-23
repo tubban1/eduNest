@@ -101,6 +101,7 @@ i18n
     ns: ['common', 'navigation', 'auth', 'content', 'home'],
     defaultNS: 'common',
     interpolation: { escapeValue: false },
+    returnObjects: true,
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],

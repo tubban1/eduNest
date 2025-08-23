@@ -124,14 +124,14 @@ export default function HomePage() {
                     href="/content"
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
                   >
-                    {t('navigation.enter_platform')}
+                    {t('enter_platform', { ns: 'navigation', defaultValue: 'Enter Platform' })}
                   </Link>
                   <button
                     onClick={handleSignOut}
                     disabled={isLoadingSignOut}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                   >
-                    {isLoadingSignOut ? t('common.signing_out') : t('common.sign_out')}
+                    {isLoadingSignOut ? t('signing_out', { ns: 'common', defaultValue: 'Signing out...' }) : t('sign_out', { ns: 'common', defaultValue: 'Sign out' })}
                   </button>
                 </div>
               ) : (
@@ -146,7 +146,7 @@ export default function HomePage() {
                     href="/login"
                     className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    {t('navigation.login')}
+                    {t('login', { ns: 'navigation', defaultValue: 'Login' })}
                   </Link>
                 </div>
               )}
@@ -160,14 +160,14 @@ export default function HomePage() {
         {/* 英雄区域 */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6 leading-tight">
-            {t('home.make_learning')}
+            {t('make_learning', { ns: 'home', defaultValue: 'Make Learning' })}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
               {' '}
-              {t('home.dynamic_and_interesting')}
+              {t('dynamic_and_interesting', { ns: 'home', defaultValue: 'Dynamic and Interesting' })}
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto mb-8 leading-relaxed">
-            {t('home.based_on_ai_generated_interactive_content_makes_each_knowledge_point_visualizable_interactive_and_experiential')}
+            {t('based_on_ai_generated_interactive_content_makes_each_knowledge_point_visualizable_interactive_and_experiential', { ns: 'home', defaultValue: 'Based on AI-generated interactive content, makes each knowledge point visualizable, interactive and experiential' })}
           </p>
           
           {!user && (
@@ -176,7 +176,7 @@ export default function HomePage() {
                 href="/login"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 text-lg font-semibold shadow-lg"
               >
-                {t('home.start_learning_now')}
+                {t('start_learning_now', { ns: 'home', defaultValue: 'Start Learning Now' })}
               </Link>
               <Link
                 href="/signup"
@@ -188,7 +188,7 @@ export default function HomePage() {
                 href="/content"
                 className="bg-white text-gray-700 px-8 py-4 rounded-xl hover:bg-gray-50 transition-all border-2 border-gray-200 text-lg font-semibold"
               >
-                {t('home.browse_content')}
+                {t('browse_content', { ns: 'home', defaultValue: 'Browse Content' })}
               </Link>
             </div>
           )}
@@ -200,30 +200,30 @@ export default function HomePage() {
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 hover:shadow-lg transition-all">
               <div className="text-4xl mb-4">🎯</div>
               <h3 className="text-xl font-bold text-gray-800 mb-3">
-                {t('home.personalized_learning')}
+                {t('personalized_learning', { ns: 'home', defaultValue: 'Personalized Learning' })}
               </h3>
               <p className="text-gray-600">
-                {t('home.ai_automatically_generates_the_most_suitable_interactive_content_based_on_learning_stage_and_knowledge_points_making_learning_more_efficient')}
+                {t('ai_automatically_generates_the_most_suitable_interactive_content_based_on_learning_stage_and_knowledge_points_making_learning_more_efficient', { ns: 'home', defaultValue: 'AI automatically generates the most suitable interactive content based on learning stage and knowledge points, making learning more efficient' })}
               </p>
             </div>
             
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 hover:shadow-lg transition-all">
               <div className="text-4xl mb-4">🎮</div>
               <h3 className="text-xl font-bold text-gray-800 mb-3">
-                {t('home.interactive_experience')}
+                {t('interactive_experience', { ns: 'home', defaultValue: 'Interactive Experience' })}
               </h3>
               <p className="text-gray-600">
-                {t('home.through_animation_games_and_simulated_experiments_etc_abstract_concepts_become_concrete_and_tangible')}
+                {t('through_animation_games_and_simulated_experiments_etc_abstract_concepts_become_concrete_and_tangible', { ns: 'home', defaultValue: 'Through animation, games and simulated experiments, etc., abstract concepts become concrete and tangible' })}
               </p>
             </div>
             
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 hover:shadow-lg transition-all">
               <div className="text-4xl mb-4">📚</div>
               <h3 className="text-xl font-bold text-gray-800 mb-3">
-                {t('home.multi_disciplinary_coverage')}
+                {t('multi_disciplinary_coverage', { ns: 'home', defaultValue: 'Multi-disciplinary Coverage' })}
               </h3>
               <p className="text-gray-600">
-                {t('home.covers_mathematics_physics_chemistry_biology_and_geography_etc_meeting_different_learning_needs')}
+                {t('covers_mathematics_physics_chemistry_biology_and_geography_etc_meeting_different_learning_needs', { ns: 'home', defaultValue: 'Covers mathematics, physics, chemistry, biology and geography, etc., meeting different learning needs' })}
               </p>
             </div>
           </div>
@@ -233,10 +233,10 @@ export default function HomePage() {
         <div className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              {t('home.selected_interactive_content')}
+              {t('selected_interactive_content', { ns: 'home', defaultValue: 'Selected Interactive Content' })}
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              {t('home.experience_ai_generated_high_quality_teaching_content_each_content_is_carefully_designed')}
+              {t('experience_ai_generated_high_quality_teaching_content_each_content_is_carefully_designed', { ns: 'home', defaultValue: 'Experience AI-generated high-quality teaching content, each content is carefully designed' })}
             </p>
           </div>
           
@@ -276,7 +276,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{t('home.click_to_view')}</span>
+                    <span>{t('click_to_view', { ns: 'home', defaultValue: 'Click to view' })}</span>
                     <span>{new Date(content.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -286,10 +286,10 @@ export default function HomePage() {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📚</div>
               <p className="text-gray-600 text-lg">
-                {t('home.no_content')}
+                {t('no_content', { ns: 'home', defaultValue: 'No content available' })}
               </p>
               <p className="text-gray-500 text-sm mt-2">
-                {t('home.please_create_some_interactive_content')}
+                {t('please_create_some_interactive_content', { ns: 'home', defaultValue: 'Please create some interactive content' })}
               </p>
             </div>
           )}
@@ -299,7 +299,7 @@ export default function HomePage() {
               href="/content"
               className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 font-semibold"
             >
-              {t('home.view_more_content')}
+              {t('view_more_content', { ns: 'home', defaultValue: 'View More Content' })}
             </Link>
           </div>
         </div>
@@ -310,25 +310,25 @@ export default function HomePage() {
             <div>
               <div className="text-3xl font-bold text-blue-600 mb-2">{contents.length}+</div>
               <div className="text-gray-600">
-                {t('home.interactive_content')}
+                {t('interactive_content', { ns: 'home', defaultValue: 'Interactive Content' })}
               </div>
             </div>
             <div>
               <div className="text-3xl font-bold text-purple-600 mb-2">6+</div>
               <div className="text-gray-600">
-                {t('home.subject_areas')}
+                {t('subject_areas', { ns: 'home', defaultValue: 'Subject Areas' })}
               </div>
             </div>
             <div>
               <div className="text-3xl font-bold text-green-600 mb-2">24/7</div>
               <div className="text-gray-600">
-                {t('home.ai_generation')}
+                {t('ai_generation', { ns: 'home', defaultValue: 'AI Generation' })}
               </div>
             </div>
             <div>
               <div className="text-3xl font-bold text-orange-600 mb-2">∞</div>
               <div className="text-gray-600">
-                {t('home.learning_possibilities')}
+                {t('learning_possibilities', { ns: 'home', defaultValue: 'Learning Possibilities' })}
               </div>
             </div>
           </div>
@@ -337,10 +337,10 @@ export default function HomePage() {
         {/* 页脚 */}
         <footer className="text-center text-gray-500 py-8">
           <p className="mb-2">
-            {t('common.copyright')} 2024 AI互动教育平台. {t('home.makes_learning_more_dynamic_and_interesting')}
+            {t('copyright', { ns: 'common', defaultValue: 'Copyright' })} 2024 AI互动教育平台. {t('makes_learning_more_dynamic_and_interesting', { ns: 'home', defaultValue: 'Makes learning more dynamic and interesting' })}
           </p>
           <p className="text-sm">
-            {t('home.based_on_ai_technology_empowers_education')}
+            {t('based_on_ai_technology_empowers_education', { ns: 'home', defaultValue: 'Based on AI technology, empowers education' })}
           </p>
         </footer>
       </div>

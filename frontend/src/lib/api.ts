@@ -31,6 +31,37 @@ class ApiClient {
     this.token = null;
   }
 
+  private async getLatestToken(): Promise<string | null> {
+    try {
+      // 首先尝试从localStorage获取
+      const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
+      if (sessionStr) {
+        const session = JSON.parse(sessionStr);
+        if (session?.access_token) {
+          // 将Supabase token转换为后端API需要的格式
+          return this.convertSupabaseToken(session.access_token);
+        }
+      }
+      
+      // 如果localStorage没有，从Supabase获取
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        // 将Supabase token转换为后端API需要的格式
+        return this.convertSupabaseToken(session.access_token);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to get token:', error);
+      return null;
+    }
+  }
+
+  private async convertSupabaseToken(supabaseToken: string): Promise<string> {
+    // 直接返回原始的Supabase token，因为后端API期望这种格式
+    return supabaseToken;
+  }
+
   private async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`;
     
@@ -39,8 +70,10 @@ class ApiClient {
       ...(options.headers as Record<string, string> || {}),
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // 动态获取最新token
+    const token = await this.getLatestToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const config: RequestInit = {
@@ -153,16 +186,12 @@ class ApiClient {
     },
 
     create: async (content: any) => {
-      const data = await this.post('/content', {
-        content,
-      });
+      const data = await this.post('/content', content);
       return data.success ? data.data : null;
     },
 
     update: async (id: string, updates: any) => {
-      const data = await this.put(`/content/${id}`, {
-        updates,
-      });
+      const data = await this.put(`/content/${id}`, updates);
       return data.success ? data.data : null;
     },
 
@@ -241,7 +270,8 @@ class ApiClient {
   // AI API
   async generateContent(prompt: string, options: any = {}) {
     return this.post('/ai/generate', {
-      prompt, options,
+      prompt,
+      ...options,
     });
   }
 

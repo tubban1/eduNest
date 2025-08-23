@@ -756,7 +756,7 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
                           />
                         </div>
                         <div>
-                          <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('learningStage', { ns: 'content', defaultValue: 'Learning Stage' }) : 'Learning Stage'}</label>
+                          <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('learningStageLabel', { ns: 'content', defaultValue: 'Learning Stage' }) : 'Learning Stage'}</label>
                           <select
                             className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                             value={learningStage}
