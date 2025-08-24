@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import WeChatRedirect from '@/components/WeChatRedirect';
 import WeChatCompatibleRenderer from '@/components/WeChatCompatibleRenderer';
 import WeChatUltraSimpleRenderer from '@/components/WeChatUltraSimpleRenderer';
 import CodePenStyleRenderer from '@/components/CodePenStyleRenderer';
@@ -201,39 +202,58 @@ export default function WeChatTestPage() {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {rendererType === 'original' ? (
-            <WeChatCompatibleRenderer
-              html={testContent.html}
-              css={testContent.css}
-              js={testContent.js}
-              externalLinks={testContent.externalLinks}
-              title="微信兼容性测试 - 原始版本"
-              className="w-full"
-              style={{ height: '80vh' }}
-            />
-          ) : rendererType === 'ultra-simple' ? (
-            <WeChatUltraSimpleRenderer
-              html={testContent.html}
-              css={testContent.css}
-              js={testContent.js}
-              externalLinks={testContent.externalLinks}
-              title="微信兼容性测试 - 超简化版本"
-              className="w-full"
-              style={{ height: '80vh' }}
-            />
-          ) : (
-            <CodePenStyleRenderer
-              html={testContent.html}
-              css={testContent.css}
-              js={testContent.js}
-              externalLinks={testContent.externalLinks}
-              title="微信兼容性测试 - CodePen风格版本"
-              className="w-full"
-              style={{ height: '80vh' }}
-            />
-          )}
-        </div>
+        <WeChatRedirect
+          className="bg-white rounded-lg shadow-lg overflow-hidden"
+          fallback={
+            <div className="p-6">
+              <h3 className="text-lg font-semibold mb-4">测试内容预览</h3>
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-50 rounded">
+                  <h4 className="font-medium mb-2">基础功能测试</h4>
+                  <p className="text-sm text-gray-600">包含点击测试、样式测试等功能</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded">
+                  <h4 className="font-medium mb-2">三种渲染器</h4>
+                  <p className="text-sm text-gray-600">原始版本、超简化版本、CodePen风格版本</p>
+                </div>
+              </div>
+            </div>
+          }
+        >
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            {rendererType === 'original' ? (
+              <WeChatCompatibleRenderer
+                html={testContent.html}
+                css={testContent.css}
+                js={testContent.js}
+                externalLinks={testContent.externalLinks}
+                title="微信兼容性测试 - 原始版本"
+                className="w-full"
+                style={{ height: '80vh' }}
+              />
+            ) : rendererType === 'ultra-simple' ? (
+              <WeChatUltraSimpleRenderer
+                html={testContent.html}
+                css={testContent.css}
+                js={testContent.js}
+                externalLinks={testContent.externalLinks}
+                title="微信兼容性测试 - 超简化版本"
+                className="w-full"
+                style={{ height: '80vh' }}
+              />
+            ) : (
+              <CodePenStyleRenderer
+                html={testContent.html}
+                css={testContent.css}
+                js={testContent.js}
+                externalLinks={testContent.externalLinks}
+                title="微信兼容性测试 - CodePen风格版本"
+                className="w-full"
+                style={{ height: '80vh' }}
+              />
+            )}
+          </div>
+        </WeChatRedirect>
         
         <div className="mt-8 text-center text-sm text-gray-500">
           <p className="mb-2">如果页面无法正常显示，请尝试：</p>
@@ -249,9 +269,9 @@ export default function WeChatTestPage() {
           <h3 className="font-semibold text-blue-800 mb-2">测试说明：</h3>
           <ul className="text-sm text-blue-700 space-y-1">
             <li>• <strong>基础功能测试</strong>: 点击按钮测试JavaScript是否正常工作</li>
-            <li>• <strong>Vue.js测试</strong>: 检测Vue.js是否正确加载和执行</li>
             <li>• <strong>样式测试</strong>: 查看CSS样式是否正确渲染</li>
-            <li>• <strong>微信环境检测</strong>: 页面会自动检测微信环境并显示状态</li>
+            <li>• <strong>三种渲染器</strong>: 测试不同的内容渲染方式</li>
+            <li>• <strong>微信优化</strong>: 在微信中会引导用户打开浏览器</li>
           </ul>
         </div>
       </div>
