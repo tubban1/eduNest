@@ -814,77 +814,11 @@ export default function SandboxRenderer({
             setTimeout(initVue, 100);
           }
           
-          // 移动端音频和语音测试
+          // 移动端音频和语音功能优化
           if (isMobile) {
-            // 创建测试按钮（仅在移动端显示）
-            var testContainer = document.createElement('div');
-            testContainer.style.cssText = 'position:fixed;top:10px;right:10px;z-index:9999;background:rgba(0,0,0,0.8);color:white;padding:10px;border-radius:5px;font-size:12px;';
-            testContainer.innerHTML = 
-              '<div style="margin-bottom:5px;">Mobile Test</div>' +
-              '<button id="testAudio" style="margin:2px;padding:2px 5px;font-size:10px;background:#007AFF;color:white;border:none;border-radius:3px;">Test Audio</button>' +
-              '<button id="testSpeech" style="margin:2px;padding:2px 5px;font-size:10px;background:#34C759;color:white;border:none;border-radius:3px;">Test Speech</button>' +
-              '<button id="closeTest" style="margin:2px;padding:2px 5px;font-size:10px;background:#FF3B30;color:white;border:none;border-radius:3px;">Close</button>';
-            document.body.appendChild(testContainer);
-            
-            // 测试音频功能
-            document.getElementById('testAudio').addEventListener('click', function() {
-              try {
-                if (typeof Tone !== 'undefined') {
-                  // 测试Tone.js
-                  var osc = new Tone.Oscillator(440, "sine").toDestination();
-                  osc.start().stop("+0.2");
-                  this.style.background = '#34C759';
-                  this.textContent = 'Audio OK';
-                } else if (audioContext) {
-                  // 测试原生AudioContext
-                  var oscillator = audioContext.createOscillator();
-                  var gainNode = audioContext.createGain();
-                  oscillator.connect(gainNode);
-                  gainNode.connect(audioContext.destination);
-                  oscillator.frequency.value = 440;
-                  gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                  oscillator.start(audioContext.currentTime);
-                  oscillator.stop(audioContext.currentTime + 0.2);
-                  this.style.background = '#34C759';
-                  this.textContent = 'Audio OK';
-                } else {
-                  this.style.background = '#FF9500';
-                  this.textContent = 'Audio N/A';
-                }
-              } catch (error) {
-                this.style.background = '#FF3B30';
-                this.textContent = 'Audio Error';
-              }
-            });
-            
-            // 测试语音功能
-            document.getElementById('testSpeech').addEventListener('click', function() {
-              try {
-                if (window.speechAPI && window.speechAPI.isSupported) {
-                  window.speechAPI.speak('Mobile speech test successful', { lang: 'zh-CN' });
-                  this.style.background = '#34C759';
-                  this.textContent = 'Speech OK';
-                } else {
-                  this.style.background = '#FF9500';
-                  this.textContent = 'Speech N/A';
-                }
-              } catch (error) {
-                this.style.background = '#FF3B30';
-                this.textContent = 'Speech Error';
-              }
-            });
-            
-            // 关闭测试面板
-            document.getElementById('closeTest').addEventListener('click', function() {
-              testContainer.remove();
-            });
-            
-            // 5秒后自动隐藏测试面板
-            setTimeout(function() {
-              if (testContainer.parentNode) {
-                testContainer.remove();
-              }
-            }, 5000);
+            // 在移动端，静默初始化音频和语音功能，不显示测试按钮
+            // 用户可以通过交互来触发音频功能
+            console.log('Mobile audio and speech initialized silently');
           }
           
           // 执行用户代码
