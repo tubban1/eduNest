@@ -72,8 +72,8 @@ export default function WeChatCompatibleRenderer({
     
     // 这里需要导入downloadSandboxHTML函数
     // 暂时使用简单的下载方式
-    const html = generateIframeSrc().replace('data:text/html;charset=utf-8,', '');
-    const blob = new Blob([decodeURIComponent(html)], { type: 'text/html' });
+    const htmlContent = generateIframeSrc().replace('data:text/html;charset=utf-8,', '');
+    const blob = new Blob([decodeURIComponent(htmlContent)], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
     const a = document.createElement('a');
