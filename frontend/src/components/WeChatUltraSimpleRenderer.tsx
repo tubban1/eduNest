@@ -37,11 +37,6 @@ export default function WeChatUltraSimpleRenderer({
 
   // 生成超简化的HTML
   const generateSimpleHTML = useCallback(() => {
-    // 只保留Vue.js，移除其他复杂库
-    const linksArray = Array.isArray(externalLinks) ? externalLinks : [externalLinks];
-    const vueLink = linksArray.find(link => link.includes('vue'));
-    const externalScripts = vueLink ? `<script src="${vueLink}" crossorigin="anonymous"></script>` : '';
-    
     const simpleHTML = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -50,17 +45,16 @@ export default function WeChatUltraSimpleRenderer({
   <meta name="x5-orientation" content="portrait">
   <meta name="x5-fullscreen" content="true">
   <title>${title}</title>
-  ${externalScripts}
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; font-family: -apple-system, 'PingFang SC', sans-serif; }
-    #app, [data-v-app] { width: 100%; min-height: 100vh; display: block; }
+    #app { width: 100%; min-height: 100vh; display: block; }
     ${css}
   </style>
 </head>
 <body>
   <div id="wechat-status" style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; font-size: 12px; z-index: 9999;">
-    微信模式: 加载中...
+    超简化模式: 加载中...
   </div>
   
   ${html}
@@ -71,41 +65,31 @@ export default function WeChatUltraSimpleRenderer({
     var statusDiv = document.getElementById('wechat-status');
     
     if (isWeChat) {
-      statusDiv.textContent = '微信模式: 已检测到';
-      console.log('WeChat detected');
+      statusDiv.textContent = '超简化模式: 微信已检测到';
+      console.log('WeChat detected in ultra-simple mode');
     }
     
-    // 等待Vue加载
-    function waitForVue() {
-      if (typeof Vue !== 'undefined') {
-        statusDiv.textContent = '微信模式: Vue已加载';
-        console.log('Vue loaded:', Vue.version);
-        
-        // 执行用户代码
-        try {
-          ${js}
-          statusDiv.textContent = '微信模式: 执行成功';
-        } catch (error) {
-          statusDiv.textContent = '微信模式: 执行错误 - ' + error.message;
-          console.error('User script error:', error);
-        }
-      } else {
-        setTimeout(waitForVue, 100);
-      }
+    // 执行用户代码
+    try {
+      ${js}
+      statusDiv.textContent = '超简化模式: 执行成功';
+      console.log('Ultra-simple mode: User script executed successfully');
+    } catch (error) {
+      statusDiv.textContent = '超简化模式: 执行错误 - ' + error.message;
+      console.error('Ultra-simple mode: User script error:', error);
     }
     
-    // 页面加载完成后开始检测
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', waitForVue);
-    } else {
-      waitForVue();
-    }
+    // 页面加载完成
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Ultra-simple mode: DOM loaded');
+      statusDiv.textContent = '超简化模式: 页面加载完成';
+    });
     
     // 微信特殊处理
     if (isWeChat) {
       document.addEventListener('WeixinJSBridgeReady', function() {
-        console.log('WeixinJSBridge ready');
-        statusDiv.textContent = '微信模式: JSBridge就绪';
+        console.log('WeixinJSBridge ready in ultra-simple mode');
+        statusDiv.textContent = '超简化模式: JSBridge就绪';
       });
     }
   </script>
@@ -113,7 +97,7 @@ export default function WeChatUltraSimpleRenderer({
 </html>`;
 
     return simpleHTML;
-  }, [html, css, js, externalLinks, title]);
+  }, [html, css, js, title]);
 
   // 生成Data URL (确保HTTPS兼容性)
   const generateDataURL = useCallback(() => {
@@ -165,7 +149,7 @@ export default function WeChatUltraSimpleRenderer({
       {/* 微信兼容性提示 */}
       <div className="absolute top-0 left-0 bg-blue-600 text-white text-xs p-2 z-40 max-w-xs">
         <div className="font-bold mb-1">🔧 微信超简化模式</div>
-        <div>使用Data URL方式</div>
+        <div>无外部依赖，纯内联内容</div>
         <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
         <div className="text-xs opacity-75">{debugInfo}</div>
         <div className="mt-2 space-y-1">
@@ -190,7 +174,7 @@ export default function WeChatUltraSimpleRenderer({
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
             <p className="text-sm text-gray-600">微信超简化模式加载中...</p>
-            <p className="text-xs text-gray-500 mt-1">使用Data URL方式，确保HTTPS兼容性</p>
+            <p className="text-xs text-gray-500 mt-1">无外部依赖，纯内联内容，确保微信兼容性</p>
             <p className="text-xs text-gray-400 mt-1">{debugInfo}</p>
           </div>
         </div>
