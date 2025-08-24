@@ -1,5 +1,7 @@
 'use client';
 
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+
 /**
  * SandboxRenderer - 增强的沙盒渲染器
  * 
@@ -259,19 +261,13 @@ export default function SandboxRenderer({
     return cleanup;
   }, [isLoading, onError, onLoad]);
 
-  // 微信浏览器自动切换到原生iframe模式
+  // 微信浏览器检测到后，不自动切换模式，而是显示重定向提示
   React.useEffect(() => {
-    if (isWeChat && !useNativeIframe) {
-      console.log('WeChat browser detected, suggesting native iframe mode');
-      // 在微信中，建议使用原生iframe模式
-      
-      // 自动切换到微信兼容模式
-      if (!useWeChatMode) {
-        console.log('Auto-switching to WeChat compatible mode');
-        setUseWeChatMode(true);
-      }
+    if (isWeChat) {
+      console.log('WeChat browser detected, will show redirect prompt');
+      // 在微信中，显示重定向提示而不是尝试渲染
     }
-  }, [isWeChat, useNativeIframe, useWeChatMode]);
+  }, [isWeChat]);
 
   // 微信兼容模式降级处理
   React.useEffect(() => {
@@ -1661,6 +1657,76 @@ export default function SandboxRenderer({
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">加载中...</p>
             <p className="text-sm text-gray-500 mt-2">请稍候，内容正在渲染</p>
+          </div>
+        </div>
+      )}
+
+      {/* 微信重定向提示 */}
+      {isWeChat && !isLoading && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 z-30">
+          <div className="text-center max-w-md mx-4 p-6">
+            {/* 图标 */}
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* 标题 */}
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              请在浏览器中打开
+            </h2>
+
+            {/* 说明 */}
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              当前页面在微信中可能无法正常显示，建议在手机浏览器中打开以获得最佳体验
+            </p>
+
+            {/* 操作按钮 */}
+            <div className="space-y-3">
+              {/* 复制链接按钮 */}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  // 显示复制成功提示
+                  const btn = document.querySelector('#sandbox-copy-btn');
+                  if (btn) {
+                    const originalText = btn.textContent;
+                    btn.textContent = '✅ 链接已复制';
+                    btn.classList.add('bg-green-600');
+                    setTimeout(() => {
+                      btn.textContent = originalText;
+                      btn.classList.remove('bg-green-600');
+                    }, 2000);
+                  }
+                }}
+                id="sandbox-copy-btn"
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                📋 复制链接
+              </button>
+
+              {/* 打开浏览器按钮 */}
+              <button
+                onClick={() => {
+                  // 尝试打开外部浏览器
+                  const url = window.location.href;
+                  window.location.href = url;
+                }}
+                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              >
+                🌐 打开浏览器
+              </button>
+            </div>
+
+            {/* 额外提示 */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                💡 <strong>小贴士</strong>: 长按链接选择"在浏览器中打开"，或复制链接到浏览器地址栏
+              </p>
+            </div>
           </div>
         </div>
       )}
