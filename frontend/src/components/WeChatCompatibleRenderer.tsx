@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
-import { generateDataURL, SandboxContent } from '../utils/sandboxGenerator';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { generateWeChatDataURL, WeChatContent } from '../utils/wechatSimpleGenerator';
 
 interface WeChatCompatibleRendererProps {
   html: string;
@@ -28,16 +28,17 @@ export default function WeChatCompatibleRenderer({
   onLoad,
   className,
   style,
-  title = 'Sandbox Preview'
+  title = 'WeChat Sandbox'
 }: WeChatCompatibleRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // 生成Data URL
   const generateIframeSrc = useCallback(() => {
-    const content: SandboxContent = {
+    const content: WeChatContent = {
       html,
       css,
       js,
@@ -45,7 +46,24 @@ export default function WeChatCompatibleRenderer({
       title
     };
     
-    return generateDataURL(content);
+    const dataURL = generateWeChatDataURL(content);
+    console.log('WeChat mode: Data URL length:', dataURL.length);
+    
+    return dataURL;
+  }, [html, css, js, externalLinks, title]);
+
+  // 更新调试信息
+  useEffect(() => {
+    const content: WeChatContent = {
+      html,
+      css,
+      js,
+      externalLinks,
+      title
+    };
+    
+    const dataURL = generateWeChatDataURL(content);
+    setDebugInfo(`Data URL长度: ${dataURL.length}`);
   }, [html, css, js, externalLinks, title]);
 
   // 重新加载
@@ -62,7 +80,7 @@ export default function WeChatCompatibleRenderer({
 
   // 下载HTML文件
   const downloadHTML = useCallback(() => {
-    const content: SandboxContent = {
+    const content: WeChatContent = {
       html,
       css,
       js,
@@ -70,21 +88,10 @@ export default function WeChatCompatibleRenderer({
       title
     };
     
-    // 这里需要导入downloadSandboxHTML函数
-    // 暂时使用简单的下载方式
-    const htmlContent = generateIframeSrc().replace('data:text/html;charset=utf-8,', '');
-    const blob = new Blob([decodeURIComponent(htmlContent)], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'wechat-sandbox.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    URL.revokeObjectURL(url);
-  }, [html, css, js, externalLinks, title, generateIframeSrc]);
+    // 使用新的下载函数
+    const { downloadWeChatHTML } = require('../utils/wechatSimpleGenerator');
+    downloadWeChatHTML(content, 'wechat-sandbox.html');
+  }, [html, css, js, externalLinks, title]);
 
   return (
     <div className={`relative ${className || ''}`} style={style}>
@@ -93,6 +100,7 @@ export default function WeChatCompatibleRenderer({
         <div className="font-bold mb-1">✅ 微信兼容模式</div>
         <div>使用Data URL方式</div>
         <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
+        <div className="text-xs opacity-75">{debugInfo}</div>
         <div className="mt-2 space-y-1">
           <button
             onClick={refresh}
@@ -116,6 +124,7 @@ export default function WeChatCompatibleRenderer({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
             <p className="text-sm text-gray-600">微信兼容模式加载中...</p>
             <p className="text-xs text-gray-500 mt-1">使用Data URL方式，微信完全兼容</p>
+            <p className="text-xs text-gray-400 mt-1">{debugInfo}</p>
           </div>
         </div>
       )}

@@ -1,9 +1,9 @@
 /**
- * 沙盒HTML文件生成器
- * 用于生成微信浏览器兼容的外部HTML文件
+ * 微信简化HTML生成器
+ * 专门用于解决微信浏览器的渲染问题
  */
 
-export interface SandboxContent {
+export interface WeChatContent {
   html: string;
   css: string;
   js: string;
@@ -11,8 +11,8 @@ export interface SandboxContent {
   title?: string;
 }
 
-export function generateSandboxHTML(content: SandboxContent): string {
-  const { html, css, js, externalLinks, title = 'Sandbox Preview' } = content;
+export function generateWeChatHTML(content: WeChatContent): string {
+  const { html, css, js, externalLinks, title = 'WeChat Sandbox' } = content;
   
   // 处理外部链接
   const renderExternalLinks = (links: string | string[]) => {
@@ -199,14 +199,26 @@ export function generateSandboxHTML(content: SandboxContent): string {
             // 如果Vue还没加载，等待一下再试
             setTimeout(function() {
               if (initVue()) {
-                executeUserScript();
+                // 用户脚本已经在全局作用域中，无需额外执行
+                console.log('Vue loaded and user script ready');
+                scriptStatus.textContent = '✅ 执行成功';
               } else {
                 scriptStatus.textContent = '❌ Vue加载失败';
               }
             }, 500);
           } else {
-            executeUserScript();
+            // 用户脚本已经在全局作用域中，无需额外执行
+            console.log('Vue loaded and user script ready');
+            scriptStatus.textContent = '✅ 执行成功';
           }
+          
+          // 隐藏调试信息
+          setTimeout(function() {
+            if (debugDiv) {
+              debugDiv.style.display = 'none';
+            }
+          }, 3000);
+          
         } catch (error) {
           console.log('Initialization error:', error.message);
           scriptStatus.textContent = '❌ 初始化错误: ' + error.message;
@@ -214,30 +226,9 @@ export function generateSandboxHTML(content: SandboxContent): string {
       }, 200);
     });
     
-    // 执行用户脚本
-    function executeUserScript() {
-      try {
-        console.log('Executing user script...');
-        scriptStatus.textContent = '🔄 执行中...';
-        
-        // 执行用户代码
-        ${js}
-        
-        console.log('User script executed successfully');
-        scriptStatus.textContent = '✅ 执行成功';
-        
-        // 隐藏调试信息
-        setTimeout(function() {
-          if (debugDiv) {
-            debugDiv.style.display = 'none';
-          }
-        }, 3000);
-        
-      } catch (error) {
-        console.log('User script error:', error.message);
-        scriptStatus.textContent = '❌ 执行错误: ' + error.message;
-      }
-    }
+    // --- User's JavaScript is injected here ---
+    ${js}
+    // -----------------------------------------
     
     // 微信特殊处理
     if (isWeChatBrowser) {
@@ -259,10 +250,18 @@ export function generateSandboxHTML(content: SandboxContent): string {
 }
 
 /**
- * 下载HTML文件
+ * 生成微信兼容的Data URL
  */
-export function downloadSandboxHTML(content: SandboxContent, filename: string = 'sandbox.html') {
-  const html = generateSandboxHTML(content);
+export function generateWeChatDataURL(content: WeChatContent): string {
+  const html = generateWeChatHTML(content);
+  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+}
+
+/**
+ * 下载微信兼容的HTML文件
+ */
+export function downloadWeChatHTML(content: WeChatContent, filename: string = 'wechat-sandbox.html') {
+  const html = generateWeChatHTML(content);
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
   
@@ -274,12 +273,4 @@ export function downloadSandboxHTML(content: SandboxContent, filename: string = 
   document.body.removeChild(a);
   
   URL.revokeObjectURL(url);
-}
-
-/**
- * 生成Data URL（用于测试）
- */
-export function generateDataURL(content: SandboxContent): string {
-  const html = generateSandboxHTML(content);
-  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
 } 
