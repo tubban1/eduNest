@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Heart, Bookmark } from 'lucide-react';
 import { api, Content } from '@/lib/api';
 import SandboxRenderer from '@/components/SandboxRenderer';
 
@@ -16,6 +19,18 @@ export default function ContentPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [collectionCount, setCollectionCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isWeChat, setIsWeChat] = useState(false);
+
+  useEffect(() => {
+    // 检测微信环境
+    const checkWeChat = () => {
+      const userAgent = navigator.userAgent;
+      const isWeChatBrowser = /MicroMessenger/i.test(userAgent) || /X5Browser/i.test(userAgent);
+      setIsWeChat(isWeChatBrowser);
+    };
+    
+    checkWeChat();
+  }, []);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -146,123 +161,128 @@ export default function ContentPage() {
     );
   }
 
+  // 微信环境显示提示
+  if (isWeChat) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-4 p-6 bg-white rounded-lg shadow-lg">
+          <div className="mb-6">
+            <div className="text-6xl mb-4">🌐</div>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">请在浏览器中打开</h1>
+            <p className="text-gray-600 text-sm">
+              当前页面在微信中可能无法正常显示，建议使用浏览器打开以获得最佳体验
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={handleOpenInBrowser}
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              🌐 用浏览器打开
+            </button>
+            
+            <button
+              onClick={() => router.back()}
+              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              ← 返回
+            </button>
+          </div>
+          
+          <div className="mt-4 text-xs text-gray-500">
+            <p>💡 提示：点击右上角菜单 → 选择"在浏览器中打开"</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 页面头部 - 移动端优化 */}
+      {/* 页面头部 */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex flex-col space-y-3">
-            {/* 标题和描述 */}
-            <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-gray-900 text-lg sm:text-xl md:text-2xl truncate">
-                {content.title}
-              </h1>
-              {content.description && (
-                <p className="text-gray-600 mt-1 text-sm sm:text-base line-clamp-2">
-                  {content.description}
-                </p>
-              )}
+          {/* 第一行：返回按钮、标题、logo */}
+          <div className="flex items-center mb-3">
+            {/* 左侧：返回按钮 */}
+            <button
+              onClick={() => router.back()}
+              className="px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors mr-3"
+            >
+              ← 返回
+            </button>
+            
+            {/* 中间：标题 */}
+            <h1 className="flex-1 font-bold text-gray-900 text-lg sm:text-xl md:text-2xl truncate">
+              {content.title}
+            </h1>
+            
+            {/* 右侧：favicon logo链接到首页 */}
+            <Link href="/" className="ml-3">
+              <Image
+                src="/favicon.png"
+                alt="AI Education Platform"
+                width={32}
+                height={32}
+                className="w-8 h-8 hover:opacity-80 transition-opacity"
+              />
+            </Link>
+          </div>
+          
+          {/* 第二行：description */}
+          {content.description && (
+            <div className="mb-3">
+              <p className="text-gray-600 text-sm sm:text-base">
+                {content.description}
+              </p>
+            </div>
+          )}
+          
+          {/* 第三行：点赞收藏按钮 + 标签 */}
+          <div className="flex items-center">
+            {/* 左侧：点赞收藏按钮 - 与CollectionCard样式保持一致 */}
+            <div className="flex items-center space-x-3 mr-4">
+              {/* 点赞按钮 */}
+              <button 
+                onClick={handleLike}
+                disabled={isProcessing}
+                className={`flex items-center text-sm transition-colors ${
+                  isLiked 
+                    ? 'text-red-600 hover:text-red-700' 
+                    : 'text-gray-600 hover:text-gray-700'
+                } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={isLiked ? '已点赞' : '点赞'}
+              >
+                <Heart className={`w-4 h-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
+                {isLiked ? '已点赞' : '点赞'} {likeCount > 0 && `(${likeCount})`}
+              </button>
+              
+              {/* 收藏按钮 */}
+              <button 
+                onClick={handleCollect}
+                disabled={isProcessing}
+                className={`flex items-center text-sm text-blue-600 hover:text-blue-700 transition-colors ${
+                  isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title={isCollected ? '已收藏' : '收藏'}
+              >
+                <Bookmark className="w-4 h-4 mr-1" />
+                {isCollected ? '已收藏' : '收藏'} {collectionCount > 0 && `(${collectionCount})`}
+              </button>
             </div>
             
-            {/* 标签和知识点 - 移动端优化 */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              {/* Tags */}
+            {/* 右侧：标签完整展示 */}
+            <div className="flex flex-wrap items-center gap-1">
               {content.tags && content.tags.length > 0 && (
                 <>
-                  <span className="text-gray-500">标签:</span>
-                  {content.tags.slice(0, 3).map((tag, index) => (
-                    <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                  {content.tags.map((tag, index) => (
+                    <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                       {tag}
                     </span>
                   ))}
-                  {content.tags.length > 3 && (
-                    <span className="text-gray-500">+{content.tags.length - 3}</span>
-                  )}
                 </>
               )}
-              
-              {/* Knowledge Points */}
-              {content.knowledge_point && content.knowledge_point.length > 0 && (
-                <>
-                  <span className="text-gray-500 ml-2">知识点:</span>
-                  {content.knowledge_point.slice(0, 2).map((point, index) => (
-                    <span key={index} className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                      {point}
-                    </span>
-                  ))}
-                  {content.knowledge_point.length > 2 && (
-                    <span className="text-gray-500">+{content.knowledge_point.length - 2}</span>
-                  )}
-                </>
-              )}
-            </div>
-            
-            {/* 操作按钮区域 - 移动端优化 */}
-            <div className="flex items-center justify-between">
-              {/* 左侧：评分和统计 */}
-              <div className="flex items-center space-x-4">
-                {content.rating && (
-                  <div className="flex items-center space-x-1">
-                    <span className="text-yellow-500">⭐</span>
-                    <span className="text-sm text-gray-600">{content.rating.toFixed(1)}</span>
-                  </div>
-                )}
-                
-                {/* 点赞统计 */}
-                <div className="flex items-center space-x-1 text-sm text-gray-600">
-                  <span>❤️ {likeCount}</span>
-                </div>
-                
-                {/* 收藏统计 */}
-                <div className="flex items-center space-x-1 text-sm text-gray-600">
-                  <span>📚 {collectionCount}</span>
-                </div>
-              </div>
-              
-              {/* 右侧：操作按钮 */}
-              <div className="flex items-center space-x-2">
-                {/* 点赞按钮 */}
-                <button 
-                  onClick={handleLike}
-                  disabled={isProcessing}
-                  className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
-                    isLiked 
-                      ? 'bg-red-500 text-white hover:bg-red-600' 
-                      : 'bg-red-100 text-red-600 hover:bg-red-200'
-                  } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {isLiked ? '❤️ 已点赞' : '🤍 点赞'}
-                </button>
-                
-                {/* 收藏按钮 */}
-                <button 
-                  onClick={handleCollect}
-                  disabled={isProcessing}
-                  className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
-                    isCollected 
-                      ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                      : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                  } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {isCollected ? '📚 已收藏' : '📖 收藏'}
-                </button>
-                
-                {/* 用浏览器打开按钮 */}
-                <button
-                  onClick={handleOpenInBrowser}
-                  className="px-3 py-1.5 bg-green-100 text-green-600 text-xs rounded-full hover:bg-green-200 transition-colors"
-                >
-                  🌐 用浏览器打开
-                </button>
-                
-                {/* 返回按钮 */}
-                <button
-                  onClick={() => router.back()}
-                  className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  ← 返回
-                </button>
-              </div>
             </div>
           </div>
         </div>
