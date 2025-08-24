@@ -38,7 +38,8 @@ export default function WeChatUltraSimpleRenderer({
   // 生成超简化的HTML
   const generateSimpleHTML = useCallback(() => {
     // 只保留Vue.js，移除其他复杂库
-    const vueLink = externalLinks.find(link => link.includes('vue'));
+    const linksArray = Array.isArray(externalLinks) ? externalLinks : [externalLinks];
+    const vueLink = linksArray.find(link => link.includes('vue'));
     const externalScripts = vueLink ? `<script src="${vueLink}" crossorigin="anonymous"></script>` : '';
     
     const simpleHTML = `<!DOCTYPE html>
