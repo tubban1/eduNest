@@ -115,14 +115,13 @@ export default function WeChatUltraSimpleRenderer({
     return simpleHTML;
   }, [html, css, js, externalLinks, title]);
 
-  // 生成Blob URL
-  const generateBlobURL = useCallback(() => {
+  // 生成Data URL (确保HTTPS兼容性)
+  const generateDataURL = useCallback(() => {
     const htmlContent = generateSimpleHTML();
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+    const dataURL = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
     
-    setDebugInfo(`Blob URL长度: ${htmlContent.length} 字符`);
-    return url;
+    setDebugInfo(`Data URL长度: ${dataURL.length} 字符`);
+    return dataURL;
   }, [generateSimpleHTML]);
 
   // 重新加载
@@ -132,11 +131,11 @@ export default function WeChatUltraSimpleRenderer({
     setErrorMessage('');
     
     if (iframeRef.current) {
-      // 创建新的Blob URL
-      const newURL = generateBlobURL();
+      // 创建新的Data URL
+      const newURL = generateDataURL();
       iframeRef.current.src = newURL;
     }
-  }, [generateBlobURL]);
+  }, [generateDataURL]);
 
   // 下载HTML文件
   const downloadHTML = useCallback(() => {
@@ -154,13 +153,10 @@ export default function WeChatUltraSimpleRenderer({
     URL.revokeObjectURL(url);
   }, [generateSimpleHTML]);
 
-  // 清理Blob URL
+  // 清理Data URL (无需清理，Data URL是内联的)
   useEffect(() => {
     return () => {
-      // 清理所有创建的Blob URL
-      if (iframeRef.current && iframeRef.current.src.startsWith('blob:')) {
-        URL.revokeObjectURL(iframeRef.current.src);
-      }
+      // Data URL是内联的，无需清理
     };
   }, []);
 
@@ -169,7 +165,7 @@ export default function WeChatUltraSimpleRenderer({
       {/* 微信兼容性提示 */}
       <div className="absolute top-0 left-0 bg-blue-600 text-white text-xs p-2 z-40 max-w-xs">
         <div className="font-bold mb-1">🔧 微信超简化模式</div>
-        <div>使用Blob URL方式</div>
+        <div>使用Data URL方式</div>
         <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
         <div className="text-xs opacity-75">{debugInfo}</div>
         <div className="mt-2 space-y-1">
@@ -194,7 +190,7 @@ export default function WeChatUltraSimpleRenderer({
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
             <p className="text-sm text-gray-600">微信超简化模式加载中...</p>
-            <p className="text-xs text-gray-500 mt-1">使用Blob URL方式，避免Data URL问题</p>
+            <p className="text-xs text-gray-500 mt-1">使用Data URL方式，确保HTTPS兼容性</p>
             <p className="text-xs text-gray-400 mt-1">{debugInfo}</p>
           </div>
         </div>
@@ -219,7 +215,7 @@ export default function WeChatUltraSimpleRenderer({
       {/* 超简化iframe */}
       <iframe
         ref={iframeRef}
-        src={generateBlobURL()}
+        src={generateDataURL()}
         title={title}
         className="w-full h-full border-0 bg-white"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
