@@ -122,6 +122,7 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
+import { generateDataURL, SandboxContent } from '../utils/sandboxGenerator';
 
 interface SandboxRendererProps {
   html: string;
@@ -186,6 +187,7 @@ export default function SandboxRenderer({
   }>>({});
   const [loadTimeout, setLoadTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isWeChat, setIsWeChat] = useState(false);
+  const [useWeChatMode, setUseWeChatMode] = useState(false);
 
   // 基本的HTTPS检查
   const validateUrl = useCallback((url: string): boolean => {
@@ -262,8 +264,14 @@ export default function SandboxRenderer({
     if (isWeChat && !useNativeIframe) {
       console.log('WeChat browser detected, suggesting native iframe mode');
       // 在微信中，建议使用原生iframe模式
+      
+      // 自动切换到微信兼容模式
+      if (!useWeChatMode) {
+        console.log('Auto-switching to WeChat compatible mode');
+        setUseWeChatMode(true);
+      }
     }
-  }, [isWeChat, useNativeIframe]);
+  }, [isWeChat, useNativeIframe, useWeChatMode]);
 
   // 渲染外部依赖链接（带基本验证）
   const renderExternalLinks = useCallback((links: string | string[]) => {
@@ -1555,6 +1563,10 @@ export default function SandboxRenderer({
           <div className="font-bold mb-1">微信模式</div>
           <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
           <div>超时时间: 20秒</div>
+          <div className="bg-green-600 p-2 rounded mt-2 text-white">
+            <div className="font-bold">✅ 微信兼容模式已启用</div>
+            <div className="text-xs">使用Data URL方式，微信完全兼容</div>
+          </div>
           {!useNativeIframe && (
             <div className="bg-red-600 p-2 rounded mt-2 text-white">
               <div className="font-bold">⚠️ 微信兼容性建议</div>
@@ -1590,6 +1602,15 @@ export default function SandboxRenderer({
               className="w-full px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
             >
               {isLoading ? '⏸️ 暂停加载' : '▶️ 开始加载'}
+            </button>
+            <button
+              onClick={() => {
+                console.log('Debug: Toggle WeChat mode');
+                setUseWeChatMode(!useWeChatMode);
+              }}
+              className="w-full px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
+            >
+              {useWeChatMode ? '🔄 切换回srcDoc' : '📱 切换到微信模式'}
             </button>
           </div>
         </div>
@@ -1697,6 +1718,37 @@ export default function SandboxRenderer({
           onError={() => {
             const errorMsg = 'Iframe加载失败';
             console.error('Iframe error:', errorMsg);
+            handleError(errorMsg);
+          }}
+        />
+      ) : useWeChatMode ? (
+        <iframe
+          key={previewKey}
+          ref={iframeRef}
+          src={generateDataURL({ html, css, js, externalLinks, title: 'WeChat Sandbox' })}
+          title="微信兼容沙盒预览"
+          className="w-full h-full border-0 bg-white"
+          style={{
+            border: 'none',
+            outline: 'none',
+            minHeight: '100%',
+            height: '100%',
+            width: '100%',
+            overflow: 'auto'
+          }}
+          onLoad={() => {
+            console.log('WeChat compatible iframe loaded successfully');
+            setIsLoading(false);
+            // 启动性能监控
+            const stopMonitoring = startPerformanceMonitoring();
+            if (stopMonitoring) {
+              setTimeout(stopMonitoring, 100);
+            }
+            onLoad?.();
+          }}
+          onError={() => {
+            const errorMsg = '微信兼容iframe加载失败';
+            console.error('WeChat iframe error:', errorMsg);
             handleError(errorMsg);
           }}
         />
