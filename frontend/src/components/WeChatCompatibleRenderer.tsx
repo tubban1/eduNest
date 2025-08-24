@@ -34,7 +34,7 @@ export default function WeChatCompatibleRenderer({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [debugInfo, setDebugInfo] = useState<string>('');
+
 
   // 生成Data URL
   const generateIframeSrc = useCallback(() => {
@@ -63,7 +63,7 @@ export default function WeChatCompatibleRenderer({
     };
     
     const dataURL = generateWeChatDataURL(content);
-    setDebugInfo(`Data URL长度: ${dataURL.length}`);
+    
   }, [html, css, js, externalLinks, title]);
 
   // 重新加载
@@ -100,7 +100,7 @@ export default function WeChatCompatibleRenderer({
         <div className="font-bold mb-1">✅ 微信兼容模式</div>
         <div>使用Data URL方式</div>
         <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
-        <div className="text-xs opacity-75">{debugInfo}</div>
+
         <div className="mt-2 space-y-1">
           <button
             onClick={refresh}
@@ -124,7 +124,7 @@ export default function WeChatCompatibleRenderer({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
             <p className="text-sm text-gray-600">微信兼容模式加载中...</p>
             <p className="text-xs text-gray-500 mt-1">使用Data URL方式，微信完全兼容</p>
-            <p className="text-xs text-gray-400 mt-1">{debugInfo}</p>
+    
           </div>
         </div>
       )}

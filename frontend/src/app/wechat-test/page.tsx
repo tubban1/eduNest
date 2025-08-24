@@ -101,7 +101,7 @@ export default function WeChatTestPage() {
       
       // 页面加载完成后的初始化
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('微信测试页面加载完成');
+      
         
         // 添加按钮悬停效果
         const buttons = document.querySelectorAll('button');
@@ -117,7 +117,7 @@ export default function WeChatTestPage() {
       
       // 微信环境检测
       if (/MicroMessenger/i.test(navigator.userAgent)) {
-        console.log('微信浏览器环境检测成功');
+
         document.body.classList.add('wechat-browser');
         
         // 添加微信特殊样式

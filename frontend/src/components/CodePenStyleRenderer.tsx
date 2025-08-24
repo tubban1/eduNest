@@ -34,7 +34,7 @@ export default function CodePenStyleRenderer({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [debugInfo, setDebugInfo] = useState<string>('');
+
 
   // 生成CodePen风格的Data URL
   const generateIframeSrc = useCallback(() => {
@@ -63,7 +63,7 @@ export default function CodePenStyleRenderer({
     };
     
     const dataURL = generateCodePenDataURL(content);
-    setDebugInfo(`Data URL长度: ${dataURL.length} 字符`);
+    
   }, [html, css, js, externalLinks, title]);
 
   // 重新加载
@@ -98,7 +98,7 @@ export default function CodePenStyleRenderer({
         <div className="font-bold mb-1">🎨 CodePen风格模式</div>
         <div>模仿CodePen的简单结构</div>
         <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
-        <div className="text-xs opacity-75">{debugInfo}</div>
+
         <div className="mt-2 space-y-1">
           <button
             onClick={refresh}
@@ -122,7 +122,7 @@ export default function CodePenStyleRenderer({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
             <p className="text-sm text-gray-600">CodePen风格模式加载中...</p>
             <p className="text-xs text-gray-500 mt-1">模仿CodePen的简单结构，提高微信兼容性</p>
-            <p className="text-xs text-gray-400 mt-1">{debugInfo}</p>
+    
           </div>
         </div>
       )}

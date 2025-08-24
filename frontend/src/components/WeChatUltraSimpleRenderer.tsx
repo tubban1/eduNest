@@ -33,7 +33,7 @@ export default function WeChatUltraSimpleRenderer({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [debugInfo, setDebugInfo] = useState<string>('');
+
 
   // 生成超简化的HTML
   const generateSimpleHTML = useCallback(() => {
@@ -120,7 +120,7 @@ export default function WeChatUltraSimpleRenderer({
       iframeRef.current.src = newURL;
       
       // 更新debugInfo
-      setDebugInfo(`Data URL长度: ${newURL.length} 字符`);
+      
     }
   }, [generateDataURL]);
 
@@ -145,7 +145,7 @@ export default function WeChatUltraSimpleRenderer({
     // 在组件挂载时设置debugInfo
     const htmlContent = generateSimpleHTML();
     const dataURL = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
-    setDebugInfo(`Data URL长度: ${dataURL.length} 字符`);
+    
     
     return () => {
       // Data URL是内联的，无需清理
@@ -159,7 +159,7 @@ export default function WeChatUltraSimpleRenderer({
         <div className="font-bold mb-1">🔧 微信超简化模式</div>
         <div>无外部依赖，纯内联内容</div>
         <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
-        <div className="text-xs opacity-75">{debugInfo}</div>
+
         <div className="mt-2 space-y-1">
           <button
             onClick={refresh}
@@ -183,7 +183,7 @@ export default function WeChatUltraSimpleRenderer({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
             <p className="text-sm text-gray-600">微信超简化模式加载中...</p>
             <p className="text-xs text-gray-500 mt-1">无外部依赖，纯内联内容，确保微信兼容性</p>
-            <p className="text-xs text-gray-400 mt-1">{debugInfo}</p>
+    
           </div>
         </div>
       )}
