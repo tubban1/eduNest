@@ -1701,8 +1701,7 @@ export default function SandboxRenderer({
             height: 'calc(100% + 20px)',
             minHeight: 'calc(100% + 20px)',
             overflow: 'hidden',
-            position: 'relative',
-            scrolling: 'no'
+            position: 'relative'
           }}
           scrolling="no"
           onLoad={() => {
@@ -1749,8 +1748,7 @@ export default function SandboxRenderer({
             height: 'calc(100% + 20px)',
             minHeight: 'calc(100% + 20px)',
             overflow: 'hidden',
-            position: 'relative',
-            scrolling: 'no'
+            position: 'relative'
           }}
           scrolling="no"
           onLoad={() => {
@@ -1787,8 +1785,7 @@ export default function SandboxRenderer({
             height: 'calc(100% + 20px)',
             minHeight: 'calc(100% + 20px)',
             overflow: 'hidden',
-            position: 'relative',
-            scrolling: 'no'
+            position: 'relative'
           }}
           scrolling="no"
           onLoad={() => {
