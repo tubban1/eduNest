@@ -1,5 +1,5 @@
 /**
- * 微信简化HTML生成器 - 真实环境优化版
+ * 微信超简化HTML生成器 - 真实环境优化版
  * 专门用于解决真实微信浏览器的渲染问题
  */
 
@@ -14,7 +14,7 @@ export interface WeChatContent {
 export function generateWeChatHTML(content: WeChatContent): string {
   const { html, css, js, externalLinks, title = 'WeChat Sandbox' } = content;
   
-  // 处理外部链接 - 简化版本
+  // 处理外部链接 - 极简版本
   const renderExternalLinks = (links: string | string[]) => {
     let arr: string[] = [];
     if (Array.isArray(links)) {
@@ -26,14 +26,9 @@ export function generateWeChatHTML(content: WeChatContent): string {
         .filter(Boolean);
     }
     
-    // 只保留必要的库，减少复杂度
-    const essentialLinks = arr.filter(link => {
-      return link.includes('vue') || link.includes('tone');
-    }).slice(0, 2); // 最多2个外部库
-    
-    return essentialLinks.map(link => 
-      `<script src="${link}" crossorigin="anonymous"></script>`
-    ).join('\n');
+    // 只保留Vue.js，其他库暂时移除
+    const vueLink = arr.find(link => link.includes('vue'));
+    return vueLink ? `<script src="${vueLink}" crossorigin="anonymous"></script>` : '';
   };
 
   return `<!DOCTYPE html>
