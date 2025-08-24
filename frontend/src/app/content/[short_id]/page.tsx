@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, Content } from '@/lib/api';
 import SandboxRenderer from '@/components/SandboxRenderer';
-import { downloadStandalonePage, generateStandaloneContentPage, ContentPageData } from '@/utils/contentPageGenerator';
 
 export default function ContentPage() {
   const params = useParams();
@@ -42,7 +41,7 @@ export default function ContentPage() {
             const isUserCollected = collectionsResponse.length > 0;
             setIsCollected(isUserCollected);
             
-            // 设置计数（这里假设后端返回的数据结构）
+            // 设置计数
             setLikeCount(response.likes_count || 0);
             setCollectionCount(response.collections_count || 0);
           } catch (err) {
@@ -111,47 +110,12 @@ export default function ContentPage() {
     }
   };
 
-  const handleDownloadStandalone = () => {
+  const handleOpenInBrowser = () => {
     if (!content) return;
     
-    const pageData: ContentPageData = {
-      html: content.code_html || '',
-      css: content.code_css || '',
-      js: content.code_js || '',
-      externalLinks: content.external_links || [],
-      title: content.title || 'Interactive Content',
-      description: content.description || 'AI Generated Interactive Content',
-      keywords: 'interactive, content, ai, education',
-      author: 'AI Education Platform'
-    };
-    
-    downloadStandalonePage(pageData, `${content.short_id}-standalone.html`);
-  };
-
-  const handleOpenStandalone = () => {
-    if (!content) return;
-    
-    const pageData: ContentPageData = {
-      html: content.code_html || '',
-      css: content.code_css || '',
-      js: content.code_js || '',
-      externalLinks: content.external_links || [],
-      title: content.title || 'Interactive Content',
-      description: content.description || 'AI Generated Interactive Content',
-      keywords: 'interactive, content, ai, education',
-      author: 'AI Education Platform'
-    };
-    
-    // 生成独立页面并在新窗口打开
-    const html = generateStandaloneContentPage(pageData);
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    
-    const newWindow = window.open(url, '_blank');
-    if (newWindow) {
-      // 清理URL对象
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
+    // 在新窗口打开当前页面
+    const currentUrl = window.location.href;
+    window.open(currentUrl, '_blank');
   };
 
   if (loading) {
@@ -283,12 +247,12 @@ export default function ContentPage() {
                   {isCollected ? '📚 已收藏' : '📖 收藏'}
                 </button>
                 
-                {/* 独立页面按钮 */}
+                {/* 用浏览器打开按钮 */}
                 <button
-                  onClick={handleDownloadStandalone}
+                  onClick={handleOpenInBrowser}
                   className="px-3 py-1.5 bg-green-100 text-green-600 text-xs rounded-full hover:bg-green-200 transition-colors"
                 >
-                  💾 下载
+                  🌐 用浏览器打开
                 </button>
                 
                 {/* 返回按钮 */}
