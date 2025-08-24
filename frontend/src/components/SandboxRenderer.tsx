@@ -152,6 +152,8 @@ export default function SandboxRenderer({
     error: boolean;
     version?: string;
   }>>({});
+  const [loadTimeout, setLoadTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isWeChat, setIsWeChat] = useState(false);
 
   // 基本的HTTPS检查
   const validateUrl = useCallback((url: string): boolean => {
@@ -162,6 +164,48 @@ export default function SandboxRenderer({
       return false;
     }
   }, []);
+
+  // 检测微信环境
+  React.useEffect(() => {
+    const checkWeChat = () => {
+      const userAgent = navigator.userAgent;
+      const isWeChatBrowser = /MicroMessenger/i.test(userAgent) || /X5Browser/i.test(userAgent);
+      setIsWeChat(isWeChatBrowser);
+      
+      if (isWeChatBrowser) {
+        console.log('WeChat browser detected, setting up compatibility mode');
+        // 微信浏览器设置更长的超时时间
+        const timeout = setTimeout(() => {
+          if (isLoading) {
+            console.log('WeChat browser timeout, forcing load complete');
+            setIsLoading(false);
+            onError?.('微信浏览器加载超时，请刷新重试');
+          }
+        }, 15000); // 微信浏览器15秒超时
+        
+        setLoadTimeout(timeout);
+      } else {
+        // 普通浏览器5秒超时
+        const timeout = setTimeout(() => {
+          if (isLoading) {
+            console.log('Browser timeout, forcing load complete');
+            setIsLoading(false);
+            onError?.('加载超时，请检查网络连接');
+          }
+        }, 5000);
+        
+        setLoadTimeout(timeout);
+      }
+    };
+    
+    checkWeChat();
+    
+    return () => {
+      if (loadTimeout) {
+        clearTimeout(loadTimeout);
+      }
+    };
+  }, [isLoading, onError, loadTimeout]);
 
   // 渲染外部依赖链接（带基本验证）
   const renderExternalLinks = useCallback((links: string | string[]) => {
@@ -387,6 +431,56 @@ export default function SandboxRenderer({
     // 触摸事件优化
     var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+    var isWeChatBrowser = isWeChat || /X5Browser/i.test(navigator.userAgent);
+    
+    // 微信浏览器特殊处理
+    if (isWeChatBrowser) {
+      // 微信浏览器兼容性优化
+      console.log('WeChat browser detected, applying compatibility fixes');
+      
+      // 强制设置视口
+      var viewport = document.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      }
+      
+      // 微信浏览器触摸事件优化
+      document.addEventListener('WeixinJSBridgeReady', function() {
+        console.log('WeixinJSBridge ready');
+        // 微信JS桥接准备就绪
+        
+        // 通知父窗口微信环境已就绪
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'WECHAT_READY',
+            data: { ready: true }
+          }, '*');
+        }
+      });
+      
+      // 微信浏览器页面显示事件
+      document.addEventListener('WeixinJSBridgeReady', function() {
+        WeixinJSBridge.on('menu:share:appmessage', function() {
+          // 分享到朋友圈
+        });
+        WeixinJSBridge.on('menu:share:timeline', function() {
+          // 分享到朋友圈
+        });
+      });
+      
+      // 微信浏览器页面可见性检测
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+          console.log('WeChat page became visible');
+          // 页面重新可见时，重新初始化
+          setTimeout(function() {
+            if (window.LibraryManager) {
+              window.LibraryManager.initCommonLibraries();
+            }
+          }, 100);
+        }
+      });
+    }
     
     if (isMobile) {
       // 防止双击缩放
@@ -1273,6 +1367,35 @@ export default function SandboxRenderer({
     `;
   }, [enableLibrarySupport]);
 
+  // 性能监控
+  const startPerformanceMonitoring = useCallback(() => {
+    if (!enablePerformance) return;
+    
+    const startTime = performance.now();
+    const startMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    
+    return () => {
+      const endTime = performance.now();
+      const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
+      
+      setPerformanceMetrics({
+        loadTime: endTime - startTime,
+        renderTime: endTime - startTime,
+        memoryUsage: endMemory - startMemory
+      });
+    };
+  }, [enablePerformance]);
+
+  // 错误边界处理
+  const handleError = useCallback((error: string) => {
+    if (enableErrorBoundary) {
+      setHasError(true);
+      setErrorMessage(error);
+      setIsLoading(false);
+    }
+    onError?.(error);
+  }, [enableErrorBoundary, onError]);
+
   // 监听iframe消息
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -1300,6 +1423,18 @@ export default function SandboxRenderer({
           return newStatus;
         });
       }
+      
+      // 监听微信就绪消息
+      if (event.data && event.data.type === 'WECHAT_READY') {
+        console.log('WeChat environment ready');
+        // 微信环境就绪，可以开始加载内容
+        if (isLoading) {
+          setTimeout(() => {
+            setIsLoading(false);
+            onLoad?.();
+          }, 1000); // 延迟1秒确保微信环境完全就绪
+        }
+      }
     };
 
     window.addEventListener('message', handleMessage);
@@ -1317,11 +1452,18 @@ export default function SandboxRenderer({
   return (
     <div className={`relative ${className || ''}`} style={style}>
       {/* 加载状态指示 */}
-      {isLoading && (
+      {isLoading && !hasError && (
         <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-600">加载中...</p>
+            <p className="text-sm text-gray-600">
+              {isWeChat ? '微信加载中...' : '加载中...'}
+            </p>
+            {isWeChat && (
+              <p className="text-xs text-gray-500 mt-1">
+                微信浏览器可能需要更长时间
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -1357,7 +1499,7 @@ export default function SandboxRenderer({
         ref={iframeRef}
         srcDoc={generateSrcDoc(html, css, js, externalLinks)}
         title="沙盒预览"
-        sandbox="allow-scripts allow-forms allow-same-origin"
+        sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-popups allow-presentation"
         className="w-full h-full border-0 bg-white"
         style={{
           border: 'none',
@@ -1369,12 +1511,16 @@ export default function SandboxRenderer({
         }}
         onLoad={() => {
           setIsLoading(false);
+          // 启动性能监控
+          const stopMonitoring = startPerformanceMonitoring();
+          if (stopMonitoring) {
+            setTimeout(stopMonitoring, 100);
+          }
           onLoad?.();
         }}
         onError={() => {
           const errorMsg = 'Iframe加载失败';
-          setIsLoading(false);
-          onError?.(errorMsg);
+          handleError(errorMsg);
         }}
       />
     </div>
