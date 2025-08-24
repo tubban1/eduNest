@@ -91,7 +91,7 @@ export default function ContentPage() {
         // 获取用户的收藏列表，找到对应的收藏记录并删除
         const collections = await api.getCollectionsByContent(content.id);
         if (collections.length > 0) {
-          await api.removeFromCollection(content.id, collections[0].list_id);
+          await api.removeContentFromList(content.id, collections[0].list_id);
           setCollectionCount(prev => Math.max(0, prev - 1));
           setIsCollected(false);
         }
@@ -99,7 +99,7 @@ export default function ContentPage() {
         // 添加到默认收藏列表
         const lists = await api.getCollectionLists();
         if (lists.length > 0) {
-          await api.addToCollection(content.id, lists[0].id);
+          await api.addContentToList(content.id, lists[0].id);
           setCollectionCount(prev => prev + 1);
           setIsCollected(true);
         }
