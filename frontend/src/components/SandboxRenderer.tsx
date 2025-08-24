@@ -181,18 +181,18 @@ export default function SandboxRenderer({
             setIsLoading(false);
             onError?.('微信浏览器加载超时，请刷新重试');
           }
-        }, 15000); // 微信浏览器15秒超时
+        }, 20000); // 微信浏览器20秒超时
         
         setLoadTimeout(timeout);
       } else {
-        // 普通浏览器5秒超时
+        // 普通浏览器10秒超时
         const timeout = setTimeout(() => {
           if (isLoading) {
             console.log('Browser timeout, forcing load complete');
             setIsLoading(false);
             onError?.('加载超时，请检查网络连接');
           }
-        }, 5000);
+        }, 10000);
         
         setLoadTimeout(timeout);
       }
@@ -205,7 +205,7 @@ export default function SandboxRenderer({
         clearTimeout(loadTimeout);
       }
     };
-  }, [isLoading, onError, loadTimeout]);
+  }, [isLoading, onError]);
 
   // 渲染外部依赖链接（带基本验证）
   const renderExternalLinks = useCallback((links: string | string[]) => {
@@ -480,6 +480,17 @@ export default function SandboxRenderer({
           }, 100);
         }
       });
+      
+      // 微信浏览器强制加载完成
+      setTimeout(function() {
+        console.log('WeChat browser force load timeout');
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'WECHAT_FORCE_LOAD',
+            data: { force: true }
+          }, '*');
+        }
+      }, 5000); // 5秒后强制通知加载完成
     }
     
     if (isMobile) {
@@ -1435,6 +1446,16 @@ export default function SandboxRenderer({
           }, 1000); // 延迟1秒确保微信环境完全就绪
         }
       }
+      
+      // 监听微信强制加载消息
+      if (event.data && event.data.type === 'WECHAT_FORCE_LOAD') {
+        console.log('WeChat force load message received');
+        // 微信强制加载，立即完成加载状态
+        if (isLoading) {
+          setIsLoading(false);
+          onLoad?.();
+        }
+      }
     };
 
     window.addEventListener('message', handleMessage);
@@ -1447,10 +1468,46 @@ export default function SandboxRenderer({
   const refresh = useCallback(() => {
     setPreviewKey(prev => prev + 1);
     setIsLoading(true);
-  }, []);
+    setHasError(false);
+    setErrorMessage('');
+    setPerformanceMetrics({
+      loadTime: 0,
+      renderTime: 0,
+      memoryUsage: 0
+    });
+    
+    // 微信浏览器特殊处理：强制设置加载状态
+    if (isWeChat) {
+      console.log('WeChat browser refresh, setting up force load');
+      setTimeout(() => {
+        if (isLoading) {
+          console.log('Force completing load for WeChat browser');
+          setIsLoading(false);
+          onLoad?.();
+        }
+      }, 3000); // 3秒后强制完成加载
+    }
+  }, [isLoading, isWeChat, onLoad]);
 
   return (
     <div className={`relative ${className || ''}`} style={style}>
+      {/* 微信浏览器调试信息 */}
+      {isWeChat && (
+        <div className="absolute top-0 left-0 bg-yellow-500 text-white text-xs p-1 z-40">
+          微信模式 | 加载状态: {isLoading ? '加载中' : '已完成'} | 
+          <button
+            onClick={() => {
+              console.log('Debug: Force complete load');
+              setIsLoading(false);
+              onLoad?.();
+            }}
+            className="ml-1 px-1 bg-red-500 text-white text-xs rounded"
+          >
+            强制完成
+          </button>
+        </div>
+      )}
+      
       {/* 加载状态指示 */}
       {isLoading && !hasError && (
         <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
@@ -1460,9 +1517,21 @@ export default function SandboxRenderer({
               {isWeChat ? '微信加载中...' : '加载中...'}
             </p>
             {isWeChat && (
-              <p className="text-xs text-gray-500 mt-1">
-                微信浏览器可能需要更长时间
-              </p>
+              <>
+                <p className="text-xs text-gray-500 mt-1">
+                  微信浏览器可能需要更长时间
+                </p>
+                <button
+                  onClick={() => {
+                    console.log('Manual force load for WeChat');
+                    setIsLoading(false);
+                    onLoad?.();
+                  }}
+                  className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                >
+                  强制完成加载
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -1499,7 +1568,7 @@ export default function SandboxRenderer({
         ref={iframeRef}
         srcDoc={generateSrcDoc(html, css, js, externalLinks)}
         title="沙盒预览"
-        sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-popups allow-presentation"
+        sandbox="allow-scripts allow-forms allow-same-origin"
         className="w-full h-full border-0 bg-white"
         style={{
           border: 'none',
@@ -1510,6 +1579,7 @@ export default function SandboxRenderer({
           overflow: 'auto'
         }}
         onLoad={() => {
+          console.log('Iframe loaded successfully');
           setIsLoading(false);
           // 启动性能监控
           const stopMonitoring = startPerformanceMonitoring();
@@ -1520,6 +1590,7 @@ export default function SandboxRenderer({
         }}
         onError={() => {
           const errorMsg = 'Iframe加载失败';
+          console.error('Iframe error:', errorMsg);
           handleError(errorMsg);
         }}
       />
