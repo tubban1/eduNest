@@ -1689,7 +1689,7 @@ export default function SandboxRenderer({
           ref={iframeRef}
           src={externalUrl}
           title="沙盒预览"
-          sandbox="allow-scripts allow-forms allow-same-origin"
+          sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
           className="w-full h-full border-0 bg-white"
           style={{
             border: 'none',
@@ -1737,6 +1737,7 @@ export default function SandboxRenderer({
             return dataUrl;
           })()}
           title="微信兼容沙盒预览"
+          sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
           className="w-full h-full border-0 bg-white"
           style={{
             border: 'none',
@@ -1773,7 +1774,7 @@ export default function SandboxRenderer({
           ref={iframeRef}
           srcDoc={generateSrcDoc(html, css, js, externalLinks)}
           title="沙盒预览"
-          sandbox="allow-scripts allow-forms allow-same-origin"
+          sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
           className="w-full h-full border-0 bg-white"
           style={{
             border: 'none',
