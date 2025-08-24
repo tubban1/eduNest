@@ -123,7 +123,7 @@ i18n
       }
     },
     react: { useSuspense: false },
-    debug: process.env.NODE_ENV === 'development', // 只在开发环境开启debug
+    debug: false,
   });
 
 export default i18n;

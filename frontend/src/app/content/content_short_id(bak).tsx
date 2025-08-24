@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import Logo from '@/components/Logo';
-import SandboxRenderer from '@/components/SandboxRenderer';
 
 interface ContentData {
   id: string;
@@ -381,23 +380,19 @@ export default function ContentViewPage({ params }: { params: { short_id: string
 
       {/* 全尺寸内容渲染区域 */}
       <div className="flex-1 w-full h-0 relative">
-        <SandboxRenderer
+        <iframe
           key={previewKey}
-          html={content.code_html}
-          css={content.code_css}
-          js={content.code_js}
-          externalLinks={content.external_links}
-          className="w-full h-full"
+          srcDoc={generateSrcDoc(content)}
+          title="内容预览"
+          sandbox="allow-scripts allow-forms allow-same-origin"
+          className="w-full h-full border-0 outline-none"
           style={{
+            border: 'none',
+            outline: 'none',
             minHeight: '100%',
             height: '100%',
-            width: '100%'
-          }}
-          onError={(error) => {
-            console.log('Content render error:', error);
-          }}
-          onLoad={() => {
-            console.log('Content loaded successfully');
+            width: '100%',
+            overflow: 'auto'
           }}
         />
       </div>

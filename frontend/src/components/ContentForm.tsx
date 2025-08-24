@@ -9,6 +9,7 @@ import Logo from './Logo';
 import AiLoadingAnimation from './AiLoadingAnimation';
 import { useTranslation } from 'react-i18next';
 import { config } from '@/lib/config';
+import SandboxRenderer from './SandboxRenderer';
 
 const DEFAULT_HTML = '<div id="app">{{ message }}</div>';
 const DEFAULT_CSS = 'body { font-family: sans-serif; } #app { padding: 20px; }';
@@ -347,7 +348,8 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
   // console.log('当前activeTab:', activeTab);
 
   // 生成srcDoc，注入window.onerror
-  const srcDoc = `<!DOCTYPE html>
+  const generatePreviewHtml = (html: string, css: string, js: string, externalLinks: string) => {
+    return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset='utf-8'>
@@ -422,19 +424,20 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
       }
     }
   </style>
-  ${renderExternalLinks(external_links)}
-  <style>${code_css||""}</style>
+  ${renderExternalLinks(externalLinks)}
+  <style>${css||""}</style>
 </head>
 <body>
-  ${code_html||""}
+  ${html||""}
   <script>
     window.onerror=function(m,s,l,c,e){
       parent.postMessage({type:'RENDER_ERROR',message:m,stack:e?.stack},'*');
     };
   </script>
-  <script>${code_js||""}</script>
+  <script>${js||""}</script>
 </body>
 </html>`;
+  };
 
   const handlePreview = () => {
     setPreviewKey(prev => prev + 1);
@@ -938,21 +941,34 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
             {/* 右侧：实时预览区 */}
             <div className="bg-gradient-to-br from-gray-100 to-white border border-gray-200 rounded-xl shadow flex flex-col h-[40rem]">
               <div className="text-xs text-gray-400 px-4 py-2 border-b border-gray-100 bg-white/80 rounded-t-xl">{mounted ? t('realTimePreview', { ns: 'content', defaultValue: 'Real-time Preview' }) : 'Real-time Preview'}</div>
-              <iframe
-                ref={iframeRef}
-                key={previewKey}
-                srcDoc={srcDoc}
-                title="预览"
-                sandbox="allow-scripts allow-forms"
-                className="w-full h-full border-0 bg-white rounded-b-xl"
-                style={{
-                  minHeight: '700px',
-                  height: '100%',
-                  width: '100%',
-                  overflow: 'auto',
-                  resize: 'both'
-                }}
-              />
+              <div className="flex-1 relative">
+                {/* 调试信息 */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="absolute top-2 left-2 bg-yellow-100 border border-yellow-300 text-yellow-700 px-2 py-1 rounded text-xs z-20">
+                    HTML: {code_html?.length || 0} chars, CSS: {code_css?.length || 0} chars, JS: {code_js?.length || 0} chars
+                  </div>
+                )}
+                
+                <SandboxRenderer
+                  key={previewKey}
+                  html={code_html}
+                  css={code_css}
+                  js={code_js}
+                  externalLinks={external_links}
+                  className="w-full h-full"
+                  style={{
+                    minHeight: '700px',
+                    height: '100%',
+                    width: '100%'
+                  }}
+                  onError={(error) => {
+                    console.log('Preview error:', error);
+                  }}
+                  onLoad={() => {
+                    console.log('Preview loaded successfully');
+                  }}
+                />
+              </div>
               {/* AI修复摘要显示 */}
               {fixed && (
                 <div className="px-4 py-3 bg-gradient-to-r from-green-50 to-blue-50 border-t border-gray-200 rounded-b-xl">
