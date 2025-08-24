@@ -104,7 +104,7 @@ export default function WeChatUltraSimpleRenderer({
     const htmlContent = generateSimpleHTML();
     const dataURL = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
     
-    setDebugInfo(`Data URL长度: ${dataURL.length} 字符`);
+    // 移除setDebugInfo调用，避免无限循环
     return dataURL;
   }, [generateSimpleHTML]);
 
@@ -118,6 +118,9 @@ export default function WeChatUltraSimpleRenderer({
       // 创建新的Data URL
       const newURL = generateDataURL();
       iframeRef.current.src = newURL;
+      
+      // 更新debugInfo
+      setDebugInfo(`Data URL长度: ${newURL.length} 字符`);
     }
   }, [generateDataURL]);
 
@@ -137,12 +140,17 @@ export default function WeChatUltraSimpleRenderer({
     URL.revokeObjectURL(url);
   }, [generateSimpleHTML]);
 
-  // 清理Data URL (无需清理，Data URL是内联的)
+  // 初始化debugInfo和清理
   useEffect(() => {
+    // 在组件挂载时设置debugInfo
+    const htmlContent = generateSimpleHTML();
+    const dataURL = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
+    setDebugInfo(`Data URL长度: ${dataURL.length} 字符`);
+    
     return () => {
       // Data URL是内联的，无需清理
     };
-  }, []);
+  }, [generateSimpleHTML]);
 
   return (
     <div className={`relative ${className || ''}`} style={style}>
@@ -199,7 +207,12 @@ export default function WeChatUltraSimpleRenderer({
       {/* 超简化iframe */}
       <iframe
         ref={iframeRef}
-        src={generateDataURL()}
+        src={(() => {
+          // 使用立即执行函数避免每次渲染都调用
+          const dataURL = generateDataURL();
+          console.log('Ultra-simple: Data URL generated, length:', dataURL.length);
+          return dataURL;
+        })()}
         title={title}
         className="w-full h-full border-0 bg-white"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
