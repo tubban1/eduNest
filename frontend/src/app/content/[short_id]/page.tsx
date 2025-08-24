@@ -1,43 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import Logo from '@/components/Logo';
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { api, Content } from '@/lib/api';
 import SandboxRenderer from '@/components/SandboxRenderer';
+import { downloadStandalonePage, generateStandaloneContentPage, ContentPageData } from '@/utils/contentPageGenerator';
 
-interface ContentData {
-  id: string;
-  short_id: string;
-  title: string;
-  description?: string;
-  code_html: string;
-  code_css: string;
-  code_js: string;
-  external_links: string;
-  tags: string[];
-}
-
-export default function ContentViewPage({ params }: { params: { short_id: string } }) {
+export default function ContentPage() {
+  const params = useParams();
   const router = useRouter();
-  const [content, setContent] = useState<ContentData | null>(null);
+  const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [previewKey, setPreviewKey] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [useStandaloneMode, setUseStandaloneMode] = useState(false);
 
   useEffect(() => {
     const fetchContent = async () => {
       try {
         setLoading(true);
-        // 使用short_id查询内容
-        const data = await api.content.getByShortId(params.short_id);
-        if (data) {
-          setContent(data);
-        } else {
-          setError('内容不存在');
-        }
-      } catch (error) {
-        setError('加载内容失败');
+        const shortId = params.short_id as string;
+        const response = await api.content.getByShortId(shortId);
+        setContent(response);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '加载失败');
       } finally {
         setLoading(false);
       }
@@ -48,358 +33,282 @@ export default function ContentViewPage({ params }: { params: { short_id: string
     }
   }, [params.short_id]);
 
-  // 智能返回逻辑
-  const handleBack = () => {
-    // 检查是否有历史记录
-    if (window.history.length > 1) {
-      // 有历史记录，尝试返回
-      try {
-        router.back();
-      } catch (error) {
-        // 返回失败，跳转到内容列表页
-        router.push('/content');
-      }
-    } else {
-      // 没有历史记录，直接跳转到内容列表页
-      router.push('/content');
-    }
+  const handleDownloadStandalone = () => {
+    if (!content) return;
+    
+    const pageData: ContentPageData = {
+      html: content.code_html || '',
+      css: content.code_css || '',
+      js: content.code_js || '',
+      externalLinks: content.external_links || [],
+      title: content.title || 'Interactive Content',
+      description: content.description || 'AI Generated Interactive Content',
+      keywords: 'interactive, content, ai, education',
+      author: 'AI Education Platform'
+    };
+    
+    downloadStandalonePage(pageData, `${content.short_id}-standalone.html`);
   };
 
-  // 添加键盘快捷键支持
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        handleBack();
-      }
+  const handleOpenStandalone = () => {
+    if (!content) return;
+    
+    const pageData: ContentPageData = {
+      html: content.code_html || '',
+      css: content.code_css || '',
+      js: content.code_js || '',
+      externalLinks: content.external_links || [],
+      title: content.title || 'Interactive Content',
+      description: content.description || 'AI Generated Interactive Content',
+      keywords: 'interactive, content, ai, education',
+      author: 'AI Education Platform'
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // 渲染外部依赖链接
-  function renderExternalLinks(links: string | string[]) {
-    let arr: string[] = [];
-    if (Array.isArray(links)) {
-      arr = links;
-    } else if (typeof links === 'string') {
-      arr = links
-        .split(/\n|,|;/)
-        .map(link => link.trim())
-        .filter(Boolean);
+    
+    // 生成独立页面并在新窗口打开
+    const html = generateStandaloneContentPage(pageData);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    const newWindow = window.open(url, '_blank');
+    if (newWindow) {
+      // 清理URL对象
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
-    
-    // 确保Vue.js在插件之前加载
-    const cssFiles = arr.filter(link => link.endsWith('.css'));
-    const jsFiles = arr.filter(link => !link.endsWith('.css'));
-    const vueFiles = jsFiles.filter(link => link.includes('vue'));
-    const otherFiles = jsFiles.filter(link => !link.includes('vue'));
-    const sortedJsFiles = [...vueFiles, ...otherFiles];
-    
-    const cssLinks = cssFiles.map(link => `<link rel="stylesheet" href="${link}">`).join('\n');
-    const jsScripts = sortedJsFiles.map(link => `<script src="${link}"></script>`).join('\n');
-    
-    return `${cssLinks}\n${jsScripts}`;
-  }
-
-  // 生成预览文档
-  const generateSrcDoc = (content: ContentData) => {
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-  ${renderExternalLinks(content.external_links)}
-  <style>
-    /* 重置默认样式 */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    html, body {
-      width: 100%;
-      min-height: 100vh;
-      border: none;
-      outline: none;
-      overflow-x: hidden;
-    }
-    
-    /* 确保根元素也是全尺寸 */
-    #root, #app, [data-v-app] {
-      width: 100%;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    /* 游戏容器优化 */
-    .game-container {
-      max-width: 100%;
-      overflow-x: auto;
-    }
-    
-    .game-content {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-    }
-    
-    .game-board {
-      max-width: 100%;
-      height: auto;
-      min-height: 400px;
-    }
-    
-    .side-panel {
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    
-    .game-title {
-      font-size: 2rem !important;
-    }
-    
-    .game-subtitle {
-      font-size: 0.9rem !important;
-    }
-    
-    /* 响应式设计 */
-    @media (max-width: 768px) {
-      .game-container {
-        transform: scale(0.9);
-      }
-      
-      .game-content {
-        flex-direction: column;
-      }
-      
-      .game-board {
-        width: 100%;
-        max-width: 300px;
-      }
-      
-      .side-panel {
-        flex-direction: row;
-        justify-content: center;
-      }
-    }
-    
-    /* 确保iframe内容完整显示 */
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    
-    #app {
-      min-height: 100vh;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .ocean-background {
-      min-height: 100vh;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    
-    /* 用户自定义样式 */
-    ${content.code_css}
-  </style>
-</head>
-<body>
-  ${content.code_html}
-  <script>
-    // 全局错误处理
-    window.addEventListener('error', function(e) {
-      // console.error('Script error:', e.error);
-    });
-    
-    // Tone.js 音频上下文处理
-    function initToneAudioContext() {
-      if (typeof Tone !== 'undefined') {
-        // 监听用户交互事件来启动音频上下文
-        const startAudioContext = () => {
-          if (Tone.context.state !== 'running') {
-            Tone.context.resume();
-            // console.log('Tone.js 音频上下文已启动');
-          }
-        };
-        
-        // 监听各种用户交互事件
-        ['click', 'touchstart', 'keydown', 'mousedown'].forEach(event => {
-          document.addEventListener(event, startAudioContext, { once: true });
-        });
-      }
-    }
-    
-    // 简化的Vue加载检查
-    function waitForVue() {
-      if (typeof Vue !== 'undefined') {
-        window.GlobalVue = Vue;
-        return true;
-      }
-      return false;
-    }
-    
-    // 等待外部脚本加载完成
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        try {
-          // 初始化Tone.js音频上下文
-          initToneAudioContext();
-          
-          // 检查Vue是否加载
-          if (typeof Vue !== 'undefined') {
-            window.GlobalVue = Vue;
-            
-            // 检查VueKinesis
-            if (typeof VueKinesis !== 'undefined') {
-              try {
-                Vue.use(VueKinesis);
-                // console.log('VueKinesis 注册成功');
-              } catch (error) {
-                // console.error('VueKinesis 注册失败:', error);
-              }
-            }
-          }
-          
-          // 执行用户代码
-          ${content.code_js}
-        } catch (error) {
-          // console.error('User script error:', error);
-        }
-      }, 100);
-    });
-  </script>
-</body>
-</html>`;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">加载中...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !content) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-600 text-xl mb-4">❌</div>
-          <p className="text-gray-600">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!content) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">内容不存在</p>
+          <div className="text-red-600 text-xl mb-4">加载失败</div>
+          <p className="text-gray-600 mb-4">{error || '内容不存在'}</p>
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            返回
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
-      {/* 顶部导航栏 */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 z-10 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Logo size="sm" />
-            <button 
-              onClick={handleBack}
-              title="返回上一页或内容列表"
-              className="text-gray-500 hover:text-black text-sm font-medium transition-colors flex items-center gap-1"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              返回
-            </button>
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{content.title}</h1>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <button
-              onClick={() => setPreviewKey(prev => prev + 1)}
-              className="px-3 py-1 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-            >
-              刷新
-            </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* 页面头部 */}
+      <div className={`bg-white shadow-sm border-b transition-all duration-300 ${
+        useStandaloneMode ? 'py-4' : 'py-2'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <h1 className={`font-bold text-gray-900 transition-all duration-300 ${
+                useStandaloneMode ? 'text-2xl' : 'text-lg'
+              } truncate`}>{content.title}</h1>
+              {content.description && (
+                <p className={`text-gray-600 mt-1 transition-all duration-300 ${
+                  useStandaloneMode ? 'text-base' : 'text-sm'
+                } line-clamp-2`}>{content.description}</p>
+              )}
+              {!useStandaloneMode && (
+                <div className="flex items-center space-x-4 mt-2">
+                  {/* Tags */}
+                  {content.tags && content.tags.length > 0 && (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">标签:</span>
+                      {content.tags.slice(0, 3).map((tag, index) => (
+                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                      {content.tags.length > 3 && (
+                        <span className="text-xs text-gray-500">+{content.tags.length - 3}</span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Knowledge Points */}
+                  {content.knowledge_point && content.knowledge_point.length > 0 && (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">知识点:</span>
+                      {content.knowledge_point.slice(0, 2).map((point, index) => (
+                        <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                          {point}
+                        </span>
+                      ))}
+                      {content.knowledge_point.length > 2 && (
+                        <span className="text-xs text-gray-500">+{content.knowledge_point.length - 2}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-3 ml-4">
+              {!useStandaloneMode && (
+                <>
+                  {/* Rating */}
+                  {content.rating && (
+                    <div className="flex items-center space-x-1">
+                      <span className="text-yellow-500">⭐</span>
+                      <span className="text-sm text-gray-600">{content.rating.toFixed(1)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Like Button */}
+                  <button className="px-3 py-1 bg-red-100 text-red-600 text-xs rounded-full hover:bg-red-200 transition-colors">
+                    ❤️ 点赞
+                  </button>
+                  
+                  {/* Collect Button */}
+                  <button className="px-3 py-1 bg-blue-100 text-blue-600 text-xs rounded-full hover:bg-blue-200 transition-colors">
+                    📚 收藏
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={() => setUseStandaloneMode(!useStandaloneMode)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  useStandaloneMode
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {useStandaloneMode ? '📱 独立页面模式' : '📄 嵌入模式'}
+              </button>
+              
+              {useStandaloneMode && (
+                <>
+                  <button
+                    onClick={handleDownloadStandalone}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    💾 下载独立页面
+                  </button>
+                  <button
+                    onClick={handleOpenStandalone}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                  >
+                    🚀 直接打开
+                  </button>
+                  <a
+                    href={`/api/content/${content.short_id}/standalone`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors inline-block"
+                  >
+                    🌐 独立页面链接
+                  </a>
+                </>
+              )}
+              
+              {!useStandaloneMode && (
+                <button
+                  onClick={() => {
+                    if (document.documentElement.requestFullscreen) {
+                      document.documentElement.requestFullscreen();
+                    }
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  🖥️ 全屏模式
+                </button>
+              )}
+              
+              <button
+                onClick={() => router.back()}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+              >
+                ← 返回
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 信息区域 - 显示 description 和完整的 tags */}
-      {(content.description || (content.tags && content.tags.length > 0)) && (
-        <div className="bg-gray-50/80 backdrop-blur-sm border-b border-gray-200 flex-shrink-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-              {/* Description */}
-              {content.description && (
-                <div className="flex-1">
-                  <div className="text-sm text-gray-600 mb-1">描述</div>
-                  <div className="text-sm text-gray-800 leading-relaxed">{content.description}</div>
-                </div>
-              )}
-              
-              {/* Tags */}
-              {content.tags && content.tags.length > 0 && (
-                <div className="flex-shrink-0">
-                  <div className="text-sm text-gray-600 mb-1">标签</div>
-                  <div className="flex flex-wrap gap-1">
-                    {content.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+      {/* 内容区域 */}
+      <div className="w-full">
+        {useStandaloneMode ? (
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">独立页面模式</h2>
+              <p className="text-gray-600 mb-4">
+                生成完整的HTML页面，避免iframe兼容性问题，微信完全兼容
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={handleDownloadStandalone}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  💾 下载独立页面
+                </button>
+                <button
+                  onClick={handleOpenStandalone}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                >
+                  🚀 直接打开
+                </button>
+                <a
+                  href={`/api/content/${content.short_id}/standalone`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors inline-block"
+                >
+                  🌐 独立页面链接
+                </a>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-medium text-gray-900 mb-2">独立页面优势：</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• 微信完全兼容，无iframe限制</li>
+                <li>• 独立运行，性能更好</li>
+                <li>• 支持所有浏览器和设备</li>
+                <li>• 可以单独部署和分享</li>
+                <li>• SEO友好，搜索引擎可索引</li>
+              </ul>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* 全尺寸内容渲染区域 */}
-      <div className="flex-1 w-full h-0 relative">
-        <SandboxRenderer
-          key={previewKey}
-          html={content.code_html}
-          css={content.code_css}
-          js={content.code_js}
-          externalLinks={content.external_links}
-          className="w-full h-full"
-          style={{
-            minHeight: '100%',
-            height: '100%',
-            width: '100%'
-          }}
-          onError={(error) => {
-            console.log('Content render error:', error);
-          }}
-          onLoad={() => {
-            console.log('Content loaded successfully');
-          }}
-        />
+        ) : (
+          <div className="w-full h-screen">
+            <SandboxRenderer
+              html={content.code_html || ''}
+              css={content.code_css || ''}
+              js={content.code_js || ''}
+              externalLinks={content.external_links || []}
+              enableLibrarySupport={true}
+              enablePerformance={true}
+              enableErrorBoundary={true}
+              className="w-full h-full"
+              style={{ 
+                width: '100%',
+                height: 'calc(100vh + 20px)',
+                border: 'none',
+                margin: '0 0 16px 0',
+                padding: '0'
+              }}
+              onError={(error) => {
+                console.log('Content render error:', error);
+              }}
+              onLoad={() => {
+                console.log('Content loaded successfully');
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

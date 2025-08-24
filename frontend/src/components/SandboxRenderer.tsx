@@ -273,6 +273,18 @@ export default function SandboxRenderer({
     }
   }, [isWeChat, useNativeIframe, useWeChatMode]);
 
+  // 微信兼容模式降级处理
+  React.useEffect(() => {
+    if (isWeChat && useWeChatMode) {
+      // 检查内容长度，如果过长则自动降级
+      const contentLength = html.length + css.length + js.length;
+      if (contentLength > 50000) { // 50KB限制
+        console.warn('Content too long for WeChat Data URL, auto-falling back to srcDoc');
+        setUseWeChatMode(false);
+      }
+    }
+  }, [isWeChat, useWeChatMode, html, css, js]);
+
   // 渲染外部依赖链接（带基本验证）
   const renderExternalLinks = useCallback((links: string | string[]) => {
     let arr: string[] = [];
@@ -1556,13 +1568,28 @@ export default function SandboxRenderer({
   }, [isLoading, isWeChat, onLoad]);
 
   return (
-    <div className={`relative ${className || ''}`} style={style}>
+    <div 
+      className={`relative ${className || ''}`} 
+      style={{
+        width: '100%',
+        height: '100%',
+        minHeight: '100%',
+        border: 'none',
+        outline: 'none',
+        margin: '0',
+        padding: '0',
+        overflow: 'hidden',
+        position: 'relative',
+        ...style
+      }}
+    >
       {/* 微信浏览器调试信息 */}
       {isWeChat && (
         <div className="absolute top-0 left-0 bg-yellow-500 text-white text-xs p-2 z-40 max-w-xs">
           <div className="font-bold mb-1">微信模式</div>
           <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
           <div>超时时间: 20秒</div>
+          <div>当前模式: {useWeChatMode ? '📱 Data URL' : '📄 srcDoc'}</div>
           <div className="bg-green-600 p-2 rounded mt-2 text-white">
             <div className="font-bold">✅ 微信兼容模式已启用</div>
             <div className="text-xs">使用Data URL方式，微信完全兼容</div>
@@ -1600,7 +1627,7 @@ export default function SandboxRenderer({
                 setIsLoading(!isLoading);
               }}
               className="w-full px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
-            >
+              >
               {isLoading ? '⏸️ 暂停加载' : '▶️ 开始加载'}
             </button>
             <button
@@ -1612,83 +1639,50 @@ export default function SandboxRenderer({
             >
               {useWeChatMode ? '🔄 切换回srcDoc' : '📱 切换到微信模式'}
             </button>
+            <button
+              onClick={() => {
+                console.log('Debug: Test Data URL generation');
+                const dataUrl = generateDataURL({ html, css, js, externalLinks, title: 'WeChat Sandbox' });
+                console.log('Generated Data URL length:', dataUrl.length);
+                console.log('Data URL preview:', dataUrl.substring(0, 200) + '...');
+              }}
+              className="w-full px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600"
+            >
+              🔍 测试Data URL
+            </button>
           </div>
         </div>
       )}
-      
-      {/* 加载状态指示 */}
+
+      {/* 加载指示器 */}
       {isLoading && !hasError && (
-        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-30">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-600">
-              {isWeChat ? '微信加载中...' : '加载中...'}
-            </p>
-            {isWeChat && (
-              <>
-                <p className="text-xs text-gray-500 mt-1 mb-3">
-                  微信浏览器可能需要更长时间
-                </p>
-                <div className="bg-yellow-100 border border-yellow-300 rounded p-3 text-xs text-yellow-800">
-                  <div className="font-bold mb-2">微信浏览器状态</div>
-                  <div>• 检测到微信环境</div>
-                  <div>• 已设置20秒超时</div>
-                  <div>• 3秒后自动强制完成</div>
-                  <div>• 如果还是加载中，请点击上方按钮</div>
-                </div>
-                <div className="mt-3 space-x-2">
-                  <button
-                    onClick={() => {
-                      console.log('Manual force load for WeChat');
-                      setIsLoading(false);
-                      onLoad?.();
-                    }}
-                    className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                  >
-                    🚀 立即完成加载
-                  </button>
-                  <button
-                    onClick={() => {
-                      console.log('Manual refresh for WeChat');
-                      refresh();
-                    }}
-                    className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
-                  >
-                    🔄 重新加载
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">加载中...</p>
+            <p className="text-sm text-gray-500 mt-2">请稍候，内容正在渲染</p>
           </div>
         </div>
       )}
-      
-      {/* 性能监控显示 */}
-      {enablePerformance && performanceMetrics.loadTime > 0 && (
-        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs p-2 rounded z-30">
-          <div>加载: {performanceMetrics.loadTime.toFixed(0)}ms</div>
-          <div>内存: {(performanceMetrics.memoryUsage / 1024 / 1024).toFixed(2)}MB</div>
+
+      {/* 错误显示 */}
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-50 z-30">
+          <div className="text-center max-w-md mx-4">
+            <div className="text-red-600 text-4xl mb-4">⚠️</div>
+            <h3 className="text-lg font-semibold text-red-800 mb-2">渲染失败</h3>
+            <p className="text-red-600 mb-4">{errorMessage}</p>
+            <button
+              onClick={refresh}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              重试
+            </button>
+          </div>
         </div>
       )}
-      
-      {/* 库状态显示 */}
-      {enableLibrarySupport && Object.keys(libraryStatus).length > 0 && (
-        <div className="absolute top-2 left-2 bg-blue-600/80 text-white text-xs p-2 rounded z-30 max-w-xs">
-          <div className="font-semibold mb-1">已加载库:</div>
-          {Object.entries(libraryStatus).slice(0, 5).map(([lib, status]) => (
-            <div key={lib} className="flex items-center justify-between">
-              <span>{lib}</span>
-              <span className="text-green-300">{status.version || 'v?'}</span>
-            </div>
-          ))}
-          {Object.keys(libraryStatus).length > 5 && (
-            <div className="text-blue-200 text-xs mt-1">
-              +{Object.keys(libraryStatus).length - 5} 更多...
-            </div>
-          )}
-        </div>
-      )}
-      
+
+      {/* 主iframe渲染 */}
       {useNativeIframe && externalUrl ? (
         <iframe
           key={previewKey}
@@ -1700,13 +1694,19 @@ export default function SandboxRenderer({
           style={{
             border: 'none',
             outline: 'none',
-            minHeight: '100%',
-            height: '100%',
+            margin: '0 0 16px 0',
+            padding: '0',
+            display: 'block',
             width: '100%',
-            overflow: 'auto'
+            height: 'calc(100% + 20px)',
+            minHeight: 'calc(100% + 20px)',
+            overflow: 'hidden',
+            position: 'relative',
+            scrolling: 'no'
           }}
+          scrolling="no"
           onLoad={() => {
-            console.log('Iframe loaded successfully');
+            console.log('Native iframe loaded successfully');
             setIsLoading(false);
             // 启动性能监控
             const stopMonitoring = startPerformanceMonitoring();
@@ -1716,8 +1716,8 @@ export default function SandboxRenderer({
             onLoad?.();
           }}
           onError={() => {
-            const errorMsg = 'Iframe加载失败';
-            console.error('Iframe error:', errorMsg);
+            const errorMsg = '原生iframe加载失败';
+            console.error('Native iframe error:', errorMsg);
             handleError(errorMsg);
           }}
         />
@@ -1725,17 +1725,34 @@ export default function SandboxRenderer({
         <iframe
           key={previewKey}
           ref={iframeRef}
-          src={generateDataURL({ html, css, js, externalLinks, title: 'WeChat Sandbox' })}
+          src={(() => {
+            const dataUrl = generateDataURL({ html, css, js, externalLinks, title: 'WeChat Sandbox' });
+            console.log('WeChat mode: Data URL length:', dataUrl.length);
+            
+            // 检查Data URL长度，微信可能有长度限制
+            if (dataUrl.length > 1000000) { // 1MB限制
+              console.warn('Data URL too long for WeChat, length:', dataUrl.length);
+              return 'data:text/html;charset=utf-8,<html><body><h1>内容过长，微信无法加载</h1><p>Data URL长度: ' + dataUrl.length + '</p><p>建议：</p><ul><li>减少HTML/CSS/JS内容</li><li>使用外部资源链接</li><li>切换到srcDoc模式</li></ul></body></html>';
+            }
+            
+            return dataUrl;
+          })()}
           title="微信兼容沙盒预览"
           className="w-full h-full border-0 bg-white"
           style={{
             border: 'none',
             outline: 'none',
-            minHeight: '100%',
-            height: '100%',
+            margin: '0 0 16px 0',
+            padding: '0',
+            display: 'block',
             width: '100%',
-            overflow: 'auto'
+            height: 'calc(100% + 20px)',
+            minHeight: 'calc(100% + 20px)',
+            overflow: 'hidden',
+            position: 'relative',
+            scrolling: 'no'
           }}
+          scrolling="no"
           onLoad={() => {
             console.log('WeChat compatible iframe loaded successfully');
             setIsLoading(false);
@@ -1763,13 +1780,19 @@ export default function SandboxRenderer({
           style={{
             border: 'none',
             outline: 'none',
-            minHeight: '100%',
-            height: '100%',
+            margin: '0 0 16px 0',
+            padding: '0',
+            display: 'block',
             width: '100%',
-            overflow: 'auto'
+            height: 'calc(100% + 20px)',
+            minHeight: 'calc(100% + 20px)',
+            overflow: 'hidden',
+            position: 'relative',
+            scrolling: 'no'
           }}
+          scrolling="no"
           onLoad={() => {
-            console.log('Iframe loaded successfully');
+            console.log('Standard iframe loaded successfully');
             setIsLoading(false);
             // 启动性能监控
             const stopMonitoring = startPerformanceMonitoring();
@@ -1779,8 +1802,8 @@ export default function SandboxRenderer({
             onLoad?.();
           }}
           onError={() => {
-            const errorMsg = 'Iframe加载失败';
-            console.error('Iframe error:', errorMsg);
+            const errorMsg = '标准iframe加载失败';
+            console.error('Standard iframe error:', errorMsg);
             handleError(errorMsg);
           }}
         />

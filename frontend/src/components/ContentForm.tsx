@@ -92,7 +92,19 @@ function FixForm({ error, onSubmit, loading, t }: { error: string; onSubmit: (no
   );
 }
 
-export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edit'; contentId?: string }) {
+export default function ContentForm({ 
+  mode, 
+  contentId, 
+  initialContent,
+  className,
+  style
+}: { 
+  mode: 'create' | 'edit'; 
+  contentId?: string;
+  initialContent?: any;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   const { t } = useTranslation(['content', 'common', 'auth']);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -131,6 +143,33 @@ export default function ContentForm({ mode, contentId }: { mode: 'create' | 'edi
 
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  
+  // 初始化表单数据
+  useEffect(() => {
+    if (initialContent && mode === 'edit') {
+      setTitle(initialContent.title || '');
+      setDescription(initialContent.description || '');
+      setTagList(initialContent.tags || []);
+      setExternalLinks(initialContent.external_links?.join('\n') || 'https://unpkg.com/vue@3/dist/vue.global.prod.js');
+      setHtml(initialContent.code_html || DEFAULT_HTML);
+      setCss(initialContent.code_css || DEFAULT_CSS);
+      setJs(initialContent.code_js || DEFAULT_JS);
+      setContentType(initialContent.content_type || '');
+      
+      // 修复语言代码读取
+      const languageCode = initialContent.language_code || '';
+      setLanguage(languageCode);
+      setAiGeneratedLanguage(languageCode);
+      
+      setContentShortId(initialContent.short_id || null);
+      setSavedContentId(initialContent.id || null);
+      
+      // 调试信息
+      console.log('Edit mode - initialContent:', initialContent);
+      console.log('Edit mode - language_code:', initialContent.language_code);
+      console.log('Edit mode - setLanguage:', languageCode);
+    }
+  }, [initialContent, mode]);
   
   // 检查用户是否为普通用户（role === 'user'）
   const isRegularUser = user?.role === 'user';
