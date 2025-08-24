@@ -149,7 +149,7 @@ export default function CodePenStyleRenderer({
         src={generateIframeSrc()}
         title={title}
         className="w-full h-full border-0 bg-white"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
         style={{
           border: 'none',
           outline: 'none',

@@ -27,28 +27,15 @@ export default function WeChatTestPage() {
           </div>
           
           <div class="test-section" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
-            <h2 style="color: #2c3e50; margin-bottom: 15px;">Vue.js 测试</h2>
-            <div id="vue-test">
-              <p>Vue状态: <span id="vue-status">检测中...</span></p>
-              <button id="vue-btn" onclick="testVue()" style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                测试Vue
-              </button>
-              <div id="vue-result" style="margin-top: 15px; padding: 10px; border-left: 4px solid #e74c3c; background: #f8f9fa;">
-                等待Vue测试...
-              </div>
-            </div>
-          </div>
-          
-          <div class="test-section" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
             <h2 style="color: #2c3e50; margin-bottom: 15px;">样式测试</h2>
             <div class="style-test" style="display: flex; gap: 15px; flex-wrap: wrap;">
               <div class="color-box red" style="width: 100px; height: 100px; background: #e74c3c; color: white; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
                 红色方块
               </div>
-              <div class="color-box blue" style="width: 100px; height: 100px; background: #3498db; color: white; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
+              <div class="color-box blue" style="width: 100px; height: 100px; background: #3498db; color: white; display: flex: align-items: center; justify-content: center; border-radius: 10px;">
                 蓝色方块
               </div>
-              <div class="color-box green" style="width: 100px; height: 100px; background: #2ecc71; color: white; display: flex: align-items: center; justify-content: center; border-radius: 10px;">
+              <div class="color-box green" style="width: 100px; height: 100px; background: #2ecc71; color: white; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
                 绿色方块
               </div>
             </div>
@@ -112,54 +99,9 @@ export default function WeChatTestPage() {
         console.log('Click test successful');
       }
       
-      // Vue.js 测试
-      function testVue() {
-        const result = document.getElementById('vue-result');
-        const status = document.getElementById('vue-status');
-        
-        if (typeof Vue !== 'undefined') {
-          status.textContent = '✅ 已加载 v' + Vue.version;
-          result.innerHTML = \`✅ Vue.js 加载成功<br>✅ 版本: \${Vue.version}<br>✅ Vue功能正常\`;
-          result.style.borderLeftColor = '#00b894';
-          
-          try {
-            // 创建测试Vue应用
-            const testApp = Vue.createApp({
-              data() { 
-                return { message: 'Vue响应式测试成功!' } 
-              },
-              template: '<div style="padding: 10px; background: #e8f5e8; border-radius: 5px; margin-top: 10px;">{{ message }}</div>'
-            });
-            
-            const testDiv = document.createElement('div');
-            testDiv.id = 'vue-test-app';
-            document.getElementById('vue-test').appendChild(testDiv);
-            testApp.mount('#vue-test-app');
-            
-            // 3秒后移除测试应用
-            setTimeout(() => { 
-              if (document.getElementById('vue-test-app')) {
-                document.getElementById('vue-test').removeChild(testDiv);
-              }
-            }, 3000);
-            
-          } catch (error) {
-            result.innerHTML += \`<br>⚠️ Vue响应式测试失败: \${error.message}\`;
-            console.error('Vue test error:', error);
-          }
-        } else {
-          status.textContent = '❌ 未加载';
-          result.innerHTML = '❌ Vue.js 未加载<br>❌ 请检查网络连接和CDN链接';
-          result.style.borderLeftColor = '#e74c3c';
-        }
-      }
-      
       // 页面加载完成后的初始化
       document.addEventListener('DOMContentLoaded', function() {
         console.log('微信测试页面加载完成');
-        
-        // 延迟执行Vue测试
-        setTimeout(testVue, 1000);
         
         // 添加按钮悬停效果
         const buttons = document.querySelectorAll('button');
