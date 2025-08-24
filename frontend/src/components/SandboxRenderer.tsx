@@ -123,7 +123,6 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
  * - 建议：在微信中使用原生iframe模式
  */
 
-import React, { useState, useRef, useCallback } from 'react';
 import { generateDataURL, SandboxContent } from '../utils/sandboxGenerator';
 
 interface SandboxRendererProps {
