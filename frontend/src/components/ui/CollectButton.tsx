@@ -44,12 +44,6 @@ export default function CollectButton({
   }, [initialCollected, initialCollectionCount]);
 
   // 加载收藏列表
-  useEffect(() => {
-    if (showCollectionDialog) {
-      loadCollectionLists();
-    }
-  }, [showCollectionDialog]);
-
   const loadCollectionLists = async () => {
     try {
       const response = await api.get('/collection_lists');
@@ -61,6 +55,12 @@ export default function CollectButton({
     }
   };
 
+  useEffect(() => {
+    if (showCollectionDialog) {
+      loadCollectionLists();
+    }
+  }, [showCollectionDialog]);
+
   const handleCollect = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -68,7 +68,7 @@ export default function CollectButton({
     if (isProcessing) return;
     
     if (isCollected) {
-      // 取消收藏
+      // 取消收藏（默认操作：从第一个列表移除）
       setIsProcessing(true);
       try {
         const collections = await api.getCollectionsByContent(contentId);
@@ -79,6 +79,10 @@ export default function CollectButton({
             setCollectionCount(prev => Math.max(0, prev - 1));
             onCollectChange?.(false, collectionCount - 1);
           }
+        } else {
+          // 没有任何列表，则直接更新状态
+          setIsCollected(false);
+          onCollectChange?.(false, Math.max(0, collectionCount - 1));
         }
       } catch (error) {
         console.error('Failed to remove from collection:', error);
@@ -86,25 +90,8 @@ export default function CollectButton({
         setIsProcessing(false);
       }
     } else {
-      // 显示收藏对话框
+      // 显示收藏对话框，由对话框内部完成添加/移除
       setShowCollectionDialog(true);
-    }
-  };
-
-  const handleSaveToCollection = async (listId: string) => {
-    setIsProcessing(true);
-    try {
-      const result = await api.addContentToList(contentId, listId);
-      if (result.success) {
-        setIsCollected(true);
-        setCollectionCount(prev => prev + 1);
-        onCollectChange?.(true, collectionCount + 1);
-        setShowCollectionDialog(false);
-      }
-    } catch (error) {
-      console.error('Failed to add to collection:', error);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -153,19 +140,18 @@ export default function CollectButton({
         open={showCollectionDialog}
         onClose={() => setShowCollectionDialog(false)}
         lists={collectionLists}
-        onSave={handleSaveToCollection}
+        onSave={() => { /* 由对话框内部直接处理保存 */ }}
         onCreateList={async (list) => {
           try {
             const result = await api.createCollectionList(list.name, list.visibility);
             if (result.success) {
               await loadCollectionLists();
-              return result.data.id;
             }
           } catch (error) {
             console.error('Failed to create collection list:', error);
           }
         }}
-        refreshLists={loadCollectionLists}
+        refreshLists={() => { void loadCollectionLists(); }}
         contentId={contentId}
       />
     </>
