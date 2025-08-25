@@ -30,6 +30,14 @@ export default function ContentPage() {
     };
     
     checkWeChat();
+    
+    // 保存原始标题，用于组件卸载时恢复
+    const originalTitle = document.title;
+    
+    // 组件卸载时恢复原始标题
+    return () => {
+      document.title = originalTitle;
+    };
   }, []);
 
   useEffect(() => {
@@ -39,6 +47,14 @@ export default function ContentPage() {
         const shortId = params.short_id as string;
         const response = await api.content.getByShortId(shortId);
         setContent(response);
+        
+        // 动态设置浏览器标题
+        if (response.title) {
+          document.title = `${response.title} - EduNest AI`;
+        } else {
+          // 如果没有标题，设置默认标题
+          document.title = '内容详情 - EduNest AI';
+        }
         
         // 获取点赞和收藏状态
         if (response.id) {
@@ -65,6 +81,8 @@ export default function ContentPage() {
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载失败');
+        // 错误时设置错误标题
+        document.title = '加载失败 - EduNest AI';
       } finally {
         setLoading(false);
       }
@@ -222,7 +240,7 @@ export default function ContentPage() {
             <Link href="/" className="ml-3">
               <Image
                 src="/favicon.png"
-                alt="AI Education Platform"
+                alt="EduNest AI"
                 width={32}
                 height={32}
                 className="w-8 h-8 hover:opacity-80 transition-opacity"
