@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BookOpen, Edit3, Copy, Trash2, ThumbsUp, X, Eye } from 'lucide-react';
+import { BookOpen, Edit3, Copy, Trash2, ThumbsUp, X, Eye, Bookmark } from 'lucide-react';
 import ContentActionButtons from './ui/ContentActionButtons';
 import CollectionListDialog from './CollectionListDialog';
 import { api } from '@/lib/api';
