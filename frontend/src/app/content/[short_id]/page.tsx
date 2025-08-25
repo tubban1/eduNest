@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, Bookmark } from 'lucide-react';
+import ContentActionButtons from '@/components/ui/ContentActionButtons';
 import { api, Content } from '@/lib/api';
 import SandboxRenderer from '@/components/SandboxRenderer';
 
@@ -259,35 +259,28 @@ export default function ContentPage() {
           
           {/* 第三行：点赞收藏按钮 + 标签 */}
           <div className="flex items-center">
-            {/* 左侧：点赞收藏按钮 - 与CollectionCard样式保持一致 */}
-            <div className="flex items-center space-x-3 mr-4">
-              {/* 点赞按钮 */}
-              <button 
-                onClick={handleLike}
-                disabled={isProcessing}
-                className={`flex items-center text-sm transition-colors ${
-                  isLiked 
-                    ? 'text-red-600 hover:text-red-700' 
-                    : 'text-gray-600 hover:text-gray-700'
-                } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={isLiked ? '已点赞' : '点赞'}
-              >
-                <Heart className={`w-4 h-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
-                {isLiked ? '已点赞' : '点赞'} {likeCount > 0 && `(${likeCount})`}
-              </button>
-              
-              {/* 收藏按钮 */}
-              <button 
-                onClick={handleCollect}
-                disabled={isProcessing}
-                className={`flex items-center text-sm text-blue-600 hover:text-blue-700 transition-colors ${
-                  isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                title={isCollected ? '已收藏' : '收藏'}
-              >
-                <Bookmark className="w-4 h-4 mr-1" />
-                {isCollected ? '已收藏' : '收藏'} {collectionCount > 0 && `(${collectionCount})`}
-              </button>
+            {/* 左侧：点赞收藏分享按钮 - 使用统一控件 */}
+            <div className="mr-4">
+              <ContentActionButtons
+                contentId={content.id}
+                shortId={content.short_id}
+                title={content.title}
+                initialLiked={isLiked}
+                initialCollected={isCollected}
+                initialLikeCount={likeCount}
+                initialCollectionCount={collectionCount}
+                size="md"
+                showCount={true}
+                showText={true}
+                onLikeChange={(liked, count) => {
+                  setIsLiked(liked);
+                  setLikeCount(count);
+                }}
+                onCollectChange={(collected, count) => {
+                  setIsCollected(collected);
+                  setCollectionCount(count);
+                }}
+              />
             </div>
             
             {/* 右侧：标签完整展示 */}

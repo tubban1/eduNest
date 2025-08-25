@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Heart, BookOpen, Edit3, Copy, Trash2, ThumbsUp, X, Eye, Bookmark } from 'lucide-react';
+import { BookOpen, Edit3, Copy, Trash2, ThumbsUp, X, Eye } from 'lucide-react';
+import ContentActionButtons from './ui/ContentActionButtons';
 import CollectionListDialog from './CollectionListDialog';
 import { api } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
@@ -224,33 +225,32 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
             {/* 删除“查看”按钮，这里只保留edit和like/collect等 */}
             <div className="flex items-center space-x-3">
-              <button
-                onClick={async (e) => {
-                  e.preventDefault();
-                  const newAction = isLiked ? 'unlike' : 'like';
-                  await handleAction(newAction);
+              {/* 使用统一的按钮组件 */}
+              <ContentActionButtons
+                contentId={content.id}
+                shortId={content.short_id}
+                title={content.title}
+                initialLiked={isLiked}
+                initialCollected={false}
+                initialLikeCount={0}
+                initialCollectionCount={0}
+                size="sm"
+                showCount={false}
+                showText={true}
+                onLikeChange={(liked) => {
+                  setIsLiked(liked);
+                  // 更新父组件的状态
+                  if (refreshLists) {
+                    refreshLists();
+                  }
                 }}
-                className={`flex items-center text-sm transition-colors ${
-                  isLiked 
-                    ? 'text-red-600 hover:text-red-700' 
-                    : 'text-gray-600 hover:text-gray-700'
-                }`}
-                title={isLiked ? (mounted ? t('liked', { ns: 'content', defaultValue: 'Liked' }) : 'Liked') : (mounted ? t('like', { ns: 'content', defaultValue: 'Like' }) : 'Like')}
-              >
-                <Heart className={`w-4 h-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
-                {isLiked ? (mounted ? t('liked', { ns: 'content', defaultValue: 'Liked' }) : 'Liked') : (mounted ? t('like', { ns: 'content', defaultValue: 'Like' }) : 'Like')}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleAction('collect');
+                onCollectChange={() => {
+                  // 更新父组件的状态
+                  if (refreshLists) {
+                    refreshLists();
+                  }
                 }}
-                className="flex items-center text-sm text-blue-600 hover:text-blue-700 transition-colors"
-                title={mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
-              >
-                <Bookmark className="w-4 h-4 mr-1" />
-                {mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
-              </button>
+              />
               {/* edit按钮不变 */}
               <Link
                 href={`/content/edit/${content.id}`}
