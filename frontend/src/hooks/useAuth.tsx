@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { enforceSingleAccount, detectSessionConflict, clearAllSessions } from '@/utils/sessionManager';
 
 interface AuthUser {
   id: string;
@@ -34,12 +35,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 检查用户认证状态
   const checkAuthStatus = async () => {
     try {
+      // 强制单账号登录：清除所有可能的冲突session
+      const clearConflictingSessions = () => {
+        // 清除所有可能的session存储
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.includes('sb-') && key.includes('-auth-token')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // 清除所有可能的sessionStorage
+        const sessionKeys = Object.keys(sessionStorage);
+        sessionKeys.forEach(key => {
+          if (key.includes('sb-') && key.includes('-auth-token')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      };
+
       const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
       
       if (!sessionStr) {
+        clearConflictingSessions();
         setUser(null);
         setLoading(false);
-        // 清除 API 客户端的 token
         api.clearToken();
         return;
       }
@@ -47,10 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const session = JSON.parse(sessionStr);
       
       if (!session.access_token) {
-        localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
+        clearConflictingSessions();
         setUser(null);
         setLoading(false);
-        // 清除 API 客户端的 token
         api.clearToken();
         return;
       }
@@ -64,17 +83,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
+        clearConflictingSessions();
         setUser(null);
         setLoading(false);
-        // 清除 API 客户端的 token
         api.clearToken();
         return;
       }
 
       const userData = await response.json();
 
-      // 注入 API 客户端令牌（关键修复）
+      // 注入 API 客户端令牌
       api.setToken(session.access_token);
 
       // 获取用户角色信息
@@ -100,6 +118,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setLoading(false);
     } catch (error) {
+      console.error('Auth check error:', error);
+      // 清除所有可能的冲突session
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
       setUser(null);
       setLoading(false);
       api.clearToken();
@@ -107,11 +133,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // 检测并处理session冲突
+    const handleSessionConflict = async () => {
+      if (detectSessionConflict()) {
+        console.warn('Session conflict detected, enforcing single account...');
+        await enforceSingleAccount();
+      }
+    };
+
+    handleSessionConflict();
     checkAuthStatus();
 
-    // 监听会话变化，实时注入/清除 token（关键修复）
+    // 监听会话变化，实时注入/清除 token
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.access_token) {
+        // 新session创建时，强制清除冲突session
+        await enforceSingleAccount();
         api.setToken(session.access_token);
       } else {
         api.clearToken();
@@ -126,8 +163,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithEmail = async (email: string, password: string) => {
     setLoading(true);
     try {
+      // 登录前强制清除所有可能的冲突session
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { error: error.message };
+      
       // 登录成功后刷新状态与 token
       await checkAuthStatus();
       return { error: null };
@@ -140,6 +193,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      // 登录前强制清除所有可能的冲突session
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -155,6 +223,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmail = async (email: string, password: string, name?: string) => {
     try {
+      // 注册前强制清除所有可能的冲突session
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -213,6 +296,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      
+      // 强制清除所有可能的session存储
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (key.includes('sb-') && key.includes('-auth-token')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
       api.clearToken();
       setUser(null);
       router.push('/login');
