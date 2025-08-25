@@ -337,10 +337,10 @@ export default function HomePage() {
         {/* 页脚 */}
         <footer className="text-center text-gray-500 py-8">
           <p className="mb-2">
-            {t('copyright', { ns: 'common', defaultValue: 'Copyright' })} 2024 AI互动教育平台. {t('makes_learning_more_dynamic_and_interesting', { ns: 'home', defaultValue: 'Makes learning more dynamic and interesting' })}
+            {mounted ? t('copyright', { ns: 'common', defaultValue: '版权' }) : '版权'} 2024 AI互动教育平台. {mounted ? t('makes_learning_more_dynamic_and_interesting', { ns: 'home', defaultValue: '让学习更加动态有趣' }) : '让学习更加动态有趣'}
           </p>
           <p className="text-sm">
-            {t('based_on_ai_technology_empowers_education', { ns: 'home', defaultValue: 'Based on AI technology, empowers education' })}
+            {mounted ? t('based_on_ai_technology_empowers_education', { ns: 'home', defaultValue: '基于AI技术，赋能教育' }) : '基于AI技术，赋能教育'}
           </p>
         </footer>
       </div>

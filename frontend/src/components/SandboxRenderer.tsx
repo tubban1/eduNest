@@ -83,14 +83,14 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
  * />
  * 
  * 支持的库类型：
- * - Vue.js 系列: Vue, VueRouter, Vuex, VueKinesis
- * - React 系列: React, ReactDOM, Redux, Zustand
+ * - Vue.js 系列: Vue, VueRouter, Vuex
+ * - React 系列: Redux, 
  * - 音频库: Tone.js, Howler.js
- * - 动画库: Anime.js, GSAP, Lottie
+ * - 动画库: Anime.js, GSAP
  * - 3D库: Three.js, Babylon.js
  * - 图表库: Chart.js, ECharts
  * - 工具库: Lodash, Moment.js, Day.js
- * - 表单处理: Formik, React Hook Form
+ * - 表单处理: VeeValidate, VeeValidate Rules, VeeValidate i18n
  * 
  * 注意：所有上述库都支持CDN免编译直接引用！
  * 
@@ -189,6 +189,7 @@ export default function SandboxRenderer({
   const [loadTimeout, setLoadTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isWeChat, setIsWeChat] = useState(false);
   const [useWeChatMode, setUseWeChatMode] = useState(false);
+  const [iframeHeight, setIframeHeight] = useState<string>('calc(100% + 20px)');
 
   // 基本的HTTPS检查
   const validateUrl = useCallback((url: string): boolean => {
@@ -1471,6 +1472,57 @@ export default function SandboxRenderer({
     };
   }, []);
 
+  // 动态调整iframe高度，确保内容完整展示
+  const adjustIframeHeight = useCallback(() => {
+    if (iframeRef.current) {
+      try {
+        const iframe = iframeRef.current;
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        
+        if (iframeDoc && iframeDoc.body) {
+          const contentHeight = iframeDoc.body.scrollHeight;
+          const contentWidth = iframeDoc.body.scrollWidth;
+          const clientHeight = iframeDoc.body.clientHeight;
+          const offsetHeight = iframeDoc.body.offsetHeight;
+          
+          console.log('Content dimensions:', { 
+            contentHeight, 
+            contentWidth, 
+            clientHeight, 
+            offsetHeight,
+            iframeHeight: iframe.style.height,
+            iframeMinHeight: iframe.style.minHeight
+          });
+          
+          // 使用最大的高度值，确保内容不被裁切
+          const maxHeight = Math.max(contentHeight, clientHeight, offsetHeight);
+          
+          // 确保iframe高度能够完整显示所有内容
+          // 添加一些额外空间，防止内容被裁切
+          const extraSpace = 80; // 增加额外空间，为按钮切换等留出更多空间
+          const newHeight = maxHeight + extraSpace;
+          
+          // 设置iframe高度
+          iframe.style.height = `${newHeight}px`;
+          iframe.style.minHeight = `${newHeight}px`;
+          
+          // 更新状态
+          setIframeHeight(`${newHeight}px`);
+          
+          console.log('Adjusted iframe height to:', newHeight, 'from max content height:', maxHeight);
+          
+          // 强制重新计算布局
+          iframe.style.display = 'none';
+          iframe.offsetHeight; // 触发重排
+          iframe.style.display = 'block';
+        }
+      } catch (error) {
+        // 跨域限制，无法访问iframe内容
+        console.log('无法访问iframe内容，使用默认高度:', error);
+      }
+    }
+  }, []);
+
   // 重新渲染
   const refresh = useCallback(() => {
     setPreviewKey(prev => prev + 1);
@@ -1693,16 +1745,16 @@ export default function SandboxRenderer({
           style={{
             border: 'none',
             outline: 'none',
-            margin: '0 0 16px 0',
+            margin: '0',
             padding: '0',
             display: 'block',
             width: '100%',
-            height: 'calc(100% + 20px)',
-            minHeight: 'calc(100% + 20px)',
-            overflow: 'hidden',
+            height: 'auto', // 改为auto，让内容决定高度
+            minHeight: '100%',
+            overflow: 'visible', // 改为visible，让内容能够扩展
             position: 'relative'
           }}
-          scrolling="no"
+          scrolling="no" // 禁用滚动
           onLoad={() => {
             console.log('Native iframe loaded successfully');
             setIsLoading(false);
@@ -1711,6 +1763,8 @@ export default function SandboxRenderer({
             if (stopMonitoring) {
               setTimeout(stopMonitoring, 100);
             }
+            // 尝试调整iframe高度
+            setTimeout(adjustIframeHeight, 500);
             onLoad?.();
           }}
           onError={() => {
@@ -1741,16 +1795,16 @@ export default function SandboxRenderer({
           style={{
             border: 'none',
             outline: 'none',
-            margin: '0 0 16px 0',
+            margin: '0',
             padding: '0',
             display: 'block',
             width: '100%',
-            height: 'calc(100% + 20px)',
-            minHeight: 'calc(100% + 20px)',
-            overflow: 'hidden',
+            height: 'auto', // 改为auto，让内容决定高度
+            minHeight: '100%',
+            overflow: 'visible', // 改为visible，让内容能够扩展
             position: 'relative'
           }}
-          scrolling="no"
+          scrolling="no" // 禁用滚动
           onLoad={() => {
             console.log('WeChat compatible iframe loaded successfully');
             setIsLoading(false);
@@ -1759,6 +1813,8 @@ export default function SandboxRenderer({
             if (stopMonitoring) {
               setTimeout(stopMonitoring, 100);
             }
+            // 尝试调整iframe高度
+            setTimeout(adjustIframeHeight, 500);
             onLoad?.();
           }}
           onError={() => {
@@ -1778,16 +1834,16 @@ export default function SandboxRenderer({
           style={{
             border: 'none',
             outline: 'none',
-            margin: '0 0 16px 0',
+            margin: '0',
             padding: '0',
             display: 'block',
             width: '100%',
-            height: 'calc(100% + 20px)',
-            minHeight: 'calc(100% + 20px)',
-            overflow: 'hidden',
+            height: 'auto', // 改为auto，让内容决定高度
+            minHeight: '100%',
+            overflow: 'visible', // 改为visible，让内容能够扩展
             position: 'relative'
           }}
-          scrolling="no"
+          scrolling="no" // 禁用滚动
           onLoad={() => {
             console.log('Standard iframe loaded successfully');
             setIsLoading(false);
@@ -1796,6 +1852,8 @@ export default function SandboxRenderer({
             if (stopMonitoring) {
               setTimeout(stopMonitoring, 100);
             }
+            // 尝试调整iframe高度
+            setTimeout(adjustIframeHeight, 500);
             onLoad?.();
           }}
           onError={() => {

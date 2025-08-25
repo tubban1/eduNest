@@ -24,7 +24,7 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'de-DE', label: 'Deutsch' },
   { code: 'fr-FR', label: 'Français' },
 ];
-export const DEFAULT_LANGUAGE = 'en-US';
+export const DEFAULT_LANGUAGE = 'zh-CN'; // 改为中文作为默认语言，避免水合错误
 
 const resources = {
   'en-US': {
@@ -53,6 +53,7 @@ i18n
   .init({
     resources,
     fallbackLng: DEFAULT_LANGUAGE,
+    lng: DEFAULT_LANGUAGE, // 强制设置初始语言为中文
     supportedLngs: SUPPORTED_LANGUAGES.map(l => l.code).concat(['zh', 'en', 'de', 'fr']), // 包含别名
     ns: ['common', 'navigation', 'auth', 'content', 'home'],
     defaultNS: 'common',

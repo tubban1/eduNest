@@ -290,7 +290,7 @@ export default function ContentPage() {
 
       {/* 内容区域 */}
       <div className="w-full">
-        <div className="w-full h-screen">
+        <div className="w-full">
           <SandboxRenderer
             html={content.code_html || ''}
             css={content.code_css || ''}
@@ -299,10 +299,11 @@ export default function ContentPage() {
             enableLibrarySupport={true}
             enablePerformance={true}
             enableErrorBoundary={true}
-            className="w-full h-full"
+            className="w-full"
             style={{ 
               width: '100%',
-              height: 'calc(100vh - 120px)', // 调整高度以适应新的头部
+              height: 'auto', // 改为auto，让iframe内容决定高度
+              minHeight: 'calc(100vh - 160px)', // 保持最小高度
               border: 'none',
               margin: '0',
               padding: '0'

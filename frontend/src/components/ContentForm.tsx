@@ -163,13 +163,8 @@ export default function ContentForm({
       
       setContentShortId(initialContent.short_id || null);
       setSavedContentId(initialContent.id || null);
-      
-      // 调试信息
-      console.log('Edit mode - initialContent:', initialContent);
-      console.log('Edit mode - language_code:', initialContent.language_code);
-      console.log('Edit mode - setLanguage:', languageCode);
     }
-  }, [initialContent, mode]);
+  }, [initialContent, mode, contentId]);
   
   // 检查用户是否为普通用户（role === 'user'）
   const isRegularUser = user?.role === 'user';
@@ -752,7 +747,7 @@ export default function ContentForm({
               {mode === 'create' ? (mounted ? t('openAfterSave', { ns: 'content', defaultValue: 'Open after save' }) : 'Open after save') : (mounted ? t('open', { ns: 'common', defaultValue: 'Open' }) : 'Open')}
             </button>
             <button className="px-6 py-2 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition" onClick={handlePreview} type="button">{mounted ? t('preview', { ns: 'content', defaultValue: 'Preview' }) : 'Preview'}</button>
-            <button className="px-6 py-2 rounded-full bg-gradient-to-r from-gray-900 to-gray-700 text-white font-medium shadow hover:from-gray-800 hover:to-gray-600 transition" onClick={handleSave} type="button" disabled={loading}>{loading ? (mounted ? t('saving', { ns: 'common', defaultValue: 'Saving...' }) : 'Saving...') : (mounted ? t('save', { ns: 'common', defaultValue: 'Save' }) : 'Save')}</button>
+            <button className="px-6 py-2 rounded-full bg-gradient-to-r from-gray-900 to-gray-700 text-white font-medium shadow hover:from-gray-800 hover:to-gray-600 transition" onClick={handleSave} type="button" disabled={loading}>{loading ? (mode === 'edit' ? (mounted ? t('updating', { ns: 'common', defaultValue: 'Updating...' }) : 'Updating...') : (mounted ? t('saving', { ns: 'common', defaultValue: 'Saving...' }) : 'Saving...')) : (mode === 'edit' ? (mounted ? t('update', { ns: 'common', defaultValue: 'Update' }) : 'Update') : (mounted ? t('save', { ns: 'common', defaultValue: 'Save' }) : 'Save'))}</button>
           </div>
         </div>
         <div className="px-6 pt-4 pb-8">

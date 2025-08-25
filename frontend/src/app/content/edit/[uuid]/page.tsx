@@ -106,6 +106,8 @@ export default function EditContentPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+
+      
       {/* 内容区域 */}
       <div className="w-full">
         {useStandaloneMode ? (
@@ -154,6 +156,7 @@ export default function EditContentPage() {
             <ContentForm
               initialContent={content}
               mode="edit"
+              contentId={content.id}
               className="w-full h-full"
               style={{ 
                 width: '100%',
