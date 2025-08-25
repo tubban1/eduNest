@@ -191,13 +191,16 @@ export default function ContentPage() {
       />
       
       <main className="flex-1 bg-white overflow-y-auto">
-        {/* 移动端头部 */}
-        <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
+        {/* 移动端头部（固定） */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
           <MobileMenuButton onClick={() => setSidebarOpen(true)} />
           <Logo size="sm" />
           <div className="w-10" /> {/* 占位，保持Logo居中 */}
         </div>
         
+        {/* 顶部预留占位，避免内容被固定头部遮挡 */}
+        <div className="lg:hidden h-14" />
+
         <div className="p-8 lg:p-8">
           <div className="hidden lg:flex justify-center mb-6">
             <Logo size="md" />

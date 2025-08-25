@@ -195,18 +195,20 @@ export default function CollectionsPage() {
       {/* 右侧主区 */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
-          {/* 移动端头部 */}
-          <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
+          {/* 移动端头部（固定） */}
+          <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
             <MobileMenuButton onClick={() => setSidebarOpen(true)} />
             <Logo size="sm" />
             <div className="w-10" /> {/* 占位，保持Logo居中 */}
           </div>
           
+          {/* 顶部预留占位，避免内容被固定头部遮挡 */}
+          <div className="lg:hidden h-14" />
+
           {/* Logo */}
           <div className="hidden lg:flex justify-center mb-6">
             <Logo size="md" />
           </div>
-          
           {/* 页面标题 */}
           <div className="mb-8 px-4 lg:px-0">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{mounted ? t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }) : 'My Collections'}</h1>
@@ -303,7 +305,7 @@ export default function CollectionsPage() {
                   ? (mounted ? t('noCollections', { ns: 'content', defaultValue: 'No collections yet' }) : 'No collections yet')
                   : activeList === 'liked'
                   ? (mounted ? t('noLikes', { ns: 'content', defaultValue: 'No likes yet' }) : 'No likes yet')
-                  : (mounted ? t('noCollections', { ns: 'content', defaultValue: 'No collections yet' }) : 'No collections yet')}
+                  : (mounted ? t('noCollectionsListDesc', { ns: 'content', defaultValue: 'This collection list is empty' }) : 'This collection list is empty')}
               </h3>
               <p className="text-gray-500">
                 {activeList === 'all'
