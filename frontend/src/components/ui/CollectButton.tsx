@@ -143,8 +143,11 @@ export default function CollectButton({
         onSave={() => { /* 由对话框内部直接处理保存 */ }}
         onCreateList={async (list) => {
           try {
-            const result = await api.createCollectionList(list.name, list.visibility);
-            if (result.success) {
+            // 使用 ApiClient 提供的 createCollection
+            const result = await api.createCollection({ name: list.name, visibility: list.visibility });
+            if (result && typeof result === 'object' && 'success' in result && (result as any).success) {
+              await loadCollectionLists();
+            } else {
               await loadCollectionLists();
             }
           } catch (error) {
