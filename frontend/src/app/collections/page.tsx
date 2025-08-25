@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import Sidebar from '@/components/Sidebar';
+import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
 import Logo from '@/components/Logo';
 import LoginRequired from '@/components/LoginRequired';
 import CollectionCard from '@/components/CollectionCard';
@@ -42,6 +42,8 @@ export default function CollectionsPage() {
   const [error, setError] = useState('');
   const [activeList, setActiveList] = useState<string>('');
   const [mounted, setMounted] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   useEffect(() => { setMounted(true); }, []);
 
   // 获取收藏列表
@@ -178,29 +180,46 @@ export default function CollectionsPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* 左侧栏 */}
-      <div className="h-screen sticky top-0 left-0 z-30">
-        <Sidebar />
+      {/* 桌面端侧边栏 */}
+      <div className="hidden lg:block h-screen sticky top-0 left-0 z-30">
+        <Sidebar variant="desktop" />
       </div>
+      
+      {/* 移动端侧边栏 */}
+      <Sidebar 
+        variant="mobile" 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+      />
+      
       {/* 右侧主区 */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
+          {/* 移动端头部 */}
+          <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
+            <MobileMenuButton onClick={() => setSidebarOpen(true)} />
+            <Logo size="sm" />
+            <div className="w-10" /> {/* 占位，保持Logo居中 */}
+          </div>
+          
           {/* Logo */}
-          <div className="flex justify-center mb-6">
+          <div className="hidden lg:flex justify-center mb-6">
             <Logo size="md" />
           </div>
+          
           {/* 页面标题 */}
-          <div className="mb-8">
+          <div className="mb-8 px-4 lg:px-0">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{mounted ? t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }) : 'My Collections'}</h1>
             <p className="text-gray-600">{mounted ? t('manageCollections', { ns: 'content', defaultValue: 'Manage all your collected content' }) : 'Manage all your collected content'}</p>
           </div>
+          
           {/* 收藏列表选择 */}
-          <div className="mb-6">
-            <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm">
+          <div className="mb-6 px-4 lg:px-0">
+            <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm overflow-x-auto">
               {/* 全部收藏 Tab */}
               <button
                 onClick={() => setActiveList('all')}
-                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeList === 'all'
                     ? 'bg-blue-600 text-white'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -211,7 +230,7 @@ export default function CollectionsPage() {
               {/* 我的喜欢 Tab */}
               <button
                 onClick={() => setActiveList('liked')}
-                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeList === 'liked'
                     ? 'bg-red-600 text-white'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -224,7 +243,7 @@ export default function CollectionsPage() {
                 <button
                   key={list.id}
                   onClick={() => setActiveList(list.id)}
-                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeList === list.id
                       ? 'bg-blue-600 text-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -238,7 +257,7 @@ export default function CollectionsPage() {
 
           {/* 错误信息 */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-6 mx-4 lg:mx-0 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600">{error}</p>
             </div>
           )}
@@ -252,7 +271,7 @@ export default function CollectionsPage() {
 
           {/* 内容网格 */}
           {!loading && collections.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 lg:px-0">
               {collections.map((item) => (
                 <CollectionCard
                   key={item.id}
@@ -273,7 +292,7 @@ export default function CollectionsPage() {
 
           {/* 空状态 */}
           {!loading && collections.length === 0 && activeList && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 px-4 lg:px-0">
               <div className="text-gray-400 mb-4">
                 <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />

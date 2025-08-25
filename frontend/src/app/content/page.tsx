@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Sidebar from '@/components/Sidebar';
+import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
 import ContentCard from '@/components/ContentCard';
 import FilterBar from '@/components/FilterBar';
 import LoginRequired from '@/components/LoginRequired';
@@ -130,8 +130,12 @@ export default function ContentPage() {
   const { t } = useTranslation(['content', 'common', 'navigation']);
   const { user, loading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
   useEffect(() => { setMounted(true); }, []);
+  
   const [lists, setLists] = useState<any[]>([]);
+  
   const fetchLists = async () => {
     if (!user) return;
     try {
@@ -142,9 +146,11 @@ export default function ContentPage() {
       setLists([]);
     }
   };
+  
   useEffect(() => {
     if (user) fetchLists();
   }, [user]);
+  
   if (authLoading) {
     return (
       <div className="text-center text-gray-400 py-12">
@@ -158,6 +164,7 @@ export default function ContentPage() {
       </div>
     );
   }
+  
   if (!user) {
     return (
       <LoginRequired 
@@ -167,21 +174,44 @@ export default function ContentPage() {
       />
     );
   }
-  // 只保留“我的创作”内容列表
+  
+  // 只保留"我的创作"内容列表
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-900">
-      <div className="h-screen sticky top-0 left-0 z-30">
-        <Sidebar />
+      {/* 桌面端侧边栏 */}
+      <div className="hidden lg:block h-screen sticky top-0 left-0 z-30">
+        <Sidebar variant="desktop" />
       </div>
-      <main className="flex-1 p-8 bg-white overflow-y-auto">
-        <div className="flex justify-center mb-6">
-          <Logo size="md" />
+      
+      {/* 移动端侧边栏 */}
+      <Sidebar 
+        variant="mobile" 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+      />
+      
+      <main className="flex-1 bg-white overflow-y-auto">
+        {/* 移动端头部 */}
+        <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
+          <MobileMenuButton onClick={() => setSidebarOpen(true)} />
+          <Logo size="sm" />
+          <div className="w-10" /> {/* 占位，保持Logo居中 */}
         </div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">{mounted ? t('myContent', { ns: 'navigation', defaultValue: '我创作的内容' }) : 'My Creations'}</h2>
-          <a href="/content/create" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">{mounted ? t('createContent', { ns: 'navigation', defaultValue: '新建内容' }) : 'Create Content'}</a>
+        
+        <div className="p-8 lg:p-8">
+          <div className="hidden lg:flex justify-center mb-6">
+            <Logo size="md" />
+          </div>
+          
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
+            <h2 className="text-2xl font-bold">{mounted ? t('myContent', { ns: 'navigation', defaultValue: '我创作的内容' }) : 'My Creations'}</h2>
+            <a href="/content/create" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-center lg:text-left">
+              {mounted ? t('createContent', { ns: 'navigation', defaultValue: '新建内容' }) : 'Create Content'}
+            </a>
+          </div>
+          
+          <MyContentList userId={user.id} lists={lists} refreshLists={fetchLists} />
         </div>
-        <MyContentList userId={user.id} lists={lists} refreshLists={fetchLists} />
       </main>
     </div>
   );
