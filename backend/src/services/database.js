@@ -502,6 +502,23 @@ const getUserById = async (id) => {
   }
 };
 
+const getAllUsers = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, email, name, role, created_at')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
 const createUser = async (userData) => {
   try {
     // 使用 Supabase Auth 创建用户
@@ -1278,6 +1295,7 @@ module.exports = {
   deleteContent,
   getUserByEmail,
   getUserById,
+  getAllUsers,
   createUser,
   getUserCollections,
   addToCollection,

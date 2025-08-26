@@ -288,6 +288,19 @@ class ApiClient {
   async getCollectionsByContent(contentId: string) {
     return this.get(`/user_collections/content/${contentId}`);
   }
+
+  // Admin API
+  async getAdminUsers() {
+    return this.get('/admin/users');
+  }
+
+  async addCreditsToUser(userId: string, amount: number, reason: string) {
+    return this.post('/admin/credits/add', {
+      userId,
+      amount,
+      reason,
+    });
+  }
 }
 
 // 创建并导出 API 实例

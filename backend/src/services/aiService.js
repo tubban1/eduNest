@@ -51,7 +51,7 @@ Your design must ensure:
 - Ensure the CSS and JS fields are fully populated with working, complete, and runnable code. The HTML field must not include any <style> or <script> tags. External links must be declared in the external_links field.
 - Use Vue 3 with <script setup> syntax via production CDN:
 https://unpkg.com/vue@3/dist/vue.global.prod.js
-- You may autonomously choose the most pedagogically effective library from the following list:
+- You may autonomously choose one or more libraries from the following list:
 Vue.js: Vue, VueRouter, Vuex
 React: Redux
 Sound: Tone.js, Howler.js
