@@ -1,12 +1,13 @@
+
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
 import { api } from '@/lib/api';
 
-export default function SignupPage() {
+function SignupPageInner() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -214,4 +215,12 @@ export default function SignupPage() {
       </div>
     </div>
   );
-} 
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-500">加载中...</div>}>
+      <SignupPageInner />
+    </Suspense>
+  );
+}
