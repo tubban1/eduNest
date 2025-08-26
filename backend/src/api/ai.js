@@ -6,6 +6,7 @@ const logger = require('../utils/logger');
 const jwt = require('jsonwebtoken'); // Added for token testing
 
 const router = express.Router();
+const DatabaseService = require('../services/database');
 
 // AI生成教育内容
 router.post('/generate', [
@@ -33,10 +34,30 @@ router.post('/generate', [
 
     logger.info(`开始AI生成内容: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${language_code || '未指定'}`);
 
+    // 订阅豁免与积分预校验（先校验，成功后再在成功渲染时扣减）
+    const userId = req.user?.id;
+    let shouldConsume = true;
+    if (userId) {
+      const { data: subscription } = await DatabaseService.getActiveSubscription(userId);
+      if (subscription && subscription.plan === 'pro') {
+        shouldConsume = false;
+      } else {
+        const { data: balance } = await DatabaseService.getCreditsBalance(userId);
+        if ((balance || 0) < 1) {
+          return res.status(402).json({ success: false, error: '积分不足' });
+        }
+      }
+    }
+
     const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code);
 
     if (result.success) {
       logger.info(`AI生成成功: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${result.data?.language_code || language_code || '未知'}`);
+      // 在生成成功后扣减积分（仅当需要且用户存在）
+      if (shouldConsume && userId) {
+        await DatabaseService.addCreditChange(userId, 'usage', -1);
+      }
+
       res.json({
         success: true,
         data: result.data,

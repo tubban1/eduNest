@@ -109,13 +109,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role = roleData?.[0]?.role || 'user';
       }
 
-      setUser({
+      const authUser: AuthUser = {
         id: userData.id,
         email: userData.email,
         name: userData.user_metadata?.name,
         avatar_url: userData.user_metadata?.avatar_url,
         role,
-      });
+      };
+      setUser(authUser);
+      
+      // 首次有效登录奖励发放（仅一次）
+      try {
+        const rewardedKey = `ref_rewarded_${authUser.id}`;
+        const already = localStorage.getItem(rewardedKey);
+        if (!already) {
+          const pendingCode = localStorage.getItem('pending_ref_code') || undefined;
+          await api.post('/referrals/reward', { code: pendingCode });
+          localStorage.setItem(rewardedKey, '1');
+          if (pendingCode) localStorage.removeItem('pending_ref_code');
+        }
+      } catch (e) {
+        // 静默失败，不影响登录流程
+      }
       setLoading(false);
     } catch (error) {
       console.error('Auth check error:', error);

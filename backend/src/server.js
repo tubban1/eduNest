@@ -16,6 +16,8 @@ const userCollectionsRoutes = require('./api/user_collections');
 const userContentRoutes = require('./api/user_content');
 const aiRoutes = require('./api/ai');
 const contentFixRoutes = require('./api/content_fix');
+const creditsRoutes = require('./api/credits');
+const referralsRoutes = require('./api/referrals');
 const { errorHandler } = require('./utils/errorHandler');
 const logger = require('./utils/logger');
 const { supabase } = require('./services/database');
@@ -123,6 +125,8 @@ app.get('/api/test', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/content/fix', contentFixRoutes);
+app.use('/api/credits', creditsRoutes);
+app.use('/api/referrals', referralsRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/collection_lists', collectionListsRoutes);
 app.use('/api/user_collections', userCollectionsRoutes);

@@ -184,6 +184,232 @@ const createContent = async (contentData, userId) => {
   }
 };
 
+// ===== Credits & Referrals & Subscriptions =====
+const getCreditsBalance = async (userId) => {
+  try {
+    if (useMockData || !supabase) {
+      // 开发/无配置环境下返回0，避免抛错
+      return { data: 0, error: null };
+    }
+    const { data, error } = await supabase
+      .from('user_credits')
+      .select('change_amount')
+      .eq('user_id', userId);
+    if (error) throw error;
+    const balance = (data || []).reduce((sum, r) => sum + (r.change_amount || 0), 0);
+    return { data: balance, error: null };
+  } catch (error) {
+    return { data: 0, error };
+  }
+};
+
+const getCreditsHistory = async (userId, limit = 50, offset = 0) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: [], error: null };
+    }
+    const { data, error } = await supabase
+      .from('user_credits')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+const addCreditChange = async (userId, changeType, changeAmount, relatedUserId = null) => {
+  try {
+    if (useMockData || !supabase) {
+      // 在无配置环境下直接返回成功，便于开发流程
+      return { data: { user_id: userId, change_type: changeType, change_amount: changeAmount }, error: null };
+    }
+    const { data, error } = await supabase
+      .from('user_credits')
+      .insert({
+        user_id: userId,
+        change_type: changeType,
+        change_amount: changeAmount,
+        related_user_id: relatedUserId,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const getActiveSubscription = async (userId) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: null, error: null };
+    }
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('start_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// ===== Referrals =====
+const generateReferralCode = () => {
+  // 4位短码，字母数字（碰撞概率更高，后续通过唯一性检查重试）
+  return Math.random().toString(36).slice(2, 6).toUpperCase();
+};
+
+const ensureReferralCode = async (userId) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: 'MOCKCODE', error: null };
+    }
+    // 查询当前用户的推荐码
+    const { data: user, error: getErr } = await supabase
+      .from('users')
+      .select('referral_code')
+      .eq('id', userId)
+      .single();
+    if (getErr) throw getErr;
+    if (user?.referral_code) {
+      return { data: user.referral_code, error: null };
+    }
+    // 生成并确保唯一（4位码提高重试次数）
+    let code = generateReferralCode();
+    for (let i = 0; i < 20; i++) {
+      const { data: exists } = await supabase
+        .from('users')
+        .select('id')
+        .eq('referral_code', code)
+        .maybeSingle();
+      if (!exists) break;
+      code = generateReferralCode();
+    }
+    const { error: updErr } = await supabase
+      .from('users')
+      .update({ referral_code: code })
+      .eq('id', userId);
+    if (updErr) throw updErr;
+    return { data: code, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const getReferralStats = async (userId) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: { invites: 0 }, error: null };
+    }
+    const { count, error } = await supabase
+      .from('referral_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('inviter_id', userId)
+      .eq('status', 'success');
+    if (error) throw error;
+    return { data: { invites: count || 0 }, error: null };
+  } catch (error) {
+    return { data: { invites: 0 }, error };
+  }
+};
+
+const getReferralCode = async (userId) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: null, error: null };
+    }
+    const { data, error } = await supabase
+      .from('users')
+      .select('referral_code')
+      .eq('id', userId)
+      .single();
+    if (error) throw error;
+    return { data: data?.referral_code || null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const getUserByReferralCode = async (referralCode) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: null, error: null };
+    }
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, email, name, referral_code')
+      .eq('referral_code', referralCode)
+      .maybeSingle();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const createReferralLog = async (inviterId, inviteeId, referralCode, status = 'success') => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: { inviter_id: inviterId, invitee_id: inviteeId, referral_code: referralCode, status }, error: null };
+    }
+    const { data, error } = await supabase
+      .from('referral_logs')
+      .insert({ inviter_id: inviterId, invitee_id: inviteeId, referral_code: referralCode, status, created_at: new Date().toISOString() })
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const countSuccessfulReferrals = async (inviterId) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: 0, error: null };
+    }
+    const { count, error } = await supabase
+      .from('referral_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('inviter_id', inviterId)
+      .eq('status', 'success');
+    if (error) throw error;
+    return { data: count || 0, error: null };
+  } catch (error) {
+    return { data: 0, error };
+  }
+};
+
+const hasReferralForInvitee = async (inviteeId) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: false, error: null };
+    }
+    const { count, error } = await supabase
+      .from('referral_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('invitee_id', inviteeId)
+      .eq('status', 'success');
+    if (error) throw error;
+    return { data: (count || 0) > 0, error: null };
+  } catch (error) {
+    return { data: false, error };
+  }
+};
+
 const updateContent = async (contentId, contentData) => {
   const {
     title,
@@ -1074,5 +1300,18 @@ module.exports = {
   getContentLikeStatus,
   getUserLikedContent,
   checkDatabaseStatus,
-  logAIUsage
+  logAIUsage,
+  // credits & subscription
+  getCreditsBalance,
+  getCreditsHistory,
+  addCreditChange,
+  getActiveSubscription,
+  // referrals
+  ensureReferralCode,
+  getReferralStats,
+  getReferralCode,
+  getUserByReferralCode,
+  createReferralLog,
+  countSuccessfulReferrals,
+  hasReferralForInvitee
 }; 

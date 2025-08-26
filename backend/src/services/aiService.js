@@ -51,10 +51,17 @@ Your design must ensure:
 - Ensure the CSS and JS fields are fully populated with working, complete, and runnable code. The HTML field must not include any <style> or <script> tags. External links must be declared in the external_links field.
 - Use Vue 3 with <script setup> syntax via production CDN:
 https://unpkg.com/vue@3/dist/vue.global.prod.js
-- Use Tone.js v14.8.49 when audio feedback, sound effects, or music would enhance the learning experience*:
-  https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js
+- You may autonomously choose the most pedagogically effective library from the following list:
+Vue.js: Vue, VueRouter, Vuex
+React: Redux
+Sound: Tone.js, Howler.js
+Animation: Anime.js, GSAP
+3D: Three.js, Babylon.js
+Charts: Chart.js, ECharts
+Tools: Lodash, Moment.js, Day.js
+Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
 - Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
-- All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs).
+- All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr).
 - Avoid any build tools or .vue files.
 Everything must work in plain HTML/CSS/JS, and run directly in environments like sandbox editors or iframes.
 

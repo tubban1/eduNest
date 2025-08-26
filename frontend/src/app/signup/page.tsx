@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
+import { api } from '@/lib/api';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,42 @@ export default function SignupPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const { signUpWithEmail } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [refCode, setRefCode] = useState<string>('');
+  const [refValid, setRefValid] = useState<boolean | null>(null);
+  const [refChecking, setRefChecking] = useState(false);
+  const [refMessage, setRefMessage] = useState('');
+
+  // 读取并校验邀请码（如果存在）
+  useEffect(() => {
+    const code = (searchParams?.get('ref') || '').toString().trim().toUpperCase();
+    if (!code) { setRefCode(''); setRefValid(null); return; }
+    setRefCode(code);
+    const validate = async () => {
+      try {
+        setRefChecking(true);
+        setRefMessage('');
+        const res = await api.post('/referrals/validate', { code });
+        if ((res as any)?.success) {
+          setRefValid(true);
+          setRefMessage(`邀请码 ${code} 已验证`);
+          // 记录待发放的邀请码，等待首次有效登录时发放
+          try { localStorage.setItem('pending_ref_code', code); } catch {}
+        } else {
+          setRefValid(false);
+          setRefMessage('邀请码无效');
+          try { localStorage.removeItem('pending_ref_code'); } catch {}
+        }
+      } catch (e: any) {
+        setRefValid(false);
+        setRefMessage(e?.message || '邀请码无效');
+        try { localStorage.removeItem('pending_ref_code'); } catch {}
+      } finally {
+        setRefChecking(false);
+      }
+    };
+    validate();
+  }, [searchParams]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +79,8 @@ export default function SignupPage() {
         setError(result.error);
       } else {
         setSuccess(true);
+        // 奖励将在首次有效登录时发放（避免机器人注册）
+        // TODO: 后续在注册成功后，将 refCode 传给后端记录 referral_logs 与奖励发放
         // 如果有消息，显示消息
         if (result.message) {
           setSuccessMessage(result.message);
@@ -90,6 +129,13 @@ export default function SignupPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">注册账号</h1>
           <p className="text-gray-500 text-sm">创建您的教育内容管理账号</p>
         </div>
+
+        {/* 邀请码提示 */}
+        {refCode && (
+          <div className={`text-sm rounded-lg p-3 ${refChecking ? 'bg-gray-50 text-gray-600' : refValid ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+            {refChecking ? '正在验证邀请码…' : (refMessage || `邀请码 ${refCode}`)}
+          </div>
+        )}
         
         <form onSubmit={handleSignup} className="space-y-4">
           <div>

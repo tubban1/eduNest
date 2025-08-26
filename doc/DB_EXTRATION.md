@@ -6,3 +6,5 @@ order by table_name, ordinal_position;
 
 
 
+INSERT INTO user_credits (user_id, change_type, change_amount)
+VALUES ('9ebcdda0-ddc4-43b8-afd8-5a6b3b4e98f0', 'manual_adjust', 10);
