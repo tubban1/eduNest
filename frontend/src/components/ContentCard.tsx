@@ -30,6 +30,37 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
   useEffect(() => { setMounted(true); }, []);
   const router = useRouter();
 
+  // 新增：语言标签映射（仅按主语言，使用当前系统语言翻译）
+  const getLanguageLabel = (codeRaw: string): string => {
+    const primary = (codeRaw || '').trim().toLowerCase().split('-')[0];
+
+    // 使用 i18n key，按主语言码映射到通用名称，由当前 UI 语言决定显示
+    const keyMap: Record<string, { key: string; fallback: string }> = {
+      zh: { key: 'languageNames.zh', fallback: 'Chinese' },
+      en: { key: 'languageNames.en', fallback: 'English' },
+      ja: { key: 'languageNames.ja', fallback: 'Japanese' },
+      ko: { key: 'languageNames.ko', fallback: 'Korean' },
+      es: { key: 'languageNames.es', fallback: 'Spanish' },
+      fr: { key: 'languageNames.fr', fallback: 'French' },
+      de: { key: 'languageNames.de', fallback: 'German' },
+      pt: { key: 'languageNames.pt', fallback: 'Portuguese' },
+      it: { key: 'languageNames.it', fallback: 'Italian' },
+      ru: { key: 'languageNames.ru', fallback: 'Russian' },
+      ar: { key: 'languageNames.ar', fallback: 'Arabic' },
+      hi: { key: 'languageNames.hi', fallback: 'Hindi' },
+      nl: { key: 'languageNames.nl', fallback: 'Dutch' },
+      sv: { key: 'languageNames.sv', fallback: 'Swedish' },
+    };
+
+    if (keyMap[primary]) {
+      const { key, fallback } = keyMap[primary];
+      return mounted ? t(key, { ns: 'content', defaultValue: fallback }) : fallback;
+    }
+
+    // 兜底：显示原始 code
+    return codeRaw || 'N/A';
+  };
+
   // 新增：实现handleCreateList并传递给CollectionListDialog
   const handleCreateList = async ({ name, visibility }: { name: string; visibility: string }) => {
     try {
@@ -67,7 +98,7 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
           </h3>
           <div className="flex flex-wrap gap-2 mb-2">
             <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
-              {mounted ? t(`languages.${content.language_code === 'zh-CN' ? 'zhCN' : 'enUS'}`, { ns: 'content', defaultValue: content.language_code === 'zh-CN' ? '中文' : 'English' }) : (content.language_code === 'zh-CN' ? '中文' : 'English')}
+              {getLanguageLabel(content.language_code)}
             </span>
           </div>
           {/* 标签块状显示，优先显示tags，没有则回退knowledge_point */}

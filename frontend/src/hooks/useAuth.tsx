@@ -21,6 +21,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signUpWithEmail: (email: string, password: string, name?: string) => Promise<{ error: string | null; message?: string }>;
   sendResetPasswordEmail: (email: string) => Promise<{ error: string | null }>;
+  resendVerificationEmail: (email: string) => Promise<{ error: string | null; message?: string }>;
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<{ error: string | null }>;
 }
@@ -124,12 +125,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const already = localStorage.getItem(rewardedKey);
         if (!already) {
           const pendingCode = localStorage.getItem('pending_ref_code') || undefined;
-          await api.post('/referrals/reward', { code: pendingCode });
-          localStorage.setItem(rewardedKey, '1');
-          if (pendingCode) localStorage.removeItem('pending_ref_code');
+          // 调用推荐奖励API，后端会检查是否已发放
+          const response = await api.post('/referrals/reward', { code: pendingCode });
+          if (response.success) {
+            // 标记为已处理，无论是否实际发放了积分
+            localStorage.setItem(rewardedKey, '1');
+            if (pendingCode) localStorage.removeItem('pending_ref_code');
+          }
         }
       } catch (e) {
         // 静默失败，不影响登录流程
+        console.warn('推荐奖励发放失败:', e);
       }
       setLoading(false);
     } catch (error) {
@@ -296,6 +302,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resendVerificationEmail = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { redirectTo: `${window.location.origin}/auth/callback` }
+      } as any);
+      if (error) return { error: error.message };
+      return { error: null, message: '验证邮件已重发，请检查邮箱' };
+    } catch (e: any) {
+      return { error: e.message || '重发验证邮件失败' };
+    }
+  };
+
   const updatePassword = async (newPassword: string) => {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -342,9 +362,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading, 
       signInWithEmail, 
       signInWithGoogle, 
-      signUpWithEmail,
-      sendResetPasswordEmail,
-      updatePassword,
+      signUpWithEmail, 
+      sendResetPasswordEmail, 
+      resendVerificationEmail,
+      updatePassword, 
       signOut 
     }}>
       {children}

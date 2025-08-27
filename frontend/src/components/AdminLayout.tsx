@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (!loading) {
       if (!user) {
         router.push('/admin/login');
-      } else if (!user.email.includes('admin')) {
+      } else if (!user.role || user.role !== 'admin') {
         router.push('/');
       } else {
         setIsChecking(false);
@@ -34,7 +34,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!user || !user.email.includes('admin')) {
+  if (!user || !user.role || user.role !== 'admin') {
     return null;
   }
 

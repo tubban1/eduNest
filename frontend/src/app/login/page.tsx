@@ -56,6 +56,11 @@ function LoginForm() {
       
       if (result.error) {
         setError(result.error);
+        // 针对未验证邮箱的提示（基于常见提示关键字）
+        const lower = result.error.toLowerCase();
+        if (lower.includes('email') && (lower.includes('not confirmed') || lower.includes('not verified') || lower.includes('verify'))) {
+          setMessage('检测到邮箱尚未验证，您可以点击下方按钮重发验证邮件。');
+        }
       } else {
         // 登录成功，跳转到内容页面
         router.push('/content');
@@ -64,6 +69,16 @@ function LoginForm() {
       setError(error.message || t('loginFailed', { ns: 'auth', defaultValue: '登录失败' }));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      const { resendVerificationEmail } = require('@/hooks/useAuth').useAuth();
+      const res = await resendVerificationEmail(email);
+      setMessage(res.error ? res.error : (res.message || '验证邮件已重发'));
+    } catch (e: any) {
+      setMessage('重发失败，请稍后重试');
     }
   };
 
@@ -161,6 +176,15 @@ function LoginForm() {
           <div className="text-green-600 text-sm text-center bg-green-50 p-3 rounded-lg">
             {message}
           </div>
+        )}
+        {message.includes('未验证') && (
+          <button
+            onClick={handleResend}
+            className="w-full mt-2 py-2 px-4 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+            disabled={loading || !email}
+          >
+            重发验证邮件
+          </button>
         )}
       </div>
     </div>

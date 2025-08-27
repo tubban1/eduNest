@@ -16,11 +16,21 @@ interface LanguageSelectorProps {
 
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' }) => {
   const { currentLanguage, setLanguage, supportedLanguages } = useLanguage();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSelect = (code: string) => {
     setLanguage(code);
+    try {
+      // 写入 i18next 的本地存储键，供 LanguageDetector 使用
+      localStorage.setItem('i18nextLng', code);
+      // 同步 i18n
+      i18n.changeLanguage(code);
+      // 同步 html lang
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = code;
+      }
+    } catch {}
     setIsOpen(false);
   };
 
@@ -33,24 +43,26 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
   }
 
   return (
-    <div className="relative inline-block text-left">
+    <div className="relative block w-full mb-3">
       <button
-        className="flex items-center px-2 py-1 border rounded hover:bg-gray-100"
+        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         type="button"
       >
-        <span className="mr-1">🌐</span>
-        <span>{supportedLanguages.find(l => l.code === currentLanguage)?.label || currentLanguage}</span>
-        <svg className="ml-1 w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" /></svg>
+        <span className="flex items-center">
+          <span className="mr-2">🌐</span>
+          <span>{supportedLanguages.find(l => l.code === currentLanguage)?.label || currentLanguage}</span>
+        </span>
+        <svg className="ml-2 w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" /></svg>
       </button>
       {isOpen && (
-        <ul className="absolute z-10 mt-1 w-full bg-white border rounded shadow-lg" role="listbox">
+        <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg" role="listbox">
           {supportedLanguages.map(lang => (
             <li
               key={lang.code}
-              className={`flex items-center px-2 py-1 cursor-pointer hover:bg-gray-200 ${lang.code === currentLanguage ? 'font-bold' : ''}`}
+              className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${lang.code === currentLanguage ? 'font-semibold bg-gray-50' : ''}`}
               onClick={() => handleSelect(lang.code)}
               role="option"
               aria-selected={lang.code === currentLanguage}

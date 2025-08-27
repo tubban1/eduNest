@@ -11,7 +11,7 @@ const DatabaseService = require('../services/database');
 // AI生成教育内容
 router.post('/generate', [
   authenticateToken,
-  body('knowledgePoint').isString().isLength({ min: 1, max: 200 }).withMessage('知识点不能为空且长度不能超过200字'),
+  body('knowledgePoint').isString().isLength({ min: 1, max: 1000 }).withMessage('知识点不能为空且长度不能超过1000字'),
   body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
   body('description').optional().isString().isLength({ max: 1000 }).withMessage('描述长度不能超过1000字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法')
@@ -89,7 +89,7 @@ router.post('/generate', [
 
 // 测试AI API（不需要认证）
 router.post('/test', [
-  body('knowledgePoint').isString().isLength({ min: 1, max: 200 }).withMessage('知识点不能为空且长度不能超过200字'),
+  body('knowledgePoint').isString().isLength({ min: 1, max: 1000 }).withMessage('知识点不能为空且长度不能超过1000字'),
   body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
 ], async (req, res) => {
   try {

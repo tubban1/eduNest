@@ -105,17 +105,23 @@ router.post('/admin/credits/add', authenticateToken, async (req, res) => {
       return res.status(403).json({ success: false, error: '权限不足' });
     }
 
-    const { userId, amount, reason } = req.body;
-    if (!userId || !amount || amount <= 0) {
+    const { email, amount, reason } = req.body;
+    if (!email || !amount || amount <= 0) {
       return res.status(400).json({ success: false, error: '参数错误' });
     }
 
+    // 通过邮箱查找用户
+    const { data: user, error: userError } = await DatabaseService.getUserByEmail(email);
+    if (userError || !user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+
     // 增加积分
-    const { error } = await DatabaseService.addCreditChange(userId, reason, amount);
+    const { error } = await DatabaseService.addCreditChange(user.id, reason, amount);
     if (error) throw error;
 
     // 获取新的余额
-    const { data: newBalance } = await DatabaseService.getCreditsBalance(userId);
+    const { data: newBalance } = await DatabaseService.getCreditsBalance(user.id);
     res.json({ success: true, data: { balance: newBalance } });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

@@ -784,13 +784,22 @@ export default function ContentForm({
                         <div>
                           <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('knowledgePoint', { ns: 'content', defaultValue: 'Knowledge Point' }) : 'Knowledge Point'} <span className="text-red-500">*</span></label>
                           <textarea
-                            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-20"
+                            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-24"
                             value={knowledgePoint}
                             onChange={e => setKnowledgePoint(e.target.value)}
                             placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
                             required
                             disabled={isAiFormDisabled}
+                            maxLength={1000}
                           />
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-xs text-gray-500">
+                              {mounted ? t('knowledgePointHint', { ns: 'content', defaultValue: 'Describe the knowledge point in detail for better AI generation' }) : 'Describe the knowledge point in detail for better AI generation'}
+                            </span>
+                            <span className={`text-xs ${knowledgePoint.length > 900 ? 'text-red-500' : knowledgePoint.length > 800 ? 'text-yellow-500' : 'text-gray-500'}`}>
+                              {knowledgePoint.length}/1000
+                            </span>
+                          </div>
                         </div>
                         <div>
                           <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('learningStageLabel', { ns: 'content', defaultValue: 'Learning Stage' }) : 'Learning Stage'}</label>

@@ -149,7 +149,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
                 <span className="font-medium">{mounted ? t('email', { ns: 'auth', defaultValue: 'Email:' }) : 'Email:'}</span> {user.email}
               </div>
               <div className="mb-1">
-                <span className="font-medium">{mounted ? t('role', { ns: 'auth', defaultValue: 'Role:' }) : 'Role:'}</span> {user.email.includes('admin') ? (mounted ? t('admin', { ns: 'auth', defaultValue: 'Admin' }) : 'Admin') : (mounted ? t('user', { ns: 'auth', defaultValue: 'User' }) : 'User')}
+                <span className="font-medium">{mounted ? t('role', { ns: 'auth', defaultValue: 'Role:' }) : 'Role:'}</span> {user.role === 'admin' ? (mounted ? t('admin', { ns: 'auth', defaultValue: 'Admin' }) : 'Admin') : (mounted ? t('user', { ns: 'auth', defaultValue: 'User' }) : 'User')}
               </div>
               <div className="mb-2 flex items-center justify-between">
                 <div>

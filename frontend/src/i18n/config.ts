@@ -53,7 +53,8 @@ i18n
   .init({
     resources,
     fallbackLng: DEFAULT_LANGUAGE,
-    lng: DEFAULT_LANGUAGE, // 强制设置初始语言为中文
+    // 关键修复：不再强制设定 lng，交给 LanguageDetector + localStorage 持久化
+    // lng: DEFAULT_LANGUAGE,
     supportedLngs: SUPPORTED_LANGUAGES.map(l => l.code).concat(['zh', 'en', 'de', 'fr']), // 包含别名
     ns: ['common', 'navigation', 'auth', 'content', 'home'],
     defaultNS: 'common',

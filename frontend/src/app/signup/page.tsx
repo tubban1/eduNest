@@ -112,6 +112,24 @@ function SignupPageInner() {
           <p className="text-gray-600 text-sm mb-4">
             {successMessage || '我们已向您的邮箱发送了验证邮件，请点击邮件中的链接完成验证。'}
           </p>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <button
+              onClick={async () => {
+                try {
+                  const emailInput = (document.getElementById('email') as HTMLInputElement)?.value || '';
+                  if (!emailInput) return;
+                  const { resendVerificationEmail } = require('@/hooks/useAuth').useAuth();
+                  const res = await resendVerificationEmail(emailInput);
+                  alert(res.error ? res.error : (res.message || '验证邮件已重发'));
+                } catch (e) {
+                  alert('重发失败，请稍后重试');
+                }
+              }}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              重发验证邮件
+            </button>
+          </div>
           <p className="text-gray-500 text-xs">
             验证完成后，您就可以使用邮箱和密码登录了。
           </p>

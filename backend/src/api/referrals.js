@@ -45,6 +45,16 @@ router.post('/reward', authenticateToken, async (req, res) => {
   try {
     const inviteeId = req.user.id;
     const { code } = req.body || {};
+    
+    // 检查用户是否已经获得过初始积分
+    const { data: existingCredits } = await DatabaseService.getCreditsHistory(inviteeId, 1, 0);
+    const hasInitialCredits = existingCredits && existingCredits.some(credit => credit.change_type === 'initial');
+    
+    if (hasInitialCredits) {
+      // 用户已经获得过初始积分，不重复发放
+      return res.json({ success: true, data: { invited: false, initialGranted: false, reason: 'already_granted' } });
+    }
+    
     if (!code) {
       // 没有邀请码，仅发放新用户初始积分
       await DatabaseService.addCreditChange(inviteeId, 'initial', 3);

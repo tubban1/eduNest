@@ -291,12 +291,12 @@ class ApiClient {
 
   // Admin API
   async getAdminUsers() {
-    return this.get('/admin/users');
+    return this.get('/credits/admin/users');
   }
 
-  async addCreditsToUser(userId: string, amount: number, reason: string) {
-    return this.post('/admin/credits/add', {
-      userId,
+  async addCreditsToUser(email: string, amount: number, reason: string) {
+    return this.post('/credits/admin/credits/add', {
+      email,
       amount,
       reason,
     });

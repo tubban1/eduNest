@@ -252,8 +252,20 @@ export default function AiLoadingAnimation({
         <div className="bg-gray-50 rounded-lg p-6 min-h-[120px] flex items-center justify-center">
           <div className="text-center">
             <div className={`text-lg text-gray-700 font-mono whitespace-pre-wrap transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-              {displayedMessage || '正在加载...'}
+              {displayedMessage ? displayedMessage.replace(
+                knowledgePoint, 
+                knowledgePoint.length > 1000 ? knowledgePoint.substring(0, 1000) + '...' : knowledgePoint
+              ) : '正在加载...'}
             </div>
+            {/* 字符计数显示 */}
+            {knowledgePoint && (
+              <div className="text-xs text-gray-500 mt-2">
+                知识点长度: {knowledgePoint.length}/1000 字符
+                {knowledgePoint.length > 900 && (
+                  <span className="text-red-500 ml-2">⚠️ 接近限制</span>
+                )}
+              </div>
+            )}
             {/* 调试信息 */}
             <div className="text-xs text-gray-500 mt-2">
               调试: 阶段={currentStage}, 消息={currentMessage}, 显示长度={displayedMessage.length}
