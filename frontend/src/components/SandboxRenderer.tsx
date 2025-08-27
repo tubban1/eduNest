@@ -146,6 +146,7 @@ interface SandboxRendererProps {
   }>; // 自定义库配置
   useNativeIframe?: boolean; // 使用原生iframe模式（类似CodePen）
   externalUrl?: string; // 外部URL（当useNativeIframe为true时使用）
+  fixedHeight?: boolean; // 预览页固定高度，超出出现滚动条
 }
 
 interface ExternalResource {
@@ -169,7 +170,8 @@ export default function SandboxRenderer({
   enableLibrarySupport = true,
   customLibraries = [],
   useNativeIframe = false,
-  externalUrl
+  externalUrl,
+  fixedHeight = false
 }: SandboxRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewKey, setPreviewKey] = useState(0);
@@ -367,7 +369,13 @@ export default function SandboxRenderer({
       line-height: 1.5;
       color: #333;
       background: #fff;
+      margin: 0 !important;
+      padding: 0 !important;
     }
+    
+    /* 强制靠近顶部：移除常见容器的顶边距/内边距 */
+    body > :first-child { margin-top: 0 !important; }
+    #root, #app, [data-v-app], main, header { margin-top: 0 !important; padding-top: 0 !important; }
     
     /* 根元素样式 */
     #root, #app, [data-v-app] {
@@ -375,6 +383,8 @@ export default function SandboxRenderer({
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      align-items: flex-start; /* 去掉垂直居中 */
+      justify-content: flex-start; /* 去掉垂直居中 */
     }
     
     /* 触摸优化 */
@@ -488,8 +498,8 @@ export default function SandboxRenderer({
       min-height: 100vh;
       width: 100%;
       display: flex;
-      justify-content: center;
-      align-items: center;
+      justify-content: flex-start; /* 去掉垂直居中 */
+      align-items: flex-start; /* 去掉垂直居中 */
       padding: 20px;
       box-sizing: border-box;
     }
@@ -1480,40 +1490,53 @@ export default function SandboxRenderer({
         const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
         
         if (iframeDoc && iframeDoc.body) {
-          const contentHeight = iframeDoc.body.scrollHeight;
-          const contentWidth = iframeDoc.body.scrollWidth;
-          const clientHeight = iframeDoc.body.clientHeight;
-          const offsetHeight = iframeDoc.body.offsetHeight;
+          const bodyEl = iframeDoc.body as HTMLElement;
+          const docEl = iframeDoc.documentElement as HTMLElement | null;
+          
+          const contentHeight = bodyEl.scrollHeight;
+          const contentWidth = bodyEl.scrollWidth;
+          const clientHeight = bodyEl.clientHeight;
+          const offsetHeight = bodyEl.offsetHeight;
+          const docScrollHeight = docEl ? docEl.scrollHeight : 0;
+          const docClientHeight = docEl ? docEl.clientHeight : 0;
+          const docOffsetHeight = docEl ? docEl.offsetHeight : 0;
           
           console.log('Content dimensions:', { 
             contentHeight, 
             contentWidth, 
             clientHeight, 
             offsetHeight,
+            docScrollHeight,
+            docClientHeight,
+            docOffsetHeight,
             iframeHeight: iframe.style.height,
             iframeMinHeight: iframe.style.minHeight
           });
           
-          // 使用最大的高度值，确保内容不被裁切
-          const maxHeight = Math.max(contentHeight, clientHeight, offsetHeight);
+          // 使用最大的高度值，确保内容不被裁切（仅布局高度，不包含transform视觉高度）
+          const maxHeight = Math.max(
+            contentHeight,
+            clientHeight,
+            offsetHeight,
+            docScrollHeight,
+            docClientHeight,
+            docOffsetHeight
+          );
           
-          // 确保iframe高度能够完整显示所有内容
-          // 添加一些额外空间，防止内容被裁切
-          const extraSpace = 80; // 增加额外空间，为按钮切换等留出更多空间
-          const newHeight = maxHeight + extraSpace;
+          const extraSpace = 80;
+          const newHeight = Math.max(0, maxHeight + extraSpace);
           
-          // 设置iframe高度
           iframe.style.height = `${newHeight}px`;
           iframe.style.minHeight = `${newHeight}px`;
           
-          // 更新状态
           setIframeHeight(`${newHeight}px`);
           
           console.log('Adjusted iframe height to:', newHeight, 'from max content height:', maxHeight);
           
-          // 强制重新计算布局
+          // 触发重排
           iframe.style.display = 'none';
-          iframe.offsetHeight; // 触发重排
+          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+          (iframe as any).offsetHeight;
           iframe.style.display = 'block';
         }
       } catch (error) {
@@ -1749,12 +1772,12 @@ export default function SandboxRenderer({
             padding: '0',
             display: 'block',
             width: '100%',
-            height: 'auto', // 改为auto，让内容决定高度
+            height: fixedHeight ? '100%' : 'auto',
             minHeight: '100%',
-            overflow: 'visible', // 改为visible，让内容能够扩展
+            overflow: fixedHeight ? 'auto' : 'visible',
             position: 'relative'
           }}
-          scrolling="no" // 禁用滚动
+          scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
             console.log('Native iframe loaded successfully');
             setIsLoading(false);
@@ -1763,8 +1786,11 @@ export default function SandboxRenderer({
             if (stopMonitoring) {
               setTimeout(stopMonitoring, 100);
             }
-            // 尝试调整iframe高度
-            setTimeout(adjustIframeHeight, 500);
+            if (!fixedHeight) {
+              setTimeout(adjustIframeHeight, 100);
+              setTimeout(adjustIframeHeight, 300);
+              setTimeout(adjustIframeHeight, 1000);
+            }
             onLoad?.();
           }}
           onError={() => {
@@ -1799,12 +1825,12 @@ export default function SandboxRenderer({
             padding: '0',
             display: 'block',
             width: '100%',
-            height: 'auto', // 改为auto，让内容决定高度
+            height: fixedHeight ? '100%' : 'auto',
             minHeight: '100%',
-            overflow: 'visible', // 改为visible，让内容能够扩展
+            overflow: fixedHeight ? 'auto' : 'visible',
             position: 'relative'
           }}
-          scrolling="no" // 禁用滚动
+          scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
             console.log('WeChat compatible iframe loaded successfully');
             setIsLoading(false);
@@ -1813,8 +1839,11 @@ export default function SandboxRenderer({
             if (stopMonitoring) {
               setTimeout(stopMonitoring, 100);
             }
-            // 尝试调整iframe高度
-            setTimeout(adjustIframeHeight, 500);
+            if (!fixedHeight) {
+              setTimeout(adjustIframeHeight, 100);
+              setTimeout(adjustIframeHeight, 300);
+              setTimeout(adjustIframeHeight, 1000);
+            }
             onLoad?.();
           }}
           onError={() => {
@@ -1838,12 +1867,12 @@ export default function SandboxRenderer({
             padding: '0',
             display: 'block',
             width: '100%',
-            height: 'auto', // 改为auto，让内容决定高度
+            height: fixedHeight ? '100%' : 'auto',
             minHeight: '100%',
-            overflow: 'visible', // 改为visible，让内容能够扩展
+            overflow: fixedHeight ? 'auto' : 'visible',
             position: 'relative'
           }}
-          scrolling="no" // 禁用滚动
+          scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
             console.log('Standard iframe loaded successfully');
             setIsLoading(false);
@@ -1852,8 +1881,11 @@ export default function SandboxRenderer({
             if (stopMonitoring) {
               setTimeout(stopMonitoring, 100);
             }
-            // 尝试调整iframe高度
-            setTimeout(adjustIframeHeight, 500);
+            if (!fixedHeight) {
+              setTimeout(adjustIframeHeight, 100);
+              setTimeout(adjustIframeHeight, 300);
+              setTimeout(adjustIframeHeight, 1000);
+            }
             onLoad?.();
           }}
           onError={() => {
