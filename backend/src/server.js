@@ -47,8 +47,18 @@ app.use(cors({
 
 // 速率限制
 const limiter = rateLimit({
-  windowMs: config.RATE_LIMIT_WINDOW,
-  max: config.RATE_LIMIT_MAX,
+  windowMs: process.env.NODE_ENV === 'production' ? (60 * 1000) : (60 * 1000),
+  max: process.env.NODE_ENV === 'production' ? 120 : 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req, _res) => {
+    try {
+      // 认证后优先按用户ID限流，否则回退IP
+      return (req.user && req.user.id) ? `uid:${req.user.id}` : `ip:${req.ip}`;
+    } catch {
+      return `ip:${req.ip}`;
+    }
+  },
   message: '请求过于频繁，请稍后再试'
 });
 app.use('/api/', limiter);

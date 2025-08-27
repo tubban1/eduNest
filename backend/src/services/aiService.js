@@ -51,7 +51,7 @@ Your design must ensure:
 - Ensure the CSS and JS fields are fully populated with working, complete, and runnable code. The HTML field must not include any <style> or <script> tags. External links must be declared in the external_links field.
 - Use Vue 3 with <script setup> syntax via production CDN:
 https://unpkg.com/vue@3/dist/vue.global.prod.js
-- You may autonomously choose one or more libraries from the following list:
+- In addition, you may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect (e.g. animation, charts, audio, 3D):
 Vue.js: Vue, VueRouter, Vuex
 React: Redux
 Sound: Tone.js, Howler.js
@@ -72,8 +72,7 @@ Everything must work in plain HTML/CSS/JS, and run directly in environments like
 - The layout should be minimal, accessible, and focused on content.
 
 4. Output Language Constraint
-- If language_code is provided, you MUST use it for ALL output fields (title, description, html, css, js, tags, content_type, language_code, etc.), regardless of the knowledge point’s language. Do NOT infer the output language from the knowledge point or any other input. Only use language_code for all output.
-- If language_code is not provided, use the fallback language: {{fallback_language}}.
+- Language_code is: {{fallback_language}}.
 - The language_code must be included as a field in the final JSON output and must be a valid BCP 47 code string (e.g., "zh-CN", "en-US", "de-CH").
 - All text values in the JSON (including title, description, UI strings, tags and comments) must match the language indicated by language_code.
 
@@ -89,6 +88,7 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
   "external_links": [
     "https://unpkg.com/vue@3/dist/vue.global.prod.js",
     "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js" *if used*
+    "Any additional library links you actually used from the allowed list"
   ],
   "tags": [
     "3–7 high-quality tags that reflect subject, domain, format, or interaction style"

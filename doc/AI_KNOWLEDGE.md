@@ -27,10 +27,17 @@ Your design must ensure:
 - Ensure the CSS and JS fields are fully populated with working, complete, and runnable code. The HTML field must not include any <style> or <script> tags. External links must be declared in the external_links field.
 - Use Vue 3 with <script setup> syntax via production CDN:
 https://unpkg.com/vue@3/dist/vue.global.prod.js
-- Use Tone.js v14.8.49 when audio feedback, sound effects, or music would enhance the learning experience*:
-  https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js
+- In addition, you may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect (e.g. animation, charts, audio, 3D):
+Vue.js: Vue, VueRouter, Vuex
+React: Redux
+Sound: Tone.js, Howler.js
+Animation: Anime.js, GSAP
+3D: Three.js, Babylon.js
+Charts: Chart.js, ECharts
+Tools: Lodash, Moment.js, Day.js
+Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
 - Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
-- All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs).
+- All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr).
 - Avoid any build tools or .vue files.
 Everything must work in plain HTML/CSS/JS, and run directly in environments like sandbox editors or iframes.
 
@@ -40,7 +47,12 @@ Everything must work in plain HTML/CSS/JS, and run directly in environments like
 - Use sound and visual feedback where pedagogically helpful for user interactions (e.g., success, fail, progress, guidance).
 - The layout should be minimal, accessible, and focused on content.
 
-4. Output Format
+4. Output Language Constraint
+- Language_code is: {{fallback_language}}.
+- The language_code must be included as a field in the final JSON output and must be a valid BCP 47 code string (e.g., "zh-CN", "en-US", "de-CH").
+- All text values in the JSON (including title, description, UI strings, tags and comments) must match the language indicated by language_code.
+
+5. Output Format
 Return the result as a single, valid, and minified JSON object. Strictly adhere to the specified structure below, with no leading or trailing text. The entire output must be parseable as a single JSON object. Any deviation, such as a missing comma, unclosed quote, or bracket, is a critical error.
 
 {
@@ -52,21 +64,17 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
   "external_links": [
     "https://unpkg.com/vue@3/dist/vue.global.prod.js",
     "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js" *if used*
+    "Any additional library links you actually used from the allowed list"
   ],
   "tags": [
     "3–7 high-quality tags that reflect subject, domain, format, or interaction style"
   ],
   "content_type": "vue",
-  "language": "BCP 47 code"
+  "language_code": "MUST match the language_code input parameter exactly as per Constraint 4"
 }
 
-5. Language
-If no explicit language is provided, you must automatically infer the correct output language by analyzing the input "{{knowledge_point}}".  
-Ensure that all output text—including the title, description, UI strings, and comments—is written in the same language that best matches the "{{knowledge_point}}".
-Do not default to any single language (e.g., Chinese or English). Use your best judgment to match the language of the "{{knowledge_point}}".
-The final JSON must also include the "language" field in BCP 47 format (e.g., zh-CN, en-US, de-CH) based on your inferred language.
+6. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.
 
-6. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.`;
 
 
 
