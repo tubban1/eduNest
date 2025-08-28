@@ -52,14 +52,17 @@ Your design must ensure:
 - Use Vue 3 with <script setup> syntax via production CDN:
 https://unpkg.com/vue@3/dist/vue.global.prod.js
 - In addition, you may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect (e.g. animation, charts, audio, 3D):
-Vue.js: Vue, VueRouter, Vuex
-React: Redux
-Sound: Tone.js, Howler.js
-Animation: Anime.js, GSAP
-3D: Three.js, Babylon.js
-Charts: Chart.js, ECharts
-Tools: Lodash, Moment.js, Day.js
-Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
+Vue.js: vue@3.5.20, vue-router@4.5.1, vuex@4.1.0
+React: redux@5.0.1
+Sound: tone@15.2.12, howler@2.2.4
+Animation: animejs@4.1.3, gsap@3.13.0
+3D: three@0.179.1, Babylon.js
+Charts: chart.js@4.5.0, d3@7.9.0, echarts@6.0.0
+Game: phaser@3.90.0, matter@0.20.0, p5@2.0.4
+Tools: lodash@4.17.21, moment@2.30.1, dayjs@1.11.11
+Form: vee-validate@4.12.0, vee-validate-rules@4.12.0, vee-validate-i18n@4.12.0
+Graphic: fabric@6.7.0, rough@4.0.0, konva@9.3.22
+UI: bootstrap@5.3.3, tailwindcss@3.4.15, fontawesome@6.5.2
 - Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
 - All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr).
 - Avoid any build tools or .vue files.
@@ -218,6 +221,12 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           ...parsedDataRaw,
           language_code: parsedDataRaw.language_code || languageCode || 'zh-CN'
         };
+        
+        // 替换 external_links 为支持的库链接
+        if (parsedData.external_links && Array.isArray(parsedData.external_links)) {
+          parsedData.external_links = replaceWithSupportedLibraries(parsedData.external_links);
+        }
+        
         // 日志：成功解析JSON
         await logAIUsage({
           user_id: userId,
@@ -392,6 +401,17 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       
       if (jsonMatch) {
         parsedData = JSON.parse(jsonMatch[0]);
+        
+        // 替换 external_links 为支持的库链接
+        if (parsedData.external_links && Array.isArray(parsedData.external_links)) {
+          parsedData.external_links = replaceWithSupportedLibraries(parsedData.external_links);
+        }
+        
+        return {
+          success: true,
+          data: parsedData,
+          learningStage: LEARNING_STAGE_NAMES[learningStage]
+        };
       } else {
         console.error('未找到JSON格式，完整响应:', aiResponse);
         throw new Error('无法解析AI返回的JSON，请检查AI返回的格式');
@@ -401,12 +421,6 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       console.error('AI原始响应内容:', aiResponse);
       throw new Error(`AI返回内容格式错误: ${parseError.message}`);
     }
-
-    return {
-      success: true,
-      data: parsedData,
-      learningStage: LEARNING_STAGE_NAMES[learningStage]
-    };
 
   } catch (error) {
     console.error('简化AI生成错误:', error);
@@ -544,6 +558,12 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
       }
       if (jsonMatch) {
         parsed = JSON.parse(jsonMatch[0]);
+        
+        // 替换 external_links 为支持的库链接
+        if (parsed.external_links && Array.isArray(parsed.external_links)) {
+          parsed.external_links = replaceWithSupportedLibraries(parsed.external_links);
+        }
+        
         await logAIUsage({
           user_id,
           model_name: process.env.ARK_MODEL,
@@ -679,6 +699,146 @@ const testSafeReplace = () => {
   });
 };
 
+// 将 AI 生成的库链接替换为支持的库链接
+const replaceWithSupportedLibraries = (externalLinks) => {
+  if (!Array.isArray(externalLinks)) {
+    return [];
+  }
+
+  // 支持的库映射表（从 SUPPORTED_LIBRARIES.md 提取）
+  const supportedLibraries = {
+    // Vue.js 生态
+    'vue@3': 'https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js',
+    'vue@3.5.20': 'https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js',
+    'vue@3/dist/vue.global.prod.js': 'https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js',
+    'vue@3/dist/vue.global.js': 'https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js',
+    'unpkg.com/vue@3': 'https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js',
+    
+    // Vue Router
+    'vue-router@4': 'https://cdn.jsdelivr.net/npm/vue-router@4.5.1/dist/vue-router.global.prod.js',
+    'vue-router@4.5.1': 'https://cdn.jsdelivr.net/npm/vue-router@4.5.1/dist/vue-router.global.prod.js',
+    
+    // Vuex
+    'vuex@4': 'https://cdn.jsdelivr.net/npm/vuex@4.1.0/dist/vuex.global.prod.js',
+    'vuex@4.1.0': 'https://cdn.jsdelivr.net/npm/vuex@4.1.0/dist/vuex.global.prod.js',
+    
+    // Redux
+    'redux@5': 'https://cdn.jsdelivr.net/npm/redux@5.0.1/dist/redux.legacy-esm.min.js',
+    'redux@5.0.1': 'https://cdn.jsdelivr.net/npm/redux@5.0.1/dist/redux.legacy-esm.min.js',
+    
+    // 动画和视觉效果
+    'gsap@3': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
+    'gsap@3.13.0': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
+    
+    'three@0.179.1': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    'three@0.179': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    'three@0': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    
+    'animejs@4': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',
+    'animejs@4.1.3': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',
+    
+    'babylon': 'https://cdn.babylonjs.com/babylon.js',
+    'babylon.js': 'https://cdn.babylonjs.com/babylon.js',
+    
+    // 音频和音乐
+    'tone@15': 'https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js',
+    'tone@15.2.12': 'https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js',
+    'tone@14': 'https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js',
+    'tone@14.8.49': 'https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js',
+    
+    'howler@2': 'https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js',
+    'howler@2.2.4': 'https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js',
+    
+    // 图表和数据可视化
+    'chart.js@4': 'https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js',
+    'chart.js@4.5.0': 'https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js',
+    
+    'd3@7': 'https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js',
+    'd3@7.9.0': 'https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js',
+    
+    'echarts@6': 'https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js',
+    'echarts@6.0.0': 'https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js',
+    
+    // 游戏和交互
+    'phaser@3': 'https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js',
+    'phaser@3.90.0': 'https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js',
+    
+    'matter@0': 'https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js',
+    'matter@0.20.0': 'https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js',
+    'matter-js@0': 'https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js',
+    'matter-js@0.20.0': 'https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js',
+    
+    'p5@2': 'https://cdn.jsdelivr.net/npm/p5@2.0.4/lib/p5.min.js',
+    'p5@2.0.4': 'https://cdn.jsdelivr.net/npm/p5@2.0.4/lib/p5.min.js',
+    
+    // 工具库
+    'lodash@4': 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
+    'lodash@4.17.21': 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
+    
+    'moment@2': 'https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js',
+    'moment@2.30.1': 'https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js',
+    
+    'dayjs@1': 'https://cdn.jsdelivr.net/npm/dayjs@1.11.11/dayjs.min.js',
+    'dayjs@1.11.11': 'https://cdn.jsdelivr.net/npm/dayjs@1.11.11/dayjs.min.js',
+    
+    // 表单处理
+    'vee-validate@4': 'https://cdn.jsdelivr.net/npm/vee-validate@4/dist/vee-validate.min.js',
+    '@vee-validate/rules@4': 'https://cdn.jsdelivr.net/npm/@vee-validate/rules@4/dist/vee-validate-rules.min.js',
+    '@vee-validate/i18n@4': 'https://cdn.jsdelivr.net/npm/@vee-validate/i18n@4/dist/vee-validate-i18n.min.js',
+    
+    // UI 组件
+    'bootstrap@5': 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
+    'bootstrap@5.3.3': 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
+    'bootstrap@5/dist/css/bootstrap.min.css': 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+    
+    'tailwindcss': 'https://cdn.tailwindcss.com',
+    
+    'fontawesome@6': 'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css',
+    'fontawesome@6.5.2': 'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css',
+    '@fortawesome/fontawesome-free@6': 'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css',
+    
+    // 画图
+    'fabric@6': 'https://cdn.jsdelivr.net/npm/fabric@6.7.0/dist/index.min.js',
+    'fabric@6.7.0': 'https://cdn.jsdelivr.net/npm/fabric@6.7.0/dist/index.min.js',
+    
+    'rough@latest': 'https://unpkg.com/roughjs@latest/bundled/rough.js',
+    'roughjs@latest': 'https://unpkg.com/roughjs@latest/bundled/rough.js',
+    
+    'konva@9': 'https://cdn.jsdelivr.net/npm/konva@9.3.22/konva.min.js',
+    'konva@9.3.22': 'https://cdn.jsdelivr.net/npm/konva@9.3.22/konva.min.js',
+    
+    // 特殊映射（处理常见的错误链接）
+    'unpkg.com/vue@3': 'https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js',
+    'unpkg.com/vue@3/dist/vue.global.js': 'https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js',
+    'unpkg.com/vue@3/dist/vue.global.prod.js': 'https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js',
+    
+    'cdnjs.cloudflare.com/ajax/libs/tone': 'https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js',
+    'cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js': 'https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js',
+    
+    'unpkg.com/three': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    'unpkg.com/three@0.179.1': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    
+    'unpkg.com/gsap': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
+    'unpkg.com/gsap@3.13.0': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js'
+  };
+
+  return externalLinks.map(link => {
+    if (!link || typeof link !== 'string') {
+      return link;
+    }
+
+    // 尝试匹配库名和版本
+    for (const [pattern, replacement] of Object.entries(supportedLibraries)) {
+      if (link.includes(pattern)) {
+        return replacement;
+      }
+    }
+
+    // 如果没有匹配到，返回原链接（可能是自定义链接）
+    return link;
+  });
+};
+
 // 记录前端渲染结果API
 router.post('/api/ai/log_render_status', async (req, res) => {
   const { log_id, is_render_success, error_message } = req.body;
@@ -708,5 +868,6 @@ module.exports = {
   LEARNING_STAGE_NAMES,
   fixEducationalContent,
   safeReplace,  // 导出安全替换函数供测试使用
-  testSafeReplace  // 导出测试函数
+  testSafeReplace,  // 导出测试函数
+  replaceWithSupportedLibraries // 导出替换库链接函数
 }; 
