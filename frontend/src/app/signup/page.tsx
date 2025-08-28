@@ -17,8 +17,9 @@ function SignupPageInner() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [countdown, setCountdown] = useState(5); // 倒计时秒数
+  const [countdown, setCountdown] = useState(3); // 倒计时秒数
   const [autoRedirect, setAutoRedirect] = useState(true); // 是否自动跳转
+  const [hasResentEmail, setHasResentEmail] = useState(false); // 是否已重发验证邮件
   const { signUpWithEmail } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -90,11 +91,11 @@ function SignupPageInner() {
         if (result.message) {
           setSuccessMessage(result.message);
         }
-        // 5秒后跳转到登录页（给用户更多时间操作）
+        // 3秒后跳转到登录页（给用户更多时间操作）
         if (autoRedirect) {
           setTimeout(() => {
             router.push('/login?message=signup_success');
-          }, 5000);
+          }, 3000);
         }
       }
     } catch (error: any) {
@@ -129,7 +130,13 @@ function SignupPageInner() {
                   if (!emailInput) return;
                   const { resendVerificationEmail } = require('@/hooks/useAuth').useAuth();
                   const res = await resendVerificationEmail(emailInput);
-                  alert(res.error ? res.error : (res.message || '验证邮件已重发'));
+                  if (res.error) {
+                    alert(res.error);
+                  } else {
+                    setHasResentEmail(true);
+                    setAutoRedirect(false);
+                    alert(res.message || '验证邮件已重发');
+                  }
                 } catch (e) {
                   alert('重发失败，请稍后重试');
                 }
@@ -142,6 +149,26 @@ function SignupPageInner() {
           <p className="text-gray-500 text-xs">
             {t('verifyAndLoginHint', { ns: 'auth', defaultValue: '验证完成后，您就可以使用邮箱和密码登录了。' })}
           </p>
+          
+          {/* 重发邮件后的额外选项 */}
+          {hasResentEmail && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-green-600 text-sm mb-3">
+                ✅ 验证邮件已重发，请检查您的邮箱
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => router.push('/login')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  回到登录页面
+                </button>
+                <p className="text-gray-500 text-xs">
+                  您可以稍后使用邮箱和密码登录
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
