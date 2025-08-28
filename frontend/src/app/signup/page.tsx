@@ -17,6 +17,8 @@ function SignupPageInner() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [countdown, setCountdown] = useState(5); // 倒计时秒数
+  const [autoRedirect, setAutoRedirect] = useState(true); // 是否自动跳转
   const { signUpWithEmail } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,10 +90,12 @@ function SignupPageInner() {
         if (result.message) {
           setSuccessMessage(result.message);
         }
-        // 3秒后跳转到登录页
-        setTimeout(() => {
-          router.push('/login?message=signup_success');
-        }, 3000);
+        // 5秒后跳转到登录页（给用户更多时间操作）
+        if (autoRedirect) {
+          setTimeout(() => {
+            router.push('/login?message=signup_success');
+          }, 5000);
+        }
       }
     } catch (error: any) {
       console.error('注册处理异常:', error);
