@@ -52,17 +52,17 @@ Your design must ensure:
 - Use Vue 3 with <script setup> syntax via production CDN:
 https://unpkg.com/vue@3/dist/vue.global.prod.js
 - In addition, you may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect (e.g. animation, charts, audio, 3D):
-Vue.js: vue@3.5.20, vue-router@4.5.1, vuex@4.1.0
-React: redux@5.0.1
-Sound: tone@15.2.12, howler@2.2.4
-Animation: animejs@4.1.3, gsap@3.13.0
-3D: three@0.179.1, Babylon.js
-Charts: chart.js@4.5.0, d3@7.9.0, echarts@6.0.0
-Game: phaser@3.90.0, matter@0.20.0, p5@2.0.4
-Tools: lodash@4.17.21, moment@2.30.1, dayjs@1.11.11
-Form: vee-validate@4.12.0, vee-validate-rules@4.12.0, vee-validate-i18n@4.12.0
-Graphic: fabric@6.7.0, rough@4.0.0, konva@9.3.22
-UI: bootstrap@5.3.3, tailwindcss@3.4.15, fontawesome@6.5.2
+Vue.js: Vue, VueRouter, Vuex
+React: Redux
+Sound: Tone.js, Howler.js
+Animation: Anime.js, GSAP.js
+3D: Three.js, Babylon.js
+Charts: Chart.js, ECharts, D3.js
+Tools: Lodash, Moment.js, Day.js
+Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
+Game: Phaser.js, Matter.js, P5.js
+Graphic: Fabric.js, Rough.js, Konva.js
+UI: Bootstrap, Tailwindcss, Fontawesome
 - Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
 - All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr).
 - Avoid any build tools or .vue files.
@@ -731,10 +731,16 @@ const replaceWithSupportedLibraries = (externalLinks) => {
     'gsap@3.13.0': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
     'gsap': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
     'cdnjs.cloudflare.com/ajax/libs/gsap': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
+    'unpkg.com/gsap': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
+    'unpkg.com/gsap@3.13.0': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
     
     'three@0.179.1': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
     'three@0.179': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
     'three@0': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    'three.js': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    'cdnjs.cloudflare.com/ajax/libs/three.js': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    'unpkg.com/three': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
+    'unpkg.com/three@0.179.1': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
     
     'animejs@4': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',
     'animejs@4.1.3': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',

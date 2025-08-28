@@ -75,8 +75,18 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
 
 6. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.
 
-
-
+libraries：
+Vue.js: vue@3.5.20, vue-router@4.5.1, vuex@4.1.0
+React: redux@5.0.1
+Sound: tone@15.2.12, howler@2.2.4
+Animation: animejs@4.1.3, gsap@3.13.0
+3D: three@0.179.1, Babylon.js
+Charts: chart.js@4.5.0, d3@7.9.0, echarts@6.0.0
+Game: phaser@3.90.0, matter@0.20.0, p5@2.0.4
+Tools: lodash@4.17.21, moment@2.30.1, dayjs@1.11.11
+Form: vee-validate@4.12.0, vee-validate-rules@4.12.0, vee-validate-i18n@4.12.0
+Graphic: fabric@6.7.0, rough@4.0.0, konva@9.3.22
+UI: bootstrap@5.3.3, tailwindcss@3.4.15, fontawesome@6.5.2
 
 (Optional 4 output control)
 CRITICAL JSON FORMAT REQUIREMENTS:
