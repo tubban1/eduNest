@@ -91,8 +91,19 @@ function SignupPageInner() {
         if (result.message) {
           setSuccessMessage(result.message);
         }
-        // 3秒后跳转到登录页（给用户更多时间操作）
-        if (autoRedirect) {
+        // 智能判断是否自动跳转
+        // 如果用户可能需要重发邮件，给更多时间；否则快速跳转
+        const needsResendCheck = true; // 默认给用户重发邮件的机会
+        
+        if (needsResendCheck) {
+          // 给用户10秒时间操作，如果点击了重发邮件则停止跳转
+          setTimeout(() => {
+            if (autoRedirect && !hasResentEmail) {
+              router.push('/login?message=signup_success');
+            }
+          }, 10000);
+        } else {
+          // 快速跳转（3秒）
           setTimeout(() => {
             router.push('/login?message=signup_success');
           }, 3000);
@@ -149,6 +160,18 @@ function SignupPageInner() {
           <p className="text-gray-500 text-xs">
             {t('verifyAndLoginHint', { ns: 'auth', defaultValue: '验证完成后，您就可以使用邮箱和密码登录了。' })}
           </p>
+          
+          {/* 倒计时显示 */}
+          {autoRedirect && !hasResentEmail && (
+            <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+              <p className="text-blue-600 text-xs">
+                ⏰ 页面将在10秒后自动跳转到登录页面
+              </p>
+              <p className="text-blue-500 text-xs mt-1">
+                如需重发验证邮件，请点击上方按钮
+              </p>
+            </div>
+          )}
           
           {/* 重发邮件后的额外选项 */}
           {hasResentEmail && (
