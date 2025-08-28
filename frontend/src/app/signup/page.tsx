@@ -2,6 +2,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
@@ -23,6 +24,7 @@ function SignupPageInner() {
   const [refValid, setRefValid] = useState<boolean | null>(null);
   const [refChecking, setRefChecking] = useState(false);
   const [refMessage, setRefMessage] = useState('');
+  const { t } = useTranslation(['auth']);
 
   // 读取并校验邀请码（如果存在）
   useEffect(() => {
@@ -109,8 +111,11 @@ function SignupPageInner() {
             </svg>
           </div>
           <h1 className="text-xl font-semibold text-gray-900 mb-2">注册成功！</h1>
-          <p className="text-gray-600 text-sm mb-4">
-            {successMessage || '我们已向您的邮箱发送了验证邮件，请点击邮件中的链接完成验证。'}
+          <p className="text-gray-600 text-sm mb-2">
+            {successMessage || t('successDesc', { ns: 'auth', defaultValue: '我们已向您的邮箱发送了验证邮件，请点击邮件中的链接完成验证。' })}
+          </p>
+          <p className="text-gray-600 text-xs mb-4">
+            {t('checkSpamHint', { ns: 'auth', defaultValue: '如果没有收到邮件，请检查垃圾邮箱（Spam）或广告邮件，并将我们加入白名单。' })}
           </p>
           <div className="flex items-center justify-center gap-3 mb-2">
             <button
@@ -127,11 +132,11 @@ function SignupPageInner() {
               }}
               className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
             >
-              重发验证邮件
+              {t('resendVerification', { ns: 'auth', defaultValue: '重发验证邮件' })}
             </button>
           </div>
           <p className="text-gray-500 text-xs">
-            验证完成后，您就可以使用邮箱和密码登录了。
+            {t('verifyAndLoginHint', { ns: 'auth', defaultValue: '验证完成后，您就可以使用邮箱和密码登录了。' })}
           </p>
         </div>
       </div>

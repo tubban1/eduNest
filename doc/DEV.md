@@ -17,12 +17,15 @@
   - [x] 显示当前积分余额（已集成至 Sidebar 用户信息区）
   - [x] 显示积分变动历史（`CreditsHistoryDialog` 弹窗）
   - [x] 集成到页面（`Sidebar` 内刷新/明细按钮）
+  - [ ] 在积分显示下方添加升级入口（仅Pro订阅）
 
 #### 1.3 AI调用积分验证
 - **修改文件**：`edu/backend/src/api/ai.js`
 - **功能**：在AI生成接口中添加积分验证（成功才扣减；Pro 订阅免扣）
   - [x] `/api/ai/generate` 已接入
   - [ ] 其它入口（如修复/修改）后续统一接入
+  - [ ] 订阅用户（Pro）免积分消耗
+  - [ ] 积分包用户（Lite）按积分余额消耗
 
 ### 第二阶段：推荐码系统（优先级：高）
 **目标**：实现推荐码生成和分享功能
@@ -72,21 +75,43 @@
   - [x] 登录校验成功后检查 `localStorage.pending_ref_code`
   - [x] 调用 `POST /referrals/reward` 发放奖励，仅一次（用 `ref_rewarded_<userId>` 作为去重标记）
 
-### 第四阶段：订阅管理（优先级：中）
-**目标**：实现订阅状态管理和界面
+### 第四阶段：订阅管理与支付集成（优先级：中）
+**目标**：实现订阅状态管理与 Stripe 支付集成
 
 #### 4.1 后端订阅管理API
 - **文件路径**：`edu/backend/src/api/subscriptions.js`（新建）
 - **功能**：
   - `GET /subscriptions/status` - 查询订阅状态
   - `POST /subscriptions/upgrade` - 升级订阅计划
+  - `POST /subscriptions/cancel` - 取消订阅
 
-#### 4.2 前端订阅管理组件
+#### 4.2 后端支付管理API
+- **文件路径**：`edu/backend/src/api/payments.js`（新建）
+- **功能**：
+  - `POST /payments/create-session` - 创建Stripe支付会话
+  - `POST /payments/webhook` - Stripe webhook处理
+  - `GET /payments/history` - 查询支付历史
+
+#### 4.3 前端订阅管理组件
 - **文件路径**：`edu/frontend/src/components/SubscriptionManager.tsx`（新建）
 - **功能**：
   - 显示当前订阅状态
-  - 订阅计划选择界面
-  - 订阅升级操作
+  - 订阅计划选择界面：
+    - **Pro**: $20/月（无限使用，订阅制）
+  - 订阅升级/取消操作
+  - 支付状态显示
+  - 集成到Sidebar积分显示下方
+  - **Upgrade按钮显示逻辑**：
+    - 免费用户：显示"升级到Pro"按钮
+    - Pro用户（即将到期）：显示"续费"按钮
+
+#### 4.4 Stripe支付集成
+- **文件路径**：`edu/frontend/src/components/PaymentForm.tsx`（新建）
+- **功能**：
+  - Stripe Elements集成
+  - 支付表单验证
+  - 支付成功/失败处理
+  - 订阅状态更新
 
 ### 第五阶段：权限控制集成（优先级：中）
 **目标**：将积分、推荐、订阅系统整合到权限控制中
@@ -97,6 +122,7 @@
   - 积分余额验证
   - 订阅状态验证
   - AI调用权限控制
+  - 支付状态验证
 
 #### 5.2 前端权限提示
 - **修改文件**：相关前端组件
@@ -104,6 +130,7 @@
   - 积分不足提示
   - 订阅升级引导
   - 推荐邀请引导
+  - 支付失败处理
 
 ## �� 技术实现细节
 
@@ -120,13 +147,26 @@
 - 所有积分操作在后端进行
 - 使用数据库事务确保一致性
 - API调用频率限制防止刷积分
+- 支付验证通过Stripe webhook确保安全性
 
 ### 前端集成
 - 使用现有React组件架构
 - 集成到现有用户认证系统
 - 响应式设计支持移动端
+- 升级入口集成到Sidebar积分显示下方
+- Pro订阅界面简洁明了
+- **智能按钮显示**：根据用户状态动态显示不同的升级选项
 
-## �� 测试策略
+### Upgrade按钮显示逻辑
+- **免费用户**：显示"升级到Pro"按钮
+- **Pro用户（即将到期）**：显示"续费"按钮，避免服务中断
+- **订阅过期用户**：显示"重新订阅"按钮，恢复服务
+- **支付失败用户**：显示"重试支付"按钮，处理异常情况
+- **新用户（首次使用）**：显示"开始体验"按钮
+- **高活跃用户**：显示"升级到Pro"按钮
+- **试用期用户**：显示"订阅继续使用"按钮，避免试用结束
+
+##  测试策略
 
 ### 第一阶段测试
 1. 测试积分余额查询API
@@ -183,12 +223,16 @@
 17. 扩展前端推荐统计显示
 18. 测试推荐奖励发放流程
 
-**第四阶段：订阅管理**
+**第四阶段：订阅管理与支付集成**
 19. 创建 `edu/backend/src/api/subscriptions.js`
 20. 实现订阅状态查询API
-21. 创建 `edu/frontend/src/components/SubscriptionManager.tsx`
-22. 集成订阅管理到用户界面
-23. 测试订阅状态管理
+21. 创建 `edu/backend/src/api/payments.js`
+22. 集成Stripe支付API
+23. 创建 `edu/frontend/src/components/SubscriptionManager.tsx`
+24. 创建 `edu/frontend/src/components/PaymentForm.tsx`
+25. 集成订阅管理和支付到用户界面
+26. 将升级入口集成到Sidebar积分显示下方
+27. 测试订阅状态管理和支付流程
 
 **第五阶段：权限控制集成**
 24. 创建 `edu/backend/src/middleware/credits.js`
