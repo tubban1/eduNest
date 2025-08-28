@@ -729,6 +729,8 @@ const replaceWithSupportedLibraries = (externalLinks) => {
     // 动画和视觉效果
     'gsap@3': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
     'gsap@3.13.0': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
+    'gsap': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
+    'cdnjs.cloudflare.com/ajax/libs/gsap': 'https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js',
     
     'three@0.179.1': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
     'three@0.179': 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.core.min.js',
@@ -736,6 +738,9 @@ const replaceWithSupportedLibraries = (externalLinks) => {
     
     'animejs@4': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',
     'animejs@4.1.3': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',
+    'animejs': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',
+    'cdnjs.cloudflare.com/ajax/libs/animejs': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',
+    'unpkg.com/animejs': 'https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.umd.min.js',
     
     'babylon': 'https://cdn.babylonjs.com/babylon.js',
     'babylon.js': 'https://cdn.babylonjs.com/babylon.js',
@@ -752,6 +757,8 @@ const replaceWithSupportedLibraries = (externalLinks) => {
     // 图表和数据可视化
     'chart.js@4': 'https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js',
     'chart.js@4.5.0': 'https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js',
+    'chart.js': 'https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js',
+    'cdnjs.cloudflare.com/ajax/libs/chart.js': 'https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js',
     
     'd3@7': 'https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js',
     'd3@7.9.0': 'https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js',
@@ -831,6 +838,37 @@ const replaceWithSupportedLibraries = (externalLinks) => {
     for (const [pattern, replacement] of Object.entries(supportedLibraries)) {
       if (link.includes(pattern)) {
         return replacement;
+      }
+    }
+
+    // 如果没有匹配到，尝试更智能的版本匹配
+    // 处理类似 gsap@3.x.x, three@0.x.x 等版本范围
+    const versionMatch = link.match(/([a-zA-Z0-9-]+)@(\d+)\.(\d+)\.(\d+)/);
+    if (versionMatch) {
+      const [fullMatch, libName, major, minor, patch] = versionMatch;
+      
+      // 尝试匹配主版本号
+      const majorVersionPattern = `${libName}@${major}`;
+      if (supportedLibraries[majorVersionPattern]) {
+        return supportedLibraries[majorVersionPattern];
+      }
+      
+      // 尝试匹配库名（不带版本）
+      if (supportedLibraries[libName]) {
+        return supportedLibraries[libName];
+      }
+    }
+
+    // 额外处理：尝试从 URL 中提取库名进行模糊匹配
+    const urlMatch = link.match(/([a-zA-Z0-9-]+)(?:@\d+\.\d+\.\d+)?/);
+    if (urlMatch) {
+      const libName = urlMatch[1];
+      
+      // 查找包含该库名的任何模式
+      for (const [pattern, replacement] of Object.entries(supportedLibraries)) {
+        if (pattern.includes(libName) && !pattern.includes('@')) {
+          return replacement;
+        }
       }
     }
 
