@@ -18,6 +18,8 @@ const aiRoutes = require('./api/ai');
 const contentFixRoutes = require('./api/content_fix');
 const creditsRoutes = require('./api/credits');
 const referralsRoutes = require('./api/referrals');
+const subscriptionsRoutes = require("./api/subscriptions");
+const paymentsRoutes = require("./api/payments");
 const { errorHandler } = require('./utils/errorHandler');
 const logger = require('./utils/logger');
 const { supabase } = require('./services/database');
@@ -141,8 +143,9 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/collection_lists', collectionListsRoutes);
 app.use('/api/user_collections', userCollectionsRoutes);
 app.use('/api/user_content', userContentRoutes);
-app.use('/api/ai', aiRoutes);
-
+app.use("/api/subscriptions", subscriptionsRoutes);
+app.use("/api/payments", paymentsRoutes);
+app.use("/api/ai", aiRoutes);
 // 404 处理
 app.use('*', (req, res) => {
   res.status(404).json({ 
