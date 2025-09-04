@@ -189,7 +189,7 @@ function translate(key: string, language: Language): string {
       value = value[k];
     } else {
       // 如果找不到翻译，返回英文版本
-      value = keys.reduce((obj, k) => obj?.[k], translations.en);
+      value = keys.reduce((obj: any, k) => obj?.[k], translations.en);
       break;
     }
   }
