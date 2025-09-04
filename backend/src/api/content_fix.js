@@ -2,21 +2,35 @@ const express = require('express');
 const router = express.Router();
 const aiService = require('../services/aiService');
 const DatabaseService = require('../services/database');
+const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // POST /api/content/fix
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { content_id, note, html, css, js, external_links, content_type, language_code, title, description } = req.body;
     if (!html || !js) {
-      return res.status(400).json({ error: 'html, js 必填' });
+      return res.status(400).json({ success: false, error: 'html, js 必填' });
     }
-    // 获取当前用户id（如有）
-    const user_id = req.user && req.user.id ? req.user.id : null;
+    
+    const userId = req.user.id;
+
+    // AI使用日志由aiService.fixEducationalContent统一记录
+    
+    // 积分验证和扣除（非pro订阅用户）
+    const { data: subscription } = await DatabaseService.getActiveSubscription(userId);
+    if (!subscription || subscription.plan !== 'pro') {
+      const { data: balance } = await DatabaseService.getCreditsBalance(userId);
+      if ((balance || 0) < 1) {
+        return res.status(402).json({ success: false, error: '积分不足' });
+      }
+    }
+    
     // 如果是编辑模式，需要验证 content_id 并获取原始内容
     if (content_id) {
       const { data: original, error: dbErr } = await DatabaseService.getContentById(content_id);
       if (dbErr || !original) {
-        return res.status(404).json({ error: '内容不存在' });
+        return res.status(404).json({ success: false, error: '内容不存在' });
       }
       // 使用数据库中的原始内容信息
       const aiResult = await aiService.fixEducationalContent({
@@ -25,13 +39,25 @@ router.post('/', async (req, res) => {
         language: original.language_code,
         title: original.title,
         description: original.description,
-        user_id
+        user_id: userId
       });
       if (!aiResult.success) {
-        return res.status(500).json({ error: aiResult.error });
+        return res.status(500).json({ success: false, error: aiResult.error });
       }
+      
+      // 成功修复后扣除积分（非pro订阅用户）
+      if (!subscription || subscription.plan !== 'pro') {
+        await DatabaseService.addCreditChange(userId, 'usage', -1);
+      }
+      
       const { html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed } = aiResult.data;
-      return res.json({ html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed });
+
+      // AI使用日志由aiService.fixEducationalContent统一记录
+
+      return res.json({ 
+        success: true, 
+        data: { html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed } 
+      });
     } else {
       // 如果是创建模式，直接使用前端传递的参数
       const aiResult = await aiService.fixEducationalContent({
@@ -40,16 +66,30 @@ router.post('/', async (req, res) => {
         language: language_code || 'zh-CN',
         title: title || '未命名内容',
         description: description || '',
-        user_id
+        user_id: userId
       });
       if (!aiResult.success) {
-        return res.status(500).json({ error: aiResult.error });
+        // AI使用日志由aiService.fixEducationalContent统一记录
+        return res.status(500).json({ success: false, error: aiResult.error });
       }
+      
+      // 成功修复后扣除积分（非pro订阅用户）
+      if (!subscription || subscription.plan !== 'pro') {
+        await DatabaseService.addCreditChange(userId, 'usage', -1);
+      }
+      
       const { html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed } = aiResult.data;
-      return res.json({ html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed });
+
+      // AI使用日志由aiService.fixEducationalContent统一记录
+
+      return res.json({ 
+        success: true, 
+        data: { html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed } 
+      });
     }
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    // AI使用日志由aiService.fixEducationalContent统一记录
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 

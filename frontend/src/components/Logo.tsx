@@ -19,12 +19,12 @@ export default function Logo({ className = '', size = 'md' }: LogoProps) {
     <Link href="/" className={`inline-flex items-center ${className}`}>
       <Image
         src="/favicon.png"
-        alt="AI教育平台"
+        alt="EduNest AI"
         width={32}
         height={32}
         className={`${sizeClasses[size]} object-contain`}
       />
-      <span className="ml-2 font-bold text-gray-900">AI教育平台</span>
+      <span className="ml-2 font-bold text-gray-900">EduNest AI</span>
     </Link>
   );
 } 

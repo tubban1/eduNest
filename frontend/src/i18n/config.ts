@@ -5,18 +5,26 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 // 导入语言资源
 import enUSCommon from './locales/en-US/common.json';
+import enUSNavigation from './locales/en-US/navigation.json';
 import enUSContent from './locales/en-US/content.json';
+import enUSHome from './locales/en-US/home.json';
 import enUSWeChat from './locales/en-US/wechat.json';
 
 import zhCNCommon from './locales/zh-CN/common.json';
+import zhCNNavigation from './locales/zh-CN/navigation.json';
 import zhCNContent from './locales/zh-CN/content.json';
+import zhCNHome from './locales/zh-CN/home.json';
 import zhCNWeChat from './locales/zh-CN/wechat.json';
 
 import deDECommon from './locales/de-DE/common.json';
+import deDENavigation from './locales/de-DE/navigation.json';
 import deDEContent from './locales/de-DE/content.json';
+import deDEHome from './locales/de-DE/home.json';
 
 import frFRCommon from './locales/fr-FR/common.json';
+import frFRNavigation from './locales/fr-FR/navigation.json';
 import frFRContent from './locales/fr-FR/content.json';
+import frFRHome from './locales/fr-FR/home.json';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'zh-CN', label: '中文' },
@@ -29,21 +37,29 @@ export const DEFAULT_LANGUAGE = 'zh-CN'; // 改为中文作为默认语言，避
 const resources = {
   'en-US': {
     common: enUSCommon,
+    navigation: enUSNavigation,
     content: enUSContent,
+    home: enUSHome,
     wechat: enUSWeChat,
   },
   'zh-CN': {
     common: zhCNCommon,
+    navigation: zhCNNavigation,
     content: zhCNContent,
+    home: zhCNHome,
     wechat: zhCNWeChat,
   },
   'de-DE': {
     common: deDECommon,
+    navigation: deDENavigation,
     content: deDEContent,
+    home: deDEHome,
   },
   'fr-FR': {
     common: frFRCommon,
+    navigation: frFRNavigation,
     content: frFRContent,
+    home: frFRHome,
   },
 };
 

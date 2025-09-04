@@ -138,4 +138,44 @@ INSERT INTO content (title, grade, subject, knowledge_point, language, content_t
   'zh-CN',
   'vue',
   '{"template": "<div>Python 学习</div>", "script": "print(\"Hello Python!\")", "style": "div { background: #f0f0f0; }"}'
-); 
+);
+
+-- 10. 创建 ai_usage_logs 表
+CREATE TABLE IF NOT EXISTS ai_usage_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  model_name TEXT,
+  user_query TEXT,
+  action_type TEXT,
+  input_tokens INTEGER DEFAULT 0,
+  output_tokens INTEGER DEFAULT 0,
+  total_tokens INTEGER DEFAULT 0,
+  request_payload JSONB,
+  response_metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  is_json_valid BOOLEAN DEFAULT false,
+  is_render_success BOOLEAN DEFAULT false,
+  error_message TEXT
+);
+
+-- 11. 为 ai_usage_logs 表启用 RLS
+ALTER TABLE ai_usage_logs ENABLE ROW LEVEL SECURITY;
+
+-- 12. 创建 ai_usage_logs 表的 RLS 策略
+-- 用户只能查看自己的日志
+CREATE POLICY "ai_usage_logs_select_policy" ON ai_usage_logs
+  FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
+
+-- 用户只能插入自己的日志
+CREATE POLICY "ai_usage_logs_insert_policy" ON ai_usage_logs
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+-- 用户只能更新自己的日志
+CREATE POLICY "ai_usage_logs_update_policy" ON ai_usage_logs
+  FOR UPDATE USING (auth.uid() = user_id OR user_id IS NULL);
+
+-- 13. 为 ai_usage_logs 表创建索引
+CREATE INDEX IF NOT EXISTS idx_ai_usage_logs_user_id ON ai_usage_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_logs_created_at ON ai_usage_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_logs_action_type ON ai_usage_logs(action_type);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_logs_model_name ON ai_usage_logs(model_name); 

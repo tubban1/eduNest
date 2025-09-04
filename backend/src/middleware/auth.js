@@ -3,33 +3,75 @@ const config = require('../config');
 const DatabaseService = require('../services/database');
 const { AppError } = require('../utils/errorHandler');
 const logger = require('../utils/logger');
+const { supabase } = require('../services/database');
 
 // Supabase JWT 验证函数
 const verifySupabaseToken = async (token) => {
   try {
-    // 解码JWT token（不验证签名，因为我们需要从Supabase获取公钥）
+    // 解码JWT token（不验证签名和过期时间，因为我们需要处理Google OAuth token）
     const decoded = jwt.decode(token);
     
     if (!decoded) {
       throw new Error('无效的token格式');
     }
     
-    // 从token中获取用户信息
-    const userId = decoded.sub; // Supabase JWT中的用户ID
+        // 从token中获取用户信息（支持多种格式）
+    let userId = decoded.sub || decoded.userId; // 支持Supabase和Google OAuth格式
     const email = decoded.email;
+    const username = decoded.username;
     
     if (!userId) {
       throw new Error('token中缺少用户ID');
     }
     
-    // 查询users表获取用户信息
-    const userResult = await DatabaseService.getUserById(userId);
-    
-    if (!userResult.data) {
-      throw new Error('用户不存在');
+    // 如果用户ID不是UUID格式，尝试通过username查找用户或创建新用户
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+      if (username) {
+        // 直接查找users表
+        const { data: users, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('name', username)
+          .limit(1);
+        
+        if (users && users.length > 0) {
+          return users[0];
+        } else {
+          // 创建新用户
+          const { v4: uuidv4 } = require('uuid');
+          const newUserId = uuidv4();
+          
+          const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert({
+              id: newUserId, // 明确提供UUID
+              email: email || `${username}@example.com`,
+              name: username,
+              role: decoded.role || 'user'
+            })
+            .select()
+            .single();
+          
+          if (createError) {
+            console.error('创建用户失败:', createError);
+            throw new Error('无法创建用户');
+          }
+          
+          return newUser;
+        }
+        } else {
+          throw new Error('token中缺少username信息');
+        }
+    } else {
+      // 用户ID是UUID格式，直接查询
+      const userResult = await DatabaseService.getUserById(userId);
+      
+      if (!userResult.data) {
+        throw new Error('用户不存在');
+      }
+      
+      return userResult.data;
     }
-    
-    return userResult.data;
   } catch (error) {
     logger.error('Supabase token验证失败:', error);
     throw error;

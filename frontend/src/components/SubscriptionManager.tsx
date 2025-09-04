@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/lib/api';
 
 interface SubscriptionStatus {
   status: string;
@@ -24,16 +25,8 @@ const SubscriptionManager: React.FC = () => {
 
   const fetchSubscriptionStatus = async () => {
     try {
-      const response = await fetch('/api/subscriptions/status', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSubscription(data);
-      }
+      const data = await api.getSubscriptionStatus();
+      setSubscription(data);
     } catch (error) {
       console.error('获取订阅状态失败:', error);
     } finally {
@@ -45,17 +38,12 @@ const SubscriptionManager: React.FC = () => {
     setUpgrading(true);
     try {
       // 创建支付会话
-      const response = await fetch('/api/payments/create-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ plan_type: planType })
+      const session = await api.createPaymentSession(planType, {
+        success_url: `${window.location.origin}/subscription/success`,
+        cancel_url: `${window.location.origin}/subscription/cancel`,
       });
       
-      if (response.ok) {
-        const { session } = await response.json();
+      if (session?.url) {
         // 重定向到Stripe支付页面
         window.location.href = session.url;
       } else {
@@ -75,19 +63,9 @@ const SubscriptionManager: React.FC = () => {
     }
     
     try {
-      const response = await fetch('/api/subscriptions/cancel', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        alert('订阅已取消');
-        fetchSubscriptionStatus();
-      } else {
-        alert('取消订阅失败');
-      }
+      await api.cancelSubscription();
+      alert('订阅已取消');
+      fetchSubscriptionStatus();
     } catch (error) {
       console.error('取消订阅失败:', error);
       alert('取消订阅失败，请稍后重试');

@@ -641,17 +641,12 @@ export default function ContentForm({
         requestBody.description = description || '';
       }
       
-      const res = await fetch(`${config.API_BASE_URL}/content/fix`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody)
-      });
-      const result = await res.json();
-      if (result.html) setHtml(result.html);
-      if (result.css) setCss(result.css);
-      if (result.js) setJs(result.js);
-      if (result.external_links) setExternalLinks(result.external_links.join('\n'));
-      if (result.fixed) setFixed(result.fixed); // 更新 fixed 状态
+      const result = await api.content.fix(requestBody);
+      if (result && result.html) setHtml(result.html);
+      if (result && result.css) setCss(result.css);
+      if (result && result.js) setJs(result.js);
+      if (result && result.external_links) setExternalLinks(result.external_links.join('\n'));
+      if (result && result.fixed) setFixed(result.fixed); // 更新 fixed 状态
       // 保持修复表单显示，不清空错误信息，让用户可以继续优化
       setFixError(""); // 清空错误信息，表示修复成功
       setPreviewKey(prev => prev + 1);
@@ -818,25 +813,14 @@ export default function ContentForm({
                         </div>
                         <div>
                           <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('outputLanguage', { ns: 'content', defaultValue: 'Output Language' }) : 'Output Language'}</label>
-                          <div className="flex gap-2">
-                            <input
-                              className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                              value={language}
-                              readOnly
-                              placeholder={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Please select output language (BCP 47) through the selector' }) : 'Please select output language (BCP 47) through the selector'}
-                              disabled={isAiFormDisabled}
-                            />
-                            <button
-                              type="button"
-                              className="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
-                              onClick={() => setShowLanguagePicker(true)}
-                              disabled={isAiFormDisabled}
-                              aria-label={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select output language' }) : 'Select output language'}
-                              title={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select output language' }) : 'Select output language'}
-                            >
-                              🌐
-                            </button>
-                          </div>
+                          <input
+                            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer"
+                            value={language}
+                            readOnly
+                            placeholder={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Click to select output language (BCP 47)' }) : 'Click to select output language (BCP 47)'}
+                            disabled={isAiFormDisabled}
+                            onClick={() => !isAiFormDisabled && setShowLanguagePicker(true)}
+                          />
                         </div>
                       </div>
                       <button
@@ -904,8 +888,13 @@ export default function ContentForm({
                       <input
                         className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
                         value={aiGeneratedLanguage}
-                        readOnly
-                        placeholder={mounted ? t('aiGeneratedLanguagePlaceholder', { ns: 'content', defaultValue: 'AI generated language code (BCP 47) will be filled automatically after generation' }) : 'AI generated language code (BCP 47) will be filled automatically after generation'}
+                        readOnly={isRegularUser}
+                        onChange={!isRegularUser ? (e) => setAiGeneratedLanguage(e.target.value) : undefined}
+                        placeholder={
+                          isRegularUser 
+                            ? (mounted ? t('aiGeneratedLanguagePlaceholder', { ns: 'content', defaultValue: 'AI generated language code (BCP 47) will be filled automatically after generation' }) : 'AI generated language code (BCP 47) will be filled automatically after generation')
+                            : (mounted ? t('languageCodePlaceholder', { ns: 'content', defaultValue: 'Enter language code (BCP 47 format, e.g., zh-CN, en-US)' }) : 'Enter language code (BCP 47 format, e.g., zh-CN, en-US)')
+                        }
                         disabled={isAiFormDisabled}
                       />
                     </div>

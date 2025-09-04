@@ -6,6 +6,7 @@ import { Home, BookOpen, Heart, Plus, Settings, LogOut, User, Menu, X, List, Sha
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
+import Logo from './Logo';
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import CreditsHistoryDialog from './CreditsHistoryDialog';
@@ -115,9 +116,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
     <div className="w-64 h-screen bg-white shadow-sm border-r border-gray-200 flex flex-col">
       {variant === 'mobile' && (
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h1 className="text-lg font-bold text-gray-900">
-            {mounted ? t('platformTitle', { ns: 'common', defaultValue: 'EduNest AI' }) : 'EduNest AI'}
-          </h1>
+          <Logo size="sm" />
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5 text-gray-600" />
           </button>
@@ -126,9 +125,9 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
       
       <div className="p-6 flex-1">
         {variant === 'desktop' && (
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
-            {mounted ? t('platformTitle', { ns: 'common', defaultValue: 'EduNest AI' }) : 'EduNest AI'}
-          </h1>
+          <div className="mb-6">
+            <Logo size="md" />
+          </div>
         )}
         
         <LanguageSelector variant="button" />

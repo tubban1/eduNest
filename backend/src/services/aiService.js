@@ -5,6 +5,28 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('./database');
 
+// 抽象的AI使用日志记录方法
+const logAIUsageWithDefaults = async (params) => {
+  const defaultParams = {
+    user_id: null,
+    model_name: ARK_MODEL,
+    user_query: '',
+    action_type: 'unknown',
+    input_tokens: 0,
+    output_tokens: 0,
+    total_tokens: 0,
+    request_payload: null,
+    response_metadata: null,
+    created_at: new Date(),
+    is_json_valid: false,
+    is_render_success: false,
+    error_message: null
+  };
+  
+  const logParams = { ...defaultParams, ...params };
+  return await logAIUsage(logParams);
+};
+
 // 安全的变量替换函数
 const safeReplace = (template, placeholder, value) => {
   if (typeof value !== 'string') {
@@ -170,19 +192,12 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     const createdAt = Date.now() / 1000;
     if (!response.ok) {
       // 记录失败日志
-      await logAIUsage({
+      await logAIUsageWithDefaults({
         user_id: userId,
-        model_name: ARK_MODEL,
         user_query: knowledgePoint,
         action_type: actionType,
-        input_tokens: 0,
-        output_tokens: 0,
-        total_tokens: 0,
         request_payload: requestPayload,
         response_metadata: { status: response.status, statusText: response.statusText },
-        created_at: new Date(),
-        is_json_valid: false,
-        is_render_success: false,
         error_message: `AI API请求失败: ${response.status} ${response.statusText}`
       });
       throw new Error(`AI API请求失败: ${response.status} ${response.statusText}`);
@@ -195,9 +210,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     const outputTokens = usage.completion_tokens || 0;
     const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
-      await logAIUsage({
+      await logAIUsageWithDefaults({
         user_id: userId,
-        model_name: ARK_MODEL,
         user_query: knowledgePoint,
         action_type: actionType,
         input_tokens: inputTokens,
@@ -205,9 +219,6 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         total_tokens: totalTokens,
         request_payload: requestPayload,
         response_metadata: data,
-        created_at: new Date(),
-        is_json_valid: false,
-        is_render_success: false,
         error_message: 'AI返回内容为空'
       });
       throw new Error('AI返回内容为空');
@@ -228,9 +239,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         }
         
         // 日志：成功解析JSON
-        await logAIUsage({
+        await logAIUsageWithDefaults({
           user_id: userId,
-          model_name: ARK_MODEL,
           user_query: knowledgePoint,
           action_type: actionType,
           input_tokens: inputTokens,
@@ -240,7 +250,6 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           response_metadata: data,
           created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
           is_json_valid: true,
-          is_render_success: false,
           error_message: null
         });
     return {
@@ -248,9 +257,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           data: parsedData
         };
       } catch (parseError) {
-        await logAIUsage({
+        await logAIUsageWithDefaults({
           user_id: userId,
-          model_name: ARK_MODEL,
           user_query: knowledgePoint,
           action_type: actionType,
           input_tokens: inputTokens,
@@ -260,7 +268,6 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           response_metadata: data,
           created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
           is_json_valid: false,
-          is_render_success: false,
           error_message: `JSON解析失败: ${parseError.message}`
         });
         return {
@@ -270,9 +277,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         };
       }
     } else {
-      await logAIUsage({
+      await logAIUsageWithDefaults({
         user_id: userId,
-        model_name: ARK_MODEL,
         user_query: knowledgePoint,
         action_type: actionType,
         input_tokens: inputTokens,
@@ -282,7 +288,6 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         response_metadata: data,
         created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
         is_json_valid: false,
-        is_render_success: false,
         error_message: '未找到JSON格式'
       });
       return {
@@ -293,19 +298,10 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     }
   } catch (error) {
     // 捕获主流程异常
-    await logAIUsage({
+    await logAIUsageWithDefaults({
       user_id: null,
-      model_name: ARK_MODEL,
       user_query: null,
       action_type: 'generate',
-      input_tokens: 0,
-      output_tokens: 0,
-      total_tokens: 0,
-      request_payload: null,
-      response_metadata: null,
-      created_at: new Date(),
-      is_json_valid: false,
-      is_render_success: false,
       error_message: error.message || 'AI生成失败'
     });
     return {
@@ -489,18 +485,15 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
     });
     const createdAt = Date.now() / 1000;
     if (!response.ok) {
-      const usage = data.usage || {};
-      const promptTokens = usage.prompt_tokens || 0;
-      const completionTokens = usage.completion_tokens || 0;
-      const totalTokens = usage.total_tokens || 0;
+      // API请求失败时，无法获取token信息
       await logAIUsage({
         user_id,
         model_name: process.env.ARK_MODEL,
         user_query: note,
         action_type: 'fix',
-        input_tokens: promptTokens,
-        output_tokens: completionTokens,
-        total_tokens: totalTokens,
+        input_tokens: 0,
+        output_tokens: 0,
+        total_tokens: 0,
         request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
         response_metadata: { status: response.status, statusText: response.statusText },
         created_at: new Date(),
@@ -517,9 +510,8 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
     const completionTokens = usage.completion_tokens || 0;
     const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
-      await logAIUsage({
+      await logAIUsageWithDefaults({
         user_id,
-        model_name: process.env.ARK_MODEL,
         user_query: note,
         action_type: 'fix',
         input_tokens: promptTokens,
@@ -527,9 +519,6 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
         total_tokens: totalTokens,
         request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
         response_metadata: data,
-        created_at: new Date(),
-        is_json_valid: false,
-        is_render_success: false,
         error_message: 'AI返回内容为空'
       });
       return { success: false, error: 'AI返回内容为空' };
@@ -564,9 +553,8 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
           parsed.external_links = replaceWithSupportedLibraries(parsed.external_links);
         }
         
-        await logAIUsage({
+        await logAIUsageWithDefaults({
           user_id,
-          model_name: process.env.ARK_MODEL,
           user_query: note,
           action_type: 'fix',
           input_tokens: promptTokens,
@@ -576,25 +564,9 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
           response_metadata: data,
           created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
           is_json_valid: true,
-          is_render_success: false,
           error_message: null
         });
       } else {
-        await logAIUsage({
-          user_id,
-          model_name: process.env.ARK_MODEL,
-          user_query: note,
-          action_type: 'fix',
-          input_tokens: promptTokens,
-          output_tokens: completionTokens,
-          total_tokens: totalTokens,
-          request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
-          response_metadata: data,
-          created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
-          is_json_valid: false,
-          is_render_success: false,
-          error_message: '未找到JSON格式'
-        });
         console.error('无法找到修复JSON结构，原始内容:', aiResponse);
         throw new Error('AI返回内容无法解析，请检查AI返回的格式');
       }
@@ -620,19 +592,10 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
     }
     return { success: true, data: parsed };
   } catch (e) {
-    await logAIUsage({
-      user_id: null,
-      model_name: process.env.ARK_MODEL,
-      user_query: null,
+    await logAIUsageWithDefaults({
+      user_id,
+      user_query: note,
       action_type: 'fix',
-      input_tokens: 0,
-      output_tokens: 0,
-      total_tokens: 0,
-      request_payload: null,
-      response_metadata: null,
-      created_at: new Date(),
-      is_json_valid: false,
-      is_render_success: false,
       error_message: e.message || 'AI修复失败'
     });
     return { success: false, error: e.message };

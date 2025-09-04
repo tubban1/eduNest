@@ -31,11 +31,14 @@ https://unpkg.com/vue@3/dist/vue.global.prod.js
 Vue.js: Vue, VueRouter, Vuex
 React: Redux
 Sound: Tone.js, Howler.js
-Animation: Anime.js, GSAP
+Animation: Anime.js, GSAP.js
 3D: Three.js, Babylon.js
-Charts: Chart.js, ECharts
+Charts: Chart.js, ECharts, D3.js
 Tools: Lodash, Moment.js, Day.js
 Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
+Game: Phaser.js, Matter.js, P5.js
+Graphic: Fabric.js, Rough.js, Konva.js
+UI: Bootstrap, Tailwindcss, Fontawesome
 - Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
 - All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr).
 - Avoid any build tools or .vue files.

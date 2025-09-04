@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BookOpen, Edit3, Copy, Trash2, ThumbsUp, X, Eye, Bookmark } from 'lucide-react';
+import { Copy, Trash2, ThumbsUp, X, Eye, Bookmark } from 'lucide-react';
 import ContentActionButtons from './ui/ContentActionButtons';
+import EditButton from './ui/EditButton';
 import CollectionListDialog from './CollectionListDialog';
 import { api } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
@@ -121,146 +122,68 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
     await loadCollectionLists();
   };
 
-  // 生成封面颜色
-  const getCoverColor = () => {
-    const colors = [
-      'bg-gradient-to-br from-blue-400 to-blue-600',
-      'bg-gradient-to-br from-green-400 to-green-600',
-      'bg-gradient-to-br from-purple-400 to-purple-600',
-      'bg-gradient-to-br from-orange-400 to-orange-600',
-      'bg-gradient-to-br from-pink-400 to-pink-600',
-      'bg-gradient-to-br from-indigo-400 to-indigo-600',
-    ];
-    const index = content.id.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
 
   return (
-    <Link href={`/content/${content.short_id || content.id}`} prefetch={false} className="block">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer">
-        {/* 封面 */}
-        <div className={`h-32 ${getCoverColor()} relative overflow-hidden`}>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <BookOpen className="w-12 h-12 text-white opacity-80" />
-          </div>
-          {/* 操作按钮悬浮层 */}
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="flex space-x-1">
-              <button
-                onClick={() => setShowActions(!showActions)}
-                className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
-                title={mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          
-          {/* 展开的操作菜单 */}
-          {showActions && (
-            <div className="absolute top-10 right-2 bg-white rounded-lg shadow-lg p-2 space-y-1 min-w-32">
-              <Link
-                href={`/content/${content.short_id || content.id}`}
-                prefetch={false}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                {mounted ? t('view', { ns: 'common', defaultValue: 'View' }) : 'View'}
-              </Link>
-              <Link
-                href={`/content/edit/${content.id}`}
-                prefetch={false}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                {mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
-              </Link>
-              <button
-                onClick={() => copyToClipboard(content.title)}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                title={mounted ? t('copy', { ns: 'common', defaultValue: 'Copy' }) : 'Copy'}
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                {mounted ? t('copy', { ns: 'common', defaultValue: 'Copy' }) : 'Copy'}
-              </button>
-              <button
-                onClick={() => handleAction('collect')}
-                className="flex items-center w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                title={mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
-              >
-                <Bookmark className="w-4 h-4 mr-2" />
-                {mounted ? t('collect', { ns: 'content', defaultValue: 'Collect' }) : 'Collect'}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 内容信息 */}
-        <div className="p-4">
-          {/* 标题 */}
-          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+    <div className="overflow-visible hover:shadow-lg transition-shadow group">
+      {/* 内容信息 */}
+      <div className="p-4">
+        {/* 标题 - 可点击跳转 */}
+        <Link href={`/content/${content.short_id || content.id}`} prefetch={false} className="block">
+          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
             {content.title}
           </h3>
+        </Link>
 
-          {/* 标签 */}
-          {content.tags && content.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              {content.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-              {content.tags.length > 3 && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-full">
-                  +{content.tags.length - 3}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* 快速操作按钮 */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-            {/* 删除“查看”按钮，这里只保留edit和like/collect等 */}
-            <div className="flex items-center space-x-3">
-              {/* 使用统一的按钮组件 */}
-              <ContentActionButtons
-                contentId={content.id}
-                shortId={content.short_id}
-                title={content.title}
-                initialLiked={isLiked}
-                initialCollected={false}
-                initialLikeCount={0}
-                initialCollectionCount={0}
-                size="sm"
-                showCount={false}
-                showText={true}
-                onLikeChange={(liked) => {
-                  setIsLiked(liked);
-                  // 更新父组件的状态
-                  if (refreshLists) {
-                    refreshLists();
-                  }
-                }}
-                onCollectChange={() => {
-                  // 更新父组件的状态
-                  if (refreshLists) {
-                    refreshLists();
-                  }
-                }}
-              />
-              {/* edit按钮不变 */}
-              <Link
-                href={`/content/edit/${content.id}`}
-                className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                onClick={e => e.stopPropagation()}
+        {/* 标签 */}
+        {content.tags && content.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {content.tags.slice(0, 3).map((tag, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
               >
-                <Edit3 className="w-4 h-4 mr-2" />
-                {mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
-              </Link>
-            </div>
+                {tag}
+              </span>
+            ))}
+            {content.tags.length > 3 && (
+              <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-full">
+                +{content.tags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* 快速操作按钮 */}
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            {/* 使用统一的按钮组件 */}
+            <ContentActionButtons
+              contentId={content.id}
+              shortId={content.short_id}
+              title={content.title}
+              initialLiked={isLiked}
+              initialCollected={false}
+              initialLikeCount={0}
+              initialCollectionCount={0}
+              size="md"
+              showCount={false}
+              showText={false}
+              onLikeChange={(liked) => {
+                setIsLiked(liked);
+                // 更新父组件的状态
+                if (refreshLists) {
+                  refreshLists();
+                }
+              }}
+              onCollectChange={() => {
+                // 更新父组件的状态
+                if (refreshLists) {
+                  refreshLists();
+                }
+              }}
+            />
+            {/* edit按钮 */}
+            <EditButton contentId={content.id} size="md" />
           </div>
         </div>
       </div>
@@ -275,6 +198,6 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
         refreshLists={handleRefreshLists}
         contentId={content.id}
       />
-    </Link>
+    </div>
   );
 } 

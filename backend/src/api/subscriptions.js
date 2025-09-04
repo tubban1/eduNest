@@ -10,7 +10,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     
     // 查询用户订阅信息
     const { data: subscription, error } = await supabase
-      .from('user_subscriptions')
+      .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
       .single();
@@ -69,7 +69,7 @@ router.post('/upgrade', authenticateToken, async (req, res) => {
     
     // 创建或更新订阅记录
     const { data, error } = await supabase
-      .from('user_subscriptions')
+      .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
       .single();
@@ -97,7 +97,7 @@ router.post('/cancel', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     
     const { data, error } = await supabase
-      .from('user_subscriptions')
+      .from('subscriptions')
       .update({
         cancel_at_period_end: true,
         updated_at: new Date().toISOString()

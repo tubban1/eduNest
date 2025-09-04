@@ -3,6 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import LanguageSelector from '@/components/LanguageSelector';
 import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Logo from '../components/Logo';
@@ -30,11 +31,12 @@ interface Content {
 export default function HomePage() {
   const { t } = useTranslation(['home', 'common', 'content', 'navigation']);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
   const { user, signOut } = useAuth();
   const [contents, setContents] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSignOut, setIsLoadingSignOut] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   // 从数据库获取内容数据
   useEffect(() => {
@@ -88,19 +90,42 @@ export default function HomePage() {
     if (!tags || !Array.isArray(tags)) return '📚';
     
     const tagString = tags.join(' ').toLowerCase();
-    if (tagString.includes('数学') || tagString.includes('分数') || tagString.includes('几何')) return '🔢';
-    if (tagString.includes('生物') || tagString.includes('细胞') || tagString.includes('基因')) return '🧬';
-    if (tagString.includes('物理') || tagString.includes('力学') || tagString.includes('电学')) return '⚡';
-    if (tagString.includes('化学') || tagString.includes('反应') || tagString.includes('分子')) return '🧪';
-    if (tagString.includes('地理') || tagString.includes('气候') || tagString.includes('地形')) return '🌍';
-    if (tagString.includes('编程') || tagString.includes('代码') || tagString.includes('算法')) return '💻';
-    if (tagString.includes('历史') || tagString.includes('古代') || tagString.includes('文明')) return '📜';
-    if (tagString.includes('语言') || tagString.includes('语法') || tagString.includes('词汇')) return '📝';
-    if (tagString.includes('艺术') || tagString.includes('音乐') || tagString.includes('绘画')) return '🎨';
-    if (tagString.includes('心理') || tagString.includes('认知') || tagString.includes('思维')) return '🧠';
+    // 支持中英文标签匹配
+    if (tagString.includes('数学') || tagString.includes('分数') || tagString.includes('几何') || 
+        tagString.includes('math') || tagString.includes('fraction') || tagString.includes('geometry')) return '🔢';
+    if (tagString.includes('生物') || tagString.includes('细胞') || tagString.includes('基因') || 
+        tagString.includes('biology') || tagString.includes('cell') || tagString.includes('gene')) return '🧬';
+    if (tagString.includes('物理') || tagString.includes('力学') || tagString.includes('电学') || 
+        tagString.includes('physics') || tagString.includes('mechanics') || tagString.includes('electricity')) return '⚡';
+    if (tagString.includes('化学') || tagString.includes('反应') || tagString.includes('分子') || 
+        tagString.includes('chemistry') || tagString.includes('reaction') || tagString.includes('molecule')) return '🧪';
+    if (tagString.includes('地理') || tagString.includes('气候') || tagString.includes('地形') || 
+        tagString.includes('geography') || tagString.includes('climate') || tagString.includes('terrain')) return '🌍';
+    if (tagString.includes('编程') || tagString.includes('代码') || tagString.includes('算法') || 
+        tagString.includes('programming') || tagString.includes('code') || tagString.includes('algorithm')) return '💻';
+    if (tagString.includes('历史') || tagString.includes('古代') || tagString.includes('文明') || 
+        tagString.includes('history') || tagString.includes('ancient') || tagString.includes('civilization')) return '📜';
+    if (tagString.includes('语言') || tagString.includes('语法') || tagString.includes('词汇') || 
+        tagString.includes('language') || tagString.includes('grammar') || tagString.includes('vocabulary')) return '📝';
+    if (tagString.includes('艺术') || tagString.includes('音乐') || tagString.includes('绘画') || 
+        tagString.includes('art') || tagString.includes('music') || tagString.includes('painting')) return '🎨';
+    if (tagString.includes('心理') || tagString.includes('认知') || tagString.includes('思维') || 
+        tagString.includes('psychology') || tagString.includes('cognition') || tagString.includes('thinking')) return '🧠';
     
     return '📚';
   };
+
+  // 为避免 SSR 与客户端语言检测不一致导致的水合错误，使用 loading 状态
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -110,10 +135,12 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Logo size="md" />
-              <span className="text-xl font-bold text-gray-800">AI互动教育</span>
             </div>
             
             <div className="flex items-center space-x-4">
+              <div className="hidden sm:block w-48">
+                <LanguageSelector />
+              </div>
               {user ? (
                 <div className="flex items-center space-x-4">
                   <div className="hidden md:block text-right">
@@ -140,7 +167,7 @@ export default function HomePage() {
                     href="/signup"
                     className="bg-white text-blue-600 border border-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors text-sm"
                   >
-                    注册
+                    {t('signup', { ns: 'navigation', defaultValue: 'Sign up' })}
                   </Link>
                   <Link
                     href="/login"
@@ -182,7 +209,7 @@ export default function HomePage() {
                 href="/signup"
                 className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-4 rounded-xl hover:bg-blue-50 transition-all text-lg font-semibold"
               >
-                注册账号
+                {t('create_account', { ns: 'navigation', defaultValue: 'Create Account' })}
               </Link>
               <Link
                 href="/content"
@@ -337,10 +364,10 @@ export default function HomePage() {
         {/* 页脚 */}
         <footer className="text-center text-gray-500 py-8">
           <p className="mb-2">
-            {mounted ? t('copyright', { ns: 'common', defaultValue: '版权' }) : '版权'} 2024 AI互动教育平台. {mounted ? t('makes_learning_more_dynamic_and_interesting', { ns: 'home', defaultValue: '让学习更加动态有趣' }) : '让学习更加动态有趣'}
+            {mounted ? t('copyright', { ns: 'common', defaultValue: 'Copyright' }) : 'Copyright'} 2024 EduNest AI. {mounted ? t('makes_learning_more_dynamic_and_interesting', { ns: 'home', defaultValue: 'Make learning more dynamic and interesting' }) : 'Make learning more dynamic and interesting'}
           </p>
           <p className="text-sm">
-            {mounted ? t('based_on_ai_technology_empowers_education', { ns: 'home', defaultValue: '基于AI技术，赋能教育' }) : '基于AI技术，赋能教育'}
+            {mounted ? t('based_on_ai_technology_empowers_education', { ns: 'home', defaultValue: 'Based on AI technology, empowers education' }) : 'Based on AI technology, empowers education'}
           </p>
         </footer>
       </div>

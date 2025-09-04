@@ -192,31 +192,27 @@ export default function CollectionsPage() {
         onClose={() => setSidebarOpen(false)} 
       />
       
-      {/* 右侧主区 */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto">
-          {/* 移动端头部（固定） */}
-          <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
-            <MobileMenuButton onClick={() => setSidebarOpen(true)} />
-            <Logo size="sm" />
-            <div className="w-10" /> {/* 占位，保持Logo居中 */}
-          </div>
-          
-          {/* 顶部预留占位，避免内容被固定头部遮挡 */}
-          <div className="lg:hidden h-14" />
+      <main className="flex-1 bg-white overflow-y-auto">
+        {/* 移动端头部（固定） */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
+          <MobileMenuButton onClick={() => setSidebarOpen(true)} />
+          <div className="w-10" /> {/* 占位，保持居中 */}
+        </div>
+        
+        {/* 顶部预留占位，避免内容被固定头部遮挡 */}
+        <div className="lg:hidden h-14" />
 
-          {/* Logo */}
-          <div className="hidden lg:flex justify-center mb-6">
-            <Logo size="md" />
-          </div>
+        <div className="p-8 lg:p-8">
           {/* 页面标题 */}
-          <div className="mb-8 px-4 lg:px-0">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{mounted ? t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }) : 'My Collections'}</h1>
-            <p className="text-gray-600">{mounted ? t('manageCollections', { ns: 'content', defaultValue: 'Manage all your collected content' }) : 'Manage all your collected content'}</p>
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{mounted ? t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }) : 'My Collections'}</h1>
+              <p className="text-gray-600">{mounted ? t('manageCollections', { ns: 'content', defaultValue: 'Manage all your collected content' }) : 'Manage all your collected content'}</p>
+            </div>
           </div>
           
           {/* 收藏列表选择 */}
-          <div className="mb-6 px-4 lg:px-0">
+          <div className="mb-6">
             <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm overflow-x-auto">
               {/* 全部收藏 Tab */}
               <button
@@ -259,7 +255,7 @@ export default function CollectionsPage() {
 
           {/* 错误信息 */}
           {error && (
-            <div className="mb-6 mx-4 lg:mx-0 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600">{error}</p>
             </div>
           )}
@@ -273,28 +269,29 @@ export default function CollectionsPage() {
 
           {/* 内容网格 */}
           {!loading && collections.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 lg:px-0">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {collections.map((item) => (
-                <CollectionCard
-                  key={item.id}
-                  content={item.content}
-                  collectionInfo={{
-                    id: item.id,
-                    added_at: item.added_at,
-                    list_id: item.list_id,
-                    list_name: item.list_name,
-                    is_liked: item.is_liked
-                  }}
-                  onAction={handleCollectionAction}
-                  refreshLists={async () => {}}
-                />
+                <div key={item.id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 flex flex-col gap-2">
+                  <CollectionCard
+                    content={item.content}
+                    collectionInfo={{
+                      id: item.id,
+                      added_at: item.added_at,
+                      list_id: item.list_id,
+                      list_name: item.list_name,
+                      is_liked: item.is_liked
+                    }}
+                    onAction={handleCollectionAction}
+                    refreshLists={async () => {}}
+                  />
+                </div>
               ))}
             </div>
           )}
 
           {/* 空状态 */}
           {!loading && collections.length === 0 && activeList && (
-            <div className="text-center py-12 px-4 lg:px-0">
+            <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -317,7 +314,7 @@ export default function CollectionsPage() {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 } 

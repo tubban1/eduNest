@@ -49,7 +49,7 @@ router.post('/generate', [
       }
     }
 
-    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code);
+    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate');
 
     if (result.success) {
       logger.info(`AI生成成功: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${result.data?.language_code || language_code || '未知'}`);

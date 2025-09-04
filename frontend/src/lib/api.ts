@@ -198,6 +198,11 @@ class ApiClient {
     delete: async (id: string) => {
       await this.delete(`/content/${id}`);
     },
+
+    fix: async (fixData: any) => {
+      const data = await this.post('/content/fix', fixData);
+      return data.success ? data.data : null;
+    },
   };
 
   // Collection API
@@ -273,6 +278,39 @@ class ApiClient {
       prompt,
       ...options,
     });
+  }
+
+  // Payments API
+  async getPaymentMethods() {
+    return this.get('/payments/payment-methods');
+  }
+
+  async createPaymentSession(planType: string, options?: {
+    success_url?: string;
+    cancel_url?: string;
+    payment_methods?: string[];
+    region?: string;
+  }) {
+    return this.post('/payments/create-session', {
+      plan_type: planType,
+      ...options,
+    });
+  }
+
+  // Subscriptions API
+  async getSubscriptionStatus() {
+    return this.get('/subscriptions/status');
+  }
+
+  async upgradeSubscription(planType: string, stripeSessionId: string) {
+    return this.post('/subscriptions/upgrade', {
+      plan_type: planType,
+      stripe_session_id: stripeSessionId,
+    });
+  }
+
+  async cancelSubscription() {
+    return this.post('/subscriptions/cancel');
   }
 
   async fixContent(contentId: string, issue: string) {
