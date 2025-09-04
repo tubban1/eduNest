@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { api } from '../../../lib/api';
 
-const SubscriptionSuccess: React.FC = () => {
+const SubscriptionSuccessContent: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -111,6 +111,23 @@ const SubscriptionSuccess: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">正在加载...</p>
+    </div>
+  </div>
+);
+
+const SubscriptionSuccess: React.FC = () => {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <SubscriptionSuccessContent />
+    </Suspense>
   );
 };
 
