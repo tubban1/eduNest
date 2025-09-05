@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslation } from 'react-i18next';
 
@@ -115,12 +116,41 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
         </ul>
       )}
 
-      {isOpen && isMobile && (
-        <div className="fixed inset-0 z-[9999] flex items-end" aria-modal="true" role="dialog">
+      {isOpen && isMobile && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999]" 
+          aria-modal="true" 
+          role="dialog"
+          style={{ zIndex: 9999 }}
+        >
           {/* 蒙层 */}
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsOpen(false)} />
+          <div 
+            className="absolute inset-0 bg-black/40" 
+            onClick={() => setIsOpen(false)}
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.4)'
+            }} 
+          />
           {/* 底部弹出框 */}
-          <div className="relative w-full bg-white rounded-t-2xl shadow-2xl pb-safe">
+          <div 
+            className="bg-white rounded-t-2xl shadow-2xl"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'white',
+              borderTopLeftRadius: '1rem',
+              borderTopRightRadius: '1rem',
+              boxShadow: '0 -10px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04)',
+              paddingBottom: 'env(safe-area-inset-bottom)'
+            }}
+          >
             <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
             <div className="max-h-[60vh] overflow-auto py-2">
               {supportedLanguages.map(lang => (
@@ -145,7 +175,8 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
