@@ -102,6 +102,19 @@ router.get('/by-language', async (req, res) => {
   }
 });
 
+// 获取内容总数
+router.get('/count', async (req, res) => {
+  try {
+    const result = await DatabaseService.getContents({ limit: 1000 }); // 获取足够多的数据来计算总数
+    if (result.error) {
+      return res.status(500).json({ success: false, error: result.error.message });
+    }
+    return res.json({ success: true, count: result.data ? result.data.length : 0 });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 获取内容列表
 router.get('/', authenticateToken, async (req, res) => {
   try {

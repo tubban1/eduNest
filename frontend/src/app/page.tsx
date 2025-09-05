@@ -33,6 +33,7 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { user, signOut } = useAuth();
   const [contents, setContents] = useState<Content[]>([]);
+  const [totalContentCount, setTotalContentCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSignOut, setIsLoadingSignOut] = useState(false);
 
@@ -51,14 +52,16 @@ export default function HomePage() {
         const currentLang = i18n.language || 'en';
         const langPrefix = currentLang.split('-')[0].toLowerCase();
         
-        const [contentRes, userRes] = await Promise.all([
+        const [contentRes, totalCountRes, userRes] = await Promise.all([
           fetch(`${apiBaseUrl}/content/by-language?language_prefix=${langPrefix}&limit=18`),
+          fetch(`${apiBaseUrl}/content/count`), // 获取总数
           fetch(`${apiBaseUrl}/auth/me`, {
             credentials: 'include'
           })
         ]);
 
         const contentData = await contentRes.json();
+        const totalCountData = await totalCountRes.json();
         const userData = await userRes.json();
 
         if (contentData.success && contentData.data && Array.isArray(contentData.data)) {
@@ -68,6 +71,13 @@ export default function HomePage() {
         } else {
           // 如果该语言没有内容，显示空状态
           setContents([]);
+        }
+
+        // 设置总内容数
+        if (totalCountData.success && typeof totalCountData.count === 'number') {
+          setTotalContentCount(totalCountData.count);
+        } else {
+          setTotalContentCount(0);
         }
       } catch (error) {
         console.error('Failed to fetch content:', error);
@@ -362,7 +372,7 @@ export default function HomePage() {
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 mb-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">{contents.length}+</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">{totalContentCount}+</div>
               <div className="text-gray-600">
                 {t('interactive_content', { ns: 'home', defaultValue: 'Interactive Content' })}
               </div>
