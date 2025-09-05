@@ -155,7 +155,13 @@ export default function HomePage() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* 桌面端语言切换 */}
               <div className="hidden sm:block w-48">
+                <LanguageSelector />
+              </div>
+              
+              {/* 移动端语言切换按钮 */}
+              <div className="sm:hidden">
                 <LanguageSelector />
               </div>
               {user ? (
