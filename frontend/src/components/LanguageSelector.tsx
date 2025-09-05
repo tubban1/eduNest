@@ -21,6 +21,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const mobileModalRef = useRef<HTMLDivElement | null>(null);
 
   // 监听窗口尺寸，判定移动端（与 Tailwind sm 断点一致）
   useEffect(() => {
@@ -44,8 +45,16 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
     if (!isOpen) return;
     const onDown = (ev: MouseEvent | TouchEvent) => {
       const target = ev.target as Node | null;
-      if (containerRef.current && target && !containerRef.current.contains(target)) {
-        setIsOpen(false);
+      if (isMobile) {
+        // 移动端：检查是否点击在弹窗外部
+        if (mobileModalRef.current && target && !mobileModalRef.current.contains(target)) {
+          setIsOpen(false);
+        }
+      } else {
+        // 桌面端：检查是否点击在按钮容器外部
+        if (containerRef.current && target && !containerRef.current.contains(target)) {
+          setIsOpen(false);
+        }
       }
     };
     const onKey = (ev: KeyboardEvent) => {
@@ -59,21 +68,12 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
       document.removeEventListener('touchstart', onDown as any);
       document.removeEventListener('keydown', onKey);
     };
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
 
   const handleSelect = (code: string) => {
+    // 只调用 setLanguage，它会处理所有同步和页面刷新
     setLanguage(code);
-    try {
-      // 写入 i18next 的本地存储键，供 LanguageDetector 使用
-      localStorage.setItem('i18nextLng', code);
-      // 同步 i18n
-      i18n.changeLanguage(code);
-      // 同步 html lang
-      if (typeof document !== 'undefined') {
-        document.documentElement.lang = code;
-      }
-    } catch {}
-    setIsOpen(false);
+    // 不需要手动关闭弹窗，因为页面会刷新
   };
 
   if (variant === 'inline') {
@@ -118,6 +118,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
 
       {isOpen && isMobile && createPortal(
         <div 
+          ref={mobileModalRef}
           className="fixed inset-0 z-[9999]" 
           aria-modal="true" 
           role="dialog"
