@@ -116,11 +116,11 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
       )}
 
       {isOpen && isMobile && (
-        <div className="fixed inset-0 z-50" aria-modal="true" role="dialog">
+        <div className="fixed inset-0 z-[9999] flex items-end" aria-modal="true" role="dialog">
           {/* 蒙层 */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsOpen(false)} />
           {/* 底部弹出框 */}
-          <div className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl pb-safe">
+          <div className="relative w-full bg-white rounded-t-2xl shadow-2xl pb-safe">
             <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
             <div className="max-h-[60vh] overflow-auto py-2">
               {supportedLanguages.map(lang => (
