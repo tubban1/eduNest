@@ -10,6 +10,7 @@ import Logo from './Logo';
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import CreditsHistoryDialog from './CreditsHistoryDialog';
+import ReferralCodeDialog from './ReferralCodeDialog';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -25,6 +26,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
   const [credits, setCredits] = useState<number | null>(null);
   const [loadingCredits, setLoadingCredits] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showReferralDialog, setShowReferralDialog] = useState(false);
   const [referralCode, setReferralCode] = useState<string>('');
   const [loadingReferral, setLoadingReferral] = useState(false);
 
@@ -116,7 +118,10 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
     <div className="w-64 h-screen bg-white shadow-sm border-r border-gray-200 flex flex-col">
       {variant === 'mobile' && (
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <Logo size="sm" />
+          <div className="flex items-center gap-3">
+            <Logo size="sm" />
+            <LanguageSelector variant="button" />
+          </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5 text-gray-600" />
           </button>
@@ -125,12 +130,11 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
       
       <div className="p-6 flex-1">
         {variant === 'desktop' && (
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-3">
             <Logo size="md" />
+            <LanguageSelector variant="button" />
           </div>
         )}
-        
-        <LanguageSelector variant="button" />
         
         {user && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -151,21 +155,26 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
                 <span className="font-medium">{mounted ? t('role', { ns: 'auth', defaultValue: 'Role:' }) : 'Role:'}</span> {user.role === 'admin' ? (mounted ? t('admin', { ns: 'auth', defaultValue: 'Admin' }) : 'Admin') : (mounted ? t('user', { ns: 'auth', defaultValue: 'User' }) : 'User')}
               </div>
               <div className="mb-2 flex items-center justify-between">
-                <div>
-                  <span className="font-medium">邀请码:</span>{' '}
-                  {loadingReferral ? (mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...') : (referralCode || '-')}
-                </div>
-                <button onClick={handleShareReferral} className="p-1.5 rounded hover:bg-gray-200" title="分享邀请链接">
+                <button 
+                  onClick={() => setShowReferralDialog(true)}
+                  className="flex-1 text-left hover:bg-gray-100 rounded p-1 -m-1 transition-colors"
+                >
+                  <div>
+                    <span className="font-medium">{mounted ? t('referralCode', { ns: 'referral', defaultValue: '邀请码' }) : '邀请码'}:</span>{' '}
+                    {loadingReferral ? (mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...') : (referralCode || '-')}
+                  </div>
+                </button>
+                <button onClick={handleShareReferral} className="p-1.5 rounded hover:bg-gray-200" title={mounted ? t('shareReferralLink', { ns: 'common', defaultValue: '分享邀请链接' }) : '分享邀请链接'}>
                   <Share2 className="w-4 h-4 text-gray-600" />
                 </button>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="font-medium">{mounted ? t('credits', { ns: 'common', defaultValue: '积分:' }) : '积分:'}</span>{' '}
-                  {loadingCredits ? (mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...') : (credits ?? '-')}
+                  <span className="font-medium">{mounted ? t('credits', { ns: 'credits', defaultValue: '积分:' }) : '积分:'}</span>{' '}
+                  {loadingCredits ? (mounted ? t('loading', { ns: 'credits', defaultValue: '加载中...' }) : 'Loading...') : (credits ?? '-')}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setShowHistory(true)} className="p-1.5 rounded hover:bg-gray-200" title="明细">
+                  <button onClick={() => setShowHistory(true)} className="p-1.5 rounded hover:bg-gray-200" title={mounted ? t('creditsHistory', { ns: 'credits', defaultValue: '查看积分明细' }) : 'View Credits History'}>
                     <List className="w-4 h-4 text-gray-600" />
                   </button>
                 </div>
@@ -210,6 +219,14 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
 
       {/* 积分明细弹窗 */}
       <CreditsHistoryDialog open={showHistory} onClose={() => setShowHistory(false)} />
+      
+      {/* 邀请码弹窗 */}
+      <ReferralCodeDialog 
+        open={showReferralDialog} 
+        onClose={() => setShowReferralDialog(false)}
+        referralCode={referralCode}
+        onShare={handleShareReferral}
+      />
     </div>
   );
 

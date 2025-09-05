@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
 
 interface CreditsHistoryDialogProps {
@@ -17,9 +18,15 @@ interface CreditRecord {
 }
 
 export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDialogProps) {
+  const { t } = useTranslation(['common', 'credits']);
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [records, setRecords] = useState<CreditRecord[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -36,7 +43,7 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
           setRecords([]);
         }
       } catch (e: any) {
-        setError(e?.message || '加载失败');
+        setError(e?.message || (mounted ? t('loadFailed', { ns: 'credits', defaultValue: '加载失败' }) : 'Load failed'));
       } finally {
         setLoading(false);
       }
@@ -51,11 +58,15 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white w-11/12 max-w-lg rounded-2xl shadow-lg border p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">积分明细</h2>
+          <h2 className="text-lg font-semibold">
+            {mounted ? t('creditsHistory', { ns: 'credits', defaultValue: '积分明细' }) : 'Credits History'}
+          </h2>
           <button className="text-gray-500 hover:text-black" onClick={onClose}>✕</button>
         </div>
         {loading && (
-          <div className="py-8 text-center text-gray-500">加载中...</div>
+          <div className="py-8 text-center text-gray-500">
+            {mounted ? t('loading', { ns: 'credits', defaultValue: '加载中...' }) : 'Loading...'}
+          </div>
         )}
         {error && (
           <div className="mb-3 p-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded">{error}</div>
@@ -63,12 +74,16 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
         {!loading && !error && (
           <div className="max-h-80 overflow-y-auto divide-y">
             {records.length === 0 && (
-              <div className="py-6 text-center text-gray-500">暂无记录</div>
+              <div className="py-6 text-center text-gray-500">
+                {mounted ? t('noRecords', { ns: 'credits', defaultValue: '暂无记录' }) : 'No records'}
+              </div>
             )}
             {records.map((r) => (
               <div key={r.id} className="py-3 flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{r.change_type}</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {mounted ? t(`changeTypeLabels.${r.change_type}`, { ns: 'credits', defaultValue: r.change_type }) : r.change_type}
+                  </div>
                   <div className="text-xs text-gray-500">{new Date(r.created_at).toLocaleString()}</div>
                 </div>
                 <div className={`text-sm font-semibold ${r.change_amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>

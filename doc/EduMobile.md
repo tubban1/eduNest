@@ -6,7 +6,7 @@
 
 ### 总体路线（荐）
 - 外层壳: Flutter（导航/登录/订阅/设置/推送/权限）
-- 内容渲染: InAppWebView 承载 AI 产物（HTML/CSS/JS/Vue/Canvas），直注入、秒开。
+- 内容渲染: InAppWebView 承载 AI 产物 （HTML/CSS/JS/Vue/Canvas），直注入、秒开。
 - 支付与合规: 原生 Stripe SDK + Apple Pay/Google Pay（或系统浏览器 SFSafariViewController/Custom Tabs），不在 WebView 内走原生支付。
 - 仓库形态: Monorepo，新建 `apps/mobile-flutter`，逐步抽取 `packages/shared-*` 复用逻辑。
 
