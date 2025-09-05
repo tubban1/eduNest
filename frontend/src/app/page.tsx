@@ -29,7 +29,7 @@ interface Content {
 }
 
 export default function HomePage() {
-  const { t } = useTranslation(['home', 'common', 'content', 'navigation']);
+  const { t, i18n } = useTranslation(['home', 'common', 'content', 'navigation']);
   const [mounted, setMounted] = useState(false);
   const { user, signOut } = useAuth();
   const [contents, setContents] = useState<Content[]>([]);
@@ -47,8 +47,12 @@ export default function HomePage() {
         // 使用config中的API_BASE_URL
         const apiBaseUrl = config.API_BASE_URL;
         
+        // 获取当前语言前缀
+        const currentLang = i18n.language || 'en';
+        const langPrefix = currentLang.split('-')[0].toLowerCase();
+        
         const [contentRes, userRes] = await Promise.all([
-          fetch(`${apiBaseUrl}/content/public?limit=6`),
+          fetch(`${apiBaseUrl}/content/by-language?language_prefix=${langPrefix}&limit=18`),
           fetch(`${apiBaseUrl}/auth/me`, {
             credentials: 'include'
           })
@@ -61,9 +65,12 @@ export default function HomePage() {
           // 随机打乱内容顺序
           const shuffled = contentData.data.sort(() => Math.random() - 0.5);
           setContents(shuffled);
+        } else {
+          // 如果该语言没有内容，显示空状态
+          setContents([]);
         }
       } catch (error) {
-        // 如果获取失败，使用空数组
+        console.error('Failed to fetch content:', error);
         setContents([]);
       } finally {
         setIsLoading(false);
@@ -71,7 +78,7 @@ export default function HomePage() {
     };
 
     fetchData();
-  }, []);
+  }, [i18n.language]);
 
   const handleSignOut = async () => {
     try {
@@ -311,13 +318,33 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📚</div>
+              <div className="text-6xl mb-4">🌍</div>
               <p className="text-gray-600 text-lg">
-                {t('no_content', { ns: 'home', defaultValue: 'No content available' })}
+                {t('no_content_in_current_language', { ns: 'home', defaultValue: 'No content available in current language' })}
               </p>
-              <p className="text-gray-500 text-sm mt-2">
-                {t('please_create_some_interactive_content', { ns: 'home', defaultValue: 'Please create some interactive content' })}
+              <p className="text-gray-500 text-sm mt-2 mb-4">
+                {t('try_other_languages_or_create_content', { ns: 'home', defaultValue: 'Try switching to other languages or create new content' })}
               </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => i18n.changeLanguage('en')}
+                  className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                >
+                  {t('view_english_content', { ns: 'home', defaultValue: 'View English Content' })}
+                </button>
+                <button
+                  onClick={() => i18n.changeLanguage('zh')}
+                  className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                >
+                  {t('view_chinese_content', { ns: 'home', defaultValue: 'View Chinese Content' })}
+                </button>
+                <Link
+                  href="/content"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  {t('browse_all_content', { ns: 'home', defaultValue: 'Browse All Content' })}
+                </Link>
+              </div>
             </div>
           )}
           

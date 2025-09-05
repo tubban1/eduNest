@@ -102,6 +102,11 @@ const getContents = async (filters = {}) => {
     if (filters.language_code) {
       query = query.eq('language_code', filters.language_code);
     }
+    // 语言前缀过滤（BCP47 前缀，如 zh/en/de/fr）
+    if (filters.language_prefix) {
+      const prefix = String(filters.language_prefix).toLowerCase();
+      query = query.ilike('language_code', `${prefix}%`);
+    }
     if (filters.tag) {
       query = query.contains('tag', [filters.tag]);
     }
@@ -111,7 +116,8 @@ const getContents = async (filters = {}) => {
     
     // 添加limit支持
     if (filters.limit) {
-      query = query.limit(filters.limit);
+      const limit = Math.max(1, Math.min(parseInt(filters.limit, 10) || 12, 50));
+      query = query.limit(limit);
     }
     
     const { data, error } = await query.order('created_at', { ascending: false });
@@ -122,6 +128,11 @@ const getContents = async (filters = {}) => {
   } catch (error) {
     return { data: null, error };
   }
+};
+
+// 定向按语言获取（便捷封装）
+const getContentsByLanguage = async ({ language_prefix, language_code, limit } = {}) => {
+  return getContents({ language_prefix, language_code, limit });
 };
 
 const getContentById = async (id) => {

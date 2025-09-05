@@ -46,16 +46,59 @@ router.get('/public', async (req, res) => {
     if (req.query.limit) {
       filters.limit = parseInt(req.query.limit);
     }
-    
+    if (req.query.language_prefix) {
+      filters.language_prefix = String(req.query.language_prefix).toLowerCase();
+    }
+    if (req.query.language_code) {
+      filters.language_code = String(req.query.language_code);
+    }
+
     const result = await DatabaseService.getContents(filters);
     
     if (result.error) {
       return res.status(500).json({ error: result.error.message });
     }
-
     res.json({ success: true, data: result.data });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// 定向语言公开内容（保留）
+router.get('/public/by-language', async (req, res) => {
+  try {
+    const { language_prefix, language_code } = req.query;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 12;
+    if (!language_prefix && !language_code) {
+      return res.status(400).json({ success: false, error: '缺少语言参数：language_prefix 或 language_code 其一必填' });
+    }
+    const result = await DatabaseService.getContents({ language_prefix, language_code, limit });
+    if (result.error) {
+      return res.status(500).json({ success: false, error: result.error.message });
+    }
+    return res.json({ success: true, data: result.data || [] });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 新：仅语言限制的公开接口（推荐）
+// GET /api/content/by-language?language_prefix=en&limit=18
+// 或 GET /api/content/by-language?language_code=en-US&limit=18
+router.get('/by-language', async (req, res) => {
+  try {
+    const { language_prefix, language_code } = req.query;
+    const limit = req.query.limit ? Math.max(1, Math.min(parseInt(req.query.limit), 60)) : 12;
+    if (!language_prefix && !language_code) {
+      return res.status(400).json({ success: false, error: '缺少语言参数：language_prefix 或 language_code 其一必填' });
+    }
+    const result = await DatabaseService.getContents({ language_prefix, language_code, limit });
+    if (result.error) {
+      return res.status(500).json({ success: false, error: result.error.message });
+    }
+    return res.json({ success: true, data: result.data || [] });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
