@@ -52,17 +52,13 @@ export default function HomePage() {
         const currentLang = i18n.language || 'en';
         const langPrefix = currentLang.split('-')[0].toLowerCase();
         
-        const [contentRes, totalCountRes, userRes] = await Promise.all([
+        const [contentRes, totalCountRes] = await Promise.all([
           fetch(`${apiBaseUrl}/content/by-language?language_prefix=${langPrefix}&limit=18`),
-          fetch(`${apiBaseUrl}/content/count`), // 获取总数
-          fetch(`${apiBaseUrl}/auth/me`, {
-            credentials: 'include'
-          })
+          fetch(`${apiBaseUrl}/content/count`) // 获取总数
         ]);
 
         const contentData = await contentRes.json();
         const totalCountData = await totalCountRes.json();
-        const userData = await userRes.json();
 
         if (contentData.success && contentData.data && Array.isArray(contentData.data)) {
           // 随机打乱内容顺序

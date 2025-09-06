@@ -86,6 +86,18 @@ class ApiClient {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // 如果是401错误，强制重定向到登录页
+        if (response.status === 401) {
+          // 清除本地存储的认证信息
+          localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
+          this.clearToken();
+          // 重定向到登录页
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+        }
+        
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 

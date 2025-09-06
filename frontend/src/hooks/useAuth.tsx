@@ -75,6 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // 检查token是否过期
+      if (session.expires_at && new Date(session.expires_at * 1000) < new Date()) {
+        clearConflictingSessions();
+        setUser(null);
+        setLoading(false);
+        api.clearToken();
+        return;
+      }
+
       // 验证token并获取用户信息
       const response = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/user', {
         headers: {
@@ -88,6 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setLoading(false);
         api.clearToken();
+        // 如果是401错误，强制重定向到登录页
+        if (response.status === 401) {
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+        }
         return;
       }
 

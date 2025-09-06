@@ -252,6 +252,12 @@ export default function ContentForm({
         }
         setLoading(false);
       }).catch((e: any) => {
+        // 检查是否是认证错误
+        if (e.message?.includes('401') || e.message?.includes('无效的访问令牌') || e.message?.includes('访问令牌缺失')) {
+          // 强制重定向到登录页
+          window.location.href = '/login';
+          return;
+        }
         setError(e.message || t('loadContentFailed', { ns: 'content', defaultValue: 'Failed to load content' }));
         setLoading(false);
       });
@@ -612,6 +618,12 @@ export default function ContentForm({
         throw new Error('AI generation failed');
       }
     } catch (error: any) {
+      // 检查是否是认证错误
+      if (error.message?.includes('401') || error.message?.includes('无效的访问令牌') || error.message?.includes('访问令牌缺失')) {
+        // 强制重定向到登录页
+        window.location.href = '/login';
+        return;
+      }
       setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
     } finally {
       setAiGenerating(false);
@@ -651,6 +663,12 @@ export default function ContentForm({
       setFixError(""); // 清空错误信息，表示修复成功
       setPreviewKey(prev => prev + 1);
     } catch (e: any) {
+      // 检查是否是认证错误
+      if (e.message?.includes('401') || e.message?.includes('无效的访问令牌') || e.message?.includes('访问令牌缺失')) {
+        // 强制重定向到登录页
+        window.location.href = '/login';
+        return;
+      }
       setFixError(e.message || t('fixFailed', { ns: 'content', defaultValue: 'Fix failed' }));
     } finally {
       setFixLoading(false);
@@ -690,6 +708,12 @@ export default function ContentForm({
       }
       router.push('/content');
     } catch (e: any) {
+      // 检查是否是认证错误
+      if (e.message?.includes('401') || e.message?.includes('无效的访问令牌') || e.message?.includes('访问令牌缺失')) {
+        // 强制重定向到登录页
+        window.location.href = '/login';
+        return;
+      }
       setError(e.message || t('saveFailed', { ns: 'content', defaultValue: 'Save failed' }));
     } finally {
       setLoading(false);

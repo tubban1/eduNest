@@ -26,6 +26,12 @@ function MyContentList({ userId, lists, refreshLists }: { userId: string, lists:
       setMyContent(list);
       setLoading(false);
     }).catch((e: any) => {
+      // 检查是否是认证错误
+      if (e.message?.includes('401') || e.message?.includes('无效的访问令牌') || e.message?.includes('访问令牌缺失')) {
+        // 强制重定向到登录页
+        window.location.href = '/login';
+        return;
+      }
       setError(e.message || t('fetchContentError', { ns: 'content', defaultValue: '获取内容失败' }));
       setLoading(false);
     });
@@ -84,6 +90,12 @@ function CollectionTree({ userId }: { userId: string }) {
       setCollections(colRes && Array.isArray(colRes.data) ? colRes.data : []);
       setLoading(false);
     }).catch((e: any) => {
+      // 检查是否是认证错误
+      if (e.message?.includes('401') || e.message?.includes('无效的访问令牌') || e.message?.includes('访问令牌缺失')) {
+        // 强制重定向到登录页
+        window.location.href = '/login';
+        return;
+      }
       setError(e.message || t('fetchCollectionsError', { ns: 'content', defaultValue: '获取收藏失败' }));
       setLoading(false);
     });
@@ -142,7 +154,13 @@ export default function ContentPage() {
       const res = await api.get('/collection_lists');
       const listsData = (res as any)?.success ? (res as any).data : [];
       setLists(listsData);
-    } catch (error) {
+    } catch (error: any) {
+      // 检查是否是认证错误
+      if (error.message?.includes('401') || error.message?.includes('无效的访问令牌') || error.message?.includes('访问令牌缺失')) {
+        // 强制重定向到登录页
+        window.location.href = '/login';
+        return;
+      }
       setLists([]);
     }
   };
