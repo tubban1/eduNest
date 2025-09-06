@@ -799,16 +799,13 @@ export default function ContentForm({
                         <div>
                           <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('learningStageLabel', { ns: 'content', defaultValue: 'Learning Stage' }) : 'Learning Stage'}</label>
                           <select
-                            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                            value={learningStage}
-                            onChange={e => setLearningStage(e.target.value)}
-                            disabled={isAiFormDisabled}
+                            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed"
+                            value="understanding"
+                            disabled={true}
                           >
-                            {LEARNING_STAGES.map(stage => (
-                              <option key={stage.value} value={stage.value}>
-                                {stage.label}
-                              </option>
-                            ))}
+                            <option value="understanding">
+                              {mounted ? t('learningStage.understanding', { ns: 'content', defaultValue: 'Understanding core principles and logic' }) : 'Understanding core principles and logic'}
+                            </option>
                           </select>
                         </div>
                         <div>
