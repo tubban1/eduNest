@@ -13,6 +13,7 @@ interface LikeButtonProps {
   showCount?: boolean;
   showText?: boolean;
   className?: string;
+  disabled?: boolean;
   onLikeChange?: (liked: boolean, count: number) => void;
 }
 
@@ -24,6 +25,7 @@ export default function LikeButton({
   showCount = true,
   showText = true,
   className = '',
+  disabled = false,
   onLikeChange
 }: LikeButtonProps) {
   const { t } = useTranslation(['content', 'common']);
@@ -44,7 +46,7 @@ export default function LikeButton({
     e.preventDefault();
     e.stopPropagation();
     
-    if (isProcessing) return;
+    if (isProcessing || disabled) return;
     
     setIsProcessing(true);
     try {
@@ -87,11 +89,13 @@ export default function LikeButton({
   return (
     <button
       onClick={handleLike}
-      disabled={isProcessing}
+      disabled={isProcessing || disabled}
       className={`flex items-center transition-colors ${
-        isLiked 
-          ? 'text-red-600 hover:text-red-700' 
-          : 'text-gray-600 hover:text-gray-700'
+        disabled 
+          ? 'text-gray-400 cursor-not-allowed' 
+          : isLiked 
+            ? 'text-red-600 hover:text-red-700' 
+            : 'text-gray-600 hover:text-gray-700'
       } ${sizeClasses[size]} ${className} ${
         isProcessing ? 'opacity-50 cursor-not-allowed' : ''
       }`}

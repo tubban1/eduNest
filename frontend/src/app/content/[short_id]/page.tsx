@@ -7,10 +7,12 @@ import Image from 'next/image';
 import ContentActionButtons from '@/components/ui/ContentActionButtons';
 import { api, Content } from '@/lib/api';
 import SandboxRenderer from '@/components/SandboxRenderer';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ContentPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,8 +58,12 @@ export default function ContentPage() {
           document.title = '内容详情 - EduNest AI';
         }
         
-        // 获取点赞和收藏状态
-        if (response.id) {
+        // 设置计数（无论是否登录都显示）
+        setLikeCount(response.likes_count || 0);
+        setCollectionCount(response.collections_count || 0);
+        
+        // 只有在用户已登录时才获取点赞和收藏状态
+        if (response.id && user) {
           try {
             const [likedResponse, collectionsResponse] = await Promise.all([
               api.getLikedContent(),
@@ -71,10 +77,6 @@ export default function ContentPage() {
             // 检查是否已收藏
             const isUserCollected = collectionsResponse.length > 0;
             setIsCollected(isUserCollected);
-            
-            // 设置计数
-            setLikeCount(response.likes_count || 0);
-            setCollectionCount(response.collections_count || 0);
           } catch (err) {
             console.log('Failed to fetch user interaction status:', err);
           }
@@ -94,7 +96,7 @@ export default function ContentPage() {
   }, [params.short_id]);
 
   const handleLike = async () => {
-    if (!content || isProcessing) return;
+    if (!content || isProcessing || !user) return;
     
     setIsProcessing(true);
     try {
@@ -115,7 +117,7 @@ export default function ContentPage() {
   };
 
   const handleCollect = async () => {
-    if (!content || isProcessing) return;
+    if (!content || isProcessing || !user) return;
     
     setIsProcessing(true);
     try {
@@ -265,20 +267,25 @@ export default function ContentPage() {
                 contentId={content.id}
                 shortId={content.short_id}
                 title={content.title}
-                initialLiked={isLiked}
-                initialCollected={isCollected}
+                initialLiked={user ? isLiked : false}
+                initialCollected={user ? isCollected : false}
                 initialLikeCount={likeCount}
                 initialCollectionCount={collectionCount}
                 size="md"
                 showCount={true}
                 showText={true}
+                disabled={!user} // 未登录时禁用交互按钮
                 onLikeChange={(liked, count) => {
-                  setIsLiked(liked);
-                  setLikeCount(count);
+                  if (user) {
+                    setIsLiked(liked);
+                    setLikeCount(count);
+                  }
                 }}
                 onCollectChange={(collected, count) => {
-                  setIsCollected(collected);
-                  setCollectionCount(count);
+                  if (user) {
+                    setIsCollected(collected);
+                    setCollectionCount(count);
+                  }
                 }}
               />
             </div>

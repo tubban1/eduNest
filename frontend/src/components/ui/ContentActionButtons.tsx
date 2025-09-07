@@ -17,6 +17,7 @@ interface ContentActionButtonsProps {
   showCount?: boolean;
   showText?: boolean;
   className?: string;
+  disabled?: boolean;
   onLikeChange?: (liked: boolean, count: number) => void;
   onCollectChange?: (collected: boolean, count: number) => void;
   onShare?: () => void;
@@ -36,6 +37,7 @@ export default function ContentActionButtons({
   showCount = true,
   showText = true,
   className = '',
+  disabled = false,
   onLikeChange,
   onCollectChange,
   onShare,
@@ -66,6 +68,7 @@ export default function ContentActionButtons({
         size={size}
         showCount={showCount}
         showText={showText}
+        disabled={disabled}
         onLikeChange={onLikeChange}
       />
       
@@ -76,6 +79,7 @@ export default function ContentActionButtons({
         size={size}
         showCount={showCount}
         showText={showText}
+        disabled={disabled}
         onCollectChange={onCollectChange}
       />
       

@@ -14,6 +14,7 @@ interface CollectButtonProps {
   showCount?: boolean;
   showText?: boolean;
   className?: string;
+  disabled?: boolean;
   onCollectChange?: (collected: boolean, count: number) => void;
 }
 
@@ -25,6 +26,7 @@ export default function CollectButton({
   showCount = true,
   showText = true,
   className = '',
+  disabled = false,
   onCollectChange
 }: CollectButtonProps) {
   const { t } = useTranslation(['content', 'common']);
@@ -65,7 +67,7 @@ export default function CollectButton({
     e.preventDefault();
     e.stopPropagation();
     
-    if (isProcessing) return;
+    if (isProcessing || disabled) return;
     
     if (isCollected) {
       // 取消收藏（默认操作：从第一个列表移除）
@@ -111,11 +113,13 @@ export default function CollectButton({
     <>
       <button
         onClick={handleCollect}
-        disabled={isProcessing}
+        disabled={isProcessing || disabled}
         className={`flex items-center transition-colors ${
-          isCollected 
-            ? 'text-blue-600 hover:text-blue-700' 
-            : 'text-gray-600 hover:text-gray-700'
+          disabled 
+            ? 'text-gray-400 cursor-not-allowed' 
+            : isCollected 
+              ? 'text-blue-600 hover:text-blue-700' 
+              : 'text-gray-600 hover:text-gray-700'
         } ${sizeClasses[size]} ${className} ${
           isProcessing ? 'opacity-50 cursor-not-allowed' : ''
         }`}
