@@ -33,85 +33,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // 检查用户认证状态
+  // 检查用户认证状态 - 简化版本，依赖Supabase自动刷新
   const checkAuthStatus = async () => {
     try {
-      // 强制单账号登录：清除所有可能的冲突session
-      const clearConflictingSessions = () => {
-        // 清除所有可能的session存储
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-          if (key.includes('sb-') && key.includes('-auth-token')) {
-            localStorage.removeItem(key);
-          }
-        });
-        
-        // 清除所有可能的sessionStorage
-        const sessionKeys = Object.keys(sessionStorage);
-        sessionKeys.forEach(key => {
-          if (key.includes('sb-') && key.includes('-auth-token')) {
-            sessionStorage.removeItem(key);
-          }
-        });
-      };
-
-      const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
+      // 使用Supabase的getSession方法，它会自动处理token刷新
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (!sessionStr) {
-        clearConflictingSessions();
+      if (error) {
+        console.error('Session check error:', error);
         setUser(null);
         setLoading(false);
         api.clearToken();
         return;
       }
 
-      const session = JSON.parse(sessionStr);
-      
-      if (!session.access_token) {
-        clearConflictingSessions();
+      if (!session) {
         setUser(null);
         setLoading(false);
         api.clearToken();
         return;
       }
-
-      // 检查token是否过期
-      if (session.expires_at && new Date(session.expires_at * 1000) < new Date()) {
-        clearConflictingSessions();
-        setUser(null);
-        setLoading(false);
-        api.clearToken();
-        return;
-      }
-
-      // 验证token并获取用户信息
-      const response = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/user', {
-        headers: {
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-      if (!response.ok) {
-        clearConflictingSessions();
-        setUser(null);
-        setLoading(false);
-        api.clearToken();
-        // 如果是401错误，强制重定向到登录页
-        if (response.status === 401) {
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
-        }
-        return;
-      }
-
-      const userData = await response.json();
 
       // 注入 API 客户端令牌
       api.setToken(session.access_token);
 
+      // 获取用户信息
+      const userData = session.user;
+
       // 获取用户角色信息
+      let role = 'user';
+      try {
       const roleResponse = await fetch(`https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users?id=eq.${userData.id}&select=role`, {
         headers: {
           'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
@@ -119,15 +70,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      let role = 'user';
       if (roleResponse.ok) {
         const roleData = await roleResponse.json();
         role = roleData?.[0]?.role || 'user';
+        }
+      } catch (roleError) {
+        console.warn('Failed to get user role:', roleError);
       }
 
       const authUser: AuthUser = {
         id: userData.id,
-        email: userData.email,
+        email: userData.email || '',
         name: userData.user_metadata?.name,
         avatar_url: userData.user_metadata?.avatar_url,
         role,
@@ -155,13 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     } catch (error) {
       console.error('Auth check error:', error);
-      // 清除所有可能的冲突session
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.includes('sb-') && key.includes('-auth-token')) {
-          localStorage.removeItem(key);
-        }
-      });
       setUser(null);
       setLoading(false);
       api.clearToken();
@@ -181,13 +127,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuthStatus();
 
     // 监听会话变化，实时注入/清除 token
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session ? 'Session exists' : 'No session');
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // 登录成功或token自动刷新成功
       if (session?.access_token) {
         // 新session创建时，强制清除冲突session
         await enforceSingleAccount();
         api.setToken(session.access_token);
-      } else {
+          
+          // 获取用户信息并设置状态
+          try {
+            const userData = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/user', {
+              headers: {
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+                'Authorization': `Bearer ${session.access_token}`
+              }
+            });
+            
+            if (userData.ok) {
+              const user = await userData.json();
+              
+              // 获取用户角色信息
+              const roleResponse = await fetch(`https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users?id=eq.${user.id}&select=role`, {
+                headers: {
+                  'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+                  'Authorization': `Bearer ${session.access_token}`
+                }
+              });
+
+              let role = 'user';
+              if (roleResponse.ok) {
+                const roleData = await roleResponse.json();
+                role = roleData?.[0]?.role || 'user';
+              }
+
+              const authUser = {
+                id: user.id,
+                email: user.email || '',
+                name: user.user_metadata?.name,
+                avatar_url: user.user_metadata?.avatar_url,
+                role,
+              };
+              setUser(authUser);
+              setLoading(false);
+            }
+          } catch (error) {
+            console.error('Failed to get user info after auth state change:', error);
+          }
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // 登出或刷新失败
+        console.log('User signed out, clearing auth state');
+        
+        // 清除所有可能的session存储
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.includes('sb-') && key.includes('-auth-token')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        const sessionKeys = Object.keys(sessionStorage);
+        sessionKeys.forEach(key => {
+          if (key.includes('sb-') && key.includes('-auth-token')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+        
+        setUser(null);
+        setLoading(false);
         api.clearToken();
+        
+        // 只有在非登录页面时才重定向
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
       }
     });
 

@@ -28,11 +28,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
+    autoRefreshToken: true,        // 启用自动刷新
+    persistSession: true,          // 持久化session
+    detectSessionInUrl: true,      // 检测URL中的session
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'sb-zayoczhybuegvtpcsgso-auth-token'
+    storageKey: 'sb-zayoczhybuegvtpcsgso-auth-token',
+    debug: process.env.NODE_ENV === 'development'  // 开发环境启用调试
   },
   global: {
     headers: {
