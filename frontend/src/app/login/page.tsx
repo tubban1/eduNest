@@ -9,6 +9,7 @@ import LanguageSelector from '@/components/LanguageSelector';
 
 function LoginForm() {
   const { t } = useTranslation(['auth', 'common', 'home']);
+  const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,6 +18,11 @@ function LoginForm() {
   const { signInWithEmail, signInWithGoogle } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // 避免SSR/CSR文案不一致的水合报错：首屏使用SSR语言，挂载后再切换为当前语言
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 处理URL参数中的消息
   useEffect(() => {
@@ -83,15 +89,15 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-8">
-      <button onClick={() => router.push('/')} className="absolute left-8 top-8 text-gray-400 hover:text-black text-sm">← {t('home', { ns: 'navigation', defaultValue: '返回首页' })}</button>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-8" suppressHydrationWarning>
+      <button onClick={() => router.push('/')} className="absolute left-8 top-8 text-gray-400 hover:text-black text-sm">← {mounted ? t('home', { ns: 'navigation', defaultValue: 'Home' }) : 'Home'}</button>
       
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border p-8 flex flex-col gap-6">
         <div className="text-center mb-2">
           <Logo size="md" />
           <LanguageSelector variant="button" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('login', { ns: 'auth', defaultValue: '登录' })}</h1>
-          <p className="text-gray-500 text-sm">{t('loginWith', { ns: 'auth', defaultValue: '使用邮箱密码或Google账号登录' })}</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{mounted ? t('login', { ns: 'auth', defaultValue: 'Login' }) : 'Login'}</h1>
+          <p className="text-gray-500 text-sm">{mounted ? t('loginWith', { ns: 'auth', defaultValue: 'Sign in with email/password or Google' }) : 'Sign in with email/password or Google'}</p>
         </div>
         
         <form onSubmit={handleEmailPasswordLogin} className="space-y-4">
@@ -100,7 +106,7 @@ function LoginForm() {
               type="email"
               id="email"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder={t('email', { ns: 'auth', defaultValue: '邮箱' })}
+              placeholder={mounted ? t('email', { ns: 'auth', defaultValue: 'Email' }) : 'Email'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
@@ -112,7 +118,7 @@ function LoginForm() {
               type="password"
               id="password"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder={t('password', { ns: 'auth', defaultValue: '密码' })}
+              placeholder={mounted ? t('password', { ns: 'auth', defaultValue: 'Password' }) : 'Password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
@@ -124,7 +130,7 @@ function LoginForm() {
             className="w-full py-2 px-4 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            {loading ? t('loggingIn', { ns: 'auth', defaultValue: '登录中...' }) : t('login', { ns: 'auth', defaultValue: '登录' })}
+            {mounted ? (loading ? t('loggingIn', { ns: 'auth', defaultValue: 'Logging in...' }) : t('login', { ns: 'auth', defaultValue: 'Login' })) : (loading ? 'Logging in...' : 'Login')}
           </button>
         </form>
         
@@ -133,7 +139,7 @@ function LoginForm() {
             <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">{t('or', { ns: 'common', defaultValue: '或' })}</span>
+            <span className="px-2 bg-white text-gray-500">{mounted ? t('or', { ns: 'common', defaultValue: 'or' }) : 'or'}</span>
           </div>
         </div>
         
@@ -148,7 +154,7 @@ function LoginForm() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          {t('loginWithGoogle', { ns: 'auth', defaultValue: '使用Google登录' })}
+          {mounted ? t('loginWithGoogle', { ns: 'auth', defaultValue: 'Sign in with Google' }) : 'Sign in with Google'}
         </button>
         
         <div className="flex justify-between text-sm">
@@ -156,13 +162,13 @@ function LoginForm() {
             onClick={() => router.push('/signup')}
             className="text-black hover:underline font-medium"
           >
-            注册账号
+            {mounted ? t('signup', { ns: 'auth', defaultValue: 'Create account' }) : 'Create account'}
           </button>
           <button 
             onClick={() => router.push('/auth/forgot')}
             className="text-gray-500 hover:text-black"
           >
-            忘记密码？
+            {mounted ? t('forgotPassword', { ns: 'auth', defaultValue: 'Forgot password?' }) : 'Forgot password?'}
           </button>
         </div>
         
@@ -183,7 +189,7 @@ function LoginForm() {
             className="w-full mt-2 py-2 px-4 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
             disabled={loading || !email}
           >
-            重发验证邮件
+            {mounted ? t('resendVerification', { ns: 'auth', defaultValue: 'Resend verification email' }) : 'Resend verification email'}
           </button>
         )}
       </div>
