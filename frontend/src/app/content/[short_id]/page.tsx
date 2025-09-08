@@ -78,7 +78,6 @@ export default function ContentPage() {
             const isUserCollected = collectionsResponse.length > 0;
             setIsCollected(isUserCollected);
           } catch (err) {
-            console.log('Failed to fetch user interaction status:', err);
           }
         }
       } catch (err) {
@@ -327,10 +326,8 @@ export default function ContentPage() {
               padding: '0'
             }}
             onError={(error) => {
-              console.log('Content render error:', error);
             }}
             onLoad={() => {
-              console.log('Content loaded successfully');
             }}
           />
         </div>

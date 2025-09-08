@@ -128,7 +128,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 监听会话变化，实时注入/清除 token
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session ? 'Session exists' : 'No session');
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         // 登录成功或token自动刷新成功
@@ -179,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } else if (event === 'SIGNED_OUT') {
         // 登出或刷新失败
-        console.log('User signed out, clearing auth state');
         
         // 清除所有可能的session存储
         const keys = Object.keys(localStorage);

@@ -161,7 +161,6 @@ export default function WeChatCompatibleRenderer({
           overflow: 'auto'
         }}
         onLoad={() => {
-          console.log('WeChat compatible iframe loaded successfully');
           setIsLoading(false);
           onLoad?.();
         }}

@@ -66,14 +66,12 @@ export default function WeChatUltraSimpleRenderer({
     
     if (isWeChat) {
       statusDiv.textContent = '超简化模式: 微信已检测到';
-      console.log('WeChat detected in ultra-simple mode');
     }
     
     // 执行用户代码
     try {
       ${js}
       statusDiv.textContent = '超简化模式: 执行成功';
-      console.log('Ultra-simple mode: User script executed successfully');
     } catch (error) {
       statusDiv.textContent = '超简化模式: 执行错误 - ' + error.message;
       console.error('Ultra-simple mode: User script error:', error);
@@ -81,7 +79,6 @@ export default function WeChatUltraSimpleRenderer({
     
     // 页面加载完成
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('Ultra-simple mode: DOM loaded');
       statusDiv.textContent = '超简化模式: 页面加载完成';
     });
     
@@ -225,7 +222,6 @@ export default function WeChatUltraSimpleRenderer({
           overflow: 'auto'
         }}
         onLoad={() => {
-          console.log('WeChat ultra-simple iframe loaded successfully');
           setIsLoading(false);
           onLoad?.();
         }}

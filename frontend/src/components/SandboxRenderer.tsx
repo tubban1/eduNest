@@ -211,12 +211,12 @@ export default function SandboxRenderer({
       setIsWeChat(isWeChatBrowser);
       
       if (isWeChatBrowser) {
-        console.log('WeChat browser detected, setting up compatibility mode');
+        
         
         // 微信浏览器多重超时保护
         const timeouts = [
           setTimeout(() => {
-            console.log('WeChat browser timeout 1: 3 seconds');
+            
             if (isLoading) {
               setIsLoading(false);
               onLoad?.();
@@ -224,7 +224,7 @@ export default function SandboxRenderer({
           }, 3000),
           
           setTimeout(() => {
-            console.log('WeChat browser timeout 2: 8 seconds');
+            
             if (isLoading) {
               setIsLoading(false);
               onLoad?.();
@@ -232,7 +232,7 @@ export default function SandboxRenderer({
           }, 8000),
           
           setTimeout(() => {
-            console.log('WeChat browser timeout 3: 15 seconds');
+            
             if (isLoading) {
               setIsLoading(false);
               onError?.('微信浏览器加载超时，请刷新重试');
@@ -248,7 +248,7 @@ export default function SandboxRenderer({
         // 普通浏览器超时
         const timeout = setTimeout(() => {
           if (isLoading) {
-            console.log('Browser timeout: 10 seconds');
+            
             setIsLoading(false);
             onError?.('加载超时，请检查网络连接');
           }
@@ -266,7 +266,7 @@ export default function SandboxRenderer({
   // 微信浏览器检测到后，不自动切换模式，而是显示重定向提示
   React.useEffect(() => {
     if (isWeChat) {
-      console.log('WeChat browser detected, will show redirect prompt');
+      
       // 在微信中，显示重定向提示而不是尝试渲染
     }
   }, [isWeChat]);
@@ -277,7 +277,7 @@ export default function SandboxRenderer({
       // 检查内容长度，如果过长则自动降级
       const contentLength = html.length + css.length + js.length;
       if (contentLength > 50000) { // 50KB限制
-        console.warn('Content too long for WeChat Data URL, auto-falling back to srcDoc');
+        
         setUseWeChatMode(false);
       }
     }
@@ -520,7 +520,7 @@ export default function SandboxRenderer({
     // 微信浏览器特殊处理
     if (isWeChatBrowser) {
       // 微信浏览器兼容性优化
-      console.log('WeChat browser detected, applying compatibility fixes');
+      
       
       // 强制设置视口
       var viewport = document.querySelector('meta[name="viewport"]');
@@ -530,7 +530,7 @@ export default function SandboxRenderer({
       
       // 微信浏览器触摸事件优化
       document.addEventListener('WeixinJSBridgeReady', function() {
-        console.log('WeixinJSBridge ready');
+        
         // 微信JS桥接准备就绪
         
         // 通知父窗口微信环境已就绪
@@ -555,7 +555,7 @@ export default function SandboxRenderer({
       // 微信浏览器页面可见性检测
       document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') {
-          console.log('WeChat page became visible');
+          
           // 页面重新可见时，重新初始化
           setTimeout(function() {
             if (window.LibraryManager) {
@@ -567,7 +567,7 @@ export default function SandboxRenderer({
       
       // 微信浏览器强制加载完成
       setTimeout(function() {
-        console.log('WeChat browser force load timeout');
+        
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({
             type: 'WECHAT_FORCE_LOAD',
@@ -829,7 +829,7 @@ export default function SandboxRenderer({
           if (isMobile) {
             // 在移动端，静默初始化音频和语音功能，不显示测试按钮
             // 用户可以通过交互来触发音频功能
-            console.log('Mobile audio and speech initialized silently');
+            
           }
           
           // 执行用户代码
@@ -981,120 +981,120 @@ export default function SandboxRenderer({
         initCommonLibraries: function() {
           // Vue.js 系列
           if (this.detect('Vue')) {
-            console.log('Vue.js detected:', this.versions['Vue']);
+            
             
             // Vue插件自动注册
             if (window.VueKinesis && !Vue._installedPlugins.includes('VueKinesis')) {
               try {
                 Vue.use(window.VueKinesis);
-                console.log('VueKinesis registered');
+                
               } catch (e) {
-                console.log('VueKinesis registration failed');
+                
               }
             }
             
             if (window.VueRouter && !Vue._installedPlugins.includes('VueRouter')) {
               try {
                 Vue.use(window.VueRouter);
-                console.log('VueRouter registered');
+                
               } catch (e) {
-                console.log('VueRouter registration failed');
+                
               }
             }
             
             if (window.Vuex && !Vue._installedPlugins.includes('Vuex')) {
               try {
                 Vue.use(window.Vuex);
-                console.log('Vuex registered');
+                
               } catch (e) {
-                console.log('Vuex registration failed');
+                
               }
             }
           }
           
           // React 系列
           if (this.detect('React')) {
-            console.log('React detected:', this.versions['React']);
+            
           }
           
           if (this.detect('ReactDOM')) {
-            console.log('ReactDOM detected');
+            
           }
           
           // 音频库
           if (this.detect('Tone')) {
-            console.log('Tone.js detected:', this.versions['Tone']);
+            
           }
           
           if (this.detect('Howl')) {
-            console.log('Howler.js detected');
+            
           }
           
           // 动画库
           if (this.detect('anime')) {
-            console.log('Anime.js detected');
+            
           }
           
           if (this.detect('gsap')) {
-            console.log('GSAP detected');
+            
           }
           
           if (this.detect('lottie')) {
-            console.log('Lottie detected');
+            
           }
           
           // 3D库
           if (this.detect('THREE')) {
-            console.log('Three.js detected:', this.versions['THREE']);
+            
           }
           
           if (this.detect('Babylon')) {
-            console.log('Babylon.js detected');
+            
           }
           
           // 图表库
           if (this.detect('Chart')) {
-            console.log('Chart.js detected');
+            
           }
           
           if (this.detect('ECharts')) {
-            console.log('ECharts detected');
+            
           }
           
           // 工具库
           if (this.detect('lodash')) {
-            console.log('Lodash detected');
+            
           }
           
           if (this.detect('moment')) {
-            console.log('Moment.js detected');
+            
           }
           
           if (this.detect('dayjs')) {
-            console.log('Day.js detected');
+            
           }
           
           // 状态管理
           if (this.detect('Redux')) {
-            console.log('Redux detected');
+            
           }
           
           if (this.detect('Zustand')) {
-            console.log('Zustand detected');
+            
           }
           
           // 路由
           if (this.detect('Router')) {
-            console.log('Router detected');
+            
           }
           
           // 表单处理
           if (this.detect('Formik')) {
-            console.log('Formik detected');
+            
           }
           
           if (this.detect('ReactHookForm')) {
-            console.log('React Hook Form detected');
+            
           }
         },
         
@@ -1476,7 +1476,7 @@ export default function SandboxRenderer({
               this.loadLibrary(libName).then(function() {
                 loaded.push(libName);
               }).catch(function(error) {
-                console.log('Failed to load library:', libName, error.message);
+                
               })
             );
           }
@@ -1556,7 +1556,7 @@ export default function SandboxRenderer({
       
       // 监听微信就绪消息
       if (event.data && event.data.type === 'WECHAT_READY') {
-        console.log('WeChat environment ready');
+        
         // 微信环境就绪，可以开始加载内容
         if (isLoading) {
           setTimeout(() => {
@@ -1568,7 +1568,7 @@ export default function SandboxRenderer({
       
       // 监听微信强制加载消息
       if (event.data && event.data.type === 'WECHAT_FORCE_LOAD') {
-        console.log('WeChat force load message received');
+        
         // 微信强制加载，立即完成加载状态
         if (isLoading) {
           setIsLoading(false);
@@ -1579,7 +1579,7 @@ export default function SandboxRenderer({
       // 监听iframe高度变化消息 - 安全版本
       if (event.data && event.data.type === 'IFRAME_HEIGHT_CHANGE') {
         const { height, count } = event.data.data;
-        console.log('Iframe height change received:', height, 'count:', count);
+        
         
         // 只在非固定高度模式下调整，且高度合理范围内
         if (iframeRef.current && !fixedHeight && height > 0 && height < 10000) {
@@ -1590,7 +1590,7 @@ export default function SandboxRenderer({
           iframe.style.minHeight = `${newHeight}px`;
           setIframeHeight(`${newHeight}px`);
           
-          console.log('Iframe height updated to:', newHeight);
+          
         }
       }
     };
@@ -1619,18 +1619,7 @@ export default function SandboxRenderer({
           const docScrollHeight = docEl ? docEl.scrollHeight : 0;
           const docClientHeight = docEl ? docEl.clientHeight : 0;
           const docOffsetHeight = docEl ? docEl.offsetHeight : 0;
-          
-          console.log('Content dimensions:', { 
-            contentHeight, 
-            contentWidth, 
-            clientHeight, 
-            offsetHeight,
-            docScrollHeight,
-            docClientHeight,
-            docOffsetHeight,
-            iframeHeight: iframe.style.height,
-            iframeMinHeight: iframe.style.minHeight
-          });
+          // (debug log removed)
           
           // 使用最大的高度值，确保内容不被裁切（仅布局高度，不包含transform视觉高度）
           const maxHeight = Math.max(
@@ -1650,7 +1639,7 @@ export default function SandboxRenderer({
           
           setIframeHeight(`${newHeight}px`);
           
-          console.log('Adjusted iframe height to:', newHeight, 'from max content height:', maxHeight);
+          
           
           // 触发重排
           iframe.style.display = 'none';
@@ -1660,7 +1649,7 @@ export default function SandboxRenderer({
         }
       } catch (error) {
         // 跨域限制，无法访问iframe内容
-        console.log('无法访问iframe内容，使用默认高度:', error);
+        
       }
     }
   }, []);
@@ -1679,10 +1668,10 @@ export default function SandboxRenderer({
     
     // 微信浏览器特殊处理：强制设置加载状态
     if (isWeChat) {
-      console.log('WeChat browser refresh, setting up force load');
+      
       setTimeout(() => {
         if (isLoading) {
-          console.log('Force completing load for WeChat browser');
+          
           setIsLoading(false);
           onLoad?.();
         }
@@ -1727,7 +1716,7 @@ export default function SandboxRenderer({
           <div className="mt-2 space-y-1">
             <button
               onClick={() => {
-                console.log('Debug: Force complete load');
+                
                 setIsLoading(false);
                 onLoad?.();
               }}
@@ -1737,7 +1726,7 @@ export default function SandboxRenderer({
             </button>
             <button
               onClick={() => {
-                console.log('Debug: Refresh component');
+                
                 refresh();
               }}
               className="w-full px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
@@ -1746,7 +1735,7 @@ export default function SandboxRenderer({
             </button>
             <button
               onClick={() => {
-                console.log('Debug: Toggle loading state');
+                
                 setIsLoading(!isLoading);
               }}
               className="w-full px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
@@ -1755,7 +1744,7 @@ export default function SandboxRenderer({
             </button>
             <button
               onClick={() => {
-                console.log('Debug: Toggle WeChat mode');
+                
                 setUseWeChatMode(!useWeChatMode);
               }}
               className="w-full px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
@@ -1764,10 +1753,10 @@ export default function SandboxRenderer({
             </button>
             <button
               onClick={() => {
-                console.log('Debug: Test Data URL generation');
+                
                 const dataUrl = generateDataURL({ html, css, js, externalLinks, title: 'WeChat Sandbox' });
-                console.log('Generated Data URL length:', dataUrl.length);
-                console.log('Data URL preview:', dataUrl.substring(0, 200) + '...');
+                
+                
               }}
               className="w-full px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600"
             >
@@ -1898,7 +1887,7 @@ export default function SandboxRenderer({
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
-            console.log('Native iframe loaded successfully');
+            
             setIsLoading(false);
             // 启动性能监控
             const stopMonitoring = startPerformanceMonitoring();
@@ -1914,7 +1903,7 @@ export default function SandboxRenderer({
           }}
           onError={() => {
             const errorMsg = '原生iframe加载失败';
-            console.error('Native iframe error:', errorMsg);
+            
             handleError(errorMsg);
           }}
         />
@@ -1924,11 +1913,11 @@ export default function SandboxRenderer({
           ref={iframeRef}
           src={(() => {
             const dataUrl = generateDataURL({ html, css, js, externalLinks, title: 'WeChat Sandbox' });
-            console.log('WeChat mode: Data URL length:', dataUrl.length);
+            
             
             // 检查Data URL长度，微信可能有长度限制
             if (dataUrl.length > 1000000) { // 1MB限制
-              console.warn('Data URL too long for WeChat, length:', dataUrl.length);
+              
               return 'data:text/html;charset=utf-8,<html><body><h1>内容过长，微信无法加载</h1><p>Data URL长度: ' + dataUrl.length + '</p><p>建议：</p><ul><li>减少HTML/CSS/JS内容</li><li>使用外部资源链接</li><li>切换到srcDoc模式</li></ul></body></html>';
             }
             
@@ -1951,7 +1940,7 @@ export default function SandboxRenderer({
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
-            console.log('WeChat compatible iframe loaded successfully');
+            
             setIsLoading(false);
             // 启动性能监控
             const stopMonitoring = startPerformanceMonitoring();
@@ -1967,7 +1956,7 @@ export default function SandboxRenderer({
           }}
           onError={() => {
             const errorMsg = '微信兼容iframe加载失败';
-            console.error('WeChat iframe error:', errorMsg);
+            
             handleError(errorMsg);
           }}
         />
@@ -1993,7 +1982,7 @@ export default function SandboxRenderer({
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
-            console.log('Standard iframe loaded successfully');
+            
             setIsLoading(false);
             // 启动性能监控
             const stopMonitoring = startPerformanceMonitoring();
@@ -2009,7 +1998,7 @@ export default function SandboxRenderer({
           }}
           onError={() => {
             const errorMsg = '标准iframe加载失败';
-            console.error('Standard iframe error:', errorMsg);
+            
             handleError(errorMsg);
           }}
         />

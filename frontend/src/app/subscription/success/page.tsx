@@ -18,7 +18,6 @@ const SubscriptionSuccessContent: React.FC = () => {
     const sessionId = searchParams.get('session_id');
     if (sessionId) {
       // 这里可以验证支付会话状态
-      console.log('Payment session ID:', sessionId);
     }
     
     // 获取用户最新订阅状态

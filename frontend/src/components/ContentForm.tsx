@@ -995,12 +995,7 @@ export default function ContentForm({
             <div className="bg-gradient-to-br from-gray-100 to-white border border-gray-200 rounded-xl shadow flex flex-col h-[40rem]">
               <div className="text-xs text-gray-400 px-4 py-2 border-b border-gray-100 bg-white/80 rounded-t-xl">{mounted ? t('realTimePreview', { ns: 'content', defaultValue: 'Real-time Preview' }) : 'Real-time Preview'}</div>
               <div className="flex-1 relative">
-                {/* 调试信息 */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="absolute top-2 left-2 bg-yellow-100 border border-yellow-300 text-yellow-700 px-2 py-1 rounded text-xs z-20">
-                    HTML: {code_html?.length || 0} chars, CSS: {code_css?.length || 0} chars, JS: {code_js?.length || 0} chars
-                  </div>
-                )}
+                {/* 调试字符计数已移除 */}
                 
                 <SandboxRenderer
                   key={previewKey}
@@ -1015,10 +1010,8 @@ export default function ContentForm({
                     width: '100%'
                   }}
                   onError={(error) => {
-                    console.log('Preview error:', error);
                   }}
                   onLoad={() => {
-                    console.log('Preview loaded successfully');
                   }}
                 />
               </div>

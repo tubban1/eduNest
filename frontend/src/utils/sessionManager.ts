@@ -27,7 +27,6 @@ export const clearAllSessions = (): void => {
     keys.forEach(key => {
       if (key.includes('sb-') && key.includes('-auth-token')) {
         localStorage.removeItem(key);
-        console.log('Cleared localStorage session:', key);
       }
     });
     
@@ -36,7 +35,6 @@ export const clearAllSessions = (): void => {
     sessionKeys.forEach(key => {
       if (key.includes('sb-') && key.includes('-auth-token')) {
         sessionStorage.removeItem(key);
-        console.log('Cleared sessionStorage session:', key);
       }
     });
     
@@ -45,7 +43,6 @@ export const clearAllSessions = (): void => {
       document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
     });
     
-    console.log('All sessions cleared successfully');
   } catch (error) {
     console.error('Error clearing sessions:', error);
   }
@@ -115,11 +112,8 @@ export const enforceSingleAccount = async (): Promise<void> => {
     keys.forEach(key => {
       if (key.includes('sb-') && key.includes('-auth-token') && key !== 'sb-zayoczhybuegvtpcsgso-auth-token') {
         localStorage.removeItem(key);
-        console.log('Cleared conflicting session:', key);
       }
     });
-    
-    console.log('Single account enforced successfully');
   } catch (error) {
     console.error('Error enforcing single account:', error);
     // 出错时清除所有session

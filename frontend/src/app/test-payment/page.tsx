@@ -7,7 +7,6 @@ const TestPaymentPage: React.FC = () => {
   const [showCheckout, setShowCheckout] = useState(false);
 
   const handleSuccess = (subscription: any) => {
-    console.log('订阅成功:', subscription);
     alert('订阅成功！');
     setShowCheckout(false);
   };
@@ -18,7 +17,6 @@ const TestPaymentPage: React.FC = () => {
   };
 
   const handleCancel = () => {
-    console.log('用户取消支付');
     setShowCheckout(false);
   };
 

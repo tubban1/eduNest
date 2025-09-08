@@ -40,7 +40,6 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({
         region: userRegion.code,
       });
 
-      console.log('支付会话响应:', response);
 
       // 检查响应结构
       if (response?.success && response?.session?.url) {

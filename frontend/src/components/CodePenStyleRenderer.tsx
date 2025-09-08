@@ -159,7 +159,6 @@ export default function CodePenStyleRenderer({
           overflow: 'auto'
         }}
         onLoad={() => {
-          console.log('CodePen style iframe loaded successfully');
           setIsLoading(false);
           onLoad?.();
         }}
