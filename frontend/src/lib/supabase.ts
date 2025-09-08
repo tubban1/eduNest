@@ -33,7 +33,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,      // 检测URL中的session
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'sb-zayoczhybuegvtpcsgso-auth-token',
-    debug: process.env.NODE_ENV === 'development'  // 开发环境启用调试
+    debug: false  // 关闭调试日志
   },
   global: {
     headers: {

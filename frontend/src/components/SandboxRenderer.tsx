@@ -840,6 +840,107 @@ export default function SandboxRenderer({
       }, 100);
     });
     
+    // 安全的高度监听机制 - 防止无限循环
+    (function() {
+      var lastHeight = 0;
+      var isNotifying = false;
+      var notificationCount = 0;
+      var maxNotifications = 5; // 最多通知5次，防止无限循环
+      var maxHeight = 0;
+      
+      // 计算内容高度
+      function calculateHeight() {
+        var bodyHeight = document.body.scrollHeight;
+        var docHeight = document.documentElement.scrollHeight;
+        var currentHeight = Math.max(bodyHeight, docHeight);
+        
+        // 只记录增加的高度，防止高度回退
+        if (currentHeight > maxHeight) {
+          maxHeight = currentHeight;
+        }
+        
+        return maxHeight;
+      }
+      
+      // 通知父页面高度变化
+      function notifyHeightChange() {
+        if (isNotifying || notificationCount >= maxNotifications) {
+          return; // 防止重复通知和无限循环
+        }
+        
+        var newHeight = calculateHeight();
+        
+        // 只有高度显著变化才通知（阈值50px）
+        if (Math.abs(newHeight - lastHeight) > 50) {
+          lastHeight = newHeight;
+          isNotifying = true;
+          notificationCount++;
+          
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+              type: 'IFRAME_HEIGHT_CHANGE',
+              data: { 
+                height: newHeight,
+                count: notificationCount
+              }
+            }, '*');
+          }
+          
+          // 通知完成后重置标志
+          setTimeout(function() {
+            isNotifying = false;
+          }, 1000);
+        }
+      }
+      
+      // 防抖函数
+      function debounce(func, wait) {
+        var timeout;
+        return function() {
+          clearTimeout(timeout);
+          timeout = setTimeout(func, wait);
+        };
+      }
+      
+      var debouncedCheck = debounce(notifyHeightChange, 500);
+      
+      // 基础事件监听
+      var checkEvents = ['load', 'resize', 'DOMContentLoaded'];
+      checkEvents.forEach(function(event) {
+        window.addEventListener(event, debouncedCheck);
+      });
+      
+      // 用户交互事件监听 - 只监听关键交互
+      var interactionEvents = ['click', 'touchstart', 'touchend'];
+      interactionEvents.forEach(function(event) {
+        document.addEventListener(event, debouncedCheck);
+      });
+      
+      // 监听图片加载
+      document.addEventListener('DOMContentLoaded', function() {
+        var images = document.querySelectorAll('img');
+        images.forEach(function(img) {
+          img.addEventListener('load', debouncedCheck);
+        });
+      });
+      
+      // 使用MutationObserver监听DOM变化 - 轻量级监听
+      if (window.MutationObserver) {
+        var observer = new MutationObserver(debounce(function() {
+          // 只在DOM结构变化时检查高度
+          setTimeout(debouncedCheck, 100);
+        }, 300));
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: false // 不监听属性变化，减少性能开销
+        });
+      }
+      
+      // 初始通知（延迟1秒）
+      setTimeout(notifyHeightChange, 1000);
+    })();
+    
     ${detectAndInitializeLibraries()}
   </script>
 </body>
@@ -1474,13 +1575,31 @@ export default function SandboxRenderer({
           onLoad?.();
         }
       }
+      
+      // 监听iframe高度变化消息 - 安全版本
+      if (event.data && event.data.type === 'IFRAME_HEIGHT_CHANGE') {
+        const { height, count } = event.data.data;
+        console.log('Iframe height change received:', height, 'count:', count);
+        
+        // 只在非固定高度模式下调整，且高度合理范围内
+        if (iframeRef.current && !fixedHeight && height > 0 && height < 10000) {
+          const iframe = iframeRef.current;
+          const newHeight = Math.max(100, Math.min(height, 8000)); // 限制在100-8000px之间
+          
+          iframe.style.height = `${newHeight}px`;
+          iframe.style.minHeight = `${newHeight}px`;
+          setIframeHeight(`${newHeight}px`);
+          
+          console.log('Iframe height updated to:', newHeight);
+        }
+      }
     };
 
     window.addEventListener('message', handleMessage);
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, []);
+  }, [fixedHeight, isLoading, onLoad]);
 
   // 动态调整iframe高度，确保内容完整展示
   const adjustIframeHeight = useCallback(() => {
