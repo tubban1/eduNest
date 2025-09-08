@@ -40,7 +40,7 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'de-DE', label: 'Deutsch' },
   { code: 'fr-FR', label: 'Français' },
 ];
-export const DEFAULT_LANGUAGE = 'zh-CN'; // 改为中文作为默认语言，避免水合错误
+export const DEFAULT_LANGUAGE = 'en-US'; // 默认语言设为英文，确保SSR/CSR一致
 
 const resources = {
   'en-US': {

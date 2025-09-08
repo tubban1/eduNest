@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN">
+    <html lang="en-US">
       <body>
         <ErrorBoundary>
           <AppClientProviders>
