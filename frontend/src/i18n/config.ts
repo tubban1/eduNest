@@ -97,7 +97,6 @@ i18n
     // lng: DEFAULT_LANGUAGE,
     supportedLngs: SUPPORTED_LANGUAGES.map(l => l.code).concat(['zh', 'en', 'de', 'fr']), // 包含别名
     ns: ['common', 'navigation', 'auth', 'content', 'home', 'referral', 'credits', 'aiProvider'],
-    load: 'languageOnly',
     defaultNS: 'common',
     interpolation: { escapeValue: false },
     returnObjects: true,
