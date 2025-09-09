@@ -5,10 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { api, Content } from '@/lib/api';
 import ContentForm from '@/components/ContentForm';
 import { downloadStandalonePage, generateStandaloneContentPage, ContentPageData } from '@/utils/contentPageGenerator';
+import { useTranslation } from 'react-i18next';
+import { useSmartBack } from '@/utils/navigation';
 
 export default function EditContentPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation('common');
+  const { handleSmartBack } = useSmartBack();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,10 +98,10 @@ export default function EditContentPage() {
           <div className="text-red-600 text-xl mb-4">加载失败</div>
           <p className="text-gray-600 mb-4">{error || '内容不存在'}</p>
           <button
-            onClick={() => router.back()}
+            onClick={handleSmartBack}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            返回
+            {t('back')}
           </button>
         </div>
       </div>

@@ -747,7 +747,7 @@ export default function ContentForm({
           <Logo size="md" />
         </div>
         <div className="flex justify-between items-center px-6 pt-6 pb-2 border-b border-gray-100">
-          <button onClick={() => router.push('/content')} className="text-gray-400 hover:text-black text-sm font-medium transition">{mounted ? t('backToList', { ns: 'common', defaultValue: '← Back to List' }) : '← Back to List'}</button>
+          <button onClick={() => router.push('/content')} className="text-gray-400 hover:text-black text-sm font-medium transition">{mounted ? t('back', { ns: 'common', defaultValue: '← Back' }) : '← Back'}</button>
           <div className="flex gap-2">
             <button 
               className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition" 

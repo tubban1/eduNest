@@ -8,11 +8,15 @@ import ContentActionButtons from '@/components/ui/ContentActionButtons';
 import { api, Content } from '@/lib/api';
 import SandboxRenderer from '@/components/SandboxRenderer';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from 'react-i18next';
+import { useSmartBack } from '@/utils/navigation';
 
 export default function ContentPage() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useTranslation('common');
+  const { handleSmartBack } = useSmartBack();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -170,10 +174,10 @@ export default function ContentPage() {
           <div className="text-red-600 text-xl mb-4">加载失败</div>
           <p className="text-gray-600 mb-4">{error || '内容不存在'}</p>
           <button
-            onClick={() => router.back()}
+            onClick={handleSmartBack}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            返回
+            {t('back')}
           </button>
         </div>
       </div>
@@ -202,10 +206,10 @@ export default function ContentPage() {
             </button>
             
             <button
-              onClick={() => router.back()}
+              onClick={handleSmartBack}
               className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
             >
-              ← 返回
+              ← {t('back')}
             </button>
           </div>
           
@@ -226,10 +230,10 @@ export default function ContentPage() {
           <div className="flex items-center mb-3">
             {/* 左侧：返回按钮 */}
             <button
-              onClick={() => router.back()}
+              onClick={handleSmartBack}
               className="px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors mr-3"
             >
-              ← 返回
+              ← {t('back')}
             </button>
             
             {/* 中间：标题 */}
