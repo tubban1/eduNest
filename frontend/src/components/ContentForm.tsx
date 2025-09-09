@@ -10,6 +10,7 @@ import AiLoadingAnimation from './AiLoadingAnimation';
 import { useTranslation } from 'react-i18next';
 import { config } from '@/lib/config';
 import SandboxRenderer from './SandboxRenderer';
+import AIProviderSelector from './AIProviderSelector';
 
 const DEFAULT_HTML = '<div id="app">{{ message }}</div>';
 const DEFAULT_CSS = 'body { font-family: sans-serif; } #app { padding: 20px; }';
@@ -133,6 +134,7 @@ export default function ContentForm({
   const [learningStage, setLearningStage] = useState('understanding');
   const [aiGenerating, setAiGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false); // 新增：标记是否已经生成过内容
+  const [aiProvider, setAiProvider] = useState<string>(''); // AI提供商选择
   
   // AI修复相关状态
   const [fixError, setFixError] = useState("");
@@ -561,7 +563,8 @@ export default function ContentForm({
         knowledgePoint,
         learningStage,
         description,
-        language_code: language
+        language_code: language,
+        provider: user?.role === 'admin' ? aiProvider : undefined // 只有管理员可以指定提供商
       });
 
       if (response.success && response.data) {
@@ -641,6 +644,10 @@ export default function ContentForm({
         js: code_js,
         external_links: external_links.split(/\n|,|;/).map(s => s.trim()).filter(Boolean)
       };
+      // 管理员可选择 provider
+      if (user && user.role === 'admin' && aiProvider) {
+        requestBody.provider = aiProvider;
+      }
       
       // 如果是编辑模式，添加 content_id
       if (mode === 'edit' && contentId) {
@@ -843,6 +850,17 @@ export default function ContentForm({
                             onClick={() => !isAiFormDisabled && setShowLanguagePicker(true)}
                           />
                         </div>
+                        {/* AI提供商选择器 - 仅管理员可见 */}
+                        {user && user.role === 'admin' && (
+                          <div>
+                            <AIProviderSelector
+                              selectedProvider={aiProvider}
+                              onProviderChange={setAiProvider}
+                              disabled={isAiFormDisabled}
+                              className="mb-2"
+                            />
+                          </div>
+                        )}
                       </div>
                       <button
                         type="button"

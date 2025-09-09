@@ -14,7 +14,8 @@ router.post('/generate', [
   body('knowledgePoint').isString().isLength({ min: 1, max: 1000 }).withMessage('知识点不能为空且长度不能超过1000字'),
   body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
   body('description').optional().isString().isLength({ max: 1000 }).withMessage('描述长度不能超过1000字'),
-  body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法')
+  body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
+  body('provider').optional().isIn(['ark', 'kimi']).withMessage('provider 必须是 ark 或 kimi')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -25,7 +26,7 @@ router.post('/generate', [
       });
     }
 
-    const { knowledgePoint, learningStage, description, language_code } = req.body;
+    const { knowledgePoint, learningStage, description, language_code, provider } = req.body;
 
     // 验证学习阶段
     if (!aiService.validateLearningStage(learningStage)) {
@@ -49,7 +50,7 @@ router.post('/generate', [
       }
     }
 
-    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate');
+    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate', provider);
 
     if (result.success) {
       logger.info(`AI生成成功: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${result.data?.language_code || language_code || '未知'}`);

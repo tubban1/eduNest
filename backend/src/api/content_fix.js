@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 // POST /api/content/fix
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { content_id, note, html, css, js, external_links, content_type, language_code, title, description } = req.body;
+    const { content_id, note, html, css, js, external_links, content_type, language_code, title, description, provider } = req.body;
     if (!html || !js) {
       return res.status(400).json({ success: false, error: 'html, js 必填' });
     }
@@ -39,7 +39,8 @@ router.post('/', authenticateToken, async (req, res) => {
         language: original.language_code,
         title: original.title,
         description: original.description,
-        user_id: userId
+        user_id: userId,
+        provider
       });
       if (!aiResult.success) {
         return res.status(500).json({ success: false, error: aiResult.error });
@@ -66,7 +67,8 @@ router.post('/', authenticateToken, async (req, res) => {
         language: language_code || 'zh-CN',
         title: title || '未命名内容',
         description: description || '',
-        user_id: userId
+        user_id: userId,
+        provider
       });
       if (!aiResult.success) {
         // AI使用日志由aiService.fixEducationalContent统一记录

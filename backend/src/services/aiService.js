@@ -5,6 +5,7 @@ const { logAIUsage } = require('./database');
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('./database');
+const AIProviderFactory = require('./aiProviderFactory');
 
 // 支持的库映射表缓存
 let supportedLibrariesCache = null;
@@ -44,7 +45,7 @@ const loadSupportedLibraries = () => {
 const logAIUsageWithDefaults = async (params) => {
   const defaultParams = {
     user_id: null,
-    model_name: ARK_MODEL,
+    model_name: null,
     user_query: '',
     action_type: 'unknown',
     input_tokens: 0,
@@ -86,6 +87,9 @@ const safeReplace = (template, placeholder, value) => {
 const ARK_API_KEY = process.env.ARK_API_KEY;
 const ARK_MODEL = process.env.ARK_MODEL || 'kimi-k2-250711';
 const ARK_URL = process.env.ARK_URL || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+
+// 初始化AI提供商工厂
+const aiProviderFactory = new AIProviderFactory();
 
 // 系统提示词（来自AI_KNOWLEDGE.md）
 const SYSTEM_PROMPT = `You are an expert Vue 3 educational interaction designer and frontend engineer.
@@ -193,13 +197,10 @@ const LEARNING_STAGE_NAMES = {
 };
 
 // 生成教育交互内容
-const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate') => {
+const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate', provider = null) => {
   let logId = null;
   let logParams = {};
   try {
-    if (!ARK_API_KEY || ARK_API_KEY === 'your_ark_api_key_here') {
-      throw new Error('ARK_API_KEY未配置或使用默认值，请在.env文件中配置真实的API密钥');
-    }
     // 构建完整的提示词
     const userPrompt = safeReplace(LEARNING_STAGE_PROMPTS[learningStage], '{{knowledge_point}}', knowledgePoint);
     let systemPromptWithKnowledge = safeReplace(SYSTEM_PROMPT, '{{knowledge_point}}', knowledgePoint);
@@ -208,52 +209,37 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     } else {
       systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', 'en-US');
     }
-    const requestPayload = {
-      model: ARK_MODEL,
-      messages: [
-        { role: 'system', content: systemPromptWithKnowledge },
-        { role: 'user', content: userPrompt }
-      ],
-      max_tokens: 24000
-    };
-    const response = await fetch(ARK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ARK_API_KEY}`,
-      },
-      body: JSON.stringify(requestPayload)
+    
+    const messages = [
+      { role: 'system', content: systemPromptWithKnowledge },
+      { role: 'user', content: userPrompt }
+    ];
+
+    // 使用AI提供商工厂发送请求
+    const result = await aiProviderFactory.createChatCompletion({
+      provider: provider,
+      messages: messages,
+      max_tokens: 24000,
+      temperature: 0.6
     });
-    const createdAt = Date.now() / 1000;
-    if (!response.ok) {
-      // 记录失败日志
-      await logAIUsageWithDefaults({
-        user_id: userId,
-        user_query: knowledgePoint,
-        action_type: actionType,
-        request_payload: requestPayload,
-        response_metadata: { status: response.status, statusText: response.statusText },
-        error_message: `AI API请求失败: ${response.status} ${response.statusText}`
-      });
-      throw new Error(`AI API请求失败: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content;
+    
+    const aiResponse = result.content;
     // tokens字段名修正，全部用prompt_tokens/completion_tokens/total_tokens
-    const usage = data.usage || {};
+    const usage = result.usage || {};
     const inputTokens = usage.prompt_tokens || 0;
     const outputTokens = usage.completion_tokens || 0;
     const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
       await logAIUsageWithDefaults({
         user_id: userId,
+        model_name: result.model,
         user_query: knowledgePoint,
         action_type: actionType,
         input_tokens: inputTokens,
         output_tokens: outputTokens,
         total_tokens: totalTokens,
-        request_payload: requestPayload,
-        response_metadata: data,
+        request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+        response_metadata: { provider: result.provider, model: result.model },
         error_message: 'AI返回内容为空'
       });
       throw new Error('AI返回内容为空');
@@ -276,14 +262,15 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         // 日志：成功解析JSON
         await logAIUsageWithDefaults({
           user_id: userId,
+          model_name: result.model,
           user_query: knowledgePoint,
           action_type: actionType,
           input_tokens: inputTokens,
           output_tokens: outputTokens,
           total_tokens: totalTokens,
-          request_payload: requestPayload,
-          response_metadata: data,
-          created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+          request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+          response_metadata: { provider: result.provider, model: result.model, raw: result.response },
+          created_at: new Date(result.created ? result.created * 1000 : Date.now()),
           is_json_valid: true,
           error_message: null
         });
@@ -294,14 +281,15 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
       } catch (parseError) {
         await logAIUsageWithDefaults({
           user_id: userId,
+          model_name: result.model,
           user_query: knowledgePoint,
           action_type: actionType,
           input_tokens: inputTokens,
           output_tokens: outputTokens,
           total_tokens: totalTokens,
-          request_payload: requestPayload,
-          response_metadata: data,
-          created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+          request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+          response_metadata: { provider: result.provider, model: result.model, raw: result.response },
+          created_at: new Date(result.created ? result.created * 1000 : Date.now()),
           is_json_valid: false,
           error_message: `JSON解析失败: ${parseError.message}`
         });
@@ -314,14 +302,15 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     } else {
       await logAIUsageWithDefaults({
         user_id: userId,
+        model_name: result.model,
         user_query: knowledgePoint,
         action_type: actionType,
         input_tokens: inputTokens,
         output_tokens: outputTokens,
         total_tokens: totalTokens,
-        request_payload: requestPayload,
-        response_metadata: data,
-        created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+        request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+        response_metadata: { provider: result.provider, model: result.model },
+        created_at: new Date(result.created ? result.created * 1000 : Date.now()),
         is_json_valid: false,
         error_message: '未找到JSON格式'
       });
@@ -462,8 +451,8 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
   }
 };
 
-// AI修复接口
-const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language_code, title, description, user_id = null }) => {
+// AI修复接口（已接入多提供商）
+const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language_code, title, description, user_id = null, provider = null }) => {
   let logParams = {};
   try {
     // 构建修复prompt
@@ -503,57 +492,33 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
       .replace('{{js}}', js)
       .replace('{{external_links}}', JSON.stringify(external_links || []));
 
-    const response = await fetch(process.env.ARK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ARK_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: process.env.ARK_MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: finalUserPrompt }
-        ],
-        max_tokens: 24000
-      })
+    // 使用AI提供商工厂发送请求
+    const result = await aiProviderFactory.createChatCompletion({
+      provider,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: finalUserPrompt }
+      ],
+      max_tokens: 24000,
+      temperature: 0.6
     });
-    const createdAt = Date.now() / 1000;
-    if (!response.ok) {
-      // API请求失败时，无法获取token信息
-      await logAIUsage({
-        user_id,
-        model_name: process.env.ARK_MODEL,
-        user_query: note,
-        action_type: 'fix',
-        input_tokens: 0,
-        output_tokens: 0,
-        total_tokens: 0,
-        request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
-        response_metadata: { status: response.status, statusText: response.statusText },
-        created_at: new Date(),
-        is_json_valid: false,
-        is_render_success: false,
-        error_message: `AI API请求失败: ${response.status} ${response.statusText}`
-      });
-      return { success: false, error: `AI API请求失败: ${response.status}` };
-    }
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content;
-    const usage = data.usage || {};
+
+    const aiResponse = result.content;
+    const usage = result.usage || {};
     const promptTokens = usage.prompt_tokens || 0;
     const completionTokens = usage.completion_tokens || 0;
     const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
       await logAIUsageWithDefaults({
         user_id,
+        model_name: result.model,
         user_query: note,
         action_type: 'fix',
         input_tokens: promptTokens,
         output_tokens: completionTokens,
         total_tokens: totalTokens,
         request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
-        response_metadata: data,
+        response_metadata: { provider: result.provider, model: result.model, raw: result.response },
         error_message: 'AI返回内容为空'
       });
       return { success: false, error: 'AI返回内容为空' };
@@ -590,14 +555,15 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
         
         await logAIUsageWithDefaults({
           user_id,
+          model_name: result.model,
           user_query: note,
           action_type: 'fix',
           input_tokens: promptTokens,
           output_tokens: completionTokens,
           total_tokens: totalTokens,
           request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
-          response_metadata: data,
-          created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+          response_metadata: { provider: result.provider, model: result.model, raw: result.response },
+          created_at: new Date(result.created ? result.created * 1000 : Date.now()),
           is_json_valid: true,
           error_message: null
         });
@@ -608,15 +574,15 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
     } catch (e) {
       await logAIUsage({
         user_id,
-        model_name: process.env.ARK_MODEL,
+        model_name: result.model,
         user_query: note,
         action_type: 'fix',
         input_tokens: promptTokens,
         output_tokens: completionTokens,
         total_tokens: totalTokens,
         request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
-        response_metadata: data,
-        created_at: new Date(data.created_at ? data.created_at * 1000 : Date.now()),
+        response_metadata: { provider: result.provider, model: result.model, raw: result.response },
+        created_at: new Date(result.created ? result.created * 1000 : Date.now()),
         is_json_valid: false,
         is_render_success: false,
         error_message: `JSON解析失败: ${e.message}`
@@ -775,6 +741,46 @@ router.post('/api/ai/log_render_status', async (req, res) => {
   }
 });
 
+// 获取可用的AI提供商列表（注意：该router会挂载在 /api/ai 下，这里使用相对路径）
+router.get('/providers', async (req, res) => {
+  try {
+    const providers = aiProviderFactory.getAvailableProviders();
+    return res.json({ success: true, providers });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// 测试AI提供商连接
+router.post('/test-provider', async (req, res) => {
+  try {
+    const { provider } = req.body;
+    const result = await aiProviderFactory.testProvider(provider);
+    return res.json({ success: true, result });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// 获取当前默认提供商
+router.get('/default-provider', async (req, res) => {
+  try {
+    const defaultProvider = aiProviderFactory.defaultProvider;
+    const provider = aiProviderFactory.getProvider();
+    return res.json({ 
+      success: true, 
+      defaultProvider,
+      provider: {
+        key: defaultProvider,
+        name: provider.name,
+        model: provider.model
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = {
   generateEducationalContent,
   getSupportedLearningStages,
@@ -784,5 +790,7 @@ module.exports = {
   fixEducationalContent,
   safeReplace,  // 导出安全替换函数供测试使用
   testSafeReplace,  // 导出测试函数
-  replaceWithSupportedLibraries // 导出替换库链接函数
+  replaceWithSupportedLibraries, // 导出替换库链接函数
+  aiProviderFactory, // 导出AI提供商工厂
+  router // 导出路由
 }; 

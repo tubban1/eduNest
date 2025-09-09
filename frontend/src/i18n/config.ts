@@ -11,6 +11,7 @@ import enUSHome from './locales/en-US/home.json';
 import enUSWeChat from './locales/en-US/wechat.json';
 import enUSReferral from './locales/en-US/referral.json';
 import enUSCredits from './locales/en-US/credits.json';
+import enUSAiProvider from './locales/en-US/aiProvider.json';
 
 import zhCNCommon from './locales/zh-CN/common.json';
 import zhCNNavigation from './locales/zh-CN/navigation.json';
@@ -19,6 +20,7 @@ import zhCNHome from './locales/zh-CN/home.json';
 import zhCNWeChat from './locales/zh-CN/wechat.json';
 import zhCNReferral from './locales/zh-CN/referral.json';
 import zhCNCredits from './locales/zh-CN/credits.json';
+import zhCNAiProvider from './locales/zh-CN/aiProvider.json';
 
 import deDECommon from './locales/de-DE/common.json';
 import deDENavigation from './locales/de-DE/navigation.json';
@@ -26,6 +28,7 @@ import deDEContent from './locales/de-DE/content.json';
 import deDEHome from './locales/de-DE/home.json';
 import deDEReferral from './locales/de-DE/referral.json';
 import deDECredits from './locales/de-DE/credits.json';
+import deDEAiProvider from './locales/de-DE/aiProvider.json';
 
 import frFRCommon from './locales/fr-FR/common.json';
 import frFRNavigation from './locales/fr-FR/navigation.json';
@@ -33,6 +36,7 @@ import frFRContent from './locales/fr-FR/content.json';
 import frFRHome from './locales/fr-FR/home.json';
 import frFRReferral from './locales/fr-FR/referral.json';
 import frFRCredits from './locales/fr-FR/credits.json';
+import frFRAiProvider from './locales/fr-FR/aiProvider.json';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'zh-CN', label: '中文' },
@@ -51,6 +55,7 @@ const resources = {
     wechat: enUSWeChat,
     referral: enUSReferral,
     credits: enUSCredits,
+    aiProvider: enUSAiProvider,
   },
   'zh-CN': {
     common: zhCNCommon,
@@ -60,6 +65,7 @@ const resources = {
     wechat: zhCNWeChat,
     referral: zhCNReferral,
     credits: zhCNCredits,
+    aiProvider: zhCNAiProvider,
   },
   'de-DE': {
     common: deDECommon,
@@ -68,6 +74,7 @@ const resources = {
     home: deDEHome,
     referral: deDEReferral,
     credits: deDECredits,
+    aiProvider: deDEAiProvider,
   },
   'fr-FR': {
     common: frFRCommon,
@@ -76,6 +83,7 @@ const resources = {
     home: frFRHome,
     referral: frFRReferral,
     credits: frFRCredits,
+    aiProvider: frFRAiProvider,
   },
 };
 
@@ -88,7 +96,8 @@ i18n
     // 关键修复：不再强制设定 lng，交给 LanguageDetector + localStorage 持久化
     // lng: DEFAULT_LANGUAGE,
     supportedLngs: SUPPORTED_LANGUAGES.map(l => l.code).concat(['zh', 'en', 'de', 'fr']), // 包含别名
-    ns: ['common', 'navigation', 'auth', 'content', 'home', 'referral', 'credits'],
+    ns: ['common', 'navigation', 'auth', 'content', 'home', 'referral', 'credits', 'aiProvider'],
+    load: 'languageOnly',
     defaultNS: 'common',
     interpolation: { escapeValue: false },
     returnObjects: true,

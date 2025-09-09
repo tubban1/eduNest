@@ -15,6 +15,7 @@ const collectionListsRoutes = require('./api/collection_lists');
 const userCollectionsRoutes = require('./api/user_collections');
 const userContentRoutes = require('./api/user_content');
 const aiRoutes = require('./api/ai');
+const { router: aiServiceRoutes } = require('./services/aiService');
 const contentFixRoutes = require('./api/content_fix');
 const creditsRoutes = require('./api/credits');
 const referralsRoutes = require('./api/referrals');
@@ -146,6 +147,7 @@ app.use('/api/user_content', userContentRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
 app.use("/api/payments", paymentsRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/ai", aiServiceRoutes);
 // 404 处理
 app.use('*', (req, res) => {
   res.status(404).json({ 
