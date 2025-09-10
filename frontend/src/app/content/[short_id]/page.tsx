@@ -189,11 +189,7 @@ export default function ContentPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {isWeChat && (
-        <div className="bg-amber-50 border-b border-amber-300 text-amber-800 text-sm px-4 py-2 text-center">
-          🌐 当前为微信浏览器，若出现显示问题，可点击页面右上角菜单选择“在浏览器中打开”。
-        </div>
-      )}
+      {/* 移除页面级微信提示，统一由 Renderer 内部处理 */}
       {/* 页面头部 */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-3">
