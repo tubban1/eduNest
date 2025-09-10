@@ -7,6 +7,7 @@ import Image from 'next/image';
 import ContentActionButtons from '@/components/ui/ContentActionButtons';
 import { api, Content } from '@/lib/api';
 import SandboxRenderer from '@/components/SandboxRenderer';
+import WeChatCompatibleRenderer from '@/components/WeChatCompatibleRenderer';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
@@ -282,28 +283,47 @@ export default function ContentPage() {
       {/* 内容区域 */}
       <div className="w-full">
         <div className="w-full">
-          <SandboxRenderer
-            html={content.code_html || ''}
-            css={content.code_css || ''}
-            js={content.code_js || ''}
-            externalLinks={content.external_links || []}
-            enableLibrarySupport={true}
-            enablePerformance={true}
-            enableErrorBoundary={true}
-            className="w-full"
-            style={{ 
-              width: '100%',
-              height: 'auto', // 改为auto，让iframe内容决定高度
-              minHeight: 'calc(100vh - 160px)', // 保持最小高度
-              border: 'none',
-              margin: '0',
-              padding: '0'
-            }}
-            onError={(error) => {
-            }}
-            onLoad={() => {
-            }}
-          />
+          {isWeChat ? (
+            <WeChatCompatibleRenderer
+              html={content.code_html || ''}
+              css={content.code_css || ''}
+              js={content.code_js || ''}
+              externalLinks={content.external_links || []}
+              externalUrl={`/content/${content.short_id}/standalone`}
+              className="w-full"
+              style={{ 
+                width: '100%',
+                height: 'auto',
+                minHeight: 'calc(100vh - 160px)',
+                border: 'none',
+                margin: '0',
+                padding: '0'
+              }}
+              onError={() => {}}
+              onLoad={() => {}}
+            />
+          ) : (
+            <SandboxRenderer
+              html={content.code_html || ''}
+              css={content.code_css || ''}
+              js={content.code_js || ''}
+              externalLinks={content.external_links || []}
+              enableLibrarySupport={true}
+              enablePerformance={true}
+              enableErrorBoundary={true}
+              className="w-full"
+              style={{ 
+                width: '100%',
+                height: 'auto',
+                minHeight: 'calc(100vh - 160px)',
+                border: 'none',
+                margin: '0',
+                padding: '0'
+              }}
+              onError={() => {}}
+              onLoad={() => {}}
+            />
+          )}
         </div>
       </div>
     </div>
