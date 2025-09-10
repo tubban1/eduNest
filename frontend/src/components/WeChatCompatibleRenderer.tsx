@@ -9,6 +9,7 @@ interface WeChatCompatibleRendererProps {
   js: string;
   externalLinks: string | string[];
   externalUrl?: string; // 部署在独立服务器上的可公开访问URL
+  title?: string; // 为兼容旧调用保留（当前不直接使用）
   className?: string;
   style?: React.CSSProperties;
   onError?: (error: string) => void;
@@ -26,6 +27,7 @@ export default function WeChatCompatibleRenderer({
   js,
   externalLinks,
   externalUrl,
+  title, // 占位以兼容调用方
   className,
   style,
   onError,
