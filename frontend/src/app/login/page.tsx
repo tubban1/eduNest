@@ -94,8 +94,10 @@ function LoginForm() {
       
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border p-8 flex flex-col gap-6">
         <div className="text-center mb-2">
-          <Logo size="md" />
-          <LanguageSelector variant="button" />
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Logo size="md" />
+            <LanguageSelector variant="button" />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">{mounted ? t('login', { ns: 'auth', defaultValue: 'Login' }) : 'Login'}</h1>
           <p className="text-gray-500 text-sm">{mounted ? t('loginWith', { ns: 'auth', defaultValue: 'Sign in with email/password or Google' }) : 'Sign in with email/password or Google'}</p>
         </div>

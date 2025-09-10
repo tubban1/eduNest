@@ -12,6 +12,7 @@ import enUSWeChat from './locales/en-US/wechat.json';
 import enUSReferral from './locales/en-US/referral.json';
 import enUSCredits from './locales/en-US/credits.json';
 import enUSAiProvider from './locales/en-US/aiProvider.json';
+import enUSAuth from './locales/en-US/auth.json';
 
 import zhCNCommon from './locales/zh-CN/common.json';
 import zhCNNavigation from './locales/zh-CN/navigation.json';
@@ -21,6 +22,7 @@ import zhCNWeChat from './locales/zh-CN/wechat.json';
 import zhCNReferral from './locales/zh-CN/referral.json';
 import zhCNCredits from './locales/zh-CN/credits.json';
 import zhCNAiProvider from './locales/zh-CN/aiProvider.json';
+import zhCNAuth from './locales/zh-CN/auth.json';
 
 import deDECommon from './locales/de-DE/common.json';
 import deDENavigation from './locales/de-DE/navigation.json';
@@ -29,6 +31,7 @@ import deDEHome from './locales/de-DE/home.json';
 import deDEReferral from './locales/de-DE/referral.json';
 import deDECredits from './locales/de-DE/credits.json';
 import deDEAiProvider from './locales/de-DE/aiProvider.json';
+import deDEAuth from './locales/de-DE/auth.json';
 
 import frFRCommon from './locales/fr-FR/common.json';
 import frFRNavigation from './locales/fr-FR/navigation.json';
@@ -37,6 +40,7 @@ import frFRHome from './locales/fr-FR/home.json';
 import frFRReferral from './locales/fr-FR/referral.json';
 import frFRCredits from './locales/fr-FR/credits.json';
 import frFRAiProvider from './locales/fr-FR/aiProvider.json';
+import frFRAuth from './locales/fr-FR/auth.json';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'zh-CN', label: '中文' },
@@ -56,6 +60,7 @@ const resources = {
     referral: enUSReferral,
     credits: enUSCredits,
     aiProvider: enUSAiProvider,
+    auth: enUSAuth,
   },
   'zh-CN': {
     common: zhCNCommon,
@@ -66,6 +71,7 @@ const resources = {
     referral: zhCNReferral,
     credits: zhCNCredits,
     aiProvider: zhCNAiProvider,
+    auth: zhCNAuth,
   },
   'de-DE': {
     common: deDECommon,
@@ -75,6 +81,7 @@ const resources = {
     referral: deDEReferral,
     credits: deDECredits,
     aiProvider: deDEAiProvider,
+    auth: deDEAuth,
   },
   'fr-FR': {
     common: frFRCommon,
@@ -84,6 +91,7 @@ const resources = {
     referral: frFRReferral,
     credits: frFRCredits,
     aiProvider: frFRAiProvider,
+    auth: frFRAuth,
   },
 };
 
