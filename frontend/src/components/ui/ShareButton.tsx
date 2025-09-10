@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Share2, Copy, Check, Mail, Facebook, Twitter, Linkedin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,6 +28,8 @@ export default function ShareButton({
   const [mounted, setMounted] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const [menuPos, setMenuPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -37,6 +40,10 @@ export default function ShareButton({
     e.preventDefault();
     e.stopPropagation();
     setShowShareMenu(prev => !prev);
+    if (!showShareMenu && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({ left: Math.round(rect.left), top: Math.round(rect.bottom + 8) });
+    }
     if (!showShareMenu) onShare?.();
   };
 
@@ -114,6 +121,7 @@ export default function ShareButton({
   return (
     <div className="relative">
       <button
+        ref={btnRef}
         onClick={handleShare}
         className={`inline-flex items-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 ${pillPadding[size]} ${sizeClasses[size]} transition-colors ${className}`}
         title={mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share'}
@@ -121,14 +129,15 @@ export default function ShareButton({
         <Share2 className={`${iconSizes[size]} mr-2`} />
         {showText && (mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share')}
       </button>
-
-      {showShareMenu && (
-        <div className="absolute z-50 mt-2 left-0 top-full w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden origin-top-left">
+      {showShareMenu && mounted && typeof document !== 'undefined' && createPortal(
+        <div
+          className="z-[10000] w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden"
+          style={{ position: 'fixed', left: menuPos.left, top: menuPos.top }}
+        >
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="text-sm font-semibold text-gray-800">{mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share'}</div>
           </div>
 
-          {/* 平台宫格：Copy -> WhatsApp, X, Weibo, Facebook, Reddit, Email, LinkedIn */}
           <div className="px-3 py-3 grid grid-cols-4 gap-3">
             <button onClick={() => copyToClipboard(url)} className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
               <Circle className={copySuccess ? 'bg-green-100' : 'bg-gray-100'}>
@@ -146,7 +155,6 @@ export default function ShareButton({
             <button onClick={() => handlePlatformShare('linkedin')}><GridItem><Circle className="bg-blue-100"><Linkedin className="w-5 h-5 text-blue-700" /></Circle><span className="text-xs text-gray-700">LinkedIn</span></GridItem></button>
           </div>
 
-          {/* 链接预览与复制 */}
           <div className="px-3 pb-3">
             <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
               <div className="px-3 py-2 text-xs text-gray-600 truncate select-all">{url}</div>
@@ -158,7 +166,8 @@ export default function ShareButton({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {showShareMenu && (
