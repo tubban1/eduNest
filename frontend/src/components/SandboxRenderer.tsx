@@ -1777,71 +1777,18 @@ export default function SandboxRenderer({
         </div>
       )}
 
-      {/* 微信重定向提示 */}
-      {isWeChat && !isLoading && !hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 z-30">
-          <div className="text-center max-w-md mx-4 p-6">
-            {/* 图标 */}
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-
-            {/* 标题 */}
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              请在浏览器中打开
-            </h2>
-
-            {/* 说明 */}
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              当前页面在微信中可能无法正常显示，建议在手机浏览器中打开以获得最佳体验
-            </p>
-
-            {/* 操作按钮 */}
-            <div className="space-y-3">
-              {/* 复制链接按钮 */}
+      {/* 微信环境提示：非阻断显示 */}
+      {isWeChat && (
+        <div className="absolute top-0 left-0 right-0 z-30">
+          <div className="mx-auto max-w-7xl">
+            <div className="m-2 rounded bg-amber-50 border border-amber-300 text-amber-800 text-xs px-3 py-2 shadow-sm">
+              微信环境下可能影响交互或加载，如有问题可使用右上菜单选择“在浏览器中打开”。
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  // 显示复制成功提示
-                  const btn = document.querySelector('#sandbox-copy-btn');
-                  if (btn) {
-                    const originalText = btn.textContent;
-                    btn.textContent = '✅ 链接已复制';
-                    btn.classList.add('bg-green-600');
-                    setTimeout(() => {
-                      btn.textContent = originalText;
-                      btn.classList.remove('bg-green-600');
-                    }, 2000);
-                  }
-                }}
-                id="sandbox-copy-btn"
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                onClick={() => navigator.clipboard.writeText(window.location.href)}
+                className="ml-2 underline"
               >
-                📋 复制链接
+                复制链接
               </button>
-
-              {/* 打开浏览器按钮 */}
-              <button
-                onClick={() => {
-                  // 尝试打开外部浏览器
-                  const url = window.location.href;
-                  window.location.href = url;
-                }}
-                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors"
-              >
-                🌐 打开浏览器
-              </button>
-            </div>
-
-            {/* 额外提示 */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
-                💡 <strong>小贴士</strong>: 长按链接选择"在浏览器中打开"，或复制链接到浏览器地址栏
-              </p>
             </div>
           </div>
         </div>

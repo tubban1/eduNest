@@ -184,45 +184,16 @@ export default function ContentPage() {
     );
   }
 
-  // 微信环境显示提示
-  if (isWeChat) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center max-w-md mx-4 p-6 bg-white rounded-lg shadow-lg">
-          <div className="mb-6">
-            <div className="text-6xl mb-4">🌐</div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">请在浏览器中打开</h1>
-            <p className="text-gray-600 text-sm">
-              当前页面在微信中可能无法正常显示，建议使用浏览器打开以获得最佳体验
-            </p>
-          </div>
-          
-          <div className="space-y-3">
-            <button
-              onClick={handleOpenInBrowser}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              🌐 用浏览器打开
-            </button>
-            
-            <button
-              onClick={handleSmartBack}
-              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              ← {t('back')}
-            </button>
-          </div>
-          
-          <div className="mt-4 text-xs text-gray-500">
-            <p>💡 提示：点击右上角菜单 → 选择"在浏览器中打开"</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // 旧逻辑：在微信环境直接拦截。现改为非阻断式，仅在页面顶部展示提示条，允许继续使用。
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {isWeChat && (
+        <div className="bg-amber-50 border-b border-amber-300 text-amber-800 text-sm px-4 py-2 text-center">
+          🌐 当前为微信浏览器，若出现显示问题，可点击页面右上角菜单选择“在浏览器中打开”。
+          <button onClick={handleOpenInBrowser} className="ml-2 underline">立即打开</button>
+        </div>
+      )}
       {/* 页面头部 */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-3">
