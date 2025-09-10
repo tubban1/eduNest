@@ -289,7 +289,7 @@ export default function ContentPage() {
               css={content.code_css || ''}
               js={content.code_js || ''}
               externalLinks={content.external_links || []}
-              externalUrl={`/content/${content.short_id}/standalone`}
+              externalUrl={`/api/content/${content.short_id}/standalone`}
               className="w-full"
               style={{ 
                 width: '100%',
