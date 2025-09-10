@@ -2,11 +2,10 @@
 
 import React, { useState } from 'react';
 import WeChatCompatibleRenderer from '@/components/WeChatCompatibleRenderer';
-import WeChatUltraSimpleRenderer from '@/components/WeChatUltraSimpleRenderer';
 import CodePenStyleRenderer from '@/components/CodePenStyleRenderer';
 
 export default function WeChatTestPage() {
-  const [rendererType, setRendererType] = useState<'original' | 'ultra-simple' | 'codepen-style'>('original');
+  const [rendererType, setRendererType] = useState<'original' | 'codepen-style'>('original');
   const [testContent] = useState({
     html: `
       <div id="app">
@@ -171,16 +170,7 @@ export default function WeChatTestPage() {
             >
               🔧 原始微信兼容渲染器
             </button>
-            <button
-              onClick={() => setRendererType('ultra-simple')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                rendererType === 'ultra-simple'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              🚀 超简化微信渲染器
-            </button>
+            {/* 已移除超简化渲染器入口 */}
             <button
               onClick={() => setRendererType('codepen-style')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -195,8 +185,7 @@ export default function WeChatTestPage() {
           
           <div className="text-sm text-gray-500">
             当前使用: <span className="font-semibold">
-              {rendererType === 'original' ? '原始微信兼容渲染器' : 
-               rendererType === 'ultra-simple' ? '超简化微信渲染器' : 'CodePen风格渲染器'}
+              {rendererType === 'original' ? '原始微信兼容渲染器' : 'CodePen风格渲染器'}
             </span>
           </div>
         </div>
@@ -209,16 +198,7 @@ export default function WeChatTestPage() {
               js={testContent.js}
               externalLinks={testContent.externalLinks}
               title="微信兼容性测试 - 原始版本"
-              className="w-full"
-              style={{ height: '80vh' }}
-            />
-          ) : rendererType === 'ultra-simple' ? (
-            <WeChatUltraSimpleRenderer
-              html={testContent.html}
-              css={testContent.css}
-              js={testContent.js}
-              externalLinks={testContent.externalLinks}
-              title="微信兼容性测试 - 超简化版本"
+              externalUrl={process.env.NEXT_PUBLIC_WECHAT_SANDBOX_URL}
               className="w-full"
               style={{ height: '80vh' }}
             />

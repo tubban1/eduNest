@@ -1695,76 +1695,7 @@ export default function SandboxRenderer({
         ...style
       }}
     >
-      {/* 微信浏览器调试信息 */}
-      {isWeChat && (
-        <div className="absolute top-0 left-0 bg-yellow-500 text-white text-xs p-2 z-40 max-w-xs">
-          <div className="font-bold mb-1">微信模式</div>
-          <div>加载状态: {isLoading ? '🔄 加载中' : '✅ 已完成'}</div>
-          <div>超时时间: 20秒</div>
-          <div>当前模式: {useWeChatMode ? '📱 Data URL' : '📄 srcDoc'}</div>
-          <div className="bg-green-600 p-2 rounded mt-2 text-white">
-            <div className="font-bold">✅ 微信兼容模式已启用</div>
-            <div className="text-xs">使用Data URL方式，微信完全兼容</div>
-          </div>
-          {!useNativeIframe && (
-            <div className="bg-red-600 p-2 rounded mt-2 text-white">
-              <div className="font-bold">⚠️ 微信兼容性建议</div>
-              <div className="text-xs">当前使用srcDoc模式，微信可能不兼容</div>
-              <div className="text-xs">建议切换到原生iframe模式</div>
-            </div>
-          )}
-          <div className="mt-2 space-y-1">
-            <button
-              onClick={() => {
-                
-                setIsLoading(false);
-                onLoad?.();
-              }}
-              className="w-full px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-            >
-              🚀 强制完成加载
-            </button>
-            <button
-              onClick={() => {
-                
-                refresh();
-              }}
-              className="w-full px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
-            >
-              🔄 重新加载
-            </button>
-            <button
-              onClick={() => {
-                
-                setIsLoading(!isLoading);
-              }}
-              className="w-full px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
-              >
-              {isLoading ? '⏸️ 暂停加载' : '▶️ 开始加载'}
-            </button>
-            <button
-              onClick={() => {
-                
-                setUseWeChatMode(!useWeChatMode);
-              }}
-              className="w-full px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
-            >
-              {useWeChatMode ? '🔄 切换回srcDoc' : '📱 切换到微信模式'}
-            </button>
-            <button
-              onClick={() => {
-                
-                const dataUrl = generateDataURL({ html, css, js, externalLinks, title: 'WeChat Sandbox' });
-                
-                
-              }}
-              className="w-full px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600"
-            >
-              🔍 测试Data URL
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 微信环境提示（非阻断）已在上方实现，这里移除调试面板 */}
 
       {/* 加载指示器 */}
       {isLoading && !hasError && (
@@ -1945,35 +1876,7 @@ export default function SandboxRenderer({
         />
       )}
       
-      {/* 微信浏览器问题诊断面板 */}
-      {isWeChat && (
-        <div className="fixed bottom-0 left-0 right-0 bg-black/90 text-white text-xs p-3 z-50">
-          <div className="text-center font-bold mb-2">微信浏览器诊断面板</div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-gray-700 p-2 rounded">
-              <div className="font-bold">加载状态</div>
-              <div className={isLoading ? 'text-yellow-400' : 'text-green-400'}>
-                {isLoading ? '🔄 加载中' : '✅ 已完成'}
-              </div>
-            </div>
-            <div className="bg-gray-700 p-2 rounded">
-              <div className="font-bold">超时设置</div>
-              <div>20秒自动超时</div>
-            </div>
-            <div className="bg-gray-700 p-2 rounded">
-              <div className="font-bold">强制加载</div>
-              <div>3秒后自动完成</div>
-            </div>
-            <div className="bg-gray-700 p-2 rounded">
-              <div className="font-bold">操作按钮</div>
-              <div>点击上方按钮</div>
-            </div>
-          </div>
-          <div className="text-center mt-2 text-gray-400">
-            如果页面无法加载，请尝试刷新或使用强制加载按钮
-          </div>
-        </div>
-      )}
+      {/* 移除诊断面板 */}
     </div>
   );
 } 

@@ -39,8 +39,14 @@ export default function WeChatCompatibleRenderer({
     return /MicroMessenger/i.test(ua) || /X5Browser/i.test(ua);
   }, []);
 
+  // 统一解析可用的外部URL：优先props，其次环境变量
+  const resolvedExternalUrl = useMemo(() => {
+    const envUrl = typeof process !== 'undefined' ? (process.env.NEXT_PUBLIC_WECHAT_SANDBOX_URL || process.env.NEXT_PUBLIC_SANDBOX_URL) : undefined;
+    return externalUrl || envUrl || undefined;
+  }, [externalUrl]);
+
   // 在微信中：如果提供了 externalUrl，则使用原生 iframe 加载该 URL
-  if (isWeChat && externalUrl) {
+  if (isWeChat && resolvedExternalUrl) {
     return (
       <SandboxRenderer
         html={html}
@@ -48,7 +54,7 @@ export default function WeChatCompatibleRenderer({
         js={js}
         externalLinks={externalLinks}
         useNativeIframe={true}
-        externalUrl={externalUrl}
+        externalUrl={resolvedExternalUrl}
         enableLibrarySupport={true}
         className={className}
         style={style}
@@ -58,7 +64,7 @@ export default function WeChatCompatibleRenderer({
     );
   }
 
-  // 其它环境：使用标准渲染
+  // 其它环境或未配置 externalUrl：使用标准渲染（非阻断）。
   return (
     <SandboxRenderer
       html={html}
