@@ -1783,12 +1783,6 @@ export default function SandboxRenderer({
           <div className="mx-auto max-w-7xl">
             <div className="m-2 rounded bg-amber-50 border border-amber-300 text-amber-800 text-xs px-3 py-2 shadow-sm">
               微信环境下可能影响交互或加载，如有问题可使用右上菜单选择“在浏览器中打开”。
-              <button
-                onClick={() => navigator.clipboard.writeText(window.location.href)}
-                className="ml-2 underline"
-              >
-                复制链接
-              </button>
             </div>
           </div>
         </div>

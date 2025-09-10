@@ -191,7 +191,6 @@ export default function ContentPage() {
       {isWeChat && (
         <div className="bg-amber-50 border-b border-amber-300 text-amber-800 text-sm px-4 py-2 text-center">
           🌐 当前为微信浏览器，若出现显示问题，可点击页面右上角菜单选择“在浏览器中打开”。
-          <button onClick={handleOpenInBrowser} className="ml-2 underline">立即打开</button>
         </div>
       )}
       {/* 页面头部 */}
