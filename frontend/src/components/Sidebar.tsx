@@ -189,7 +189,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
             onClick={handleItemClick}
             className="block w-full mb-4 px-4 py-3 rounded-lg bg-blue-600 text-white text-sm font-medium text-center hover:bg-blue-700"
           >
-            升级到 Pro
+            {mounted ? t('upgrade_to_pro', { ns: 'navigation', defaultValue: '升级到 Pro' }) : '升级到 Pro'}
           </Link>
         )}
 

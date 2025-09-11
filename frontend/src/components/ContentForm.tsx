@@ -732,13 +732,7 @@ export default function ContentForm({
     { key: 'css', label: mounted ? t('tabs.css', { ns: 'content', defaultValue: 'CSS' }) : 'CSS' },
     { key: 'js', label: mounted ? t('tabs.js', { ns: 'content', defaultValue: 'JS' }) : 'JS' },
   ];
-  const LEARNING_STAGES = [
-    { value: 'understanding', label: mounted ? t('learningStage.understanding', { ns: 'content', defaultValue: 'Understanding core principles and logic' }) : 'Understanding core principles and logic' },
-    { value: 'application', label: mounted ? t('learningStage.application', { ns: 'content', defaultValue: 'Knowledge application' }) : 'Knowledge application' },
-    { value: 'assessment', label: mounted ? t('learningStage.assessment', { ns: 'content', defaultValue: 'Practice and assessment' }) : 'Practice and assessment' },
-    { value: 'expansion', label: mounted ? t('learningStage.expansion', { ns: 'content', defaultValue: 'Interdisciplinary application' }) : 'Interdisciplinary application' },
-    { value: 'gamify', label: mounted ? t('learningStage.gamify', { ns: 'content', defaultValue: 'Gamified learning' }) : 'Gamified learning' },
-  ];
+  const LEARNING_STAGES: { value: string; label: string }[] = [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center py-8">
@@ -827,18 +821,7 @@ export default function ContentForm({
                             </span>
                           </div>
                         </div>
-                        <div>
-                          <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('learningStageLabel', { ns: 'content', defaultValue: 'Learning Stage' }) : 'Learning Stage'}</label>
-                          <select
-                            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed"
-                            value="understanding"
-                            disabled={true}
-                          >
-                            <option value="understanding">
-                              {mounted ? t('learningStage.understanding', { ns: 'content', defaultValue: 'Understanding core principles and logic' }) : 'Understanding core principles and logic'}
-                            </option>
-                          </select>
-                        </div>
+                        {/* 学习阶段在 create 页面隐藏，仅后端使用默认 understanding */}
                         <div>
                           <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('outputLanguage', { ns: 'content', defaultValue: 'Output Language' }) : 'Output Language'}</label>
                           <input
