@@ -263,9 +263,9 @@ export default function ContentPage() {
             </div>
             
             {/* 右侧：标签一行显示，超出显示+号 */}
-            <div className="flex items-center gap-1 flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
               {content.tags && content.tags.length > 0 && (
-                <>
+                <div className="flex flex-wrap items-center gap-1">
                   {(() => {
                     const maxVisibleTags = 3; // 最多显示3个标签
                     const visibleTags = showAllTags ? content.tags : content.tags.slice(0, maxVisibleTags);
@@ -303,7 +303,7 @@ export default function ContentPage() {
                       </>
                     );
                   })()}
-                </>
+                </div>
               )}
             </div>
           </div>
