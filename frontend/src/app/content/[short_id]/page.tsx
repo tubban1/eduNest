@@ -11,6 +11,7 @@ import WeChatCompatibleRenderer from '@/components/WeChatCompatibleRenderer';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
+import { useState as useReactState } from 'react';
 
 export default function ContentPage() {
   const params = useParams();
@@ -27,6 +28,7 @@ export default function ContentPage() {
   const [collectionCount, setCollectionCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isWeChat, setIsWeChat] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
 
   useEffect(() => {
     // 检测微信环境
@@ -243,7 +245,7 @@ export default function ContentPage() {
                 initialCollectionCount={collectionCount}
                 size="md"
                 showCount={true}
-                showText={true}
+                showText={false}
                 disabled={!user} // 未登录时禁用交互按钮
                 onLikeChange={(liked, count) => {
                   if (user) {
@@ -260,15 +262,47 @@ export default function ContentPage() {
               />
             </div>
             
-            {/* 右侧：标签完整展示 */}
-            <div className="flex flex-wrap items-center gap-1">
+            {/* 右侧：标签一行显示，超出显示+号 */}
+            <div className="flex items-center gap-1 flex-1 min-w-0">
               {content.tags && content.tags.length > 0 && (
                 <>
-                  {content.tags.map((tag, index) => (
-                    <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                      {tag}
-                    </span>
-                  ))}
+                  {(() => {
+                    const maxVisibleTags = 3; // 最多显示3个标签
+                    const visibleTags = showAllTags ? content.tags : content.tags.slice(0, maxVisibleTags);
+                    const remainingCount = content.tags.length - maxVisibleTags;
+                    
+                    return (
+                      <>
+                        {visibleTags.map((tag, index) => (
+                          <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full whitespace-nowrap">
+                            {tag}
+                          </span>
+                        ))}
+                        
+                        {/* 显示剩余标签数量的+号 */}
+                        {!showAllTags && remainingCount > 0 && (
+                          <button
+                            onClick={() => setShowAllTags(true)}
+                            className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full hover:bg-blue-200 transition-colors"
+                            title={`还有 ${remainingCount} 个标签`}
+                          >
+                            +{remainingCount}
+                          </button>
+                        )}
+                        
+                        {/* 收起按钮 */}
+                        {showAllTags && content.tags.length > maxVisibleTags && (
+                          <button
+                            onClick={() => setShowAllTags(false)}
+                            className="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded-full hover:bg-gray-300 transition-colors"
+                            title="收起标签"
+                          >
+                            收起
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>
