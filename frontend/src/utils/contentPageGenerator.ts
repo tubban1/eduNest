@@ -251,7 +251,6 @@ export function generateStandaloneContentPage(data: ContentPageData): string {
   <!-- 页面头部 -->
   <header style="position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); color: white; padding: 10px; z-index: 1000; text-align: center;">
     <h1 style="margin: 0; font-size: 16px;">${title}</h1>
-    <div style="font-size: 12px; opacity: 0.8;">独立页面 - 微信完全兼容</div>
   </header>
   
   <!-- 主要内容 -->
