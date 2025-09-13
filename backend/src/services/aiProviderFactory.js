@@ -12,7 +12,7 @@ class AIProviderFactory {
         name: 'ARK/Kimi (VolcEngine)',
         apiKey: process.env.ARK_API_KEY,
         baseURL: process.env.ARK_URL || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
-        model: process.env.ARK_MODEL || 'kimi-k2-250711',
+        model: process.env.ARK_MODEL || 'kimi-k2-250905',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${process.env.ARK_API_KEY}`
