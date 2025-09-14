@@ -336,26 +336,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('尝试重发验证邮件到:', email);
       console.log('重定向URL:', `${window.location.origin}/auth/callback`);
       
-      // 首先检查用户状态
-      try {
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
-        if (userError) {
-          console.warn('无法获取用户状态:', userError);
-        } else if (userData?.user) {
-          console.log('用户状态:', {
-            email_confirmed: userData.user.email_confirmed_at,
-            created_at: userData.user.created_at,
-            last_sign_in: userData.user.last_sign_in_at
-          });
-          
-          // 如果用户已经验证过，提示用户
-          if (userData.user.email_confirmed_at) {
-            return { error: null, message: '该邮箱已经验证过，请直接登录' };
-          }
-        }
-      } catch (statusError) {
-        console.warn('检查用户状态失败:', statusError);
-      }
+      // 注意：admin API 需要服务端权限，前端无法直接调用
+      // 这里暂时跳过用户状态检查，直接尝试重发邮件
+      console.log('准备重发验证邮件，跳过用户状态检查（前端无法访问admin API）');
       
       const { data, error } = await supabase.auth.resend({
         type: 'signup',
