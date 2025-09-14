@@ -15,7 +15,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const { signInWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithEmail, signInWithGoogle, resendVerificationEmail } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -80,7 +80,6 @@ function LoginForm() {
 
   const handleResend = async () => {
     try {
-      const { resendVerificationEmail } = require('@/hooks/useAuth').useAuth();
       const res = await resendVerificationEmail(email);
       setMessage(res.error ? res.error : (res.message || t('resendSuccessMessage', { ns: 'auth', defaultValue: '验证邮件已重发，请检查邮箱' })));
     } catch (e: any) {

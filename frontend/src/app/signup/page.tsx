@@ -20,7 +20,7 @@ function SignupPageInner() {
   const [countdown, setCountdown] = useState(3); // 倒计时秒数
   const [autoRedirect, setAutoRedirect] = useState(true); // 是否自动跳转
   const [hasResentEmail, setHasResentEmail] = useState(false); // 是否已重发验证邮件
-  const { signUpWithEmail } = useAuth();
+  const { signUpWithEmail, resendVerificationEmail } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [refCode, setRefCode] = useState<string>('');
@@ -145,7 +145,6 @@ function SignupPageInner() {
                     return;
                   }
                   
-                  const { resendVerificationEmail } = require('@/hooks/useAuth').useAuth();
                   console.log('开始调用resendVerificationEmail');
                   const res = await resendVerificationEmail(email);
                   console.log('resendVerificationEmail结果:', res);
