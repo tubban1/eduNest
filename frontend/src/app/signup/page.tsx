@@ -139,10 +139,17 @@ function SignupPageInner() {
             <button
               onClick={async () => {
                 try {
-                  const emailInput = (document.getElementById('email') as HTMLInputElement)?.value || '';
-                  if (!emailInput) return;
+                  console.log('点击重发按钮，邮箱:', email);
+                  if (!email) {
+                    alert('邮箱地址不可用，请重新注册');
+                    return;
+                  }
+                  
                   const { resendVerificationEmail } = require('@/hooks/useAuth').useAuth();
-                  const res = await resendVerificationEmail(emailInput);
+                  console.log('开始调用resendVerificationEmail');
+                  const res = await resendVerificationEmail(email);
+                  console.log('resendVerificationEmail结果:', res);
+                  
                   if (res.error) {
                     alert(res.error);
                   } else {
@@ -151,6 +158,7 @@ function SignupPageInner() {
                     alert(res.message || t('resendSuccess', { ns: 'auth', defaultValue: '验证邮件已重发' }));
                   }
                 } catch (e) {
+                  console.error('重发邮件异常:', e);
                   alert(t('resendFailed', { ns: 'auth', defaultValue: '重发失败，请稍后重试' }));
                 }
               }}
