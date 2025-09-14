@@ -126,7 +126,9 @@ function SignupPageInner() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">注册成功！</h1>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            {t('signupSuccess', { ns: 'auth', defaultValue: '注册成功！' })}
+          </h1>
           <p className="text-gray-600 text-sm mb-2">
             {successMessage || t('successDesc', { ns: 'auth', defaultValue: '我们已向您的邮箱发送了验证邮件，请点击邮件中的链接完成验证。' })}
           </p>
@@ -146,10 +148,10 @@ function SignupPageInner() {
                   } else {
                     setHasResentEmail(true);
                     setAutoRedirect(false);
-                    alert(res.message || '验证邮件已重发');
+                    alert(res.message || t('resendSuccess', { ns: 'auth', defaultValue: '验证邮件已重发' }));
                   }
                 } catch (e) {
-                  alert('重发失败，请稍后重试');
+                  alert(t('resendFailed', { ns: 'auth', defaultValue: '重发失败，请稍后重试' }));
                 }
               }}
               className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -165,10 +167,10 @@ function SignupPageInner() {
           {autoRedirect && !hasResentEmail && (
             <div className="mt-3 p-2 bg-blue-50 rounded-lg">
               <p className="text-blue-600 text-xs">
-                ⏰ 页面将在10秒后自动跳转到登录页面
+                ⏰ {t('autoRedirectHint', { ns: 'auth', defaultValue: '页面将在10秒后自动跳转到登录页面' })}
               </p>
               <p className="text-blue-500 text-xs mt-1">
-                如需重发验证邮件，请点击上方按钮
+                {t('resendHint', { ns: 'auth', defaultValue: '如需重发验证邮件，请点击上方按钮' })}
               </p>
             </div>
           )}

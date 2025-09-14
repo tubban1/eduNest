@@ -333,14 +333,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resendVerificationEmail = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resend({
+      console.log('尝试重发验证邮件到:', email);
+      console.log('重定向URL:', `${window.location.origin}/auth/callback`);
+      
+      // 首先检查用户状态
+      try {
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
+        if (userError) {
+          console.warn('无法获取用户状态:', userError);
+        } else if (userData?.user) {
+          console.log('用户状态:', {
+            email_confirmed: userData.user.email_confirmed_at,
+            created_at: userData.user.created_at,
+            last_sign_in: userData.user.last_sign_in_at
+          });
+          
+          // 如果用户已经验证过，提示用户
+          if (userData.user.email_confirmed_at) {
+            return { error: null, message: '该邮箱已经验证过，请直接登录' };
+          }
+        }
+      } catch (statusError) {
+        console.warn('检查用户状态失败:', statusError);
+      }
+      
+      const { data, error } = await supabase.auth.resend({
         type: 'signup',
         email,
-        options: { redirectTo: `${window.location.origin}/auth/callback` }
-      } as any);
-      if (error) return { error: error.message };
+        options: { 
+          redirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      console.log('Supabase resend 响应:', { data, error });
+      
+      if (error) {
+        console.error('重发邮件错误:', error);
+        return { error: error.message };
+      }
+      
+      console.log('邮件重发成功，响应数据:', data);
       return { error: null, message: '验证邮件已重发，请检查邮箱' };
     } catch (e: any) {
+      console.error('重发邮件异常:', e);
       return { error: e.message || '重发验证邮件失败' };
     }
   };

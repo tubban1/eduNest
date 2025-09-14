@@ -65,7 +65,7 @@ function LoginForm() {
         // 针对未验证邮箱的提示（基于常见提示关键字）
         const lower = result.error.toLowerCase();
         if (lower.includes('email') && (lower.includes('not confirmed') || lower.includes('not verified') || lower.includes('verify'))) {
-          setMessage('检测到邮箱尚未验证，您可以点击下方按钮重发验证邮件。');
+          setMessage(t('emailNotVerified', { ns: 'auth', defaultValue: '检测到邮箱尚未验证，您可以点击下方按钮重发验证邮件。' }));
         }
       } else {
         // 登录成功，跳转到内容页面
@@ -82,9 +82,9 @@ function LoginForm() {
     try {
       const { resendVerificationEmail } = require('@/hooks/useAuth').useAuth();
       const res = await resendVerificationEmail(email);
-      setMessage(res.error ? res.error : (res.message || '验证邮件已重发'));
+      setMessage(res.error ? res.error : (res.message || t('resendSuccessMessage', { ns: 'auth', defaultValue: '验证邮件已重发，请检查邮箱' })));
     } catch (e: any) {
-      setMessage('重发失败，请稍后重试');
+      setMessage(t('resendFailed', { ns: 'auth', defaultValue: '重发失败，请稍后重试' }));
     }
   };
 
