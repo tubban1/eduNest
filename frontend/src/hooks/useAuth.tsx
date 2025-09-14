@@ -344,7 +344,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         type: 'signup',
         email,
         options: { 
-          redirectTo: `${window.location.origin}/auth/callback`,
           emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
