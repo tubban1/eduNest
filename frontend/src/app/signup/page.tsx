@@ -41,17 +41,17 @@ function SignupPageInner() {
         const res = await api.post('/referrals/validate', { code });
         if ((res as any)?.success) {
           setRefValid(true);
-          setRefMessage(`邀请码 ${code} 已验证`);
+          setRefMessage(t('refCodeVerified', { ns: 'auth', defaultValue: '邀请码 {code} 已验证', code }));
           // 记录待发放的邀请码，等待首次有效登录时发放
           try { localStorage.setItem('pending_ref_code', code); } catch {}
         } else {
           setRefValid(false);
-          setRefMessage('邀请码无效');
+          setRefMessage(t('refCodeInvalid', { ns: 'auth', defaultValue: '邀请码无效' }));
           try { localStorage.removeItem('pending_ref_code'); } catch {}
         }
       } catch (e: any) {
         setRefValid(false);
-        setRefMessage(e?.message || '邀请码无效');
+        setRefMessage(e?.message || t('refCodeInvalid', { ns: 'auth', defaultValue: '邀请码无效' }));
         try { localStorage.removeItem('pending_ref_code'); } catch {}
       } finally {
         setRefChecking(false);
@@ -67,13 +67,13 @@ function SignupPageInner() {
     
     // 验证密码
     if (password !== confirmPassword) {
-      setError('两次输入的密码不一致');
+      setError(t('passwordMismatch', { ns: 'auth', defaultValue: '两次输入的密码不一致' }));
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError('密码长度至少6位');
+      setError(t('passwordTooShort', { ns: 'auth', defaultValue: '密码长度至少6位' }));
       setLoading(false);
       return;
     }
@@ -111,7 +111,7 @@ function SignupPageInner() {
       }
     } catch (error: any) {
       console.error('注册处理异常:', error);
-      setError(error.message || '注册失败');
+      setError(error.message || t('signupFailed', { ns: 'auth', defaultValue: '注册失败' }));
     } finally {
       setLoading(false);
     }
@@ -141,7 +141,7 @@ function SignupPageInner() {
                 try {
                   console.log('点击重发按钮，邮箱:', email);
                   if (!email) {
-                    alert('邮箱地址不可用，请重新注册');
+                    alert(t('emailNotAvailable', { ns: 'auth', defaultValue: '邮箱地址不可用，请重新注册' }));
                     return;
                   }
                   
@@ -186,17 +186,17 @@ function SignupPageInner() {
           {hasResentEmail && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <p className="text-green-600 text-sm mb-3">
-                ✅ 验证邮件已重发，请检查您的邮箱
+                {t('resendSuccessNotice', { ns: 'auth', defaultValue: '✅ 验证邮件已重发，请检查您的邮箱' })}
               </p>
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => router.push('/login')}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  回到登录页面
+                  {t('backToLogin', { ns: 'auth', defaultValue: '回到登录页面' })}
                 </button>
                 <p className="text-gray-500 text-xs">
-                  您可以稍后使用邮箱和密码登录
+                  {t('canLoginLater', { ns: 'auth', defaultValue: '您可以稍后使用邮箱和密码登录' })}
                 </p>
               </div>
             </div>
@@ -208,19 +208,19 @@ function SignupPageInner() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-8">
-      <button onClick={() => router.push('/')} className="absolute left-8 top-8 text-gray-400 hover:text-black text-sm">← 返回首页</button>
+      <button onClick={() => router.push('/')} className="absolute left-8 top-8 text-gray-400 hover:text-black text-sm">{t('backToHome', { ns: 'auth', defaultValue: '← 返回首页' })}</button>
       
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border p-8 flex flex-col gap-6">
         <div className="text-center mb-2">
           <Logo size="md" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">注册账号</h1>
-          <p className="text-gray-500 text-sm">创建您的教育内容管理账号</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('signupAccount', { ns: 'auth', defaultValue: '注册账号' })}</h1>
+          <p className="text-gray-500 text-sm">{t('createAccount', { ns: 'auth', defaultValue: '创建您的教育内容管理账号' })}</p>
         </div>
 
         {/* 邀请码提示 */}
         {refCode && (
           <div className={`text-sm rounded-lg p-3 ${refChecking ? 'bg-gray-50 text-gray-600' : refValid ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
-            {refChecking ? '正在验证邀请码…' : (refMessage || `邀请码 ${refCode}`)}
+            {refChecking ? t('verifyingRefCode', { ns: 'auth', defaultValue: '正在验证邀请码…' }) : (refMessage || t('refCodePrefix', { ns: 'auth', defaultValue: '邀请码' }) + ` ${refCode}`)}
           </div>
         )}
         
@@ -230,7 +230,7 @@ function SignupPageInner() {
               type="text"
               id="name"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="昵称（可选）"
+              placeholder={t('nicknamePlaceholder', { ns: 'auth', defaultValue: '昵称（可选）' })}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={loading}
@@ -241,7 +241,7 @@ function SignupPageInner() {
               type="email"
               id="email"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="邮箱"
+              placeholder={t('emailPlaceholder', { ns: 'auth', defaultValue: '邮箱' })}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
@@ -253,7 +253,7 @@ function SignupPageInner() {
               type="password"
               id="password"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="密码（至少6位）"
+              placeholder={t('passwordPlaceholder', { ns: 'auth', defaultValue: '密码（至少6位）' })}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
@@ -265,7 +265,7 @@ function SignupPageInner() {
               type="password"
               id="confirmPassword"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="确认密码"
+              placeholder={t('confirmPasswordPlaceholder', { ns: 'auth', defaultValue: '确认密码' })}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
@@ -277,18 +277,18 @@ function SignupPageInner() {
             className="w-full py-2 px-4 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            {loading ? '注册中...' : '注册账号'}
+            {loading ? t('signupProcessing', { ns: 'auth', defaultValue: '注册中...' }) : t('signupAccount', { ns: 'auth', defaultValue: '注册账号' })}
           </button>
         </form>
         
         <div className="text-center">
           <p className="text-gray-500 text-sm">
-            已有账号？{' '}
+            {t('alreadyHaveAccount', { ns: 'auth', defaultValue: '已有账号？' })}{' '}
             <button 
               onClick={() => router.push('/login')}
               className="text-black hover:underline font-medium"
             >
-              立即登录
+              {t('loginNow', { ns: 'auth', defaultValue: '立即登录' })}
             </button>
           </p>
         </div>
