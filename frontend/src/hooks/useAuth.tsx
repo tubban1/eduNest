@@ -356,7 +356,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!error1) {
         console.log('邮件重发成功（方式1），响应数据:', data1);
-        return { error: null, message: '验证邮件已重发，请检查邮箱' };
+        return { error: null };
       }
       
       lastError = error1;
@@ -375,7 +375,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!error2) {
         console.log('邮件重发成功（方式2），响应数据:', data2);
-        return { error: null, message: '验证邮件已重发，请检查邮箱' };
+        return { error: null };
       }
       
       lastError = error2;
@@ -391,7 +391,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!error3) {
         console.log('邮件重发成功（方式3），响应数据:', data3);
-        return { error: null, message: '验证邮件已重发，请检查邮箱' };
+        return { error: null };
       }
       
       // 所有方式都失败了
