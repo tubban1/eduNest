@@ -340,7 +340,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 这里暂时跳过用户状态检查，直接尝试重发邮件
       console.log('准备重发验证邮件，跳过用户状态检查（前端无法访问admin API）');
       
-      const { data, error } = await supabase.auth.resend({
+      // 尝试多种方式重发邮件
+      let lastError = null;
+      
+      // 方式1: 使用 signup 类型
+      const { data: data1, error: error1 } = await supabase.auth.resend({
         type: 'signup',
         email,
         options: { 
@@ -348,15 +352,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
       
-      console.log('Supabase resend 响应:', { data, error });
+      console.log('方式1 - signup类型响应:', { data: data1, error: error1 });
       
-      if (error) {
-        console.error('重发邮件错误:', error);
-        return { error: error.message };
+      if (!error1) {
+        console.log('邮件重发成功（方式1），响应数据:', data1);
+        return { error: null, message: '验证邮件已重发，请检查邮箱' };
       }
       
-      console.log('邮件重发成功，响应数据:', data);
-      return { error: null, message: '验证邮件已重发，请检查邮箱' };
+      lastError = error1;
+      console.log('方式1失败，尝试方式2...');
+      
+      // 方式2: 不指定类型，让Supabase自动判断
+      const { data: data2, error: error2 } = await supabase.auth.resend({
+        email,
+        options: { 
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      console.log('方式2 - 自动类型响应:', { data: data2, error: error2 });
+      
+      if (!error2) {
+        console.log('邮件重发成功（方式2），响应数据:', data2);
+        return { error: null, message: '验证邮件已重发，请检查邮箱' };
+      }
+      
+      lastError = error2;
+      console.log('方式2也失败，尝试方式3...');
+      
+      // 方式3: 使用 signup 类型但不指定重定向URL
+      const { data: data3, error: error3 } = await supabase.auth.resend({
+        type: 'signup',
+        email
+      });
+      
+      console.log('方式3 - 无重定向URL响应:', { data: data3, error: error3 });
+      
+      if (!error3) {
+        console.log('邮件重发成功（方式3），响应数据:', data3);
+        return { error: null, message: '验证邮件已重发，请检查邮箱' };
+      }
+      
+      // 所有方式都失败了
+      console.error('所有重发方式都失败，最后错误:', error3);
+      return { 
+        error: `重发失败: ${error3.message || '未知错误'}。请检查邮箱是否已注册，或稍后重试。如果问题持续，请联系管理员。` 
+      };
+      
     } catch (e: any) {
       console.error('重发邮件异常:', e);
       return { error: e.message || '重发验证邮件失败' };

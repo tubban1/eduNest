@@ -154,7 +154,7 @@ function SignupPageInner() {
                   } else {
                     setHasResentEmail(true);
                     setAutoRedirect(false);
-                    alert(res.message || t('resendSuccess', { ns: 'auth', defaultValue: '验证邮件已重发' }));
+                    alert(res.message || t('resendSuccessMessage', { ns: 'auth', defaultValue: '验证邮件已重发，请检查邮箱' }));
                   }
                 } catch (e) {
                   console.error('重发邮件异常:', e);

@@ -28,7 +28,7 @@ function LoginForm() {
   useEffect(() => {
     const messageParam = searchParams.get('message');
     if (messageParam === 'signup_success') {
-      setMessage('注册成功！请检查您的邮箱完成验证。');
+      setMessage(t('signupSuccessEmail', { ns: 'auth', defaultValue: '注册成功！请检查您的邮箱完成验证。' }));
     } else if (messageParam === 'reset_email_sent') {
       setMessage('重置密码邮件已发送，请检查您的邮箱。');
     } else if (messageParam === 'password_updated') {
