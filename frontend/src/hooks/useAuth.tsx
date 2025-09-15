@@ -340,6 +340,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 这里暂时跳过用户状态检查，直接尝试重发邮件
       console.log('准备重发验证邮件，跳过用户状态检查（前端无法访问admin API）');
       
+      // 记录重发与注册的差异
+      console.log('重发邮件与注册邮件的差异：');
+      console.log('- 注册使用: supabase.auth.signUp()');
+      console.log('- 重发使用: supabase.auth.resend()');
+      console.log('- 重发响应: {user: null, session: null}');
+      console.log('- 注册响应: {user: {...}, session: null 或 {...}}');
+      
       // 尝试多种方式重发邮件
       let lastError = null;
       
