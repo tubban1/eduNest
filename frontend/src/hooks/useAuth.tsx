@@ -362,8 +362,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastError = error1;
       console.log('方式1失败，尝试方式2...');
       
-      // 方式2: 不指定类型，让Supabase自动判断
+      // 方式2: 使用 email_change 类型
       const { data: data2, error: error2 } = await supabase.auth.resend({
+        type: 'email_change',
         email,
         options: { 
           emailRedirectTo: `${window.location.origin}/auth/callback`
