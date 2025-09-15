@@ -363,6 +363,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!error1) {
         console.log('邮件重发成功（方式1），响应数据:', data1);
+        console.log('分析响应数据：');
+        console.log('- user:', data1?.user);
+        console.log('- session:', data1?.session);
+        console.log('- 完整响应:', JSON.stringify(data1, null, 2));
+        console.log('注意：user: null 可能表示用户已存在，但邮件应该已发送');
         return { error: null };
       }
       
