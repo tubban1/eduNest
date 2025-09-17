@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
+import LanguageSelector from '@/components/LanguageSelector';
 import { api } from '@/lib/api';
 
 function SignupPageInner() {
@@ -20,6 +21,7 @@ function SignupPageInner() {
   const [countdown, setCountdown] = useState(3); // 倒计时秒数
   const [autoRedirect, setAutoRedirect] = useState(true); // 是否自动跳转
   const [hasResentEmail, setHasResentEmail] = useState(false); // 是否已重发验证邮件
+  const [mounted, setMounted] = useState(false); // 避免hydration错误
   const { signUpWithEmail, resendVerificationEmail } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +30,11 @@ function SignupPageInner() {
   const [refChecking, setRefChecking] = useState(false);
   const [refMessage, setRefMessage] = useState('');
   const { t } = useTranslation(['auth']);
+
+  // 避免hydration错误
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 读取并校验邀请码（如果存在）
   useEffect(() => {
@@ -208,13 +215,16 @@ function SignupPageInner() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-8">
-      <button onClick={() => router.push('/')} className="absolute left-8 top-8 text-gray-400 hover:text-black text-sm">{t('backToHome', { ns: 'auth', defaultValue: '← 返回首页' })}</button>
+      <button onClick={() => router.push('/')} className="absolute left-8 top-8 text-gray-400 hover:text-black text-sm">{mounted ? t('backToHome', { ns: 'auth', defaultValue: '← 返回首页' }) : '← Back to Home'}</button>
       
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border p-8 flex flex-col gap-6">
         <div className="text-center mb-2">
-          <Logo size="md" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('signupAccount', { ns: 'auth', defaultValue: '注册账号' })}</h1>
-          <p className="text-gray-500 text-sm">{t('createAccount', { ns: 'auth', defaultValue: '创建您的教育内容管理账号' })}</p>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Logo size="md" />
+            <LanguageSelector variant="button" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{mounted ? t('signupAccount', { ns: 'auth', defaultValue: '注册账号' }) : 'Create Account'}</h1>
+          <p className="text-gray-500 text-sm">{mounted ? t('createAccount', { ns: 'auth', defaultValue: '创建您的教育内容管理账号' }) : 'Create your educational content management account'}</p>
         </div>
 
         {/* 邀请码提示 */}
@@ -230,7 +240,7 @@ function SignupPageInner() {
               type="text"
               id="name"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder={t('nicknamePlaceholder', { ns: 'auth', defaultValue: '昵称（可选）' })}
+              placeholder={mounted ? t('nicknamePlaceholder', { ns: 'auth', defaultValue: '昵称（可选）' }) : 'Nickname (optional)'}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={loading}
@@ -241,7 +251,7 @@ function SignupPageInner() {
               type="email"
               id="email"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder={t('emailPlaceholder', { ns: 'auth', defaultValue: '邮箱' })}
+              placeholder={mounted ? t('emailPlaceholder', { ns: 'auth', defaultValue: '邮箱' }) : 'Email'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
@@ -253,7 +263,7 @@ function SignupPageInner() {
               type="password"
               id="password"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder={t('passwordPlaceholder', { ns: 'auth', defaultValue: '密码（至少6位）' })}
+              placeholder={mounted ? t('passwordPlaceholder', { ns: 'auth', defaultValue: '密码（至少6位）' }) : 'Password (at least 6 characters)'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
@@ -265,7 +275,7 @@ function SignupPageInner() {
               type="password"
               id="confirmPassword"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder={t('confirmPasswordPlaceholder', { ns: 'auth', defaultValue: '确认密码' })}
+              placeholder={mounted ? t('confirmPasswordPlaceholder', { ns: 'auth', defaultValue: '确认密码' }) : 'Confirm Password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
@@ -277,18 +287,18 @@ function SignupPageInner() {
             className="w-full py-2 px-4 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            {loading ? t('signupProcessing', { ns: 'auth', defaultValue: '注册中...' }) : t('signupAccount', { ns: 'auth', defaultValue: '注册账号' })}
+            {loading ? (mounted ? t('signupProcessing', { ns: 'auth', defaultValue: '注册中...' }) : 'Registering...') : (mounted ? t('signupAccount', { ns: 'auth', defaultValue: '注册账号' }) : 'Create Account')}
           </button>
         </form>
         
         <div className="text-center">
           <p className="text-gray-500 text-sm">
-            {t('alreadyHaveAccount', { ns: 'auth', defaultValue: '已有账号？' })}{' '}
+            {mounted ? t('alreadyHaveAccount', { ns: 'auth', defaultValue: '已有账号？' }) : 'Already have an account?'}{' '}
             <button 
               onClick={() => router.push('/login')}
               className="text-black hover:underline font-medium"
             >
-              {t('loginNow', { ns: 'auth', defaultValue: '立即登录' })}
+              {mounted ? t('loginNow', { ns: 'auth', defaultValue: '立即登录' }) : 'Login Now'}
             </button>
           </p>
         </div>

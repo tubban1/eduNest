@@ -33,21 +33,60 @@ class ApiClient {
 
   private async getLatestToken(): Promise<string | null> {
     try {
-      // 首先尝试从localStorage获取
+      // 首先尝试从Supabase获取当前session（这会自动刷新过期的token）
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('获取session失败:', error);
+        return null;
+      }
+      
+      if (session?.access_token) {
+        // 检查token是否即将过期（提前5分钟刷新）
+        const now = Math.floor(Date.now() / 1000);
+        const expiresAt = session.expires_at || 0;
+        const timeUntilExpiry = expiresAt - now;
+        
+        console.log('Token状态检查:', {
+          expiresAt: new Date(expiresAt * 1000),
+          timeUntilExpiry: `${Math.floor(timeUntilExpiry / 60)}分钟`,
+          needsRefresh: timeUntilExpiry < 300, // 5分钟内过期
+          currentTime: new Date().toISOString()
+        });
+        
+        // 如果token即将过期，尝试刷新
+        if (timeUntilExpiry < 300) {
+          console.log('Token即将过期，尝试刷新...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            console.error('Token刷新失败:', refreshError);
+            // 如果刷新失败，清除本地存储并重定向到登录页
+            localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
+            return null;
+          }
+          
+          if (refreshData?.session?.access_token) {
+            console.log('Token刷新成功');
+            return this.convertSupabaseToken(refreshData.session.access_token);
+          }
+        }
+        
+        return this.convertSupabaseToken(session.access_token);
+      }
+      
+      // 如果Supabase没有session，尝试从localStorage获取（兼容旧版本）
       const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
       if (sessionStr) {
         const session = JSON.parse(sessionStr);
         if (session?.access_token) {
-          // 将Supabase token转换为后端API需要的格式
+          console.log('从localStorage获取token');
           return this.convertSupabaseToken(session.access_token);
         }
-      }
-      
-      // 如果localStorage没有，从Supabase获取
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        // 将Supabase token转换为后端API需要的格式
-        return this.convertSupabaseToken(session.access_token);
       }
       
       return null;
@@ -62,7 +101,7 @@ class ApiClient {
     return supabaseToken;
   }
 
-  private async request(endpoint: string, options: RequestInit = {}) {
+  private async request(endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<any> {
     const url = `${this.baseUrl}${endpoint}`;
     
     const headers: Record<string, string> = {
@@ -82,12 +121,38 @@ class ApiClient {
     };
 
     try {
+      console.log('API请求:', { url, config, retryCount });
       const response = await fetch(url, config);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         
-        // 如果是401错误，强制重定向到登录页
+        // 如果是401错误且还没有重试过，尝试刷新token并重试
+        if (response.status === 401 && retryCount === 0) {
+          console.log('收到401错误，尝试刷新token并重试...');
+          
+          // 尝试刷新Supabase session
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            console.error('Token刷新失败:', refreshError);
+            // 刷新失败，清除本地存储并重定向到登录页
+            localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
+            this.clearToken();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
+            throw new Error('认证已过期，请重新登录');
+          }
+          
+          if (refreshData?.session?.access_token) {
+            console.log('Token刷新成功，重试请求...');
+            // 递归调用自己，但增加重试计数
+            return await this.request(endpoint, options, retryCount + 1);
+          }
+        }
+        
+        // 如果重试后仍然是401，或者不是401错误，则抛出错误
         if (response.status === 401) {
           // 清除本地存储的认证信息
           localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
@@ -103,6 +168,13 @@ class ApiClient {
 
       return await response.json();
     } catch (error) {
+      console.error('API请求失败:', { url, error, config, retryCount });
+      
+      // 提供更详细的错误信息
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error(`网络连接失败: ${error.message}。请检查网络连接和后端服务状态。`);
+      }
+      
       throw error;
     }
   }

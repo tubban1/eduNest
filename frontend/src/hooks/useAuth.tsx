@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { enforceSingleAccount, detectSessionConflict, clearAllSessions } from '@/utils/sessionManager';
+import { tokenMonitor } from '@/utils/tokenMonitor';
 
 interface AuthUser {
   id: string;
@@ -125,6 +126,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     handleSessionConflict();
     checkAuthStatus();
+    
+    // 启动token监控（每5分钟检查一次）
+    tokenMonitor.startMonitoring(5 * 60 * 1000);
 
     // 监听会话变化，实时注入/清除 token
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -207,6 +211,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       authListener.subscription.unsubscribe();
+      // 停止token监控
+      tokenMonitor.stopMonitoring();
     };
   }, []);
 
@@ -336,13 +342,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('尝试重发验证邮件到:', email);
       console.log('重定向URL:', `${window.location.origin}/auth/callback`);
       
-      console.log('使用与注册相同的接口: supabase.auth.signUp()');
-      console.log('这样可以确保邮件发送逻辑完全一致');
+      console.log('使用Supabase官方推荐的方法：重新调用signUp');
+      console.log('根据官方文档，没有resend接口，需要重新调用signUp');
       
-      // 使用与注册相同的接口和参数
+      // 根据Supabase官方文档，重发验证邮件需要重新调用signUp
+      // 对于已存在的用户，Supabase会重新发送验证邮件
       const { data, error } = await supabase.auth.signUp({
         email,
-        password: 'dummy_password_for_resend', // 使用虚拟密码，因为用户已存在
+        password: 'temporary_password_for_resend', // 临时密码，仅用于重发
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`
         }
@@ -353,11 +360,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('重发邮件错误:', error);
         
-        // 如果是用户已存在的错误，这实际上是正常的
+        // 检查是否是用户已存在的错误（这通常是正常的）
         if (error.message.includes('already registered') || 
             error.message.includes('already been registered') ||
-            error.message.includes('User already registered')) {
-          console.log('用户已存在，这是正常的，邮件应该已发送');
+            error.message.includes('User already registered') ||
+            error.message.includes('already signed up')) {
+          console.log('用户已存在，这是正常的，Supabase应该已重新发送验证邮件');
           return { error: null };
         }
         
