@@ -167,11 +167,11 @@ class ApiClient {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
       console.error('API请求失败:', { url, error, config, retryCount });
       
       // 提供更详细的错误信息
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      if (error instanceof TypeError && error.message && error.message.includes('fetch')) {
         throw new Error(`网络连接失败: ${error.message}。请检查网络连接和后端服务状态。`);
       }
       
