@@ -15,7 +15,8 @@ router.post('/generate', [
   body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
   body('description').optional().isString().isLength({ max: 1000 }).withMessage('描述长度不能超过1000字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
-  body('provider').optional().isIn(['ark', 'kimi']).withMessage('provider 必须是 ark 或 kimi')
+  body('provider').optional().isIn(['ark', 'kimi']).withMessage('provider 必须是 ark 或 kimi'),
+  body('requestId').optional().isUUID().withMessage('requestId 必须是有效的UUID')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -26,7 +27,7 @@ router.post('/generate', [
       });
     }
 
-    const { knowledgePoint, learningStage, description, language_code, provider } = req.body;
+    const { knowledgePoint, learningStage, description, language_code, provider, requestId } = req.body;
 
     // 验证学习阶段
     if (!aiService.validateLearningStage(learningStage)) {
@@ -50,7 +51,7 @@ router.post('/generate', [
       }
     }
 
-    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate', provider);
+    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate', provider, requestId);
 
     if (result.success) {
       logger.info(`AI生成成功: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${result.data?.language_code || language_code || '未知'}`);
@@ -319,6 +320,90 @@ router.post('/test-token', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || '测试失败'
+    });
+  }
+});
+
+// 通过request_id查询AI生成日志
+router.get('/logs/:requestId', authenticateToken, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user?.id;
+
+    if (!requestId) {
+      return res.status(400).json({
+        success: false,
+        error: 'request_id参数缺失'
+      });
+    }
+
+    // 验证UUID格式
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(requestId)) {
+      return res.status(400).json({
+        success: false,
+        error: '无效的request_id格式'
+      });
+    }
+
+    logger.info(`查询AI生成日志: requestId=${requestId}, userId=${userId}`);
+
+    // 从数据库查询日志
+    const { data: logData, error: queryError } = await DatabaseService.supabase
+      .from('ai_usage_logs')
+      .select('*')
+      .eq('request_id', requestId)
+      .single();
+
+    if (queryError) {
+      logger.error('查询AI日志失败:', queryError);
+      return res.status(500).json({
+        success: false,
+        error: '查询日志失败'
+      });
+    }
+
+    if (!logData) {
+      return res.status(404).json({
+        success: false,
+        error: '未找到对应的生成记录'
+      });
+    }
+
+    // 验证用户权限（只能查询自己的日志）
+    if (userId && logData.user_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: '无权访问此记录'
+      });
+    }
+
+    // 解析response_metadata中的response_meta
+    let responseMeta = null;
+    if (logData.response_metadata) {
+      try {
+        const metadata = typeof logData.response_metadata === 'string' 
+          ? JSON.parse(logData.response_metadata) 
+          : logData.response_metadata;
+        responseMeta = metadata.raw || metadata.response_meta || metadata;
+      } catch (parseError) {
+        logger.warn('解析response_metadata失败:', parseError);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...logData,
+        response_meta: responseMeta
+      }
+    });
+
+  } catch (error) {
+    logger.error('查询AI日志API错误:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '查询日志失败'
     });
   }
 });

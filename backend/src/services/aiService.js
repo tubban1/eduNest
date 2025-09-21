@@ -56,7 +56,8 @@ const logAIUsageWithDefaults = async (params) => {
     created_at: new Date(),
     is_json_valid: false,
     is_render_success: false,
-    error_message: null
+    error_message: null,
+    request_id: null
   };
   
   const logParams = { ...defaultParams, ...params };
@@ -197,7 +198,7 @@ const LEARNING_STAGE_NAMES = {
 };
 
 // 生成教育交互内容
-const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate', provider = null) => {
+const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null) => {
   let logId = null;
   let logParams = {};
   try {
@@ -240,7 +241,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         total_tokens: totalTokens,
         request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
         response_metadata: { provider: result.provider, model: result.model },
-        error_message: 'AI返回内容为空'
+        error_message: 'AI返回内容为空',
+        request_id: requestId
       });
       throw new Error('AI返回内容为空');
     }
@@ -272,7 +274,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           response_metadata: { provider: result.provider, model: result.model, raw: result.response },
           created_at: new Date(result.created ? result.created * 1000 : Date.now()),
           is_json_valid: true,
-          error_message: null
+          error_message: null,
+          request_id: requestId
         });
     return {
       success: true,
@@ -291,7 +294,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           response_metadata: { provider: result.provider, model: result.model, raw: result.response },
           created_at: new Date(result.created ? result.created * 1000 : Date.now()),
           is_json_valid: false,
-          error_message: `JSON解析失败: ${parseError.message}`
+          error_message: `JSON解析失败: ${parseError.message}`,
+          request_id: requestId
         });
         return {
           success: false,
@@ -312,7 +316,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         response_metadata: { provider: result.provider, model: result.model },
         created_at: new Date(result.created ? result.created * 1000 : Date.now()),
         is_json_valid: false,
-        error_message: '未找到JSON格式'
+        error_message: '未找到JSON格式',
+        request_id: requestId
       });
       return {
         success: false,
@@ -326,7 +331,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
       user_id: null,
       user_query: null,
       action_type: 'generate',
-      error_message: error.message || 'AI生成失败'
+      error_message: error.message || 'AI生成失败',
+      request_id: requestId
     });
     return {
       success: false,

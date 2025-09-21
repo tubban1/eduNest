@@ -358,10 +358,24 @@ class ApiClient {
 
   // AI API
   async generateContent(prompt: string, options: any = {}) {
-    return this.post('/ai/generate', {
+    // 生成唯一的request_id
+    const requestId = crypto.randomUUID();
+    
+    console.log('AI生成请求:', { requestId, prompt: prompt.substring(0, 100) + '...' });
+    
+    const response = await this.post('/ai/generate', {
       prompt,
+      requestId,
       ...options,
     });
+    
+    // 将request_id附加到响应中，方便前端使用
+    return { ...response, requestId };
+  }
+
+  // 通过request_id查询AI生成日志
+  async getAiLogByRequestId(requestId: string) {
+    return this.get(`/ai/logs/${requestId}`);
   }
 
   // Payments API

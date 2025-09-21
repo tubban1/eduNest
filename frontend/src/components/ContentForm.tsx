@@ -135,6 +135,7 @@ export default function ContentForm({
   const [aiGenerating, setAiGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false); // 新增：标记是否已经生成过内容
   const [aiProvider, setAiProvider] = useState<string>(''); // AI提供商选择
+  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null); // 当前AI生成请求的ID
   
   // AI修复相关状态
   const [fixError, setFixError] = useState("");
@@ -567,6 +568,12 @@ export default function ContentForm({
         provider: user?.role === 'admin' ? aiProvider : undefined // 只有管理员可以指定提供商
       });
 
+      // 存储当前请求的request_id
+      if (response.requestId) {
+        setCurrentRequestId(response.requestId);
+        console.log('AI生成请求ID已存储:', response.requestId);
+      }
+
       if (response.success && response.data) {
         const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = response.data;
         
@@ -621,11 +628,67 @@ export default function ContentForm({
         throw new Error('AI generation failed');
       }
     } catch (error: any) {
+      console.error('AI生成失败:', error);
+      
       // 检查是否是认证错误
       if (error.message?.includes('401') || error.message?.includes('无效的访问令牌') || error.message?.includes('访问令牌缺失')) {
         // 强制重定向到登录页
         window.location.href = '/login';
         return;
+      }
+
+      // 如果是网络错误或load failed，尝试fallback查询
+      if (currentRequestId && (error.message?.includes('Failed to fetch') || error.message?.includes('load failed') || error.message?.includes('网络连接失败'))) {
+        console.log('检测到网络错误，尝试fallback查询:', currentRequestId);
+        try {
+          const fallbackResponse = await api.getAiLogByRequestId(currentRequestId);
+          if (fallbackResponse.success && fallbackResponse.data) {
+            console.log('Fallback查询成功，恢复AI生成结果');
+            // 处理fallback数据
+            const logData = fallbackResponse.data;
+            if (logData.response_meta) {
+              const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = logData.response_meta;
+              
+              // 更新表单内容
+              setHtml(html || DEFAULT_HTML);
+              setCss(css || DEFAULT_CSS);
+              setJs(js || DEFAULT_JS);
+              setTitle(generatedTitle || title);
+              setDescription(generatedDescription || description);
+              setContentType(content_type || generatedContentType || '');
+              setAiGeneratedLanguage(generatedLanguageCode || legacyLanguage || '');
+              
+              if (generatedLinks && Array.isArray(generatedLinks)) {
+                setExternalLinks(generatedLinks.join('\n'));
+              }
+              
+              // 处理标签
+              const allNewTags = [];
+              if (generatedTags && Array.isArray(generatedTags)) {
+                const uniqueGeneratedTags = [...new Set(generatedTags.filter(tag => 
+                  tag && tag.trim() && tag.trim().length <= 20
+                ))];
+                allNewTags.push(...uniqueGeneratedTags);
+              }
+              if (knowledgePoint.trim() && knowledgePoint.trim().length <= 20) {
+                allNewTags.push(knowledgePoint.trim());
+              }
+              const finalUniqueTags = [...new Set(allNewTags)];
+              const uniqueNewTags = finalUniqueTags.filter(tag => !tagList.includes(tag));
+              if (uniqueNewTags.length > 0) {
+                setTagList(prev => [...prev, ...uniqueNewTags]);
+              }
+              
+              setActiveTab('js');
+              setError('');
+              setHasGenerated(true);
+              setAiGenerating(false);
+              return;
+            }
+          }
+        } catch (fallbackError) {
+          console.error('Fallback查询也失败了:', fallbackError);
+        }
       }
       setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
     } finally {
