@@ -458,7 +458,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
 };
 
 // AI修复接口（已接入多提供商）
-const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language_code, title, description, user_id = null, provider = null }) => {
+const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language_code, title, description, user_id = null, provider = null, requestId = null }) => {
   let logParams = {};
   try {
     // 构建修复prompt
@@ -525,7 +525,8 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
         total_tokens: totalTokens,
         request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
         response_metadata: { provider: result.provider, model: result.model, raw: result.response },
-        error_message: 'AI返回内容为空'
+        error_message: 'AI返回内容为空',
+        request_id: requestId
       });
       return { success: false, error: 'AI返回内容为空' };
     }
@@ -571,7 +572,8 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
           response_metadata: { provider: result.provider, model: result.model, raw: result.response },
           created_at: new Date(result.created ? result.created * 1000 : Date.now()),
           is_json_valid: true,
-          error_message: null
+          error_message: null,
+          request_id: requestId
         });
       } else {
         console.error('无法找到修复JSON结构，原始内容:', aiResponse);
@@ -603,7 +605,8 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
       user_id,
       user_query: note,
       action_type: 'fix',
-      error_message: e.message || 'AI修复失败'
+      error_message: e.message || 'AI修复失败',
+      request_id: requestId
     });
     return { success: false, error: e.message };
   }

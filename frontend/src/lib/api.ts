@@ -284,7 +284,13 @@ class ApiClient {
     },
 
     fix: async (fixData: any) => {
-      const data = await this.post('/content/fix', fixData);
+      // 生成唯一的request_id
+      const requestId = crypto.randomUUID();
+      
+      const data = await this.post('/content/fix', {
+        ...fixData,
+        requestId
+      });
       return data.success ? data.data : null;
     },
   };
