@@ -87,13 +87,14 @@ class AIProviderFactory {
   }
 
   /**
-   * 发送聊天完成请求
+   * 发送聊天完成请求（带重试机制）
    * @param {Object} params - 请求参数
    * @param {string} params.provider - 提供商名称
    * @param {string} params.model - 模型名称（可选，使用默认模型）
    * @param {Array} params.messages - 消息数组
    * @param {number} params.temperature - 温度参数
    * @param {number} params.max_tokens - 最大token数
+   * @param {number} params.maxRetries - 最大重试次数
    * @returns {Promise<Object>} API响应
    */
   async createChatCompletion({
@@ -101,7 +102,8 @@ class AIProviderFactory {
     model = null,
     messages = [],
     temperature = 0.6,
-    max_tokens = 24000
+    max_tokens = 24000,
+    maxRetries = 3
   }) {
     const providerConfig = this.getProvider(provider);
     const requestModel = model || providerConfig.model;
@@ -113,29 +115,75 @@ class AIProviderFactory {
       max_tokens
     };
 
-    const response = await fetch(providerConfig.baseURL, {
-      method: 'POST',
-      headers: providerConfig.headers,
-      body: JSON.stringify(requestPayload)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`${providerConfig.name} API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const data = await response.json();
+    let lastError = null;
     
-    // 统一响应格式
-    return {
-      provider: provider || this.defaultProvider,
-      model: requestModel,
-      response: data,
-      content: data.choices?.[0]?.message?.content,
-      usage: data.usage,
-      created: data.created,
-      id: data.id
-    };
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(providerConfig.baseURL, {
+          method: 'POST',
+          headers: providerConfig.headers,
+          body: JSON.stringify(requestPayload)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          // 统一响应格式
+          return {
+            provider: provider || this.defaultProvider,
+            model: requestModel,
+            response: data,
+            content: data.choices?.[0]?.message?.content,
+            usage: data.usage,
+            created: data.created,
+            id: data.id
+          };
+        }
+
+        // 处理错误响应
+        const errorText = await response.text();
+        const errorMessage = `${providerConfig.name} API请求失败: ${response.status} ${response.statusText} - ${errorText}`;
+        
+        // 检查是否是429错误（并发限制）
+        if (response.status === 429) {
+          // 尝试从错误信息中提取等待时间
+          let waitTime = 1000; // 默认等待1秒
+          
+          try {
+            const errorData = JSON.parse(errorText);
+            if (errorData.error && errorData.error.message) {
+              const message = errorData.error.message;
+              const match = message.match(/try again after (\d+) seconds?/i);
+              if (match) {
+                waitTime = parseInt(match[1]) * 1000;
+              }
+            }
+          } catch (parseError) {
+            // 如果解析失败，使用默认等待时间
+          }
+          
+          if (attempt < maxRetries) {
+            console.log(`${providerConfig.name} API并发限制，等待${waitTime}ms后重试 (${attempt + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          }
+        }
+        
+        // 如果不是429错误或已达到最大重试次数，抛出错误
+        lastError = new Error(errorMessage);
+        break;
+        
+      } catch (error) {
+        lastError = error;
+        if (attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 1000; // 指数退避
+          console.log(`${providerConfig.name} API请求异常，${waitTime}ms后重试 (${attempt + 1}/${maxRetries}):`, error.message);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+    
+    throw lastError;
   }
 
   /**

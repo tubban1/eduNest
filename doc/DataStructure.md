@@ -98,6 +98,13 @@
     "column_default": "0"
   },
   {
+    "table_name": "ai_usage_logs",
+    "column_name": "request_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "collection_lists",
     "column_name": "id",
     "data_type": "uuid",
