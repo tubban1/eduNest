@@ -571,7 +571,6 @@ export default function ContentForm({
       // 存储当前请求的request_id
       if (response.requestId) {
         setCurrentRequestId(response.requestId);
-        console.log('AI生成请求ID已存储:', response.requestId);
       }
 
       if (response.success && response.data) {

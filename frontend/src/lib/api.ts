@@ -361,7 +361,6 @@ class ApiClient {
     // 生成唯一的request_id
     const requestId = crypto.randomUUID();
     
-    console.log('AI生成请求:', { requestId, prompt: prompt.substring(0, 100) + '...' });
     
     const response = await this.post('/ai/generate', {
       prompt,

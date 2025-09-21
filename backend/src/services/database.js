@@ -1255,7 +1255,8 @@ const logAIUsage = async (log) => {
         created_at: log.created_at ? new Date(log.created_at) : new Date(),
         is_json_valid: typeof log.is_json_valid === 'boolean' ? log.is_json_valid : false,
         is_render_success: typeof log.is_render_success === 'boolean' ? log.is_render_success : false,
-        error_message: log.error_message || null
+        error_message: log.error_message || null,
+        request_id: log.request_id || null
       })
       .select()
       .single();
