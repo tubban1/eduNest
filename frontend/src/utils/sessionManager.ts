@@ -95,28 +95,39 @@ export const enforceSingleAccount = async (): Promise<void> => {
     const currentSession = getCurrentSession();
     
     if (!currentSession) {
-      clearAllSessions();
+      // 没有当前会话，不做破坏性清理，交由登录流程处理
       return;
     }
     
-    // 验证当前session是否有效
-    const isValid = await validateSession(currentSession);
+    // 验证当前session是否有效（加入最多2次重试）
+    const maxAttempts = 3;
+    let attempt = 0;
+    let isValid = false;
+    while (attempt < maxAttempts) {
+      isValid = await validateSession(currentSession);
+      if (isValid) break;
+      // 指数退避 200ms, 400ms
+      await new Promise(r => setTimeout(r, 200 * Math.pow(2, attempt)));
+      attempt++;
+    }
     
     if (!isValid) {
-      clearAllSessions();
+      // 验证仍失败，不强制清除所有；避免网络抖动误伤
       return;
     }
     
-    // 清除其他可能的冲突session，但保留当前有效的session
+    // 仅在确实存在多个 Supabase 会话键时，清除其他键
     const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.includes('sb-') && key.includes('-auth-token') && key !== 'sb-zayoczhybuegvtpcsgso-auth-token') {
-        localStorage.removeItem(key);
-      }
-    });
+    const sessionKeys = keys.filter(key => key.includes('sb-') && key.includes('-auth-token'));
+    if (sessionKeys.length > 1) {
+      sessionKeys.forEach(key => {
+        if (key !== 'sb-zayoczhybuegvtpcsgso-auth-token') {
+          localStorage.removeItem(key);
+        }
+      });
+    }
   } catch (error) {
     console.error('Error enforcing single account:', error);
-    // 出错时清除所有session
-    clearAllSessions();
+    // 出错时不做破坏性清理，避免误登出
   }
 }; 

@@ -127,8 +127,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     handleSessionConflict();
     checkAuthStatus();
     
-    // 启动token监控（每5分钟检查一次）
-    tokenMonitor.startMonitoring(5 * 60 * 1000);
+    // 启动token监控（每1分钟检查一次）
+    tokenMonitor.startMonitoring(60 * 1000);
+
+    // 页面可见时，主动触发一次会话刷新
+    const handleVisibility = async () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          await supabase.auth.getSession();
+        } catch (e) {
+          // 忽略
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     // 监听会话变化，实时注入/清除 token
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -213,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authListener.subscription.unsubscribe();
       // 停止token监控
       tokenMonitor.stopMonitoring();
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 

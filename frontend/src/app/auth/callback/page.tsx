@@ -94,6 +94,14 @@ export default function AuthCallback() {
           return;
         }
 
+        // 新增：没有refresh_token则不建立不可续期会话
+        if (!refreshToken) {
+          console.error('Missing refresh token in hash');
+          setStatus('认证失败: 缺少刷新令牌');
+          setTimeout(() => { router.push('/login?error=missing_refresh_token'); }, 1500);
+          return;
+        }
+
         // 设置 Supabase 会话
         console.log('Setting Supabase session...');
         const { error: setErr } = await supabase.auth.setSession({

@@ -127,40 +127,27 @@ class ApiClient {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         
-        // 如果是401错误且还没有重试过，尝试刷新token并重试
-        if (response.status === 401 && retryCount === 0) {
-          console.log('收到401错误，尝试刷新token并重试...');
-          
-          // 尝试刷新Supabase session
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          
-          if (refreshError) {
-            console.error('Token刷新失败:', refreshError);
-            // 刷新失败，清除本地存储并重定向到登录页
-            localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
-            this.clearToken();
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
+        // 如果是401错误，进行最多两次刷新重试
+        if (response.status === 401 && retryCount < 2) {
+          console.log('收到401错误，尝试刷新token并重试...', { retryCount });
+          try {
+            // 短暂退避以避免与其他刷新竞态
+            await new Promise(r => setTimeout(r, 200 * (retryCount + 1)));
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (!refreshError && refreshData?.session?.access_token) {
+              console.log('Token刷新成功，重试请求...');
+              return await this.request(endpoint, options, retryCount + 1);
             }
-            throw new Error('认证已过期，请重新登录');
-          }
-          
-          if (refreshData?.session?.access_token) {
-            console.log('Token刷新成功，重试请求...');
-            // 递归调用自己，但增加重试计数
-            return await this.request(endpoint, options, retryCount + 1);
+            console.warn('Token刷新失败，准备下一次尝试或退出', { refreshError, retryCount });
+          } catch (e) {
+            console.error('刷新流程异常:', e);
           }
         }
         
-        // 如果重试后仍然是401，或者不是401错误，则抛出错误
+        // 连续重试后仍401，交给上层处理（不要立即强制跳登录）
         if (response.status === 401) {
-          // 清除本地存储的认证信息
-          localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
-          this.clearToken();
-          // 重定向到登录页
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
+          throw new Error('认证失败或已过期');
         }
         
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
