@@ -941,14 +941,14 @@ export default function ContentForm({
                             placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
                             required
                             disabled={isAiFormDisabled}
-                            maxLength={1000}
+                            maxLength={1500}
                           />
                           <div className="flex justify-between items-center mt-1">
                             <span className="text-xs text-gray-500">
                               {mounted ? t('knowledgePointHint', { ns: 'content', defaultValue: 'Describe the knowledge point in detail for better AI generation' }) : 'Describe the knowledge point in detail for better AI generation'}
                             </span>
-                            <span className={`text-xs ${knowledgePoint.length > 900 ? 'text-red-500' : knowledgePoint.length > 800 ? 'text-yellow-500' : 'text-gray-500'}`}>
-                              {knowledgePoint.length}/1000
+                            <span className={`text-xs ${knowledgePoint.length > 1350 ? 'text-red-500' : knowledgePoint.length > 1200 ? 'text-yellow-500' : 'text-gray-500'}`}>
+                              {knowledgePoint.length}/1500
                             </span>
                           </div>
                         </div>
@@ -1020,7 +1020,13 @@ export default function ContentForm({
                     onChange={e => setDescription(e.target.value)}
                     placeholder={mounted ? t('inputDescriptionPlaceholder', { ns: 'content', defaultValue: 'Please enter content description' }) : 'Please enter content description'}
                     disabled={isAiFormDisabled}
+                    maxLength={1500}
                   />
+                  <div className="flex justify-end items-center mt-1">
+                    <span className={`text-xs ${description.length > 1350 ? 'text-red-500' : description.length > 1200 ? 'text-yellow-500' : 'text-gray-500'}`}>
+                      {description.length}/1500
+                    </span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   {!isRegularUser && (
