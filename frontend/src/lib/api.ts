@@ -370,6 +370,11 @@ class ApiClient {
     return this.get(`/ai/logs/${requestId}`);
   }
 
+  // 重新加载AI生成结果
+  async reloadAiResult(requestId: string) {
+    return this.get(`/ai/reload?request_id=${requestId}`);
+  }
+
   // Payments API
   async getPaymentMethods() {
     return this.get('/payments/payment-methods');

@@ -136,6 +136,8 @@ export default function ContentForm({
   const [hasGenerated, setHasGenerated] = useState(false); // 新增：标记是否已经生成过内容
   const [aiProvider, setAiProvider] = useState<string>(''); // AI提供商选择
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null); // 当前AI生成请求的ID
+  const [showReloadButton, setShowReloadButton] = useState(false); // 是否显示重新加载按钮
+  const [reloading, setReloading] = useState(false); // 重新加载状态
   
   // AI修复相关状态
   const [fixError, setFixError] = useState("");
@@ -556,6 +558,7 @@ export default function ContentForm({
 
     setAiGenerating(true);
     setError('');
+    setShowReloadButton(false);
 
     try {
       const prompt = `${t('aiGenerateContentPrompt', { ns: 'content', defaultValue: `Generate a ${learningStage} learning content about "${knowledgePoint.trim()}".${description ? `Specific requirements: ${description}` : ''}` })}`;
@@ -689,9 +692,75 @@ export default function ContentForm({
           console.error('Fallback查询也失败了:', fallbackError);
         }
       }
-      setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
+      
+      // 如果是load failed错误，显示重新加载按钮
+      if (error.message?.includes('load failed') || error.message?.includes('Failed to fetch') || error.message?.includes('网络连接失败')) {
+        setShowReloadButton(true);
+        setError('生成失败，但可以尝试重新加载结果');
+      } else {
+        setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
+      }
     } finally {
       setAiGenerating(false);
+    }
+  };
+
+  // 重新加载AI生成结果
+  const handleReload = async () => {
+    if (!currentRequestId) return;
+    
+    setReloading(true);
+    setError('');
+    
+    try {
+      const response = await api.reloadAiResult(currentRequestId);
+      
+      if (response.success && response.data) {
+        console.log('重新加载成功，恢复AI生成结果');
+        const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = response.data;
+        
+        // 更新表单内容
+        setHtml(html || DEFAULT_HTML);
+        setCss(css || DEFAULT_CSS);
+        setJs(js || DEFAULT_JS);
+        setTitle(generatedTitle || title);
+        setDescription(generatedDescription || description);
+        setContentType(content_type || generatedContentType || '');
+        setAiGeneratedLanguage(generatedLanguageCode || legacyLanguage || '');
+        
+        if (generatedLinks && Array.isArray(generatedLinks)) {
+          setExternalLinks(generatedLinks.join('\n'));
+        }
+        
+        // 处理标签
+        const allNewTags = [];
+        if (generatedTags && Array.isArray(generatedTags)) {
+          const uniqueGeneratedTags = [...new Set(generatedTags.filter(tag => 
+            tag && tag.trim() && tag.trim().length <= 20
+          ))];
+          allNewTags.push(...uniqueGeneratedTags);
+        }
+        if (knowledgePoint.trim() && knowledgePoint.trim().length <= 20) {
+          allNewTags.push(knowledgePoint.trim());
+        }
+        const finalUniqueTags = [...new Set(allNewTags)];
+        const uniqueNewTags = finalUniqueTags.filter(tag => !tagList.includes(tag));
+        if (uniqueNewTags.length > 0) {
+          setTagList(prev => [...prev, ...uniqueNewTags]);
+        }
+        
+        setActiveTab('js');
+        setError('');
+        setHasGenerated(true);
+        setShowReloadButton(false);
+      } else {
+        setError('重新加载失败，请重试');
+      }
+    } catch (error: any) {
+      console.error('重新加载失败:', error);
+      setError('重新加载失败: ' + (error.message || '未知错误'));
+    } finally {
+      setReloading(false);
     }
   };
 
@@ -1052,7 +1121,20 @@ export default function ContentForm({
                   </div>
                 </div>
               )}
-              {error && <div className="text-red-600 text-center mt-2">{error}</div>}
+              {error && (
+                <div className="text-red-600 text-center mt-2">
+                  <div>{error}</div>
+                  {showReloadButton && currentRequestId && (
+                    <button
+                      onClick={handleReload}
+                      disabled={reloading}
+                      className="mt-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                    >
+                      {reloading ? '重新加载中...' : '重新加载结果'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             {/* 右侧：实时预览区 */}
             <div className="bg-gradient-to-br from-gray-100 to-white border border-gray-200 rounded-xl shadow flex flex-col h-[40rem]">

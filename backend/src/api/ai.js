@@ -408,4 +408,97 @@ router.get('/logs/:requestId', authenticateToken, async (req, res) => {
   }
 });
 
+// 重新加载AI生成结果（通过request_id）
+router.get('/reload', authenticateToken, async (req, res) => {
+  try {
+    const { request_id } = req.query;
+    const userId = req.user?.id;
+
+    if (!request_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'request_id参数缺失'
+      });
+    }
+
+    // 验证UUID格式
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(request_id)) {
+      return res.status(400).json({
+        success: false,
+        error: '无效的request_id格式'
+      });
+    }
+
+    logger.info(`重新加载AI生成结果: requestId=${request_id}, userId=${userId}`);
+
+    // 从数据库查询日志
+    const { data: logData, error: queryError } = await DatabaseService.supabase
+      .from('ai_usage_logs')
+      .select('*')
+      .eq('request_id', request_id)
+      .single();
+
+    if (queryError) {
+      logger.error('查询AI日志失败:', queryError);
+      return res.status(500).json({
+        success: false,
+        error: '查询日志失败'
+      });
+    }
+
+    if (!logData) {
+      return res.status(404).json({
+        success: false,
+        error: '未找到对应的生成记录'
+      });
+    }
+
+    // 验证用户权限（只能查询自己的日志）
+    if (userId && logData.user_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: '无权访问此记录'
+      });
+    }
+
+    // 解析response_metadata中的response_meta
+    let responseMeta = null;
+    if (logData.response_metadata) {
+      try {
+        const metadata = typeof logData.response_metadata === 'string' 
+          ? JSON.parse(logData.response_metadata) 
+          : logData.response_metadata;
+        responseMeta = metadata.raw || metadata.response_meta || metadata;
+      } catch (parseError) {
+        logger.warn('解析response_metadata失败:', parseError);
+        return res.status(500).json({
+          success: false,
+          error: '解析生成结果失败'
+        });
+      }
+    }
+
+    if (!responseMeta) {
+      return res.status(404).json({
+        success: false,
+        error: '未找到有效的生成结果'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: responseMeta,
+      request_id: request_id
+    });
+
+  } catch (error) {
+    logger.error('重新加载AI结果API错误:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '重新加载失败'
+    });
+  }
+});
+
 module.exports = router;
