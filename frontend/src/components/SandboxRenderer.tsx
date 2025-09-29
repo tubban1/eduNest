@@ -1760,8 +1760,7 @@ export default function SandboxRenderer({
             overflow: fixedHeight ? 'auto' : 'visible',
             position: 'relative',
             // 移动端触摸滚动支持
-            WebkitOverflowScrolling: 'touch',
-            overflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch'
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
@@ -1816,8 +1815,7 @@ export default function SandboxRenderer({
             overflow: fixedHeight ? 'auto' : 'visible',
             position: 'relative',
             // 移动端触摸滚动支持
-            WebkitOverflowScrolling: 'touch',
-            overflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch'
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
@@ -1861,11 +1859,7 @@ export default function SandboxRenderer({
             overflow: fixedHeight ? 'auto' : 'visible',
             position: 'relative',
             // 移动端触摸滚动支持
-            WebkitOverflowScrolling: 'touch',
-            overflowScrolling: 'touch',
-            // 移动端触摸滚动支持
-            WebkitOverflowScrolling: 'touch',
-            overflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch'
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
