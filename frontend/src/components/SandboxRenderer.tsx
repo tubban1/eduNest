@@ -371,6 +371,9 @@ export default function SandboxRenderer({
       background: #fff;
       margin: 0 !important;
       padding: 0 !important;
+      /* 移动端触摸滚动优化 */
+      -webkit-overflow-scrolling: touch;
+      overflow-scrolling: touch;
     }
     
     /* 强制靠近顶部：移除常见容器的顶边距/内边距 */
@@ -1755,7 +1758,10 @@ export default function SandboxRenderer({
             height: fixedHeight ? '100%' : 'auto',
             minHeight: '100%',
             overflow: fixedHeight ? 'auto' : 'visible',
-            position: 'relative'
+            position: 'relative',
+            // 移动端触摸滚动支持
+            WebkitOverflowScrolling: 'touch',
+            overflowScrolling: 'touch'
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
@@ -1808,7 +1814,10 @@ export default function SandboxRenderer({
             height: fixedHeight ? '100%' : 'auto',
             minHeight: '100%',
             overflow: fixedHeight ? 'auto' : 'visible',
-            position: 'relative'
+            position: 'relative',
+            // 移动端触摸滚动支持
+            WebkitOverflowScrolling: 'touch',
+            overflowScrolling: 'touch'
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
@@ -1850,7 +1859,13 @@ export default function SandboxRenderer({
             height: fixedHeight ? '100%' : 'auto',
             minHeight: '100%',
             overflow: fixedHeight ? 'auto' : 'visible',
-            position: 'relative'
+            position: 'relative',
+            // 移动端触摸滚动支持
+            WebkitOverflowScrolling: 'touch',
+            overflowScrolling: 'touch',
+            // 移动端触摸滚动支持
+            WebkitOverflowScrolling: 'touch',
+            overflowScrolling: 'touch'
           }}
           scrolling={fixedHeight ? 'auto' : 'no'}
           onLoad={() => {
