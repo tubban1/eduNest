@@ -374,6 +374,7 @@ export default function SandboxRenderer({
       /* 移动端触摸滚动优化 */
       -webkit-overflow-scrolling: touch;
       overflow-scrolling: touch;
+      overflow-y: auto;
     }
     
     /* 强制靠近顶部：移除常见容器的顶边距/内边距 */
