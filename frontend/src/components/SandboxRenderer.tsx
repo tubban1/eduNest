@@ -594,7 +594,8 @@ export default function SandboxRenderer({
       
       // 防止滚动时触发其他事件
       document.addEventListener('touchmove', function (event) {
-        if (event.scale !== 1) {
+        // 仅在检测到缩放手势时才阻止默认行为，避免影响正常滚动
+        if (typeof event.scale === 'number' && event.scale !== 1) {
           event.preventDefault();
         }
       }, { passive: false });
