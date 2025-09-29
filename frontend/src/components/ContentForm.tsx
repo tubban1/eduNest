@@ -138,6 +138,46 @@ export default function ContentForm({
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null); // 当前AI生成请求的ID
   const [showReloadButton, setShowReloadButton] = useState(false); // 是否显示重新加载按钮
   const [reloading, setReloading] = useState(false); // 重新加载状态
+
+  // 统一设置“加载失败，可重载”的UI状态，并持久化到 sessionStorage，防止 iOS 后台/切回导致状态丢失
+  const markLoadFailed = React.useCallback((message: string) => {
+    const msg = message || 'Load failed';
+    setShowReloadButton(true);
+    setError(msg);
+    try {
+      const reqId = currentRequestId || (typeof window !== 'undefined' ? sessionStorage.getItem('ai_current_request_id') : null);
+      if (typeof window !== 'undefined' && reqId) {
+        sessionStorage.setItem('ai_reload_hint', JSON.stringify({ requestId: reqId, ts: Date.now(), msg }));
+      }
+    } catch {}
+  }, [currentRequestId]);
+
+  // 恢复“加载失败”提示（在组件挂载和页面从后台回到前台时触发）
+  useEffect(() => {
+    const restoreReloadHint = () => {
+      try {
+        const hintRaw = sessionStorage.getItem('ai_reload_hint');
+        if (!hintRaw) return;
+        const hint = JSON.parse(hintRaw);
+        // 仅在10分钟内的记录有效
+        if (hint && hint.requestId && Date.now() - (hint.ts || 0) < 10 * 60 * 1000) {
+          if (!currentRequestId) {
+            setCurrentRequestId(hint.requestId);
+          }
+          setShowReloadButton(true);
+          setError(hint.msg || 'Load failed');
+        }
+      } catch {}
+    };
+
+    restoreReloadHint();
+
+    const onVis = () => {
+      if (document.visibilityState === 'visible') restoreReloadHint();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [currentRequestId]);
   
   // AI修复相关状态
   const [fixError, setFixError] = useState("");
@@ -574,6 +614,7 @@ export default function ContentForm({
       // 存储当前请求的request_id
       if (response.requestId) {
         setCurrentRequestId(response.requestId);
+        try { sessionStorage.setItem('ai_current_request_id', response.requestId); } catch {}
       }
 
       if (response.success && response.data) {
@@ -696,8 +737,7 @@ export default function ContentForm({
       
       // 如果是load failed错误，显示重新加载按钮
       if (error.message?.includes('load failed') || error.message?.includes('Failed to fetch') || error.message?.includes('网络连接失败')) {
-        setShowReloadButton(true);
-        setError('生成失败，但可以尝试重新加载结果');
+        markLoadFailed('生成失败，但可以尝试重新加载结果');
       } else {
       setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
       }
@@ -719,6 +759,9 @@ export default function ContentForm({
       if (response.success && response.data) {
         console.log('重新加载成功，恢复AI生成结果');
         
+        // 清除持久化的失败提示
+        try { sessionStorage.removeItem('ai_reload_hint'); } catch {}
+
         // 尝试从不同位置提取数据
         let extractedData = response.data;
         
@@ -1188,9 +1231,20 @@ export default function ContentForm({
                     height: '100%',
                     width: '100%'
                   }}
-                  onError={(error) => {
+                  onError={(err) => {
+                    try {
+                      const msg = String((err as any) ?? 'Load failed');
+                      markLoadFailed(msg);
+                    } catch {
+                      markLoadFailed('Load failed');
+                    }
                   }}
                   onLoad={() => {
+                    // 清理iframe加载错误
+                    if (error && error.toLowerCase().includes('load failed')) {
+                      setError('');
+                    }
+                    try { sessionStorage.removeItem('ai_reload_hint'); } catch {}
                   }}
                 />
               </div>
