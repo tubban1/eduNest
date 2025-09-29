@@ -577,6 +577,7 @@ export default function ContentForm({
       }
 
       if (response.success && response.data) {
+        // 第一次AI生成：直接从AI生成的内容中读取
         const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = response.data;
         
         // 更新表单内容
@@ -698,7 +699,7 @@ export default function ContentForm({
         setShowReloadButton(true);
         setError('生成失败，但可以尝试重新加载结果');
       } else {
-        setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
+      setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
       }
     } finally {
       setAiGenerating(false);
@@ -717,7 +718,34 @@ export default function ContentForm({
       
       if (response.success && response.data) {
         console.log('重新加载成功，恢复AI生成结果');
-        const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = response.data;
+        
+        // 尝试从不同位置提取数据
+        let extractedData = response.data;
+        
+        // 1. 尝试从 response_meta 直接获取
+        if (response.data.response_meta) {
+          extractedData = response.data.response_meta;
+        }
+        // 2. 尝试从 choices[0].message.content 解析 JSON
+        else if (response.data.choices && response.data.choices[0] && response.data.choices[0].message && response.data.choices[0].message.content) {
+          try {
+            extractedData = JSON.parse(response.data.choices[0].message.content);
+          } catch (e) {
+            console.error('Failed to parse content JSON:', e);
+            extractedData = response.data;
+          }
+        }
+        // 3. 尝试从 raw 字段获取
+        else if (response.data.raw) {
+          try {
+            extractedData = JSON.parse(response.data.raw);
+          } catch (e) {
+            console.error('Failed to parse raw JSON:', e);
+            extractedData = response.data;
+          }
+        }
+        
+        const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = extractedData;
         
         // 更新表单内容
         setHtml(html || DEFAULT_HTML);
