@@ -118,7 +118,7 @@ Vue.js: Vue, VueRouter, Vuex
 React: Redux
 Sound: Tone.js, Howler.js
 Animation: Anime.js, GSAP.js
-3D: Three.js, Babylon.js
+3D: Three.js, Babylon.js, Orbit-Controls, AexsHelper, FontLoader,TextGeometry
 Charts: Chart.js, ECharts, D3.js
 Tools: Lodash, Moment.js, Day.js
 Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
