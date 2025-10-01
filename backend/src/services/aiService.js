@@ -681,7 +681,7 @@ const replaceWithSupportedLibraries = (externalLinks) => {
   // 从配置文件加载支持的库映射表
   const supportedLibraries = loadSupportedLibraries();
 
-  return externalLinks.map(link => {
+  const processedLinks = externalLinks.map(link => {
     if (!link || typeof link !== 'string') {
       return link;
     }
@@ -727,6 +727,19 @@ const replaceWithSupportedLibraries = (externalLinks) => {
     // 如果没有匹配到，返回原链接（可能是自定义链接）
     return link;
   });
+
+  // 去重：移除重复的库链接
+  const uniqueLinks = [];
+  const seenUrls = new Set();
+  
+  for (const link of processedLinks) {
+    if (!seenUrls.has(link)) {
+      seenUrls.add(link);
+      uniqueLinks.push(link);
+    }
+  }
+
+  return uniqueLinks;
 };
 
 // 记录前端渲染结果API
