@@ -252,8 +252,10 @@ export default function ContentForm({
 
   const normalizeBCP47 = (tag: string): string => {
     if (!tag) return '';
+    
+    // 先标准化格式
     const parts = tag.split('-');
-    return parts
+    const normalized = parts
       .map((p, idx) => {
         if (idx === 0) return p.toLowerCase();
         if (p.length === 2 || p.length === 3) return p.toUpperCase();
@@ -261,6 +263,29 @@ export default function ContentForm({
         return p;
       })
       .join('-');
+    
+    // 如果只有语言代码，添加默认地区
+    if (normalized.length === 2) {
+      const languageMap: Record<string, string> = {
+        'zh': 'zh-CN',  // 中文默认中国
+        'en': 'en-US',  // 英文默认美国
+        'de': 'de-DE',  // 德文默认德国
+        'fr': 'fr-FR',  // 法文默认法国
+        'es': 'es-ES',  // 西班牙文默认西班牙
+        'it': 'it-IT',  // 意大利文默认意大利
+        'pt': 'pt-BR',  // 葡萄牙文默认巴西
+        'ja': 'ja-JP',  // 日文默认日本
+        'ko': 'ko-KR',  // 韩文默认韩国
+        'ru': 'ru-RU',  // 俄文默认俄罗斯
+        'ar': 'ar-SA',  // 阿拉伯文默认沙特
+        'hi': 'hi-IN',  // 印地文默认印度
+        'nl': 'nl-NL',  // 荷兰文默认荷兰
+        'sv': 'sv-SE',  // 瑞典文默认瑞典
+      };
+      return languageMap[normalized] || 'en-US';
+    }
+    
+    return normalized;
   };
 
   const filteredLanguages = LANGUAGE_OPTIONS.filter(l => {
