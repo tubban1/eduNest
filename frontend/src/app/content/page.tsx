@@ -16,16 +16,19 @@ function MyContentList({ userId, lists, refreshLists }: { userId: string, lists:
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
+  
   useEffect(() => { setMounted(true); }, []);
-  useEffect(() => {
+  
+  // 刷新内容列表的函数
+  const refreshContent = async () => {
     if (!userId) return;
     setLoading(true);
-    // 使用any类型绕过TypeScript检查，因为getFiltered的参数类型不完整
-    api.content.getFiltered({ created_by: userId } as any).then((data: any) => {
+    try {
+      // 使用any类型绕过TypeScript检查，因为getFiltered的参数类型不完整
+      const data: any = await api.content.getFiltered({ created_by: userId } as any);
       const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
       setMyContent(list);
-      setLoading(false);
-    }).catch((e: any) => {
+    } catch (e: any) {
       // 检查是否是认证错误
       if (e.message?.includes('401') || e.message?.includes('无效的访问令牌') || e.message?.includes('访问令牌缺失')) {
         // 强制重定向到登录页
@@ -33,8 +36,13 @@ function MyContentList({ userId, lists, refreshLists }: { userId: string, lists:
         return;
       }
       setError(e.message || t('fetchContentError', { ns: 'content', defaultValue: '获取内容失败' }));
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+  
+  useEffect(() => {
+    refreshContent();
   }, [userId]);
   if (loading) return <div className="text-gray-400">{mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...'}</div>;
   if (error) return <div className="text-red-600">{error}</div>;
@@ -42,15 +50,22 @@ function MyContentList({ userId, lists, refreshLists }: { userId: string, lists:
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {myContent.map(item => (
-        <div key={item.id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 flex flex-col gap-2">
-          <ContentCard 
-            content={{ ...item, language_code: item.language_code || 'zh-CN' }}
-            isAuthenticated={true} 
-            editMode={true} 
-            lists={lists} 
-            refreshLists={refreshLists} 
-          />
-        </div>
+        <ContentCard 
+          key={item.id}
+          content={{ 
+            ...item, 
+            language_code: item.language_code || 'zh-CN',
+            generation_status: (item as any).generation_status,
+            generation_progress: (item as any).generation_progress,
+            retry_count: (item as any).retry_count,
+            generation_error: (item as any).generation_error
+          }}
+          isAuthenticated={true} 
+          editMode={true} 
+          lists={lists} 
+          refreshLists={refreshLists}
+          onContentUpdate={refreshContent}
+        />
       ))}
     </div>
   );

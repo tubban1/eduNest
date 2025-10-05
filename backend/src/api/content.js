@@ -123,7 +123,12 @@ router.get('/', authenticateToken, async (req, res) => {
       filters.created_by = req.query.created_by;
     }
     
-    const result = await DatabaseService.getContents(filters);
+    // 如果查询用户自己的内容，包含生成状态
+    const includeGenerationStatus = req.query.created_by && req.query.created_by === req.user.id;
+    
+    const result = includeGenerationStatus 
+      ? await DatabaseService.getContentsWithGenerationStatus(filters)
+      : await DatabaseService.getContents(filters);
     
     if (result.error) {
       return res.status(500).json({ error: result.error.message });

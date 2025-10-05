@@ -130,6 +130,89 @@ const getContents = async (filters = {}) => {
   }
 };
 
+// 获取带有生成状态的内容列表
+const getContentsWithGenerationStatus = async (filters = {}) => {
+  try {
+    // 首先获取内容列表
+    const contentsResult = await getContents(filters);
+    if (contentsResult.error) {
+      return contentsResult;
+    }
+
+    const contents = contentsResult.data;
+    if (!contents || contents.length === 0) {
+      return { data: [], error: null };
+    }
+
+    // 获取所有内容的生成状态
+    const contentIds = contents.map(c => c.id);
+    
+    // 查询每个内容的最新生成状态
+    const { data: generationLogs, error: logsError } = await supabase
+      .from('ai_usage_logs')
+      .select('content_id, status, error_message, created_at, updated_at')
+      .in('content_id', contentIds)
+      .eq('action_type', 'generate')
+      .order('created_at', { ascending: false });
+
+    if (logsError) {
+      // 如果查询生成状态失败，返回不带状态的内容
+      return { data: contents, error: null };
+    }
+
+    // 为每个内容创建状态映射（只取最新的状态）
+    const statusMap = new Map();
+    const retryCountMap = new Map();
+    
+    if (generationLogs) {
+      // 按内容ID分组，每个内容只取最新的状态
+      const latestLogsByContent = new Map();
+      
+      generationLogs.forEach(log => {
+        if (!latestLogsByContent.has(log.content_id)) {
+          latestLogsByContent.set(log.content_id, log);
+        }
+        
+        // 计算每个内容的总重试次数
+        const count = retryCountMap.get(log.content_id) || 0;
+        retryCountMap.set(log.content_id, count + 1);
+      });
+      
+      // 构建状态映射
+      latestLogsByContent.forEach((log, contentId) => {
+        statusMap.set(contentId, {
+          generation_status: log.status,
+          generation_error: log.error_message,
+          generation_updated_at: log.updated_at
+        });
+      });
+      
+      // 重试次数 = 总次数 - 1（减去第一次尝试）
+      retryCountMap.forEach((count, contentId) => {
+        retryCountMap.set(contentId, Math.max(0, count - 1));
+      });
+    }
+
+    // 合并内容数据和生成状态
+    const contentsWithStatus = contents.map(content => {
+      const status = statusMap.get(content.id);
+      const retryCount = retryCountMap.get(content.id) || 0;
+      
+      return {
+        ...content,
+        generation_status: status?.generation_status || null,
+        generation_error: status?.generation_error || null,
+        retry_count: retryCount,
+        generation_updated_at: status?.generation_updated_at || null
+      };
+    });
+
+    return { data: contentsWithStatus, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
 // 定向按语言获取（便捷封装）
 const getContentsByLanguage = async ({ language_prefix, language_code, limit } = {}) => {
   return getContents({ language_prefix, language_code, limit });
@@ -1300,6 +1383,7 @@ module.exports = {
   supabase,
   useMockData,
   getContents,
+  getContentsWithGenerationStatus,
   getContentById,
   getContentByShortId,
   createContent,

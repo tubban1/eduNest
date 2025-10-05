@@ -64,6 +64,30 @@ const logAIUsageWithDefaults = async (params) => {
   return await logAIUsage(logParams);
 };
 
+// 更新现有的AI使用日志记录
+const updateExistingLog = async (requestId, updateData) => {
+  try {
+    // 使用已导入的 supabase 客户端
+    const { error } = await supabase
+      .from('ai_usage_logs')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('request_id', requestId);
+
+    if (error) {
+      console.error('更新AI使用日志失败:', error);
+      throw error;
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('更新AI使用日志失败:', error);
+    return { success: false, error };
+  }
+};
+
 // 安全的变量替换函数
 const safeReplace = (template, placeholder, value) => {
   if (typeof value !== 'string') {
@@ -198,7 +222,7 @@ const LEARNING_STAGE_NAMES = {
 };
 
 // 生成教育交互内容
-const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null) => {
+const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null, isAsyncMode = false) => {
   let logId = null;
   let logParams = {};
   try {
@@ -231,19 +255,35 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     const outputTokens = usage.completion_tokens || 0;
     const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
-      await logAIUsageWithDefaults({
-        user_id: userId,
-        model_name: result.model,
-        user_query: knowledgePoint,
-        action_type: actionType,
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-        total_tokens: totalTokens,
-        request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
-        response_metadata: { provider: result.provider, model: result.model },
-        error_message: 'AI返回内容为空',
-        request_id: requestId
-      });
+      if (isAsyncMode && requestId) {
+        // 异步模式：更新现有记录
+        await updateExistingLog(requestId, {
+          model_name: result.model,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          total_tokens: totalTokens,
+          request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+          response_metadata: { provider: result.provider, model: result.model },
+          error_message: 'AI返回内容为空',
+          is_json_valid: false,
+          is_render_success: false
+        });
+      } else {
+        // 同步模式：创建新记录
+        await logAIUsageWithDefaults({
+          user_id: userId,
+          model_name: result.model,
+          user_query: knowledgePoint,
+          action_type: actionType,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          total_tokens: totalTokens,
+          request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+          response_metadata: { provider: result.provider, model: result.model },
+          error_message: 'AI返回内容为空',
+          request_id: requestId
+        });
+      }
       throw new Error('AI返回内容为空');
     }
     // 尝试从AI响应中提取JSON
@@ -262,41 +302,75 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         }
         
         // 日志：成功解析JSON
-        await logAIUsageWithDefaults({
-          user_id: userId,
-          model_name: result.model,
-          user_query: knowledgePoint,
-          action_type: actionType,
-          input_tokens: inputTokens,
-          output_tokens: outputTokens,
-          total_tokens: totalTokens,
-          request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
-          response_metadata: { provider: result.provider, model: result.model, raw: result.response },
-          created_at: new Date(result.created ? result.created * 1000 : Date.now()),
-          is_json_valid: true,
-          error_message: null,
-          request_id: requestId
-        });
+        if (isAsyncMode && requestId) {
+          // 异步模式：更新现有记录
+          await updateExistingLog(requestId, {
+            model_name: result.model,
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
+            total_tokens: totalTokens,
+            request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+            response_metadata: { provider: result.provider, model: result.model, raw: result.response },
+            created_at: new Date(result.created ? result.created * 1000 : Date.now()),
+            is_json_valid: true,
+            is_render_success: true,
+            error_message: null
+          });
+        } else {
+          // 同步模式：创建新记录
+          await logAIUsageWithDefaults({
+            user_id: userId,
+            model_name: result.model,
+            user_query: knowledgePoint,
+            action_type: actionType,
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
+            total_tokens: totalTokens,
+            request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+            response_metadata: { provider: result.provider, model: result.model, raw: result.response },
+            created_at: new Date(result.created ? result.created * 1000 : Date.now()),
+            is_json_valid: true,
+            error_message: null,
+            request_id: requestId
+          });
+        }
     return {
       success: true,
           data: parsedData
         };
       } catch (parseError) {
-        await logAIUsageWithDefaults({
-          user_id: userId,
-          model_name: result.model,
-          user_query: knowledgePoint,
-          action_type: actionType,
-          input_tokens: inputTokens,
-          output_tokens: outputTokens,
-          total_tokens: totalTokens,
-          request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
-          response_metadata: { provider: result.provider, model: result.model, raw: result.response },
-          created_at: new Date(result.created ? result.created * 1000 : Date.now()),
-          is_json_valid: false,
-          error_message: `JSON解析失败: ${parseError.message}`,
-          request_id: requestId
-        });
+        if (isAsyncMode && requestId) {
+          // 异步模式：更新现有记录
+          await updateExistingLog(requestId, {
+            model_name: result.model,
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
+            total_tokens: totalTokens,
+            request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+            response_metadata: { provider: result.provider, model: result.model, raw: result.response },
+            created_at: new Date(result.created ? result.created * 1000 : Date.now()),
+            is_json_valid: false,
+            is_render_success: false,
+            error_message: `JSON解析失败: ${parseError.message}`
+          });
+        } else {
+          // 同步模式：创建新记录
+          await logAIUsageWithDefaults({
+            user_id: userId,
+            model_name: result.model,
+            user_query: knowledgePoint,
+            action_type: actionType,
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
+            total_tokens: totalTokens,
+            request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+            response_metadata: { provider: result.provider, model: result.model, raw: result.response },
+            created_at: new Date(result.created ? result.created * 1000 : Date.now()),
+            is_json_valid: false,
+            error_message: `JSON解析失败: ${parseError.message}`,
+            request_id: requestId
+          });
+        }
         return {
           success: false,
           error: 'JSON解析失败',
@@ -304,21 +378,38 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         };
       }
     } else {
-      await logAIUsageWithDefaults({
-        user_id: userId,
-        model_name: result.model,
-        user_query: knowledgePoint,
-        action_type: actionType,
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-        total_tokens: totalTokens,
-        request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
-        response_metadata: { provider: result.provider, model: result.model },
-        created_at: new Date(result.created ? result.created * 1000 : Date.now()),
-        is_json_valid: false,
-        error_message: '未找到JSON格式',
-        request_id: requestId
-      });
+      if (isAsyncMode && requestId) {
+        // 异步模式：更新现有记录
+        await updateExistingLog(requestId, {
+          model_name: result.model,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          total_tokens: totalTokens,
+          request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+          response_metadata: { provider: result.provider, model: result.model },
+          created_at: new Date(result.created ? result.created * 1000 : Date.now()),
+          is_json_valid: false,
+          is_render_success: false,
+          error_message: '未找到JSON格式'
+        });
+      } else {
+        // 同步模式：创建新记录
+        await logAIUsageWithDefaults({
+          user_id: userId,
+          model_name: result.model,
+          user_query: knowledgePoint,
+          action_type: actionType,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          total_tokens: totalTokens,
+          request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+          response_metadata: { provider: result.provider, model: result.model },
+          created_at: new Date(result.created ? result.created * 1000 : Date.now()),
+          is_json_valid: false,
+          error_message: '未找到JSON格式',
+          request_id: requestId
+        });
+      }
       return {
         success: false,
         error: '未找到JSON格式',
@@ -327,13 +418,23 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     }
   } catch (error) {
     // 捕获主流程异常
-    await logAIUsageWithDefaults({
-      user_id: null,
-      user_query: null,
-      action_type: 'generate',
-      error_message: error.message || 'AI生成失败',
-      request_id: requestId
-    });
+    if (isAsyncMode && requestId) {
+      // 异步模式：更新现有记录
+      await updateExistingLog(requestId, {
+        error_message: error.message || 'AI生成失败',
+        is_json_valid: false,
+        is_render_success: false
+      });
+    } else {
+      // 同步模式：创建新记录
+      await logAIUsageWithDefaults({
+        user_id: userId,
+        user_query: knowledgePoint,
+        action_type: actionType,
+        error_message: error.message || 'AI生成失败',
+        request_id: requestId
+      });
+    }
     return {
       success: false,
       error: error.message || 'AI生成失败'

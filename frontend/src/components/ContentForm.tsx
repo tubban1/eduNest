@@ -614,8 +614,70 @@ export default function ContentForm({
     setExternalLinksError(error);
   };
 
-  // AI生成处理函数
-  const handleAiGenerate = async () => {
+  // 异步AI生成处理函数
+  const handleAsyncAiGenerate = async () => {
+    if (!knowledgePoint.trim()) {
+      setError(t('pleaseEnterKnowledgePoint', { ns: 'content', defaultValue: 'Please enter a knowledge point' }));
+      return;
+    }
+
+    setAiGenerating(true);
+    setError('');
+    setShowReloadButton(false);
+
+    try {
+      // 1. 首先创建一个空的 content 记录
+      const contentData = {
+        title: knowledgePoint.trim(),
+        description: description || '',
+        language_code: language,
+        content_type: 'vue',
+        code_html: '',
+        code_css: '',
+        code_js: '',
+        external_links: [],
+        tags: [],
+        created_by: user?.id
+      };
+
+      const contentResponse = await api.content.create(contentData);
+      
+      if (!contentResponse) {
+        throw new Error('创建内容记录失败');
+      }
+
+      // 2. 调用异步生成 API
+      const generateResponse = await api.generateContentAsync(contentResponse.id, {
+        knowledge_point: knowledgePoint.trim(),
+        learning_stage: learningStage,
+        description: description,
+        language_code: language,
+        provider: user?.role === 'admin' ? aiProvider : undefined
+      });
+
+      if (generateResponse.success) {
+        // 3. 跳转到内容列表页面
+        router.push('/content');
+      } else {
+        throw new Error(generateResponse.error || '启动异步生成失败');
+      }
+
+    } catch (error: any) {
+      
+      // 检查是否是认证错误
+      if (error.message?.includes('401') || error.message?.includes('无效的访问令牌') || error.message?.includes('访问令牌缺失')) {
+        window.location.href = '/login';
+        return;
+      }
+
+      setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  // 同步AI生成处理函数（保留原有逻辑作为备用）
+  const handleSyncAiGenerate = async () => {
     if (!knowledgePoint.trim()) {
       setError(t('pleaseEnterKnowledgePoint', { ns: 'content', defaultValue: 'Please enter a knowledge point' }));
       return;
@@ -697,7 +759,6 @@ export default function ContentForm({
         throw new Error('AI generation failed');
       }
     } catch (error: any) {
-      console.error('AI生成失败:', error);
       
       // 检查是否是认证错误
       if (error.message?.includes('401') || error.message?.includes('无效的访问令牌') || error.message?.includes('访问令牌缺失')) {
@@ -708,11 +769,9 @@ export default function ContentForm({
 
       // 如果是网络错误或load failed，尝试fallback查询
       if (currentRequestId && (error.message?.includes('Failed to fetch') || error.message?.includes('load failed') || error.message?.includes('网络连接失败'))) {
-        console.log('检测到网络错误，尝试fallback查询:', currentRequestId);
         try {
           const fallbackResponse = await api.getAiLogByRequestId(currentRequestId);
           if (fallbackResponse.success && fallbackResponse.data) {
-            console.log('Fallback查询成功，恢复AI生成结果');
             // 处理fallback数据
             const logData = fallbackResponse.data;
             if (logData.response_meta) {
@@ -782,7 +841,6 @@ export default function ContentForm({
       const response = await api.reloadAiResult(currentRequestId);
       
       if (response.success && response.data) {
-        console.log('重新加载成功，恢复AI生成结果');
         
         // 清除持久化的失败提示
         try { sessionStorage.removeItem('ai_reload_hint'); } catch {}
@@ -1075,16 +1133,16 @@ export default function ContentForm({
                       <button
                         type="button"
                         className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg shadow hover:from-blue-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        onClick={handleAiGenerate}
+                        onClick={handleAsyncAiGenerate}
                         disabled={isAiFormDisabled || !knowledgePoint.trim()}
                       >
                         {aiGenerating ? (
                           <>
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                            🤖 AI generating...
+                            🤖 正在启动生成...
                           </>
                         ) : (
-                          '🚀 AI generate content'
+                          '🚀 AI 异步生成内容'
                         )}
                       </button>
                     </div>

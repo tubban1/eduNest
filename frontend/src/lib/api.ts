@@ -47,16 +47,9 @@ class ApiClient {
         const expiresAt = session.expires_at || 0;
         const timeUntilExpiry = expiresAt - now;
         
-        console.log('Token状态检查:', {
-          expiresAt: new Date(expiresAt * 1000),
-          timeUntilExpiry: `${Math.floor(timeUntilExpiry / 60)}分钟`,
-          needsRefresh: timeUntilExpiry < 300, // 5分钟内过期
-          currentTime: new Date().toISOString()
-        });
         
         // 如果token即将过期，尝试刷新
         if (timeUntilExpiry < 300) {
-          console.log('Token即将过期，尝试刷新...');
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
           
           if (refreshError) {
@@ -71,7 +64,6 @@ class ApiClient {
           }
           
           if (refreshData?.session?.access_token) {
-            console.log('Token刷新成功');
             return this.convertSupabaseToken(refreshData.session.access_token);
           }
         }
@@ -84,7 +76,6 @@ class ApiClient {
       if (sessionStr) {
         const session = JSON.parse(sessionStr);
         if (session?.access_token) {
-          console.log('从localStorage获取token');
           return this.convertSupabaseToken(session.access_token);
         }
       }
@@ -121,7 +112,6 @@ class ApiClient {
     };
 
     try {
-      console.log('API请求:', { url, config, retryCount });
       const response = await fetch(url, config);
       
       if (!response.ok) {
@@ -129,14 +119,12 @@ class ApiClient {
         
         // 如果是401错误，进行最多两次刷新重试
         if (response.status === 401 && retryCount < 2) {
-          console.log('收到401错误，尝试刷新token并重试...', { retryCount });
           try {
             // 短暂退避以避免与其他刷新竞态
             await new Promise(r => setTimeout(r, 200 * (retryCount + 1)));
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             
             if (!refreshError && refreshData?.session?.access_token) {
-              console.log('Token刷新成功，重试请求...');
               return await this.request(endpoint, options, retryCount + 1);
             }
             console.warn('Token刷新失败，准备下一次尝试或退出', { refreshError, retryCount });
@@ -375,6 +363,41 @@ class ApiClient {
     return this.get(`/ai/reload?request_id=${requestId}`);
   }
 
+  // 异步生成内容
+  async generateContentAsync(contentId: string, params: {
+    knowledge_point: string;
+    learning_stage?: string;
+    description?: string;
+    language_code?: string;
+    provider?: string;
+  }) {
+    return this.post('/ai/generate-async', {
+      content_id: contentId,
+      ...params
+    });
+  }
+
+  // 获取内容生成状态
+  async getContentGenerationStatus(contentId: string) {
+    return this.get(`/ai/generation-status/${contentId}`);
+  }
+
+  // 批量获取生成状态
+  async getBatchGenerationStatus(contentIds: string[]) {
+    const ids = contentIds.join(',');
+    return this.get(`/ai/generation-status?ids=${ids}`);
+  }
+
+  // 手动重试失败的任务
+  async retryFailedTask(contentId: string) {
+    return this.post(`/ai/retry/${contentId}`, {});
+  }
+
+  // 获取队列状态（管理员）
+  async getQueueStatus() {
+    return this.get('/ai/queue-status');
+  }
+
   // Payments API
   async getPaymentMethods() {
     return this.get('/payments/payment-methods');
@@ -458,4 +481,10 @@ export interface Content {
   created_by?: string;
   rating?: number;
   user_rating?: number;
+  // 生成状态相关字段
+  generation_status?: 'pending' | 'processing' | 'done' | 'failed';
+  generation_progress?: number;
+  retry_count?: number;
+  generation_error?: string;
+  generation_updated_at?: string;
 } 

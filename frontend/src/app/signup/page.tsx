@@ -161,15 +161,12 @@ function SignupPageInner() {
             <button
               onClick={async () => {
                 try {
-                  console.log('点击重发按钮，邮箱:', email);
                   if (!email) {
                     alert(t('emailNotAvailable', { ns: 'auth', defaultValue: '邮箱地址不可用，请重新注册' }));
                     return;
                   }
                   
-                  console.log('开始调用resendVerificationEmail');
                   const res = await resendVerificationEmail(email);
-                  console.log('resendVerificationEmail结果:', res);
                   
                   if (res.error) {
                     alert(res.error);

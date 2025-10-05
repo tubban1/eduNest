@@ -352,11 +352,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resendVerificationEmail = async (email: string) => {
     try {
-      console.log('尝试重发验证邮件到:', email);
-      console.log('重定向URL:', `${window.location.origin}/auth/callback`);
-      
-      console.log('使用Supabase官方推荐的方法：重新调用signUp');
-      console.log('根据官方文档，没有resend接口，需要重新调用signUp');
       
       // 根据Supabase官方文档，重发验证邮件需要重新调用signUp
       // 对于已存在的用户，Supabase会重新发送验证邮件
@@ -368,7 +363,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
       
-      console.log('重发邮件响应:', { data, error });
       
       if (error) {
         console.error('重发邮件错误:', error);
@@ -378,18 +372,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             error.message.includes('already been registered') ||
             error.message.includes('User already registered') ||
             error.message.includes('already signed up')) {
-          console.log('用户已存在，这是正常的，Supabase应该已重新发送验证邮件');
           return { error: null };
         }
         
         return { error: error.message };
       }
       
-      console.log('重发邮件成功，响应数据:', data);
-      console.log('分析响应数据：');
-      console.log('- user:', data?.user);
-      console.log('- session:', data?.session);
-      console.log('- 完整响应:', JSON.stringify(data, null, 2));
       
       return { error: null };
       

@@ -6,7 +6,17 @@ import Link from 'next/link';
 import CollectionListDialog from './CollectionListDialog';
 import ContentActionButtons from './ui/ContentActionButtons';
 import EditButton from './ui/EditButton';
+import PendingCard from './generation/PendingCard';
+import ProcessingCard from './generation/ProcessingCard';
+import FailedCard from './generation/FailedCard';
 import { api } from '@/lib/api';
+import { 
+  GenerationStatus, 
+  GenerationStatusResponse,
+  statusPollingManager,
+  isGenerating,
+  isFinalStatus
+} from '@/utils/generationStatus';
 
 interface ContentCardProps {
   content: {
@@ -17,18 +27,101 @@ interface ContentCardProps {
     tags?: string[];
     knowledge_point?: string[];
     created_at: string;
+    // 生成状态相关字段
+    generation_status?: GenerationStatus;
+    generation_progress?: number;
+    retry_count?: number;
+    generation_error?: string;
   };
   isAuthenticated: boolean;
   editMode: boolean;
   lists: { id: string; name: string; visibility: string }[];
   refreshLists: () => Promise<void>;
+  // 可选的回调函数，用于刷新内容列表
+  onContentUpdate?: () => void;
 }
 
-export default function ContentCard({ content, isAuthenticated, editMode, lists, refreshLists }: ContentCardProps) {
+export default function ContentCard({ 
+  content, 
+  isAuthenticated, 
+  editMode, 
+  lists, 
+  refreshLists, 
+  onContentUpdate 
+}: ContentCardProps) {
   const { t } = useTranslation(['content', 'common']);
   const [showDialog, setShowDialog] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<GenerationStatus | null>(
+    content.generation_status || null
+  );
+  const [generationProgress, setGenerationProgress] = useState<number>(
+    content.generation_progress || 0
+  );
+  const [retryCount, setRetryCount] = useState<number>(content.retry_count || 0);
+  const [errorMessage, setErrorMessage] = useState<string>(content.generation_error || '');
+  const [isRetrying, setIsRetrying] = useState(false);
+
   useEffect(() => { setMounted(true); }, []);
+
+  // 监听生成状态变化
+  useEffect(() => {
+    const status = content.generation_status;
+    if (status && isGenerating(status)) {
+      // 开始轮询状态
+      statusPollingManager.startPolling(
+        content.id,
+        (statusData: GenerationStatusResponse) => {
+          setGenerationStatus(statusData.status);
+          setGenerationProgress(statusData.progress);
+          setRetryCount(statusData.retry_count);
+          setErrorMessage(statusData.error_message || '');
+          
+          // 如果生成完成，刷新内容列表
+          if (isFinalStatus(statusData.status) && onContentUpdate) {
+            onContentUpdate();
+          }
+        },
+        (contentId: string) => api.getContentGenerationStatus(contentId)
+      );
+    } else if (status && isFinalStatus(status)) {
+      // 最终状态，停止轮询
+      statusPollingManager.stopPolling(content.id);
+    }
+
+    // 清理函数
+    return () => {
+      statusPollingManager.stopPolling(content.id);
+    };
+  }, [content.id, content.generation_status, onContentUpdate]);
+
+  // 重试处理函数
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      const response = await api.retryFailedTask(content.id);
+      if (response.success) {
+        // 重新开始轮询
+        statusPollingManager.startPolling(
+          content.id,
+          (statusData: GenerationStatusResponse) => {
+            setGenerationStatus(statusData.status);
+            setGenerationProgress(statusData.progress);
+            setRetryCount(statusData.retry_count);
+            setErrorMessage(statusData.error_message || '');
+            
+            if (isFinalStatus(statusData.status) && onContentUpdate) {
+              onContentUpdate();
+            }
+          },
+          (contentId: string) => api.getContentGenerationStatus(contentId)
+        );
+      }
+    } catch (error) {
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   // 新增：语言标签映射（仅按主语言，使用当前系统语言翻译）
   const getLanguageLabel = (codeRaw: string): string => {
@@ -76,6 +169,32 @@ export default function ContentCard({ content, isAuthenticated, editMode, lists,
 
   // 使用short_id，如果没有则回退到id
   const contentUrl = content.short_id ? `/content/${content.short_id}` : `/content/${content.id}`;
+
+  // 如果内容正在生成中，显示对应的状态卡片
+  if (generationStatus && generationStatus !== 'done') {
+    switch (generationStatus) {
+      case 'pending':
+        return <PendingCard content={content} />;
+      case 'processing':
+        return (
+          <ProcessingCard 
+            content={content} 
+            progress={generationProgress} 
+            retryCount={retryCount} 
+          />
+        );
+      case 'failed':
+        return (
+          <FailedCard 
+            content={content} 
+            errorMessage={errorMessage}
+            retryCount={retryCount}
+            onRetry={handleRetry}
+            isRetrying={isRetrying}
+          />
+        );
+    }
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-64 min-w-56 max-w-xs mx-auto">

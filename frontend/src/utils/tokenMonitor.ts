@@ -73,17 +73,9 @@ export class TokenMonitor {
       const expiresAt = session.expires_at || 0;
       const timeUntilExpiry = expiresAt - now;
 
-      console.log('Token状态监控:', {
-        expiresAt: new Date(expiresAt * 1000).toISOString(),
-        timeUntilExpiry: `${Math.floor(timeUntilExpiry / 60)}分钟`,
-        isExpired: timeUntilExpiry <= 0,
-        needsRefresh: timeUntilExpiry < 300, // 5分钟内过期
-        currentTime: new Date().toISOString()
-      });
 
       // 如果token即将过期，尝试刷新
       if (timeUntilExpiry < 300 && timeUntilExpiry > 0) {
-        console.log('Token即将过期，尝试自动刷新...');
         await this.refreshToken();
       } else if (timeUntilExpiry <= 0) {
         console.warn('Token已过期，需要重新登录');
@@ -108,7 +100,6 @@ export class TokenMonitor {
       }
 
       if (refreshData?.session?.access_token) {
-        console.log('Token自动刷新成功');
         return true;
       }
 
@@ -124,7 +115,6 @@ export class TokenMonitor {
    * 处理token过期
    */
   private handleTokenExpired(): void {
-    console.log('处理token过期，清除本地存储并重定向到登录页');
     
     // 清除本地存储
     localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');

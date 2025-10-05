@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const aiService = require('../services/aiService');
+const asyncGenerationQueue = require('../services/asyncGenerationQueue');
 const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const jwt = require('jsonwebtoken'); // Added for token testing
@@ -497,6 +498,339 @@ router.get('/reload', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || '重新加载失败'
+    });
+  }
+});
+
+// 异步生成内容接口
+router.post('/generate-async', [
+  authenticateToken,
+  body('content_id').isUUID().withMessage('content_id 必须是有效的UUID'),
+  body('knowledge_point').isString().isLength({ min: 1, max: 1500 }).withMessage('知识点不能为空且长度不能超过1500字'),
+  body('learning_stage').optional().isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
+  body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
+  body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
+  body('provider').optional().isIn(['ark', 'kimi']).withMessage('provider 必须是 ark 或 kimi')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false,
+        error: '参数验证失败', 
+        details: errors.array() 
+      });
+    }
+
+    const { content_id, knowledge_point, learning_stage, description, language_code, provider } = req.body;
+    const userId = req.user?.id;
+
+    // 验证 content 是否存在且属于当前用户
+    const { data: content, error: contentError } = await DatabaseService.supabase
+      .from('content')
+      .select('id, created_by')
+      .eq('id', content_id)
+      .eq('created_by', userId)
+      .single();
+
+    if (contentError || !content) {
+      return res.status(404).json({
+        success: false,
+        error: '内容不存在或无权限访问'
+      });
+    }
+
+    // 订阅豁免与积分预校验
+    let shouldConsume = true;
+    if (userId) {
+      const { data: subscription } = await DatabaseService.getActiveSubscription(userId);
+      if (subscription && subscription.plan === 'pro') {
+        shouldConsume = false;
+      } else {
+        const { data: balance } = await DatabaseService.getCreditsBalance(userId);
+        if ((balance || 0) < 1) {
+          return res.status(402).json({ 
+            success: false, 
+            error: '积分不足' 
+          });
+        }
+      }
+    }
+
+    // 添加生成任务到队列
+    const { log, requestId } = await asyncGenerationQueue.addTask(content_id, {
+      user_id: userId,
+      knowledge_point,
+      learning_stage: learning_stage || 'understanding',
+      description,
+      language_code,
+      provider
+    });
+
+    logger.info(`异步生成任务已添加: contentId=${content_id}, requestId=${requestId}`);
+
+    res.json({
+      success: true,
+      data: {
+        content_id,
+        request_id: requestId,
+        status: 'pending',
+        message: '已加入生成队列'
+      }
+    });
+
+  } catch (error) {
+    logger.error('异步生成API错误:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '异步生成失败'
+    });
+  }
+});
+
+// 获取内容生成状态
+router.get('/generation-status/:contentId', authenticateToken, async (req, res) => {
+  try {
+    const { contentId } = req.params;
+    const userId = req.user?.id;
+
+    // 验证 content 权限
+    const { data: content, error: contentError } = await DatabaseService.supabase
+      .from('content')
+      .select('id, created_by')
+      .eq('id', contentId)
+      .eq('created_by', userId)
+      .single();
+
+    if (contentError || !content) {
+      return res.status(404).json({
+        success: false,
+        error: '内容不存在或无权限访问'
+      });
+    }
+
+    // 查询最新的生成日志
+    const { data: log, error: logError } = await DatabaseService.supabase
+      .from('ai_usage_logs')
+      .select('*')
+      .eq('content_id', contentId)
+      .eq('action_type', 'generate')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (logError || !log) {
+      return res.status(404).json({
+        success: false,
+        error: '未找到生成记录'
+      });
+    }
+
+    // 计算重试次数
+    const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
+    
+    // 计算进度
+    let progress = 0;
+    switch (log.status) {
+      case 'pending': progress = 10; break;
+      case 'processing': progress = 50; break;
+      case 'done': progress = 100; break;
+      case 'failed': progress = 0; break;
+      default: progress = 0;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        status: log.status,
+        progress,
+        retry_count: retryCount,
+        latest_request_id: log.request_id,
+        error_message: log.error_message,
+        created_at: log.created_at,
+        updated_at: log.updated_at
+      }
+    });
+
+  } catch (error) {
+    logger.error('获取生成状态失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '获取生成状态失败'
+    });
+  }
+});
+
+// 批量获取生成状态
+router.get('/generation-status', authenticateToken, async (req, res) => {
+  try {
+    const { ids } = req.query;
+    const userId = req.user?.id;
+
+    if (!ids) {
+      return res.status(400).json({
+        success: false,
+        error: '缺少 content_ids 参数'
+      });
+    }
+
+    const contentIds = ids.split(',');
+    
+    // 验证权限并获取状态
+    const statuses = await Promise.all(
+      contentIds.map(async (contentId) => {
+        try {
+          // 验证权限
+          const { data: content } = await DatabaseService.supabase
+            .from('content')
+            .select('id')
+            .eq('id', contentId)
+            .eq('created_by', userId)
+            .single();
+
+          if (!content) {
+            return {
+              content_id: contentId,
+              status: 'unauthorized',
+              progress: 0,
+              retry_count: 0
+            };
+          }
+
+          // 获取生成状态
+          const { data: log } = await DatabaseService.supabase
+            .from('ai_usage_logs')
+            .select('*')
+            .eq('content_id', contentId)
+            .eq('action_type', 'generate')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (!log) {
+            return {
+              content_id: contentId,
+              status: 'unknown',
+              progress: 0,
+              retry_count: 0
+            };
+          }
+
+          const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
+          
+          let progress = 0;
+          switch (log.status) {
+            case 'pending': progress = 10; break;
+            case 'processing': progress = 50; break;
+            case 'done': progress = 100; break;
+            case 'failed': progress = 0; break;
+            default: progress = 0;
+          }
+
+          return {
+            content_id: contentId,
+            status: log.status,
+            progress,
+            retry_count: retryCount,
+            latest_request_id: log.request_id,
+            error_message: log.error_message
+          };
+        } catch (error) {
+          logger.error(`获取内容 ${contentId} 状态失败:`, error);
+          return {
+            content_id: contentId,
+            status: 'error',
+            progress: 0,
+            retry_count: 0,
+            error: error.message
+          };
+        }
+      })
+    );
+
+    res.json({
+      success: true,
+      data: statuses
+    });
+
+  } catch (error) {
+    logger.error('批量获取生成状态失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '批量获取生成状态失败'
+    });
+  }
+});
+
+// 手动重试失败的任务
+router.post('/retry/:contentId', authenticateToken, async (req, res) => {
+  try {
+    const { contentId } = req.params;
+    const userId = req.user?.id;
+
+    // 验证 content 权限
+    const { data: content, error: contentError } = await DatabaseService.supabase
+      .from('content')
+      .select('id, created_by')
+      .eq('id', contentId)
+      .eq('created_by', userId)
+      .single();
+
+    if (contentError || !content) {
+      return res.status(404).json({
+        success: false,
+        error: '内容不存在或无权限访问'
+      });
+    }
+
+    // 手动重试
+    const result = await asyncGenerationQueue.retryFailedTask(contentId, userId);
+
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    logger.error('手动重试失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '重试失败'
+    });
+  }
+});
+
+// 获取队列状态（管理员接口）
+router.get('/queue-status', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    // 检查管理员权限
+    const { data: user } = await DatabaseService.supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: '权限不足'
+      });
+    }
+
+    const queueStatus = await asyncGenerationQueue.getQueueStatus();
+
+    res.json({
+      success: true,
+      data: queueStatus
+    });
+
+  } catch (error) {
+    logger.error('获取队列状态失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '获取队列状态失败'
     });
   }
 });
