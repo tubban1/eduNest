@@ -43,7 +43,8 @@ const mockTestContents = [
 ];
 
 export default function TestRetryPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   const [testContents, setTestContents] = useState(mockTestContents);
   const [isRetrying, setIsRetrying] = useState<Record<string, boolean>>({});
   const [logs, setLogs] = useState<string[]>([]);
@@ -567,7 +568,7 @@ export default function TestRetryPage() {
               {content.generation_status === 'failed' && (
                 <FailedCard
                   content={content}
-                  errorMessage={content.generation_error}
+                  errorMessage={content.generation_error || undefined}
                   retryCount={content.retry_count}
                   userQuery={content.user_query}
                   onRetry={() => handleRetry(content.id)}
