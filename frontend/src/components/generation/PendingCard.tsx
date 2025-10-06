@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { truncateUserQuery } from '@/utils/generationStatus';
 
 interface PendingCardProps {
   content: {
@@ -8,27 +9,28 @@ interface PendingCardProps {
     title: string;
     created_at: string;
   };
+  userQuery?: string;
 }
 
-const PendingCard: React.FC<PendingCardProps> = ({ content }) => (
+const PendingCard: React.FC<PendingCardProps> = ({ content, userQuery }) => (
   <div className="bg-gray-100 rounded-lg p-4 animate-pulse">
-    <div className="flex items-center gap-3 mb-3">
-      <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
-      <div className="flex-1">
-        <div className="h-4 bg-gray-300 rounded mb-2 w-3/4"></div>
-        <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+    {/* 显示用户查询 */}
+    {userQuery && (
+      <div className="mb-3">
+        <div className="text-sm text-gray-600 font-medium mb-1">
+          生成内容: <span title={userQuery}>{truncateUserQuery(userQuery, 15)}</span>
+        </div>
       </div>
-    </div>
-    <div className="space-y-2">
+    )}
+    
+    {/* 简化的占位符内容 */}
+    <div className="space-y-2 mb-4">
       <div className="h-3 bg-gray-300 rounded w-full"></div>
-      <div className="h-3 bg-gray-300 rounded w-5/6"></div>
-      <div className="h-3 bg-gray-300 rounded w-4/6"></div>
+      <div className="h-3 bg-gray-300 rounded w-4/5"></div>
     </div>
-    <div className="mt-4 flex items-center justify-between">
-      <div className="flex gap-2">
-        <div className="w-16 h-6 bg-gray-300 rounded"></div>
-        <div className="w-20 h-6 bg-gray-300 rounded"></div>
-      </div>
+    
+    {/* 底部状态 */}
+    <div className="flex items-center justify-center">
       <div className="text-sm text-gray-500 flex items-center gap-1">
         <span>⏳</span>
         <span>等待生成中...</span>

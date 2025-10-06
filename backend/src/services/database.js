@@ -150,7 +150,7 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
     // 查询每个内容的最新生成状态
     const { data: generationLogs, error: logsError } = await supabase
       .from('ai_usage_logs')
-      .select('content_id, status, error_message, created_at, updated_at')
+      .select('content_id, status, error_message, user_query, created_at, updated_at')
       .in('content_id', contentIds)
       .eq('action_type', 'generate')
       .order('created_at', { ascending: false });
@@ -183,7 +183,8 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
         statusMap.set(contentId, {
           generation_status: log.status,
           generation_error: log.error_message,
-          generation_updated_at: log.updated_at
+          generation_updated_at: log.updated_at,
+          user_query: log.user_query
         });
       });
       
@@ -203,7 +204,8 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
         generation_status: status?.generation_status || null,
         generation_error: status?.generation_error || null,
         retry_count: retryCount,
-        generation_updated_at: status?.generation_updated_at || null
+        generation_updated_at: status?.generation_updated_at || null,
+        user_query: status?.user_query || null
       };
     });
 

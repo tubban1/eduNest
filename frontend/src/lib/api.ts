@@ -487,4 +487,5 @@ export interface Content {
   retry_count?: number;
   generation_error?: string;
   generation_updated_at?: string;
+  user_query?: string;
 } 

@@ -32,6 +32,7 @@ interface ContentCardProps {
     generation_progress?: number;
     retry_count?: number;
     generation_error?: string;
+    user_query?: string;
   };
   isAuthenticated: boolean;
   editMode: boolean;
@@ -60,6 +61,7 @@ export default function ContentCard({
   );
   const [retryCount, setRetryCount] = useState<number>(content.retry_count || 0);
   const [errorMessage, setErrorMessage] = useState<string>(content.generation_error || '');
+  const [userQuery, setUserQuery] = useState<string>(content.user_query || '');
   const [isRetrying, setIsRetrying] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -76,6 +78,7 @@ export default function ContentCard({
           setGenerationProgress(statusData.progress);
           setRetryCount(statusData.retry_count);
           setErrorMessage(statusData.error_message || '');
+          setUserQuery(statusData.user_query || '');
           
           // 如果生成完成，刷新内容列表
           if (isFinalStatus(statusData.status) && onContentUpdate) {
@@ -95,12 +98,25 @@ export default function ContentCard({
     };
   }, [content.id, content.generation_status, onContentUpdate]);
 
-  // 重试处理函数
+  // 重试处理函数 - 基于测试页面的成功逻辑优化
   const handleRetry = async () => {
     setIsRetrying(true);
     try {
+      // 使用重试API，后端会自动使用相同的生成参数
       const response = await api.retryFailedTask(content.id);
       if (response.success) {
+        // 先停止现有的轮询
+        statusPollingManager.stopPolling(content.id);
+        
+        // 重置状态，开始新的生成流程
+        setGenerationStatus('pending');
+        setGenerationProgress(0);
+        setRetryCount(0); // 重置重试计数
+        setErrorMessage('');
+        
+        // 等待一小段时间确保后端状态更新
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // 重新开始轮询
         statusPollingManager.startPolling(
           content.id,
@@ -109,8 +125,10 @@ export default function ContentCard({
             setGenerationProgress(statusData.progress);
             setRetryCount(statusData.retry_count);
             setErrorMessage(statusData.error_message || '');
+            setUserQuery(statusData.user_query || '');
             
-            if (isFinalStatus(statusData.status) && onContentUpdate) {
+            // 如果生成完成，触发内容更新
+            if (statusData.status === 'done' && onContentUpdate) {
               onContentUpdate();
             }
           },
@@ -118,6 +136,8 @@ export default function ContentCard({
         );
       }
     } catch (error) {
+      console.error('重试失败:', error);
+      setIsRetrying(false);
     } finally {
       setIsRetrying(false);
     }
@@ -174,13 +194,14 @@ export default function ContentCard({
   if (generationStatus && generationStatus !== 'done') {
     switch (generationStatus) {
       case 'pending':
-        return <PendingCard content={content} />;
+        return <PendingCard content={content} userQuery={userQuery} />;
       case 'processing':
         return (
           <ProcessingCard 
             content={content} 
             progress={generationProgress} 
-            retryCount={retryCount} 
+            retryCount={retryCount}
+            userQuery={userQuery}
           />
         );
       case 'failed':
@@ -189,6 +210,7 @@ export default function ContentCard({
             content={content} 
             errorMessage={errorMessage}
             retryCount={retryCount}
+            userQuery={userQuery}
             onRetry={handleRetry}
             isRetrying={isRetrying}
           />

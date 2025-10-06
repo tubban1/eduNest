@@ -9,6 +9,13 @@ export const GENERATION_STATUS = {
 
 export type GenerationStatus = typeof GENERATION_STATUS[keyof typeof GENERATION_STATUS];
 
+// 文本截断工具函数
+export const truncateUserQuery = (userQuery: string, maxLength: number = 12): string => {
+  if (!userQuery) return '';
+  if (userQuery.length <= maxLength) return userQuery;
+  return userQuery.substring(0, maxLength) + '...';
+};
+
 // 状态到中文的映射
 export const STATUS_LABELS: Record<GenerationStatus, string> = {
   [GENERATION_STATUS.PENDING]: '等待中',
@@ -104,6 +111,7 @@ export interface GenerationStatusResponse {
   retry_count: number;
   latest_request_id?: string;
   error_message?: string;
+  user_query?: string;
   created_at?: string;
   updated_at?: string;
 }

@@ -647,6 +647,7 @@ router.get('/generation-status/:contentId', authenticateToken, async (req, res) 
         retry_count: retryCount,
         latest_request_id: log.request_id,
         error_message: log.error_message,
+        user_query: log.user_query,
         created_at: log.created_at,
         updated_at: log.updated_at
       }
@@ -733,7 +734,8 @@ router.get('/generation-status', authenticateToken, async (req, res) => {
             progress,
             retry_count: retryCount,
             latest_request_id: log.request_id,
-            error_message: log.error_message
+            error_message: log.error_message,
+            user_query: log.user_query
           };
         } catch (error) {
           logger.error(`获取内容 ${contentId} 状态失败:`, error);

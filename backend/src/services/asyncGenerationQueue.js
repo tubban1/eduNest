@@ -305,21 +305,53 @@ class AsyncGenerationQueue {
 
   /**
    * 获取重试次数
+   * 修复：只计算当前轮次的自动重试次数
    */
   async getRetryCount(contentId) {
     try {
-      const { data, error } = await DatabaseService.supabase
+      // 获取最新的记录
+      const { data: latestLog, error: latestError } = await DatabaseService.supabase
         .from('ai_usage_logs')
-        .select('id')
+        .select('*')
         .eq('content_id', contentId)
-        .eq('action_type', 'generate');
+        .eq('action_type', 'generate')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (latestError || !latestLog) {
+        logger.error('获取最新记录失败:', latestError);
+        return 0;
+      }
+
+      // 从最新记录开始往前计算，直到找到初始记录或手动重试记录
+      const { data: allLogs, error } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('*')
+        .eq('content_id', contentId)
+        .eq('action_type', 'generate')
+        .order('created_at', { ascending: false });
 
       if (error) {
         logger.error('获取重试次数失败:', error);
         return 0;
       }
 
-      return (data?.length || 1) - 1; // 减去第一次尝试
+      // 计算当前轮次的重试次数
+      let retryCount = 0;
+      let currentRequestId = latestLog.request_id;
+      
+      // 向前查找，计算当前轮次的重试次数
+      for (let i = 1; i < allLogs.length; i++) {
+        const log = allLogs[i];
+        // 如果遇到手动重试的记录（error_message包含"重试:"），停止计算
+        if (log.error_message && log.error_message.includes('重试:')) {
+          break;
+        }
+        retryCount++;
+      }
+
+      return retryCount;
     } catch (error) {
       logger.error('获取重试次数失败:', error);
       return 0;
@@ -363,16 +395,16 @@ class AsyncGenerationQueue {
 
   /**
    * 手动重试失败的任务
+   * 方案2: 手动重试 = 重新提交用户查询，重新开始整个生成流程
    */
   async retryFailedTask(contentId, userId) {
     try {
-      // 获取最新的失败任务
+      // 获取最新的失败任务，获取原始生成参数
       const { data: failedTask, error } = await DatabaseService.supabase
         .from('ai_usage_logs')
         .select('*')
         .eq('content_id', contentId)
         .eq('action_type', 'generate')
-        .eq('status', 'failed')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -382,15 +414,35 @@ class AsyncGenerationQueue {
         throw new Error('未找到失败的任务');
       }
 
-      // 创建新的重试任务
-      await this.createRetryTask(failedTask);
+      // 重新构建生成参数
+      const generationParams = {
+        user_id: userId,
+        knowledge_point: failedTask.user_query,
+        learning_stage: failedTask.request_payload?.learning_stage || 'understanding',
+        description: failedTask.request_payload?.description || '',
+        language_code: failedTask.request_payload?.language_code || 'zh-CN',
+        provider: failedTask.request_payload?.provider || 'kimi'
+      };
+
+      // 直接调用 addTask，重新开始整个生成流程
+      const result = await this.addTask(contentId, generationParams);
       
-      // 触发队列处理
-      this.processQueue();
+      // 标记这是手动重试的记录
+      await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .update({ 
+          error_message: `手动重试: ${failedTask.error_message || '未知错误'}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', result.log.id);
       
-      logger.info(`手动重试任务: contentId=${contentId}`);
+      logger.info(`手动重试任务: contentId=${contentId}, requestId=${result.requestId}`);
       
-      return { success: true, message: '已重新加入生成队列' };
+      return { 
+        success: true, 
+        message: '已重新提交生成请求',
+        request_id: result.requestId
+      };
     } catch (error) {
       logger.error('手动重试失败:', error);
       throw error;
