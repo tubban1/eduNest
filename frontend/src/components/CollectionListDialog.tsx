@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
 import { MoreVertical, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import {
@@ -18,6 +19,7 @@ interface CollectionList {
 }
 
 function MenuButton({ onMoveUp, onMoveDown, onDelete, canMoveUp, canMoveDown }: any) {
+  const { t } = useTranslation(['content', 'common']);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -28,16 +30,16 @@ function MenuButton({ onMoveUp, onMoveDown, onDelete, canMoveUp, canMoveDown }: 
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={onMoveUp} disabled={!canMoveUp} className="cursor-pointer">
           <ChevronUp className="mr-2 h-4 w-4" />
-          上移
+          {t('collectionsDialog.moveUp', { ns: 'content', defaultValue: '上移' })}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onMoveDown} disabled={!canMoveDown} className="cursor-pointer">
           <ChevronDown className="mr-2 h-4 w-4" />
-          下移
+          {t('collectionsDialog.moveDown', { ns: 'content', defaultValue: '下移' })}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive cursor-pointer">
           <Trash2 className="mr-2 h-4 w-4" />
-          删除
+          {t('delete', { ns: 'common', defaultValue: '删除' })}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -45,6 +47,7 @@ function MenuButton({ onMoveUp, onMoveDown, onDelete, canMoveUp, canMoveDown }: 
 }
 
 function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolean; onClose: () => void; onCreate: (list: CollectionList) => Promise<void>; refreshLists: () => void }) {
+  const { t } = useTranslation(['content', 'common']);
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,7 +61,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
       setTitle('');
       onClose();
     } catch (error: any) {
-      setError(error.message || '创建列表失败，请重试');
+      setError(error.message || t('collectionsDialog.createFailed', { ns: 'content', defaultValue: '创建列表失败，请重试' }));
     } finally {
       setLoading(false);
     }
@@ -75,7 +78,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
           e.stopPropagation();
         }}
       >
-        <div className="font-semibold text-lg mb-4">新建列表</div>
+        <div className="font-semibold text-lg mb-4">{t('collectionsDialog.newList', { ns: 'content', defaultValue: '新建列表' })}</div>
         <input
           type="text"
           value={title}
@@ -88,7 +91,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
             e.preventDefault();
             e.stopPropagation();
           }}
-          placeholder="输入列表名称"
+          placeholder={t('collectionsDialog.inputListName', { ns: 'content', defaultValue: '输入列表名称' })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
         />
@@ -104,7 +107,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
               onClose();
             }}
           >
-            取消
+            {t('cancel', { ns: 'common', defaultValue: '取消' })}
           </button>
           <button
             className={`flex-1 py-2 rounded-lg text-white ${title.trim() ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'}`}
@@ -115,7 +118,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
             }}
             disabled={!title.trim() || loading}
           >
-            {loading ? '创建中...' : '创建'}
+            {loading ? t('creating', { ns: 'common', defaultValue: '创建中...' }) : t('create', { ns: 'common', defaultValue: '创建' })}
           </button>
         </div>
       </div>
@@ -154,6 +157,7 @@ export default function CollectionListDialog({
   refreshLists: () => void;
   contentId?: string;
 }) {
+  const { t } = useTranslation(['content', 'common']);
   const { user } = useAuth();
   const [showNewList, setShowNewList] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, item: CollectionList | null }>({ open: false, item: null });
@@ -320,7 +324,7 @@ export default function CollectionListDialog({
           }}
         >
           <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
-            <span className="font-semibold text-lg text-gray-900">将内容保存至...</span>
+            <span className="font-semibold text-lg text-gray-900">{t('collectionsDialog.saveTo', { ns: 'content', defaultValue: '将内容保存至...' })}</span>
             <button 
               onClick={(e) => {
                 e.preventDefault();
@@ -346,7 +350,7 @@ export default function CollectionListDialog({
                 setShowNewList(true);
               }}
             >
-              ＋新建列表
+              ＋{t('collectionsDialog.newList', { ns: 'content', defaultValue: '新建列表' })}
             </button>
           </div>
         </div>
@@ -369,8 +373,8 @@ export default function CollectionListDialog({
               e.stopPropagation();
             }}
           >
-            <div className="font-semibold text-lg mb-4 text-gray-900">确认删除？</div>
-            <div className="mb-6 text-gray-700 text-sm">将删除该列表，操作不可恢复。</div>
+            <div className="font-semibold text-lg mb-4 text-gray-900">{t('confirmDelete', { ns: 'common', defaultValue: '确认删除？' })}</div>
+            <div className="mb-6 text-gray-700 text-sm">{t('collectionsDialog.deleteTip', { ns: 'content', defaultValue: '将删除该列表，操作不可恢复。' })}</div>
             <div className="flex gap-3">
               <button 
                 className="flex-1 py-2 px-4 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors" 
@@ -380,7 +384,7 @@ export default function CollectionListDialog({
                   setConfirmDelete({ open: false, item: null });
                 }}
               >
-                取消
+                {t('cancel', { ns: 'common', defaultValue: '取消' })}
               </button>
               <button 
                 className="flex-1 py-2 px-4 rounded-lg text-white bg-red-600 hover:bg-red-700 transition-colors" 
@@ -390,7 +394,7 @@ export default function CollectionListDialog({
                   handleDeleteConfirm();
                 }}
               >
-                删除
+                {t('delete', { ns: 'common', defaultValue: '删除' })}
               </button>
             </div>
           </div>

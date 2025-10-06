@@ -9,6 +9,7 @@ import Logo from '@/components/Logo';
 import { useAuth } from '@/hooks/useAuth';
 import { api, Content } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
+import ContentAIGenerator from '@/components/ContentAIGenerator';
 
 function MyContentList({ userId, lists, refreshLists }: { userId: string, lists: any[], refreshLists: () => Promise<void> }) {
   const { t } = useTranslation(['content', 'common']);
@@ -158,6 +159,8 @@ export default function ContentPage() {
   const { user, loading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // 本地乐观插入的生成中内容
+  const [optimisticItems, setOptimisticItems] = useState<any[]>([]);
   
   useEffect(() => { setMounted(true); }, []);
   
@@ -182,6 +185,61 @@ export default function ContentPage() {
   
   useEffect(() => {
     if (user) fetchLists();
+  }, [user]);
+
+  // 从 sessionStorage 读取新创建的内容，乐观插入并依赖 ContentCard 内部轮询
+  useEffect(() => {
+    if (!user) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = sessionStorage.getItem('new_content');
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data && data.id) {
+        const item = {
+          id: data.id,
+          title: data.q || data.title || '',
+          language_code: data.lang || 'zh-CN',
+          created_at: new Date().toISOString(),
+          generation_status: 'pending',
+          generation_progress: 0,
+          retry_count: 0,
+          generation_error: '',
+          user_query: data.q || '',
+        };
+        setOptimisticItems(prev => {
+          // 去重插入
+          if (prev.some(p => p.id === item.id)) return prev;
+          return [item, ...prev];
+        });
+      }
+    } catch {}
+    finally {
+      try { sessionStorage.removeItem('new_content'); } catch {}
+    }
+  }, [user]);
+
+  // 监听创建事件，当前页面即时插入
+  useEffect(() => {
+    if (!user) return;
+    const handler = (e: any) => {
+      const data = e?.detail;
+      if (!data?.id) return;
+      const item = {
+        id: data.id,
+        title: data.q || data.title || '',
+        language_code: data.lang || 'zh-CN',
+        created_at: new Date().toISOString(),
+        generation_status: 'pending',
+        generation_progress: 0,
+        retry_count: 0,
+        generation_error: '',
+        user_query: data.q || '',
+      };
+      setOptimisticItems(prev => prev.some(p => p.id === item.id) ? prev : [item, ...prev]);
+    };
+    window.addEventListener('NEW_CONTENT_CREATED' as any, handler);
+    return () => window.removeEventListener('NEW_CONTENT_CREATED' as any, handler);
   }, [user]);
   
   if (authLoading) {
@@ -237,11 +295,32 @@ export default function ContentPage() {
           
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold">{mounted ? t('myContent', { ns: 'navigation', defaultValue: '我创作的内容' }) : 'My Creations'}</h2>
-            <a href="/content/create" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-center lg:text-left">
-              {mounted ? t('createContent', { ns: 'navigation', defaultValue: '新建内容' }) : 'Create Content'}
-            </a>
           </div>
+
+          {/* 顶部 AI 智能生成表单 */}
+          <ContentAIGenerator className="mb-6" onGenerated={fetchLists} />
           
+          {/* 优先渲染乐观插入的生成中项目 */}
+          {optimisticItems.length > 0 && (
+            <div className="mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {optimisticItems.map(item => (
+                <ContentCard 
+                  key={`optimistic-${item.id}`}
+                  content={item}
+                  isAuthenticated={true}
+                  editMode={true}
+                  lists={lists}
+                  refreshLists={fetchLists}
+                  onContentUpdate={async () => {
+                    // 当生成完成时，移除乐观项并刷新列表
+                    setOptimisticItems(prev => prev.filter(p => p.id !== item.id));
+                    await fetchLists();
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
           <MyContentList userId={user.id} lists={lists} refreshLists={fetchLists} />
         </div>
       </main>

@@ -129,3 +129,4 @@ failed → 点击重试 → pending → processing → done/failed
 - 使用React状态管理组件状态
 - 实时日志记录调试信息
 - 模拟状态变化进行测试
+

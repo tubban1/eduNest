@@ -92,3 +92,4 @@ testAsyncGeneration().then(() => {
   console.error('测试失败:', error);
   process.exit(1);
 });
+

@@ -100,7 +100,6 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
   const menuItems = [
     { href: '/content', label: t('myContent', { ns: 'navigation', defaultValue: 'My Creations' }), icon: BookOpen },
     { href: '/collections', label: t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }), icon: Heart },
-    { href: '/content/create', label: t('createContent', { ns: 'navigation', defaultValue: 'Create Content' }), icon: Plus },
   ];
 
   const handleSignOut = async () => {
