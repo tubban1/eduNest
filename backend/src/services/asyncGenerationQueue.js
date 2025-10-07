@@ -8,8 +8,8 @@ class AsyncGenerationQueue {
     this.maxConcurrent = 3;
     this.runningTasks = new Set();
     this.isProcessing = false;
-    // 任务超时（毫秒）：默认 5 分钟
-    this.taskTimeoutMs = 5 * 60 * 1000;
+    // 任务超时（毫秒）：默认 10 分钟
+    this.taskTimeoutMs = 10 * 60 * 1000;
     
     // 启动队列处理器
     this.startQueueProcessor();
@@ -84,7 +84,7 @@ class AsyncGenerationQueue {
         const ids = data.map(r => r.id);
         const { error: updErr } = await DatabaseService.supabase
           .from('ai_usage_logs')
-          .update({ status: 'failed', error_message: '生成超时(>5min)', updated_at: new Date().toISOString() })
+          .update({ status: 'failed', error_message: '生成超时(>10min)', updated_at: new Date().toISOString() })
           .in('id', ids);
         if (updErr) {
           logger.error('Watchdog 更新失败:', updErr);
@@ -188,7 +188,7 @@ class AsyncGenerationQueue {
       );
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('TASK_TIMEOUT_5MIN')), this.taskTimeoutMs);
+        setTimeout(() => reject(new Error('TASK_TIMEOUT_10MIN')), this.taskTimeoutMs);
       });
 
       const aiResult = await Promise.race([aiPromise, timeoutPromise]);
@@ -208,7 +208,7 @@ class AsyncGenerationQueue {
 
     } catch (error) {
       logger.error(`任务处理失败: ${taskId}`, error);
-      const reason = error && error.message === 'TASK_TIMEOUT_5MIN' ? '生成超时(>5min)' : (error?.message || '未知错误');
+      const reason = error && error.message === 'TASK_TIMEOUT_10MIN' ? '生成超时(>10min)' : (error?.message || '未知错误');
       await this.handleFailure(task, reason);
     } finally {
       // 从运行中任务集合移除
