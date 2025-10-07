@@ -32,7 +32,7 @@ Vue.js: Vue, VueRouter, Vuex
 React: Redux
 Sound: Tone.js, Howler.js
 Animation: Anime.js, GSAP.js
-3D: Three.js, Babylon.js
+3D: Three.js, Babylon.js, Orbit-Controls, AexsHelper, FontLoader,TextGeometry
 Charts: Chart.js, ECharts, D3.js
 Tools: Lodash, Moment.js, Day.js
 Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
@@ -77,6 +77,8 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
 }
 
 6. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.
+
+
 
 libraries：
 Vue.js: vue@3.5.20, vue-router@4.5.1, vuex@4.1.0

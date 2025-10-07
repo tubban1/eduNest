@@ -219,7 +219,7 @@ export default function ContentCard({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-64 min-w-56 max-w-xs mx-auto">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-full sm:w-64 sm:min-w-56 sm:max-w-xs mx-auto">
       <div className="p-4">
         {/* 标题 - 可点击跳转 */}
         <Link href={contentUrl} prefetch={false} className="block">

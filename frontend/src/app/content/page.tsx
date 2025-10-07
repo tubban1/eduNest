@@ -302,7 +302,7 @@ export default function ContentPage() {
           
           {/* 优先渲染乐观插入的生成中项目 */}
           {optimisticItems.length > 0 && (
-            <div className="mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mb-6 grid gap-4 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {optimisticItems.map(item => (
                 <ContentCard 
                   key={`optimistic-${item.id}`}

@@ -116,8 +116,10 @@ export default function ContentAIGenerator({
     setAiGenerating(true);
     setError('');
     try {
+      const rawTitle = knowledgePoint.trim();
+      const safeTitle = rawTitle.length > 200 ? (rawTitle.slice(0, 200)) : rawTitle;
       const contentData = {
-        title: knowledgePoint.trim(),
+        title: safeTitle,
         description: description || '',
         language_code: language,
         content_type: 'vue',
@@ -148,7 +150,7 @@ export default function ContentAIGenerator({
 
       // 1) 写入 sessionStorage，供跨页面或刷新后拾取
       try {
-        const payload = { id: contentResponse.id, q: knowledgePoint.trim(), lang: language };
+        const payload = { id: contentResponse.id, q: rawTitle, lang: language };
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('new_content', JSON.stringify(payload));
         }
@@ -166,7 +168,9 @@ export default function ContentAIGenerator({
         window.location.href = '/login';
         return;
       }
-      setError(msg);
+      // 后端参数验证失败时返回 details
+      const detailed = (e?.details && Array.isArray(e.details)) ? e.details.map((d: any) => d.msg || d.message || d.param).join('\n') : '';
+      setError(detailed ? `${msg}\n${detailed}` : msg);
     } finally {
       setAiGenerating(false);
     }

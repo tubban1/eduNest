@@ -8,9 +8,13 @@ class AsyncGenerationQueue {
     this.maxConcurrent = 3;
     this.runningTasks = new Set();
     this.isProcessing = false;
+    // 任务超时（毫秒）：默认 5 分钟
+    this.taskTimeoutMs = 5 * 60 * 1000;
     
     // 启动队列处理器
     this.startQueueProcessor();
+    // 启动看门狗，定时清理卡住的 processing 任务（即使进程重启也能纠正）
+    this.startWatchdog();
   }
 
   /**
@@ -56,6 +60,41 @@ class AsyncGenerationQueue {
       logger.error('添加生成任务失败:', error);
       throw error;
     }
+  }
+
+  /**
+   * 定时扫描 ai_usage_logs，将超过超时时间的 processing 任务标记为 failed
+   */
+  startWatchdog() {
+    setInterval(async () => {
+      try {
+        const now = Date.now();
+        const thresholdIso = new Date(now - this.taskTimeoutMs).toISOString();
+        const { data, error } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .select('id, updated_at, status')
+          .eq('action_type', 'generate')
+          .eq('status', 'processing')
+          .lt('updated_at', thresholdIso);
+        if (error) {
+          logger.error('Watchdog 查询失败:', error);
+          return;
+        }
+        if (!data || data.length === 0) return;
+        const ids = data.map(r => r.id);
+        const { error: updErr } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .update({ status: 'failed', error_message: '生成超时(>5min)', updated_at: new Date().toISOString() })
+          .in('id', ids);
+        if (updErr) {
+          logger.error('Watchdog 更新失败:', updErr);
+        } else {
+          logger.warn(`Watchdog 标记超时任务为 failed: ${ids.length} 条`);
+        }
+      } catch (e) {
+        logger.error('Watchdog 异常:', e);
+      }
+    }, 60 * 1000); // 每分钟执行一次
   }
 
   /**
@@ -135,8 +174,8 @@ class AsyncGenerationQueue {
       // 更新状态为 processing
       await this.updateTaskStatus(taskId, 'processing');
 
-      // 调用 AI 生成服务（异步模式）
-      const aiResult = await aiService.generateEducationalContent(
+      // 调用 AI 生成服务（异步模式）+ 超时保护
+      const aiPromise = aiService.generateEducationalContent(
         task.request_payload.knowledge_point,
         task.request_payload.learning_stage || 'understanding',
         task.request_payload.description,
@@ -147,6 +186,12 @@ class AsyncGenerationQueue {
         task.request_id,
         true // isAsyncMode = true
       );
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('TASK_TIMEOUT_5MIN')), this.taskTimeoutMs);
+      });
+
+      const aiResult = await Promise.race([aiPromise, timeoutPromise]);
 
       if (aiResult.success && aiResult.data) {
         // 生成成功，更新 content 表
@@ -163,7 +208,8 @@ class AsyncGenerationQueue {
 
     } catch (error) {
       logger.error(`任务处理失败: ${taskId}`, error);
-      await this.handleFailure(task, error.message);
+      const reason = error && error.message === 'TASK_TIMEOUT_5MIN' ? '生成超时(>5min)' : (error?.message || '未知错误');
+      await this.handleFailure(task, reason);
     } finally {
       // 从运行中任务集合移除
       this.runningTasks.delete(taskId);
@@ -365,7 +411,7 @@ class AsyncGenerationQueue {
     try {
       const { data, error } = await DatabaseService.supabase
         .from('ai_usage_logs')
-        .select('status')
+        .select('status, updated_at')
         .eq('action_type', 'generate')
         .not('content_id', 'is', null);
 
@@ -374,10 +420,13 @@ class AsyncGenerationQueue {
         return null;
       }
 
+      const now = Date.now();
       const statusCounts = data.reduce((acc, item) => {
         acc[item.status] = (acc[item.status] || 0) + 1;
         return acc;
       }, {});
+
+      const processingTimeout = data.filter((item) => item.status === 'processing' && item.updated_at && (now - new Date(item.updated_at).getTime()) > this.taskTimeoutMs).length;
 
       return {
         pending: statusCounts.pending || 0,
@@ -385,7 +434,8 @@ class AsyncGenerationQueue {
         done: statusCounts.done || 0,
         failed: statusCounts.failed || 0,
         running_tasks: this.runningTasks.size,
-        max_concurrent: this.maxConcurrent
+        max_concurrent: this.maxConcurrent,
+        processing_timeout: processingTimeout
       };
     } catch (error) {
       logger.error('获取队列状态失败:', error);
