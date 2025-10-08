@@ -165,6 +165,7 @@ export default function ContentPage() {
   useEffect(() => { setMounted(true); }, []);
   
   const [lists, setLists] = useState<any[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0); // 用于强制刷新MyContentList
   
   const fetchLists = async () => {
     if (!user) return;
@@ -181,6 +182,11 @@ export default function ContentPage() {
       }
       setLists([]);
     }
+  };
+
+  // 刷新内容列表的函数
+  const refreshContentList = () => {
+    setRefreshKey(prev => prev + 1); // 触发MyContentList重新渲染
   };
   
   useEffect(() => {
@@ -314,14 +320,14 @@ export default function ContentPage() {
                   onContentUpdate={async () => {
                     // 当生成完成时，移除乐观项并刷新列表
                     setOptimisticItems(prev => prev.filter(p => p.id !== item.id));
-                    await fetchLists();
+                    refreshContentList(); // 刷新内容列表
                   }}
                 />
               ))}
             </div>
           )}
 
-          <MyContentList userId={user.id} lists={lists} refreshLists={fetchLists} />
+          <MyContentList key={refreshKey} userId={user.id} lists={lists} refreshLists={fetchLists} />
         </div>
       </main>
     </div>
