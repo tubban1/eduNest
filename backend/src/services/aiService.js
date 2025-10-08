@@ -110,7 +110,7 @@ const safeReplace = (template, placeholder, value) => {
 
 // AI服务配置
 const ARK_API_KEY = process.env.ARK_API_KEY;
-const ARK_MODEL = process.env.ARK_MODEL || 'kimi-k2-250711';
+const ARK_MODEL = process.env.ARK_MODEL || 'kimi-k2-250905';
 const ARK_URL = process.env.ARK_URL || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
 
 // 初始化AI提供商工厂
