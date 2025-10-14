@@ -142,12 +142,13 @@ Vue.js: Vue, VueRouter, Vuex
 React: Redux
 Sound: Tone.js, Howler.js
 Animation: Anime.js, GSAP.js
-3D: Three.js, Babylon.js, Orbit-Controls, AexsHelper, FontLoader,TextGeometry
+3D: Three.js, Babylon.js, OrbitControls, AexsHelper, FontLoader,TextGeometry
 Charts: Chart.js, ECharts, D3.js
 Tools: Lodash, Moment.js, Day.js
 Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
 Game: Phaser.js, Matter.js, P5.js
 Graphic: Fabric.js, Rough.js, Konva.js
+Math: KaTeX.min.js, KaTeX.min.css
 UI: Bootstrap, Tailwindcss, Fontawesome
 - Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
 - All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr).
@@ -180,7 +181,7 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
     "Any additional library links you actually used from the allowed list"
   ],
   "tags": [
-    "3–7 high-quality tags that reflect subject, domain, format, or interaction style"
+    "3-7 high-quality tags that reflect subject, domain, format, or interaction style"
   ],
   "content_type": "vue",
   "language_code": "MUST match the language_code input parameter exactly as per Constraint 4"
@@ -190,9 +191,12 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
 
 // 学习阶段的用户提示词映射
 const LEARNING_STAGE_PROMPTS = {
-  understanding: `Create an interactive project that visually and audibly explains the concept of "{{knowledge_point}}".
-Use animated diagrams, gentle ambient sounds, and user-driven actions like hovering or clicking to highlight different parts.
-Ensure users can explore the concept in steps, with each stage accompanied by sound or animation cues.`,
+  understanding: `Explain the concept of "{{knowledge_point}}" through an interactive, exploratory learning experience.
+Present the idea step by step, combining visual storytelling, gentle sound cues, and interactive exploration to guide understanding.
+Allow users to toggle between different perspectives, such as overview, mechanism, real-world examples, and related or advanced concepts.
+Encourage discovery by letting users click, hover, or reveal hidden patterns and connections that show how "{{knowledge_point}}" links to broader ideas.
+Each interaction should feel meaningful — revealing not just information, but relationships and insights that deepen comprehension.
+End with a moment of reflection or synthesis, helping learners see the “big picture” of how "{{knowledge_point}}" fits within a wider knowledge network.`,
 
   application: `Build an interactive simulation that lets users apply "{{knowledge_point}}" in a real-world or scenario-based context.
 Use sliders, drag-and-drop, or live input fields to manipulate variables.

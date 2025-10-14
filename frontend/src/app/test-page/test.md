@@ -1,0 +1,20 @@
+- 有效修改文件与位置
+  - `edu/backend/config/supported-libraries.json`
+    - 为 `three` 增加 cdnjs 模式匹配：`cdnjs.cloudflare.com/ajax/libs/three.js`、`.../r134/three.min.js`，保证从数据库读取的 three 链接能被识别并加载。
+  - `edu/frontend/src/components/SandboxRenderer.tsx`
+    - 外链识别与顺序
+      - 扩展 three 识别条件：支持包含 `three.js`、`three.min.js` 的 cdnjs 链接。
+      - 按依赖排序加载：保证 `three` → `OrbitControls`。
+    - 执行时序与兜底
+      - 增强 “安全执行” 逻辑：仅在 `THREE.Scene/WebGLRenderer/PerspectiveCamera` 就绪后执行用户 JS。
+      - 若 `document.readyState==='complete'` 且用户代码依赖 `window.load`，注入并分发合成的 `load` 事件（含一次延迟分发）触发初始化。
+    - 诊断日志
+      - 在 iframe 内注入 `__LOG`，通过 `postMessage` 回传 `SANDBOX_LOG`；父页监听并 `console.debug` 输出。
+      - 增加渲染审计：`audit_start/t1/t3`（canvas 数量、尺寸、WebGL 支持）与 `fit_canvas_applied/fit_canvas_no_canvas`。
+    - 画布尺寸与比例
+      - 样式：移除对 canvas 的强制拉伸，使用“保持原比例、自适应宽度”：
+        - `#canvas-container { width: 100%; height: auto; }`
+        - `canvas { width: auto; height: auto; max-width: 100%; }`
+      - 运行时：`applyCanvasClamp()` 仅设置 `max-width:100%`，不再强制 100% 高度，避免变形。
+    - 其他
+      - 保持 iframe 文档 `html, body` 为 `height:100vh; overflow:hidden`，避免内容把 iframe 无限拉高。
