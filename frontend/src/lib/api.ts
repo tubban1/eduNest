@@ -266,7 +266,7 @@ class ApiClient {
         ...fixData,
         requestId
       });
-      return data.success ? data.data : null;
+      return data.success ? data : null;
     },
   };
 

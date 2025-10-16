@@ -58,7 +58,11 @@ router.post('/', authenticateToken, async (req, res) => {
 
       return res.json({ 
         success: true, 
-        data: { html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed } 
+        html: newHtml, 
+        css: newCss, 
+        js: newJs, 
+        external_links: newLinks, 
+        fixed 
       });
     } else {
       // 如果是创建模式，直接使用前端传递的参数
@@ -88,7 +92,11 @@ router.post('/', authenticateToken, async (req, res) => {
 
       return res.json({ 
         success: true, 
-        data: { html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed } 
+        html: newHtml, 
+        css: newCss, 
+        js: newJs, 
+        external_links: newLinks, 
+        fixed 
       });
     }
   } catch (e) {
