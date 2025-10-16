@@ -10,6 +10,8 @@ class AsyncGenerationQueue {
     this.isProcessing = false;
     // 任务超时（毫秒）：默认 10 分钟
     this.taskTimeoutMs = 10 * 60 * 1000;
+    // 瞬时错误重试配置
+    this.retry = { maxAttempts: 3, baseDelayMs: 500, maxDelayMs: 4000 };
     
     // 启动队列处理器
     this.startQueueProcessor();
@@ -23,6 +25,31 @@ class AsyncGenerationQueue {
   async addTask(contentId, generationParams) {
     try {
       const requestId = uuidv4();
+      const idempotencyKey = generationParams.idempotency_key || generationParams.idempotencyKey || null;
+
+      // 幂等：如传入 idempotency_key，优先查找是否已有同一 content 的进行中/待处理任务
+      if (idempotencyKey) {
+        try {
+          const { data: existing, error: existErr } = await DatabaseService.supabase
+            .from('ai_usage_logs')
+            .select('*')
+            .eq('content_id', contentId)
+            .eq('action_type', 'generate')
+            .in('status', ['pending', 'processing'])
+            .contains('request_payload', { idempotency_key: idempotencyKey })
+            .order('created_at', { ascending: false })
+            .limit(1);
+          if (!existErr && existing && existing.length > 0) {
+            const log = existing[0];
+            logger.info(`幂等命中，返回已有任务: contentId=${contentId}, requestId=${log.request_id}, idem=${idempotencyKey}`);
+            // 触发处理（防止处于 pending 未被拉起）
+            this.processQueue();
+            return { log, requestId: log.request_id };
+          }
+        } catch (e) {
+          logger.warn('幂等查询异常，忽略继续创建:', e?.message || e);
+        }
+      }
       
       // 创建 ai_usage_logs 记录
       const { data: log, error } = await DatabaseService.supabase
@@ -39,7 +66,9 @@ class AsyncGenerationQueue {
             learning_stage: generationParams.learning_stage,
             description: generationParams.description,
             language_code: generationParams.language_code,
-            provider: generationParams.provider
+            provider: generationParams.provider,
+            // 将幂等键保存在 JSON 里，便于 contains 查询，无需表结构变更
+            idempotency_key: idempotencyKey
           }
         })
         .select()
@@ -50,7 +79,7 @@ class AsyncGenerationQueue {
         throw new Error(`创建生成任务失败: ${error.message}`);
       }
 
-      logger.info(`生成任务已添加到队列: contentId=${contentId}, requestId=${requestId}`);
+      logger.info(`生成任务已添加到队列: contentId=${contentId}, requestId=${requestId}, idem=${idempotencyKey || 'none'}`);
       
       // 触发队列处理
       this.processQueue();
@@ -70,27 +99,39 @@ class AsyncGenerationQueue {
       try {
         const now = Date.now();
         const thresholdIso = new Date(now - this.taskTimeoutMs).toISOString();
-        const { data, error } = await DatabaseService.supabase
-          .from('ai_usage_logs')
-          .select('id, updated_at, status')
-          .eq('action_type', 'generate')
-          .eq('status', 'processing')
-          .lt('updated_at', thresholdIso);
-        if (error) {
-          logger.error('Watchdog 查询失败:', error);
-          return;
-        }
+        const { data, error } = await this.runQueryWithRetry(async () => {
+          return await DatabaseService.supabase
+            .from('ai_usage_logs')
+            .select('id, updated_at, status, content_id, user_id, request_id, error_message')
+            .eq('action_type', 'generate')
+            .eq('status', 'processing')
+            .lt('updated_at', thresholdIso);
+        }, 'watchdog_select_timeouts');
+        if (error) { logger.error('Watchdog 查询失败:', error); return; }
         if (!data || data.length === 0) return;
-        const ids = data.map(r => r.id);
-        const { error: updErr } = await DatabaseService.supabase
-          .from('ai_usage_logs')
-          .update({ status: 'failed', error_message: '生成超时(>10min)', updated_at: new Date().toISOString() })
-          .in('id', ids);
-        if (updErr) {
-          logger.error('Watchdog 更新失败:', updErr);
-        } else {
-          logger.warn(`Watchdog 标记超时任务为 failed: ${ids.length} 条`);
+        let requeued = 0; let failed = 0;
+        for (const row of data) {
+          try {
+            const retryCount = await this.getRetryCount(row.content_id);
+            if (retryCount < 2) {
+              const { error: updErr } = await DatabaseService.supabase
+                .from('ai_usage_logs')
+                .update({ status: 'pending', error_message: `watchdog_requeue: ${row.error_message || ''}`, updated_at: new Date().toISOString() })
+                .eq('id', row.id);
+              if (updErr) { logger.error('Watchdog 重排队失败:', updErr); }
+              else { requeued++; }
+            } else {
+              const { error: updErr } = await DatabaseService.supabase
+                .from('ai_usage_logs')
+                .update({ status: 'failed', error_message: '生成超时(>10min)', updated_at: new Date().toISOString() })
+                .eq('id', row.id);
+              if (updErr) { logger.error('Watchdog 更新失败:', updErr); }
+              else { failed++; }
+            }
+          } catch (e) { logger.error('Watchdog 处理单条记录异常:', e); }
         }
+        if (requeued > 0) logger.warn(`Watchdog 重排队超时任务: ${requeued} 条`);
+        if (failed > 0) logger.warn(`Watchdog 标记超时任务为 failed: ${failed} 条`);
       } catch (e) {
         logger.error('Watchdog 异常:', e);
       }
@@ -128,14 +169,16 @@ class AsyncGenerationQueue {
       }
 
       // 获取待处理的任务
-      const { data: pendingTasks, error } = await DatabaseService.supabase
-        .from('ai_usage_logs')
-        .select('*')
-        .eq('status', 'pending')
-        .eq('action_type', 'generate')
-        .not('content_id', 'is', null)
-        .order('created_at', { ascending: true })
-        .limit(availableSlots);
+      const { data: pendingTasks, error } = await this.runQueryWithRetry(async () => {
+        return await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .select('*')
+          .eq('status', 'pending')
+          .eq('action_type', 'generate')
+          .not('content_id', 'is', null)
+          .order('created_at', { ascending: true })
+          .limit(availableSlots);
+      }, 'queue_select_pending');
 
       if (error) {
         logger.error('查询待处理任务失败:', error);
@@ -156,6 +199,30 @@ class AsyncGenerationQueue {
       logger.error('处理队列失败:', error);
     } finally {
       this.isProcessing = false;
+    }
+  }
+
+  /**
+   * 统一的 Supabase 查询重试助手
+   */
+  async runQueryWithRetry(exec, label) {
+    let attempt = 0;
+    const max = this.retry.maxAttempts;
+    const base = this.retry.baseDelayMs;
+    const cap = this.retry.maxDelayMs;
+    while (true) {
+      try {
+        const res = await exec();
+        return res;
+      } catch (e) {
+        attempt++;
+        const isLast = attempt >= max;
+        logger.warn(`[retry] ${label} attempt ${attempt} failed:`, e?.message || e);
+        if (isLast) return { data: null, error: e };
+        const jitter = Math.random() * base;
+        const delay = Math.min(cap, base * Math.pow(2, attempt - 1)) + jitter;
+        await new Promise(r => setTimeout(r, delay));
+      }
     }
   }
 

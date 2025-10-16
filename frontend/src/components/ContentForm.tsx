@@ -152,7 +152,17 @@ export default function ContentForm({
     } catch {}
   }, [currentRequestId]);
 
-  // 恢复“加载失败”提示（在组件挂载和页面从后台回到前台时触发）
+  // 实时预览：监听代码变化自动更新预览
+  useEffect(() => {
+    // 使用防抖来避免频繁更新
+    const debounceTimer = setTimeout(() => {
+      setPreviewKey(prev => prev + 1);
+    }, 300); // 300ms 防抖
+
+    return () => clearTimeout(debounceTimer);
+  }, [code_html, code_css, code_js, external_links]);
+
+  // 恢复"加载失败"提示（在组件挂载和页面从后台回到前台时触发）
   useEffect(() => {
     const restoreReloadHint = () => {
       try {
