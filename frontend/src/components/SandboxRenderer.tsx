@@ -334,13 +334,40 @@ export default function SandboxRenderer({
   
   ${renderExternalLinks(externalLinks)}
   
+  <!-- 添加 Tailwind CSS 支持 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // 配置 Tailwind CSS
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            indigo: {
+              50: '#eef2ff',
+              600: '#4f46e5',
+              700: '#4338ca'
+            },
+            cyan: {
+              50: '#ecfeff',
+              600: '#0891b2'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
   <style>
     /* 基础重置样式 - 兼容各种浏览器 */
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* 更温和的重置，保留 Tailwind 样式 */
+    html, body {
+      margin: 0;
+      padding: 0;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       -moz-user-select: none;
@@ -508,8 +535,22 @@ export default function SandboxRenderer({
       box-sizing: border-box;
     }
     
-    /* 用户自定义样式 */
+    /* 用户自定义样式 - 提高优先级 */
     ${css}
+    
+    /* 确保用户样式不被覆盖 */
+    #app, #root, [data-v-app] {
+      all: unset !important;
+      display: block !important;
+    }
+    
+    /* 恢复必要的显示属性 */
+    #app {
+      min-height: 100vh !important;
+      background: inherit !important;
+      color: inherit !important;
+      font-family: inherit !important;
+    }
   </style>
 </head>
 <body>
