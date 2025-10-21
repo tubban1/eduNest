@@ -70,6 +70,11 @@ export default function ContentCard({
   useEffect(() => {
     const status = content.generation_status;
     if (status && isGenerating(status)) {
+      // 如果已经在轮询，先停止再重新开始，确保状态同步
+      if (statusPollingManager.isPolling(content.id)) {
+        statusPollingManager.stopPolling(content.id);
+      }
+      
       // 开始轮询状态
       statusPollingManager.startPolling(
         content.id,

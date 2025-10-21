@@ -7,16 +7,69 @@ class AsyncGenerationQueue {
   constructor() {
     this.maxConcurrent = 3;
     this.runningTasks = new Set();
+    this.runningContent = new Set(); // 按 content_id 互斥
     this.isProcessing = false;
     // 任务超时（毫秒）：默认 10 分钟
     this.taskTimeoutMs = 10 * 60 * 1000;
     // 瞬时错误重试配置
     this.retry = { maxAttempts: 3, baseDelayMs: 500, maxDelayMs: 4000 };
+    // 延迟重试任务存储
+    this.delayedRetryTasks = new Map();
+    
+    // 启动时清理重复任务
+    this.initializeCleanup();
     
     // 启动队列处理器
     this.startQueueProcessor();
     // 启动看门狗，定时清理卡住的 processing 任务（即使进程重启也能纠正）
     this.startWatchdog();
+    // 启动延迟重试处理器
+    this.startDelayedRetryProcessor();
+  }
+
+  /**
+   * 初始化清理：服务启动时清理可能存在的重复任务
+   */
+  async initializeCleanup() {
+    try {
+      
+      // 清理重复的 processing 任务
+      await this.cleanupDuplicateProcessingTasks();
+      
+      // 清理可能卡住的 processing 任务（超过超时时间）
+      const now = Date.now();
+      const thresholdIso = new Date(now - this.taskTimeoutMs).toISOString();
+      
+      const { data: stuckTasks, error } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('id, content_id, updated_at')
+        .eq('action_type', 'generate')
+        .eq('status', 'processing')
+        .lt('updated_at', thresholdIso);
+
+      if (error) {
+        logger.error('初始化清理查询卡住任务失败:', error);
+      } else if (stuckTasks && stuckTasks.length > 0) {
+        const taskIds = stuckTasks.map(t => t.id);
+        const { error: updateError } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .update({ 
+            status: 'failed', 
+            error_message: 'service_restart_cleanup',
+            updated_at: new Date().toISOString()
+          })
+          .in('id', taskIds);
+
+        if (updateError) {
+          logger.error('初始化清理卡住任务失败:', updateError);
+        } else {
+          logger.warn(`初始化清理了 ${stuckTasks.length} 个卡住的processing任务`);
+        }
+      }
+      
+    } catch (error) {
+      logger.error('初始化清理异常:', error);
+    }
   }
 
   /**
@@ -27,21 +80,44 @@ class AsyncGenerationQueue {
       const requestId = uuidv4();
       const idempotencyKey = generationParams.idempotency_key || generationParams.idempotencyKey || null;
 
-      // 幂等：如传入 idempotency_key，优先查找是否已有同一 content 的进行中/待处理任务
+      // 使用数据库级别的唯一约束来防止重复任务
+      // 首先检查是否已有相同 content_id 的进行中任务
+      const { data: existingTasks, error: checkError } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('*')
+        .eq('content_id', contentId)
+        .eq('action_type', 'generate')
+        .in('status', ['pending', 'processing'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (checkError) {
+        logger.error('检查现有任务失败:', checkError);
+        throw new Error(`检查现有任务失败: ${checkError.message}`);
+      }
+
+      // 如果已有进行中的任务，直接返回
+      if (existingTasks && existingTasks.length > 0) {
+        const existingTask = existingTasks[0];
+        // 触发处理（防止处于 pending 未被拉起）
+        this.processQueue();
+        return { log: existingTask, requestId: existingTask.request_id };
+      }
+
+      // 幂等性检查：如果传入了 idempotency_key，检查是否有相同幂等键的任务
       if (idempotencyKey) {
         try {
-          const { data: existing, error: existErr } = await DatabaseService.supabase
+          const { data: idempotentTasks, error: idemErr } = await DatabaseService.supabase
             .from('ai_usage_logs')
             .select('*')
             .eq('content_id', contentId)
             .eq('action_type', 'generate')
-            .in('status', ['pending', 'processing'])
             .contains('request_payload', { idempotency_key: idempotencyKey })
             .order('created_at', { ascending: false })
             .limit(1);
-          if (!existErr && existing && existing.length > 0) {
-            const log = existing[0];
-            logger.info(`幂等命中，返回已有任务: contentId=${contentId}, requestId=${log.request_id}, idem=${idempotencyKey}`);
+          
+          if (!idemErr && idempotentTasks && idempotentTasks.length > 0) {
+            const log = idempotentTasks[0];
             // 触发处理（防止处于 pending 未被拉起）
             this.processQueue();
             return { log, requestId: log.request_id };
@@ -79,7 +155,6 @@ class AsyncGenerationQueue {
         throw new Error(`创建生成任务失败: ${error.message}`);
       }
 
-      logger.info(`生成任务已添加到队列: contentId=${contentId}, requestId=${requestId}, idem=${idempotencyKey || 'none'}`);
       
       // 触发队列处理
       this.processQueue();
@@ -99,6 +174,8 @@ class AsyncGenerationQueue {
       try {
         const now = Date.now();
         const thresholdIso = new Date(now - this.taskTimeoutMs).toISOString();
+        
+        // 1. 处理超时的 processing 任务
         const { data, error } = await this.runQueryWithRetry(async () => {
           return await DatabaseService.supabase
             .from('ai_usage_logs')
@@ -107,8 +184,10 @@ class AsyncGenerationQueue {
             .eq('status', 'processing')
             .lt('updated_at', thresholdIso);
         }, 'watchdog_select_timeouts');
+        
         if (error) { logger.error('Watchdog 查询失败:', error); return; }
         if (!data || data.length === 0) return;
+        
         let requeued = 0; let failed = 0;
         for (const row of data) {
           try {
@@ -132,10 +211,77 @@ class AsyncGenerationQueue {
         }
         if (requeued > 0) logger.warn(`Watchdog 重排队超时任务: ${requeued} 条`);
         if (failed > 0) logger.warn(`Watchdog 标记超时任务为 failed: ${failed} 条`);
+        
+        // 2. 清理重复的 processing 任务
+        await this.cleanupDuplicateProcessingTasks();
+        
       } catch (e) {
         logger.error('Watchdog 异常:', e);
       }
     }, 60 * 1000); // 每分钟执行一次
+  }
+
+  /**
+   * 清理重复的 processing 任务
+   * 对于同一个 content_id，只保留最新的 processing 任务，其他的标记为 failed
+   */
+  async cleanupDuplicateProcessingTasks() {
+    try {
+      // 查找所有 processing 任务，包含 id 字段
+      const { data: processingTasks, error } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('id, content_id, created_at')
+        .eq('action_type', 'generate')
+        .eq('status', 'processing')
+        .order('content_id, created_at', { ascending: false });
+
+      if (error) {
+        logger.error('清理重复processing任务查询失败:', error);
+        return;
+      }
+
+      if (!processingTasks || processingTasks.length === 0) return;
+
+      // 按 content_id 分组，找出有重复的
+      const contentGroups = {};
+      processingTasks.forEach(task => {
+        if (!contentGroups[task.content_id]) {
+          contentGroups[task.content_id] = [];
+        }
+        contentGroups[task.content_id].push(task);
+      });
+
+      let cleanedCount = 0;
+      for (const [contentId, tasks] of Object.entries(contentGroups)) {
+        if (tasks.length > 1) {
+          // 保留最新的（第一个），其他的标记为 failed
+          const tasksToClean = tasks.slice(1);
+          const taskIds = tasksToClean.map(t => t.id);
+          
+          const { error: updateError } = await DatabaseService.supabase
+            .from('ai_usage_logs')
+            .update({ 
+              status: 'failed', 
+              error_message: 'duplicate_processing_cleaned',
+              updated_at: new Date().toISOString()
+            })
+            .in('id', taskIds);
+
+          if (updateError) {
+            logger.error(`清理重复processing任务失败: contentId=${contentId}`, updateError);
+          } else {
+            cleanedCount += tasksToClean.length;
+            logger.warn(`清理了 ${tasksToClean.length} 个重复的processing任务: contentId=${contentId}`);
+          }
+        }
+      }
+
+      if (cleanedCount > 0) {
+        logger.warn(`Watchdog 清理重复processing任务: ${cleanedCount} 条`);
+      }
+    } catch (error) {
+      logger.error('清理重复processing任务异常:', error);
+    }
   }
 
   /**
@@ -149,6 +295,36 @@ class AsyncGenerationQueue {
     
     // 立即处理一次
     this.processQueue();
+  }
+
+  /**
+   * 启动延迟重试处理器
+   */
+  startDelayedRetryProcessor() {
+    // 每10秒检查一次延迟重试任务
+    setInterval(() => {
+      this.processDelayedRetryTasks();
+    }, 10000);
+  }
+
+  /**
+   * 处理延迟重试任务
+   */
+  processDelayedRetryTasks() {
+    const now = Date.now();
+    const readyTasks = [];
+
+    for (const [taskId, taskData] of this.delayedRetryTasks) {
+      if (now >= taskData.executeAt) {
+        readyTasks.push({ taskId, taskData });
+      }
+    }
+
+    // 执行到期的延迟重试任务
+    readyTasks.forEach(({ taskId, taskData }) => {
+      this.delayedRetryTasks.delete(taskId);
+      this.addTask(taskData.contentId, taskData.generationParams);
+    });
   }
 
   /**
@@ -189,10 +365,19 @@ class AsyncGenerationQueue {
         return; // 没有待处理的任务
       }
 
-      logger.info(`找到 ${pendingTasks.length} 个待处理任务`);
+      // 同一 content_id 只取一个，且跳过已在运行中的内容
+      const seen = new Set();
+      const filteredTasks = [];
+      for (const t of pendingTasks) {
+        if (this.runningContent.has(t.content_id)) continue;
+        if (seen.has(t.content_id)) continue;
+        seen.add(t.content_id);
+        filteredTasks.push(t);
+      }
+
 
       // 并行处理任务
-      const promises = pendingTasks.map(task => this.processTask(task));
+      const promises = filteredTasks.map(task => this.processTask(task));
       await Promise.allSettled(promises);
 
     } catch (error) {
@@ -231,15 +416,51 @@ class AsyncGenerationQueue {
    */
   async processTask(task) {
     const taskId = task.id;
+    const contentId = task.content_id;
     
     try {
+      // 检查是否已有相同 content_id 在运行
+      if (this.runningContent.has(contentId)) {
+        return;
+      }
+
+      // 双重检查：再次查询数据库确认没有其他 processing 任务
+      const { data: processingTasks, error: checkError } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('id, status')
+        .eq('content_id', contentId)
+        .eq('action_type', 'generate')
+        .eq('status', 'processing')
+        .neq('id', taskId);
+
+      if (checkError) {
+        logger.error(`检查processing任务失败: ${taskId}`, checkError);
+        return;
+      }
+
+      if (processingTasks && processingTasks.length > 0) {
+        return;
+      }
+
       // 添加到运行中任务集合
       this.runningTasks.add(taskId);
+      this.runningContent.add(contentId);
       
-      logger.info(`开始处理任务: ${taskId}, contentId=${task.content_id}`);
 
-      // 更新状态为 processing
-      await this.updateTaskStatus(taskId, 'processing');
+      // 原子性更新：同时更新状态和清除错误信息
+      const { error: updateError } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .update({ 
+          status: 'processing',
+          error_message: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskId);
+
+      if (updateError) {
+        logger.error(`更新任务状态失败: ${taskId}`, updateError);
+        throw new Error(`更新任务状态失败: ${updateError.message}`);
+      }
 
       // 调用 AI 生成服务（异步模式）+ 超时保护
       const aiPromise = aiService.generateEducationalContent(
@@ -262,12 +483,14 @@ class AsyncGenerationQueue {
 
       if (aiResult.success && aiResult.data) {
         // 生成成功，更新 content 表
-        await this.updateContentFromAIResult(task.content_id, aiResult.data);
+        await this.updateContentFromAIResult(contentId, aiResult.data);
         
         // 更新任务状态为 done
         await this.updateTaskStatus(taskId, 'done');
         
-        logger.info(`任务处理成功: ${taskId}`);
+        // 清理同一 content_id 的其他 pending 任务
+        await this.cleanupPendingTasks(contentId, taskId);
+        
       } else {
         // 生成失败，处理重试逻辑
         await this.handleFailure(task, aiResult.error || 'AI生成失败');
@@ -280,6 +503,44 @@ class AsyncGenerationQueue {
     } finally {
       // 从运行中任务集合移除
       this.runningTasks.delete(taskId);
+      this.runningContent.delete(contentId);
+    }
+  }
+
+  /**
+   * 清理同一 content_id 的其他 pending 任务
+   */
+  async cleanupPendingTasks(contentId, successTaskId) {
+    try {
+      const { data: pendingTasks, error } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('id, request_id')
+        .eq('content_id', contentId)
+        .eq('action_type', 'generate')
+        .eq('status', 'pending')
+        .neq('id', successTaskId);
+
+      if (error || !pendingTasks || pendingTasks.length === 0) {
+        return;
+      }
+
+      // 批量更新为失败状态
+      const taskIds = pendingTasks.map(t => t.id);
+      const { error: updateError } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .update({ 
+          status: 'failed', 
+          error_message: `closed_by_success:${successTaskId}`,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', taskIds);
+
+      if (updateError) {
+        logger.error('清理 pending 任务失败:', updateError);
+      } else {
+      }
+    } catch (error) {
+      logger.error('清理 pending 任务异常:', error);
     }
   }
 
@@ -350,7 +611,6 @@ class AsyncGenerationQueue {
         throw error;
       }
 
-      logger.info(`Content更新成功: ${contentId}`);
     } catch (error) {
       logger.error(`更新content失败: ${contentId}`, error);
       throw error;
@@ -358,24 +618,83 @@ class AsyncGenerationQueue {
   }
 
   /**
+   * 判断错误是否应该重试
+   */
+  shouldRetryError(errorMessage) {
+    const retryableErrors = [
+      'TASK_TIMEOUT_10MIN',
+      '504 Gateway Time-out',
+      '502 Bad Gateway',
+      '503 Service Unavailable',
+      'NETWORK_ERROR',
+      'AI_SERVICE_UNAVAILABLE',
+      'RATE_LIMIT_EXCEEDED'
+    ];
+    
+    const nonRetryableErrors = [
+      '知识点不能为空',
+      '不支持的学习阶段',
+      '积分不足',
+      '内容不存在',
+      '权限不足',
+      '参数验证失败',
+      'Invalid status',
+      'AI生成失败: 内容过于复杂',
+      'AI生成失败: 不支持的语言'
+    ];
+
+    // 检查是否为不可重试错误
+    if (nonRetryableErrors.some(err => errorMessage.includes(err))) {
+      return false;
+    }
+
+    // 检查是否为可重试错误
+    return retryableErrors.some(err => errorMessage.includes(err));
+  }
+
+  /**
+   * 计算重试延迟时间（指数退避 + 随机抖动）
+   */
+  calculateRetryDelay(retryCount) {
+    const baseDelay = 2000; // 2秒基础延迟
+    const maxDelay = 30000; // 30秒最大延迟
+    const jitter = Math.random() * 1000; // 0-1秒随机抖动
+    
+    const delay = Math.min(
+      baseDelay * Math.pow(2, retryCount) + jitter,
+      maxDelay
+    );
+    
+    return Math.floor(delay);
+  }
+
+  /**
    * 处理失败逻辑
    */
   async handleFailure(task, errorMessage) {
     try {
+      // 检查是否应该重试
+      if (!this.shouldRetryError(errorMessage)) {
+        // 不可重试错误，直接标记为失败
+        await this.updateTaskStatus(task.id, 'failed');
+        await this.updateTaskError(task.id, errorMessage);
+        return;
+      }
+
       // 获取该 content 的重试次数
       const retryCount = await this.getRetryCount(task.content_id);
       
-      logger.info(`任务失败: ${task.id}, 重试次数: ${retryCount}, 错误: ${errorMessage}`);
 
-      if (retryCount < 2) {
-        // 创建重试任务
-        await this.createRetryTask(task);
-        logger.info(`创建重试任务: contentId=${task.content_id}, retryCount=${retryCount + 1}`);
+      if (retryCount < 3) { // 最多重试3次
+        // 计算重试延迟
+        const delayMs = this.calculateRetryDelay(retryCount);
+        
+        // 创建延迟重试任务
+        await this.createDelayedRetryTask(task, delayMs);
       } else {
         // 最终失败
         await this.updateTaskStatus(task.id, 'failed');
         await this.updateTaskError(task.id, errorMessage);
-        logger.info(`任务最终失败: ${task.id}, 已达到最大重试次数`);
       }
     } catch (error) {
       logger.error(`处理失败逻辑错误: ${task.id}`, error);
@@ -383,7 +702,43 @@ class AsyncGenerationQueue {
   }
 
   /**
-   * 创建重试任务
+   * 创建延迟重试任务
+   */
+  async createDelayedRetryTask(originalTask, delayMs) {
+    try {
+      const taskId = uuidv4();
+      const executeAt = Date.now() + delayMs;
+      
+      // 构建生成参数
+      const generationParams = {
+        user_id: originalTask.user_id,
+        knowledge_point: originalTask.user_query,
+        learning_stage: originalTask.request_payload?.learning_stage || 'understanding',
+        description: originalTask.request_payload?.description || '',
+        language_code: originalTask.request_payload?.language_code || 'zh-CN',
+        provider: originalTask.request_payload?.provider || 'kimi'
+      };
+
+      // 存储延迟重试任务
+      this.delayedRetryTasks.set(taskId, {
+        contentId: originalTask.content_id,
+        generationParams,
+        executeAt,
+        originalTaskId: originalTask.id
+      });
+
+      // 更新原任务状态为 failed
+      await this.updateTaskStatus(originalTask.id, 'failed');
+      await this.updateTaskError(originalTask.id, `延迟重试: ${originalTask.error_message || '未知错误'} (${Math.ceil(delayMs/1000)}秒后重试)`);
+      
+    } catch (error) {
+      logger.error('创建延迟重试任务失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 创建重试任务（保留向后兼容）
    */
   async createRetryTask(originalTask) {
     try {
@@ -553,7 +908,6 @@ class AsyncGenerationQueue {
         })
         .eq('id', result.log.id);
       
-      logger.info(`手动重试任务: contentId=${contentId}, requestId=${result.requestId}`);
       
       return { 
         success: true, 

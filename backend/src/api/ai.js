@@ -609,6 +609,9 @@ router.get('/generation-status/:contentId', authenticateToken, async (req, res) 
       });
     }
 
+    // 先清理该 content_id 的重复 processing 任务
+    await asyncGenerationQueue.cleanupDuplicateProcessingTasks();
+
     // 查询最新的生成日志
     const { data: log, error: logError } = await DatabaseService.supabase
       .from('ai_usage_logs')
@@ -676,6 +679,9 @@ router.get('/generation-status', authenticateToken, async (req, res) => {
     }
 
     const contentIds = ids.split(',');
+    
+    // 先清理重复的 processing 任务
+    await asyncGenerationQueue.cleanupDuplicateProcessingTasks();
     
     // 验证权限并获取状态
     const statuses = await Promise.all(

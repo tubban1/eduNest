@@ -191,9 +191,8 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
 
 // 学习阶段的用户提示词映射
 const LEARNING_STAGE_PROMPTS = {
-  understanding: `Explain the concept of "{{knowledge_point}}" through an interactive, exploratory learning experience.
-Present the idea step by step, combining visual storytelling, gentle sound cues, and interactive exploration to guide understanding.
-Allow users to toggle between different perspectives, such as overview, mechanism, real-world examples, and related or advanced concepts.
+  understanding: `Create an interactive project that visually and audibly explains the concept of {{knowledge_point}}.
+Ensure users can explore the concept in steps, with each stage accompanied by sound or animation cues.
 Encourage discovery by letting users click, hover, or reveal hidden patterns and connections that show how "{{knowledge_point}}" links to broader ideas.
 Each interaction should feel meaningful — revealing not just information, but relationships and insights that deepen comprehension.
 End with a moment of reflection or synthesis, helping learners see the “big picture” of how "{{knowledge_point}}" fits within a wider knowledge network.`,
