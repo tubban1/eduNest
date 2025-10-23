@@ -28,7 +28,9 @@ interface ContentCardProps {
     knowledge_point?: string[];
     created_at: string;
     // 生成状态相关字段
-    generation_status?: GenerationStatus;
+    generation_status?: GenerationStatus & {
+      started_at?: string;
+    };
     generation_progress?: number;
     retry_count?: number;
     generation_error?: string;
@@ -62,6 +64,7 @@ export default function ContentCard({
   const [retryCount, setRetryCount] = useState<number>(content.retry_count || 0);
   const [errorMessage, setErrorMessage] = useState<string>(content.generation_error || '');
   const [userQuery, setUserQuery] = useState<string>(content.user_query || '');
+  const [startedAt, setStartedAt] = useState<string>(content.generation_status?.started_at || '');
   const [isRetrying, setIsRetrying] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -84,6 +87,7 @@ export default function ContentCard({
           setRetryCount(statusData.retry_count);
           setErrorMessage(statusData.error_message || '');
           setUserQuery(statusData.user_query || '');
+          setStartedAt(statusData.started_at || '');
           
           // 如果生成完成，刷新内容列表
           if (isFinalStatus(statusData.status) && onContentUpdate) {
@@ -118,6 +122,7 @@ export default function ContentCard({
         setGenerationProgress(0);
         setRetryCount(0); // 重置重试计数
         setErrorMessage('');
+        setStartedAt(''); // 重置开始时间
         
         // 等待一小段时间确保后端状态更新
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -131,6 +136,7 @@ export default function ContentCard({
             setRetryCount(statusData.retry_count);
             setErrorMessage(statusData.error_message || '');
             setUserQuery(statusData.user_query || '');
+            setStartedAt(statusData.started_at || '');
             
             // 如果生成完成，触发内容更新
             if (statusData.status === 'done' && onContentUpdate) {
@@ -207,6 +213,7 @@ export default function ContentCard({
             progress={generationProgress} 
             retryCount={retryCount}
             userQuery={userQuery}
+            startedAt={startedAt}
           />
         );
       case 'failed':

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { truncateUserQuery } from '@/utils/generationStatus';
 
@@ -13,10 +13,37 @@ interface ProcessingCardProps {
   progress: number;
   retryCount: number;
   userQuery?: string;
+  startedAt?: string; // 新增：开始时间
 }
 
-const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retryCount, userQuery }) => {
+const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retryCount, userQuery, startedAt }) => {
   const { t } = useTranslation(['content', 'common']);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // 实时计算已用时间
+  useEffect(() => {
+    if (!startedAt) {
+      return;
+    }
+    
+    const updateTimer = () => {
+      const now = new Date();
+      const start = new Date(startedAt);
+      const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+      const newElapsedTime = Math.max(0, elapsed);
+      setElapsedTime(newElapsedTime);
+    };
+    
+    // 立即更新一次
+    updateTimer();
+    
+    // 每秒更新
+    const interval = setInterval(updateTimer, 1000);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, [startedAt]);
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
       {userQuery && (
@@ -26,27 +53,11 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retr
           </div>
         </div>
       )}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm text-blue-600 mb-1">
-          <span>{t('generation.progress', { ns: 'content', defaultValue: '生成进度' })}</span>
-          <span>{progress}%</span>
-        </div>
-        <div 
-          className="w-full bg-blue-100 rounded-full h-2 cursor-pointer"
-          onClick={() => {
-            const event = new CustomEvent('showAiLoadingAnimation', { 
-              detail: { knowledgePoint: userQuery || t('generation.loading', { ns: 'content', defaultValue: 'AI生成中' }) } 
-            });
-            window.dispatchEvent(event);
-          }}
-        >
-          <div 
-            className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        <div className="text-xs text-blue-500 mt-1 text-center">
-          {t('generation.viewDetails', { ns: 'content', defaultValue: '点击进度条查看详细生成过程' })}
+      
+      {/* 计时器显示 */}
+      <div className="mb-4 bg-blue-100 rounded-lg p-3 text-center">
+        <div className="text-3xl font-bold text-blue-600 mb-1">
+          {elapsedTime}s
         </div>
       </div>
 
