@@ -114,6 +114,7 @@ export interface GenerationStatusResponse {
   user_query?: string;
   created_at?: string;
   updated_at?: string;
+  started_at?: string;
 }
 
 // 内容接口扩展
@@ -150,6 +151,7 @@ export interface BatchGenerationStatus {
   latest_request_id?: string;
   error_message?: string;
   error?: string;
+  started_at?: string;
 }
 
 // 队列状态接口

@@ -29,6 +29,19 @@ const FailedCard: React.FC<FailedCardProps> = ({
   const canRetry = !isRetrying;
   const { t } = useTranslation(['content', 'common']);
   
+  // 过滤错误信息，只显示"Generation failed"
+  const getDisplayErrorMessage = (error: string) => {
+    if (!error) return '';
+    
+    // 如果错误信息包含"Generation failed"，只显示这一部分
+    if (error.includes('Generation failed')) {
+      return 'Generation failed';
+    }
+    
+    // 否则显示通用错误信息
+    return t('generation.failed', { ns: 'content', defaultValue: '生成失败' });
+  };
+  
   return (
   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
     {/* 显示用户查询 */}
@@ -46,8 +59,7 @@ const FailedCard: React.FC<FailedCardProps> = ({
         <div className="flex items-start gap-2">
           <span className="text-red-500 text-sm">⚠️</span>
           <div className="flex-1">
-            <p className="text-sm text-red-700 font-medium">{t('generation.failed', { ns: 'content', defaultValue: '生成失败' })}</p>
-            <p className="text-xs text-red-600 mt-1">{errorMessage}</p>
+            <p className="text-sm text-red-700 font-medium">{getDisplayErrorMessage(errorMessage)}</p>
           </div>
         </div>
       </div>

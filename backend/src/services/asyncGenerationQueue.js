@@ -447,12 +447,13 @@ class AsyncGenerationQueue {
       this.runningContent.add(contentId);
       
 
-      // 原子性更新：同时更新状态和清除错误信息
+      // 原子性更新：同时更新状态和清除错误信息，记录开始时间
       const { error: updateError } = await DatabaseService.supabase
         .from('ai_usage_logs')
         .update({ 
           status: 'processing',
           error_message: null,
+          started_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', taskId);
@@ -485,8 +486,22 @@ class AsyncGenerationQueue {
         // 生成成功，更新 content 表
         await this.updateContentFromAIResult(contentId, aiResult.data);
         
-        // 更新任务状态为 done
-        await this.updateTaskStatus(taskId, 'done');
+        // 计算总时长并更新任务状态为 done
+        const completedAt = new Date().toISOString();
+        const { data: taskData } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .select('started_at')
+          .eq('id', taskId)
+          .single();
+        
+        let totalDuration = 0;
+        if (taskData && taskData.started_at) {
+          const startTime = new Date(taskData.started_at);
+          const endTime = new Date(completedAt);
+          totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+        }
+        
+        await this.updateTaskStatusWithCompletion(taskId, 'done', completedAt, totalDuration);
         
         // 清理同一 content_id 的其他 pending 任务
         await this.cleanupPendingTasks(contentId, taskId);
@@ -557,6 +572,31 @@ class AsyncGenerationQueue {
       .from('ai_usage_logs')
       .update({ 
         status: status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', taskId);
+
+    if (error) {
+      logger.error(`更新任务状态失败: ${taskId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新任务状态并记录完成信息
+   */
+  async updateTaskStatusWithCompletion(taskId, status, completedAt, totalDuration) {
+    const validStatuses = ['pending', 'processing', 'done', 'failed'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    const { error } = await DatabaseService.supabase
+      .from('ai_usage_logs')
+      .update({ 
+        status: status,
+        completed_at: completedAt,
+        total_duration: totalDuration,
         updated_at: new Date().toISOString()
       })
       .eq('id', taskId);
@@ -676,7 +716,21 @@ class AsyncGenerationQueue {
       // 检查是否应该重试
       if (!this.shouldRetryError(errorMessage)) {
         // 不可重试错误，直接标记为失败
-        await this.updateTaskStatus(task.id, 'failed');
+        const completedAt = new Date().toISOString();
+        const { data: taskData } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .select('started_at')
+          .eq('id', task.id)
+          .single();
+        
+        let totalDuration = 0;
+        if (taskData && taskData.started_at) {
+          const startTime = new Date(taskData.started_at);
+          const endTime = new Date(completedAt);
+          totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+        }
+        
+        await this.updateTaskStatusWithCompletion(task.id, 'failed', completedAt, totalDuration);
         await this.updateTaskError(task.id, errorMessage);
         return;
       }
@@ -693,7 +747,21 @@ class AsyncGenerationQueue {
         await this.createDelayedRetryTask(task, delayMs);
       } else {
         // 最终失败
-        await this.updateTaskStatus(task.id, 'failed');
+        const completedAt = new Date().toISOString();
+        const { data: taskData } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .select('started_at')
+          .eq('id', task.id)
+          .single();
+        
+        let totalDuration = 0;
+        if (taskData && taskData.started_at) {
+          const startTime = new Date(taskData.started_at);
+          const endTime = new Date(completedAt);
+          totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+        }
+        
+        await this.updateTaskStatusWithCompletion(task.id, 'failed', completedAt, totalDuration);
         await this.updateTaskError(task.id, errorMessage);
       }
     } catch (error) {

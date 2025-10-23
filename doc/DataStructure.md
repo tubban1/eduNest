@@ -126,6 +126,27 @@
     "column_default": null
   },
   {
+    "table_name": "ai_usage_logs",
+    "column_name": "started_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "ai_usage_logs",
+    "column_name": "completed_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "ai_usage_logs",
+    "column_name": "total_duration",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "collection_lists",
     "column_name": "id",
     "data_type": "uuid",

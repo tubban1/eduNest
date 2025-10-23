@@ -11,7 +11,7 @@ import { api, Content } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import ContentAIGenerator from '@/components/ContentAIGenerator';
 
-function MyContentList({ userId, lists, refreshLists }: { userId: string, lists: any[], refreshLists: () => Promise<void> }) {
+function MyContentList({ userId, lists, refreshLists, optimisticItems = [] }: { userId: string, lists: any[], refreshLists: () => Promise<void>, optimisticItems?: any[] }) {
   const { t } = useTranslation(['content', 'common']);
   const [myContent, setMyContent] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +28,12 @@ function MyContentList({ userId, lists, refreshLists }: { userId: string, lists:
       // 使用any类型绕过TypeScript检查，因为getFiltered的参数类型不完整
       const data: any = await api.content.getFiltered({ created_by: userId } as any);
       const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
-      setMyContent(list);
+      
+      // 过滤掉已经在optimisticItems中的内容，避免重复显示
+      const optimisticIds = optimisticItems.map(item => item.id);
+      const filteredList = list.filter((item: any) => !optimisticIds.includes(item.id));
+      
+      setMyContent(filteredList);
     } catch (e: any) {
       // 检查是否是认证错误
       if (e.message?.includes('401') || e.message?.includes('无效的访问令牌') || e.message?.includes('访问令牌缺失')) {
@@ -44,7 +49,7 @@ function MyContentList({ userId, lists, refreshLists }: { userId: string, lists:
   
   useEffect(() => {
     refreshContent();
-  }, [userId]);
+  }, [userId, optimisticItems]);
   if (loading) return <div className="text-gray-400">{mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...'}</div>;
   if (error) return <div className="text-red-600">{error}</div>;
   if (!myContent.length) return <div className="text-gray-400">{mounted ? t('noContent', { ns: 'content', defaultValue: '暂无创作内容' }) : 'No content yet'}</div>;
@@ -247,6 +252,41 @@ export default function ContentPage() {
     window.addEventListener('NEW_CONTENT_CREATED' as any, handler);
     return () => window.removeEventListener('NEW_CONTENT_CREATED' as any, handler);
   }, [user]);
+
+  // 定期清理已完成的optimisticItems
+  useEffect(() => {
+    if (optimisticItems.length === 0) return;
+    
+    const cleanupInterval = setInterval(async () => {
+      const completedItems = [];
+      const remainingItems = [];
+      
+      for (const item of optimisticItems) {
+        try {
+          const response = await api.getContentGenerationStatus(item.id);
+          if (response.success && response.data) {
+            const status = response.data.status;
+            if (status === 'done' || status === 'failed') {
+              completedItems.push(item.id);
+            } else {
+              remainingItems.push(item);
+            }
+          }
+        } catch (error) {
+          // 如果获取状态失败，保留该项目
+          remainingItems.push(item);
+        }
+      }
+      
+      if (completedItems.length > 0) {
+        setOptimisticItems(remainingItems);
+        // 刷新内容列表
+        refreshContentList();
+      }
+    }, 5000); // 每5秒检查一次
+    
+    return () => clearInterval(cleanupInterval);
+  }, [optimisticItems]);
   
   if (authLoading) {
     return (
@@ -306,7 +346,7 @@ export default function ContentPage() {
           {/* 顶部 AI 智能生成表单 */}
           <ContentAIGenerator className="mb-6" onGenerated={fetchLists} />
           
-          {/* 优先渲染乐观插入的生成中项目 */}
+          {/* 优先渲染乐观插入的生成中项目 - 只显示不在正常列表中的项目 */}
           {optimisticItems.length > 0 && (
             <div className="mb-6 grid gap-4 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {optimisticItems.map(item => (
@@ -327,7 +367,7 @@ export default function ContentPage() {
             </div>
           )}
 
-          <MyContentList key={refreshKey} userId={user.id} lists={lists} refreshLists={fetchLists} />
+          <MyContentList key={refreshKey} userId={user.id} lists={lists} refreshLists={fetchLists} optimisticItems={optimisticItems} />
         </div>
       </main>
     </div>
