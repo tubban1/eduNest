@@ -35,7 +35,6 @@ router.post('/generate', [
       return res.status(400).json({ error: '不支持的学习阶段' });
     }
 
-    logger.info(`开始AI生成内容: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${language_code || '未指定'}`);
 
     // 订阅豁免与积分预校验（先校验，成功后再在成功渲染时扣减）
     const userId = req.user?.id;
@@ -55,7 +54,6 @@ router.post('/generate', [
     const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate', provider, requestId);
 
     if (result.success) {
-      logger.info(`AI生成成功: 知识点=${knowledgePoint}, 学习阶段=${learningStage}, 语言=${result.data?.language_code || language_code || '未知'}`);
       // 在生成成功后扣减积分（仅当需要且用户存在）
       if (shouldConsume && userId) {
         await DatabaseService.addCreditChange(userId, 'usage', -1);
@@ -106,12 +104,10 @@ router.post('/test', [
 
     const { knowledgePoint, learningStage } = req.body;
 
-    logger.info(`测试AI生成: 知识点=${knowledgePoint}, 学习阶段=${learningStage}`);
 
     const result = await aiService.generateEducationalContent(knowledgePoint, learningStage);
 
     if (result.success) {
-      logger.info(`AI测试生成成功`);
       res.json({
         success: true,
         data: result.data,
@@ -254,7 +250,6 @@ router.post('/test-raw', [
 
     const { knowledgePoint, learningStage } = req.body;
 
-    logger.info(`测试AI原始返回: 知识点=${knowledgePoint}, 学习阶段=${learningStage}`);
 
     // 直接调用AI API查看原始返回
     const userPrompt = aiService.LEARNING_STAGE_PROMPTS[learningStage].replace('{{knowledge_point}}', knowledgePoint);
@@ -347,7 +342,6 @@ router.get('/logs/:requestId', authenticateToken, async (req, res) => {
       });
     }
 
-    logger.info(`查询AI生成日志: requestId=${requestId}, userId=${userId}`);
 
     // 从数据库查询日志
     const { data: logData, error: queryError } = await DatabaseService.supabase
@@ -431,7 +425,6 @@ router.get('/reload', authenticateToken, async (req, res) => {
       });
     }
 
-    logger.info(`重新加载AI生成结果: requestId=${request_id}, userId=${userId}`);
 
     // 从数据库查询日志
     const { data: logData, error: queryError } = await DatabaseService.supabase
@@ -567,7 +560,6 @@ router.post('/generate-async', [
       provider
     });
 
-    logger.info(`异步生成任务已添加: contentId=${content_id}, requestId=${requestId}`);
 
     res.json({
       success: true,

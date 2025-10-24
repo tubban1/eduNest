@@ -661,7 +661,6 @@ class AsyncGenerationQueue {
       await this.updateTaskStatusWithCompletion(task.id, 'failed', completedAt, totalDuration);
       await this.updateTaskError(task.id, errorMessage);
       
-      logger.info(`任务失败，已标记为failed: taskId=${task.id}, totalDuration=${totalDuration}s, error=${errorMessage}`);
     } catch (error) {
       logger.error(`处理失败逻辑错误: ${task.id}`, error);
     }

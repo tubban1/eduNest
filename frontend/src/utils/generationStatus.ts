@@ -166,8 +166,10 @@ export interface QueueStatus {
 
 // 状态轮询配置
 export const POLLING_CONFIG = {
-  // 轮询间隔（毫秒）
-  interval: 2000,
+  // 渐进式轮询间隔（毫秒）
+  intervals: [32000, 16000, 8000, 4000], // 32s -> 16s -> 8s -> 4s
+  // 默认轮询间隔（4次后使用）
+  defaultInterval: 2000, // 2秒
   // 最大轮询次数
   maxAttempts: 300, // 10分钟
   // 轮询退避策略
@@ -201,7 +203,7 @@ export class StatusPollingManager {
         
         // 检查是否超过最大尝试次数
         if (attemptCount >= POLLING_CONFIG.maxAttempts) {
-          console.warn(`轮询超时: contentId=${contentId}`);
+          console.warn(`轮询超时: contentId=${contentId}, 尝试次数=${attemptCount}`);
           this.stopPolling(contentId);
           return;
         }
@@ -227,11 +229,17 @@ export class StatusPollingManager {
         // 增加尝试次数
         this.attemptCounts.set(contentId, attemptCount + 1);
 
-        // 计算下次轮询间隔（退避策略）
-        const interval = Math.min(
-          POLLING_CONFIG.interval * Math.pow(POLLING_CONFIG.backoffMultiplier, attemptCount),
-          POLLING_CONFIG.maxInterval
-        );
+        // 计算下次轮询间隔（渐进式策略）
+        let interval: number;
+        if (attemptCount < POLLING_CONFIG.intervals.length) {
+          // 使用预定义的渐进式间隔
+          interval = POLLING_CONFIG.intervals[attemptCount];
+        } else {
+          // 4次后使用默认间隔
+          interval = POLLING_CONFIG.defaultInterval;
+        }
+        
+        // 不应用退避策略，保持渐进式间隔的清晰性
 
         // 设置下次轮询
         const timeoutId = setTimeout(poll, interval);
@@ -250,8 +258,16 @@ export class StatusPollingManager {
           return;
         }
 
-        // 继续轮询
-        const timeoutId = setTimeout(poll, POLLING_CONFIG.interval);
+        // 继续轮询（使用渐进式间隔）
+        const currentAttemptCount = this.attemptCounts.get(contentId) || 0;
+        let interval: number;
+        if (currentAttemptCount < POLLING_CONFIG.intervals.length) {
+          interval = POLLING_CONFIG.intervals[currentAttemptCount];
+        } else {
+          interval = POLLING_CONFIG.defaultInterval;
+        }
+        
+        const timeoutId = setTimeout(poll, interval);
         this.intervals.set(contentId, timeoutId);
       }
     };

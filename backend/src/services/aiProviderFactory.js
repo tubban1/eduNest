@@ -42,12 +42,6 @@ class AIProviderFactory {
   getProvider(providerName = null) {
     const provider = providerName || this.defaultProvider;
     
-    console.log('🔍 获取AI提供商配置:', {
-      providerName,
-      defaultProvider: this.defaultProvider,
-      selectedProvider: provider,
-      availableProviders: Object.keys(this.providers)
-    });
     
     if (!this.providers[provider]) {
       throw new Error(`不支持的AI提供商: ${provider}`);
@@ -55,13 +49,6 @@ class AIProviderFactory {
     
     const config = this.providers[provider];
     
-    console.log('🔍 提供商配置详情:', {
-      name: config.name,
-      model: config.model,
-      hasApiKey: !!config.apiKey,
-      apiKeyLength: config.apiKey ? config.apiKey.length : 0,
-      baseURL: config.baseURL
-    });
     
     if (!config.apiKey || config.apiKey === 'your-api-key-here') {
       throw new Error(`${config.name} API密钥未配置或使用默认值`);
@@ -143,17 +130,6 @@ class AIProviderFactory {
         if (response.ok) {
           const data = await response.json();
           
-          console.log('🔍 AI API响应数据:', {
-            hasData: !!data,
-            hasChoices: !!data.choices,
-            choicesLength: data.choices ? data.choices.length : 0,
-            hasUsage: !!data.usage,
-            usage: data.usage,
-            hasCreated: !!data.created,
-            created: data.created,
-            model: requestModel,
-            provider: provider || this.defaultProvider
-          });
           
           // 统一响应格式
           return {

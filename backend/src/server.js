@@ -70,14 +70,6 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 请求日志
-app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.path}`, {
-    ip: req.ip,
-    userAgent: req.get('User-Agent')
-  });
-  next();
-});
 
 // 健康检查
 app.get('/health', (req, res) => {
@@ -168,7 +160,6 @@ if (!process.env.VERCEL) {
     try {
       // 在Vercel环境中，不需要启动HTTP服务器
       if (process.env.VERCEL) {
-        logger.info('在Vercel环境中运行，跳过HTTP服务器启动');
         return;
       }
       
@@ -176,16 +167,11 @@ if (!process.env.VERCEL) {
       try {
         const DatabaseService = require('./services/database');
         await DatabaseService.getContents();
-        logger.info('数据库连接验证成功');
       } catch (dbError) {
         logger.warn('数据库连接验证失败，但继续启动服务器:', dbError.message);
       }
       
       app.listen(PORT, () => {
-        logger.info(`服务器运行在端口 ${PORT}`);
-        logger.info(`环境: ${config.NODE_ENV}`);
-        logger.info(`API 文档: http://localhost:${PORT}/api/docs`);
-        logger.info('✅ 服务器启动成功');
       });
     } catch (error) {
       logger.error('服务器启动失败:', error.message);

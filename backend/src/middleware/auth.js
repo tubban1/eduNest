@@ -103,7 +103,6 @@ const authenticateToken = async (req, res, next) => {
         role: user.role || 'user'
       };
       
-      logger.info('用户认证成功:', { userId: user.id, email: user.email });
       next();
     } catch (tokenError) {
       logger.error('Token验证失败:', tokenError);

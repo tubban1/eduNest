@@ -47,12 +47,6 @@ router.post('/', [
 
     const result = await DatabaseService.addRating(ratingData);
     
-    logger.info('添加评分成功', { 
-      contentId: content_id, 
-      rating, 
-      userId: userId || 'anonymous' 
-    });
-    
     res.status(201).json({
       success: true,
       data: result
