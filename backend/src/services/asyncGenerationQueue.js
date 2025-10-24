@@ -13,8 +13,6 @@ class AsyncGenerationQueue {
     this.taskTimeoutMs = 10 * 60 * 1000;
     // 瞬时错误重试配置
     this.retry = { maxAttempts: 3, baseDelayMs: 500, maxDelayMs: 4000 };
-    // 延迟重试任务存储
-    this.delayedRetryTasks = new Map();
     
     // 启动时清理重复任务
     this.initializeCleanup();
@@ -23,8 +21,6 @@ class AsyncGenerationQueue {
     this.startQueueProcessor();
     // 启动看门狗，定时清理卡住的 processing 任务（即使进程重启也能纠正）
     this.startWatchdog();
-    // 启动延迟重试处理器
-    this.startDelayedRetryProcessor();
   }
 
   /**
@@ -188,28 +184,38 @@ class AsyncGenerationQueue {
         if (error) { logger.error('Watchdog 查询失败:', error); return; }
         if (!data || data.length === 0) return;
         
-        let requeued = 0; let failed = 0;
+        let failed = 0;
         for (const row of data) {
           try {
-            const retryCount = await this.getRetryCount(row.content_id);
-            if (retryCount < 2) {
-              const { error: updErr } = await DatabaseService.supabase
-                .from('ai_usage_logs')
-                .update({ status: 'pending', error_message: `watchdog_requeue: ${row.error_message || ''}`, updated_at: new Date().toISOString() })
-                .eq('id', row.id);
-              if (updErr) { logger.error('Watchdog 重排队失败:', updErr); }
-              else { requeued++; }
-            } else {
-              const { error: updErr } = await DatabaseService.supabase
-                .from('ai_usage_logs')
-                .update({ status: 'failed', error_message: '生成超时(>10min)', updated_at: new Date().toISOString() })
-                .eq('id', row.id);
-              if (updErr) { logger.error('Watchdog 更新失败:', updErr); }
-              else { failed++; }
+            // 直接标记为失败，不进行重试
+            const completedAt = new Date().toISOString();
+            const { data: taskData } = await DatabaseService.supabase
+              .from('ai_usage_logs')
+              .select('started_at')
+              .eq('id', row.id)
+              .single();
+            
+            let totalDuration = 0;
+            if (taskData && taskData.started_at) {
+              const startTime = new Date(taskData.started_at);
+              const endTime = new Date(completedAt);
+              totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
             }
+            
+            const { error: updErr } = await DatabaseService.supabase
+              .from('ai_usage_logs')
+              .update({ 
+                status: 'failed', 
+                error_message: '生成超时(>10min)', 
+                completed_at: completedAt,
+                total_duration: totalDuration,
+                updated_at: completedAt
+              })
+              .eq('id', row.id);
+            if (updErr) { logger.error('Watchdog 更新失败:', updErr); }
+            else { failed++; }
           } catch (e) { logger.error('Watchdog 处理单条记录异常:', e); }
         }
-        if (requeued > 0) logger.warn(`Watchdog 重排队超时任务: ${requeued} 条`);
         if (failed > 0) logger.warn(`Watchdog 标记超时任务为 failed: ${failed} 条`);
         
         // 2. 清理重复的 processing 任务
@@ -297,35 +303,6 @@ class AsyncGenerationQueue {
     this.processQueue();
   }
 
-  /**
-   * 启动延迟重试处理器
-   */
-  startDelayedRetryProcessor() {
-    // 每10秒检查一次延迟重试任务
-    setInterval(() => {
-      this.processDelayedRetryTasks();
-    }, 10000);
-  }
-
-  /**
-   * 处理延迟重试任务
-   */
-  processDelayedRetryTasks() {
-    const now = Date.now();
-    const readyTasks = [];
-
-    for (const [taskId, taskData] of this.delayedRetryTasks) {
-      if (now >= taskData.executeAt) {
-        readyTasks.push({ taskId, taskData });
-      }
-    }
-
-    // 执行到期的延迟重试任务
-    readyTasks.forEach(({ taskId, taskData }) => {
-      this.delayedRetryTasks.delete(taskId);
-      this.addTask(taskData.contentId, taskData.generationParams);
-    });
-  }
 
   /**
    * 处理队列中的任务
@@ -657,153 +634,39 @@ class AsyncGenerationQueue {
     }
   }
 
-  /**
-   * 判断错误是否应该重试
-   */
-  shouldRetryError(errorMessage) {
-    const retryableErrors = [
-      'TASK_TIMEOUT_10MIN',
-      '504 Gateway Time-out',
-      '502 Bad Gateway',
-      '503 Service Unavailable',
-      'NETWORK_ERROR',
-      'AI_SERVICE_UNAVAILABLE',
-      'RATE_LIMIT_EXCEEDED'
-    ];
-    
-    const nonRetryableErrors = [
-      '知识点不能为空',
-      '不支持的学习阶段',
-      '积分不足',
-      '内容不存在',
-      '权限不足',
-      '参数验证失败',
-      'Invalid status',
-      'AI生成失败: 内容过于复杂',
-      'AI生成失败: 不支持的语言'
-    ];
-
-    // 检查是否为不可重试错误
-    if (nonRetryableErrors.some(err => errorMessage.includes(err))) {
-      return false;
-    }
-
-    // 检查是否为可重试错误
-    return retryableErrors.some(err => errorMessage.includes(err));
-  }
-
-  /**
-   * 计算重试延迟时间（指数退避 + 随机抖动）
-   */
-  calculateRetryDelay(retryCount) {
-    const baseDelay = 2000; // 2秒基础延迟
-    const maxDelay = 30000; // 30秒最大延迟
-    const jitter = Math.random() * 1000; // 0-1秒随机抖动
-    
-    const delay = Math.min(
-      baseDelay * Math.pow(2, retryCount) + jitter,
-      maxDelay
-    );
-    
-    return Math.floor(delay);
-  }
 
   /**
    * 处理失败逻辑
    */
+  /**
+   * 处理失败逻辑 - 直接标记为失败，不自动重试
+   */
   async handleFailure(task, errorMessage) {
     try {
-      // 检查是否应该重试
-      if (!this.shouldRetryError(errorMessage)) {
-        // 不可重试错误，直接标记为失败
-        const completedAt = new Date().toISOString();
-        const { data: taskData } = await DatabaseService.supabase
-          .from('ai_usage_logs')
-          .select('started_at')
-          .eq('id', task.id)
-          .single();
-        
-        let totalDuration = 0;
-        if (taskData && taskData.started_at) {
-          const startTime = new Date(taskData.started_at);
-          const endTime = new Date(completedAt);
-          totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
-        }
-        
-        await this.updateTaskStatusWithCompletion(task.id, 'failed', completedAt, totalDuration);
-        await this.updateTaskError(task.id, errorMessage);
-        return;
-      }
-
-      // 获取该 content 的重试次数
-      const retryCount = await this.getRetryCount(task.content_id);
+      // 直接标记为失败，不进行任何自动重试
+      const completedAt = new Date().toISOString();
+      const { data: taskData } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('started_at')
+        .eq('id', task.id)
+        .single();
       
-
-      if (retryCount < 3) { // 最多重试3次
-        // 计算重试延迟
-        const delayMs = this.calculateRetryDelay(retryCount);
-        
-        // 创建延迟重试任务
-        await this.createDelayedRetryTask(task, delayMs);
-      } else {
-        // 最终失败
-        const completedAt = new Date().toISOString();
-        const { data: taskData } = await DatabaseService.supabase
-          .from('ai_usage_logs')
-          .select('started_at')
-          .eq('id', task.id)
-          .single();
-        
-        let totalDuration = 0;
-        if (taskData && taskData.started_at) {
-          const startTime = new Date(taskData.started_at);
-          const endTime = new Date(completedAt);
-          totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
-        }
-        
-        await this.updateTaskStatusWithCompletion(task.id, 'failed', completedAt, totalDuration);
-        await this.updateTaskError(task.id, errorMessage);
+      let totalDuration = 0;
+      if (taskData && taskData.started_at) {
+        const startTime = new Date(taskData.started_at);
+        const endTime = new Date(completedAt);
+        totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
       }
+      
+      await this.updateTaskStatusWithCompletion(task.id, 'failed', completedAt, totalDuration);
+      await this.updateTaskError(task.id, errorMessage);
+      
+      logger.info(`任务失败，已标记为failed: taskId=${task.id}, totalDuration=${totalDuration}s, error=${errorMessage}`);
     } catch (error) {
       logger.error(`处理失败逻辑错误: ${task.id}`, error);
     }
   }
 
-  /**
-   * 创建延迟重试任务
-   */
-  async createDelayedRetryTask(originalTask, delayMs) {
-    try {
-      const taskId = uuidv4();
-      const executeAt = Date.now() + delayMs;
-      
-      // 构建生成参数
-      const generationParams = {
-        user_id: originalTask.user_id,
-        knowledge_point: originalTask.user_query,
-        learning_stage: originalTask.request_payload?.learning_stage || 'understanding',
-        description: originalTask.request_payload?.description || '',
-        language_code: originalTask.request_payload?.language_code || 'zh-CN',
-        provider: originalTask.request_payload?.provider || 'kimi'
-      };
-
-      // 存储延迟重试任务
-      this.delayedRetryTasks.set(taskId, {
-        contentId: originalTask.content_id,
-        generationParams,
-        executeAt,
-        originalTaskId: originalTask.id
-      });
-
-      // 更新原任务状态为 failed
-      await this.updateTaskStatus(originalTask.id, 'failed');
-      await this.updateTaskError(originalTask.id, `延迟重试: ${originalTask.error_message || '未知错误'} (${Math.ceil(delayMs/1000)}秒后重试)`);
-      
-    } catch (error) {
-      logger.error('创建延迟重试任务失败:', error);
-      throw error;
-    }
-  }
 
   /**
    * 创建重试任务（保留向后兼容）
@@ -811,6 +674,26 @@ class AsyncGenerationQueue {
   async createRetryTask(originalTask) {
     try {
       const requestId = uuidv4();
+      
+      // 如果原任务还在processing状态，先标记为failed并记录完成时间
+      if (originalTask.status === 'processing') {
+        const completedAt = new Date().toISOString();
+        const { data: taskData } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .select('started_at')
+          .eq('id', originalTask.id)
+          .single();
+        
+        let totalDuration = 0;
+        if (taskData && taskData.started_at) {
+          const startTime = new Date(taskData.started_at);
+          const endTime = new Date(completedAt);
+          totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+        }
+        
+        await this.updateTaskStatusWithCompletion(originalTask.id, 'failed', completedAt, totalDuration);
+        await this.updateTaskError(originalTask.id, `重试前标记为失败: ${originalTask.error_message || '未知错误'}`);
+      }
       
       const { error } = await DatabaseService.supabase
         .from('ai_usage_logs')
@@ -829,9 +712,6 @@ class AsyncGenerationQueue {
         logger.error('创建重试任务失败:', error);
         throw error;
       }
-
-      // 更新原任务状态为 failed
-      await this.updateTaskStatus(originalTask.id, 'failed');
       
     } catch (error) {
       logger.error('创建重试任务失败:', error);
@@ -839,60 +719,6 @@ class AsyncGenerationQueue {
     }
   }
 
-  /**
-   * 获取重试次数
-   * 修复：只计算当前轮次的自动重试次数
-   */
-  async getRetryCount(contentId) {
-    try {
-      // 获取最新的记录
-      const { data: latestLog, error: latestError } = await DatabaseService.supabase
-        .from('ai_usage_logs')
-        .select('*')
-        .eq('content_id', contentId)
-        .eq('action_type', 'generate')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (latestError || !latestLog) {
-        logger.error('获取最新记录失败:', latestError);
-        return 0;
-      }
-
-      // 从最新记录开始往前计算，直到找到初始记录或手动重试记录
-      const { data: allLogs, error } = await DatabaseService.supabase
-        .from('ai_usage_logs')
-        .select('*')
-        .eq('content_id', contentId)
-        .eq('action_type', 'generate')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        logger.error('获取重试次数失败:', error);
-        return 0;
-      }
-
-      // 计算当前轮次的重试次数
-      let retryCount = 0;
-      let currentRequestId = latestLog.request_id;
-      
-      // 向前查找，计算当前轮次的重试次数
-      for (let i = 1; i < allLogs.length; i++) {
-        const log = allLogs[i];
-        // 如果遇到手动重试的记录（error_message包含"重试:"），停止计算
-        if (log.error_message && log.error_message.includes('重试:')) {
-          break;
-        }
-        retryCount++;
-      }
-
-      return retryCount;
-    } catch (error) {
-      logger.error('获取重试次数失败:', error);
-      return 0;
-    }
-  }
 
   /**
    * 获取队列状态
@@ -954,6 +780,26 @@ class AsyncGenerationQueue {
         throw new Error('未找到失败的任务');
       }
 
+      // 如果原任务还在processing状态，先标记为failed并记录完成时间
+      if (failedTask.status === 'processing') {
+        const completedAt = new Date().toISOString();
+        const { data: taskData } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .select('started_at')
+          .eq('id', failedTask.id)
+          .single();
+        
+        let totalDuration = 0;
+        if (taskData && taskData.started_at) {
+          const startTime = new Date(taskData.started_at);
+          const endTime = new Date(completedAt);
+          totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+        }
+        
+        await this.updateTaskStatusWithCompletion(failedTask.id, 'failed', completedAt, totalDuration);
+        await this.updateTaskError(failedTask.id, `手动重试前标记为失败: ${failedTask.error_message || '未知错误'}`);
+      }
+
       // 重新构建生成参数
       const generationParams = {
         user_id: userId,
@@ -961,7 +807,7 @@ class AsyncGenerationQueue {
         learning_stage: failedTask.request_payload?.learning_stage || 'understanding',
         description: failedTask.request_payload?.description || '',
         language_code: failedTask.request_payload?.language_code || 'zh-CN',
-        provider: failedTask.request_payload?.provider || 'kimi'
+        provider: failedTask.request_payload?.provider || 'ark'
       };
 
       // 直接调用 addTask，重新开始整个生成流程

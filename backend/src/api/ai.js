@@ -629,8 +629,8 @@ router.get('/generation-status/:contentId', authenticateToken, async (req, res) 
       });
     }
 
-    // 计算重试次数
-    const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
+    // 不再需要计算重试次数，因为已取消自动重试
+    // const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
     
     // 计算进度
     let progress = 0;
@@ -647,7 +647,6 @@ router.get('/generation-status/:contentId', authenticateToken, async (req, res) 
       data: {
         status: log.status,
         progress,
-        retry_count: retryCount,
         latest_request_id: log.request_id,
         error_message: log.error_message,
         user_query: log.user_query,

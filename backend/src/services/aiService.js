@@ -245,7 +245,7 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
 
     // 使用AI提供商工厂发送请求
     const result = await aiProviderFactory.createChatCompletion({
-      provider: provider,
+      provider: provider || 'ark', // 默认使用ARK提供商
       messages: messages,
       max_tokens: 24000,
       temperature: 0.6
@@ -604,7 +604,7 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
 
     // 使用AI提供商工厂发送请求
     const result = await aiProviderFactory.createChatCompletion({
-      provider,
+      provider: provider || 'ark', // 默认使用ARK提供商
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: finalUserPrompt }

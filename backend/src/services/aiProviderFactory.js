@@ -118,7 +118,7 @@ class AIProviderFactory {
     messages = [],
     temperature = 0.6,
     max_tokens = 24000,
-    maxRetries = 3
+    maxRetries = 0
   }) {
     const providerConfig = this.getProvider(provider);
     const requestModel = model || providerConfig.model;
