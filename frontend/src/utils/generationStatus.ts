@@ -211,6 +211,9 @@ export class StatusPollingManager {
         const response = await apiCall(contentId);
         
         if (response.success) {
+          // 重置连续失败计数
+          this.attemptCounts.set(`failures_${contentId}`, 0);
+          
           const status = response.data;
           
           // 调用回调
@@ -248,24 +251,25 @@ export class StatusPollingManager {
       } catch (error) {
         console.error(`轮询失败: contentId=${contentId}`, error);
         
-        // 增加尝试次数
-        const attemptCount = this.attemptCounts.get(contentId) || 0;
-        this.attemptCounts.set(contentId, attemptCount + 1);
-
-        // 如果超过最大尝试次数，停止轮询
-        if (attemptCount >= POLLING_CONFIG.maxAttempts) {
+        // 网络错误不计入尝试次数，继续重试
+        // 只有在连续失败多次后才考虑停止
+        
+        // 继续轮询（使用较短的间隔，尽快恢复）
+        const currentAttemptCount = this.attemptCounts.get(contentId) || 0;
+        
+        // 网络错误使用较短的固定间隔，加快恢复速度
+        const interval = 5000; // 5秒
+        
+        // 只有在非常长的连续失败后才停止（比如连续失败100次，即500秒后）
+        const consecutiveFailures = this.attemptCounts.get(`failures_${contentId}`) || 0;
+        if (consecutiveFailures > 100) {
+          console.warn(`轮询连续失败次数过多，停止轮询: contentId=${contentId}`);
           this.stopPolling(contentId);
           return;
         }
-
-        // 继续轮询（使用渐进式间隔）
-        const currentAttemptCount = this.attemptCounts.get(contentId) || 0;
-        let interval: number;
-        if (currentAttemptCount < POLLING_CONFIG.intervals.length) {
-          interval = POLLING_CONFIG.intervals[currentAttemptCount];
-        } else {
-          interval = POLLING_CONFIG.defaultInterval;
-        }
+        
+        // 增加连续失败计数
+        this.attemptCounts.set(`failures_${contentId}`, consecutiveFailures + 1);
         
         const timeoutId = setTimeout(poll, interval);
         this.intervals.set(contentId, timeoutId);

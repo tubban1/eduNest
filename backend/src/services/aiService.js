@@ -119,8 +119,7 @@ const aiProviderFactory = new AIProviderFactory();
 // 系统提示词（来自AI_KNOWLEDGE.md）
 const SYSTEM_PROMPT = `You are an expert Vue 3 educational interaction designer and frontend engineer.
 
-Your task is to generate an interactive Vue 3 project that visually, audibly, and interactively teaches a specific knowledge point through one of the following learning stages:
-understanding, application, assessment, expansion, or gamify.
+Your task is to generate an interactive Vue 3 project that visually, audibly, and interactively teaches a specific concept.
 
 Your design must ensure:
 
@@ -266,6 +265,13 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           output_tokens: outputTokens,
           total_tokens: totalTokens,
           request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+          generation_params: {
+            knowledge_point: knowledgePoint,
+            learning_stage: learningStage,
+            description: description,
+            language_code: languageCode,
+            provider: provider
+          },
           response_metadata: { provider: result.provider, model: result.model },
           error_message: 'AI返回内容为空',
           is_json_valid: false,
@@ -313,6 +319,13 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
             output_tokens: outputTokens,
             total_tokens: totalTokens,
             request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+            generation_params: {
+              knowledge_point: knowledgePoint,
+              learning_stage: learningStage,
+              description: description,
+              language_code: languageCode,
+              provider: provider
+            },
             response_metadata: { provider: result.provider, model: result.model, raw: result.response },
             created_at: new Date(result.created ? result.created * 1000 : Date.now()),
             is_json_valid: true,
@@ -350,6 +363,13 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
             output_tokens: outputTokens,
             total_tokens: totalTokens,
             request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+            generation_params: {
+              knowledge_point: knowledgePoint,
+              learning_stage: learningStage,
+              description: description,
+              language_code: languageCode,
+              provider: provider
+            },
             response_metadata: { provider: result.provider, model: result.model, raw: result.response },
             created_at: new Date(result.created ? result.created * 1000 : Date.now()),
             is_json_valid: false,
@@ -389,6 +409,13 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           output_tokens: outputTokens,
           total_tokens: totalTokens,
           request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
+          generation_params: {
+            knowledge_point: knowledgePoint,
+            learning_stage: learningStage,
+            description: description,
+            language_code: languageCode,
+            provider: provider
+          },
           response_metadata: { provider: result.provider, model: result.model },
           created_at: new Date(result.created ? result.created * 1000 : Date.now()),
           is_json_valid: false,
@@ -425,6 +452,13 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
       // 异步模式：更新现有记录
       await updateExistingLog(requestId, {
         error_message: error.message || 'AI生成失败',
+        generation_params: {
+          knowledge_point: knowledgePoint,
+          learning_stage: learningStage,
+          description: description,
+          language_code: languageCode,
+          provider: provider
+        },
         is_json_valid: false,
         is_render_success: false
       });

@@ -147,6 +147,13 @@
     "column_default": null
   },
   {
+    "table_name": "ai_usage_logs",
+    "column_name": "generation_params",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "collection_lists",
     "column_name": "id",
     "data_type": "uuid",

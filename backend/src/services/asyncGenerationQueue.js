@@ -133,6 +133,15 @@ class AsyncGenerationQueue {
           action_type: 'generate',
           status: 'pending',
           request_id: requestId,
+          generation_params: {
+            knowledge_point: generationParams.knowledge_point,
+            learning_stage: generationParams.learning_stage,
+            description: generationParams.description,
+            language_code: generationParams.language_code,
+            provider: generationParams.provider,
+            // 将幂等键保存在 JSON 里，便于 contains 查询，无需表结构变更
+            idempotency_key: idempotencyKey
+          },
           request_payload: {
             knowledge_point: generationParams.knowledge_point,
             learning_stage: generationParams.learning_stage,
@@ -442,13 +451,13 @@ class AsyncGenerationQueue {
 
       // 调用 AI 生成服务（异步模式）+ 超时保护
       const aiPromise = aiService.generateEducationalContent(
-        task.request_payload.knowledge_point,
-        task.request_payload.learning_stage || 'understanding',
-        task.request_payload.description,
-        task.request_payload.language_code,
+        task.generation_params.knowledge_point,
+        task.generation_params.learning_stage || 'understanding',
+        task.generation_params.description,
+        task.generation_params.language_code,
         task.user_id,
         'generate',
-        task.request_payload.provider,
+        task.generation_params.provider,
         task.request_id,
         true // isAsyncMode = true
       );
