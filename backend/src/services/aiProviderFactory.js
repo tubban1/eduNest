@@ -119,13 +119,20 @@ class AIProviderFactory {
 
     let lastError = null;
     
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
+        // 创建带超时的 fetch 请求
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2分钟超时
+        
         const response = await fetch(providerConfig.baseURL, {
           method: 'POST',
           headers: providerConfig.headers,
-          body: JSON.stringify(requestPayload)
+          body: JSON.stringify(requestPayload),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
@@ -174,10 +181,16 @@ class AIProviderFactory {
         
         // 如果不是429错误或已达到最大重试次数，抛出错误
         lastError = new Error(errorMessage);
+        clearTimeout(timeoutId);
         break;
         
       } catch (error) {
-        lastError = error;
+        // 检查是否是超时错误
+        if (error.name === 'AbortError') {
+          lastError = new Error('API请求超时(2分钟)');
+        } else {
+          lastError = error;
+        }
         if (attempt < maxRetries) {
           const waitTime = Math.pow(2, attempt) * 1000; // 指数退避
           console.log(`${providerConfig.name} API请求异常，${waitTime}ms后重试 (${attempt + 1}/${maxRetries}):`, error.message);
