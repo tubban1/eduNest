@@ -123,7 +123,7 @@ class AIProviderFactory {
       try {
         // 创建带超时的 fetch 请求
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2分钟超时
+        const timeoutId = setTimeout(() => controller.abort(), 600000); // 10分钟超时，与任务超时一致
         
         const response = await fetch(providerConfig.baseURL, {
           method: 'POST',
@@ -187,7 +187,7 @@ class AIProviderFactory {
       } catch (error) {
         // 检查是否是超时错误
         if (error.name === 'AbortError') {
-          lastError = new Error('API请求超时(2分钟)');
+          lastError = new Error('API请求超时(10分钟)');
         } else {
           lastError = error;
         }

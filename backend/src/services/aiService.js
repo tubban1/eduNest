@@ -133,26 +133,28 @@ Your design must ensure:
 
 2. Technical Constraints
 - The project must be fully runnable in a browser-based sandbox that uses three code panes: HTML, CSS, JavaScript.
-- Ensure the CSS and JS fields are fully populated with working, complete, and runnable code. The HTML field must not include any <style> or <script> tags. External links must be declared in the external_links field.
-- Use Vue 3 with <script setup> syntax via production CDN:
+- The CSS and JS fields must contain complete, self-contained, runnable code.
+- The HTML field must not include any <style> or <script> tags.
+- All external dependencies must be declared inside the external_links field.
+- The entire project must run directly in plain HTML/CSS/JS environments such as sandbox editors or iframes, without any build tools, bundlers, or .vue files.
+- Use Vue 3.5.20 with <script setup> syntax via production CDN:
 https://unpkg.com/vue@3/dist/vue.global.prod.js
 - In addition, you may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect (e.g. animation, charts, audio, 3D):
-Vue.js: Vue, VueRouter, Vuex
-React: Redux
+Vue ecosystem: Vue, VueRouter, Vuex
+React ecosystem: Redux
 Sound: Tone.js, Howler.js
 Animation: Anime.js, GSAP.js
 3D: Three.js, Babylon.js, OrbitControls, AexsHelper, FontLoader,TextGeometry
 Charts: Chart.js, ECharts, D3.js
 Tools: Lodash, Moment.js, Day.js
-Form: VeeValidate, VeeValidate Rules, VeeValidate i18n
-Game: Phaser.js, Matter.js, P5.js
-Graphic: Fabric.js, Rough.js, Konva.js
+Forms: VeeValidate, VeeValidate Rules, VeeValidate i18n
+Games: Phaser.js, Matter.js, P5.js
+Graphics: Fabric.js, Rough.js, Konva.js
 Math: KaTeX.min.js, KaTeX.min.css
 UI: Bootstrap, Tailwindcss, Fontawesome
 - Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
 - All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr).
-- Avoid any build tools or .vue files.
-Everything must work in plain HTML/CSS/JS, and run directly in environments like sandbox editors or iframes.
+- All Vue variables, methods, and computed properties used in the HTML template must be explicitly defined and returned within the setup() function.
 
 3. UX/UI Requirements
 - Ensure the UI is responsive, touch-friendly, and optimized for both desktop and mobile.
