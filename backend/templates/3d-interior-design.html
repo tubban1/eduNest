@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D室内设计展示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    /* 控制面板样式 */
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+      min-width: 200px;
+    }
+    
+    .controls h3 {
+      margin-bottom: 10px;
+      color: #333;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .controls button {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border: none;
+      background: #667eea;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s;
+    }
+    
+    .controls button:hover {
+      background: #5568d3;
+    }
+    
+    /* 加载提示 */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+      z-index: 100;
+    }
+    
+    /* 隐藏加载提示 */
+    .loading.hidden {
+      display: none;
+    }
+  </style>
+  
+  <!-- Three.js 基础库 - 使用稳定版本 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 加载提示 -->
+  <div class="loading" id="loading">加载中...</div>
+  
+  <!-- 3D 容器 -->
+  <div id="container"></div>
+  
+  <!-- 控制面板 -->
+  <div class="controls" id="controls">
+    <h3>房间控制</h3>
+    <button onclick="resetCamera()">重置视角</button>
+    <button onclick="toggleLights()">切换灯光</button>
+    <button onclick="toggleFurniture()">显示/隐藏家具</button>
+    <button onclick="changeWallColor()">更换墙色</button>
+  </div>
+  
+  <script>
+    const sceneData = (function(win) {
+      'use strict';
+      
+    // 隐藏加载提示
+    document.getElementById('loading').classList.add('hidden');
+    
+    // ==================== 场景初始化 ====================
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      45, 
+      win.innerWidth / win.innerHeight, 
+      0.1, 
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    // 设置渲染器
+    renderer.setSize(win.innerWidth, win.innerHeight);
+    renderer.setPixelRatio(win.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    // 相机位置 - 鸟瞰视角
+    camera.position.set(12, 10, 12);
+    camera.lookAt(5, 0, 5);
+    
+    // ==================== 添加光照 ====================
+    // 环境光
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+    
+    // 主光源
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 15, 10);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.camera.left = -15;
+    directionalLight.shadow.camera.right = 15;
+    directionalLight.shadow.camera.top = 15;
+    directionalLight.shadow.camera.bottom = -15;
+    scene.add(directionalLight);
+    
+    // 辅助光
+    const pointLight = new THREE.PointLight(0xffd700, 0.5, 100);
+    pointLight.position.set(5, 8, 5);
+    scene.add(pointLight);
+    
+    // ==================== 添加控制器 ====================
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.minDistance = 8;
+    controls.maxDistance = 30;
+    
+    // ==================== 创建室内场景 ====================
+    // 房间尺寸
+    const roomWidth = 10;
+    const roomHeight = 8;
+    const roomDepth = 10;
+    
+    // 创建地板
+    const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xe8e4e0,
+      roughness: 0.3
+    });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = 0;
+    floor.receiveShadow = true;
+    scene.add(floor);
+    
+    // 创建左墙
+    const leftWallGeometry = new THREE.PlaneGeometry(roomDepth, roomHeight);
+    const wallMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xf5f2eb,
+      roughness: 0.6
+    });
+    const leftWall = new THREE.Mesh(leftWallGeometry, wallMaterial);
+    leftWall.rotation.y = Math.PI / 2;
+    leftWall.position.x = 0;
+    leftWall.position.y = roomHeight / 2;
+    scene.add(leftWall);
+    
+    // 创建后墙
+    const backWall = new THREE.Mesh(leftWallGeometry.clone(), wallMaterial.clone());
+    backWall.position.z = roomDepth / 2;
+    backWall.position.y = roomHeight / 2;
+    scene.add(backWall);
+    
+    // 创建右墙
+    const rightWall = new THREE.Mesh(leftWallGeometry.clone(), wallMaterial.clone());
+    rightWall.rotation.y = -Math.PI / 2;
+    rightWall.position.x = roomWidth;
+    rightWall.position.y = roomHeight / 2;
+    scene.add(rightWall);
+    
+    // 创建天花板
+    const ceiling = new THREE.Mesh(
+      new THREE.PlaneGeometry(roomWidth, roomDepth), 
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 })
+    );
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.y = roomHeight;
+    scene.add(ceiling);
+    
+    // ==================== 创建家具 ====================
+    
+    // 沙发
+    const sofaGeometry = new THREE.BoxGeometry(4, 1.5, 2);
+    const sofaMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x8b4513,
+      roughness: 0.4
+    });
+    const sofa = new THREE.Mesh(sofaGeometry, sofaMaterial);
+    sofa.position.set(6, 0.75, 4);
+    sofa.castShadow = true;
+    scene.add(sofa);
+    
+    // 靠垫
+    const cushion1 = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 0.5, 2),
+      new THREE.MeshStandardMaterial({ color: 0xff6b6b })
+    );
+    cushion1.position.set(5.5, 1.75, 4);
+    cushion1.castShadow = true;
+    scene.add(cushion1);
+    
+    const cushion2 = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 0.5, 2),
+      new THREE.MeshStandardMaterial({ color: 0xff6b6b })
+    );
+    cushion2.position.set(6.5, 1.75, 4);
+    cushion2.castShadow = true;
+    scene.add(cushion2);
+    
+    // 茶几
+    const tableGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
+    const tableMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x4a4a4a,
+      roughness: 0.1,
+      metalness: 0.8
+    });
+    const table = new THREE.Mesh(tableGeometry, tableMaterial);
+    table.position.set(6, 1.55, 6);
+    table.castShadow = true;
+    scene.add(table);
+    
+    // 桌子腿
+    const legGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.55, 16);
+    const legMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    const legPositions = [
+      [5.8, 0.775, 5.8],
+      [6.2, 0.775, 5.8],
+      [5.8, 0.775, 6.2],
+      [6.2, 0.775, 6.2]
+    ];
+    legPositions.forEach(pos => {
+      const leg = new THREE.Mesh(legGeometry, legMaterial);
+      leg.position.set(pos[0], pos[1], pos[2]);
+      leg.castShadow = true;
+      scene.add(leg);
+    });
+    
+    // 电视
+    const tvGeometry = new THREE.BoxGeometry(3, 2, 0.2);
+    const tvMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x1a1a1a,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+    const tv = new THREE.Mesh(tvGeometry, tvMaterial);
+    tv.position.set(3, 3, 9.9);
+    tv.castShadow = true;
+    scene.add(tv);
+    
+    // 电视屏幕
+    const screenGeometry = new THREE.PlaneGeometry(2.5, 1.5);
+    const screenMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x87ceeb,
+      emissive: 0x001133
+    });
+    const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+    screen.position.set(3, 3, 9.85);
+    scene.add(screen);
+    
+    // 电视柜
+    const tvStandGeometry = new THREE.BoxGeometry(3.5, 0.8, 1.5);
+    const tvStand = new THREE.Mesh(
+      tvStandGeometry, 
+      new THREE.MeshStandardMaterial({ color: 0x654321 })
+    );
+    tvStand.position.set(3, 0.4, 8.5);
+    tvStand.castShadow = true;
+    scene.add(tvStand);
+    
+    // 落地灯
+    const lampBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.15, 0.2, 16),
+      new THREE.MeshStandardMaterial({ color: 0x8b4513 })
+    );
+    lampBase.position.set(2, 0.1, 2);
+    scene.add(lampBase);
+    
+    const lampPole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.02, 1.5, 16),
+      new THREE.MeshStandardMaterial({ color: 0xc8a882 })
+    );
+    lampPole.position.set(2, 1, 2);
+    lampPole.castShadow = true;
+    scene.add(lampPole);
+    
+    const lampShade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.3, 0.4, 16),
+      new THREE.MeshStandardMaterial({ 
+        color: 0xfff8dc,
+        emissive: 0xffaa00,
+        emissiveIntensity: 0.3
+      })
+    );
+    lampShade.position.set(2, 1.7, 2);
+    lampShade.rotation.x = Math.PI;
+    lampShade.castShadow = true;
+    scene.add(lampShade);
+    
+    // 添加照明效果
+    const lampLight = new THREE.PointLight(0xffd700, 0.8, 5);
+    lampLight.position.set(2, 1.7, 2);
+    scene.add(lampLight);
+    
+    // 书架
+    const bookshelfGeometry = new THREE.BoxGeometry(2, 5, 0.3);
+    const bookshelf = new THREE.Mesh(
+      bookshelfGeometry,
+      new THREE.MeshStandardMaterial({ color: 0x8b4513 })
+    );
+    bookshelf.position.set(0.3, 2.5, 2);
+    bookshelf.castShadow = true;
+    scene.add(bookshelf);
+    
+    // 书架上的书
+    for (let i = 0; i < 8; i++) {
+      const bookHeight = 0.3 + Math.random() * 0.2;
+      const bookGeometry = new THREE.BoxGeometry(1.5, bookHeight, 0.2);
+      const colors = [0xff6b6b, 0x4ecdc4, 0xffe66d, 0x95e1d3];
+      const bookMaterial = new THREE.MeshStandardMaterial({ 
+        color: colors[Math.floor(Math.random() * colors.length)]
+      });
+      const book = new THREE.Mesh(bookGeometry, bookMaterial);
+      book.position.set(
+        0.3,
+        0.3 + i * 0.5 + bookHeight / 2,
+        1.5
+      );
+      book.castShadow = true;
+      scene.add(book);
+    }
+    
+    // 地毯
+    const carpetGeometry = new THREE.PlaneGeometry(6, 6);
+    const carpetMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x8b7d6b,
+      roughness: 0.8
+    });
+    const carpet = new THREE.Mesh(carpetGeometry, carpetMaterial);
+    carpet.rotation.x = -Math.PI / 2;
+    carpet.position.set(6, 0.02, 6);
+    scene.add(carpet);
+    
+    // 窗户
+    const windowGeometry = new THREE.PlaneGeometry(3, 3);
+    const windowMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x1a1a1a,
+      transparent: true,
+      opacity: 0.3
+    });
+    const roomWindow = new THREE.Mesh(windowGeometry, windowMaterial);
+    roomWindow.position.set(9.8, 4, 2);
+    scene.add(roomWindow);
+    
+    // 窗框
+    const framePositions = [
+      [9.85, 2.5, 2],
+      [9.85, 5.5, 2],
+      [9.85, 4, 0.5],
+      [9.85, 4, 3.5]
+    ];
+    framePositions.forEach(pos => {
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.1, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0x8b7355 })
+      );
+      frame.position.set(pos[0], pos[1], pos[2]);
+      scene.add(frame);
+    });
+    
+    // 绿植
+    const potGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.3, 16);
+    const potMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
+    const pot = new THREE.Mesh(potGeometry, potMaterial);
+    pot.position.set(1, 0.15, 7);
+    pot.castShadow = true;
+    scene.add(pot);
+    
+    const plantGeometry = new THREE.ConeGeometry(0.5, 1, 8);
+    const plantMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+    const plant = new THREE.Mesh(plantGeometry, plantMaterial);
+    plant.position.set(1, 0.75, 7);
+    plant.castShadow = true;
+    scene.add(plant);
+    
+    // ==================== 控制功能 ====================
+    let lightsVisible = true;
+    function toggleLights() {
+      lightsVisible = !lightsVisible;
+      ambientLight.intensity = lightsVisible ? 0.4 : 0.1;
+      directionalLight.intensity = lightsVisible ? 0.8 : 0.2;
+      pointLight.intensity = lightsVisible ? 0.5 : 0;
+      lampLight.intensity = lightsVisible ? 0.8 : 0;
+    }
+    
+    let furnitureVisible = true;
+    function toggleFurniture() {
+      furnitureVisible = !furnitureVisible;
+      [sofa, cushion1, cushion2, table, tv, tvStand, bookshelf, lampBase, lampPole, lampShade, pot, plant].forEach(obj => {
+        obj.visible = furnitureVisible;
+      });
+    }
+    
+    let wallColorIndex = 0;
+    const wallColors = [0xf5f2eb, 0xe8e4e0, 0xd4c5b9, 0xc9b8a3];
+    function changeWallColor() {
+      wallColorIndex = (wallColorIndex + 1) % wallColors.length;
+      [leftWall, backWall, rightWall].forEach(wall => {
+        wall.material.color.setHex(wallColors[wallColorIndex]);
+      });
+    }
+    
+    function resetCamera() {
+      camera.position.set(12, 10, 12);
+      camera.lookAt(5, 0, 5);
+      controls.reset();
+    }
+    
+    // ==================== 动画循环 ====================
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // 更新控制器
+      controls.update();
+      
+      // AI 生成的动画代码可以在这里添加
+      
+      // 旋转吊灯
+      if (lampShade) {
+        lampShade.rotation.y += 0.01;
+      }
+      
+      // 渲染场景
+      renderer.render(scene, camera);
+    }
+    
+    // 启动动画
+    animate();
+    
+    // 将函数暴露到全局作用域供按钮调用
+    window.resetCamera = resetCamera;
+    window.toggleLights = toggleLights;
+    window.toggleFurniture = toggleFurniture;
+    window.changeWallColor = changeWallColor;
+    
+    // 返回场景数据供外部使用
+    return { camera, renderer, controls };
+    })(window);
+    
+    // 保存到全局
+    window.sceneData = sceneData;
+    
+    // ==================== 窗口大小调整 ====================
+    window.addEventListener('resize', () => {
+      if (window.sceneData) {
+        window.sceneData.camera.aspect = window.innerWidth / window.innerHeight;
+        window.sceneData.camera.updateProjectionMatrix();
+        window.sceneData.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
+    
+    // ==================== 控制台信息 ====================
+    console.log('🏠 3D 室内设计场景已初始化');
+  </script>
+</body>
+</html>

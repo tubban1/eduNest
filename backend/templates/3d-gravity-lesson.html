@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D重力课程</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    /* 控制面板样式 */
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 10;
+      min-width: 280px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .controls h2 {
+      margin-bottom: 15px;
+      color: #302b63;
+      font-size: 20px;
+      text-align: center;
+    }
+    
+    .controls h3 {
+      margin: 15px 0 10px 0;
+      color: #333;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .controls p {
+      margin: 8px 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #555;
+    }
+    
+    .controls button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: none;
+      background: linear-gradient(135deg, #302b63 0%, #24243e 100%);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(48, 43, 99, 0.4);
+    }
+    
+    .controls .param {
+      margin: 10px 0;
+    }
+    
+    .controls input[type="range"] {
+      width: 100%;
+      margin: 5px 0;
+    }
+    
+    .controls label {
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .info-panel {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 15px;
+      color: white;
+      z-index: 10;
+      min-width: 250px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .info-panel h3 {
+      color: #ffd700;
+      margin-bottom: 10px;
+    }
+    
+    .info-panel p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    
+    .info-panel .formula {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      font-size: 18px;
+      color: #ffd700;
+    }
+    
+    /* 加载提示 */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 24px;
+      z-index: 100;
+    }
+    
+    .loading.hidden {
+      display: none;
+    }
+  </style>
+  
+  <!-- Three.js 基础库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 加载提示 -->
+  <div class="loading" id="loading">加载中...</div>
+  
+  <!-- 3D 容器 -->
+  <div id="container"></div>
+  
+  <!-- 控制面板 -->
+  <div class="controls" id="controls">
+    <h2>🌍 重力演示</h2>
+    
+    <div class="param">
+      <label>重力加速度 (g): <span id="gravityValue">9.8</span> m/s²</label>
+      <input type="range" id="gravity" min="0" max="20" step="0.1" value="9.8">
+    </div>
+    
+    <div class="param">
+      <label>初始高度: <span id="heightValue">10</span> m</label>
+      <input type="range" id="height" min="5" max="30" step="1" value="10">
+    </div>
+    
+    <div class="param">
+      <label>初始速度: <span id="velocityValue">0</span> m/s</label>
+      <input type="range" id="velocity" min="0" max="20" step="1" value="0">
+    </div>
+    
+    <button onclick="dropBall()">🎾 释放小球</button>
+    <button onclick="resetCamera()">🔄 重置视角</button>
+    <button onclick="toggleTrail()">🌈 切换轨迹</button>
+    <button onclick="changeMass()">⚖️ 改变质量</button>
+    <button onclick="stopAll()">⏹️ 停止所有</button>
+    
+    <h3>📚 物理原理</h3>
+    <p><strong>重力公式：</strong></p>
+    <p>F = mg</p>
+    <p><strong>自由落体运动：</strong></p>
+    <p>s = v₀t + ½gt²</p>
+    <p>v = v₀ + gt</p>
+    
+    <p style="margin-top: 15px; color: #666;">
+      <strong>💡 提示：</strong>调整参数后点击"释放小球"观察不同重力条件下的运动
+    </p>
+  </div>
+  
+  <!-- 信息面板 -->
+  <div class="info-panel" id="infoPanel">
+    <h3>📊 实时数据</h3>
+    <p>高度: <span id="ballHeight">-</span> m</p>
+    <p>速度: <span id="ballVelocity">-</span> m/s</p>
+    <p>时间: <span id="elapsedTime">-</span> s</p>
+    <p>动能: <span id="kineticEnergy">-</span> J</p>
+    <div class="formula">F = <span id="gravityForce">-</span> N</div>
+  </div>
+  
+  <script>
+    const sceneData = (function(win) {
+      'use strict';
+      
+    // 隐藏加载提示
+    document.getElementById('loading').classList.add('hidden');
+    
+    // ==================== 游戏状态 ====================
+    let gravity = 9.8;
+    let balls = [];
+    let trails = [];
+    let trailsVisible = true;
+    let time = 0;
+    
+    // ==================== 场景初始化 ====================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    const camera = new THREE.PerspectiveCamera(
+      45, 
+      win.innerWidth / win.innerHeight, 
+      0.1, 
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    // 设置渲染器
+    renderer.setSize(win.innerWidth, win.innerHeight);
+    renderer.setPixelRatio(win.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    // 相机位置
+    camera.position.set(15, 10, 15);
+    camera.lookAt(0, 0, 0);
+    
+    // ==================== 添加光照 ====================
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(0, 20, 0);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+    
+    // ==================== 创建地面 ====================
+    const groundGeometry = new THREE.PlaneGeometry(50, 50, 20, 20);
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x444444,
+      roughness: 0.8,
+      metalness: 0.2
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    // 添加网格
+    const gridHelper = new THREE.GridHelper(50, 50, 0x666666, 0x333333);
+    scene.add(gridHelper);
+    
+    // ==================== 创建参考物 ====================
+    // 高度标尺
+    function createRuler(height) {
+      const rulerGroup = new THREE.Group();
+      
+      // 尺子
+      for (let i = 0; i <= height * 5; i++) {
+        const markGeometry = new THREE.BoxGeometry(0.05, 0.1, 0.05);
+        const markMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const mark = new THREE.Mesh(markGeometry, markMaterial);
+        mark.position.set(-10, i / 5, 0);
+        
+        if (i % 5 === 0) {
+          mark.scale.set(2, 1, 2);
+          markMaterial.color.setHex(0xff0000);
+        }
+        
+        rulerGroup.add(mark);
+      }
+      
+      // 主轴
+      const poleGeometry = new THREE.CylinderGeometry(0.02, 0.02, height, 16);
+      const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+      pole.position.y = height / 2;
+      rulerGroup.add(pole);
+      
+      scene.add(rulerGroup);
+    }
+    
+    createRuler(30);
+    
+    // 添加高度标签
+    for (let i = 0; i <= 30; i += 5) {
+      const labelGeometry = new THREE.RingGeometry(0.3, 0.35, 32);
+      const labelMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xff0000,
+        side: THREE.DoubleSide
+      });
+      const label = new THREE.Mesh(labelGeometry, labelMaterial);
+      label.position.set(-10, i, 0);
+      label.rotation.x = Math.PI / 2;
+      scene.add(label);
+    }
+    
+    // ==================== 创建小球 ====================
+    function createBall(initialHeight, initialVelocity, mass, color) {
+      const ballGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+      const ballMaterial = new THREE.MeshStandardMaterial({ 
+        color: color || 0xff6b6b,
+        roughness: 0.3,
+        metalness: 0.7
+      });
+      const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+      
+      ball.position.x = mass % 3 * 4 - 4; // 横向排列
+      ball.position.y = initialHeight;
+      ball.castShadow = true;
+      ball.castShadow = true;
+      
+      // 小球物理属性
+      ball.userData = {
+        initialHeight: initialHeight,
+        initialVelocity: initialVelocity,
+        velocity: initialVelocity,
+        mass: mass,
+        time: 0,
+        active: false
+      };
+      
+      scene.add(ball);
+      
+      // 创建轨迹线
+      const trailGeometry = new THREE.BufferGeometry();
+      const trailMaterial = new THREE.LineBasicMaterial({ 
+        color: color || 0xff6b6b,
+        linewidth: 3,
+        transparent: true,
+        opacity: 0.6
+      });
+      const trail = new THREE.Line(trailGeometry, trailMaterial);
+      trail.visible = trailsVisible;
+      scene.add(trail);
+      
+      return { ball, trail };
+    }
+    
+    // ==================== 更新球体物理 ====================
+    function updatePhysics() {
+      balls.forEach(({ ball, trail }) => {
+        if (!ball.userData.active) return;
+        
+        ball.userData.time += 0.016;
+        const t = ball.userData.time;
+        
+        // 计算位置: s = v₀t + ½gt²
+        const height = ball.userData.initialHeight + 
+                      ball.userData.initialVelocity * t + 
+                      0.5 * (-gravity) * t * t;
+        
+        // 计算速度: v = v₀ + gt
+        ball.userData.velocity = ball.userData.initialVelocity - gravity * t;
+        
+        // 更新位置
+        ball.position.y = Math.max(height, 0.5);
+        
+        // 地面碰撞
+        if (ball.position.y <= 0.5) {
+          ball.position.y = 0.5;
+          ball.userData.velocity = 0;
+          // 可以添加反弹逻辑
+        }
+        
+        // 更新轨迹
+        updateTrail(ball, trail);
+        
+        // 更新UI
+        if (balls.indexOf({ ball, trail }) === balls.length - 1) {
+          updateInfo(ball);
+        }
+      });
+    }
+    
+    // 更新轨迹
+    function updateTrail(ball, trail) {
+      const positions = trail.geometry.attributes.position;
+      if (!positions || positions.count === 0) {
+        trail.geometry = new THREE.BufferGeometry();
+        trail.geometry.setFromPoints([ball.position.clone()]);
+      } else {
+        const points = trail.geometry.getAttribute('position').array;
+        const newPoint = new THREE.Vector3(ball.position.x, ball.position.y, ball.position.z);
+        
+        // 添加新点
+        const positions = [];
+        for (let i = 0; i < points.length; i += 3) {
+          positions.push(new THREE.Vector3(points[i], points[i + 1], points[i + 2]));
+        }
+        positions.push(newPoint);
+        
+        trail.geometry = new THREE.BufferGeometry();
+        trail.geometry.setFromPoints(positions);
+      }
+    }
+    
+    // 更新信息面板
+    function updateInfo(ball) {
+      const height = ball.position.y;
+      const velocity = ball.userData.velocity;
+      const t = ball.userData.time;
+      const mass = ball.userData.mass;
+      const kinetic = 0.5 * mass * velocity * velocity;
+      const force = mass * gravity;
+      
+      document.getElementById('ballHeight').textContent = height.toFixed(2);
+      document.getElementById('ballVelocity').textContent = velocity.toFixed(2);
+      document.getElementById('elapsedTime').textContent = t.toFixed(2);
+      document.getElementById('kineticEnergy').textContent = kinetic.toFixed(2);
+      document.getElementById('gravityForce').textContent = force.toFixed(2);
+    }
+    
+    // ==================== 控制功能 ====================
+    function dropBall() {
+      const ballHeight = parseFloat(document.getElementById('height').value);
+      const ballVelocity = parseFloat(document.getElementById('velocity').value);
+      
+      const colors = [0xff6b6b, 0x4ecdc4, 0xffe66d, 0x95e1d3, 0xffa5b6];
+      const color = colors[balls.length % colors.length];
+      
+      const { ball, trail } = createBall(ballHeight, ballVelocity, 1, color);
+      ball.userData.active = true;
+      balls.push({ ball, trail });
+    }
+    
+    function toggleTrail() {
+      trailsVisible = !trailsVisible;
+      trails.forEach(trail => {
+        trail.visible = trailsVisible;
+      });
+      balls.forEach(({ trail }) => {
+        trail.visible = trailsVisible;
+      });
+    }
+    
+    function changeMass() {
+      if (balls.length === 0) return;
+      
+      const lastBall = balls[balls.length - 1].ball;
+      const mass = lastBall.userData.mass % 5 + 1;
+      lastBall.userData.mass = mass;
+      lastBall.scale.set(mass, mass, mass);
+    }
+    
+    function stopAll() {
+      balls.forEach(({ ball, trail }) => {
+        ball.userData.active = false;
+      });
+    }
+    
+    function resetCamera() {
+      camera.position.set(15, 10, 15);
+      camera.lookAt(0, 0, 0);
+    }
+    
+    // ==================== UI控制 ====================
+    document.getElementById('gravity').addEventListener('input', (e) => {
+      gravity = parseFloat(e.target.value);
+      document.getElementById('gravityValue').textContent = gravity.toFixed(1);
+    });
+    
+    document.getElementById('height').addEventListener('input', (e) => {
+      document.getElementById('heightValue').textContent = e.target.value;
+    });
+    
+    document.getElementById('velocity').addEventListener('input', (e) => {
+      document.getElementById('velocityValue').textContent = e.target.value;
+    });
+    
+    // 初始化示例球
+    setTimeout(() => dropBall(), 500);
+    
+    // ==================== 添加控制器 ====================
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.minDistance = 5;
+    controls.maxDistance = 50;
+    
+    // ==================== 动画循环 ====================
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      controls.update();
+      updatePhysics();
+      
+      renderer.render(scene, camera);
+    }
+    
+    animate();
+    
+    // 将函数暴露到全局作用域
+    window.dropBall = dropBall;
+    window.resetCamera = resetCamera;
+    window.toggleTrail = toggleTrail;
+    window.changeMass = changeMass;
+    window.stopAll = stopAll;
+    
+    // 返回场景数据
+    return { camera, renderer, controls };
+    })(window);
+    
+    // 保存到全局
+    window.sceneData = sceneData;
+    
+    // ==================== 窗口大小调整 ====================
+    window.addEventListener('resize', () => {
+      if (window.sceneData) {
+        window.sceneData.camera.aspect = window.innerWidth / window.innerHeight;
+        window.sceneData.camera.updateProjectionMatrix();
+        window.sceneData.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
+    
+    // ==================== 控制台信息 ====================
+    console.log('📚 3D 重力课程已初始化');
+    console.log('💡 调整参数后点击"释放小球"观察重力效果');
+  </script>
+</body>
+</html>
+

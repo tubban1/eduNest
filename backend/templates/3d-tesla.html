@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D特斯拉展示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    /* 控制面板样式 */
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+      min-width: 200px;
+    }
+    
+    .controls h3 {
+      margin-bottom: 10px;
+      color: #333;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .controls button {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border: none;
+      background: #1e3c72;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s;
+    }
+    
+    .controls button:hover {
+      background: #2a5298;
+    }
+    
+    /* 加载提示 */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+      z-index: 100;
+    }
+    
+    /* 隐藏加载提示 */
+    .loading.hidden {
+      display: none;
+    }
+  </style>
+  
+  <!-- Three.js 基础库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 加载提示 -->
+  <div class="loading" id="loading">加载中...</div>
+  
+  <!-- 3D 容器 -->
+  <div id="container"></div>
+  
+  <!-- 控制面板 -->
+  <div class="controls" id="controls">
+    <h3>特斯拉控制</h3>
+    <button onclick="resetCamera()">重置视角</button>
+    <button onclick="toggleLights()">切换灯光</button>
+    <button onclick="changeColor()">更换颜色</button>
+    <button onclick="toggleAnimation()">播放/暂停</button>
+  </div>
+  
+  <script>
+    const sceneData = (function(win) {
+      'use strict';
+      
+    // 隐藏加载提示
+    document.getElementById('loading').classList.add('hidden');
+    
+    // ==================== 场景初始化 ====================
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      45, 
+      win.innerWidth / win.innerHeight, 
+      0.1, 
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    // 设置渲染器
+    renderer.setSize(win.innerWidth, win.innerHeight);
+    renderer.setPixelRatio(win.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    // 相机位置
+    camera.position.set(8, 5, 8);
+    camera.lookAt(0, 0, 0);
+    
+    // ==================== 添加光照 ====================
+    // 环境光
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    // 主光源
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 15, 10);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+    
+    // 辅助光
+    const pointLight = new THREE.PointLight(0xffd700, 0.5, 100);
+    pointLight.position.set(-5, 10, 0);
+    scene.add(pointLight);
+    
+    // ==================== 添加控制器 ====================
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.minDistance = 5;
+    controls.maxDistance = 20;
+    
+    // ==================== 创建地面 ====================
+    const floorGeometry = new THREE.PlaneGeometry(50, 50);
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x444444,
+      roughness: 0.8
+    });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+    
+    // 网格线
+    const gridHelper = new THREE.GridHelper(50, 50, 0x888888, 0x666666);
+    gridHelper.position.y = -1.99;
+    scene.add(gridHelper);
+    
+    // ==================== 创建特斯拉 ====================
+    
+    // 车身主体（棱角分明的设计）
+    const bodyGroup = new THREE.Group();
+    
+    // 车身颜色
+    let carColor = 0xe31837; // Tesla Red
+    
+    // 前车盖
+    const hoodGeometry = new THREE.BoxGeometry(2, 0.3, 4);
+    const hoodMaterial = new THREE.MeshStandardMaterial({ 
+      color: carColor,
+      roughness: 0.3,
+      metalness: 0.7
+    });
+    const hood = new THREE.Mesh(hoodGeometry, hoodMaterial);
+    hood.position.set(0, 0.5, 1.5);
+    hood.castShadow = true;
+    bodyGroup.add(hood);
+    
+    // 车头
+    const frontGeometry = new THREE.BoxGeometry(2.2, 0.6, 1.2);
+    const front = new THREE.Mesh(frontGeometry, hoodMaterial);
+    front.position.set(0, 0.1, 2.8);
+    front.castShadow = true;
+    bodyGroup.add(front);
+    
+    // 前大灯（LED风格）
+    const headlightGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.4);
+    const headlightMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xffffff,
+      emissive: 0xffffaa,
+      emissiveIntensity: 0.5
+    });
+    const leftHeadlight = new THREE.Mesh(headlightGeometry, headlightMaterial);
+    leftHeadlight.position.set(-0.8, 0.1, 2.8);
+    bodyGroup.add(leftHeadlight);
+    
+    const rightHeadlight = new THREE.Mesh(headlightGeometry, headlightMaterial);
+    rightHeadlight.position.set(0.8, 0.1, 2.8);
+    bodyGroup.add(rightHeadlight);
+    
+    // 驾驶舱顶
+    const roofGeometry = new THREE.BoxGeometry(2, 1.2, 3.5);
+    const roofMaterial = hoodMaterial.clone();
+    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+    roof.position.set(0, 1.5, 0.5);
+    roof.castShadow = true;
+    bodyGroup.add(roof);
+    
+    // 前挡风玻璃（半透明）
+    const windshieldGeometry = new THREE.BoxGeometry(2.05, 1, 0.1);
+    const windshieldMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x1a1a1a,
+      transparent: true,
+      opacity: 0.3,
+      roughness: 0.1
+    });
+    const windshield = new THREE.Mesh(windshieldGeometry, windshieldMaterial);
+    windshield.position.set(0, 1.5, 1.5);
+    bodyGroup.add(windshield);
+    
+    // 侧窗
+    const sideWindowGeometry = new THREE.BoxGeometry(0.1, 0.8, 1.5);
+    const sideWindowMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x1a1a1a,
+      transparent: true,
+      opacity: 0.2
+    });
+    const leftWindow = new THREE.Mesh(sideWindowGeometry, sideWindowMaterial);
+    leftWindow.position.set(-1, 1.4, 0.5);
+    bodyGroup.add(leftWindow);
+    
+    const rightWindow = new THREE.Mesh(sideWindowGeometry, sideWindowMaterial);
+    rightWindow.position.set(1, 1.4, 0.5);
+    bodyGroup.add(rightWindow);
+    
+    // 后备箱
+    const trunkGeometry = new THREE.BoxGeometry(2, 0.3, 3);
+    const trunk = new THREE.Mesh(trunkGeometry, roofMaterial);
+    trunk.position.set(0, 0.5, -2);
+    trunk.castShadow = true;
+    bodyGroup.add(trunk);
+    
+    // 后车灯
+    const taillightGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.4);
+    const taillightMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xff0000,
+      emissive: 0xff0000,
+      emissiveIntensity: 0.5
+    });
+    const leftTaillight = new THREE.Mesh(taillightGeometry, taillightMaterial);
+    leftTaillight.position.set(-0.8, 0.2, -2.9);
+    bodyGroup.add(leftTaillight);
+    
+    const rightTaillight = new THREE.Mesh(taillightGeometry, taillightMaterial);
+    rightTaillight.position.set(0.8, 0.2, -2.9);
+    bodyGroup.add(rightTaillight);
+    
+    // 轮子（特斯拉特有的隐藏式设计）
+    const wheelGeometry = new THREE.CylinderGeometry(0.8, 0.8, 0.4, 32);
+    const wheelMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x222222,
+      roughness: 0.3,
+      metalness: 0.7
+    });
+    
+    // 前轮
+    const frontLeftWheel = new THREE.Mesh(wheelGeometry.clone(), wheelMaterial);
+    frontLeftWheel.rotation.z = Math.PI / 2;
+    frontLeftWheel.position.set(-1.2, 0, 1.8);
+    frontLeftWheel.castShadow = true;
+    bodyGroup.add(frontLeftWheel);
+    
+    const frontRightWheel = new THREE.Mesh(wheelGeometry.clone(), wheelMaterial);
+    frontRightWheel.rotation.z = Math.PI / 2;
+    frontRightWheel.position.set(1.2, 0, 1.8);
+    frontRightWheel.castShadow = true;
+    bodyGroup.add(frontRightWheel);
+    
+    // 后轮
+    const rearLeftWheel = new THREE.Mesh(wheelGeometry.clone(), wheelMaterial);
+    rearLeftWheel.rotation.z = Math.PI / 2;
+    rearLeftWheel.position.set(-1.2, 0, -1.8);
+    rearLeftWheel.castShadow = true;
+    bodyGroup.add(rearLeftWheel);
+    
+    const rearRightWheel = new THREE.Mesh(wheelGeometry.clone(), wheelMaterial);
+    rearRightWheel.rotation.z = Math.PI / 2;
+    rearRightWheel.position.set(1.2, 0, -1.8);
+    rearRightWheel.castShadow = true;
+    bodyGroup.add(rearRightWheel);
+    
+    // 轮辋
+    const rimGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.45, 16);
+    const rimMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xaaaaaa,
+      roughness: 0.2,
+      metalness: 0.9
+    });
+    
+    const wheels = [frontLeftWheel, frontRightWheel, rearLeftWheel, rearRightWheel];
+    const allWheels = [...wheels];
+    
+    wheels.forEach(wheel => {
+      const rim = new THREE.Mesh(rimGeometry.clone(), rimMaterial);
+      rim.position.copy(wheel.position);
+      rim.rotation.copy(wheel.rotation);
+      bodyGroup.add(rim);
+      allWheels.push(rim);
+    });
+    
+    // 将车添加到场景
+    scene.add(bodyGroup);
+    
+    // 保存参考以便修改颜色
+    const carParts = [hood, front, roof, trunk];
+    
+    // ==================== 控制功能 ====================
+    let lightsVisible = true;
+    function toggleLights() {
+      lightsVisible = !lightsVisible;
+      ambientLight.intensity = lightsVisible ? 0.6 : 0.2;
+      directionalLight.intensity = lightsVisible ? 0.8 : 0.3;
+      pointLight.intensity = lightsVisible ? 0.5 : 0.2;
+    }
+    
+    let carColors = [
+      0xe31837, // Tesla Red
+      0x000000, // Black
+      0xffffff, // Pearl White
+      0x1e3c72, // Deep Blue
+      0x00ff00  // Green
+    ];
+    let colorIndex = 0;
+    
+    function changeColor() {
+      colorIndex = (colorIndex + 1) % carColors.length;
+      carColor = carColors[colorIndex];
+      const newMaterial = new THREE.MeshStandardMaterial({ 
+        color: carColor,
+        roughness: 0.3,
+        metalness: 0.7
+      });
+      carParts.forEach(part => {
+        part.material = newMaterial;
+      });
+    }
+    
+    let isAnimating = true;
+    function toggleAnimation() {
+      isAnimating = !isAnimating;
+    }
+    
+    function resetCamera() {
+      camera.position.set(8, 5, 8);
+      camera.lookAt(0, 0, 0);
+      controls.reset();
+    }
+    
+    // ==================== 动画循环 ====================
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // 更新控制器
+      controls.update();
+      
+      // 车身旋转（展示效果）
+      if (isAnimating) {
+        bodyGroup.rotation.y += 0.005;
+      }
+      
+      // 车轮旋转
+      if (isAnimating) {
+        allWheels.forEach(wheel => {
+          wheel.rotation.x -= 0.01;
+        });
+      }
+      
+      // 渲染场景
+      renderer.render(scene, camera);
+    }
+    
+    // 启动动画
+    animate();
+    
+    // 将函数暴露到全局作用域供按钮调用
+    window.resetCamera = resetCamera;
+    window.toggleLights = toggleLights;
+    window.changeColor = changeColor;
+    window.toggleAnimation = toggleAnimation;
+    
+    // 返回场景数据供外部使用
+    return { camera, renderer, controls, bodyGroup };
+    })(window);
+    
+    // 保存到全局
+    window.sceneData = sceneData;
+    
+    // ==================== 窗口大小调整 ====================
+    window.addEventListener('resize', () => {
+      if (window.sceneData) {
+        window.sceneData.camera.aspect = window.innerWidth / window.innerHeight;
+        window.sceneData.camera.updateProjectionMatrix();
+        window.sceneData.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
+    
+    // ==================== 控制台信息 ====================
+    console.log('🚗 3D 特斯拉场景已初始化');
+  </script>
+</body>
+</html>
+

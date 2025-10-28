@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D空间图片滚动播放器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    /* 控制面板 */
+    .controls {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      z-index: 10;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      backdrop-filter: blur(10px);
+    }
+    
+    .controls button {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s;
+      min-width: 100px;
+    }
+    
+    .controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .controls button:active {
+      transform: translateY(0);
+    }
+    
+    /* 信息显示 */
+    .info-display {
+      position: absolute;
+      top: 30px;
+      left: 30px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 15px;
+      color: white;
+      z-index: 10;
+      min-width: 250px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .info-display h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    
+    .info-display p {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    
+    .info-display input[type="file"] {
+      margin-top: 10px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    .info-display input[type="file"]::file-selector-button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    .image-counter {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ffd700;
+    }
+    
+    /* 缩略图导航 */
+    .thumbnails {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 15px;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+      max-width: 300px;
+    }
+    
+    .thumbnails h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+    
+    .thumbnail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    
+    .thumbnail-item {
+      aspect-ratio: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      overflow: hidden;
+      border: 2px solid transparent;
+    }
+    
+    .thumbnail-item:hover {
+      border-color: #667eea;
+      transform: scale(1.05);
+    }
+    
+    .thumbnail-item.active {
+      border-color: #ffd700;
+      border-width: 3px;
+    }
+    
+    .thumbnail-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* 加载提示 */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 24px;
+      z-index: 100;
+    }
+    
+    .loading.hidden {
+      display: none;
+    }
+  </style>
+  
+  <!-- Three.js 基础库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 加载提示 -->
+  <div class="loading" id="loading">加载中...</div>
+  
+  <!-- 3D 容器 -->
+  <div id="container"></div>
+  
+  <!-- 信息显示 -->
+  <div class="info-display" id="infoDisplay">
+    <h3>🖼️ 图片播放器</h3>
+    <p>当前图片: <span class="image-counter" id="currentImage">1</span> / <span id="totalImages">0</span></p>
+    <p id="imageTitle">正在加载...</p>
+    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="loadLocalImages(event)">
+    <button onclick="document.getElementById('fileInput').click()" style="margin-top: 10px; padding: 8px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">选择本地图片</button>
+  </div>
+  
+  <!-- 缩略图导航 -->
+  <div class="thumbnails" id="thumbnails">
+    <h3>📸 图片导航</h3>
+    <div class="thumbnail-grid" id="thumbnailGrid"></div>
+  </div>
+  
+  <!-- 控制面板 -->
+  <div class="controls">
+    <button onclick="previousImage()">◀ 上一张</button>
+    <button onclick="toggleRotation()">⏸ 暂停旋转</button>
+    <button onclick="nextImage()">下一张 ▶</button>
+    <button onclick="changeLayout()">🔄 切换布局</button>
+  </div>
+  
+  <script>
+    const sceneData = (function(win) {
+      'use strict';
+      
+    // 隐藏加载提示
+    document.getElementById('loading').classList.add('hidden');
+    
+    // ==================== 图片数据 ====================
+    let imageData = [];
+    
+    // 初始化时使用默认在线图片
+    imageData = [
+      { url: 'https://picsum.photos/800/600?random=1', title: '美丽风景' },
+      { url: 'https://picsum.photos/800/600?random=2', title: '自然风光' },
+      { url: 'https://picsum.photos/800/600?random=3', title: '城市建筑' }
+    ];
+    
+    // 游戏状态
+    let currentIndex = 0;
+    let imagePlanes = [];
+    let isRotating = true;
+    let layoutMode = 'circle'; // 'circle', 'tunnel', 'spiral'
+    let imageMeshes = [];
+    
+    // ==================== 场景初始化 ====================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000011);
+    const camera = new THREE.PerspectiveCamera(
+      75, 
+      win.innerWidth / win.innerHeight, 
+      0.1, 
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    // 设置渲染器
+    renderer.setSize(win.innerWidth, win.innerHeight);
+    renderer.setPixelRatio(win.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    // 相机位置
+    camera.position.set(0, 0, 10);
+    
+    // ==================== 添加光照 ====================
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(0, 10, 10);
+    scene.add(directionalLight);
+    
+    // 点光源增强效果
+    const pointLight1 = new THREE.PointLight(0x667eea, 0.5, 50);
+    pointLight1.position.set(-10, 5, 5);
+    scene.add(pointLight1);
+    
+    const pointLight2 = new THREE.PointLight(0x764ba2, 0.5, 50);
+    pointLight2.position.set(10, 5, -5);
+    scene.add(pointLight2);
+    
+    // ==================== 创建图片面片 ====================
+    function createImagePlane(imageUrl, index) {
+      return new Promise((resolve, reject) => {
+        const loader = new THREE.TextureLoader();
+        loader.load(
+          imageUrl,
+          function(texture) {
+            const geometry = new THREE.PlaneGeometry(6, 4);
+            const material = new THREE.MeshStandardMaterial({ 
+              map: texture,
+              side: THREE.DoubleSide
+            });
+            const plane = new THREE.Mesh(geometry, material);
+            
+            plane.userData.index = index;
+            resolve(plane);
+          },
+          undefined,
+          function(error) {
+            console.error('加载图片失败:', error);
+            reject(error);
+          }
+        );
+      });
+    }
+    
+    // ==================== 布局模式 ====================
+    function arrangeCircle() {
+      const radius = 15;
+      imageMeshes.forEach((mesh, index) => {
+        const angle = (index / imageMeshes.length) * Math.PI * 2;
+        mesh.position.x = Math.cos(angle) * radius;
+        mesh.position.z = Math.sin(angle) * radius;
+        mesh.rotation.y = -angle + Math.PI / 2;
+        mesh.position.y = 0;
+      });
+    }
+    
+    function arrangeTunnel() {
+      imageMeshes.forEach((mesh, index) => {
+        const spacing = 6;
+        const offset = (index - imageMeshes.length / 2) * spacing;
+        mesh.position.z = -Math.abs(offset);
+        mesh.position.x = offset;
+        mesh.position.y = 0;
+        mesh.rotation.y = offset > 0 ? Math.PI / 4 : -Math.PI / 4;
+      });
+    }
+    
+    function arrangeSpiral() {
+      const baseRadius = 8;
+      const height = 5;
+      imageMeshes.forEach((mesh, index) => {
+        const t = index / imageMeshes.length;
+        const angle = t * Math.PI * 4;
+        const radius = baseRadius - t * 2;
+        mesh.position.x = Math.cos(angle) * radius;
+        mesh.position.z = Math.sin(angle) * radius;
+        mesh.position.y = (t - 0.5) * height * 2;
+        mesh.rotation.y = -angle + Math.PI / 2;
+      });
+    }
+    
+    // ==================== 加载图片 ====================
+    async function loadImages() {
+      imageMeshes = [];
+      
+      for (let i = 0; i < imageData.length; i++) {
+        try {
+          // 处理本地文件或URL
+          const imageUrl = imageData[i].url || imageData[i].name || imageData[i].file;
+          const plane = await createImagePlane(imageUrl, i);
+          imageMeshes.push(plane);
+          scene.add(plane);
+        } catch (error) {
+          console.error(`Failed to load image ${i}:`, error);
+        }
+      }
+      
+      // 应用布局
+      applyLayout();
+      
+      // 初始化缩略图
+      updateThumbnails();
+      
+      // 更新显示
+      updateInfo();
+      
+      document.getElementById('totalImages').textContent = imageMeshes.length;
+    }
+    
+    // 处理本地文件选择（导出为全局变量供外部访问）
+    window.handleLocalFiles = function(files) {
+      imageData = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          imageData.push({
+            file: e.target.result,
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            name: file.name
+          });
+          
+          if (imageData.length === files.length) {
+            loadImages();
+          }
+        };
+        
+        reader.readAsDataURL(file);
+      }
+    };
+    
+    // ==================== 应用布局 ====================
+    function applyLayout() {
+      switch(layoutMode) {
+        case 'circle':
+          arrangeCircle();
+          break;
+        case 'tunnel':
+          arrangeTunnel();
+          break;
+        case 'spiral':
+          arrangeSpiral();
+          break;
+      }
+    }
+    
+    // ==================== 切换布局 ====================
+    function changeLayout() {
+      const layouts = ['circle', 'tunnel', 'spiral'];
+      const current = layouts.indexOf(layoutMode);
+      layoutMode = layouts[(current + 1) % layouts.length];
+      applyLayout();
+    }
+    
+    // ==================== 导航功能 ====================
+    function nextImage() {
+      currentIndex = (currentIndex + 1) % imageMeshes.length;
+      focusOnImage();
+      updateInfo();
+    }
+    
+    function previousImage() {
+      currentIndex = (currentIndex - 1 + imageMeshes.length) % imageMeshes.length;
+      focusOnImage();
+      updateInfo();
+    }
+    
+    function focusOnImage() {
+      if (imageMeshes.length === 0) return;
+      
+      const targetImage = imageMeshes[currentIndex];
+      const targetPosition = new THREE.Vector3();
+      targetImage.getWorldPosition(targetPosition);
+      
+      // 相机看向目标图片
+      camera.lookAt(targetPosition);
+    }
+    
+    function updateInfo() {
+      document.getElementById('currentImage').textContent = currentIndex + 1;
+      document.getElementById('imageTitle').textContent = imageData[currentIndex].title;
+      
+      // 更新缩略图状态
+      const thumbnailItems = document.querySelectorAll('.thumbnail-item');
+      thumbnailItems.forEach((item, index) => {
+        if (index === currentIndex) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+    
+    // ==================== 更新缩略图 ====================
+    function updateThumbnails() {
+      const grid = document.getElementById('thumbnailGrid');
+      grid.innerHTML = '';
+      
+      imageData.forEach((data, index) => {
+        const item = document.createElement('div');
+        item.className = 'thumbnail-item';
+        if (index === currentIndex) item.classList.add('active');
+        
+        const img = document.createElement('img');
+        img.src = data.url;
+        img.alt = data.title;
+        item.appendChild(img);
+        
+        item.onclick = () => {
+          currentIndex = index;
+          focusOnImage();
+          updateInfo();
+        };
+        
+        grid.appendChild(item);
+      });
+    }
+    
+    // ==================== 切换旋转 ====================
+    function toggleRotation() {
+      isRotating = !isRotating;
+      event.target.textContent = isRotating ? '⏸ 暂停旋转' : '▶ 恢复旋转';
+    }
+    
+    // ==================== 添加相机控制 ====================
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.minDistance = 5;
+    controls.maxDistance = 50;
+    
+    // 键盘控制
+    win.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') previousImage();
+      if (e.key === 'ArrowRight') nextImage();
+      if (e.key === ' ') {
+        toggleRotation();
+        e.preventDefault();
+      }
+    });
+    
+    // ==================== 动画循环 ====================
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      controls.update();
+      
+      // 旋转场景
+      if (isRotating && imageMeshes.length > 0) {
+        imageMeshes.forEach((mesh) => {
+          mesh.rotation.y += 0.003;
+        });
+      }
+      
+      // 脉冲效果（突出当前图片）
+      if (imageMeshes[currentIndex]) {
+        const scale = 1 + Math.sin(Date.now() * 0.003) * 0.05;
+        imageMeshes[currentIndex].scale.set(scale, scale, 1);
+      }
+      
+      renderer.render(scene, camera);
+    }
+    
+    animate();
+    
+    // 初始化
+    loadImages();
+    
+    // 导出函数
+    window.nextImage = nextImage;
+    window.previousImage = previousImage;
+    window.toggleRotation = toggleRotation;
+    window.changeLayout = changeLayout;
+    
+    return { camera, renderer, controls };
+    })(window);
+    
+    // 保存到全局
+    window.sceneData = sceneData;
+    
+    // ==================== 窗口大小调整 ====================
+    window.addEventListener('resize', () => {
+      if (window.sceneData) {
+        window.sceneData.camera.aspect = window.innerWidth / window.innerHeight;
+        window.sceneData.camera.updateProjectionMatrix();
+        window.sceneData.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
+    
+    // 导出全局函数用于文件选择器
+    window.loadLocalImages = function(event) {
+      const files = event.target.files;
+      if (files && files.length > 0) {
+        // 清除旧图片
+        imageMeshes.forEach(mesh => {
+          scene.remove(mesh);
+        });
+        imageMeshes = [];
+        currentIndex = 0;
+        
+        // 加载新图片
+        window.handleLocalFiles(files);
+      }
+    };
+    
+    console.log('🖼️ 3D图片播放器已初始化');
+    console.log('💡 使用鼠标拖拽旋转视角');
+    console.log('💡 使用方向键切换图片');
+    console.log('💡 使用空格键暂停/恢复旋转');
+  </script>
+</body>
+</html>
+

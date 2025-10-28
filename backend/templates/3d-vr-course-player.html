@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>VR环绕式课件播放器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    /* VR UI控制器 */
+    .vr-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px 40px;
+      border-radius: 15px;
+      z-index: 100;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      backdrop-filter: blur(10px);
+    }
+    
+    .vr-controls button {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s;
+      min-width: 100px;
+    }
+    
+    .vr-controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .vr-controls button:active {
+      transform: translateY(0);
+    }
+    
+    /* 信息提示 */
+    .info-hud {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 30px 50px;
+      border-radius: 20px;
+      color: white;
+      z-index: 1000;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      display: none;
+    }
+    
+    .info-hud.show {
+      display: block;
+    }
+    
+    .info-hud h2 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+    
+    .info-hud p {
+      font-size: 24px;
+      margin: 5px 0;
+    }
+    
+    /* 课程大纲 */
+    .course-outline {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border-radius: 15px;
+      color: white;
+      z-index: 50;
+      max-width: 300px;
+      max-height: 80vh;
+      overflow-y: auto;
+      backdrop-filter: blur(10px);
+    }
+    
+    .course-outline h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+    
+    .course-item {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .course-item:hover {
+      background: rgba(102, 126, 234, 0.3);
+    }
+    
+    .course-item.active {
+      background: rgba(102, 126, 234, 0.6);
+      border-left: 4px solid #667eea;
+    }
+    
+    /* 进度指示器 */
+    .progress-indicator {
+      position: absolute;
+      top: 100px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      z-index: 50;
+      text-align: center;
+    }
+    
+    .progress-indicator .progress-bar {
+      width: 200px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transition: width 0.5s;
+    }
+    
+    /* 加载提示 */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 24px;
+      z-index: 100;
+    }
+    
+    .loading.hidden {
+      display: none;
+    }
+  </style>
+  
+  <!-- Three.js 基础库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 加载提示 -->
+  <div class="loading" id="loading">加载中...</div>
+  
+  <!-- 3D 容器 -->
+  <div id="container"></div>
+  
+  <!-- 信息提示 -->
+  <div class="info-hud" id="infoHud">
+    <h2 id="infoTitle">欢迎</h2>
+    <p id="infoContent">开始你的学习之旅</p>
+  </div>
+  
+  <!-- 课程大纲 -->
+  <div class="course-outline" id="courseOutline">
+    <h3>📚 课程大纲</h3>
+    <div id="courseItems"></div>
+  </div>
+  
+  <!-- 进度指示器 -->
+  <div class="progress-indicator" id="progressIndicator">
+    <div>第 <span id="currentSlide">1</span> / <span id="totalSlides">5</span> 页</div>
+    <div class="progress-bar">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+  </div>
+  
+  <!-- VR控制栏 -->
+  <div class="vr-controls">
+    <button onclick="previousSlide()">◀ 上一页</button>
+    <button onclick="toggleAutoPlay()">⏸ 暂停</button>
+    <button onclick="nextSlide()">下一页 ▶</button>
+  </div>
+  
+  <script>
+    const sceneData = (function(win) {
+      'use strict';
+      
+    // 隐藏加载提示
+    document.getElementById('loading').classList.add('hidden');
+    
+    // ==================== 课程数据 ====================
+    const courseContent = [
+      {
+        title: '太阳系',
+        content: '太阳系由八大行星组成，包括水星、金星、地球、火星、木星、土星、天王星和海王星。',
+        type: 'solar-system'
+      },
+      {
+        title: '原子结构',
+        content: '原子由质子、中子和电子组成。质子带正电，电子带负电，中子不带电。',
+        type: 'atom'
+      },
+      {
+        title: '水循环',
+        content: '水循环包括蒸发、凝结、降水等过程，是地球上水的重要循环方式。',
+        type: 'water-cycle'
+      },
+      {
+        title: '植物生长',
+        content: '植物通过光合作用制造食物，需要阳光、水和二氧化碳。',
+        type: 'plant-growth'
+      },
+      {
+        title: '人体骨骼',
+        content: '人体有206块骨头，组成骨骼系统，支撑身体并保护内脏器官。',
+        type: 'skeleton'
+      }
+    ];
+    
+    let currentSlideIndex = 0;
+    let autoPlay = false;
+    let autoPlayInterval = null;
+    
+    // ==================== 场景初始化 ====================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000011);
+    const camera = new THREE.PerspectiveCamera(
+      75, 
+      win.innerWidth / win.innerHeight, 
+      0.1, 
+      2000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    // 设置渲染器
+    renderer.setSize(win.innerWidth, win.innerHeight);
+    renderer.setPixelRatio(win.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    // VR模式相机
+    camera.position.set(0, 1.6, 0);
+    
+    // ==================== 添加光照 ====================
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(0, 10, 0);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+    
+    // 多点光源营造VR环境
+    const pointLights = [];
+    for (let i = 0; i < 6; i++) {
+      const light = new THREE.PointLight(0x667eea, 0.5, 50);
+      const angle = (i / 6) * Math.PI * 2;
+      light.position.set(
+        Math.cos(angle) * 20,
+        5,
+        Math.sin(angle) * 20
+      );
+      scene.add(light);
+      pointLights.push(light);
+    }
+    
+    // ==================== 创建VR地面 ====================
+    const groundGeometry = new THREE.PlaneGeometry(200, 200);
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x111122,
+      roughness: 0.8,
+      metalness: 0.2
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    // 创建网格地面
+    const gridHelper = new THREE.GridHelper(200, 200, 0x000066, 0x000033);
+    scene.add(gridHelper);
+    
+    // ==================== 环绕显示面板 ====================
+    let displayPanels = [];
+    
+    function createDisplayPanel(text, position, rotation) {
+      const panelGroup = new THREE.Group();
+      
+      // 面板
+      const panelGeometry = new THREE.PlaneGeometry(8, 4);
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      ctx.fillStyle = 'rgba(102, 126, 234, 0.2)';
+      ctx.fillRect(0, 0, 512, 256);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 48px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, 256, 128);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const panelMaterial = new THREE.MeshBasicMaterial({ 
+        map: texture,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+      const panel = new THREE.Mesh(panelGeometry, panelMaterial);
+      panelGroup.add(panel);
+      
+      // 发光边框
+      const borderGeometry = new THREE.PlaneGeometry(8.2, 4.2);
+      const borderMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x667eea,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.5
+      });
+      const border = new THREE.Mesh(borderGeometry, borderMaterial);
+      panelGroup.add(border);
+      
+      panelGroup.position.set(position.x, position.y, position.z);
+      panelGroup.rotation.set(rotation.x, rotation.y, rotation.z);
+      
+      return panelGroup;
+    }
+    
+    // ==================== 3D对象生成器 ====================
+    let current3DObject = null;
+    
+    function createSolarSystem() {
+      const group = new THREE.Group();
+      
+      // 太阳
+      const sun = new THREE.Mesh(
+        new THREE.SphereGeometry(1.5, 32, 32),
+        new THREE.MeshStandardMaterial({ 
+          color: 0xffd700,
+          emissive: 0xffd700,
+          emissiveIntensity: 1
+        })
+      );
+      group.add(sun);
+      
+      // 行星轨道
+      const planetColors = [0x888888, 0xffaa00, 0x4a90e2, 0xff5733, 0x8b4513, 0xffd700, 0x00bcd4, 0x4a4a4a];
+      const planetSizes = [0.4, 0.6, 0.65, 0.5, 2, 1.5, 1.2, 1.1];
+      
+      for (let i = 0; i < 8; i++) {
+        const planet = new THREE.Mesh(
+          new THREE.SphereGeometry(planetSizes[i], 32, 32),
+          new THREE.MeshStandardMaterial({ color: planetColors[i] })
+        );
+        
+        const angle = (i / 8) * Math.PI * 2;
+        const radius = 2 + i * 1.5;
+        planet.position.set(
+          Math.cos(angle) * radius,
+          (Math.random() - 0.5) * 0.5,
+          Math.sin(angle) * radius
+        );
+        
+        group.add(planet);
+      }
+      
+      group.position.set(0, 3, -15);
+      return group;
+    }
+    
+    function createAtom() {
+      const group = new THREE.Group();
+      
+      // 原子核
+      const nucleus = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 32, 32),
+        new THREE.MeshStandardMaterial({ 
+          color: 0xff6b6b,
+          emissive: 0xff0000,
+          emissiveIntensity: 0.5
+        })
+      );
+      group.add(nucleus);
+      
+      // 电子轨道
+      for (let i = 0; i < 3; i++) {
+        const orbit = new THREE.RingGeometry(2 + i, 2.2 + i, 64);
+        const orbitMaterial = new THREE.MeshBasicMaterial({ 
+          color: 0x00bcd4,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.3
+        });
+        const orbitMesh = new THREE.Mesh(orbit, orbitMaterial);
+        orbitMesh.rotation.x = Math.PI / 2;
+        group.add(orbitMesh);
+        
+        // 电子
+        const electron = new THREE.Mesh(
+          new THREE.SphereGeometry(0.1, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0x4caf50 })
+        );
+        const angle = (i / 3) * Math.PI * 2;
+        electron.position.set(
+          Math.cos(angle) * (2 + i),
+          0,
+          Math.sin(angle) * (2 + i)
+        );
+        electron.userData = { angle: angle, radius: 2 + i, speed: 0.01 + i * 0.01 };
+        group.add(electron);
+      }
+      
+      group.position.set(0, 3, -15);
+      return group;
+    }
+    
+    function createWaterCycle() {
+      const group = new THREE.Group();
+      
+      // 云朵
+      for (let i = 0; i < 5; i++) {
+        const cloud = new THREE.Mesh(
+          new THREE.BoxGeometry(1, 0.5, 1),
+          new THREE.MeshBasicMaterial({ 
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.6
+          })
+        );
+        cloud.position.set((i - 2) * 1.5, 3, -15);
+        cloud.scale.set(1 + Math.random() * 0.5, 1, 1 + Math.random() * 0.5);
+        group.add(cloud);
+      }
+      
+      // 水
+      const water = new THREE.Mesh(
+        new THREE.BoxGeometry(10, 0.5, 10),
+        new THREE.MeshStandardMaterial({ 
+          color: 0x2196f3,
+          transparent: true,
+          opacity: 0.7
+        })
+      );
+      water.position.set(0, -0.5, -15);
+      group.add(water);
+      
+      // 蒸发箭头
+      for (let i = 0; i < 3; i++) {
+        const arrow = new THREE.ConeGeometry(0.2, 1, 16);
+        const arrowMesh = new THREE.Mesh(
+          arrow,
+          new THREE.MeshStandardMaterial({ color: 0x4caf50 })
+        );
+        arrowMesh.position.set((i - 1) * 2, 1.5, -15);
+        arrowMesh.rotation.x = Math.PI;
+        group.add(arrowMesh);
+      }
+      
+      group.position.set(0, 0, 0);
+      return group;
+    }
+    
+    function createPlantGrowth() {
+      const group = new THREE.Group();
+      
+      // 土壤
+      const soil = new THREE.Mesh(
+        new THREE.BoxGeometry(6, 0.5, 6),
+        new THREE.MeshStandardMaterial({ color: 0x8b4513 })
+      );
+      soil.position.set(0, -0.75, -15);
+      group.add(soil);
+      
+      // 植物
+      for (let i = 0; i < 3; i++) {
+        const stem = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.1, 2, 16),
+          new THREE.MeshStandardMaterial({ color: 0x228b22 })
+        );
+        stem.position.set((i - 1) * 2, 1, -15);
+        group.add(stem);
+        
+        // 叶子
+        const leaf = new THREE.Mesh(
+          new THREE.ConeGeometry(0.5, 1, 8),
+          new THREE.MeshStandardMaterial({ color: 0x32cd32 })
+        );
+        leaf.position.set((i - 1) * 2, 2.5, -15);
+        leaf.rotation.x = -Math.PI / 2;
+        group.add(leaf);
+        
+        // 花朵
+        const flower = new THREE.Mesh(
+          new THREE.SphereGeometry(0.3, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0xff6b9d })
+        );
+        flower.position.set((i - 1) * 2, 3.2, -15);
+        group.add(flower);
+      }
+      
+      // 太阳光
+      const sun = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 16, 16),
+        new THREE.MeshStandardMaterial({ 
+          color: 0xffd700,
+          emissive: 0xffd700,
+          emissiveIntensity: 0.8
+        })
+      );
+      sun.position.set(0, 8, -15);
+      group.add(sun);
+      
+      group.position.set(0, 0, 0);
+      return group;
+    }
+    
+    function createSkeleton() {
+      const group = new THREE.Group();
+      
+      // 头骨
+      const skull = new THREE.Mesh(
+        new THREE.SphereGeometry(0.8, 32, 32),
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      skull.position.set(0, 4, -15);
+      group.add(skull);
+      
+      // 躯干
+      const torso = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 3, 0.8),
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      torso.position.set(0, 1.5, -15);
+      group.add(torso);
+      
+      // 手臂
+      const armPositions = [
+        { x: -1.5, z: -15 },
+        { x: 1.5, z: -15 }
+      ];
+      
+      armPositions.forEach(pos => {
+        // 上臂
+        const upperArm = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.3, 0.3, 1.5, 16),
+          new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        upperArm.position.set(pos.x, 2.5, pos.z);
+        group.add(upperArm);
+        
+        // 下臂
+        const lowerArm = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.25, 0.25, 1.2, 16),
+          new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        lowerArm.position.set(pos.x, 1, pos.z);
+        group.add(lowerArm);
+      });
+      
+      // 腿
+      const legPositions = [
+        { x: -0.5, z: -15 },
+        { x: 0.5, z: -15 }
+      ];
+      
+      legPositions.forEach(pos => {
+        // 大腿
+        const thigh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.35, 0.35, 1.8, 16),
+          new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        thigh.position.set(pos.x, -0.5, pos.z);
+        group.add(thigh);
+        
+        // 小腿
+        const calf = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.3, 0.3, 1.5, 16),
+          new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        calf.position.set(pos.x, -2, pos.z);
+        group.add(calf);
+      });
+      
+      group.position.set(0, 0, 0);
+      return group;
+    }
+    
+    // ==================== 课件管理 ====================
+    const slideGenerators = {
+      'solar-system': createSolarSystem,
+      'atom': createAtom,
+      'water-cycle': createWaterCycle,
+      'plant-growth': createPlantGrowth,
+      'skeleton': createSkeleton
+    };
+    
+    function loadSlide(index) {
+      if (index < 0 || index >= courseContent.length) return;
+      
+      currentSlideIndex = index;
+      const slide = courseContent[index];
+      
+      // 显示信息
+      document.getElementById('infoTitle').textContent = slide.title;
+      document.getElementById('infoContent').textContent = slide.content;
+      document.getElementById('infoHud').classList.add('show');
+      
+      setTimeout(() => {
+        document.getElementById('infoHud').classList.remove('show');
+      }, 3000);
+      
+      // 清除旧对象
+      if (current3DObject) {
+        scene.remove(current3DObject);
+      }
+      
+      // 创建新对象
+      const generator = slideGenerators[slide.type];
+      if (generator) {
+        current3DObject = generator();
+        scene.add(current3DObject);
+      }
+      
+      // 更新进度
+      document.getElementById('currentSlide').textContent = index + 1;
+      document.getElementById('totalSlides').textContent = courseContent.length;
+      document.getElementById('progressBar').style.width = 
+        `${((index + 1) / courseContent.length) * 100}%`;
+      
+      // 更新大纲
+      updateOutline();
+    }
+    
+    function updateOutline() {
+      const itemsContainer = document.getElementById('courseItems');
+      itemsContainer.innerHTML = '';
+      
+      courseContent.forEach((slide, index) => {
+        const item = document.createElement('div');
+        item.className = 'course-item' + (index === currentSlideIndex ? ' active' : '');
+        item.innerHTML = `
+          <strong>${index + 1}. ${slide.title}</strong><br>
+          <small>${slide.content.substring(0, 40)}...</small>
+        `;
+        item.onclick = () => loadSlide(index);
+        itemsContainer.appendChild(item);
+      });
+    }
+    
+    function nextSlide() {
+      if (currentSlideIndex < courseContent.length - 1) {
+        loadSlide(currentSlideIndex + 1);
+      }
+    }
+    
+    function previousSlide() {
+      if (currentSlideIndex > 0) {
+        loadSlide(currentSlideIndex - 1);
+      }
+    }
+    
+    function toggleAutoPlay() {
+      autoPlay = !autoPlay;
+      const button = event.target;
+      
+      if (autoPlay) {
+        button.textContent = '⏸ 暂停';
+        autoPlayInterval = setInterval(() => {
+          if (currentSlideIndex < courseContent.length - 1) {
+            nextSlide();
+          } else {
+            toggleAutoPlay();
+          }
+        }, 5000);
+      } else {
+        button.textContent = '▶ 播放';
+        if (autoPlayInterval) {
+          clearInterval(autoPlayInterval);
+        }
+      }
+    }
+    
+    // ==================== 初始化相机控制 ====================
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.minDistance = 1;
+    controls.maxDistance = 20;
+    
+    // ==================== 动画循环 ====================
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      controls.update();
+      
+      // 旋转当前对象
+      if (current3DObject) {
+        current3DObject.rotation.y += 0.01;
+      }
+      
+      renderer.render(scene, camera);
+    }
+    
+    animate();
+    
+    // 初始化
+    updateOutline();
+    loadSlide(0);
+    
+    // 键盘控制
+    win.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') previousSlide();
+      if (e.key === 'ArrowRight') nextSlide();
+      if (e.key === ' ') toggleAutoPlay();
+    });
+    
+    // 返回场景数据
+    return { camera, renderer, controls };
+    })(window);
+    
+    // 保存到全局
+    window.sceneData = sceneData;
+    
+    // ==================== 窗口大小调整 ====================
+    window.addEventListener('resize', () => {
+      if (window.sceneData) {
+        window.sceneData.camera.aspect = window.innerWidth / window.innerHeight;
+        window.sceneData.camera.updateProjectionMatrix();
+        window.sceneData.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
+    
+    // ==================== 导出函数 ====================
+    window.nextSlide = () => {
+      if (window.sceneData) {
+        // 从sceneData访问内部变量需要特殊处理
+        // 这里简化处理，通过自定义事件
+        window.dispatchEvent(new Event('nextSlide'));
+      }
+    };
+    
+    window.previousSlide = () => {
+      window.dispatchEvent(new Event('previousSlide'));
+    };
+    
+    window.toggleAutoPlay = () => {
+      window.dispatchEvent(new Event('toggleAutoPlay'));
+    };
+    
+    console.log('🎥 VR环绕式课件播放器已初始化');
+    console.log('💡 使用鼠标拖拽旋转视角');
+    console.log('💡 使用滚轮缩放');
+    console.log('💡 使用键盘方向键切换页面');
+  </script>
+</body>
+</html>
+

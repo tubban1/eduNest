@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D射击游戏</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    /* 游戏UI */
+    .game-ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      z-index: 10;
+      min-width: 200px;
+    }
+    
+    .game-ui h3 {
+      margin-bottom: 10px;
+      color: #0f0;
+      font-size: 16px;
+    }
+    
+    .game-ui p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    
+    .game-ui button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      background: #ff0000;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    
+    .game-ui button:hover {
+      background: #cc0000;
+    }
+    
+    .score {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      z-index: 10;
+      text-align: center;
+    }
+    
+    .score h2 {
+      font-size: 24px;
+      color: #ff0000;
+      margin-bottom: 5px;
+    }
+    
+    .score p {
+      font-size: 16px;
+      margin: 3px 0;
+    }
+    
+    /* 十字准星 */
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 30px;
+      height: 30px;
+      z-index: 100;
+      pointer-events: none;
+    }
+    
+    .crosshair::before,
+    .crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.8);
+    }
+    
+    .crosshair::before {
+      width: 20px;
+      height: 2px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .crosshair::after {
+      width: 2px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    /* 加载提示 */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+      z-index: 100;
+    }
+    
+    .loading.hidden {
+      display: none;
+    }
+  </style>
+  
+  <!-- Three.js 基础库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 加载提示 -->
+  <div class="loading" id="loading">加载中...</div>
+  
+  <!-- 3D 容器 -->
+  <div id="container"></div>
+  
+  <!-- 十字准星 -->
+  <div class="crosshair"></div>
+  
+  <!-- 游戏UI -->
+  <div class="game-ui" id="gameUI">
+    <h3>⚔️ 射击游戏</h3>
+    <p>🎯 击中目标得分</p>
+    <p>🎮 鼠标移动瞄准</p>
+    <p>🖱️ 点击射击</p>
+    <p>⌨️ R键换弹</p>
+    <button onclick="resetGame()">重新开始</button>
+  </div>
+  
+  <!-- 分数显示 -->
+  <div class="score" id="score">
+    <h2 id="scoreValue">0</h2>
+    <p>得分</p>
+    <p id="ammo">🔫 弹药: 30</p>
+    <p id="targets">🎯 目标: 10</p>
+  </div>
+  
+  <script>
+    const sceneData = (function(win) {
+      'use strict';
+      
+    // 隐藏加载提示
+    document.getElementById('loading').classList.add('hidden');
+    
+    // ==================== 游戏状态 ====================
+    let score = 0;
+    let ammo = 30;
+    let targets = [];
+    let bullets = [];
+    let gameStarted = true;
+    
+    // ==================== 场景初始化 ====================
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75, 
+      win.innerWidth / win.innerHeight, 
+      0.1, 
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    // 设置渲染器
+    renderer.setSize(win.innerWidth, win.innerHeight);
+    renderer.setPixelRatio(win.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    // 相机位置（第一人称视角）
+    camera.position.set(0, 1.6, 0);
+    
+    // ==================== 添加光照 ====================
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(0, 20, 10);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+    
+    // ==================== 创建天空盒 ====================
+    const skyGeometry = new THREE.SphereGeometry(500, 32, 32);
+    const skyMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x87ceeb,
+      side: THREE.BackSide
+    });
+    const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+    scene.add(sky);
+    
+    // ==================== 创建地面 ====================
+    const groundGeometry = new THREE.PlaneGeometry(100, 100);
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x2d5016,
+      roughness: 0.8
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.5;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    // 添加草
+    const grassGeometry = new THREE.BoxGeometry(0.2, 0.5, 0.2);
+    const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+    for (let i = 0; i < 100; i++) {
+      const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+      grass.position.set(
+        (Math.random() - 0.5) * 80,
+        0,
+        (Math.random() - 0.5) * 80
+      );
+      grass.scale.set(Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5);
+      scene.add(grass);
+    }
+    
+    // ==================== 创建目标 ====================
+    function createTarget(x, z) {
+      const targetGroup = new THREE.Group();
+      
+      // 靶心
+      const targetGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
+      const targetMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+      const target = new THREE.Mesh(targetGeometry, targetMaterial);
+      target.position.y = 1;
+      target.castShadow = true;
+      target.userData = { hit: false };
+      targetGroup.add(target);
+      
+      // 环
+      const ring1 = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.5, 1.5, 0.08, 32),
+        new THREE.MeshStandardMaterial({ color: 0x0000ff })
+      );
+      ring1.position.y = 1;
+      ring1.userData = { hit: false };
+      targetGroup.add(ring1);
+      
+      const ring2 = new THREE.Mesh(
+        new THREE.CylinderGeometry(2, 2, 0.05, 32),
+        new THREE.MeshStandardMaterial({ color: 0xffff00 })
+      );
+      ring2.position.y = 1;
+      ring2.userData = { hit: false };
+      targetGroup.add(ring2);
+      
+      // 支架
+      const post = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 2, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0x654321 })
+      );
+      post.position.y = -0.5;
+      targetGroup.add(post);
+      
+      targetGroup.position.set(x, 0, z);
+      targetGroup.userData.isTarget = true;
+      
+      return { group: targetGroup, target: target };
+    }
+    
+    // 生成随机目标
+    function spawnTargets() {
+      targets = [];
+      for (let i = 0; i < 10; i++) {
+        const x = (Math.random() - 0.5) * 60;
+        const z = Math.random() * 50 + 10;
+        const targetObj = createTarget(x, z);
+        scene.add(targetObj.group);
+        targets.push(targetObj);
+      }
+      updateUI();
+    }
+    
+    // 生成初始目标
+    spawnTargets();
+    
+    // ==================== 射击系统 ====================
+    function shoot() {
+      if (ammo <= 0) {
+        console.log('没有弹药了！按R键换弹');
+        return;
+      }
+      
+      ammo--;
+      updateUI();
+      
+      // 创建子弹
+      const bulletGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+      const bulletMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xffff00,
+        emissive: 0xffff00,
+        emissiveIntensity: 0.5
+      });
+      const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+      
+      // 子弹位置
+      const direction = new THREE.Vector3(0, 0, -1);
+      bullet.position.copy(camera.position);
+      bullet.position.y -= 0.5;
+      
+      // 子弹速度
+      bullet.userData = {
+        velocity: direction.multiplyScalar(0.5),
+        life: 2.0
+      };
+      
+      scene.add(bullet);
+      bullets.push(bullet);
+      
+      // 射击效果
+      const sparkle = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 8, 8),
+        new THREE.MeshStandardMaterial({ 
+          color: 0xff6600,
+          emissive: 0xff6600,
+          emissiveIntensity: 1
+        })
+      );
+      sparkle.position.copy(camera.position);
+      sparkle.position.y -= 0.3;
+      scene.add(sparkle);
+      
+      setTimeout(() => scene.remove(sparkle), 50);
+    }
+    
+    // ==================== 碰撞检测 ====================
+    function checkCollisions() {
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      
+      bullets.forEach((bullet, bulletIndex) => {
+        bullet.userData.life -= 0.016;
+        
+        if (bullet.userData.life <= 0) {
+          scene.remove(bullet);
+          bullets.splice(bulletIndex, 1);
+          return;
+        }
+        
+        bullet.position.add(bullet.userData.velocity);
+        
+        // 碰撞检测
+        targets.forEach((targetObj, targetIndex) => {
+          if (!targetObj.target.userData.hit) {
+            const distance = targetObj.group.position.distanceTo(bullet.position);
+            if (distance < 2.5) {
+              // 击中目标
+              targetObj.target.userData.hit = true;
+              score += 100;
+              updateUI();
+              
+              // 爆炸效果
+              const explosion = new THREE.Mesh(
+                new THREE.SphereGeometry(2, 16, 16),
+                new THREE.MeshStandardMaterial({ 
+                  color: 0xff6600,
+                  transparent: true,
+                  opacity: 0.8,
+                  emissive: 0xff0000,
+                  emissiveIntensity: 1
+                })
+              );
+              explosion.position.copy(targetObj.group.position);
+              explosion.position.y += 1;
+              scene.add(explosion);
+              
+              setTimeout(() => {
+                scene.remove(explosion);
+                scene.remove(targetObj.group);
+                targets.splice(targetIndex, 1);
+              }, 300);
+              
+              // 移除子弹
+              scene.remove(bullet);
+              bullets.splice(bulletIndex, 1);
+              
+              // 检查是否完成
+              if (targets.length === 0) {
+                setTimeout(() => {
+                  alert('🎉 恭喜！你完成了！得分: ' + score);
+                  resetGame();
+                }, 500);
+              }
+            }
+          }
+        });
+      });
+    }
+    
+    // ==================== UI更新 ====================
+    function updateUI() {
+      document.getElementById('scoreValue').textContent = score;
+      document.getElementById('ammo').textContent = '🔫 弹药: ' + ammo;
+      document.getElementById('targets').textContent = '🎯 目标: ' + targets.filter(t => !t.target.userData.hit).length;
+    }
+    
+    function resetGame() {
+      // 清理场景
+      targets.forEach(target => scene.remove(target.group));
+      bullets.forEach(bullet => scene.remove(bullet));
+      targets = [];
+      bullets = [];
+      
+      // 重置状态
+      score = 0;
+      ammo = 30;
+      gameStarted = true;
+      
+      // 重新生成目标
+      spawnTargets();
+      updateUI();
+    }
+    
+    // ==================== 鼠标控制 ====================
+    let mouse = { x: 0, y: 0 };
+    let yaw = 0;
+    let pitch = 0;
+    
+    function onMouseMove(event) {
+      mouse.x = (event.clientX / win.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / win.innerHeight) * 2 + 1;
+      
+      yaw = mouse.x * 0.02;
+      pitch = mouse.y * 0.02;
+      
+      camera.rotation.y = yaw;
+      camera.rotation.x = pitch;
+    }
+    
+    function onMouseClick(event) {
+      if (gameStarted) {
+        shoot();
+      }
+    }
+    
+    win.addEventListener('mousemove', onMouseMove);
+    win.addEventListener('click', onMouseClick);
+    
+    // 键盘控制
+    win.addEventListener('keydown', (event) => {
+      if (event.key === 'r' || event.key === 'R') {
+        ammo = 30;
+        updateUI();
+        console.log('换弹完成！');
+      }
+      if (event.key === ' ') {
+        event.preventDefault();
+        shoot();
+      }
+    });
+    
+    // ==================== 动画循环 ====================
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      if (gameStarted) {
+        checkCollisions();
+      }
+      
+      // 渲染场景
+      renderer.render(scene, camera);
+    }
+    
+    // 启动动画
+    animate();
+    
+    // 将函数暴露到全局作用域
+    window.resetGame = resetGame;
+    
+    // 返回场景数据供外部使用
+    return { camera, renderer, scene };
+    })(window);
+    
+    // 保存到全局
+    window.sceneData = sceneData;
+    
+    // ==================== 窗口大小调整 ====================
+    window.addEventListener('resize', () => {
+      if (window.sceneData) {
+        window.sceneData.camera.aspect = window.innerWidth / window.innerHeight;
+        window.sceneData.camera.updateProjectionMatrix();
+        window.sceneData.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
+    
+    // ==================== 控制台信息 ====================
+    console.log('🎮 3D 射击游戏已初始化');
+    console.log('💡 使用鼠标移动视角');
+    console.log('💡 点击鼠标或按空格键射击');
+    console.log('💡 按R键换弹');
+  </script>
+</body>
+</html>
+

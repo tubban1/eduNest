@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D 化学元素学习游戏</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100vw; height: 100vh; overflow: hidden; background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+    #container { width: 100%; height: 100%; position: relative; }
+    .hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); padding: 16px 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 10; min-width: 420px; text-align: center; }
+    .hud h1 { font-size: 20px; color: #203a43; }
+    .question { margin: 12px 0; font-size: 18px; color: #333; }
+    .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+    .options button { padding: 10px 12px; border: 2px solid #2c5364; background: white; color: #2c5364; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; }
+    .options button:hover { background: #2c5364; color: white; transform: translateY(-1px); }
+    .options button.correct { background: #4caf50 !important; color: white; border-color: #4caf50; }
+    .options button.wrong { background: #f44336 !important; color: white; border-color: #f44336; }
+    .panel { position: absolute; right: 20px; top: 20px; background: rgba(255,255,255,0.95); padding: 16px; border-radius: 12px; z-index: 10; width: 260px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+    .panel h3 { color: #203a43; margin-bottom: 8px; }
+    .panel p { margin: 6px 0; color: #333; }
+    .progress { height: 8px; background: #e0e0e0; border-radius: 6px; overflow: hidden; margin-top: 8px; }
+    .progress > span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #2c5364, #00bcd4); transition: width 0.3s; }
+    .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: #fff; padding: 20px 30px; border-radius: 12px; font-size: 22px; z-index: 1000; display: none; }
+    .toast.show { display: block; }
+    .toast.correct { background: rgba(76,175,80,0.95); }
+    .toast.wrong { background: rgba(244,67,54,0.95); }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="container"></div>
+
+  <div class="hud">
+    <h1>🔬 3D 化学元素学习</h1>
+    <div class="question" id="question">题目加载中...</div>
+    <div class="options" id="options"></div>
+  </div>
+
+  <div class="panel">
+    <h3>📊 进度与信息</h3>
+    <p>得分：<strong id="score">0</strong></p>
+    <p>已答：<strong id="progressText">0/10</strong></p>
+    <div class="progress"><span id="progressBar"></span></div>
+    <p style="margin-top:10px">当前元素：<strong id="elementName">-</strong></p>
+    <p>符号：<strong id="elementSymbol">-</strong></p>
+    <p>原子序数：<strong id="elementNumber">-</strong></p>
+    <p>类别：<strong id="elementCategory">-</strong></p>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (function(win){
+    'use strict';
+
+    // 元素数据（示例选择了常见元素）
+    const elements = [
+      { name: '氢', symbol: 'H', number: 1, category: '非金属', color: 0x90caf9 },
+      { name: '氦', symbol: 'He', number: 2, category: '稀有气体', color: 0xffcc80 },
+      { name: '碳', symbol: 'C', number: 6, category: '非金属', color: 0x9e9e9e },
+      { name: '氧', symbol: 'O', number: 8, category: '非金属', color: 0x64b5f6 },
+      { name: '钠', symbol: 'Na', number: 11, category: '碱金属', color: 0xffab91 },
+      { name: '镁', symbol: 'Mg', number: 12, category: '碱土金属', color: 0xa5d6a7 },
+      { name: '铝', symbol: 'Al', number: 13, category: '金属', color: 0xb0bec5 },
+      { name: '硅', symbol: 'Si', number: 14, category: '类金属', color: 0x90a4ae },
+      { name: '氯', symbol: 'Cl', number: 17, category: '卤素', color: 0xaed581 },
+      { name: '铁', symbol: 'Fe', number: 26, category: '过渡金属', color: 0xff8a65 }
+    ];
+
+    // 游戏状态
+    let score = 0;
+    let answered = 0;
+    let current = null;
+    let options = [];
+    let currentMesh = null;
+
+    // Three.js 场景
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1b2b);
+    const camera = new THREE.PerspectiveCamera(60, win.innerWidth / win.innerHeight, 0.1, 1000);
+    camera.position.set(0, 3, 10);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(win.innerWidth, win.innerHeight);
+    renderer.setPixelRatio(win.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.minDistance = 5;
+    controls.maxDistance = 20;
+
+    // 灯光
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(5, 10, 7);
+    dir.castShadow = true;
+    scene.add(dir);
+
+    // 地面
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(50, 50),
+      new THREE.MeshStandardMaterial({ color: 0x1c2230, roughness: 0.9 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -1.5;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // 原子模型生成（简化：核+电子）
+    function createAtomModel(element) {
+      const group = new THREE.Group();
+
+      // 核
+      const nucleus = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 32, 32),
+        new THREE.MeshStandardMaterial({ color: element.color, metalness: 0.2, roughness: 0.4 })
+      );
+      nucleus.castShadow = true;
+      group.add(nucleus);
+
+      // 电子轨道与电子（按壳层近似分布）
+      const shells = [2, 8, 8];
+      let remaining = Math.min(element.number, 18);
+      let radius = 2.0;
+      for (let s = 0; s < shells.length && remaining > 0; s++) {
+        const inShell = Math.min(shells[s], remaining);
+        for (let i = 0; i < inShell; i++) {
+          const theta = (i / inShell) * Math.PI * 2;
+          const electron = new THREE.Mesh(
+            new THREE.SphereGeometry(0.12, 16, 16),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x88ccff, emissiveIntensity: 0.6 })
+          );
+          electron.position.set(Math.cos(theta) * radius, 0, Math.sin(theta) * radius);
+          electron.userData = { angle: theta, radius: radius, speed: 0.01 + s * 0.005 };
+          group.add(electron);
+        }
+        radius += 0.8;
+        remaining -= inShell;
+      }
+
+      // 标签
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0,0,256,128);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 40px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(element.symbol, 128, 60);
+      ctx.font = 'bold 22px Arial';
+      ctx.fillText(`${element.name} (${element.number})`, 128, 100);
+      const labelTex = new THREE.CanvasTexture(canvas);
+      const label = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.5, 1.75),
+        new THREE.MeshBasicMaterial({ map: labelTex, transparent: true })
+      );
+      label.position.set(0, 2.2, 0);
+      group.add(label);
+
+      group.position.set(0, 0, 0);
+      return group;
+    }
+
+    function spinElectrons(group) {
+      group.children.forEach(child => {
+        if (child.geometry && child.geometry.type === 'SphereGeometry' && child.userData && child.userData.radius) {
+          child.userData.angle += child.userData.speed;
+          child.position.x = Math.cos(child.userData.angle) * child.userData.radius;
+          child.position.z = Math.sin(child.userData.angle) * child.userData.radius;
+        }
+      });
+    }
+
+    // UI 元素
+    const $q = document.getElementById('question');
+    const $opts = document.getElementById('options');
+    const $toast = document.getElementById('toast');
+    const $score = document.getElementById('score');
+    const $progressText = document.getElementById('progressText');
+    const $progressBar = document.getElementById('progressBar');
+    const $eName = document.getElementById('elementName');
+    const $eSymbol = document.getElementById('elementSymbol');
+    const $eNumber = document.getElementById('elementNumber');
+    const $eCategory = document.getElementById('elementCategory');
+
+    function showToast(text, type) {
+      $toast.textContent = text;
+      $toast.className = `toast ${type} show`;
+      setTimeout(() => { $toast.className = 'toast'; }, 1000);
+    }
+
+    function updatePanel(el) {
+      $eName.textContent = el.name;
+      $eSymbol.textContent = el.symbol;
+      $eNumber.textContent = el.number;
+      $eCategory.textContent = el.category;
+    }
+
+    function genQuestion() {
+      current = elements[Math.floor(Math.random() * elements.length)];
+      const mode = Math.random() < 0.5 ? 'symbol' : 'number';
+      if (mode === 'symbol') {
+        $q.textContent = `元素 ${current.name} 的化学符号是？`;
+        options = shuffle([current.symbol, ...pickIncorrect('symbol', current.symbol, 3)]);
+      } else {
+        $q.textContent = `元素 ${current.name} 的原子序数是？`;
+        options = shuffle([String(current.number), ...pickIncorrect('number', current.number, 3).map(String)]);
+      }
+
+      // 渲染选项
+      $opts.innerHTML = '';
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(opt);
+        $opts.appendChild(btn);
+      });
+
+      // 更新3D模型
+      if (currentMesh) scene.remove(currentMesh);
+      currentMesh = createAtomModel(current);
+      scene.add(currentMesh);
+      updatePanel(current);
+    }
+
+    function shuffle(arr){ return arr.sort(() => Math.random() - 0.5); }
+    function pickIncorrect(field, correct, n){
+      const pool = elements.map(e => e[field]).filter(v => v !== correct);
+      return shuffle(pool).slice(0, n);
+    }
+
+    function checkAnswer(sel){
+      const modeAskSymbol = $q.textContent.includes('化学符号');
+      const right = modeAskSymbol ? sel === current.symbol : Number(sel) === current.number;
+      const buttons = [...$opts.querySelectorAll('button')];
+      buttons.forEach(b => {
+        const ok = modeAskSymbol ? b.textContent === current.symbol : Number(b.textContent) === current.number;
+        b.classList.add(ok ? 'correct' : (b.textContent === sel ? 'wrong' : ''));
+        b.disabled = true;
+      });
+
+      if (right) { score += 10; showToast('✓ 正确！', 'correct'); }
+      else { showToast('✗ 再想想', 'wrong'); }
+
+      answered += 1;
+      $score.textContent = score;
+      $progressText.textContent = `${answered}/10`;
+      $progressBar.style.width = `${(answered/10)*100}%`;
+
+      setTimeout(() => {
+        if (answered >= 10) {
+          alert(`本轮结束！得分：${score}`);
+          score = 0; answered = 0; $score.textContent = '0'; $progressText.textContent = '0/10'; $progressBar.style.width = '0%';
+        }
+        genQuestion();
+      }, 800);
+    }
+
+    // 动画循环
+    function animate(){
+      requestAnimationFrame(animate);
+      controls.update();
+      if (currentMesh) spinElectrons(currentMesh);
+      renderer.render(scene, camera);
+    }
+
+    // 初始化
+    genQuestion();
+    animate();
+
+    // 自适应
+    win.addEventListener('resize', () => {
+      camera.aspect = win.innerWidth / win.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(win.innerWidth, win.innerHeight);
+    });
+  })(window);
+  </script>
+</body>
+</html>

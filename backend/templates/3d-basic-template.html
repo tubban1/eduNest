@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D建模展示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    /* 控制面板样式（可选） */
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+      min-width: 200px;
+    }
+    
+    .controls h3 {
+      margin-bottom: 10px;
+      color: #333;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .controls button {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border: none;
+      background: #667eea;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s;
+    }
+    
+    .controls button:hover {
+      background: #5568d3;
+    }
+    
+    /* 加载提示 */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+      z-index: 100;
+    }
+    
+    /* 隐藏加载提示 */
+    .loading.hidden {
+      display: none;
+    }
+  </style>
+  
+  <!-- Three.js 基础库 - 使用 UMD 版本避免跨域问题 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 加载提示 -->
+  <div class="loading" id="loading">加载中...</div>
+  
+  <!-- 3D 容器 -->
+  <div id="container"></div>
+  
+  <!-- 可选控制面板 -->
+  <div class="controls" id="controls" style="display: none;">
+    <h3>场景控制</h3>
+    <button onclick="resetCamera()">重置视角</button>
+    <button onclick="toggleWireframe()">切换线框</button>
+    <button onclick="changeBackground()">更换背景</button>
+    <button onclick="addRandomObject()">添加随机对象</button>
+  </div>
+  
+  <script>
+    // 隐藏加载提示
+    document.getElementById('loading').classList.add('hidden');
+    
+    // ==================== 场景初始化 ====================
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      45, 
+      window.innerWidth / window.innerHeight, 
+      0.1, 
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    // 设置渲染器
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    // 相机位置
+    camera.position.set(5, 5, 8);
+    camera.lookAt(0, 0, 0);
+    
+    // ==================== 添加光照 ====================
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+    
+    // ==================== 添加控制器 ====================
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.autoRotate = false;
+    
+    // ==================== 添加坐标轴和网格（可选）====================
+    const axesHelper = new THREE.AxesHelper(5);
+    scene.add(axesHelper);
+    
+    const gridHelper = new THREE.GridHelper(10, 10);
+    gridHelper.material.opacity = 0.3;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+    
+    // ==================== AI_GENERATED_CODE 占位符 ====================
+    // AI 生成的代码会插入到这里
+    // 例如：添加几何体、材质、动画等
+    
+    // 示例代码（作为占位符，AI 生成时会替换）
+    const exampleGeometry = new THREE.BoxGeometry(2, 2, 2);
+    const exampleMaterial = new THREE.MeshPhongMaterial({ 
+      color: 0x0077ff,
+      transparent: true,
+      opacity: 0.8
+    });
+    const exampleMesh = new THREE.Mesh(exampleGeometry, exampleMaterial);
+    exampleMesh.position.set(0, 1, 0);
+    scene.add(exampleMesh);
+    
+    // ==================== 控制面板功能 ====================
+    // 显示控制面板
+    document.getElementById('controls').style.display = 'block';
+    
+    // 重置相机
+    function resetCamera() {
+      camera.position.set(5, 5, 8);
+      camera.lookAt(0, 0, 0);
+      controls.reset();
+    }
+    
+    // 切换线框模式
+    let wireframeMode = false;
+    function toggleWireframe() {
+      wireframeMode = !wireframeMode;
+      scene.traverse((object) => {
+        if (object.isMesh) {
+          object.material.wireframe = wireframeMode;
+        }
+      });
+    }
+    
+    // 更换背景
+    let backgroundColors = [
+      new THREE.Color(0xf0f0f0), // 灰色
+      new THREE.Color(0x87ceeb), // 天蓝色
+      new THREE.Color(0xffa500), // 橙色
+      new THREE.Color(0x9370db)  // 紫色
+    ];
+    let bgIndex = 0;
+    function changeBackground() {
+      bgIndex = (bgIndex + 1) % backgroundColors.length;
+      scene.background = backgroundColors[bgIndex];
+    }
+    
+    // 添加随机对象
+    function addRandomObject() {
+      const geometry = new THREE.SphereGeometry(
+        Math.random() * 1 + 0.5, 
+        16, 
+        16
+      );
+      const material = new THREE.MeshPhongMaterial({
+        color: new THREE.Color().setHSL(Math.random(), 0.7, 0.6)
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      
+      mesh.position.set(
+        (Math.random() - 0.5) * 6,
+        (Math.random() - 0.5) * 4 + 2,
+        (Math.random() - 0.5) * 6
+      );
+      
+      scene.add(mesh);
+    }
+    
+    // ==================== 动画循环 ====================
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // 更新控制器
+      controls.update();
+      
+      // AI 生成的动画代码可以在这里添加
+      
+      // 渲染场景
+      renderer.render(scene, camera);
+    }
+    
+    // 启动动画
+    animate();
+    
+    // ==================== 窗口大小调整 ====================
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // ==================== 控制台信息 ====================
+    console.log('🎨 3D 场景已初始化');
+    console.log('📍 相机位置:', camera.position);
+    console.log('🎯 场景对象数量:', scene.children.length);
+    console.log('💡 提示：AI 生成的代码将替换示例代码部分');
+  </script>
+</body>
+</html>
+
