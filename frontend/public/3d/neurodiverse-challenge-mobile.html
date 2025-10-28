@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>3D 注意力与序列挑战（移动版）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100vw; height: 100vh; overflow: hidden; background: #0b1020; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif; }
+    #container { width: 100%; height: 100%; position: relative; touch-action: none; }
+
+    /* 顶部HUD（移动端紧凑） */
+    .hud { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.92); padding: 8px 10px; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); z-index: 10; min-width: 280px; text-align: center; }
+    .hud h1 { font-size: 16px; color: #17223b; }
+    .hud .meta { display: flex; gap: 10px; justify-content: center; margin-top: 4px; color: #333; font-size: 12px; }
+
+    /* 右上设置按钮 */
+    .settings-btn { position: absolute; top: 10px; right: 10px; z-index: 12; background: rgba(255,255,255,0.92); border: none; padding: 8px 10px; border-radius: 10px; font-size: 12px; color: #17223b; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+
+    /* 设置面板（浮层） */
+    .panel { position: absolute; right: 10px; top: 50px; background: rgba(255,255,255,0.98); padding: 12px; border-radius: 12px; z-index: 20; width: min(80vw, 320px); box-shadow: 0 10px 28px rgba(0,0,0,0.3); display: none; }
+    .panel.open { display: block; }
+    .panel h3 { color: #17223b; margin-bottom: 8px; font-size: 14px; }
+    .panel .row { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; font-size: 14px; color: #333; }
+    .panel button, .panel select { padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #17223b; }
+    .panel button.primary { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+
+    /* 屏幕底部引导（小屏简洁） */
+    .guide { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: #fff; padding: 6px 10px; border-radius: 10px; z-index: 10; font-size: 12px; max-width: 90vw; text-align: center; }
+
+    /* Toast 提示 */
+    .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: #fff; padding: 16px 22px; border-radius: 12px; font-size: 18px; z-index: 1000; display: none; }
+    .toast.show { display: block; }
+    .toast.good { background: rgba(34,197,94,0.95); }
+    .toast.warn { background: rgba(234,179,8,0.95); }
+    .toast.bad { background: rgba(239,68,68,0.95); }
+
+    /* 触控摇杆与按钮区 */
+    .controls { position: absolute; bottom: 10px; left: 0; right: 0; height: 110px; display: flex; justify-content: space-between; padding: 0 10px; z-index: 15; }
+    .joystick { position: relative; width: 110px; height: 110px; background: rgba(255,255,255,0.08); border-radius: 50%; border: 1px solid rgba(255,255,255,0.18); }
+    .stick { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; transform: translate(-50%, -50%); background: rgba(255,255,255,0.35); border-radius: 50%; border: 1px solid rgba(255,255,255,0.6); }
+
+    .btns { display: flex; align-items: center; gap: 10px; }
+    .btn { min-width: 84px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.92); color: #17223b; border: none; box-shadow: 0 6px 18px rgba(0,0,0,0.25); font-size: 14px; }
+    .btn.primary { background: #4f46e5; color: #fff; }
+
+    @media (min-width: 768px) {
+      .hud h1 { font-size: 18px; }
+      .btn { min-width: 96px; font-size: 15px; }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="container"></div>
+
+  <div class="hud">
+    <h1>🧠 注意力与序列挑战（移动）</h1>
+    <div class="meta">
+      <div>关卡：<span id="level">1</span></div>
+      <div>分数：<span id="score">0</span></div>
+      <div>时间：<span id="timeLeft">60</span>s</div>
+    </div>
+  </div>
+
+  <button class="settings-btn" id="settingsBtn">设置</button>
+  <div class="panel" id="panel">
+    <h3>设置</h3>
+    <div class="row"><span>难度</span>
+      <select id="difficulty">
+        <option value="easy">简单</option>
+        <option value="normal" selected>适中</option>
+        <option value="hard">困难</option>
+      </select>
+    </div>
+    <div class="row"><span>感官友好模式</span>
+      <button id="sensoryToggle">关闭</button>
+    </div>
+    <div class="row"><span>开始/重开</span>
+      <button class="primary" id="restartBtn">开始</button>
+    </div>
+    <div class="row"><span>提示次数</span>
+      <span id="hints">3</span></div>
+    <div class="row"><span>当前序列长度</span>
+      <span id="seqLen">3</span></div>
+  </div>
+
+  <div class="guide">观察中心图形顺序 → 用摇杆移动小球，依次到达四周对应平台。</div>
+  <div class="toast" id="toast"></div>
+
+  <div class="controls">
+    <div class="joystick" id="joystick"><div class="stick" id="stick"></div></div>
+    <div class="btns">
+      <button class="btn" id="hintBtn">提示</button>
+      <button class="btn primary" id="pauseBtn">暂停</button>
+    </div>
+  </div>
+
+  <script>
+  (function(win){
+    'use strict';
+
+    // 限制移动端 DPR，减少发热与掉帧
+    const MAX_DPR = 2; if (win.devicePixelRatio > MAX_DPR) { Object.defineProperty(win,'devicePixelRatio',{value:MAX_DPR}); }
+
+    // Three 基础
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b1020);
+    const camera = new THREE.PerspectiveCamera(60, win.innerWidth/win.innerHeight, 0.1, 1000); camera.position.set(0, 8, 16);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(win.innerWidth, win.innerHeight); renderer.setPixelRatio(win.devicePixelRatio);
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.06; controls.enableZoom = false; // 移动端固定距离避免误触
+
+    // 光照与地面
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(10, 15, 10); scene.add(dir);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(80,80), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 }));
+    ground.rotation.x = -Math.PI/2; ground.position.y = -0.01; ground.receiveShadow = true; scene.add(ground);
+
+    // 中心与平台
+    const centerPedestal = new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.2,0.6,32), new THREE.MeshStandardMaterial({ color: 0x1f2937 })); centerPedestal.position.set(0,0.3,0); scene.add(centerPedestal);
+    const platformPositions = [ new THREE.Vector3(-8,0.3,0), new THREE.Vector3(8,0.3,0), new THREE.Vector3(0,0.3,-8), new THREE.Vector3(0,0.3,8) ];
+    const platformColors = [0x60a5fa,0xfbbf24,0x34d399,0xf87171];
+    const targetPlatforms = platformPositions.map((pos)=>{ const p = new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.8,0.5,24), new THREE.MeshStandardMaterial({ color: 0x111827 })); p.position.copy(pos); scene.add(p); return p; });
+
+    // 图形
+    const symbolKinds = ['circle','square','triangle','star'];
+    function createSymbolMesh(kind,color){
+      switch(kind){
+        case 'circle': return new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.2,48), new THREE.MeshStandardMaterial({ color }));
+        case 'square': return new THREE.Mesh(new THREE.BoxGeometry(1.6,0.2,1.6), new THREE.MeshStandardMaterial({ color }));
+        case 'triangle': { const geo=new THREE.ConeGeometry(1.2,0.3,3); const m=new THREE.MeshStandardMaterial({color}); const mesh=new THREE.Mesh(geo,m); mesh.rotation.x=Math.PI/2; return mesh; }
+        case 'star': { const g=new THREE.Group(); for(let i=0;i<5;i++){ const wing=new THREE.ConeGeometry(0.5,0.3,5); const mm=new THREE.MeshStandardMaterial({color}); const w=new THREE.Mesh(wing,mm); w.position.set(Math.cos(i*2*Math.PI/5)*0.9,0.12,Math.sin(i*2*Math.PI/5)*0.9); w.rotation.x=Math.PI/2; g.add(w);} return g; }
+      }
+    }
+
+    // UI refs
+    const $level = document.getElementById('level');
+    const $score = document.getElementById('score');
+    const $time = document.getElementById('timeLeft');
+    const $panel = document.getElementById('panel');
+    const $settingsBtn = document.getElementById('settingsBtn');
+    const $difficulty = document.getElementById('difficulty');
+    const $sensory = document.getElementById('sensoryToggle');
+    const $restart = document.getElementById('restartBtn');
+    const $hints = document.getElementById('hints');
+    const $seqLen = document.getElementById('seqLen');
+    const $toast = document.getElementById('toast');
+    const $hintBtn = document.getElementById('hintBtn');
+    const $pauseBtn = document.getElementById('pauseBtn');
+
+    // 状态
+    let level=1, score=0, timeLeft=60, timerId=null, paused=false;
+    let sensoryFriendly=false; let sequence=[], sequencePlatforms=[], showIndex=0, inputIndex=0, hintsLeft=3;
+
+    function toast(msg,type='good'){ $toast.textContent=msg; $toast.className=`toast ${type} show`; setTimeout(()=>{ $toast.className='toast'; }, 900); try{ if('vibrate' in navigator) navigator.vibrate(type==='good'? 20 : 40);}catch(_){} }
+    function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+    function resetSymbols(){ [...centerPedestal.children].forEach(c=>centerPedestal.remove(c)); targetPlatforms.forEach(p=>{ [...p.children].forEach(c=>p.remove(c)); p.material.color.setHex(0x111827); p.material.emissiveIntensity=0; }); }
+    function genSequence(len){ sequence=[]; sequencePlatforms=[]; for(let i=0;i<len;i++){ const kind=symbolKinds[Math.floor(Math.random()*symbolKinds.length)]; const idx=Math.floor(Math.random()*targetPlatforms.length); sequence.push(kind); sequencePlatforms.push(idx);} $seqLen.textContent=String(len); }
+    function placeSymbols(){ resetSymbols(); for(let i=0;i<sequence.length;i++){ const c=platformColors[sequencePlatforms[i]]; const m=createSymbolMesh(sequence[i],c); m.position.y=0.26; targetPlatforms[sequencePlatforms[i]].add(m);} const preview=createSymbolMesh(sequence[0],0xffffff); preview.position.y=0.45; centerPedestal.add(preview);}    
+
+    async function showSequence(){ showIndex=0; const speed = sensoryFriendly? 800 : ($difficulty.value==='hard'? 420 : $difficulty.value==='normal'? 600 : 750); const glow = sensoryFriendly? 0.35 : 0.6; while(showIndex<sequence.length){ const kind=sequence[showIndex]; [...centerPedestal.children].forEach(c=>centerPedestal.remove(c)); const m=createSymbolMesh(kind,0xffffff); m.position.y=0.45; centerPedestal.add(m); const p=targetPlatforms[sequencePlatforms[showIndex]]; p.material.emissive = new THREE.Color(platformColors[sequencePlatforms[showIndex]]); p.material.emissiveIntensity = glow; await wait(speed); p.material.emissiveIntensity = 0; showIndex++; } inputIndex=0; toast('按顺序移动到平台','warn'); }
+
+    // 玩家球 + 触控摇杆
+    const player = new THREE.Mesh(new THREE.SphereGeometry(0.5,24,24), new THREE.MeshStandardMaterial({ color: 0x93c5fd })); player.position.set(0,0.5,12); scene.add(player);
+    const joystick = document.getElementById('joystick'); const stick = document.getElementById('stick');
+    let joyActive=false, joyCx=0, joyCy=0, joyDx=0, joyDy=0;
+
+    function joyStart(e){ joyActive=true; const r=joystick.getBoundingClientRect(); joyCx=r.left+r.width/2; joyCy=r.top+r.height/2; moveStick(e); }
+    function joyMove(e){ if(!joyActive) return; moveStick(e); }
+    function joyEnd(){ joyActive=false; joyDx=0; joyDy=0; stick.style.transform='translate(-50%, -50%)'; }
+    function moveStick(e){ const touch = e.touches? e.touches[0] : e; const dx = touch.clientX - joyCx; const dy = touch.clientY - joyCy; const max=40; const len=Math.hypot(dx,dy); const cl = Math.min(len,max); const nx = dx/ (len||1) * cl; const ny = dy/ (len||1) * cl; stick.style.transform = `translate(calc(-50% + ${nx}px), calc(-50% + ${ny}px))`; joyDx = nx/max; joyDy = ny/max; }
+    joystick.addEventListener('touchstart', joyStart, {passive:false}); joystick.addEventListener('touchmove', joyMove, {passive:false}); joystick.addEventListener('touchend', joyEnd);
+    joystick.addEventListener('mousedown', joyStart); joystick.addEventListener('mousemove', joyMove); joystick.addEventListener('mouseup', joyEnd); joystick.addEventListener('mouseleave', joyEnd);
+
+    function updatePlayer(dt){ if(paused) return; const base= ($difficulty.value==='hard'? 7.2 : $difficulty.value==='normal'? 6.2 : 5.2) * (sensoryFriendly?0.85:1); const vx = (joyDx) * base * dt; const vz = (joyDy) * base * dt; player.position.x += vx; player.position.z += vz; player.position.x = THREE.MathUtils.clamp(player.position.x, -20, 20); player.position.z = THREE.MathUtils.clamp(player.position.z, -20, 20); if(sequence.length>0 && inputIndex<sequence.length){ const idx=sequencePlatforms[inputIndex]; const tp=targetPlatforms[idx].position; const d=player.position.distanceTo(tp); if(d<1.8){ const p=targetPlatforms[idx]; p.material.emissive = new THREE.Color(platformColors[idx]); p.material.emissiveIntensity = 0.8; setTimeout(()=>{ p.material.emissiveIntensity=0; }, 180); inputIndex++; score+=10; $score.textContent=score; if(inputIndex===sequence.length){ toast('完成序列！+时间','good'); timeLeft+=6; nextLevel(); } } } }
+
+    // 游戏流程
+    function nextLevel(){ level++; $level.textContent=level; const len=Math.min(3+level, 10); genSequence(len); placeSymbols(); showSequence(); }
+    function startGame(){ level=1; score=0; timeLeft=60; hintsLeft=3; paused=false; $level.textContent=level; $score.textContent=score; $time.textContent=timeLeft; $hints.textContent=hintsLeft; genSequence(3); placeSymbols(); showSequence(); clearInterval(timerId); timerId=setInterval(()=>{ if(paused) return; timeLeft--; $time.textContent=timeLeft; if(timeLeft<=0){ clearInterval(timerId); toast('时间到','bad'); paused=true; } },1000); }
+    function useHint(){ if(paused||hintsLeft<=0) return; hintsLeft--; $hints.textContent=hintsLeft; const idx=inputIndex; if(idx<sequence.length){ const p=targetPlatforms[sequencePlatforms[idx]]; p.material.emissive = new THREE.Color(platformColors[sequencePlatforms[idx]]); p.material.emissiveIntensity = 0.9; setTimeout(()=>{ p.material.emissiveIntensity=0; }, 380); } }
+    function toggleSensory(){ sensoryFriendly=!sensoryFriendly; document.getElementById('sensoryToggle').textContent = sensoryFriendly? '开启' : '关闭'; scene.background = new THREE.Color(sensoryFriendly? 0x0d1326 : 0x0b1020); ground.material.color.setHex(sensoryFriendly? 0x111827 : 0x0f172a); }
+    function togglePause(){ paused=!paused; $pauseBtn.textContent = paused? '继续' : '暂停'; toast(paused? '已暂停' : '继续', 'warn'); }
+
+    // UI 绑定
+    document.getElementById('settingsBtn').onclick = ()=>{ $panel.classList.toggle('open'); };
+    document.getElementById('restartBtn').onclick = startGame;
+    document.getElementById('sensoryToggle').onclick = toggleSensory;
+    $hintBtn.onclick = useHint; $pauseBtn.onclick = togglePause;
+
+    // 主循环
+    let last=performance.now();
+    function animate(){ requestAnimationFrame(animate); const now=performance.now(); const dt=Math.min(0.05,(now-last)/1000); last=now; controls.update(); updatePlayer(dt); renderer.render(scene,camera); }
+    animate();
+
+    // 适配
+    win.addEventListener('resize', ()=>{ camera.aspect=win.innerWidth/win.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(win.innerWidth, win.innerHeight); });
+  })(window);
+  </script>
+</body>
+</html>
