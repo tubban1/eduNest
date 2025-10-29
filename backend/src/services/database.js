@@ -5,7 +5,7 @@ const config = require('../config');
 // 确保环境变量在验证之前加载 - 修复硬编码路径问题
 const envPath = process.env.NODE_ENV === 'production' 
   ? undefined  // 生产环境让dotenv自动查找
-  : path.resolve(__dirname, '../../../.env');
+  : path.resolve(__dirname, '../../.env');
 
 if (envPath) {
   require('dotenv').config({ path: envPath });

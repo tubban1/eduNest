@@ -137,8 +137,7 @@ Your design must ensure:
 - The HTML field must not include any <style> or <script> tags.
 - All external dependencies must be declared inside the external_links field.
 - The entire project must run directly in plain HTML/CSS/JS environments such as sandbox editors or iframes, without any build tools, bundlers, or .vue files.
-- Use Vue 3.5.20 with <script setup> syntax via production CDN:
-https://unpkg.com/vue@3/dist/vue.global.prod.js
+- Use Vue 3.5.20 with <script setup> syntax via production CDN.
 - In addition, you may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect (e.g. animation, charts, audio, 3D):
 Vue ecosystem: Vue, VueRouter, Vuex
 React ecosystem: Redux
@@ -173,11 +172,11 @@ Return the result as a single, valid, and minified JSON object. Strictly adhere 
 {
   "title": "Title of the project",
   "description": "What this project teaches and how to interact with it",
-  "html": "<!-- Full, complete, and runnable HTML code, including all necessary CDN script tags. -->",
+  "html": "<!-- Full, complete, and runnable HTML code.-->",
   "css": "/* Full, complete, and runnable CSS code */",
   "js": "// Full, complete, and runnable JS code using Vue 3 <script setup>, with all functions and components properly closed.",
   "external_links": [
-    "https://unpkg.com/vue@3/dist/vue.global.prod.js",
+    "https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js",
     "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js" *if used*
     "Any additional library links you actually used from the allowed list"
   ],
