@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2018·北京 题1 解析（Vue 3.5.20）</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <style>
+    body{margin:0;background:#0b1020;color:#eaf2ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+    header{background:#141a37;color:#ffd166;padding:14px 16px;font-weight:700;letter-spacing:.5px}
+    .wrap{max-width:1000px;margin:0 auto;padding:18px}
+    .card{background:#121737;border:1px solid #27305f;border-radius:10px;padding:16px;margin-bottom:16px}
+    h2{margin:0 0 10px 0;color:#8bd5ff;font-size:18px}
+    .k{color:#d9f3ff}
+    .btn{background:#ffd166;border:none;border-radius:8px;color:#1b1930;font-weight:700;padding:8px 14px;cursor:pointer}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    input[type="number"],input[type="text"]{background:#0e1330;border:1px solid #2c3b72;color:#eaf2ff;border-radius:6px;padding:6px 10px}
+    .muted{color:#9bb3ff}
+    .ans{color:#7effc8;font-weight:700}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    code{background:#0f1535;border:1px solid #27305f;padding:2px 6px;border-radius:6px}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+  <header>2018·北京 高考数学 题1 | 集合 A 的函数 M(α,β) | 逐步解析</header>
+  <div id="app" class="wrap">
+    <div class="card">
+      <h2>题目完整复原</h2>
+      <div id="problem" class="k">
+        设 \(n\) 为正整数，集合 \(A = \{\alpha = (t_1,t_2,\dots,t_n)\mid t_k\in\{0,1\},\ k=1,2,\dots,n\}\)。<br>
+        对于 \(A\) 中任意元素 \(\alpha=(x_1,\dots,x_n)\) 和 \(\beta=(y_1,\dots,y_n)\)，记
+        
+        \[ M(\alpha,\beta) = \tfrac12\big(|(x_1+y_1)-|x_1-y_1|| + \cdots + |(x_n+y_n)-|x_n-y_n||\big). \]
+        
+        (I) 当 \(n=3\) 时，若 \(\alpha=(1,1,0)\)、\(\beta=(0,1,1)\)，求 \(M(\alpha,\alpha)\) 与 \(M(\alpha,\beta)\)。<br>
+        (II) 当 \(n=4\) 时，设 \(B\subseteq A\) 满足：对 \(B\) 中任意 \(\alpha,\beta\)，若 \(\alpha=\beta\) 则 \(M(\alpha,\beta)\) 为奇数；若 \(\alpha\ne\beta\) 则 \(M(\alpha,\beta)\) 为偶数。求 \(|B|\) 的最大值。<br>
+        (III) 给定 \(n\ge 2\)，设 \(B\subseteq A\) 满足：对 \(B\) 中任意两个不同元素 \(\alpha,\beta\)，有 \(M(\alpha,\beta)=0\)。写出一个使 \(|B|\) 最大的集合 \(B\)，并说明理由。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>核心化简：将公式化为“公共 1 的个数”</h2>
+      <div class="k">
+        对单个坐标 \((x,y)\in\{0,1\}^2\)，记 \(s=x+y\)、\(d=|x-y|\)。穷举得
+        \[ |s-d| = \begin{cases}2, & (x,y)=(1,1);\\ 0, & 其他情况.\end{cases} \]
+        因此
+        \[ M(\alpha,\beta) = \tfrac12 \cdot 2 \cdot \#\{k: x_k=y_k=1\} = \sum_{k=1}^n x_k y_k, \]
+        即 \(M(\alpha,\beta)\) 就是 \(\alpha\) 与 \(\beta\) 在同为 1 的坐标数（0-1 向量的“点积”）。
+        特别地，\(M(\alpha,\alpha)=\sum x_k\)，为 \(\alpha\) 的 1 的个数（汉明重量）。
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>(I) 数值代入</h2>
+        <div class="k">给定 \(\alpha=(1,1,0),\ \beta=(0,1,1)\)。</div>
+        <div class="k">\(M(\alpha,\alpha)=\#\{1\}=2\)；\(M(\alpha,\beta)=\#\{位置2\}=1\)。</div>
+        <div class="ans">答案：(2, 1)。</div>
+      </div>
+
+      <div class="card">
+        <h2>(II) 最大规模的子集 B</h2>
+        <div class="k">
+          条件等价为：\(\alpha\in B\Rightarrow\) \(\alpha\) 权重为奇数；且任意 \(\alpha\ne\beta\in B\)，有 \(\sum x_k y_k\equiv 0\pmod2\)。
+          记 0-1 向量在 \(\mathbb F_2\) 上点积。则要求“行向量两两正交，且自乘为 1（奇权重）”。
+          在 \(\mathbb F_2^4\)，至多取 4 个线性无关且两两正交的向量，取标准基
+          \(e_1=(1,0,0,0),\dots,e_4=(0,0,0,1)\)，满足对角为 1、非对角为 0。
+        </div>
+        <div class="ans">最大值 \(|B|_{\max}=4\)，可取 \(B=\{e_1,e_2,e_3,e_4\}\)。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>(III) 一般 \(n\ge 2\)：构造极大 B</h2>
+      <div class="k">
+        条件：任意不同 \(\alpha,\beta\in B\) 满足 \(M(\alpha,\beta)=0\)，即支集两两不相交。
+        非零向量至少占用一个坐标，最多可取 \(n\) 个彼此支集不交的非零向量，再加入零向量 \(\boldsymbol0\)。
+      </div>
+      <div class="ans">极大集合：\(B=\{\boldsymbol0, e_1,\dots,e_n\}\)，于是 \(|B|_{\max}=n+1\)。</div>
+      <div class="muted">理由：若 \(B\) 中含有 \(m\) 个非零向量且两两支集不交，则它们的支集并为 \(m\) 个互不相交的非空子集，坐标数不小于 \(m\)，故 \(m\le n\)。取全体标准基即达上界，并可附加 \(\boldsymbol0\)。</div>
+    </div>
+
+    <div class="card">
+      <h2>交互校验（可自定义向量）</h2>
+      <div class="row">
+        <label>n：</label>
+        <input type="number" v-model.number="n" min="1" style="width:80px">
+        <button class="btn" @click="randomFill()">随机填充</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label>α：</label>
+        <input type="text" v-model="alphaStr" style="width:420px" placeholder="如 1,1,0,1">
+      </div>
+      <div class="row" style="margin-top:6px">
+        <label>β：</label>
+        <input type="text" v-model="betaStr" style="width:420px" placeholder="如 0,1,1,0">
+        <button class="btn" @click="calc()">计算</button>
+      </div>
+      <div style="margin-top:10px">
+        <div>\(M(\alpha,\beta)=\) <span class="ans">{{ mAB }}</span></div>
+        <div>\(M(\alpha,\alpha)=\) <span class="ans">{{ mAA }}</span>，\(M(\beta,\beta)=\) <span class="ans">{{ mBB }}</span></div>
+        <div class="muted">注：内部使用 \(M(\alpha,\beta)=\sum x_k y_k\)。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const app = Vue.createApp({
+    data(){
+      return { n: 4, alphaStr: '1,1,0,1', betaStr: '0,1,1,0', mAB: 0, mAA: 0, mBB: 0 }
+    },
+    mounted(){ this.$nextTick(()=> renderMathInElement(document.body)); this.calc(); },
+    methods:{
+      parseBits(str){
+        return str.split(',').map(s=>Number(s.trim())).filter(v=>v===0||v===1).slice(0,this.n);
+      },
+      dot(a,b){ let s=0; for(let i=0;i<Math.min(a.length,b.length);i++) s+= a[i]*b[i]; return s; },
+      calc(){
+        const a=this.parseBits(this.alphaStr), b=this.parseBits(this.betaStr);
+        this.mAB=this.dot(a,b); this.mAA=this.dot(a,a); this.mBB=this.dot(b,b);
+        this.$nextTick(()=> renderMathInElement(document.body));
+      },
+      randomFill(){
+        const rnd = () => Array.from({length:this.n},()=> Math.random()<.5?0:1).join(',');
+        this.alphaStr=rnd(); this.betaStr=rnd(); this.calc();
+      }
+    }
+  });
+  app.mount('#app');
+  </script>
+</body>
+</html>
+
