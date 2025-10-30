@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>太空航行路径规划 · 物理/坐标几何/轨迹优化</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{width:100vw;height:100vh;overflow:hidden;background:#05070e;color:#e8f1ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif}
+    #container{width:100%;height:100%;position:relative}
+    .panel{position:absolute;top:16px;left:16px;z-index:10;background:rgba(12,16,28,.7);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:14px;min-width:260px;backdrop-filter:blur(6px)}
+    .panel h3{font-size:13px;color:#cfe1ff;margin-bottom:8px}
+    .row{display:flex;align-items:center;gap:10px;margin:8px 0}
+    .row label{font-size:12px;width:110px;color:#cfe1ff}
+    .row input[type=range]{flex:1}
+    .panel button{width:100%;padding:8px 10px;border:0;cursor:pointer;border-radius:8px;background:#2b5cff;color:#fff;font-size:12px}
+    .panel button:hover{background:#244cda}
+    .legend{position:absolute;right:16px;bottom:16px;opacity:.85;font-size:12px}
+  </style>
+  <!-- Three r134 + OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Cannon-es UMD（提供 window.CANNON） -->
+  <script src="https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.umd.js"></script>
+</head>
+<body>
+  <div id="container"></div>
+  <div class="panel">
+    <h3>太空航行路径规划</h3>
+    <div class="row"><label>引力常数 G</label><input id="grav" type="range" min="0" max="50" step="1" value="12" /></div>
+    <div class="row"><label>推力大小</label><input id="thrust" type="range" min="0" max="40" step="1" value="10" /></div>
+    <div class="row"><label>阻尼系数</label><input id="damp" type="range" min="0" max="1" step="0.05" value="0.1" /></div>
+    <button id="btn-clear">清除轨迹</button>
+    <button id="btn-reset" style="margin-top:8px">重置场景</button>
+  </div>
+  <div class="legend">拖动鼠标在空间中画线生成期望轨迹；飞船受重力与推力影响；避开陨石并拾取燃料</div>
+
+  <script>
+    // ===== Three 基础 =====
+    const container=document.getElementById('container');
+    const scene=new THREE.Scene();
+    scene.background=new THREE.Color(0x05070e);
+    const camera=new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 5000); camera.position.set(40, 30, 60); camera.lookAt(0,0,0);
+    const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(window.devicePixelRatio); container.appendChild(renderer.domElement);
+    const controls=new THREE.OrbitControls(camera, renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.05;
+    scene.add(new THREE.AmbientLight(0xffffff,.5)); const dl=new THREE.DirectionalLight(0xffffff,.8); dl.position.set(60,100,80); scene.add(dl);
+
+    // 星野背景（点云）
+    (function(){
+      const geo=new THREE.BufferGeometry(); const num=2000; const pos=new Float32Array(num*3);
+      for(let i=0;i<num;i++){ pos[i*3+0]=(Math.random()-0.5)*800; pos[i*3+1]=(Math.random()-0.5)*800; pos[i*3+2]=(Math.random()-0.5)*800; }
+      geo.setAttribute('position', new THREE.BufferAttribute(pos,3)); const mat=new THREE.PointsMaterial({ color:0x88aaff, size:1, sizeAttenuation:true }); scene.add(new THREE.Points(geo,mat));
+    })();
+
+    // ===== Cannon-es 物理 =====
+    const CANNON = window.CANNON || window.CANNONES || window.cannon || window.CANNON_ES;
+    let world=null; if(CANNON){ world=new CANNON.World({ gravity: new CANNON.Vec3(0,0,0) }); world.broadphase=new CANNON.NaiveBroadphase(); world.solver.iterations=10; } else { console.warn('Cannon-es not found, physics disabled'); }
+
+    // 行星（引力源）
+    const planets=[
+      { pos:new THREE.Vector3(0,0,0), mass:5000, color:0xffcc33, r:4 },
+      { pos:new THREE.Vector3(30,10,-20), mass:2500, color:0x66bb6a, r:3 },
+      { pos:new THREE.Vector3(-28,-12,18), mass:2000, color:0x29b6f6, r:3 }
+    ];
+    const planetMeshes=[]; planets.forEach(p=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(p.r,32,32), new THREE.MeshPhongMaterial({color:p.color})); m.position.copy(p.pos); scene.add(m); planetMeshes.push(m); });
+
+    // 陨石与燃料
+    const asteroids=[]; for(let i=0;i<40;i++){ const m=new THREE.Mesh(new THREE.IcosahedronGeometry(1+Math.random()*1.5,0), new THREE.MeshPhongMaterial({color:0x8d99ae})); m.position.set((Math.random()-0.5)*160, (Math.random()-0.5)*120, (Math.random()-0.5)*160); scene.add(m); asteroids.push(m); }
+    const fuels=[]; for(let i=0;i<12;i++){ const f=new THREE.Mesh(new THREE.TetrahedronGeometry(1.2), new THREE.MeshPhongMaterial({color:0xff7043, emissive:0xff6e40})); f.position.set((Math.random()-0.5)*140, (Math.random()-0.5)*100, (Math.random()-0.5)*140); scene.add(f); fuels.push(f); }
+
+    // 飞船
+    const ship=new THREE.Mesh(new THREE.ConeGeometry(1.2, 3.0, 16), new THREE.MeshPhongMaterial({color:0x90caf9})); ship.rotation.x=Math.PI/2; scene.add(ship);
+    const shipBody = world? new CANNON.Body({ mass:1, position: new CANNON.Vec3(0,5,40), shape: new CANNON.Sphere(1.1), linearDamping: parseFloat(document.getElementById('damp').value) }): null;
+    if(world){ world.addBody(shipBody); }
+    let fuel=100; // 简易燃料
+
+    // 用户绘制目标轨迹（在 3D 空间中的折线，引导推力方向）
+    const pathPoints=[]; let drawing=false; const lineMat=new THREE.LineBasicMaterial({ color:0x42a5f5 }); let pathLine=null;
+    function screenToWorld(x,y){ const ndc=new THREE.Vector2((x/window.innerWidth)*2-1, -(y/window.innerHeight)*2+1); const ray=new THREE.Raycaster(); ray.setFromCamera(ndc, camera); const p=ray.ray.origin.clone().add(ray.ray.direction.clone().multiplyScalar(60)); return p; }
+    renderer.domElement.addEventListener('mousedown',e=>{ drawing=true; pathPoints.length=0; if(pathLine){ scene.remove(pathLine); pathLine=null; } pathPoints.push(screenToWorld(e.clientX,e.clientY)); });
+    renderer.domElement.addEventListener('mousemove',e=>{ if(!drawing) return; const p=screenToWorld(e.clientX,e.clientY); const last=pathPoints[pathPoints.length-1]; if(last.distanceTo(p)>1.5){ pathPoints.push(p); const geo=new THREE.BufferGeometry().setFromPoints(pathPoints); if(!pathLine){ pathLine=new THREE.Line(geo,lineMat); scene.add(pathLine);} else { pathLine.geometry.dispose(); pathLine.geometry=geo; } } });
+    renderer.domElement.addEventListener('mouseup',()=>{ drawing=false; });
+
+    document.getElementById('btn-clear').onclick=()=>{ if(pathLine){ scene.remove(pathLine); pathLine=null; } pathPoints.length=0; };
+    document.getElementById('btn-reset').onclick=()=>{ if(world&&shipBody){ shipBody.position.set(0,5,40); shipBody.velocity.set(0,0,0); shipBody.angularVelocity.set(0,0,0); } fuel=100; };
+
+    // 简易引力与推力模型
+    function applyPhysics(dt){ if(!world||!shipBody) return; const G=parseFloat(document.getElementById('grav').value); const thr=parseFloat(document.getElementById('thrust').value);
+      // 引力：对各行星 F = G * m / r^2 方向指向行星
+      planets.forEach(p=>{ const dir=new CANNON.Vec3(p.pos.x-shipBody.position.x, p.pos.y-shipBody.position.y, p.pos.z-shipBody.position.z); const r2=dir.x*dir.x+dir.y*dir.y+dir.z*dir.z+1e-3; const invR=Math.sqrt(1/r2); dir.x*=invR; dir.y*=invR; dir.z*=invR; const f=G * (p.mass / r2); shipBody.applyForce(new CANNON.Vec3(dir.x*f, dir.y*f, dir.z*f)); });
+      // 推力：沿最近路径段方向
+      if(pathPoints.length>1 && fuel>0){
+        // 找到距离飞船最近的段
+        let nearestDir=null; let best=1e9; for(let i=0;i<pathPoints.length-1;i++){ const a=pathPoints[i], b=pathPoints[i+1];
+          const pa=new THREE.Vector3(shipBody.position.x, shipBody.position.y, shipBody.position.z).sub(a);
+          const ab=new THREE.Vector3().subVectors(b,a); const t=Math.max(0, Math.min(1, pa.dot(ab)/ab.lengthSq())); const proj=new THREE.Vector3().copy(a).add(ab.multiplyScalar(t)); const d=proj.distanceTo(new THREE.Vector3(shipBody.position.x,shipBody.position.y,shipBody.position.z));
+          if(d<best){ best=d; nearestDir=new THREE.Vector3().subVectors(b,a).normalize(); }
+        }
+        if(nearestDir){ shipBody.applyForce(new CANNON.Vec3(nearestDir.x*thr, nearestDir.y*thr, nearestDir.z*thr)); fuel=Math.max(0, fuel - dt*2); }
+      }
+      // 阻尼调整
+      shipBody.linearDamping = parseFloat(document.getElementById('damp').value);
+    }
+
+    // 碰撞检测：陨石与燃料（用距离近似）
+    function gameplay(){ if(!shipBody) return; const sp=new THREE.Vector3(shipBody.position.x, shipBody.position.y, shipBody.position.z);
+      for(const a of asteroids){ if(sp.distanceTo(a.position) < 2.2){ // 撞击：回弹并扣燃料
+          shipBody.velocity.scale( -0.5, shipBody.velocity ); fuel = Math.max(0, fuel - 10); }
+      }
+      for(let i=fuels.length-1;i>=0;i--){ const f=fuels[i]; if(sp.distanceTo(f.position) < 2.0){ fuel=Math.min(100, fuel+25); scene.remove(f); fuels.splice(i,1);} }
+    }
+
+    // 主循环
+    let last=performance.now();
+    function animate(){
+      requestAnimationFrame(animate);
+      const now=performance.now(); const dt=Math.min(0.05,(now-last)/1000); last=now;
+      if(world){ applyPhysics(dt); world.step(1/60, dt, 3); ship.position.set(shipBody.position.x, shipBody.position.y, shipBody.position.z); }
+      gameplay();
+      controls.update(); renderer.render(scene,camera);
+    }
+    animate();
+
+    // 自适应
+    window.addEventListener('resize', ()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+  </script>
+</body>
+</html>
+
+

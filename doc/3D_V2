@@ -1,0 +1,246 @@
+## 16. V2 方案：DSL + 沙箱混合架构（在保留V1直注入优势下提升安全与规模化）
+
+### 16.1 背景与目标
+- 在 V1 中，AI 直接生成纯 JavaScript 代码并插入 HTML `<script>` 实现“所见即所得、无需编译、立即可用”的体验；但在开放投稿、版本化治理、长期可维护性与强安全场景下仍有不足。
+- V2 目标：默认采用“声明式 DSL → 前端 Three 渲染器”的安全主干，必要时对极端复杂或高自由度场景启用“代码沙箱执行”作为兜底；两条执行路径并存、可平滑切换。
+
+### 16.2 数据模型调整
+- 在 `3d_templates` 与 `3d_contents` 中新增/保留以下字段：
+  - `type`: `code | dsl`（渲染路径选择标记，默认 `dsl`）
+  - `dsl`: JSON（当 `type=dsl` 时保存声明式模板）
+  - `code_snippets`: string（当 `type=code` 时保存可执行片段，沿用V1）
+  - `schema_version`: string（DSL 版本号，用于向后兼容与迁移）
+  - `assets`: JSONB（统一管理贴图/模型等资源清单：url、hash、policy）
+- 现有接口兼容：
+  - `POST /api/3d/generate` 支持 `mode: 'dsl' | 'code' | 'auto'`；auto 下优先产 DSL，回退到 code。
+  - `GET /api/3d/:short_id` 根据 `type` 选择渲染策略（见 16.4）。
+
+### 16.3 DSL 设计（声明式）
+- 结构建议：
+```json
+{
+  "scene": {"background": "#000000", "camera": {"type": "perspective", "fov": 60, "pos": [5,5,8]}},
+  "lights": [ {"type": "directional", "intensity": 1, "pos": [5,5,5]} ],
+  "objects": [
+    {"type": "mesh", "geometry": {"type": "sphere", "radius": 2}, "material": {"type": "phong", "color": "#0077ff"}, "transform": {"position": [0,0,0]}}
+  ],
+  "postprocess": [],
+  "interactions": {"hover": [], "click": []},
+  "dataBindings": {"objects[0].material.color": "${inputs.color}"}
+}
+```
+- 约束：
+  - 强 Schema 校验（必要字段、枚举、范围）；
+  - 禁止表达式注入；后续如需表达式，引入受限小语言（如 JSONata/安全解释器）。
+
+### 16.4 渲染层设计
+- DslRenderer（默认）：
+  - 读取 DSL → 构建 Three 场景（相机/灯光/网格/材质/后处理）；
+  - 支持数据绑定、交互钩子；
+  - 依赖固定版本、只读运行时；
+  - 失败回退策略（见 16.7）。
+- CodeSandboxRenderer（兜底）：
+  - 运行容器：`iframe sandbox`（allow-scripts；禁用 same-origin/storage/network）或 Sandpack；
+  - 通信：postMessage（init、setProps、snapshot）；
+  - 仅在 `type=code` 时启用；编辑/预览页强制使用沙箱，详情页可按策略切换直出 HTML 或 iframe。
+
+### 16.5 安全策略（对比V1增强）
+- 生成前：
+  - AI 产物分流：优先 DSL；若生成 code，则进行 AST 静态扫描与规则白名单（禁 `eval/Function/fetch/document/window/localStorage` 等）。
+- 存储与分发：
+  - 模板与片段签名/哈希，防篡改；固定 CDN 源与版本；
+  - CSP 与 Trusted Types：`default-src 'none'; script-src 'self' cdn.jsdelivr.net`（按需收紧）。
+- 执行期：
+  - 预览/编辑：必走 iframe sandbox；
+  - 详情页：`type=dsl` 走渲染器；`type=code` 可策略化（低风险白名单直出/否则 iframe）。
+
+### 16.6 接口与页面改造
+- API：
+  - `POST /api/3d/generate` 入参新增 `mode`；出参增加 `type` 与 `dsl` 字段；
+  - `POST /api/3d/preview`：返回一次性 token 与沙箱页 URL，供编辑器实时预览；
+  - `POST /api/3d/validate`：对 DSL/Code 进行 schema/AST 校验与依赖分析。
+- 前端：
+  - `/3d/create`：左侧 Prompt/JSON 编辑器，右侧实时预览（统一工具栏：参数、快照、导出）；
+  - `/3d/[short_id]`：根据 `type` 选择 DslRenderer 或 iframe；
+  - 渲染器抽象：`<Renderer type="dsl|code" source={dsl|code} assets={...} />`。
+
+### 16.7 回退与灰度
+- 任何 DSL 渲染失败 → 自动降级到沙箱代码（若存在）或展示错误与收集日志；
+- 新 DSL 版本灰度：`schema_version` 双栈渲染对比 + 采样上报；
+- 高危依赖或规则变更，可通过后端开关强制所有 `type=code` 走 iframe。
+
+### 16.8 里程碑（在原“阶段 2/3”基础上追加）
+1) 2 天：定义 DSL Schema（v0）与 DslRenderer 雏形（相机/灯光/基础几何/材质）。
+2) 3 天：编辑器页联动（Monaco/JSON + 实时预览）与校验 API；
+3) 2 天：CodeSandboxRenderer 接入（iframe + postMessage + AST 校验管线）；
+4) 1 天：CSP/Trusted Types/依赖白名单与签名校验；
+5) 1 天：场景与数据绑定、快照导出、错误回退闭环。
+
+### 16.9 选择与权衡
+- 保持 V1“纯 JS 注入直出 HTML”的速度与直达效果，用于上线与 SEO/分享；
+- 在可控范围内逐步把稳定高频模板迁移到 DSL（易审计/版本化/参数化）；
+- 极端自由度/教学探索类内容继续使用沙箱代码，保证创作灵活性。
+
+### 16.10 替换层（Replacement Layer）规范
+
+本层定义“块状化 JSON → 模板占位符”的双向映射与注入算法，支持最小覆盖（只传变化字段）、安全校验与默认值回退。
+
+#### 16.10.1 JSON Schema（简版）
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ThreeTemplateConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "title": {"type": "string", "maxLength": 120},
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bodyGradient": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 2},
+        "showControls": {"type": "boolean", "default": true}
+      }
+    },
+    "libraries": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "three": {"type": "string", "enum": ["three@0.134.0"]},
+        "extras": {"type": "array", "items": {"type": "string", "enum": ["OrbitControls","GLTFLoader","FlyControls"]}}
+      },
+      "default": {"three": "three@0.134.0", "extras": ["OrbitControls"]}
+    },
+    "renderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "antialias": {"type": "boolean", "default": true},
+        "pixelRatio": {"type": "string", "enum": ["device","1"], "default": "device"},
+        "size": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 2, "default": ["window","window"]}
+      }
+    },
+    "cameraPosition": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "default": [5,5,8]},
+    "lightSource": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {"type": "string", "enum": ["ambient","directional","point"]},
+          "color": {"type": "string"},
+          "intensity": {"type": "number"},
+          "position": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+          "castShadow": {"type": "boolean"}
+        },
+        "required": ["type"]
+      },
+      "default": [{"type":"ambient","color":"#ffffff","intensity":0.5}]
+    },
+    "controls_class": {"type": "string", "enum": ["OrbitControls","FlyControls"], "default": "OrbitControls"},
+    "controls_js": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enableDamping": {"type": "boolean"},
+        "dampingFactor": {"type": "number"},
+        "enableZoom": {"type": "boolean"},
+        "autoRotate": {"type": "boolean"}
+      }
+    },
+    "axesHelper": {"type": "object", "properties": {"enabled": {"type": "boolean","default": true}, "size": {"type": "number","default": 5}}},
+    "gridHelper": {"type": "object", "properties": {"enabled": {"type": "boolean","default": true}, "size": {"type": "number","default": 10}, "divisions": {"type": "number","default": 10}, "opacity": {"type": "number","default": 0.3}}},
+    "loading": {"type": "object", "properties": {"text": {"type": "string","default":"加载中..."}, "show": {"type": "boolean","default": true}}},
+    "custom_snippets": {"type": "array", "items": {"type": "string"}, "default": []}
+  }
+}
+```
+
+#### 16.10.2 占位符映射（示例）
+- HTML 层：
+  - `<!-- TITLE -->` ← `title`
+  - `<!-- STYLES -->` ← `style`（受限 CSS 生成，白名单：背景渐变、控件显示）
+  - `<!-- LIBRARIES -->` ← `libraries`（CDN 白名单映射）
+  - `<!-- CONTROLS_PANEL -->` ← `style.showControls`（布尔控制显示）
+- JS 层：
+  - `// RENDERER_CONFIG` ← `renderer`
+  - `// CAMERA_POSITION` ← `cameraPosition`
+  - `// LIGHT_SOURCES` ← `lightSource[]`
+  - `// CONTROLS_JS` ← `controls_class` + `controls_js`
+  - `// AXES_HELPER` ← `axesHelper`
+  - `// GRID_HELPER` ← `gridHelper`
+  - `// CUSTOM_SNIPPETS` ← `custom_snippets[]`（AST 安全扫描通过后注入）
+
+#### 16.10.3 依赖白名单映射
+```ts
+const LIB_MAP = {
+  'three@0.134.0': 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js',
+  OrbitControls: 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js',
+  GLTFLoader: 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js',
+  FlyControls: 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/FlyControls.js'
+} as const;
+```
+
+#### 16.10.4 注入算法
+```ts
+function render3DHtml(templateHtml: string, cfgInput: unknown) {
+  // 1) 校验与默认值填充
+  const cfg = validateWithAjvAndFillDefaults(cfgInput);
+
+  // 2) 生成安全 CSS
+  const styles = buildSafeStyles(cfg.style); // 仅允许 bodyGradient, showControls
+
+  // 3) 生成依赖 <script> 标签（白名单映射 + 固定版本）
+  const libTags = buildLibraryTags(cfg.libraries, LIB_MAP);
+
+  // 4) HTML 基层替换
+  let html = templateHtml
+    .replace('<!-- TITLE -->', escapeHtml(cfg.title || '3D建模展示'))
+    .replace('<!-- STYLES -->', styles)
+    .replace('<!-- LIBRARIES -->', libTags)
+    .replace('<!-- CONTROLS_PANEL -->', cfg.style?.showControls === false ? '<style>.controls{display:none}</style>' : '');
+
+  // 5) 生成 JS 代码块
+  const jsBlocks = {
+    renderer: buildRendererBlock(cfg.renderer),
+    camera: `camera.position.set(${cfg.cameraPosition.join(',')}); camera.lookAt(0,0,0);`,
+    lights: cfg.lightSource.map(toLightCode).join('\n'),
+    controls: toControlsCode(cfg.controls_class, cfg.controls_js),
+    axes: cfg.axesHelper?.enabled === false ? '' : `scene.add(new THREE.AxesHelper(${cfg.axesHelper?.size ?? 5}));`,
+    grid: cfg.gridHelper?.enabled === false ? '' : `const grid=new THREE.GridHelper(${cfg.gridHelper?.size ?? 10},${cfg.gridHelper?.divisions ?? 10}); grid.material.opacity=${cfg.gridHelper?.opacity ?? 0.3}; grid.material.transparent=true; scene.add(grid);`,
+    custom: cfg.custom_snippets.map(scanAndAllowSnippet).join('\n')
+  };
+
+  // 6) JS 占位符替换（若 cfg 未提供，对应块保留模板默认实现）
+  html = html
+    .replace('// RENDERER_CONFIG', jsBlocks.renderer)
+    .replace('// CAMERA_POSITION', jsBlocks.camera)
+    .replace('// LIGHT_SOURCES', jsBlocks.lights)
+    .replace('// CONTROLS_JS', jsBlocks.controls)
+    .replace('// AXES_HELPER', jsBlocks.axes)
+    .replace('// GRID_HELPER', jsBlocks.grid)
+    .replace('// CUSTOM_SNIPPETS', jsBlocks.custom);
+
+  // 7) 返回 HTML（可选：签名/哈希）
+  return html;
+}
+```
+
+#### 16.10.5 安全规则（强制）
+- JSON 仅允许 Schema 定义的键；`additionalProperties=false`；
+- CSS 仅允许受限属性（背景渐变、display 控制），统一转义；
+- libraries 仅能映射到 `LIB_MAP` 中的固定 URL；
+- `custom_snippets` 通过 AST 规则：禁止 `eval/Function/fetch/document/window/localStorage/cookie`，仅允许访问 `THREE/scene/camera/renderer/controls` 等白名单符号；
+- 预览/编辑一律在 `iframe sandbox` 中执行；详情页可直出 HTML。
+
+#### 16.10.6 示例
+输入：
+```json
+{
+  "title": "蓝色球体演示",
+  "cameraPosition": [6, 4, 9],
+  "lightSource": [{"type":"directional","intensity":1,"position":[5,8,6]}],
+  "custom_snippets": ["const g=new THREE.SphereGeometry(1.5,32,32);const m=new THREE.MeshPhongMaterial({color:0x0077ff});scene.add(new THREE.Mesh(g,m));"]
+}
+```
+将只覆盖标题、相机位置、灯光和自定义物体，其余块保留模板默认实现。

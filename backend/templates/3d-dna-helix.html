@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DNA 双螺旋拆解互动 · 生物结构学习</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100vw; height: 100vh; overflow: hidden; background: #0a0e1a; color: #e8f1ff; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif; }
+    #container { width: 100%; height: 100%; position: relative; }
+    .hud {
+      position: absolute; top: 16px; left: 16px; z-index: 10;
+      background: rgba(10,14,26,.6); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px; padding: 14px; min-width: 260px; backdrop-filter: blur(6px);
+    }
+    .hud h3 { font-size: 13px; color: #cfe1ff; margin-bottom: 8px; }
+    .hud button { width: 100%; padding: 8px 10px; margin-top: 8px; border: 0; border-radius: 8px; cursor: pointer; background: #2b5cff; color: #fff; font-size: 12px; }
+    .hud button:hover { background: #244cda; }
+    .row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .row label { font-size: 12px; color: #cfe1ff; width: 92px; }
+    .row input[type=range] { flex: 1; }
+    .quiz { position: absolute; right: 16px; top: 16px; z-index: 10; background: rgba(10,14,26,.6); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px; min-width: 220px; }
+    .quiz h4 { margin-bottom: 8px; font-size: 13px; color: #cfe1ff; }
+    .quiz .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .quiz button { border: 0; background: #1b2445; color: #cfe1ff; border-radius: 8px; padding: 6px 0; cursor: pointer; }
+    .quiz button:hover { background: #253064; }
+    .legend { position: absolute; bottom: 16px; right: 16px; opacity: .8; font-size: 12px; }
+  </style>
+
+  <!-- Three.js r134 + OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- three-mesh-ui (cards/labels) -->
+  <script src="https://cdn.jsdelivr.net/npm/three-mesh-ui@6.5.4/build/three-mesh-ui.min.js"></script>
+</head>
+<body>
+  <div id="container"></div>
+  <div class="hud">
+    <h3>DNA 双螺旋互动</h3>
+    <div class="row">
+      <label>酶速度</label>
+      <input id="speed" type="range" min="0" max="5" step="0.1" value="1" />
+    </div>
+    <button id="btn-unzip">分子解旋</button>
+  </div>
+  <div class="quiz">
+    <h4>小测验：选择 A 的互补碱基</h4>
+    <div class="opts">
+      <button data-b="A">A</button>
+      <button data-b="T">T</button>
+      <button data-b="C">C</button>
+      <button data-b="G">G</button>
+    </div>
+    <div id="quiz-result" style="margin-top:8px;font-size:12px;color:#9ed0ff;min-height:18px;"></div>
+  </div>
+  <div class="legend">点击碱基对查看解释 · 滚轮缩放 · 拖拽旋转</div>
+
+  <script>
+    // ====== 场景基础 ======
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0e1a);
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 2000);
+    camera.position.set(10, 10, 22);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = .05; controls.minDistance = 6; controls.maxDistance = 80;
+
+    scene.add(new THREE.AmbientLight(0xffffff, .45));
+    const dl = new THREE.DirectionalLight(0xffffff, .9); dl.position.set(10,15,10); scene.add(dl);
+
+    // ====== 数据与几何：双螺旋主链（TubeGeometry） ======
+    const turns = 10;            // 螺旋圈数
+    const pointsPerTurn = 40;    // 每圈采样
+    const height = 20;           // 总高度
+    const radius = 2.2;          // 主链半径
+    const strandOffset = Math.PI;// 两条链相位差
+
+    function makeHelixCurve(phase){
+      const pts = [];
+      for(let i=0;i<=turns*pointsPerTurn;i++){
+        const t = i/(turns*pointsPerTurn);
+        const ang = t*turns*2*Math.PI + phase;
+        pts.push(new THREE.Vector3(Math.cos(ang)*radius, t*height - height/2, Math.sin(ang)*radius));
+      }
+      return new THREE.CatmullRomCurve3(pts);
+    }
+
+    const pathA = makeHelixCurve(0);
+    const pathB = makeHelixCurve(strandOffset);
+    const tubeGeomA = new THREE.TubeGeometry(pathA, turns*pointsPerTurn, .18, 12, false);
+    const tubeGeomB = new THREE.TubeGeometry(pathB, turns*pointsPerTurn, .18, 12, false);
+    const tubeMatA = new THREE.MeshPhongMaterial({ color: 0x64b5f6 });
+    const tubeMatB = new THREE.MeshPhongMaterial({ color: 0xffb74d });
+    const strandA = new THREE.Mesh(tubeGeomA, tubeMatA);
+    const strandB = new THREE.Mesh(tubeGeomB, tubeMatB);
+    scene.add(strandA, strandB);
+
+    // ====== 碱基对（InstancedMesh） ======
+    const baseGeo = new THREE.CylinderGeometry(.08, .08, 4.2, 8);
+    const baseMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    const count = turns*pointsPerTurn;
+    const bases = new THREE.InstancedMesh(baseGeo, baseMat, count);
+    bases.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    scene.add(bases);
+
+    // 碱基标签数据（A-T, C-G）
+    const pairSeq = Array.from({length: count}).map((_,i)=> (i%2===0? ['A','T'] : ['C','G']));
+
+    // 预计算实例矩阵
+    const m = new THREE.Matrix4();
+    for(let i=0;i<count;i++){
+      const t = i/(turns*pointsPerTurn);
+      const ang = t*turns*2*Math.PI;
+      const y = t*height - height/2;
+      const pA = new THREE.Vector3(Math.cos(ang)*radius, y, Math.sin(ang)*radius);
+      const pB = new THREE.Vector3(Math.cos(ang+strandOffset)*radius, y, Math.sin(ang+strandOffset)*radius);
+      const mid = new THREE.Vector3().addVectors(pA,pB).multiplyScalar(0.5);
+      const dir = new THREE.Vector3().subVectors(pB,pA).normalize();
+      const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+      m.compose(mid, quat, new THREE.Vector3(1,1,1));
+      bases.setMatrixAt(i, m);
+    }
+    bases.instanceMatrix.needsUpdate = true;
+
+    // ====== three-mesh-ui 信息卡片（悬浮解释） ======
+    const UI = window.ThreeMeshUI || window.threeMeshUI;
+    const uiContainer = new UI.Block({
+      width: 1.8, height: 0.9, padding: 0.08, justifyContent: 'center', borderRadius: 0.08,
+      backgroundColor: new THREE.Color(0x0e1640), backgroundOpacity: 0.85
+    });
+    const uiText = new UI.Text({ content: '点击碱基查看解释', fontSize: 0.06 });
+    uiContainer.add(uiText);
+    uiContainer.visible = false; scene.add(uiContainer);
+
+    // ====== 交互：点击碱基对 ======
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    function onClick(evt){
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((evt.clientX-rect.left)/rect.width)*2-1;
+      mouse.y = -((evt.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(bases);
+      if(intersects.length){
+        const id = intersects[0].instanceId;
+        const pair = pairSeq[id];
+        const exp = (pair[0]==='A'?'A 与 T 互补（2 条氢键）':'C 与 G 互补（3 条氢键）');
+        uiText.set({ content: `${pair[0]} - ${pair[1]}\n${exp}` });
+        uiContainer.position.copy(intersects[0].point);
+        uiContainer.lookAt(camera.position);
+        uiContainer.visible = true;
+      }
+    }
+    renderer.domElement.addEventListener('click', onClick);
+
+    // ====== 解旋动画 ======
+    const speedSlider = document.getElementById('speed');
+    const btnUnzip = document.getElementById('btn-unzip');
+    let unzip = false; let unzipT = 0; // 0..1
+    btnUnzip.onclick = ()=>{ unzip = !unzip; btnUnzip.textContent = unzip? '停止解旋' : '分子解旋'; };
+
+    // 解旋实现：逐步增大两链间相位差与半径、并沿高度偏移形成开链
+    function applyUnzip(delta){
+      if(!unzip) { unzipT = Math.max(0, unzipT - delta*0.15); }
+      else { unzipT = Math.min(1, unzipT + delta* (0.05 + parseFloat(speedSlider.value)*0.05)); }
+      const phase = THREE.MathUtils.lerp(strandOffset, strandOffset*1.35, unzipT);
+      const rAdd = THREE.MathUtils.lerp(0, 0.8, unzipT);
+      const drift = THREE.MathUtils.lerp(0, 0.6, unzipT);
+
+      // 重建 tube 顶点（轻量做法：更新每段中心点生成曲线）
+      const A = makeHelixCurve(0);
+      const B = makeHelixCurve(phase);
+      // 采样并写回 TubeGeometry 的沿线位置（近似处理）
+      const framesCnt = turns*pointsPerTurn;
+      const posA = tubeGeomA.parameters.path.getPoints(framesCnt);
+      const posB = tubeGeomB.parameters.path.getPoints(framesCnt);
+      for(let i=0;i<=framesCnt;i++){
+        const t = i/framesCnt;
+        const p1 = A.getPoint(t); p1.x *= (radius + rAdd)/radius; p1.z *= (radius + rAdd)/radius; p1.y += drift*(t-0.5);
+        const p2 = B.getPoint(t); p2.x *= (radius + rAdd)/radius; p2.z *= (radius + rAdd)/radius; p2.y -= drift*(t-0.5);
+        posA[i].copy(p1); posB[i].copy(p2);
+      }
+      // 用新的路径更新 Tube（替换 path 引用，触发重建）
+      tubeGeomA.parameters.path = A; strandA.geometry.dispose(); strandA.geometry = new THREE.TubeGeometry(A, framesCnt, .18, 12, false);
+      tubeGeomB.parameters.path = B; strandB.geometry.dispose(); strandB.geometry = new THREE.TubeGeometry(B, framesCnt, .18, 12, false);
+
+      // 更新碱基位置矩阵
+      const mat = new THREE.Matrix4();
+      for(let i=0;i<count;i++){
+        const t = i/(turns*pointsPerTurn);
+        const ang = t*turns*2*Math.PI;
+        const y = t*height - height/2;
+        const pA = A.getPoint(t);
+        const pB = B.getPoint(t);
+        const mid = new THREE.Vector3().addVectors(pA,pB).multiplyScalar(.5);
+        const dir = new THREE.Vector3().subVectors(pB,pA).normalize();
+        const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+        mat.compose(mid, quat, new THREE.Vector3(1,1,1));
+        bases.setMatrixAt(i, mat);
+      }
+      bases.instanceMatrix.needsUpdate = true;
+    }
+
+    // ====== 小测验：碱基互补 ======
+    const resultEl = document.getElementById('quiz-result');
+    document.querySelectorAll('.quiz .opts button').forEach(btn=>{
+      btn.onclick = () => {
+        const pick = btn.dataset.b; // 用户选择
+        const ans = 'T'; // 题目：A 的互补碱基
+        const ok = pick === ans;
+        resultEl.textContent = ok ? '正确！A 的互补碱基是 T（两条氢键）' : '不正确，再想想：A 的互补是 T，C 的互补是 G。';
+        resultEl.style.color = ok ? '#98ee99' : '#ffab91';
+      };
+    });
+
+    // ====== 动画主循环 ======
+    let last = performance.now();
+    function animate(){
+      requestAnimationFrame(animate);
+      const now = performance.now(); const dt = Math.min(0.05, (now - last)/1000); last = now;
+      controls.update();
+      applyUnzip(dt);
+      UI.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ====== 自适应 ======
+    window.addEventListener('resize', ()=>{
+      camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
+
+

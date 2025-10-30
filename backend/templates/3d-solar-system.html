@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>太阳系互动模型 · 物理与天文学习</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 100vw; height: 100vh; overflow: hidden;
+      background: radial-gradient(ellipse at center, #0b1020 0%, #05070e 70%, #000 100%);
+      color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    #container { width: 100%; height: 100%; position: relative; }
+    .controls {
+      position: absolute; top: 20px; left: 20px; z-index: 10;
+      background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(4px);
+      padding: 14px; border-radius: 10px; min-width: 200px; border: 1px solid rgba(255,255,255,0.15);
+    }
+    .controls h3 { font-size: 13px; margin-bottom: 8px; color: #e0e0e0; }
+    .controls button {
+      width: 100%; padding: 8px 10px; margin-bottom: 8px; border: 0; cursor: pointer;
+      background: #2b5cff; color: #fff; border-radius: 8px; font-size: 12px;
+    }
+    .controls button:hover { background: #234be0; }
+    .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; z-index: 100; }
+    .loading.hidden { display: none; }
+    .legend { position: absolute; right: 20px; bottom: 20px; z-index: 10; opacity: .85; font-size: 12px; }
+  </style>
+
+  <!-- Three.js & extras (r134) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Tone.js (fixed version) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+</head>
+<body>
+  <div class="loading" id="loading">加载中...</div>
+  <div id="container"></div>
+  <div class="controls" id="controls">
+    <h3>太阳系互动</h3>
+    <button id="btn-reset">重置视角</button>
+    <button id="btn-speed">时间加速 ×1</button>
+  </div>
+  <div class="legend">点击行星查看信息 · 滚轮缩放 · 拖拽旋转</div>
+
+  <script>
+    // ==================== 初始化 ====================
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
+    camera.position.set(20, 12, 28); camera.lookAt(0,0,0);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    // 光照
+    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    const d = new THREE.DirectionalLight(0xffffff, 1.1); d.position.set(20,30,10); d.castShadow = true; scene.add(d);
+
+    // 控制器
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.05; controls.enableZoom = true; controls.autoRotate = false; controls.minDistance = 6; controls.maxDistance = 120;
+
+    // 提示关闭
+    document.getElementById('loading').classList.add('hidden');
+
+    // ==================== 数据 ====================
+    const time = { scale: 1.0 }; // 动画时间倍率
+    const AU = 5; // 场景单位：天文单位缩放
+    const planetData = [
+      { name: 'Mercury', r: 0.38, dist: 0.39*AU, color: 0x9e9e9e, orbit: 0.009, temp: 440 },
+      { name: 'Venus',   r: 0.95, dist: 0.72*AU, color: 0xffc107, orbit: 0.0065, temp: 737 },
+      { name: 'Earth',   r: 1.00, dist: 1.00*AU, color: 0x2196f3, orbit: 0.0045, temp: 288 },
+      { name: 'Mars',    r: 0.53, dist: 1.52*AU, color: 0xff5722, orbit: 0.0038, temp: 210 },
+      { name: 'Jupiter', r: 11.2, dist: 5.20*AU, color: 0xb388ff, orbit: 0.0020, temp: 112 },
+      { name: 'Saturn',  r: 9.45, dist: 9.58*AU, color: 0xffe082, orbit: 0.0016, temp: 95  },
+      { name: 'Uranus',  r: 4.01, dist: 19.2*AU, color: 0x80deea, orbit: 0.0011, temp: 76  },
+      { name: 'Neptune', r: 3.88, dist: 30.1*AU, color: 0x90caf9, orbit: 0.0010, temp: 72  }
+    ];
+
+    // ==================== 太阳 ====================
+    const sunGeo = new THREE.SphereGeometry(2.5, 48, 48);
+    const sunMat = new THREE.MeshBasicMaterial({ color: 0xffcc33 });
+    const sun = new THREE.Mesh(sunGeo, sunMat); sun.name = 'Sun'; scene.add(sun);
+
+    // ==================== 行星与轨道 ====================
+    const planets = [];
+    const orbitMat = new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.25, transparent: true });
+    planetData.forEach(p => {
+      const g = new THREE.SphereGeometry(Math.max(0.25, p.r*0.2), 32, 32);
+      const m = new THREE.MeshPhongMaterial({ color: p.color });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.position.set(p.dist, 0, 0);
+      mesh.userData = { name: p.name, size: p.r, orbitSpeed: p.orbit, temp: p.temp, dist: p.dist };
+      scene.add(mesh); planets.push(mesh);
+
+      // 轨道圆
+      const curve = new THREE.EllipseCurve(0,0, p.dist, p.dist);
+      const pts = curve.getPoints(180).map(v => new THREE.Vector3(v.x, 0, v.y));
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const orbit = new THREE.LineLoop(geo, orbitMat); scene.add(orbit);
+    });
+
+    // ==================== 交互：点击显示信息 ====================
+    const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2();
+    const info = document.createElement('div');
+    info.style.cssText = 'position:absolute;bottom:20px;left:20px;background:rgba(0,0,0,.6);color:#fff;padding:10px 12px;border-radius:8px;z-index:20;font-size:12px;max-width:280px;line-height:1.5;';
+    info.innerHTML = '提示：点击行星查看信息'; document.body.appendChild(info);
+    function onClick(e){
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX-rect.left)/rect.width)*2-1; mouse.y = -((e.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse, camera); const hits = raycaster.intersectObjects(planets);
+      if(hits.length){ const m = hits[0].object; const d = m.userData;
+        info.innerHTML = `<b>${d.name}</b><br/>大小(相对地球)=${d.size.toFixed(2)}<br/>轨道速度=${d.orbitSpeed.toFixed(4)} rad/frame<br/>表面温度≈${d.temp}K`;
+      }
+    }
+    renderer.domElement.addEventListener('click', onClick);
+
+    // ==================== 控件：重置/时间加速 ====================
+    (function(){
+      const btnReset = document.getElementById('btn-reset');
+      const btnSpeed = document.getElementById('btn-speed');
+      btnReset.onclick = () => { camera.position.set(20,12,28); camera.lookAt(0,0,0); controls.reset(); };
+      let fast = false; btnSpeed.onclick = () => { fast = !fast; time.scale = fast ? 8.0 : 1.0; btnSpeed.textContent = fast ? '时间加速 ×8' : '时间加速 ×1'; };
+    })();
+
+    // ==================== 音效：Tone.js ====================
+    let sunOsc, jupOsc; 
+    function initAudio(){
+      if(window.Tone && !sunOsc){
+        const Tone = window.Tone;
+        sunOsc = new Tone.Oscillator(50, 'sine').toDestination();
+        jupOsc = new Tone.Oscillator(70, 'triangle').toDestination();
+        sunOsc.volume.value = -24; jupOsc.volume.value = -30; sunOsc.start(); jupOsc.start();
+      }
+    }
+    // 首次交互后初始化，满足浏览器自动播放策略
+    document.addEventListener('pointerdown', initAudio, { once: true });
+
+    // ==================== 动画 ====================
+    let t = 0; const baseSun = new THREE.Color(0xffcc33);
+    function updateSolarPulse(){
+      const pulse = (Math.sin(t*0.02)+1)/2; // 0..1
+      const col = baseSun.clone().multiplyScalar(0.75 + 0.25*pulse);
+      sun.material.color = col; if(sunOsc){ sunOsc.frequency.value = 40 + 10*pulse; }
+    }
+    function updatePlanets(){
+      planets.forEach((m,i)=>{ const d = planetData[i]; const angle = t * d.orbit; m.position.set(Math.cos(angle)*d.dist, 0, Math.sin(angle)*d.dist); });
+    }
+
+    function animate(){
+      requestAnimationFrame(animate);
+      t += time.scale; controls.update(); updatePlanets(); updateSolarPulse();
+      if (window.__extraUpdates) window.__extraUpdates.forEach(fn=>{ try{ fn(); }catch(_){} });
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // 自适应
+    window.addEventListener('resize', ()=>{
+      camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // 调试信息
+    console.log('🌞 太阳系模型已初始化');
+  </script>
+</body>
+</html>
+
+

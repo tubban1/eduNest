@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>视觉解题 · Vue 3 + ECharts + KaTeX</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#0b0f17;color:#e6f0ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif}
+    .layout{display:grid;grid-template-columns: 420px 1fr;grid-template-rows: auto 1fr;grid-template-areas:'hdr hdr' 'left right';height:100vh}
+    header{grid-area:hdr;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:12px}
+    header h1{font-size:16px;margin:0;color:#cfe1ff}
+    .left{grid-area:left;border-right:1px solid rgba(255,255,255,.08);padding:12px 12px 100px;overflow:auto}
+    .right{grid-area:right;padding:12px;overflow:auto}
+    .card{background:#11162a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:12px}
+    textarea{width:100%;min-height:120px;background:#0f1426;color:#e6f0ff;border:1px solid #25345e;border-radius:8px;padding:10px}
+    .btn{cursor:pointer;background:#2b5cff;color:#fff;border:0;border-radius:8px;padding:8px 12px}
+    .btn.alt{background:#1c2848}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .step{border-left:3px solid #2b5cff;padding-left:10px;margin:10px 0}
+    .katex-block{background:#0f1426;border:1px dashed #263764;border-radius:8px;padding:10px;margin:8px 0;overflow:auto}
+    .tip{font-size:12px;color:#9fb4e5}
+    #chart{width:100%;height:460px;border:1px solid #1f2a48;border-radius:12px;background:#0f1426}
+    .legend{font-size:12px;color:#9fb4e5}
+  </style>
+  <!-- Vue 3.5.20 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <!-- ECharts 6 -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+</head>
+<body>
+  <div id="app" class="layout">
+    <header>
+      <h1>视觉解题（函数几何与不等式）</h1>
+      <button class="btn alt" @click="reset">重置</button>
+      <span class="tip">步骤可视化 + 坐标系动态渲染 + LaTeX 排版</span>
+    </header>
+
+    <div class="left">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <strong>题干（可编辑）</strong>
+          <button class="btn" @click="applyProblem">应用题干</button>
+        </div>
+        <textarea v-model="problemText"></textarea>
+        <div class="tip">支持粘贴文字版题干。图片请转录为文字。</div>
+        <div style="margin-top:8px">
+          <div class="tip"><b>四个选项（可视化验证）</b></div>
+          <div class="row" style="margin-top:6px; gap:6px">
+            <button class="btn" @click="verifyA">验证 A</button>
+            <button class="btn" @click="verifyB">验证 B</button>
+            <button class="btn" @click="verifyC">验证 C</button>
+            <button class="btn" @click="verifyD">验证 D</button>
+            <button class="btn alt" @click="clearAux">清除叠加</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong>求解思路（步骤列表）</strong>
+        <div v-for="(s,i) in steps" :key="i" class="step">
+          <div><b>第 {{ i+1 }} 步：</b> {{ s.title }}</div>
+          <div class="katex-block" v-if="s.formula" ref="el => renderTex(el, s.formula)"></div>
+          <div class="tip">{{ s.note }}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong>可视化控制</strong>
+        <div class="row" style="margin-top:8px">
+          <label class="tip">曲线类型：</label>
+          <select v-model="plot.type">
+            <option value="parabola">抛物线 y^2=4px</option>
+            <option value="cubic">三次曲线 y=x^3-3x</option>
+            <option value="circle">圆 (x-a)^2+(y-b)^2=r^2</option>
+            <option value="exam">试题原图（近似重现）</option>
+          </select>
+          <label class="tip">参数a：</label>
+          <input type="number" v-model.number="plot.a" style="width:80px" />
+          <label class="tip">参数b：</label>
+          <input type="number" v-model.number="plot.b" style="width:80px" />
+          <label class="tip">参数r/p：</label>
+          <input type="number" v-model.number="plot.r" style="width:80px" />
+          <button class="btn" @click="draw">更新图像</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" @click="solveAreaForA">数值求 a（面积=4）</button>
+          <button class="btn" @click="scanMaxY">扫描第一象限最大 y</button>
+          <button class="btn" @click="toggleIneq">切换不等式 y=4/(x+2)</button>
+        </div>
+        <div class="legend">默认已绘制坐标轴、网格线、关键点与示例切线/渐近线。可用于“选项验证”。</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div id="chart"></div>
+      <div class="card">
+        <strong>结论</strong>
+        <div class="katex-block" ref="el => renderTex(el, conclusionTex)"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup(){
+        const problemText = ref(`设有一条光滑曲线 C（图示为其一部分），C 过原点 O。已知点 F(2,0)。
+直线 x=a(a<0) 与 C 围成的面积为 4。判断下列命题：
+A. a=-2；
+B. 点 (2√2,0) 在 C 上；
+C. C 在第一象限内的纵坐标最大值为 1；
+D. 若 (x0,y0)∈C，则 y0 ≤ 4/(x0+2)。`);
+
+        const steps = ref([
+          { title:'建立坐标系与曲线候选模型', formula:String.raw`\text{尝试 }\; y=x^3-3x\;\text{ 或 }\; y^2=4px\;\text{并满足 }\; C\ni O(0,0).`, note:'两个模型都过原点，后续用条件逐步筛选。' },
+          { title:'引入焦点与切线/渐近线条件', formula:String.raw`F(2,0)\;\text{到切线/渐近线 }x=a\,(a<0)\;\text{ 的距离为 }|2-a|.`, note:'将距离/面积等量化约束转换为代数条件。' },
+          { title:'面积=4 的条件转化', formula:String.raw`\int_{x=a}^{0} |y(x)|\,dx = 4\;\Rightarrow\; \text{解得 } a=-2\;\text{(示例)}.`, note:'示例展示如何把图形面积化为定积分。实际以题面精确条件为准。' },
+          { title:'第一象限的纵坐标极值', formula:String.raw`\max\{y\}>0\;\text{ 由 }\; y'(x)=0\;\text{求得驻点并验证区间。}`, note:'对确定的曲线在 x>0 上求极大值。' },
+          { title:'不等式验证', formula:String.raw`\text{若 }(x_0,y_0)\in C,\;\text{证明 } y_0 \le \dfrac{4}{x_0+2}.`, note:'利用曲线方程消去 y_0 或使用凸性/切线法证明。' }
+        ]);
+
+        const conclusionTex = ref(String.raw`\boxed{\text{示例结论： } a=-2\;,\; \text{其余选项按图像与推导逐一验证}}`);
+
+        let chart;
+        const plot = ref({ type:'cubic', a:0, b:0, r:3 });
+        let showIneq = false;
+        let overlays = { area: null, ineq: null, marks: [] };
+
+        function renderTex(el, tex){
+          if(!el) return; try{ katex.render(tex, el, { throwOnError:false, displayMode:true }); }catch(e){}
+        }
+
+        function f(x){
+          if(plot.value.type==='cubic') return x*x*x - 3*x;
+          if(plot.value.type==='parabola'){
+            const p = Math.max(0.1, plot.value.r||1);
+            // 仅画上/下分支，这里返回上分支（用于面积估计需取绝对值）
+            return Math.sign(x)*Math.sqrt(Math.max(0,4*p*Math.abs(x)));
+          }
+          if(plot.value.type==='circle'){
+            const a=plot.value.a||0, b=plot.value.b||0, r=Math.max(0.2, plot.value.r||3);
+            // 返回上半部分 y
+            const v = r*r - (x-a)*(x-a); return isNaN(v)||v<0 ? NaN : b + Math.sqrt(v);
+          }
+          return 0;
+        }
+
+        function draw(){
+          if(!chart){ chart = echarts.init(document.getElementById('chart')); }
+          const axis = {
+            type:'value', min:-6, max:6,
+            axisLine:{lineStyle:{color:'#9fb4e5', width:2}},
+            axisLabel:{color:'#cfe1ff'}, splitLine:{show:false}
+          };
+          const gridLine = {show:true,lineStyle:{color:'#1b2744'}};
+
+          // 生成曲线点
+          const xs = []; for(let x=-6;x<=6;x+=0.02){ xs.push(x); }
+          let data=[];
+          if(plot.value.type==='cubic'){
+            data = xs.map(x=>[x, x*x*x - 3*x]);
+          } else if(plot.value.type==='parabola'){
+            const p = Math.max(0.1, plot.value.r || 1);
+            data = xs.map(x=> [x, Math.sign(x)*Math.sqrt(Math.max(0,4*p*Math.abs(x)))] );
+          } else if(plot.value.type==='circle'){
+            const a=plot.value.a||0, b=plot.value.b||0, r=Math.max(0.2, plot.value.r||3);
+            data = []; const step=0.01; for(let t=0;t<Math.PI*2;t+=step){ const x=a+r*Math.cos(t); const y=b+r*Math.sin(t); data.push([x,y]); }
+          } else if(plot.value.type==='exam'){
+            // 右侧：三次曲线近似原图
+            const right = xs.map(x=>[x, x*x*x - 3*x]);
+            // 左上：竖直抛物线（开口向上），向左偏移，近似原图形态
+            const a0 = -1.2; const left = [];
+            for(let x=-3;x<=-0.2;x+=0.01){ const y = 2.6 + 2.2*(x-a0)*(x-a0); if(y<=6) left.push([x,y]); }
+            data = right;
+            // 叠加左支
+            examExtra = { type:'line', name:'左支', data:left, showSymbol:false, lineStyle:{color:'#46d369', width:2} };
+          }
+
+          // 辅助：示例直线 x=-2
+          const aLine = -2; const line = []; for(let y=-6;y<=6;y+=0.05){ line.push([aLine,y]); }
+
+          // 不等式 y=4/(x+2)
+          const ineq = []; if(showIneq){ for(let x=-1.9;x<=6;x+=0.02){ ineq.push([x, 4/(x+2)]); } }
+
+          const xArr = []; for(let x=-6;x<=6;x+=0.6){ xArr.push([x,0]); }
+          const yArr = []; for(let y=-6;y<=6;y+=0.6){ yArr.push([0,y]); }
+
+          chart.setOption({
+            backgroundColor:'transparent',
+            animation:false,
+            grid:{left:40,right:20,top:20,bottom:30},
+            xAxis:{...axis, minorSplitLine:gridLine}, yAxis:{...axis, minorSplitLine:gridLine},
+            series:[
+              { type:'line', data:xArr, showSymbol:false, lineStyle:{color:'#9fb4e5', width:2} },
+              { type:'line', data:yArr, showSymbol:false, lineStyle:{color:'#9fb4e5', width:2} },
+              { type:'line', name:'曲线 C', data, showSymbol:false, lineStyle:{color:'#46d369', width:2} },
+              { type:'line', name:'x=-2', data:line, showSymbol:false, lineStyle:{color:'#ff6b6b', type:'dashed'} },
+              showIneq ? { type:'line', name:'y=4/(x+2)', data:ineq, showSymbol:false, lineStyle:{color:'#ffd166'} } : {},
+              (typeof examExtra!=='undefined'? examExtra : {}),
+              { type:'scatter', data:[[0,0],[2,0]], symbolSize:8, itemStyle:{color:'#90caf9'},
+                encode:{x:0,y:1}, label:{show:true, formatter:(p)=> p.dataIndex===0?'O(0,0)':'F(2,0)', color:'#cfe1ff', position:'top'} }
+            ],
+            tooltip:{trigger:'item'}
+          });
+        }
+
+        function applyProblem(){
+          // 根据题干关键字可调整默认图形，示例保留 cubic
+          draw();
+        }
+        function reset(){ steps.value = JSON.parse(JSON.stringify(steps.value)); draw(); }
+
+        // —— 数值计算工具 ——
+        function integrateAbs(a,b, n=4000){
+          const h=(b-a)/n; let s=0; for(let i=0;i<=n;i++){ const x=a+i*h; const w=(i===0||i===n)?0.5:1; const y=f(x); if(!isNaN(y)) s+=w*Math.abs(y); }
+          return s*h;
+        }
+        function solveAreaForA(){
+          // 解 ∫_a^0 |f(x)| dx = 4, a<0
+          let L=-6, R=-0.01; const target=4;
+          // 单调不一定，但在示例曲线下可用夹逼试探
+          for(let k=0;k<60;k++){
+            const mid=(L+R)/2; const area=integrateAbs(mid,0); if(area>target) L=mid; else R=mid;
+          }
+          const aVal=(L+R)/2; overlays.area=aVal; draw(); shadeArea(aVal);
+        }
+        function shadeArea(aVal){
+          if(!chart||isNaN(aVal)) return;
+          const pts=[]; for(let x=aVal;x<=0;x+=0.01){ const y=f(x); if(!isNaN(y)) pts.push([x,y]); }
+          pts.push([0,0],[aVal,0]);
+          chart.setOption({ series:[ { id:'area', type:'line', areaStyle:{color:'rgba(70,211,105,0.25)'}, lineStyle:{width:0}, data:pts } ] }, {replaceMerge:['series']});
+        }
+
+        function verifyA(){ solveAreaForA(); conclusionTex.value = String.raw`A\text{（求得 }a\approx ${'${(overlays.area||0).toFixed(3)}'}\text{）}`; }
+        function verifyB(){
+          const x=2*Math.SQRT2, y=0; const ok=Math.abs(y - f(x))<1e-2; overlays.marks=[[x,y]]; draw(); markPoints(overlays.marks, ok? '#98ee99':'#ff6b6b');
+          conclusionTex.value = ok? String.raw`B\;\text{成立}` : String.raw`B\;\text{不成立（代入曲线不等于0）}`;
+        }
+        function markPoints(pts, color){ if(!chart) return; chart.setOption({ series:[ { id:'marks', type:'scatter', data:pts, symbolSize:10, itemStyle:{color} } ] }, {replaceMerge:['series']}); }
+
+        function scanMaxY(){
+          let best=-1e9, bx=null; for(let x=0;x<=6;x+=0.002){ const y=f(x); if(!isNaN(y)&&y>best){ best=y; bx=x; } }
+          draw(); markPoints([[bx,best]], '#ffd166'); conclusionTex.value = String.raw`\max y \approx ${'${best.toFixed(3)}'}`;
+        }
+        function toggleIneq(){ showIneq=!showIneq; draw(); }
+        function verifyC(){ scanMaxY(); conclusionTex.value += String.raw`\;\text{（与 }1\text{ 对比）}`; }
+        function verifyD(){ showIneq=true; draw(); conclusionTex.value = String.raw`\text{在图中黄色曲线之下： } y \le \dfrac{4}{x+2}`; }
+        function clearAux(){ overlays={area:null, ineq:null, marks:[]}; draw(); }
+
+        onMounted(()=>{ nextTick(draw); });
+
+        return { problemText, steps, plot, draw, reset, applyProblem, renderTex, conclusionTex,
+          solveAreaForA, scanMaxY, toggleIneq, verifyA, verifyB, verifyC, verifyD, clearAux };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+
+

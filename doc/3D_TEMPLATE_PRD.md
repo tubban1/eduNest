@@ -101,7 +101,7 @@ CREATE TABLE 3d_templates (
 
 **字段说明：**
 - `template_key`: 模板的唯一标识符，用于在生成内容时引用
-- `template_code`: 完整的 TSX 模板代码，包含标记占位符
+- `template_code`: 完整的 HTML 模板代码，包含标记占位符
 - `markers`: JSON 数组，定义可替换的代码块位置
   ```json
   [
@@ -208,7 +208,7 @@ ADD COLUMN code_snippets JSONB;
 - **VRButton** - VR 按钮
 - **XRControllerModelFactory** - XR 控制器模型
 
-### 4.2 CDN 导入方案
+### 4.2 CDN 导入方案（统一使用 three@0.134.0）
 
 #### 方案 A：ES 模块导入（推荐）
 
@@ -217,7 +217,7 @@ ADD COLUMN code_snippets JSONB;
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.module.js"
   }
 }
 </script>
@@ -225,8 +225,8 @@ ADD COLUMN code_snippets JSONB;
 <!-- 子库导入 -->
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/jsm/loaders/GLTFLoader.js';
 
 // 使用
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -236,9 +236,9 @@ const controls = new OrbitControls(camera, renderer.domElement);
 #### 方案 B：UMD 导入（兼容性更好）
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <script>
 // 全局可用
@@ -519,8 +519,8 @@ const detectThreeJSLibraries = (codeString: string): string[] => {
 - 每个卡片显示预览图
 
 #### 6.2.2 3D 内容详情页（`/3d/[short_id]`）
-- 渲染完整的 TSX 页面
-- 使用自定义渲染器支持 3D
+- 直出完整 HTML 页面（服务端注入纯 JS 到模板）
+- 使用 Three.js 渲染 3D 内容
 - 支持交互操作
 
 #### 6.2.3 创建 3D 内容页
@@ -666,6 +666,102 @@ export async function GET(request: Request, { params }: { params: { short_id: st
 
 ---
 
+### 7.5 替换层（Replacement Layer）规范（V1 版内置）
+
+目的：将页面拆分为可控“代码块/占位符”，后端根据 JSON 配置对默认模板进行“最小覆盖”，只替换需要变更的部分，其他保持默认，实现安全、可审计、可回滚。
+
+#### 7.5.1 JSON Schema（简版）
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ThreeTemplateConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "title": {"type": "string", "maxLength": 120},
+    "style": {"type": "object", "additionalProperties": false, "properties": {"bodyGradient": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 2}, "showControls": {"type": "boolean", "default": true}}},
+    "libraries": {"type": "object", "additionalProperties": false, "properties": {"three": {"type": "string", "enum": ["three@0.134.0"]}, "extras": {"type": "array", "items": {"type": "string", "enum": ["OrbitControls","GLTFLoader","FlyControls"]}}}, "default": {"three": "three@0.134.0", "extras": ["OrbitControls"]}},
+    "renderer": {"type": "object", "additionalProperties": false, "properties": {"antialias": {"type": "boolean", "default": true}, "pixelRatio": {"type": "string", "enum": ["device","1"], "default": "device"}, "size": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 2, "default": ["window","window"]}}},
+    "cameraPosition": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "default": [5,5,8]},
+    "lightSource": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"type": {"type": "string", "enum": ["ambient","directional","point"]}, "color": {"type": "string"}, "intensity": {"type": "number"}, "position": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "castShadow": {"type": "boolean"}}, "required": ["type"]}, "default": [{"type":"ambient","color":"#ffffff","intensity":0.5}]},
+    "controls_class": {"type": "string", "enum": ["OrbitControls","FlyControls"], "default": "OrbitControls"},
+    "controls_js": {"type": "object", "additionalProperties": false, "properties": {"enableDamping": {"type": "boolean"}, "dampingFactor": {"type": "number"}, "enableZoom": {"type": "boolean"}, "autoRotate": {"type": "boolean"}}},
+    "axesHelper": {"type": "object", "properties": {"enabled": {"type": "boolean","default": true}, "size": {"type": "number","default": 5}}},
+    "gridHelper": {"type": "object", "properties": {"enabled": {"type": "boolean","default": true}, "size": {"type": "number","default": 10}, "divisions": {"type": "number","default": 10}, "opacity": {"type": "number","default": 0.3}}},
+    "loading": {"type": "object", "properties": {"text": {"type": "string","default":"加载中..."}, "show": {"type": "boolean","default": true}}},
+    "custom_snippets": {"type": "array", "items": {"type": "string"}, "default": []}
+  }
+}
+```
+
+#### 7.5.2 占位符映射（与模板协定）
+- HTML 层：
+  - `<!-- TITLE -->` ← `title`
+  - `<!-- STYLES -->` ← `style`（受限 CSS 生成）
+  - `<!-- LIBRARIES -->` ← `libraries`（CDN 白名单映射）
+  - `<!-- CONTROLS_PANEL -->` ← `style.showControls`
+- JS 层：
+  - `// RENDERER_CONFIG` ← `renderer`
+  - `// CAMERA_POSITION` ← `cameraPosition`
+  - `// LIGHT_SOURCES` ← `lightSource[]`
+  - `// CONTROLS_JS` ← `controls_class` + `controls_js`
+  - `// AXES_HELPER` ← `axesHelper`
+  - `// GRID_HELPER` ← `gridHelper`
+  - `// CUSTOM_SNIPPETS` ← `custom_snippets[]`（经 AST 安全扫描后注入）
+
+#### 7.5.3 依赖白名单映射
+```ts
+const LIB_MAP = {
+  'three@0.134.0': 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js',
+  OrbitControls: 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js',
+  GLTFLoader: 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js',
+  FlyControls: 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/FlyControls.js'
+} as const;
+```
+
+#### 7.5.4 注入算法（伪代码）
+```ts
+function render3DHtml(templateHtml: string, cfgInput: unknown) {
+  const cfg = validateWithAjvAndFillDefaults(cfgInput);
+  const styles = buildSafeStyles(cfg.style);
+  const libTags = buildLibraryTags(cfg.libraries, LIB_MAP);
+
+  let html = templateHtml
+    .replace('<!-- TITLE -->', escapeHtml(cfg.title || '3D建模展示'))
+    .replace('<!-- STYLES -->', styles)
+    .replace('<!-- LIBRARIES -->', libTags)
+    .replace('<!-- CONTROLS_PANEL -->', cfg.style?.showControls === false ? '<style>.controls{display:none}</style>' : '');
+
+  const jsBlocks = {
+    renderer: buildRendererBlock(cfg.renderer),
+    camera: `camera.position.set(${cfg.cameraPosition.join(',')}); camera.lookAt(0,0,0);`,
+    lights: cfg.lightSource.map(toLightCode).join('\n'),
+    controls: toControlsCode(cfg.controls_class, cfg.controls_js),
+    axes: cfg.axesHelper?.enabled === false ? '' : `scene.add(new THREE.AxesHelper(${cfg.axesHelper?.size ?? 5}));`,
+    grid: cfg.gridHelper?.enabled === false ? '' : `const grid=new THREE.GridHelper(${cfg.gridHelper?.size ?? 10},${cfg.gridHelper?.divisions ?? 10}); grid.material.opacity=${cfg.gridHelper?.opacity ?? 0.3}; grid.material.transparent=true; scene.add(grid);`,
+    custom: cfg.custom_snippets.map(scanAndAllowSnippet).join('\n')
+  };
+
+  html = html
+    .replace('// RENDERER_CONFIG', jsBlocks.renderer)
+    .replace('// CAMERA_POSITION', jsBlocks.camera)
+    .replace('// LIGHT_SOURCES', jsBlocks.lights)
+    .replace('// CONTROLS_JS', jsBlocks.controls)
+    .replace('// AXES_HELPER', jsBlocks.axes)
+    .replace('// GRID_HELPER', jsBlocks.grid)
+    .replace('// CUSTOM_SNIPPETS', jsBlocks.custom);
+
+  return html;
+}
+```
+
+#### 7.5.5 安全规则
+- JSON 仅允许 Schema 定义的键；`additionalProperties=false`；
+- CSS 仅允许受限属性并做安全转义；
+- libraries 仅能映射到 `LIB_MAP` 固定 URL；
+- `custom_snippets` 通过 AST 白名单：禁 `eval/Function/fetch/document/window/localStorage/cookie`，仅允许访问 `THREE/scene/camera/renderer/controls`；
+- 编辑/预览页建议走 `iframe sandbox`，详情页可直出 HTML。
+
 ## 8. 数据流程图
 
 ### 8.1 用户创建 3D 内容流程
@@ -689,7 +785,7 @@ export async function GET(request: Request, { params }: { params: { short_id: st
 
 ```
 1. Admin 访问 /admin/3d-templates/new
-2. 输入模板代码（TSX格式）
+2. 输入模板代码（HTML格式）
 3. 定义 markers（JSON数组）
 4. 前端调用 POST /api/admin/3d-templates
 5. 后端保存到 3d_templates 表
@@ -712,7 +808,7 @@ export async function GET(request: Request, { params }: { params: { short_id: st
 - 防止恶意代码执行
 
 ### 9.3 数据验证
-- TSX 语法验证
+- JavaScript 语法验证（注入代码段）
 - 模板代码完整性检查
 - 标记位置合法性验证
 
@@ -820,4 +916,7 @@ export async function GET(request: Request, { params }: { params: { short_id: st
 - AI 生成准确率：>80%
 - 页面加载时间：<3秒
 - 用户满意度：>4.0/5.0
+
+
+---
 

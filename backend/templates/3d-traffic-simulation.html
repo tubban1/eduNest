@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>城市交通仿真 · 数学建模/优化/AI 决策</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100vw; height: 100vh; overflow: hidden; background: #0b0f17; color: #e6f0ff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+    #container { width: 100%; height: 100%; position: relative; }
+    .panel {
+      position: absolute; top: 16px; left: 16px; z-index: 10;
+      background: rgba(12, 16, 28, 0.7); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 14px; min-width: 260px; backdrop-filter: blur(6px);
+    }
+    .panel h3 { font-size: 13px; color: #cfe1ff; margin-bottom: 8px; }
+    .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+    .row label { font-size: 12px; width: 110px; color: #cfe1ff; }
+    .row input[type=range] { flex: 1; }
+    .panel button { width: 100%; padding: 8px 10px; border: 0; cursor: pointer; border-radius: 8px; background: #2b5cff; color: #fff; font-size: 12px; }
+    .panel button:hover { background: #244cda; }
+    .legend { position: absolute; right: 16px; bottom: 16px; opacity: .85; font-size: 12px; }
+    .chart { position: absolute; right: 16px; top: 16px; width: 360px; height: 220px; z-index: 9; background: rgba(12, 16, 28, 0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; overflow: hidden; }
+    #chart { width: 100%; height: 100%; }
+  </style>
+
+  <!-- Three.js r134 + OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Yuka.js (AI 行为/避让) -->
+  <script src="https://cdn.jsdelivr.net/npm/yuka@0.7.8/build/yuka.min.js"></script>
+  <!-- Vue 3 + ECharts（统计图） -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.12/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div id="container"></div>
+  <div class="panel">
+    <h3>城市交通仿真</h3>
+    <div class="row">
+      <label>红绿灯周期 (秒)</label>
+      <input id="cycle" type="range" min="10" max="120" step="5" value="60" />
+    </div>
+    <div class="row">
+      <label>绿灯占比 (%)</label>
+      <input id="green" type="range" min="20" max="80" step="5" value="50" />
+    </div>
+    <div class="row">
+      <label>车辆生成速率</label>
+      <input id="spawn" type="range" min="0" max="10" step="1" value="5" />
+    </div>
+    <button id="btn-bus">添加公交线路（节流）</button>
+  </div>
+  <div class="chart"><div id="chart"></div></div>
+  <div class="legend">拖拽旋转 · 滚轮缩放 · 调整滑块观察拥堵指标变化</div>
+
+  <script>
+    // ============= Three 基础 =============
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0f17);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 5000);
+    camera.position.set(60, 60, 60); camera.lookAt(0,0,0);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.05;
+    scene.add(new THREE.AmbientLight(0xffffff, .7));
+    const dl = new THREE.DirectionalLight(0xffffff, .8); dl.position.set(60,120,80); scene.add(dl);
+
+    // ============= 地面与路网（简化棋盘） =============
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(400, 400, 1, 1),
+      new THREE.MeshPhongMaterial({ color: 0x0f1626 })
+    );
+    ground.rotation.x = -Math.PI/2; scene.add(ground);
+
+    const grid = new THREE.GridHelper(400, 20, 0x184a90, 0x18345e);
+    grid.position.y = 0.01; scene.add(grid);
+
+    // 车道中心线（双向）
+    const roads = [];
+    const roadMat = new THREE.MeshPhongMaterial({ color: 0x152033 });
+    for(let i=-150;i<=150;i+=40){
+      const xRoad = new THREE.Mesh(new THREE.BoxGeometry(400, 0.2, 8), roadMat); xRoad.position.set(0,0.11,i); scene.add(xRoad); roads.push({dir:'x', z:i});
+      const zRoad = new THREE.Mesh(new THREE.BoxGeometry(8, 0.2, 400), roadMat); zRoad.position.set(i,0.11,0); scene.add(zRoad); roads.push({dir:'z', x:i});
+    }
+
+    // ============= 红绿灯模型 =============
+    const intersections = [];
+    const lightOn = new THREE.MeshPhongMaterial({ color: 0x46d369, emissive: 0x46d369, emissiveIntensity: 0.8 });
+    const lightOff = new THREE.MeshPhongMaterial({ color: 0x2a3b55 });
+    const redOn = new THREE.MeshPhongMaterial({ color: 0xff5f57, emissive: 0xff5f57, emissiveIntensity: 0.8 });
+    function addIntersection(x, z){
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,8,12), new THREE.MeshPhongMaterial({ color: 0x5a6b8a }));
+      pole.position.set(x, 4, z); scene.add(pole);
+      const green = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), lightOn); green.position.set(x+1.5, 8, z);
+      const red = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), redOn); red.position.set(x-1.5, 8, z);
+      scene.add(green, red);
+      intersections.push({ x, z, green, red, state: 'NS' }); // NS: 南北通行；EW: 东西通行
+    }
+    for(let x=-120;x<=120;x+=40){ for(let z=-120; z<=120; z+=40){ addIntersection(x,z); } }
+
+    // ============= Yuka 世界与车辆 =============
+    const YUKA = window.YUKA; // 全局
+    const entityManager = new YUKA.EntityManager();
+    const time = new YUKA.Time();
+    const vehicles = []; const meshes = []; const obstacles = [];
+
+    // 车辆工厂
+    function spawnCar(lane){
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(3,1.2,1.6), new THREE.MeshPhongMaterial({ color: 0x4fc3f7 }));
+      mesh.castShadow = true; scene.add(mesh);
+      const vehicle = new YUKA.Vehicle();
+      vehicle.setRenderComponent(mesh, (entity)=>{ mesh.position.copy(entity.position); mesh.quaternion.copy(entity.rotation); });
+      vehicle.maxSpeed = 12; vehicle.updateNeighborhood = true;
+      // 起点与方向
+      if(lane.dir==='x'){
+        vehicle.position.set(-200, 0.8, lane.z + (Math.random()<0.5? -2 : 2));
+        vehicle.velocity.set(1,0,0);
+      } else {
+        vehicle.position.set(lane.x + (Math.random()<0.5? -2 : 2), 0.8, -200);
+        vehicle.velocity.set(0,0,1);
+      }
+      // 避让行为（简单分离）
+      const avoid = new YUKA.ObstacleAvoidanceBehavior();
+      vehicle.steering.add(avoid);
+      vehicles.push(vehicle); meshes.push(mesh); entityManager.add(vehicle);
+    }
+
+    // 初始生成少量车辆
+    const xLanes = roads.filter(r=>r.dir==='x');
+    const zLanes = roads.filter(r=>r.dir==='z');
+    for(let i=0;i<12;i++){ spawnCar(xLanes[(Math.random()*xLanes.length)|0]); }
+    for(let i=0;i<12;i++){ spawnCar(zLanes[(Math.random()*zLanes.length)|0]); }
+
+    // ============= 交通灯逻辑与车辆简单规则 =============
+    const cycleEl = document.getElementById('cycle');
+    const greenEl = document.getElementById('green');
+    const spawnEl = document.getElementById('spawn');
+    const busBtn = document.getElementById('btn-bus');
+    let busMode = false;
+    busBtn.onclick = ()=>{ busMode = !busMode; busBtn.textContent = busMode ? '公交线路已添加（节流中）' : '添加公交线路（节流）'; };
+
+    function trafficLightState(t){
+      const cycle = parseFloat(cycleEl.value);
+      const greenRatio = parseFloat(greenEl.value)/100; // NS 绿灯占比
+      const mod = t % cycle;
+      return mod < cycle*greenRatio ? 'NS' : 'EW';
+    }
+
+    function updateTrafficLights(state){
+      intersections.forEach(it=>{
+        const ns = (state==='NS');
+        it.state = state;
+        it.green.material = ns ? lightOn : lightOff;
+        it.red.material = ns ? lightOff : redOn;
+      });
+    }
+
+    // 车辆边界/消亡与再生
+    function recycleVehicles(){
+      for(let i=vehicles.length-1;i>=0;i--){
+        const v = vehicles[i]; const p = v.position;
+        if(Math.abs(p.x)>210 || Math.abs(p.z)>210){
+          const m = meshes[i]; scene.remove(m); entityManager.remove(v); vehicles.splice(i,1); meshes.splice(i,1);
+        }
+      }
+      // 生成：受 spawn 与公交模式影响
+      const spawnRate = parseInt(spawnEl.value,10);
+      const base = busMode ? Math.max(0, spawnRate-3) : spawnRate; // 公交投入 → 私家车减少
+      if(Math.random() < base*0.02){ spawnCar(Math.random()<0.5 ? xLanes[(Math.random()*xLanes.length)|0] : zLanes[(Math.random()*zLanes.length)|0]); }
+    }
+
+    // 简化路口通行：靠近路口时根据当前相位决定减速/通行
+    function applyIntersectionRules(){
+      const state = globalState.lightState;
+      vehicles.forEach(v=>{
+        const p = v.position;
+        // 找最近路口
+        let nearest = null; let dmin = 1e9;
+        for(const it of intersections){
+          const d = Math.max(Math.abs(p.x - it.x), Math.abs(p.z - it.z));
+          if(d < dmin){ dmin = d; nearest = it; }
+        }
+        if(nearest && dmin < 8){
+          const movingX = Math.abs(v.velocity.x) > Math.abs(v.velocity.z);
+          const canPass = (state==='NS' && !movingX) || (state==='EW' && movingX);
+          if(!canPass){ v.velocity.multiplyScalar(0.95); } else { v.velocity.normalize().multiplyScalar(12); }
+        }
+      });
+    }
+
+    // ============= 统计图（Vue + ECharts） =============
+    const app = Vue.createApp({ mounted(){ this.initChart(); }, data(){ return { chart:null }; }, methods:{
+      initChart(){ this.chart = echarts.init(document.getElementById('chart')); this.chart.setOption({
+        backgroundColor: 'transparent', grid: { left: 40, right: 12, top: 20, bottom: 28 },
+        xAxis: { type: 'category', data: [], axisLine:{lineStyle:{color:'#5f79a4'}}, axisLabel:{color:'#cfe1ff'} },
+        yAxis: { type: 'value', axisLine:{lineStyle:{color:'#5f79a4'}}, splitLine:{lineStyle:{color:'#20304e'}}, axisLabel:{color:'#cfe1ff'} },
+        series: [{ type: 'line', name:'平均延误', smooth: true, showSymbol: false, data: [], lineStyle:{color:'#46d369'}, areaStyle:{color:'rgba(70,211,105,0.12)'} }]
+      }); },
+      updateChart(x, y){ if(!this.chart) return; const opt = this.chart.getOption(); opt.xAxis[0].data.push(x); opt.series[0].data.push(y); if(opt.xAxis[0].data.length>40){ opt.xAxis[0].data.shift(); opt.series[0].data.shift(); } this.chart.setOption(opt); }
+    }});
+    app.mount(document.createElement('div')); // 仅用于创建实例
+
+    // ============= 主循环 =============
+    const globalState = { lightState: 'NS', t: 0, simTime: 0 };
+    let last = performance.now(); let chartTimer = 0;
+    function animate(){
+      requestAnimationFrame(animate);
+      const now = performance.now(); const dt = Math.min(0.05, (now-last)/1000); last = now; globalState.t += dt; globalState.simTime += dt;
+      const state = trafficLightState(globalState.simTime);
+      if(state !== globalState.lightState){ globalState.lightState = state; updateTrafficLights(state); }
+
+      const delta = time.update().getDelta();
+      entityManager.update(delta);
+      applyIntersectionRules();
+      recycleVehicles();
+      controls.update();
+      renderer.render(scene, camera);
+
+      // 统计：以车辆平均速度估算延误（越低延误越大）
+      chartTimer += dt; if(chartTimer > 1){
+        chartTimer = 0;
+        const avgSpeed = vehicles.length ? vehicles.reduce((s,v)=> s + v.velocity.length(), 0)/vehicles.length : 0;
+        const delay = Math.max(0, 12 - avgSpeed); // 12 为期望速度
+        // 将数据写入 ECharts
+        app._instance && app._instance.proxy.updateChart(Math.round(globalState.simTime), parseFloat(delay.toFixed(2)));
+      }
+    }
+    updateTrafficLights('NS');
+    animate();
+
+    // ============= 自适应 =============
+    window.addEventListener('resize', ()=>{
+      camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      const el = document.getElementById('chart'); if(el){ const inst = echarts.getInstanceByDom(el); inst && inst.resize(); }
+    });
+  </script>
+</body>
+</html>
+
+

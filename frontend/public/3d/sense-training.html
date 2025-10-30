@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>空间感知迷宫 · 3D</title>
+  <style>
+    body { margin: 0; background: #0a0d14; color: #e9eef8; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif; }
+    .nav { background: #0f1530; color: #ffd166; padding: 12px 20px; font-size: 18px; font-weight: 700; letter-spacing:1px; border-bottom: 1px solid #1e2a57; display:flex; align-items:center; }
+    .nav .right {margin-left:auto;font-size:15px;color:#d7e6ff;display:flex;gap:10px;align-items:center;}
+    .wrap { display:grid; grid-template-columns:320px 1fr; height:calc(100vh - 50px); }
+    aside { background: #0f1530; padding: 18px; border-right:1px solid #1e2a57; }
+    h2{ font-size: 18px; color:#ffd166; margin:0 0 10px 0; }
+    .tip { font-size:14px; color:#b9c6ff; line-height:1.6; margin-bottom:14px; }
+    .btn{background:#ffd166;color:#232743; border:none; border-radius:8px; padding:9px 14px; margin-right:10px;cursor:pointer;font-size:14px;font-weight:700}
+    .btn.alt{background:#1f2a57;color:#d9e2ff}
+    .btn:hover{filter:brightness(1.1)}
+    #game-canvas{display:block;width:100%;height:100%;background:#0b1124;}
+    .stat{margin-top:10px;font-size:15px;color:#9bd1ff}
+    .score{margin-top:24px;color:#ffd166;background:#191c2a;border-radius:6px;padding:10px}
+    .tr{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:2px 0}
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div class="nav">
+    空间感知迷宫
+    <div class="right">
+      难度：<select id="levelSel" style="border-radius:4px;padding:5px 8px">
+        <option value="easy">简单(5×5×5)</option>
+        <option value="normal" selected>普通(7×7×7)</option>
+        <option value="hard">挑战(9×9×9)</option>
+        <option value="hell">地狱(11×11×11)</option>
+      </select>
+      <span id="best-score">最快用时：</span>
+    </div>
+  </div>
+  <div class="wrap">
+    <aside>
+      <h2>玩法</h2>
+      <div class="tip">
+        - 键盘单格移动（WASD/方向键/空格上/Shift下），到达金色终点即通关。<br>
+        - 每次新局都会生成一个不同路线的三维迷宫；难度越高尺寸越大、路径更曲折。<br>
+        - 点击“显示提示”高亮主路径辅助寻找方向。
+      </div>
+      <div>
+        <button class="btn" id="btnStart">新局</button>
+        <button class="btn alt" id="btnHint">显示提示</button>
+      </div>
+      <div class="stat" id="stat">未开始</div>
+      <div class="score" id="score-detail">用时：0s | 步数：0</div>
+      <div class="score" id="history"></div>
+    </aside>
+    <main><canvas id="game-canvas"></canvas></main>
+  </div>
+  <script>
+    // 难度配置
+    const levels = { easy:{ size:5 }, normal:{ size:7 }, hard:{ size:9 }, hell:{ size:11 } };
+    let curLevel = 'normal';
+    document.getElementById('levelSel').onchange = e=>{curLevel=e.target.value;updateBest()};
+
+    // Three.js 初始化
+    const canvas = document.getElementById('game-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setClearColor(0x0b1124);
+    let w = window.innerWidth - 320, h = window.innerHeight - 50;
+    renderer.setSize(w, h);
+    const camera = new THREE.PerspectiveCamera(55, w/h, 0.1, 2000);
+    camera.position.set(28, 28, 36);
+    const scene = new THREE.Scene();
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.06; controls.minDistance = 18; controls.maxDistance = 80;
+    const lightA = new THREE.AmbientLight(0xffffff, 0.85); scene.add(lightA);
+    const lightB = new THREE.DirectionalLight(0xffffff, 0.75); lightB.position.set(40,60,30); scene.add(lightB);
+    const grid = new THREE.GridHelper(40, 20, 0x2f7fff, 0x173a7f); grid.material.opacity=0.25; grid.material.transparent=true; scene.add(grid);
+    const axes = new THREE.AxesHelper(6); axes.material.linewidth = 2; scene.add(axes);
+
+    // 运行状态
+    let mazeData=null, pathHint=null, pathLine=null, player=null, goal=null, moving=false, steps=0, allowInput=false, gameStartTime=0;
+
+    function clearSceneKeepLights(){
+      for(let i=scene.children.length-1;i>=0;i--){ const o=scene.children[i]; if(o!==lightA && o!==lightB && o!==grid && o!==axes) scene.remove(o); }
+      pathLine = null; player = null; goal = null; mazeData=null; pathHint=null; moving=false; steps=0; allowInput=false; updateDetail();
+    }
+
+    // 生成不同路线：随机主路线（每次优先随机某维推进），再加随机支路
+    function buildRandomPath(size){
+      const path=[[0,0,0]]; let x=0,y=0,z=0; while(x<size-1 || y<size-1 || z<size-1){
+        const choices=[]; if(x<size-1) choices.push('x'); if(y<size-1) choices.push('y'); if(z<size-1) choices.push('z');
+        const c = choices[(Math.random()*choices.length)|0]; if(c==='x') x++; else if(c==='y') y++; else z++;
+        path.push([x,y,z]);
+      }
+      // 注入扰动：在若干点插入“折返”让路线更曲折，但仍可达
+      const extra=[]; for(let i=1;i<path.length-2;i+=((Math.random()*3)|0)+2){ const [px,py,pz]=path[i]; if(px+1<size) extra.push([px+1,py,pz]); }
+      return { main:path, extra };
+    }
+    function carveMaze(size){
+      const arr = Array(size).fill().map(()=>Array(size).fill().map(()=>Array(size).fill(1)));
+      const { main, extra } = buildRandomPath(size);
+      for(const [x,y,z] of main) arr[x][y][z]=0; // 主路径
+      for(const [x,y,z] of extra) arr[x][y][z]=0; // 支路
+      // 再随机挖少量邻格作为支线
+      for(let k=0;k<size; k++){
+        const i=(Math.random()*main.length)|0; const [x,y,z]=main[i]; const dirs=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]; const d=dirs[(Math.random()*dirs.length)|0];
+        const nx=x+d[0],ny=y+d[1],nz=z+d[2]; if(nx>=0&&ny>=0&&nz>=0&&nx<size&&ny<size&&nz<size) arr[nx][ny][nz]=0;
+      }
+      return { maze:arr, path:main };
+    }
+
+    function startMaze(){
+      clearSceneKeepLights();
+      const size=levels[curLevel].size, cell=2.4; const half=(size/2-0.5)*cell; const origin=-half;
+      const { maze, path } = carveMaze(size); mazeData={maze,size,cell,origin}; pathHint=path;
+      // 外壳
+      scene.add(new THREE.Mesh(new THREE.BoxGeometry(size*cell,size*cell,size*cell),new THREE.MeshStandardMaterial({ color:0x38bdf8, transparent:true, opacity:0.12, side:THREE.BackSide })));
+      // 墙体：分层渐变色 + 高对比边线
+      const wallGeo = new THREE.BoxGeometry(cell*0.28, cell*0.92, cell*0.92);
+      for(let x=0;x<size;x++) for(let y=0;y<size;y++) for(let z=0;z<size;z++) if(maze[x][y][z]===1){
+        const hue = 215 + (y/size)*15; // y层渐变，区分上下
+        const mat = new THREE.MeshStandardMaterial({ color:new THREE.Color(`hsl(${hue}, 55%, 36%)`), roughness:0.6, metalness:0.15 });
+        const m=new THREE.Mesh(wallGeo, mat); m.position.set(origin+x*cell, origin+y*cell, origin+z*cell); scene.add(m);
+        // 边线
+        const edges=new THREE.EdgesGeometry(wallGeo); const line=new THREE.LineSegments(edges,new THREE.LineBasicMaterial({color:0xa7c5ff,linewidth:1})); line.position.copy(m.position); scene.add(line);
+      }
+      // 终点/玩家
+      goal = new THREE.Mesh(new THREE.SphereGeometry(cell*0.42, 20, 20), new THREE.MeshStandardMaterial({ color:0xffc857, emissive:0xffd166, emissiveIntensity:0.6 }));
+      goal.position.set(origin+(size-1)*cell, origin+(size-1)*cell, origin+(size-1)*cell); scene.add(goal);
+      player = new THREE.Mesh(new THREE.SphereGeometry(cell*0.36, 26, 26), new THREE.MeshStandardMaterial({ color:0x47e6f2 }));
+      player.position.set(origin, origin, origin); player.cell=[0,0,0]; scene.add(player);
+      allowInput=true; steps=0; gameStartTime=performance.now(); updateStat('新局：找到通往终点的路线！'); updateDetail();
+    }
+
+    function updateStat(text){ document.getElementById('stat').innerText = text; }
+    function updateDetail(){ const secs = Math.max(0, Math.round((performance.now()-gameStartTime)/1000)); document.getElementById('score-detail').innerHTML = `用时：${secs}s | 步数：${steps}`; }
+
+    function toggleHint(){ if(!mazeData||!pathHint) return; const { size,cell,origin }=mazeData; if(pathLine){ scene.remove(pathLine); pathLine=null; updateStat('提示已关闭。'); return;} const pts=[]; for(const [x,y,z] of pathHint){ pts.push(new THREE.Vector3(origin+x*cell,origin+y*cell,origin+z*cell)); } const g=new THREE.BufferGeometry().setFromPoints(pts); pathLine=new THREE.Line(g,new THREE.LineBasicMaterial({ color:0x8ef6ff, linewidth:4 })); scene.add(pathLine); updateStat('蓝线为主路径提示。'); }
+
+    const keyDirs = { 'w':[0,1,0],'s':[0,-1,0],'a':[-1,0,0],'d':[1,0,0], 'ArrowUp':[0,1,0],'ArrowDown':[0,-1,0],'ArrowLeft':[-1,0,0],'ArrowRight':[1,0,0],' ':[0,0,1],'Shift':[0,0,-1] };
+    document.onkeydown = (ev)=>{ if(!allowInput||moving||!player||!mazeData) return; const dir = keyDirs[ev.key]; if(!dir) return; let [x,y,z]=player.cell; const [dx,dy,dz]=dir; let nx=x+dx,ny=y+dy,nz=z+dz; const { maze,size,cell,origin }=mazeData; if(nx<0||ny<0||nz<0||nx>=size||ny>=size||nz>=size) return; if(maze[nx][ny][nz]===1) return; moving=true; steps++; const start=player.position.clone(), end=new THREE.Vector3(origin+nx*cell,origin+ny*cell,origin+nz*cell); (function anim(ts0){ const ts=performance.now(); const t=Math.min(1,(ts-ts0)/120); player.position.lerpVectors(start,end,t); if(t<1) requestAnimationFrame(()=>anim(ts0)); else { player.cell=[nx,ny,nz]; moving=false; checkWin(); } })(performance.now()); };
+
+    function checkWin(){ const { size }=mazeData; const [x,y,z]=player.cell; if(x===size-1&&y===size-1&&z===size-1){ allowInput=false; const secs=Math.round((performance.now()-gameStartTime)/1000); updateStat(`通关成功！用时 ${secs}s，步数 ${steps}。点“新局”继续挑战。`); storeHistory(secs,size); // 完成闪烁
+      const mat=player.material; const old=mat.color.getHex(); let k=0; (function flash(){ mat.color.setHex(k%2?0x7cffcb:0x47e6f2); if(k++<10) setTimeout(flash,80); else mat.color.setHex(old); })(); } }
+
+    function storeHistory(t,diff){ const arr=JSON.parse(localStorage.senseMazeBest||'[]'); arr.unshift({t,diff,time:Date.now()}); while(arr.length>30) arr.pop(); localStorage.senseMazeBest=JSON.stringify(arr); updateBest(); }
+    function updateBest(){ const arr=JSON.parse(localStorage.senseMazeBest||'[]'); let best=Infinity; arr.forEach(e=>{ if(e.t<best) best=e.t; }); document.getElementById('best-score').innerText = '最快用时：'+(best===Infinity?'-':best+'s'); let html='<b>历史纪录：</b>'; arr.slice(0,6).forEach(e=>{ const dt=new Date(e.time),ds=`${dt.getMonth()+1}-${dt.getDate()} ${dt.getHours()}:${dt.getMinutes()}`; html+=`<div class='tr'>${ds} | ${e.t}s | ${e.diff}x${e.diff}x${e.diff}</div>`; }); document.getElementById('history').innerHTML=html; }
+
+    document.getElementById('btnStart').onclick = startMaze;
+    document.getElementById('btnHint').onclick = toggleHint;
+    updateBest();
+    function animate(){ controls.update(); renderer.render(scene, camera); requestAnimationFrame(animate); }
+    animate();
+    window.addEventListener('resize', ()=>{ w=window.innerWidth-320; h=window.innerHeight-50; renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); });
+    startMaze();
+  </script>
+</body>
+</html>

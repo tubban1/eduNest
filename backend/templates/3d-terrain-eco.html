@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>地形生成与生态演化 · 地理/生态学学习</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100vw; height: 100vh; overflow: hidden; background: #071016; color: #e8f1ff; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif; }
+    #container { width: 100%; height: 100%; position: relative; }
+    .panel { position: absolute; top: 16px; left: 16px; z-index: 10; background: rgba(10,16,28,.7); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 14px; min-width: 280px; backdrop-filter: blur(6px); }
+    .panel h3 { font-size: 13px; color: #cfe1ff; margin-bottom: 8px; }
+    .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+    .row label { font-size: 12px; width: 120px; color: #cfe1ff; }
+    .row input[type=range] { flex: 1; }
+    .panel button { width: 100%; padding: 8px 10px; border: 0; cursor: pointer; border-radius: 8px; background: #2b5cff; color: #fff; font-size: 12px; }
+    .panel button:hover { background: #244cda; }
+    .legend { position: absolute; right: 16px; bottom: 16px; opacity: .85; font-size: 12px; }
+    .quiz { position: absolute; right: 16px; top: 16px; z-index: 10; background: rgba(10,16,28,.7); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px; min-width: 260px; }
+    .quiz h4 { margin-bottom: 8px; font-size: 13px; color: #cfe1ff; }
+    .quiz button { border: 0; background: #1b2445; color: #cfe1ff; border-radius: 8px; padding: 6px 10px; cursor: pointer; margin-right: 6px; }
+    .quiz button:hover { background: #253064; }
+  </style>
+  <!-- Three.js r134 + OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Perlin 噪声：noisejs（jsDelivr 版）。在浏览器下通常暴露 window.Noise（构造器）。 -->
+  <script src="https://cdn.jsdelivr.net/npm/noisejs@2.1.0/index.min.js"></script>
+</head>
+<body>
+  <div id="container"></div>
+  <div class="panel">
+    <h3>地形生成与生态演化</h3>
+    <div class="row"><label>地图尺寸</label><input id="size" type="range" min="64" max="256" step="32" value="128" /></div>
+    <div class="row"><label>噪声频率</label><input id="freq" type="range" min="0.5" max="6" step="0.1" value="2.4" /></div>
+    <div class="row"><label>海平面高度</label><input id="sea" type="range" min="-10" max="20" step="1" value="0" /></div>
+    <div class="row"><label>降雨量</label><input id="rain" type="range" min="0" max="1" step="0.05" value="0.5" /></div>
+    <button id="btn-generate">生成随机地形</button>
+  </div>
+  <div class="quiz">
+    <h4>小测验：预测哪块区域可能形成湖泊？</h4>
+    <div style="font-size:12px;opacity:.85;line-height:1.5">提示：低洼 + 降雨汇集 + 出水口少</div>
+    <div style="margin-top:8px"><button id="btn-check">显示参考答案</button><span id="quiz-result" style="margin-left:8px;color:#9ed0ff"></span></div>
+  </div>
+  <div class="legend">拖拽旋转 · 滚轮缩放 · 点击生成随机地形，调整降雨量观察河流与植被变化</div>
+
+  <script>
+    // ===== Three 基础 =====
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x071016);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 5000);
+    camera.position.set(120, 140, 160); camera.lookAt(0,0,0);
+    const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(window.devicePixelRatio); container.appendChild(renderer.domElement);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.dampingFactor = .05;
+    scene.add(new THREE.AmbientLight(0xffffff,.7)); const dl=new THREE.DirectionalLight(0xffffff,.8); dl.position.set(120,240,160); scene.add(dl);
+
+    // ===== 高度图/河网数据 =====
+    let gridN = parseInt(document.getElementById('size').value,10);
+    let heights = [], water = [], flow = [], vegetation = [];
+    const worldSize = 300; // 可视尺寸
+    const half = worldSize/2;
+
+    // 网格到世界坐标
+    function idx(x,y){ return y*gridN + x; }
+    function toWorld(x,y){ return new THREE.Vector3((x/(gridN-1))*worldSize - half, 0, (y/(gridN-1))*worldSize - half); }
+
+    // 生成高度（Perlin 噪声 + 多频）
+    function generateHeights(seed){
+      // 兼容两种导出：
+      // 1) window.noise（有 seed/perlin2 方法）
+      // 2) window.Noise 构造器（需实例化）
+      const hasGlobalNoise = (window.noise && typeof window.noise.perlin2 === 'function');
+      const hasNoiseCtor = (window.Noise && typeof window.Noise === 'function');
+      let perlin2;
+      if (hasGlobalNoise) {
+        if (typeof window.noise.seed === 'function') window.noise.seed(seed);
+        perlin2 = (x,y) => window.noise.perlin2(x,y);
+      } else if (hasNoiseCtor) {
+        const n = new window.Noise(seed);
+        perlin2 = (x,y) => n.perlin2(x,y);
+      } else {
+        console.warn('Perlin noise library not found');
+        perlin2 = (x,y) => 0;
+      }
+      heights = new Float32Array(gridN*gridN); vegetation = new Float32Array(gridN*gridN);
+      const freq = parseFloat(document.getElementById('freq').value);
+      for(let y=0;y<gridN;y++){
+        for(let x=0;x<gridN;x++){
+          const u = x/gridN, v = y/gridN;
+          let h = 0;
+          h += perlin2(u*freq, v*freq) * 20;
+          h += perlin2(u*freq*0.5 + 100, v*freq*0.5 + 100) * 8;
+          h += perlin2(u*freq*2.0 + 200, v*freq*2.0 + 200) * 3;
+          heights[idx(x,y)] = h;
+          vegetation[idx(x,y)] = 0; // 初始植被密度
+        }
+      }
+    }
+
+    // 基于降雨的水流模拟（简化：迭代扩散到低处）
+    function simulateHydro(iter = 120){
+      const rain = parseFloat(document.getElementById('rain').value);
+      water = new Float32Array(gridN*gridN); flow = new Float32Array(gridN*gridN);
+      for(let i=0;i<gridN*gridN;i++){ water[i] = 0; flow[i] = 0; }
+      // 雨水初值：与噪声/海拔反比（山地降雨略多）
+      for(let y=0;y<gridN;y++) for(let x=0;x<gridN;x++){
+        water[idx(x,y)] += rain * (1.0 + Math.max(0, 10 - Math.max(0,heights[idx(x,y)]))) * 0.02;
+      }
+      // 多轮漫流：把水按坡度往低邻居移动
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+      for(let k=0;k<iter;k++){
+        const next = new Float32Array(water);
+        for(let y=1;y<gridN-1;y++){
+          for(let x=1;x<gridN-1;x++){
+            const i0 = idx(x,y); let h0 = heights[i0] + water[i0];
+            // 找最低邻居
+            let bestI = i0; let bestH = h0;
+            for(const d of dirs){ const xi=x+d[0], yi=y+d[1]; const ii=idx(xi,yi); const hh=heights[ii] + water[ii]; if(hh < bestH){ bestH = hh; bestI = ii; } }
+            if(bestI !== i0){
+              const move = water[i0]*0.35; // 向低处移动部分水量
+              next[i0] -= move; next[bestI] += move; flow[bestI] += move; // 统计流经量
+            }
+          }
+        }
+        water = next;
+      }
+      // 更新植被：水多 + 中等海拔 → 更绿
+      vegetation = vegetation.map((v, i)=> Math.max(0, Math.min(1, v + water[i]*0.6 - Math.max(0,heights[i]-8)*0.02)) );
+    }
+
+    // 构建地形 Mesh（顶点位移 + 颜色）
+    let terrain = null, riverLines = null;
+    function buildTerrain(){
+      if(terrain){ scene.remove(terrain); terrain.geometry.dispose(); terrain.material.dispose(); terrain = null; }
+      const geo = new THREE.PlaneGeometry(worldSize, worldSize, gridN-1, gridN-1);
+      geo.rotateX(-Math.PI/2);
+      const sea = parseFloat(document.getElementById('sea').value);
+      const pos = geo.attributes.position; const colors = new Float32Array(pos.count*3);
+      for(let i=0;i<pos.count;i++){
+        const ix = i % gridN; const iy = Math.floor(i / gridN);
+        const h = heights[idx(ix,iy)];
+        pos.setY(i, h);
+        // 着色：海水/沙滩/草地/山地/雪线
+        let c = new THREE.Color();
+        if(h < sea) c.setRGB(0.1,0.3,0.7);
+        else if(h < sea + 1) c.setRGB(0.9,0.85,0.6);
+        else {
+          const veg = vegetation[idx(ix,iy)];
+          const g = 0.3 + 0.5*Math.min(1, veg + Math.max(0, 10 - Math.abs(h-4))*0.03);
+          c.setRGB(0.15, g, 0.12);
+          if(h > 14) c.lerp(new THREE.Color(0.95,0.95,0.95), (h-14)/8);
+        }
+        colors[i*3+0]=c.r; colors[i*3+1]=c.g; colors[i*3+2]=c.b;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      geo.computeVertexNormals();
+      terrain = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true })); scene.add(terrain);
+
+      // 河网可视化（根据 flow 阈值绘制线）
+      if(riverLines){ scene.remove(riverLines); riverLines.geometry.dispose(); riverLines.material.dispose(); riverLines = null; }
+      const riverPts = [];
+      for(let y=1;y<gridN-1;y++) for(let x=1;x<gridN-1;x++){
+        const f = flow[idx(x,y)]; if(f > 0.6){ const p = toWorld(x,y); p.y = heights[idx(x,y)] + 0.05; riverPts.push(p.clone()); }
+      }
+      if(riverPts.length){ const g = new THREE.BufferGeometry().setFromPoints(riverPts); const m = new THREE.PointsMaterial({ color: 0x4fc3f7, size: 1.6, sizeAttenuation: true }); riverLines = new THREE.Points(g,m); scene.add(riverLines); }
+    }
+
+    // 生成流程
+    function regenerate(){ gridN = parseInt(document.getElementById('size').value,10); generateHeights(Math.random()*10000|0); simulateHydro(); buildTerrain(); }
+    document.getElementById('btn-generate').onclick = regenerate;
+    document.getElementById('size').addEventListener('change', regenerate);
+    document.getElementById('freq').addEventListener('input', ()=>{ generateHeights(Math.random()*10000|0); simulateHydro(); buildTerrain(); });
+    document.getElementById('rain').addEventListener('input', ()=>{ simulateHydro(); buildTerrain(); });
+    document.getElementById('sea').addEventListener('input', buildTerrain);
+
+    // 小测验：根据当前 flow/地势给出“可能成湖”区域
+    document.getElementById('btn-check').onclick = ()=>{
+      // 规则：低地 + 流量高 + 周边出口少
+      const candidates = [];
+      for(let y=2;y<gridN-2;y++) for(let x=2;x<gridN-2;x++){
+        const i = idx(x,y); const h=heights[i]; const f=flow[i];
+        let exits=0; const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+        for(const d of dirs){ const ii=idx(x+d[0],y+d[1]); if(heights[ii] < h-0.5) exits++; }
+        const score = (10 - Math.max(0,h)) + f*3 - exits*2; // 简化评分
+        if(score > 6) candidates.push({x,y,score});
+      }
+      const res = document.getElementById('quiz-result');
+      if(!candidates.length){ res.textContent = '当前参数下湖泊概率较低，试着提高降雨或降低海平面。'; res.style.color='#9ed0ff'; return; }
+      // 高亮前 30 个点
+      const top = candidates.sort((a,b)=>b.score-a.score).slice(0,30);
+      const pts = top.map(p=>{ const w = toWorld(p.x,p.y); w.y = heights[idx(p.x,p.y)] + 0.2; return w; });
+      const g = new THREE.BufferGeometry().setFromPoints(pts); const m = new THREE.PointsMaterial({ color: 0x90caf9, size: 2.2 });
+      const markers = new THREE.Points(g,m); scene.add(markers);
+      setTimeout(()=>{ scene.remove(markers); g.dispose(); }, 3000);
+      res.textContent = '已高亮可能形成湖泊的候选点（3秒）'; res.style.color = '#98ee99';
+    };
+
+    // 初始一次
+    regenerate();
+
+    // 动画
+    function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene,camera); }
+    animate();
+
+    // 自适应
+    window.addEventListener('resize', ()=>{ camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+  </script>
+</body>
+</html>
+
+

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>赤壁战场策略模拟 · 历史/战略/AI 决策</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100vw; height: 100vh; overflow: hidden; background: #0a0d14; color: #e6f0ff; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif; }
+    #container { width: 100%; height: 100%; position: relative; }
+    .panel { position: absolute; top: 16px; left: 16px; z-index: 10; background: rgba(12,16,28,.7); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 14px; min-width: 260px; backdrop-filter: blur(6px); }
+    .panel h3 { font-size: 13px; color: #cfe1ff; margin-bottom: 8px; }
+    .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+    .row label { font-size: 12px; width: 110px; color: #cfe1ff; }
+    .row input[type=range] { flex: 1; }
+    .panel button { width: 100%; padding: 8px 10px; border: 0; cursor: pointer; border-radius: 8px; background: #2b5cff; color: #fff; font-size: 12px; }
+    .panel button:hover { background: #244cda; }
+    .legend { position: absolute; right: 16px; bottom: 16px; opacity: .85; font-size: 12px; }
+  </style>
+  <!-- Three.js r134 + OrbitControls + GLTFLoader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- Cannon-es 物理引擎（UMD 构建，提供 window.CANNON） -->
+  <script src="https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"></script>
+  <!-- Yuka 行为AI -->
+  <script src="https://cdn.jsdelivr.net/npm/yuka@0.7.8/build/yuka.min.js"></script>
+</head>
+<body>
+  <div id="container"></div>
+  <div class="panel">
+    <h3>赤壁战场策略模拟</h3>
+    <div class="row">
+      <label>步兵数量</label>
+      <input id="infantry" type="range" min="10" max="200" step="10" value="80" />
+    </div>
+    <div class="row">
+      <label>骑兵数量</label>
+      <input id="cavalry" type="range" min="0" max="80" step="5" value="30" />
+    </div>
+    <button id="btn-ai">启动 AI 部队</button>
+  </div>
+  <div class="legend">操作：拖拽单位设置目标；滚轮缩放、拖拽旋转；每个单位头顶显示生命/士气</div>
+
+  <script>
+    // ===== 基础场景 =====
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0d14);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 5000);
+    camera.position.set(160, 120, 160); camera.lookAt(0,0,0);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = .05;
+    scene.add(new THREE.AmbientLight(0xffffff, .6));
+    const dl = new THREE.DirectionalLight(0xffffff, .8); dl.position.set(200,300,200); scene.add(dl);
+
+    // ===== 地形（GLTF 模型占位加载） =====
+    const loader = new THREE.GLTFLoader();
+    // 可替换为真实地形模型 URL
+    // loader.load('/assets/redcliff-terrain.glb', (g)=>{ const terrain = g.scene; terrain.scale.set(50,50,50); scene.add(terrain); });
+    // 简化地形占位：起伏平面
+    const terrain = new THREE.Mesh(new THREE.PlaneGeometry(600, 600, 64, 64), new THREE.MeshPhongMaterial({color:0x192233, wireframe:false}));
+    terrain.rotation.x = -Math.PI/2; terrain.position.y = 0; scene.add(terrain);
+
+    // ===== 物理世界（Cannon-es UMD） =====
+    // 物理库全局命名兼容（不同 CDN/版本可能暴露不同名称）
+    const CANNON = window.CANNON || window.CANNONES || window.cannon || window.CANNON_ES;
+    let world = null;
+    if (CANNON) {
+      world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.82, 0) });
+      const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
+      groundBody.quaternion.setFromEuler(-Math.PI/2, 0, 0);
+      world.addBody(groundBody);
+    } else {
+      console.warn('Cannon-es UMD not found on window; physics disabled.');
+    }
+
+    // ===== AI 世界（Yuka） =====
+    const YUKA = window.YUKA; const entityManager = new YUKA.EntityManager(); const ytime = new YUKA.Time();
+
+    // ===== 单位与UI：生命/士气条（Canvas 生成 Sprite） =====
+    function makeBarSprite(hp=100, morale=100){
+      const w=128,h=32; const cvs=document.createElement('canvas'); cvs.width=w; cvs.height=h; const ctx=cvs.getContext('2d');
+      ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='#ff6b6b'; ctx.fillRect(6,6,(w-12)*Math.max(0,hp/100),8);
+      ctx.fillStyle='#4fd1c5'; ctx.fillRect(6,18,(w-12)*Math.max(0,morale/100),8);
+      ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.strokeRect(5.5,5.5,w-11,h-11);
+      const tex=new THREE.CanvasTexture(cvs); const mat=new THREE.SpriteMaterial({ map: tex, transparent:true }); const sp=new THREE.Sprite(mat); sp.scale.set(12,3,1); return sp;
+    }
+
+    function createUnit(color){
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(3,2,3), new THREE.MeshPhongMaterial({ color }));
+      mesh.castShadow = true; scene.add(mesh);
+      const bar = makeBarSprite(); bar.position.set(0,3,0); mesh.add(bar);
+      const vehicle = new YUKA.Vehicle();
+      vehicle.maxSpeed = 15; vehicle.setRenderComponent(mesh, (e)=>{ mesh.position.copy(e.position); mesh.quaternion.copy(e.rotation); });
+      entityManager.add(vehicle);
+      return { mesh, vehicle, bar, hp:100, morale:100 };
+    }
+
+    // 根据滑块生成我方与AI方部队
+    const myUnits=[]; const aiUnits=[];
+    function spawnArmies(){
+      const inf = parseInt(document.getElementById('infantry').value,10);
+      const cav = parseInt(document.getElementById('cavalry').value,10);
+      // 我方：蓝色
+      for(let i=0;i<inf;i++){ const u=createUnit(0x4fc3f7); u.vehicle.position.set(-120+Math.random()*40,0.5,-40+Math.random()*40); myUnits.push(u); }
+      for(let i=0;i<cav;i++){ const u=createUnit(0x81c784); u.vehicle.position.set(-120+Math.random()*40,0.5,-80+Math.random()*40); myUnits.push(u); }
+      // 敌方：红色（数量与我方接近）
+      for(let i=0;i<Math.round(inf*0.9);i++){ const u=createUnit(0xff8a80); u.vehicle.position.set(120-Math.random()*40,0.5,40-Math.random()*40); aiUnits.push(u); }
+      for(let i=0;i<Math.round(cav*0.9);i++){ const u=createUnit(0xffb74d); u.vehicle.position.set(120-Math.random()*40,0.5,80-Math.random()*40); aiUnits.push(u); }
+    }
+    spawnArmies();
+
+    // 拖拽设置目标（我方部队）
+    const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2(); let dragging=null;
+    function pickOnGround(evt){
+      const rect=renderer.domElement.getBoundingClientRect();
+      mouse.x=((evt.clientX-rect.left)/rect.width)*2-1; mouse.y=-((evt.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse,camera); const inter=raycaster.intersectObject(terrain);
+      return inter[0]?.point;
+    }
+    renderer.domElement.addEventListener('mousedown',e=>{
+      const p=pickOnGround(e); if(!p) return;
+      // 找最近我方单位
+      let best=null,bd=1e9; myUnits.forEach(u=>{ const d=u.vehicle.position.distanceTo(p); if(d<bd){bd=d;best=u;} }); dragging=best; });
+    renderer.domElement.addEventListener('mousemove',e=>{ if(!dragging) return; const p=pickOnGround(e); if(p){ dragging.vehicle.steering.clear(); const arrive=new YUKA.ArriveBehavior(new YUKA.Vector3(p.x,p.y,p.z), 6, 0.5); dragging.vehicle.steering.add(arrive); }});
+    renderer.domElement.addEventListener('mouseup',()=>{ dragging=null; });
+
+    // AI 部队：追击/队形前进
+    let aiEnabled=false; document.getElementById('btn-ai').onclick=()=>{ aiEnabled=!aiEnabled; document.getElementById('btn-ai').textContent= aiEnabled? '暂停 AI 部队' : '启动 AI 部队'; };
+    function updateAI(){ if(!aiEnabled) return; 
+      aiUnits.forEach(u=>{
+        // 选择最近的我方单位作为目标
+        let target=null, bd=1e9; for(const v of myUnits){ const d=u.vehicle.position.distanceTo(v.vehicle.position); if(d<bd){bd=d;target=v;} }
+        if(target){ u.vehicle.steering.clear(); const pursue = new YUKA.SeekBehavior(target.vehicle.position); u.vehicle.steering.add(pursue); }
+      });
+    }
+
+    // 近战碰撞伤害（简化）：接近时双方扣血与士气
+    function resolveMelee(){
+      myUnits.forEach(mu=>{
+        aiUnits.forEach(au=>{
+          const d = mu.vehicle.position.distanceTo(au.vehicle.position);
+          if(d < 4){ mu.hp=Math.max(0,mu.hp-0.2); au.hp=Math.max(0,au.hp-0.25); mu.morale=Math.max(0,mu.morale-0.05); au.morale=Math.max(0,au.morale-0.05);
+            // 更新血条
+            const ctx = mu.bar.material.map.image.getContext('2d');
+            // 重新绘制（简单重建）
+            mu.mesh.remove(mu.bar); mu.bar=makeBarSprite(mu.hp,mu.morale); mu.bar.position.set(0,3,0); mu.mesh.add(mu.bar);
+            au.mesh.remove(au.bar); au.bar=makeBarSprite(au.hp,au.morale); au.bar.position.set(0,3,0); au.mesh.add(au.bar);
+          }
+        });
+      });
+      // 移除阵亡单位
+      function cleanup(arr){ for(let i=arr.length-1;i>=0;i--){ if(arr[i].hp<=0){ scene.remove(arr[i].mesh); entityManager.remove(arr[i].vehicle); arr.splice(i,1); } } }
+      cleanup(myUnits); cleanup(aiUnits);
+    }
+
+    // 主循环
+    let last=performance.now();
+    function animate(){
+      requestAnimationFrame(animate);
+      const now=performance.now(); const dt=Math.min(0.05,(now-last)/1000); last=now;
+      updateAI();
+      const delta = ytime.update().getDelta(); entityManager.update(delta);
+      resolveMelee();
+      controls.update(); renderer.render(scene,camera);
+    }
+    animate();
+
+    // 自适应
+    window.addEventListener('resize', ()=>{ camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+  </script>
+</body>
+</html>
+
+
