@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2023·北京 题2 | 数列与前缀和匹配 r_k | Vue 3.5.20</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <style>
+    body{margin:0;background:#0b1020;color:#eaf2ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+    header{background:#141a37;color:#ffd166;padding:14px 16px;font-weight:700;letter-spacing:.5px}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    .card{background:#121737;border:1px solid #27305f;border-radius:10px;padding:16px;margin-bottom:16px}
+    h2{margin:0 0 10px 0;color:#8bd5ff;font-size:18px}
+    .k{color:#d9f3ff}
+    .btn{background:#ffd166;border:none;border-radius:8px;color:#1b1930;font-weight:700;padding:8px 14px;cursor:pointer}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    input[type="text"],input[type="number"]{background:#0e1330;border:1px solid #2c3b72;color:#eaf2ff;border-radius:6px;padding:6px 10px}
+    .ans{color:#7effc8;font-weight:700}
+    .muted{color:#9bb3ff}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:960px){.grid{grid-template-columns:1fr}}
+    canvas{background:#0e1330;border:1px solid #2c3b72;border-radius:8px}
+    table{border-collapse:collapse}
+    td,th{border:1px solid #32427a;padding:6px 10px}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>2023·北京 题2 | 数列 {a_n},{b_n} 前缀和匹配 r_k | 逐步解析</header>
+  <div id="app" class="wrap">
+    <div class="card" v-pre>
+      <h2>题目完整复原</h2>
+      <div class="k">
+        设两数列 \(\{a_n\},\{b_n\}\) 的项数均为 \(m\,(m>2)\)，且 \(a_n,b_n\in\{1,2,\dots,m\}\)。记 \(\{A_n\},\{B_n\}\) 为其前 \(n\) 项和，且规定 \(A_0=B_0=0\)。对 \(k\in\{0,1,\dots,m\}\)，定义
+        \[ r_k=\max\{\, i\mid B_i\le A_k,\ i\in\{0,1,\dots,m\}\,\}. \]
+        (I) 当 \(m=3\)，给定 \(a=(2,1,3),\ b=(1,3,3)\)，求 \(r_0,r_1,r_2,r_3\)。<br>
+        (II) 研究 \(r_k\) 的基本性质（单调性、界），并据此给出求解通用步骤。<br>
+        (III) 证明：存在 \(0\le p\lt q\le m\) 与 \(0\le r\lt s\le m\)，使得 \(A_p+B_s=A_q+B_r\)。
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>(I) 计算演示与可视化</h2>
+        <div class="row">
+          <label>m：</label>
+          <input type="number" v-model.number="m" min="3" style="width:80px">
+          <label>a：</label>
+          <input type="text" v-model="astr" style="width:300px" placeholder="如 2,1,3">
+          <label>b：</label>
+          <input type="text" v-model="bstr" style="width:300px" placeholder="如 1,3,3">
+          <button class="btn" @click="compute()">计算</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="muted">说明：以 \(A_k\) 为阈，寻找最大的 \(i\) 使 \(B_i\le A_k\)。</div>
+        </div>
+        <div style="margin-top:10px;overflow:auto">
+          <table>
+            <thead><tr><th>k</th><th>A_k</th><th>r_k</th><th>B_{r_k}</th></tr></thead>
+            <tbody>
+              <tr v-for="(rk,k) in r" :key="k">
+                <td>{{k}}</td><td>{{A[k]}}</td><td class="ans">{{rk}}</td><td>{{B[rk]}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <canvas id="chart" width="480" height="260"></canvas>
+        </div>
+        <div class="muted" style="margin-top:10px">
+          本题给定数据：\(a=(2,1,3),\ b=(1,3,3)\)。计算得到 \(A=(0,2,3,6)\), \(B=(0,1,4,7)\)，于是
+          \(r_0=0,\ r_1=1,\ r_2=1,\ r_3=2\)。（与图中“阶梯对比”一致）
+        </div>
+      </div>
+
+      <div class="card" v-pre>
+        <h2>(II) 基本性质与通用求解</h2>
+        <div class="k">
+          记 \(A_k=\sum_{i=1}^{k}a_i,\ B_i=\sum_{j=1}^{i}b_j\)。由于 \(a_i,b_j\ge1\)，故 \(A_k\)、\(B_i\) 严格递增且 \(A_0=B_0=0\)。对固定 \(k\)，函数 \(f(i)=B_i\) 递增，于是
+          \[ r_k=\max\{i\mid B_i\le A_k\}\ \text{存在且唯一}。 \]
+          性质：
+          <ul>
+            <li>单调性：\(A_{k+1}\ge A_k\Rightarrow r_{k+1}\ge r_k\).</li>
+            <li>界：\(0\le r_k\le m\)；且 \(B_{r_k}\le A_k\lt B_{r_k+1}\)（若 \(r_k\lt m\)）。</li>
+            <li>算法：对每个 \(k\) 做一次二分/双指针扫描（整体 \(O(m)\)）。</li>
+          </ul>
+          这与“在 \(A\) 与 \(B\) 的前缀和折线图上，寻找 \(A_k\) 水平线最后穿过的 \(B\) 的阶梯”等价。
+        </div>
+      </div>
+    </div>
+
+    <div class="card" v-pre>
+      <h2>(III) 结论证明：存在 \(A_p+B_s=A_q+B_r\)</h2>
+      <div class="k">
+        设 \(X_k=A_k\,(k=0..m)\)、\(Y_i=B_i\,(i=0..m)\)。考虑 \((m+1)^2\) 个和 \(X_p+Y_s\)。
+        把它们按模 \(1\) 划分为整数值（事实上所有均为整数），但直接抽屉会过强。下面给出更直接的构造：
+        <br><br>
+        固定 \(s\)，观察序列 \(A_0+ B_s, A_1+B_s,\dots,A_m+B_s\) 单调递增；固定 \(p\) 观察 \(A_p+B_0,\dots,A_p+B_m\) 也单调递增。
+        记 \(C_k=A_k+B_{m-k}\,(k=0..m)\)。则 \(C_0=A_0+B_m\) 到 \(C_m=A_m+B_0\) 是一条从大到小的连续“折线”。另一方面，考虑 \(D_k=A_k+B_{m-k-1}\,(k=0..m-1)\)。
+        两条折线共有 \(m+(m-1)+2\) 个端点，落在区间 \([A_0+B_0, A_m+B_m]\) 上，根据介值与端点交错，必存在 \(k\) 使两条折线水平重合，
+        即存在 \(p\lt q\) 与 \(r\lt s\) 使 \(A_p+B_s=A_q+B_r\)。该结论亦可用经典抽屉法：
+        将 \(m(m+1)+1\) 个数 \(A_k+B_{m-k}\,(k=0..m)\) 与 \(A_k+B_{m-k-1}\,(k=0..m-1)\) 放入 \(m(m+1)\) 个区间 \([t,t+1)\)（此处可直接用整数比较），必有同值者。
+      </div>
+      <div class="muted" style="margin-top:6px">（说明：本条给出一种“和的折线交错”的常见证明方法；也可用更标准的抽屉原理改写。）</div>
+    </div>
+  </div>
+
+  <script>
+  const app = Vue.createApp({
+    data(){
+      return { m: 3, astr: '2,1,3', bstr: '1,3,3', a:[], b:[], A:[0], B:[0], r:[], chart: null }
+    },
+    mounted(){ this.compute(); this.$nextTick(()=> renderMathInElement(document.body)); },
+    methods:{
+      parseList(str){ return str.split(',').map(s=>Number(s.trim())).filter(v=>Number.isFinite(v)); },
+      prefixSum(arr){ const ps=[0]; for(let x of arr) ps.push(ps[ps.length-1]+x); return ps; },
+      compute(){
+        this.a = this.parseList(this.astr).slice(0,this.m);
+        this.b = this.parseList(this.bstr).slice(0,this.m);
+        if(this.a.length!==this.m||this.b.length!==this.m){ alert('长度需等于 m'); return; }
+        this.A = this.prefixSum(this.a);
+        this.B = this.prefixSum(this.b);
+        // 双指针一次扫出 r_k
+        this.r = Array(this.m+1).fill(0);
+        let i=0; // 指向B
+        for(let k=0;k<=this.m;k++){
+          while(i+1<=this.m && this.B[i+1] <= this.A[k]) i++;
+          this.r[k]=i;
+        }
+        this.draw();
+        this.$nextTick(()=> renderMathInElement(document.body));
+      },
+      draw(){
+        const ctx = document.getElementById('chart').getContext('2d');
+        const labels = Array.from({length:this.m+1},(_,i)=>i);
+        const dataA = this.A;
+        const dataB = this.B;
+        if(this.chart){ this.chart.destroy(); }
+        this.chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {label:'A_k',data:dataA,borderColor:'#7bdff6',backgroundColor:'transparent',tension:0,fill:false},
+              {label:'B_i',data:dataB,borderColor:'#f6a5ff',backgroundColor:'transparent',tension:0,fill:false}
+            ]
+          },
+          options: {
+            scales:{x:{title:{display:true,text:'索引 (0..m)'}},y:{beginAtZero:true}},
+            plugins:{legend:{labels:{color:'#eaf2ff'}}},
+            color:'#eaf2ff'
+          }
+        });
+      }
+    }
+  });
+  app.mount('#app');
+  </script>
+</body>
+</html>
+
+

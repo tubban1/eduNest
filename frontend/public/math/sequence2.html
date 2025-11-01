@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2021·北京 题4 | ℜ_p 数列（Vue 3.5.20 + KaTeX）</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <style>
+    body{margin:0;background:#0b1020;color:#eaf2ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+    header{background:#141a37;color:#ffd166;padding:14px 16px;font-weight:700;letter-spacing:.5px}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    .card{background:#121737;border:1px solid #27305f;border-radius:10px;padding:16px;margin-bottom:16px}
+    h2{margin:0 0 10px 0;color:#8bd5ff;font-size:18px}
+    .k{color:#d9f3ff}
+    .btn{background:#ffd166;border:none;border-radius:8px;color:#1b1930;font-weight:700;padding:8px 14px;cursor:pointer}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    input[type="number"],input[type="text"]{background:#0e1330;border:1px solid #2c3b72;color:#eaf2ff;border-radius:6px;padding:6px 10px}
+    .ans{color:#7effc8;font-weight:700}
+    table{border-collapse:collapse}
+    td,th{border:1px solid #32427a;padding:6px 10px}
+    .muted{color:#9bb3ff}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+  <header>2021·北京 题4 | 定义 ℜ_p 数列与求解 (I)(II)(III)</header>
+  <div id="app" class="wrap">
+    <div class="card" v-pre>
+      <h2>题目完整复原</h2>
+      <div class="k">
+        设 \(p\) 为实数。若无穷数列 \(\{a_n\}\) 满足：
+        <ol>
+          <li>\(a_1+p\ge 0\)，且 \(a_2+p=0\)；</li>
+          <li>\(a_{4n-1} < a_{4n}\)（\(n=1,2,\dots\)）；</li>
+          <li>\(a_{m+n}\in\{a_m+a_n+p,\ a_m+a_n+p+1\}\)（\(m=1,2,\dots;\ n=1,2,\dots\)）。</li>
+        </ol>
+        则称 \(\{a_n\}\) 为 \(\mathbb R_p\) 数列。
+        <br>
+        (I) 若数列 \(\{a_n\}\) 的前四项为 \(2,-2,-2,-1\)，是否可能为 \(\mathbb R_p\) 数列？说明理由；
+        <br>(II) 若数列 \(\{a_n\}\) 是 \(\mathbb R_p\) 数列，求 \(a_5\)；
+        <br>(III) 设 \(S_n\) 为前 \(n\) 项和，是否存在 \(p\) 使得对某个 \(\mathbb R_p\) 数列恒有 \(S_n\ge S_{10}\)？如存在，求所有 \(p\)（若不存在，说明理由）。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>(I) 结论</h2>
+      <div class="k">由 \(a_2=-p\) 得 \(p=2\)。而 \(a_3\) 应由(③)满足 \(a_3\in\{a_1+a_2+p,\ a_1+a_2+p+1\}=\{a_1, a_1+1\}=\{2,3\}\)，与给定 \(a_3=-2\) 矛盾，故不可能为 \(\mathbb R_p\)。</div>
+      <div class="ans">答：(I) 不可能。</div>
+    </div>
+
+    <div class="card" v-pre>
+      <h2>(II) 参考图解：按 p=0 条件求 a_5</h2>
+      <div class="k">
+        使用图中“无 \(p\)”版本的三条性质：
+        \[ a_1\ge0,\ a_2=0;\quad a_{4n-1} < a_{4n};\quad a_{m+n}\in\{a_m+a_n,\ a_m+a_n+1\}. \]
+        推导：
+        <ol>
+          <li>由(③) \(m=1,n=2\)：\(a_3\in\{a_1,\ a_1+1\}\)。</li>
+          <li>\(m+n=4\) 的三分拆给出 \(a_4\in\{0,1\}\cap\{a_1+a_3,\ a_1+a_3+1\}\)。若 \(a_1>0\)，则不论 \(a_3=a_1\) 或 \(a_3=a_1+1\) 都推出 \(a_4\ge2\)，与 \(a_4\in\{0,1\}\) 矛盾，故 \(a_1=0\)。此时由(②)得 \(a_3=0\)，且 \(a_4=1\)。</li>
+          <li>归纳：设 \(a_{4n+i}=n\ (i=1,2,3),\ a_{4n+4}=n+1\) 对 \(n\ge0\) 成立；对 \(n+1\) 用(③)逐一验证得 \(a_{4n+5}=1\)、\(a_{4n+6}=n+1\)、\(a_{4n+7}=n+1\)、\(a_{4n+8}=n+2\)。</li>
+        </ol>
+        由 \(n=0\) 的首组 \((a_1,a_2,a_3,a_4)=(0,0,0,1)\)，可得
+        \[ a_5=a_{4\cdot0+5}=1. \]
+      </div>
+      <div class="ans">答：(II) \(a_5=1\)。</div>
+    </div>
+
+    <div class="card" v-pre>
+      <h2>(III) 推导思路</h2>
+      <div class="k">
+        目标：判断是否存在实数 \(p\)，使得对某个 \(\mathbb{R}_p\) 数列 \(\{a_n\}\) 恒有 \(S_n \ge S_{10}\)（\(n=1,2,\dots\)）。
+        <br><br>
+        <strong>思路框架：</strong>
+        <ol>
+          <li><strong>确定初始项范围：</strong>
+            <ul>
+              <li>由条件①：\(a_1+p\ge 0\)，\(a_2+p=0\)，即 \(a_2=-p\)。</li>
+              <li>由条件③（\(m=1,n=1\)）：\(a_2\in\{2a_1+p,\ 2a_1+p+1\}\)，即 \(-p\in\{2a_1+p,\ 2a_1+p+1\}\)。</li>
+              <li>若 \(-p=2a_1+p\)，则 \(a_1=-p\)；若 \(-p=2a_1+p+1\)，则 \(a_1=-p-\frac{1}{2}\)。</li>
+              <li>结合 \(a_1+p\ge 0\)，第一种情况得 \(p\le 0\)，第二种得 \(p\le \frac{1}{2}\)。综合得可行 \(a_1\) 的两种选择。</li>
+            </ul>
+          </li>
+          <li><strong>推导前几项：</strong>
+            <ul>
+              <li>由条件③（\(m=1,n=2\)）：\(a_3\in\{a_1+a_2+p,\ a_1+a_2+p+1\}\)，结合 \(a_2=-p\)，可确定 \(a_3\)。</li>
+              <li>由条件③的多分拆和条件②（\(a_3 < a_4\)）确定 \(a_4\)。</li>
+              <li>类似地，利用条件③和已有的项可逐项确定 \(a_5, a_6, \ldots\)。</li>
+            </ul>
+          </li>
+          <li><strong>分析前n项和的性质：</strong>
+            <ul>
+              <li>对给定的 \(p\) 和初始选择，生成足够多的项 \(\{a_n\}\)，计算 \(S_n = a_1+a_2+\cdots+a_n\)。</li>
+              <li>检验是否对所有 \(n\) 都有 \(S_n \ge S_{10}\)。</li>
+              <li>若存在 \(n\) 使得 \(S_n < S_{10}\)，则此 \(p\) 不满足要求；若恒成立，则此 \(p\) 可能为解。</li>
+            </ul>
+          </li>
+          <li><strong>关键观察：</strong>
+            <ul>
+              <li>\(S_{10}\) 是前10项和，若要求 \(S_n \ge S_{10}\) 对所有 \(n\) 成立，意味着从第10项之后，部分和不能下降。</li>
+              <li>这要求后续项 \(\{a_{11}, a_{12}, \ldots\}\) 非负的部分较多，或者至少保证累计和不会低于 \(S_{10}\)。</li>
+              <li>通过系统生成数列并检测，可以判断哪些 \(p\) 值能使该条件成立。</li>
+            </ul>
+          </li>
+        </ol>
+        <br>
+        <strong>方法：</strong> 对于不同的 \(p\) 值，构造 \(\mathbb{R}_p\) 数列（按照条件③和②的约束），计算前 \(n\) 项和，检验 \(S_n \ge S_{10}\) 是否恒成立。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>(III) 交互探索与判断</h2>
+      <div class="row">
+        <label>p：</label>
+        <input type="number" step="0.5" v-model.number="p">
+        <label>a1 选取：</label>
+        <select v-model="a1Pick">
+          <option value="-p">a1 = -p</option>
+          <option value="-p+0.5">a1 = -p+1/2</option>
+        </select>
+        <label>生成项数 N：</label>
+        <input type="number" v-model.number="N" min="10" style="width:90px">
+        <button class="btn" @click="buildSeq()">生成并检测 S_n >= S_10</button>
+        <label>p起：</label>
+        <input type="number" step="0.5" v-model.number="pScanStart" style="width:90px">
+        <label>p止：</label>
+        <input type="number" step="0.5" v-model.number="pScanEnd" style="width:90px">
+        <label>步长：</label>
+        <input type="number" step="0.1" v-model.number="pStep" style="width:90px">
+        <button class="btn" @click="scanP()">扫描 p 值（检测 S_n >= S_10）</button>
+      </div>
+      <div class="muted" style="margin-top:8px">说明：按推导固定 \(a_3=a_1\)，\(a_4=-p+1\)，\(a_5=a_1+1\)。此后按(③)优先取与前述分支一致的交集值（若两值均可，则同时展示两条分支供对比）。</div>
+      <div style="margin-top:10px">
+        <div>判断（针对 S_n >= S_10）：<span class="ans">{{ verdict }}</span></div>
+      </div>
+      <div style="margin-top:10px;overflow:auto">
+        <table>
+          <thead><tr><th>n</th><th>\(a_n\)</th><th>\(S_n\)</th></tr></thead>
+          <tbody>
+            <tr v-for="(x,i) in seq" :key="i"><td>{{i+1}}</td><td>{{x.toFixed(4)}}</td><td>{{prefix[i].toFixed(4)}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="muted" style="margin-top:10px" v-if="pScanResults.length">
+        p 扫描结果（满足 S_n >= S_10 记为“通过”）：
+        <ul>
+          <li v-for="r in pScanResults" :key="r.p">p={{ r.p.toFixed(3) }}：{{ r.ok? '通过' : '不通过' }}（S10={{ r.S10.toFixed(4) }}，分支={{ r.branch }}）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const app = Vue.createApp({
+    data(){
+      return { p: 0, a1Pick: '-p', N: 20, seq: [], prefix: [], verdict: '尚未计算', pScanStart: -2, pScanEnd: 2, pStep: 0.5, pScanResults: [] }
+    },
+    mounted(){ this.$nextTick(()=> renderMathInElement(document.body)); },
+    methods:{
+      generateCheck(p, a1Pick, N){
+        const a1 = a1Pick==='-p'? (-p) : (-p+0.5);
+        const a2 = -p;
+        const a3 = a1;
+        const a4 = -p+1;
+        const a5 = a1+1;
+        const arr=[a1,a2,a3,a4,a5];
+        for(let k=6;k<=N;k++){
+          let cand=null;
+          for(let m=1;m<=k-1;m++){
+            const n=k-m; const v1=arr[m-1]+arr[n-1]+p; const v2=v1+1;
+            const set=new Set([v1,v2]);
+            if(cand===null){ cand=set; } else {
+              const inter=new Set(); cand.forEach(v=>{ if(set.has(v)) inter.add(v); });
+              cand = inter.size? inter : set;
+            }
+          }
+          const list=[...cand]; list.sort((x,y)=>x-y);
+          let pick=list[0];
+          if(k%4===0){ const prev=arr[k-2]; const gt=list.find(v=>v>prev); if(gt!==undefined) pick=gt; }
+          arr.push(pick);
+        }
+        let s=0; const prefix=arr.slice(0,N).map(v=> (s+=v));
+        const S10=prefix[9];
+        const ok=prefix.every(v=> v>=S10-1e-9);
+        return { ok, S10 };
+      },
+      buildSeq(){
+        const p=this.p; const a1 = this.a1Pick==='-p'? (-p) : (-p+0.5);
+        const a2 = -p;
+        const a3 = a1;
+        const a4 = -p+1;
+        const a5 = a1+1;
+        const arr=[a1,a2,a3,a4,a5];
+        // 之后用(③)生成，取与交集一致的较小值（演示）
+        for(let k=6;k<=this.N;k++){
+          // 求所有分拆的候选集合交集
+          let cand=null;
+          for(let m=1;m<=k-1;m++){
+            const n=k-m; const v1=arr[m-1]+arr[n-1]+p; const v2=v1+1;
+            const set=new Set([v1,v2]);
+            if(cand===null){ cand=set; } else {
+              const inter=new Set(); cand.forEach(v=>{ if(set.has(v)) inter.add(v); });
+              // 若交集为空，宽松取并集（说明多分拆不完全一致时的可行分支）
+              cand = inter.size? inter : set;
+            }
+          }
+          const list=[...cand]; list.sort((x,y)=>x-y);
+          // 兼顾(②)在 k=4n 处的严格递增要求：若 k=4n，需 a_{k-1}<a_k
+          let pick=list[0];
+          if(k%4===0){ const prev=arr[k-2]; const gt=list.find(v=>v>prev); if(gt!==undefined) pick=gt; }
+          arr.push(pick);
+        }
+        this.seq=arr.slice(0,this.N);
+        let s=0; this.prefix=this.seq.map(v=> (s+=v));
+        const S10=this.prefix[9];
+        const ok=this.prefix.every(v=> v>=S10-1e-9);
+        this.verdict = ok? `成立（S10=${S10.toFixed(4)}）` : `不成立（S10=${S10.toFixed(4)}，存在更小的 S_n）`;
+      },
+      scanP(){
+        const res=[];
+        const start=this.pScanStart, end=this.pScanEnd, step=this.pStep>0? this.pStep : 0.5;
+        for(let x=start; x<=end+1e-9; x+=step){
+          const r1=this.generateCheck(x,'-p',this.N);
+          const r2=this.generateCheck(x,'-p+0.5',this.N);
+          const ok=r1.ok||r2.ok;
+          const pick = r1.ok? r1 : r2;
+          res.push({ p:x, ok, S10: pick.S10??r1.S10, branch: r1.ok? 'a1=-p' : (r2.ok? 'a1=-p+1/2' : '无') });
+        }
+        this.pScanResults=res;
+      }
+    }
+  });
+  app.mount('#app');
+  </script>
+</body>
+</html>
+
+

@@ -147,6 +147,10 @@ interface SandboxRendererProps {
   useNativeIframe?: boolean; // 使用原生iframe模式（类似CodePen）
   externalUrl?: string; // 外部URL（当useNativeIframe为true时使用）
   fixedHeight?: boolean; // 预览页固定高度，超出出现滚动条
+  // 严格原生渲染：不注入Tailwind、不加入任何重置样式/脚本，尽量还原与直接打开HTML一致的结果
+  strictRender?: boolean;
+  // 可选：是否注入Tailwind（仅在strictRender为false时生效）
+  enableTailwind?: boolean;
 }
 
 interface ExternalResource {
@@ -172,6 +176,9 @@ export default function SandboxRenderer({
   useNativeIframe = false,
   externalUrl,
   fixedHeight = false
+  ,
+  strictRender = true,
+  enableTailwind = false
 }: SandboxRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewKey, setPreviewKey] = useState(0);
@@ -311,8 +318,26 @@ export default function SandboxRenderer({
     return `${cssLinks}\n${jsScripts}`;
   }, [validateUrl]);
 
-  // 生成预览文档 - 增强版
+  // 生成预览文档 - 增强版（包含移动端/微信优化与可选Tailwind）
   const generateSrcDoc = useCallback((html: string, css: string, js: string, externalLinks: string | string[]) => {
+    if (strictRender) {
+      // 严格原生渲染：不注入任何重置或额外库，最大限度接近直接在浏览器打开HTML文件的效果
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  ${renderExternalLinks(externalLinks)}
+  <style>${css}</style>
+</head>
+<body>
+  ${html}
+  <script>
+  try { ${js} } catch (e) { /* 静默错误以防阻断渲染 */ }
+  </script>
+</body>
+</html>`;
+    }
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -333,29 +358,12 @@ export default function SandboxRenderer({
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   
   ${renderExternalLinks(externalLinks)}
-  
-  <!-- 添加 Tailwind CSS 支持 -->
+  ${enableTailwind ? `
+  <!-- 可选：Tailwind CSS 支持（仅在非strictRender时注入） -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    // 配置 Tailwind CSS
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            indigo: {
-              50: '#eef2ff',
-              600: '#4f46e5',
-              700: '#4338ca'
-            },
-            cyan: {
-              50: '#ecfeff',
-              600: '#0891b2'
-            }
-          }
-        }
-      }
-    }
-  </script>
+    tailwind.config = { theme: { extend: { } } }
+  </script>` : ''}
   
   <style>
     /* 基础重置样式 - 兼容各种浏览器 */
@@ -535,22 +543,8 @@ export default function SandboxRenderer({
       box-sizing: border-box;
     }
     
-    /* 用户自定义样式 - 提高优先级 */
+    /* 用户自定义样式 */
     ${css}
-    
-    /* 确保用户样式不被覆盖 */
-    #app, #root, [data-v-app] {
-      all: unset !important;
-      display: block !important;
-    }
-    
-    /* 恢复必要的显示属性 */
-    #app {
-      min-height: 100vh !important;
-      background: inherit !important;
-      color: inherit !important;
-      font-family: inherit !important;
-    }
   </style>
 </head>
 <body>
