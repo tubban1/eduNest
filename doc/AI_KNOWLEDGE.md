@@ -360,4 +360,4 @@ The learning goal should stay clear and integrated into gameplay.
 
 ---
 
-用vue3.5.20解图中的题目，要求完整复原题目，按步骤详细解答题目。如需图像，图表，请画出来。生成的代码放在public/math下面
+用vue3.5.20解图中的题目，要求完整复原题目，按步骤详细解答题目。如需图像，图表，请画出来。给页面添加Meta description和keywords，不要带有技术描述（例如vue，katex）。生成的代码放在public/math下面

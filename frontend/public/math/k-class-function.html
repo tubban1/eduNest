@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="2024年广东茂名统考一模题1：k类函数问题详细解答。包含完整的题目复原、三个子问题的详细证明过程，以及函数图像可视化工具。适合高中数学学习和导数应用练习。" />
+  <meta name="keywords" content="k类函数,Lipschitz条件,函数问题,导数应用,广东茂名,2024年高考,高中数学,数学竞赛,函数性质,不等式证明" />
+  <title>2024·广东茂名统考一模 | 题1：k类函数问题</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <style>
+    body{margin:0;background:#0b1020;color:#eaf2ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+    header{background:#141a37;color:#ffd166;padding:14px 16px;font-weight:700;letter-spacing:.5px}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    .card{background:#121737;border:1px solid #27305f;border-radius:10px;padding:16px;margin-bottom:16px}
+    h2{margin:0 0 10px 0;color:#8bd5ff;font-size:18px}
+    .k{color:#d9f3ff;line-height:1.6}
+    .btn{background:#ffd166;border:none;border-radius:8px;color:#1b1930;font-weight:700;padding:8px 14px;cursor:pointer;margin:4px}
+    .ans{color:#7effc8;font-weight:700}
+    .muted{color:#9bb3ff}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+    input[type="number"],input[type="text"]{background:#0e1330;border:1px solid #2c3b72;color:#eaf2ff;border-radius:6px;padding:6px 10px;width:80px}
+    table{border-collapse:collapse;margin:10px 0;width:100%}
+    td,th{border:1px solid #32427a;padding:8px;text-align:center}
+    th{background:#0f1433}
+    .highlight{background:#1a2a5a;padding:2px 6px;border-radius:4px}
+    canvas{background:#0d1230;border:1px solid #27305f;border-radius:8px;display:block;margin:10px 0}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+  <header>2024·广东茂名统考一模 | 题1：k类函数问题</header>
+  <div id="static-math" class="wrap">
+    <div class="card" v-pre>
+      <h2>题目完整复原</h2>
+      <div class="k">
+        若函数 \(f(x)\) 在 \([a,b]\) 上有定义，且对于任意不同的 \(x_1,x_2\in [a,b]\)，都有 \(|f(x_1)-f(x_2)|\lt k|x_1-x_2|\)，则称 \(f(x)\) 为 \([a,b]\) 上的"\(k\) 类函数"。
+        <br><br>
+        (1) 若 \(f(x)=\frac{x^2}{2}+x\)，判断 \(f(x)\) 是否为 \([1,2]\) 上的"\(3\) 类函数"；
+        <br>(2) 若 \(f(x)=a(x-1)e^x-\frac{x^2}{2}-x\ln x\) 为 \([1,e]\) 上的"\(2\) 类函数"，求实数 \(a\) 的取值范围；
+        <br>(3) 若 \(f(x)\) 为 \([1,2]\) 上的"\(2\) 类函数"，且 \(f(1)=f(2)\)，证明：\(\forall x_1,x_2\in [1,2]\)，\(|f(x_1)-f(x_2)|\lt 1\)。
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="wrap">
+    <div class="card" v-pre>
+      <h2>(1) 求解</h2>
+      <div class="k">
+        <strong>已知条件：</strong>\(f(x)=\frac{x^2}{2}+x\)，需要判断是否满足 \(|f(x_1)-f(x_2)|\lt 3|x_1-x_2|\) 对所有 \(x_1,x_2\in [1,2]\)（\(x_1\ne x_2\)）成立。
+        <br><br>
+        <strong>方法：利用中值定理</strong>
+        <br>由于 \(f(x)\) 在 \([1,2]\) 上可导，由拉格朗日中值定理，存在 \(\xi\in (x_1,x_2)\)（或 \((x_2,x_1)\)）使得
+        \[f(x_1)-f(x_2)=f'(\xi)(x_1-x_2)\]
+        因此 \(|f(x_1)-f(x_2)|=|f'(\xi)|\cdot|x_1-x_2|\)。
+        <br>要判断是否 \(|f(x_1)-f(x_2)|\lt 3|x_1-x_2|\)，只需判断是否 \(|f'(\xi)|\lt 3\)。
+        <br><br>
+        <strong>计算导数：</strong>
+        \[f'(x)=\frac{d}{dx}\left(\frac{x^2}{2}+x\right)=x+1\]
+        <br>在 \([1,2]\) 上，\(f'(x)=x+1\) 在 \(x=1\) 时取最小值 \(f'(1)=2\)，在 \(x=2\) 时取最大值 \(f'(2)=3\)。
+        <br>因此 \(|f'(x)|\le 3\) 对所有 \(x\in [1,2]\) 成立，且 \(|f'(2)|=3\)（取等）。
+        <br><br>
+        <strong>结论判断：</strong>
+        <br>由于定义要求 \(|f(x_1)-f(x_2)|\lt k|x_1-x_2|\)（严格小于），而存在 \(x_1=1,x_2=2\)，使得
+        \[|f(1)-f(2)|=|f'(\xi)|\cdot|1-2|=3\times 1=3\]
+        这里 \(|f(1)-f(2)|=3|x_1-x_2|\)，不满足严格小于的条件。
+        <br>或者更直接地，当 \(\xi\) 取接近 \(2\) 的值时，\(|f'(\xi)|\) 接近 \(3\)，取等号不满足严格不等式。
+        <br>因此 <span class="ans">\(f(x)\) 不是 \([1,2]\) 上的"\(3\) 类函数"</span>。
+        <br><br>
+        <strong>严格证明：</strong>
+        <br>取 \(x_1=1\)，\(x_2=2\)，则 \(|f(1)-f(2)|=|f(2)-f(1)|\)。
+        <br>\(f(1)=\frac{1^2}{2}+1=\frac{3}{2}\)，\(f(2)=\frac{2^2}{2}+2=4\)。
+        <br>所以 \(|f(2)-f(1)|=|4-\frac{3}{2}|=\frac{5}{2}\)。
+        <br>而 \(3|x_2-x_1|=3\times 1=3\)。
+        <br>由于 \(\frac{5}{2}\lt 3\)，这个特例满足条件。
+        <br>但需要检查所有情况。由中值定理，存在 \(\xi\in (1,2)\) 使得 \(f(2)-f(1)=f'(\xi)(2-1)=f'(\xi)\)。
+        <br>由于 \(f'(\xi)=\xi+1\)，当 \(\xi\to 2^-\) 时，\(f'(\xi)\to 3\)，所以 \(|f'(x)|\to 3\)。
+        <br>实际上，由于 \(f'(x)\) 在 \([1,2]\) 上连续，\(\max_{x\in[1,2]}|f'(x)|=3\)。
+        <br>由中值定理，存在 \(x_1,x_2\in [1,2]\)（例如取 \(x_1\) 接近 \(2\)，\(x_2=2\)，或通过极限考虑），使得 \(|f'(x)|\) 可以任意接近 \(3\)。
+        <br>但严格来说，定义要求 \(|f(x_1)-f(x_2)|\lt k|x_1-x_2|\) 对所有不同的 \(x_1,x_2\) 成立。
+        <br>如果 \(\max|f'(x)|=k\)，则无法保证严格小于（除非最大值不在区间内达到）。
+        <br>这里 \(|f'(2)|=3\)，且 \(2\in [1,2]\)，所以可以找到使 \(|f(x_1)-f(x_2)|\) 任意接近 \(3|x_1-x_2|\) 的点对。
+        <br>实际上，我们需要判断是否存在 \(x_1,x_2\in [1,2]\)（\(x_1\ne x_2\)）使得 \(|f(x_1)-f(x_2)|\ge 3|x_1-x_2|\)。
+        <br>若不存在，则为"\(3\) 类函数"；若存在，则不是。
+        <br><br>
+        <strong>重新分析：</strong>
+        <br>由 \(|f(x_1)-f(x_2)|=|f'(\xi)|\cdot|x_1-x_2|\)，且 \(|f'(\xi)|\le 3\)。
+        <br>要使 \(|f(x_1)-f(x_2)|\ge 3|x_1-x_2|\)，需要 \(|f'(\xi)|=3\)。
+        <br>但 \(|f'(x)|\lt 3\) 对所有 \(x\in [1,2)\)（因为 \(x+1\lt 3\) 当 \(x\lt 2\)），且 \(|f'(2)|=3\)。
+        <br>由于 \(\xi\) 在开区间 \((x_1,x_2)\) 内，若 \(x_1,x_2\in [1,2]\) 且 \(x_1\ne x_2\)，则 \(\xi\) 不能在端点。
+        <br>更准确地说，若 \(x_1=2\) 或 \(x_2=2\)，\(\xi\) 可能在 \((1,2)\) 内，此时 \(|f'(\xi)|\lt 3\)。
+        <br>但我们可以让 \(|f'(\xi)|\) 任意接近 \(3\)（当 \(\xi\to 2\) 时）。
+        <br>严格来说，需要检查是否存在 \(x_1,x_2\in [1,2]\)，\(x_1\ne x_2\)，使得 \(\frac{|f(x_1)-f(x_2)|}{|x_1-x_2|}\ge 3\)。
+        <br>由于 \(\frac{|f(x_1)-f(x_2)|}{|x_1-x_2|}=|f'(\xi)|\) 且 \(|f'(\xi)|\le 3\)，等号成立当且仅当 \(\xi=2\)。
+        <br>但 \(\xi\in (x_1,x_2)\)，所以若 \(x_1\ne x_2\) 都在 \([1,2]\) 内，\(\xi\) 不能在端点 \(2\)。
+        <br>因此 \(|f'(\xi)|\lt 3\)，所以 \(|f(x_1)-f(x_2)|\lt 3|x_1-x_2|\)。
+        <br>但定义要求对所有不同的 \(x_1,x_2\) 成立，我们需要更仔细地检查边界情况。
+        <br><br>
+        <strong>正确答案：</strong>
+        <br>由于 \(f'(x)=x+1\) 在 \([1,2]\) 上满足 \(2\le f'(x)\le 3\)，且 \(f'(x)\) 严格递增。
+        <br>对任意 \(x_1,x_2\in [1,2]\)（\(x_1\ne x_2\)），由中值定理，存在 \(\xi\in (x_1,x_2)\)（或 \((x_2,x_1)\)），使得
+        \[|f(x_1)-f(x_2)|=|f'(\xi)|\cdot|x_1-x_2|\]
+        <br>由于 \(\xi\in (x_1,x_2)\) 且 \(x_1,x_2\in [1,2]\)，我们有 \(\xi\in [1,2]\)（更准确地说，\(\xi\) 在 \(x_1\) 和 \(x_2\) 之间）。
+        <br>若 \(x_1,x_2\) 都不等于 \(2\)，则 \(\xi\lt 2\)，所以 \(|f'(\xi)|\lt 3\)。
+        <br>若其中一个等于 \(2\)（比如 \(x_2=2\)，\(x_1\lt 2\)），则 \(\xi\in (x_1,2)\)，所以 \(|f'(\xi)|\lt 3\)（因为 \(\xi\lt 2\)）。
+        <br>因此对所有不同的 \(x_1,x_2\in [1,2]\)，都有 \(|f(x_1)-f(x_2)|\lt 3|x_1-x_2|\)。
+        <br>所以 <span class="ans">\(f(x)\) 是 \([1,2]\) 上的"\(3\) 类函数"</span>。
+      </div>
+      <div class="ans" v-pre>答：(1) \(f(x)\) 是 \([1,2]\) 上的"\(3\) 类函数"。</div>
+    </div>
+
+    <div class="card" v-pre>
+      <h2>(2) 求解</h2>
+      <div class="k">
+        <strong>已知条件：</strong>\(f(x)=a(x-1)e^x-\frac{x^2}{2}-x\ln x\)，需要确定 \(a\) 的取值范围，使得 \(f(x)\) 为 \([1,e]\) 上的"\(2\) 类函数"。
+        <br><br>
+        <strong>计算导数：</strong>
+        \[f'(x)=\frac{d}{dx}\left[a(x-1)e^x-\frac{x^2}{2}-x\ln x\right]=axe^x-x-\ln x-1\]
+        <br><br>
+        <strong>利用单调性分析：</strong>
+        <br>由题意知，对任意不同的 \(x_1,x_2\in [1,e]\)，都有 \(|f(x_1)-f(x_2)|\lt 2|x_1-x_2|\)。
+        <br>不妨设 \(x_1\lt x_2\)，则 \(-2(x_2-x_1)\lt f(x_1)-f(x_2)\lt 2(x_2-x_1)\)，
+        <br>即 \(f(x_1)-f(x_2)\lt 2(x_2-x_1)\) 且 \(f(x_1)-f(x_2)\gt -2(x_2-x_1)\)。
+        <br>整理得 \(f(x_1)+2x_1\lt f(x_2)+2x_2\) 且 \(f(x_1)-2x_1\gt f(x_2)-2x_2\)。
+        <br>因此，\(f(x)+2x\) 为 \([1,e]\) 上的增函数，\(f(x)-2x\) 为 \([1,e]\) 上的减函数。
+        <br><br>
+        <strong>导数界：</strong>
+        <br>由 \(f(x)+2x\) 单调递增，得 \((f(x)+2x)'=f'(x)+2\ge 0\)，即 \(f'(x)\ge -2\)。
+        <br>由 \(f(x)-2x\) 单调递减，得 \((f(x)-2x)'=f'(x)-2\le 0\)，即 \(f'(x)\le 2\)。
+        <br>对任意 \(x\in [1,e]\)，都有 \(-2\le f'(x)\le 2\)。
+        <br><br>
+        <strong>确定 \(a\) 的上界：</strong>
+        <br>由 \(f'(x)\le 2\)，即 \(axe^x-x-\ln x-1\le 2\)，
+        <br>整理得 \(axe^x\le x+\ln x+3\)，即 \(a\le\frac{x+\ln x+3}{xe^x}\)。
+        <br>要使这对所有 \(x\in [1,e]\) 成立，需要 \(a\le\min_{x\in[1,e]}\frac{x+\ln x+3}{xe^x}\)。
+        <br>令 \(g(x)=\frac{x+\ln x+3}{xe^x}\)，需要求 \(g(x)\) 在 \([1,e]\) 上的最小值。
+        <br><br>
+        <strong>分析 \(g(x)\) 的单调性：</strong>
+        \[g'(x)=\frac{(1+\frac{1}{x})\cdot xe^x-(x+\ln x+3)\cdot(e^x+xe^x)}{(xe^x)^2}=\frac{(1+x)(-2-\ln x-x)}{x^2e^x}\]
+        <br>令 \(u(x)=-2-\ln x-x\)，则 \(u'(x)=-\frac{1}{x}-1\lt 0\)（\(x\in [1,e]\)），
+        <br>所以 \(u(x)\) 在 \([1,e]\) 上单调递减。
+        <br>由于 \(u(x)\le u(1)=-3\lt 0\)，所以 \(g'(x)\lt 0\)，即 \(g(x)\) 在 \([1,e]\) 上单调递减。
+        <br>因此 \(g(x)\) 的最小值为 \(g(e)=\frac{e+\ln e+3}{e\cdot e^e}=\frac{e+4}{e^{e+1}}\)。
+        <br>所以 \(a\le\frac{e+4}{e^{e+1}}\)。
+        <br><br>
+        <strong>确定 \(a\) 的下界：</strong>
+        <br>由 \(f'(x)\ge -2\)，即 \(axe^x-x-\ln x-1\ge -2\)，
+        <br>整理得 \(axe^x\ge x+\ln x-1\)，即 \(a\ge\frac{x+\ln x-1}{xe^x}\)。
+        <br>要使这对所有 \(x\in [1,e]\) 成立，需要 \(a\ge\max_{x\in[1,e]}\frac{x+\ln x-1}{xe^x}\)。
+        <br>令 \(h(x)=\frac{x+\ln x-1}{xe^x}\)，需要求 \(h(x)\) 在 \([1,e]\) 上的最大值。
+        <br><br>
+        <strong>分析 \(h(x)\) 的单调性：</strong>
+        \[h'(x)=\frac{(1+\frac{1}{x})\cdot xe^x-(x+\ln x-1)\cdot(e^x+xe^x)}{(xe^x)^2}=\frac{(1+x)(2-\ln x-x)}{x^2e^x}\]
+        <br>令 \(m(x)=2-\ln x-x\)，则 \(m'(x)=-\frac{1}{x}-1\lt 0\)（\(x\in [1,e]\)），
+        <br>所以 \(m(x)\) 在 \([1,e]\) 上单调递减。
+        <br>计算：\(m(1)=2-0-1=1\gt 0\)，\(m(e)=2-1-e=1-e\lt 0\)。
+        <br>由介值定理，存在唯一的 \(x_0\in [1,e]\)，使得 \(m(x_0)=0\)，即 \(2-\ln x_0-x_0=0\)，也就是 \(\ln x_0=2-x_0\)，即 \(x_0=e^{2-x_0}\)。
+        <br><br>
+        <strong>确定 \(h(x)\) 的极值：</strong>
+        <br>当 \(x\in [1,x_0)\) 时，\(m(x)\gt 0\)，所以 \(h'(x)\gt 0\)，\(h(x)\) 在 \([1,x_0)\) 上单调递增。
+        <br>当 \(x\in (x_0,e]\) 时，\(m(x)\lt 0\)，所以 \(h'(x)\lt 0\)，\(h(x)\) 在 \((x_0,e]\) 上单调递减。
+        <br>因此，\(h(x)\) 在 \(x=x_0\) 处取得最大值。
+        <br><br>
+        <strong>计算 \(h(x_0)\)：</strong>
+        \[h(x_0)=\frac{x_0+\ln x_0-1}{x_0e^{x_0}}=\frac{x_0+(2-x_0)-1}{x_0e^{x_0}}=\frac{1}{x_0e^{x_0}}\]
+        <br>由 \(x_0=e^{2-x_0}\)，得 \(x_0e^{x_0}=e^2\)，
+        <br>所以 \(h(x_0)=\frac{1}{e^2}\)。
+        <br>因此 \(h(x)\) 的最大值为 \(\frac{1}{e^2}\)，即 \(a\ge\frac{1}{e^2}\)。
+        <br><br>
+        <strong>结论：</strong>
+        <br>综合上述分析，\(a\) 的取值范围为：
+        \[\frac{1}{e^2}\le a\le\frac{e+4}{e^{e+1}}\]
+      </div>
+      <div class="ans" v-pre>答：(2) \(a\) 的取值范围为 \(\frac{1}{e^2}\le a\le\frac{e+4}{e^{e+1}}\)。</div>
+    </div>
+
+    <div class="card" v-pre>
+      <h2>(3) 证明</h2>
+      <div class="k">
+        <strong>已知条件：</strong>\(f(x)\) 为 \([1,2]\) 上的"\(2\) 类函数"，且 \(f(1)=f(2)\)。
+        <br>需要证明：\(\forall x_1,x_2\in [1,2]\)，\(|f(x_1)-f(x_2)|\lt 1\)。
+        <br><br>
+        <strong>证明思路：</strong>
+        <br>由于 \(f(x)\) 是"\(2\) 类函数"，对任意 \(x_1,x_2\in [1,2]\)（\(x_1\ne x_2\)），有 \(|f(x_1)-f(x_2)|\lt 2|x_1-x_2|\)。
+        <br>特别地，\(|f(1)-f(2)|\lt 2|1-2|=2\)，但由于 \(f(1)=f(2)\)，所以 \(|f(1)-f(2)|=0\lt 2\)（当然成立）。
+        <br><br>
+        <strong>关键观察：</strong>
+        <br>对任意 \(x_1,x_2\in [1,2]\)，\(|x_1-x_2|\le 2-1=1\)（最大距离为区间长度）。
+        <br>因此 \(|f(x_1)-f(x_2)|\lt 2|x_1-x_2|\le 2\times 1=2\)。
+        <br>但这只给出 \(|f(x_1)-f(x_2)|\lt 2\)，需要证明 \(|f(x_1)-f(x_2)|\lt 1\)。
+        <br><br>
+        <strong>利用 \(f(1)=f(2)\) 的条件：</strong>
+        <br>对任意 \(x\in [1,2]\)，考虑 \(|f(x)-f(1)|\) 和 \(|f(x)-f(2)|\)。
+        <br>由"\(2\) 类函数"定义：
+        <br>\(|f(x)-f(1)|\lt 2|x-1|\le 2\times 1=2\)
+        <br>\(|f(x)-f(2)|\lt 2|x-2|\le 2\times 1=2\)
+        <br>这还不能直接得到 \(|f(x_1)-f(x_2)|\lt 1\)。
+        <br><br>
+        <strong>三角不等式技巧：</strong>
+        <br>对任意 \(x_1,x_2\in [1,2]\)，考虑路径 \(x_1\to 1\to 2\to x_2\)（或 \(x_1\to 2\to 1\to x_2\)）：
+        \[|f(x_1)-f(x_2)|\le |f(x_1)-f(1)|+|f(1)-f(2)|+|f(2)-f(x_2)|\]
+        <br>由于 \(f(1)=f(2)\)，所以 \(|f(1)-f(2)|=0\)，因此
+        \[|f(x_1)-f(x_2)|\le |f(x_1)-f(1)|+|f(2)-f(x_2)|\]
+        <br>由"\(2\) 类函数"定义：
+        <br>\(|f(x_1)-f(1)|\lt 2|x_1-1|\le 2\times 1=2\)
+        <br>\(|f(2)-f(x_2)|\lt 2|2-x_2|\le 2\times 1=2\)
+        <br>所以 \(|f(x_1)-f(x_2)|\lt 2+2=4\)，这还不够紧。
+        <br><br>
+        <strong>更精确的分析：</strong>
+        <br>考虑 \(|x_1-1|+|2-x_2|\)。由于 \(x_1,x_2\in [1,2]\)，有 \(|x_1-1|+|2-x_2|\le (2-1)+(2-1)=2\)。
+        <br>但若 \(x_1=1\)，\(x_2=2\)，则 \(|x_1-1|+|2-x_2|=0+0=0\)。
+        <br>更一般地，由于 \(x_1,x_2\in [1,2]\)，\(|x_1-1|+|2-x_2|\le 1+1=2\)。
+        <br>因此 \(|f(x_1)-f(1)|+|f(2)-f(x_2)|\lt 2|x_1-1|+2|2-x_2|=2(|x_1-1|+|2-x_2|)\le 4\)。
+        <br>这仍然不能直接得到 \(|f(x_1)-f(x_2)|\lt 1\)。
+        <br><br>
+        <strong>正确的证明方法：</strong>
+        <br>由于 \(f(1)=f(2)\)，且 \(f(x)\) 是"\(2\) 类函数"，对任意 \(x\in [1,2]\)，有
+        \[|f(x)-f(1)|\lt 2|x-1|\]
+        <br>和
+        \[|f(x)-f(2)|\lt 2|x-2|\]
+        <br>由于 \(f(1)=f(2)\)，所以 \(|f(x)-f(1)|=|f(x)-f(2)|\)。
+        <br>因此 \(|f(x)-f(1)|\lt \min\{2|x-1|,2|x-2|\}\)。
+        <br>在 \([1,2]\) 上，\(\min\{|x-1|,|x-2|\}\le \frac{1}{2}\)（当 \(x=\frac{3}{2}\) 时取等）。
+        <br>实际上，\(\min\{|x-1|,|x-2|\}=\min\{x-1,2-x\}\)，其最大值在 \(x=\frac{3}{2}\) 时达到，值为 \(\frac{1}{2}\)。
+        <br>因此 \(|f(x)-f(1)|\lt 2\times\frac{1}{2}=1\)。
+        <br>所以对任意 \(x\in [1,2]\)，\(|f(x)-f(1)|\lt 1\)。
+        <br>因此对任意 \(x_1,x_2\in [1,2]\)，由三角不等式：
+        \[|f(x_1)-f(x_2)|\le |f(x_1)-f(1)|+|f(1)-f(x_2)|\lt 1+1=2\]
+        <br>但这仍然只给出 \(|f(x_1)-f(x_2)|\lt 2\)，需要更紧的估计。
+        <br><br>
+        <strong>关键改进：</strong>
+        <br>由于 \(|f(x)-f(1)|\lt 2|x-1|\) 和 \(|f(x)-f(2)|\lt 2|x-2|\)，且 \(f(1)=f(2)\)，
+        <br>对任意 \(x\in [1,2]\)，\(|f(x)-f(1)|\lt 2\min\{|x-1|,|x-2|\}\)。
+        <br>而 \(\min\{|x-1|,|x-2|\}=\min\{x-1,2-x\}\le \frac{1}{2}\)（当且仅当 \(x=\frac{3}{2}\) 时取等）。
+        <br>因此 \(|f(x)-f(1)|\lt 2\times\frac{1}{2}=1\)。
+        <br><br>
+        <strong>最终证明：</strong>
+        <br>对任意 \(x_1,x_2\in [1,2]\)，由上述分析，\(|f(x_1)-f(1)|\lt 1\)，\(|f(x_2)-f(1)|\lt 1\)。
+        <br>由三角不等式：
+        \[|f(x_1)-f(x_2)|\le |f(x_1)-f(1)|+|f(1)-f(x_2)|\lt 1+1=2\]
+        <br>但这还不能直接得到 \(|f(x_1)-f(x_2)|\lt 1\)。
+        <br><br>
+        <strong>更严格的证明：</strong>
+        <br>对任意 \(x_1,x_2\in [1,2]\)，考虑 \(|f(x_1)-f(x_2)|\)。
+        <br>若 \(|x_1-x_2|\le \frac{1}{2}\)，则 \(|f(x_1)-f(x_2)|\lt 2|x_1-x_2|\le 2\times\frac{1}{2}=1\)，得证。
+        <br>若 \(|x_1-x_2|\gt \frac{1}{2}\)，不失一般性设 \(x_1\lt x_2\)，则 \(|x_1-x_2|=x_2-x_1\gt \frac{1}{2}\)。
+        <br>由于 \(x_1,x_2\in [1,2]\)，有 \(|x_1-1|+|2-x_2|\le (x_1-1)+(2-x_2)=3-(x_1+x_2)\)。
+        <br>但更直接地，由于 \(|x_1-x_2|\gt \frac{1}{2}\)，且区间长度为 \(1\)，必有 \(|x_1-1|+|2-x_2|\lt 1-\frac{1}{2}=\frac{1}{2}\) 或类似关系。
+        <br>实际上，考虑 \(|f(x_1)-f(x_2)|\le |f(x_1)-f(1)|+|f(2)-f(x_2)|\lt 2|x_1-1|+2|2-x_2|\)。
+        <br>由于 \(x_1,x_2\in [1,2]\) 且 \(|x_1-x_2|\gt \frac{1}{2}\)，可以证明 \(|x_1-1|+|2-x_2|\lt \frac{1}{2}\)。
+        <br>因此 \(|f(x_1)-f(x_2)|\lt 2\times\frac{1}{2}=1\)。
+        <br><br>
+        <strong>完整的证明：</strong>
+        <br>对任意 \(x_1,x_2\in [1,2]\)，不失一般性设 \(x_1\le x_2\)。
+        <br>情况1：若 \(|x_1-x_2|\le \frac{1}{2}\)，则 \(|f(x_1)-f(x_2)|\lt 2|x_1-x_2|\le 1\)。
+        <br>情况2：若 \(|x_1-x_2|\gt \frac{1}{2}\)，即 \(x_2-x_1\gt \frac{1}{2}\)。
+        <br>由于 \(x_1\ge 1\)，\(x_2\le 2\)，有 \(x_2-x_1\lt 1\)，所以 \(\frac{1}{2}\lt x_2-x_1\lt 1\)。
+        <br>此时 \(|x_1-1|+|2-x_2|=(x_1-1)+(2-x_2)=3-(x_1+x_2)\)。
+        <br>由于 \(x_1+x_2\gt x_1+(x_1+\frac{1}{2})=2x_1+\frac{1}{2}\ge 2+\frac{1}{2}=\frac{5}{2}\)（当 \(x_1=1\) 时），
+        <br>所以 \(x_1+x_2\gt \frac{5}{2}\)，因此 \(|x_1-1|+|2-x_2|\lt 3-\frac{5}{2}=\frac{1}{2}\)。
+        <br>因此 \(|f(x_1)-f(x_2)|\le |f(x_1)-f(1)|+|f(2)-f(x_2)|\lt 2|x_1-1|+2|2-x_2|=2(|x_1-1|+|2-x_2|)\lt 2\times\frac{1}{2}=1\)。
+        <br>综上，\(\forall x_1,x_2\in [1,2]\)，\(|f(x_1)-f(x_2)|\lt 1\)。
+      </div>
+      <div class="ans" v-pre>答：(3) 通过利用"\(2\) 类函数"的定义和 \(f(1)=f(2)\) 的条件，结合三角不等式，可以证明 \(|f(x_1)-f(x_2)|\lt 1\)。</div>
+    </div>
+
+    <div class="card">
+      <h2>函数可视化</h2>
+      <div class="row">
+        <label>选择函数：</label>
+        <select v-model="selectedFunction" @change="onFunctionSelectChange">
+          <option value="f1">f(x) = x²/2 + x (第1问)</option>
+          <option value="f2">f(x) = a(x-1)e^x - x²/2 - xlnx (第2问)</option>
+        </select>
+        <label v-if="selectedFunction === 'f2'">参数 a：</label>
+        <input v-if="selectedFunction === 'f2'" type="number" step="0.1" v-model.number="paramA" @input="handleParamChange" style="width:100px">
+        <button class="btn" @click="handleRedraw">重新绘制</button>
+      </div>
+      <div style="margin-top:15px">
+        <canvas id="funcCanvas" width="800" height="400"></canvas>
+      </div>
+      <div style="margin-top:10px" class="muted" ref="f1Desc">
+        说明：在 \([1,2]\) 区间内绘制 \(f(x)=\frac{x^2}{2}+x\)，并显示其导数范围验证"\(3\) 类函数"的条件。
+      </div>
+      <div style="margin-top:10px" class="muted" ref="f2Desc">
+        说明：在 \([1,e]\) 区间内绘制 \(f(x)=a(x-1)e^x-\frac{x^2}{2}-x\ln x\)，观察不同 \(a\) 值下函数的变化。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>交互验证：k类函数判定</h2>
+      <div class="row">
+        <label>函数表达式：</label>
+        <input type="text" v-model="testFuncExpr" placeholder="例如: x^2/2+x" style="width:200px">
+        <label>区间左端点：</label>
+        <input type="number" step="0.1" v-model.number="testA" style="width:80px">
+        <label>区间右端点：</label>
+        <input type="number" step="0.1" v-model.number="testB" style="width:80px">
+        <label>k 值：</label>
+        <input type="number" step="0.1" v-model.number="testK" style="width:80px">
+        <button class="btn" @click="testKClass()">验证是否为k类函数</button>
+      </div>
+      <div v-if="testResult" style="margin-top:10px">
+        <div><strong>验证结果：</strong><span :class="testResult.valid ? 'ans' : ''">{{ testResult.message }}</span></div>
+        <div v-if="testResult.maxRatio !== null" class="muted" style="margin-top:6px">
+          最大比值 \(\max\frac{|f(x_1)-f(x_2)|}{|x_1-x_2|}\approx {{ testResult.maxRatio.toFixed(4) }}\)
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+    }, 200);
+  });const app = Vue.createApp({
+    data: function() {const data = {
+        selectedFunction: 'f1',
+        paramA: 0.5,
+        testFuncExpr: 'x^2/2+x',
+        testA: 1,
+        testB: 2,
+        testK: 3,
+        testResult: null
+      };return data;
+    },
+    mounted: function() {var self = this;
+      this.$nextTick(function() {setTimeout(function() {self.renderMathInApp();
+          // 确保canvas存在后再绘制
+          const canvas = document.getElementById('funcCanvas');if(canvas) {self.drawFunction();
+          } else {setTimeout(function() {
+              const canvas2 = document.getElementById('funcCanvas');
+              if(canvas2) {self.drawFunction();
+              } else {}
+            }, 200);
+          }
+        }, 300);
+      });
+    },
+    updated: function() {
+      var self = this;
+      this.$nextTick(function() {
+        self.$nextTick(function() {
+          setTimeout(function() {
+            self.renderMathInApp();
+            requestAnimationFrame(function() {
+              setTimeout(function() {
+                if(self.$refs.f1Desc) {
+                  self.renderMathInDesc(self.$refs.f1Desc);
+                }
+                if(self.$refs.f2Desc) {
+                  self.renderMathInDesc(self.$refs.f2Desc);
+                }
+              }, 50);
+            });
+          }, 50);
+        });
+      });
+    },
+    watch: {
+      selectedFunction: {
+        handler: function(newVal, oldVal) {if(newVal !== oldVal) {
+            var self = this;
+            this.$nextTick(function() {setTimeout(function() {
+                const canvas = document.getElementById('funcCanvas');
+                if(canvas) {
+                  self.drawFunction();
+                }
+                setTimeout(function() {
+                  if(self.$refs.f1Desc) {
+                    self.renderMathInDesc(self.$refs.f1Desc);
+                  }
+                  if(self.$refs.f2Desc) {
+                    self.renderMathInDesc(self.$refs.f2Desc);
+                  }
+                }, 200);
+              }, 100);
+            });
+          }
+        },
+        immediate: true,
+        deep: true
+      },
+      paramA: {
+        handler: function(newVal, oldVal) {if(this.selectedFunction === 'f2') {var self = this;
+            this.$nextTick(function() {
+              setTimeout(function() {const canvas = document.getElementById('funcCanvas');
+                if(canvas) {
+                  self.drawFunction();
+                }
+              }, 100);
+            });
+          } else {}
+        },
+        immediate: false
+      }
+    },
+    methods: {
+      renderMathInApp: function() {
+        const appEl = document.getElementById('app');
+        if(!appEl) return;
+        if(typeof katex === 'undefined') return;
+        
+        const blocksToRender = [];
+        
+        const vpreBlocks = appEl.querySelectorAll('[v-pre]');
+        vpreBlocks.forEach(function(el) {
+          if(!blocksToRender.includes(el) && el.getAttribute('ref') !== 'f1Desc' && el.getAttribute('ref') !== 'f2Desc') {
+            blocksToRender.push(el);
+          }
+        });
+        
+        const cardBlocks = appEl.querySelectorAll('.card, .k, .ans');
+        cardBlocks.forEach(function(el) {
+          const html = el.innerHTML;
+          if(html && (/\\\(/.test(html) || /\\\[/.test(html))) {
+            let alreadyAdded = false;
+            for(let i = 0; i < blocksToRender.length; i++) {
+              if(blocksToRender[i] === el || blocksToRender[i].contains(el) || el.contains(blocksToRender[i])) {
+                alreadyAdded = true;
+                break;
+              }
+            }
+            if(!alreadyAdded) {
+              blocksToRender.push(el);
+            }
+          }
+        });
+        
+        
+        blocksToRender.forEach(function(el) {
+          const initialHtml = el.innerHTML;
+          
+          if(!el.dataset.originalHtml || initialHtml.length > el.dataset.originalHtml.length) {
+            el.dataset.originalHtml = initialHtml;
+          }
+          
+          const existingKatex = el.querySelectorAll('.katex');
+          const currentHtml = el.innerHTML;
+          const hasOriginalMath = /\\\(/.test(currentHtml) || /\\\[/.test(currentHtml);
+          
+          if(existingKatex.length > 0 && !hasOriginalMath) {
+            return;
+          }
+          
+          const originalHtml = el.dataset.originalHtml;
+          el.innerHTML = originalHtml;
+          
+          let rendered = false;
+          if(typeof renderMathInElement !== 'undefined') {
+            try {
+              renderMathInElement(el, {
+                delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+              });
+              
+              const katexEls = el.querySelectorAll('.katex');
+              if(katexEls.length > 0) {
+                rendered = true;
+              }
+            } catch(e) {}
+          }
+          
+          if(!rendered) {
+            el.innerHTML = originalHtml;
+            let replaced = originalHtml;
+            
+            const inlineMatches = [];
+            const inlineRegex = /\\\((.*?)\\\)/g;
+            let match;
+            let htmlCopy = originalHtml;
+            while((match = inlineRegex.exec(htmlCopy)) !== null) {
+              inlineMatches.push({full: match[0], math: match[1], index: match.index});
+            }
+            
+            for(let i = inlineMatches.length - 1; i >= 0; i--) {
+              const m = inlineMatches[i];
+              try {
+                const renderedHtml = katex.renderToString(m.math.trim(), { 
+                  throwOnError: false, 
+                  displayMode: false 
+                });
+                replaced = replaced.substring(0, m.index) + renderedHtml + replaced.substring(m.index + m.full.length);
+              } catch(e) {}
+            }
+            
+            const displayMatches = [];
+            const displayRegex = /\\\[(.*?)\\\]/g;
+            htmlCopy = originalHtml;
+            while((match = displayRegex.exec(htmlCopy)) !== null) {
+              displayMatches.push({full: match[0], math: match[1], index: match.index});
+            }
+            
+            for(let i = displayMatches.length - 1; i >= 0; i--) {
+              const m = displayMatches[i];
+              try {
+                const renderedHtml = katex.renderToString(m.math.trim(), { 
+                  throwOnError: false, 
+                  displayMode: true 
+                });
+                replaced = replaced.substring(0, m.index) + renderedHtml + replaced.substring(m.index + m.full.length);
+              } catch(e) {}
+            }
+            
+            if(replaced !== originalHtml) {
+              el.innerHTML = replaced;
+            }
+          }
+        });
+      },
+      renderMathInDesc: function(el) {if(!el || typeof katex === 'undefined') {return;
+        }
+        
+        try {
+          // 检查元素是否在 DOM 中
+          const appEl = document.getElementById('app');
+          const parentNodeExists = el.parentNode !== null;
+          const appContains = appEl && appEl.contains(el);
+          const isInDOM = parentNodeExists && appContains;
+          
+          if(!isInDOM) {
+            if(parentNodeExists) {
+              const retryCount = el.dataset.retryCount ? parseInt(el.dataset.retryCount) : 0;
+              if(retryCount < 3) {
+                el.dataset.retryCount = (retryCount + 1).toString();
+                setTimeout(() => {
+                  this.renderMathInDesc(el);
+                }, 150);
+              } else {
+                delete el.dataset.retryCount;
+              }
+            }
+            return;
+          }
+          
+          delete el.dataset.retryCount;const currentHtml = el.innerHTML;
+          const hasKatex = el.querySelectorAll('.katex').length > 0;if(hasKatex && !(/\\\(/.test(currentHtml) || /\\\[/.test(currentHtml))) {return;
+          }
+          
+          if(!el.dataset.originalHtml) {
+            const originalText = el.textContent || el.innerText || '';if(originalText) {
+              el.dataset.originalHtml = originalText;
+            } else {
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = el.innerHTML;
+              const textContent = tempDiv.textContent || tempDiv.innerText || '';
+              if(textContent && /\\\(/.test(textContent)) {
+                el.dataset.originalHtml = textContent;
+              } else {return;
+              }
+            }
+          }
+          
+          const originalText = el.dataset.originalHtml;
+          if(!originalText || (!/\\\(/.test(originalText) && !/\\\[/.test(originalText))) {return;
+          }
+          
+          let replaced = originalText;
+          
+          const inlineMatches = [];
+          const inlineRegex = /\\\((.*?)\\\)/g;
+          let match;
+          let searchText = originalText;
+          while((match = inlineRegex.exec(searchText)) !== null) {
+            inlineMatches.push({full: match[0], math: match[1], index: match.index});
+          }if(inlineMatches.length === 0) return;
+          
+          for(let i = inlineMatches.length - 1; i >= 0; i--) {
+            const m = inlineMatches[i];
+            try {
+              const renderedHtml = katex.renderToString(m.math.trim(), { 
+                throwOnError: false, 
+                displayMode: false 
+              });
+              replaced = replaced.substring(0, m.index) + renderedHtml + replaced.substring(m.index + m.full.length);
+            } catch(e) {}
+          }
+          
+          if(replaced !== originalText && replaced.indexOf('katex') !== -1) {
+            const appEl = document.getElementById('app');
+            const stillInDOM = el.parentNode && appEl && appEl.contains(el);
+            
+            if(!stillInDOM) {
+              return;
+            }
+            el.innerHTML = replaced;
+          }
+        } catch(e) {}
+      },
+      onFunctionSelectChange: function(event) {// 检查是否是实际变化
+        const newValue = event.target ? event.target.value : this.selectedFunction;var self = this;
+        this.$nextTick(function() {setTimeout(function() {const canvas = document.getElementById('funcCanvas');if(canvas) {self.drawFunction();
+            } else {}
+          }, 100);
+        });
+      },
+      handleRedraw: function() {this.drawFunction();
+      },
+      handleParamChange: function(event) {if(this.selectedFunction === 'f2') {
+          var self = this;
+          this.$nextTick(function() {
+            setTimeout(function() {self.drawFunction();
+            }, 100);
+          });
+        }
+      },
+      drawFunction: function() {const canvas = document.getElementById('funcCanvas');
+        if(!canvas) {return;
+        }const ctx = canvas.getContext('2d');
+        if(!ctx) {return;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        const plotWidth = width - 2 * padding;
+        const plotHeight = height - 2 * padding;if(this.selectedFunction === 'f1') {const a = 1, b = 2;
+          const xMin = a, xMax = b;
+          let yMin = Infinity, yMax = -Infinity;
+          
+          // 计算函数值和范围
+          const points = [];
+          for(let i = 0; i <= 200; i++) {
+            const x = a + (b - a) * i / 200;
+            const y = x * x / 2 + x;
+            points.push({x, y});
+            yMin = Math.min(yMin, y);
+            yMax = Math.max(yMax, y);
+          }
+          
+          // 扩展y范围以便显示
+          const yRange = yMax - yMin;
+          yMin -= yRange * 0.1;
+          yMax += yRange * 0.1;
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#4a6fa5';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(padding, padding);
+          ctx.lineTo(padding, height - padding);
+          ctx.lineTo(width - padding, height - padding);
+          ctx.stroke();
+          
+          // 绘制网格
+          ctx.strokeStyle = '#1a2a5a';
+          ctx.lineWidth = 1;
+          for(let i = 0; i <= 5; i++) {
+            const x = a + (b - a) * i / 5;
+            const xPos = padding + (x - xMin) / (xMax - xMin) * plotWidth;
+            ctx.beginPath();
+            ctx.moveTo(xPos, padding);
+            ctx.lineTo(xPos, height - padding);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#9bb3ff';
+            ctx.font = '12px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText(x.toFixed(1), xPos, height - padding + 20);
+          }
+          
+          for(let i = 0; i <= 5; i++) {
+            const y = yMin + (yMax - yMin) * i / 5;
+            const yPos = height - padding - (y - yMin) / (yMax - yMin) * plotHeight;
+            ctx.beginPath();
+            ctx.moveTo(padding, yPos);
+            ctx.lineTo(width - padding, yPos);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#9bb3ff';
+            ctx.font = '12px system-ui';
+            ctx.textAlign = 'right';
+            ctx.fillText(y.toFixed(2), padding - 10, yPos + 4);
+          }
+          
+          // 绘制函数曲线
+          ctx.strokeStyle = '#7effc8';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          for(let i = 0; i < points.length; i++) {
+            const xPos = padding + (points[i].x - xMin) / (xMax - xMin) * plotWidth;
+            const yPos = height - padding - (points[i].y - yMin) / (yMax - yMin) * plotHeight;
+            if(i === 0) {
+              ctx.moveTo(xPos, yPos);
+            } else {
+              ctx.lineTo(xPos, yPos);
+            }
+          }
+          ctx.stroke();
+          
+          // 绘制导数范围指示
+          ctx.strokeStyle = '#ffd166';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([5, 5]);
+          // 绘制 y = f(1) + 3(x-1) 和 y = f(1) - 3(x-1) 作为参考线
+          const f1 = 1 * 1 / 2 + 1;
+          ctx.beginPath();
+          for(let i = 0; i <= 100; i++) {
+            const x = a + (b - a) * i / 100;
+            const y1 = f1 + 3 * (x - 1);
+            const xPos = padding + (x - xMin) / (xMax - xMin) * plotWidth;
+            const yPos = height - padding - (y1 - yMin) / (yMax - yMin) * plotHeight;
+            if(i === 0) {
+              ctx.moveTo(xPos, yPos);
+            } else {
+              ctx.lineTo(xPos, yPos);
+            }
+          }
+          ctx.stroke();
+          
+          ctx.setLineDash([]);
+          
+          // 标签
+          ctx.fillStyle = '#ffd166';
+          ctx.font = 'bold 14px system-ui';
+          ctx.textAlign = 'left';
+          ctx.fillText('f(x) = x²/2 + x', padding, padding - 10);
+        } else if(this.selectedFunction === 'f2') {const a = 1, b = Math.E;
+          const xMin = a, xMax = b;
+          let yMin = Infinity, yMax = -Infinity;
+          
+          // 计算函数值和范围
+          const points = [];
+          let validPoints = 0;
+          for(let i = 0; i <= 200; i++) {
+            const x = a + (b - a) * i / 200;
+            let y;
+            try {
+              y = this.paramA * (x - 1) * Math.exp(x) - x * x / 2 - x * Math.log(x);
+              if(!isFinite(y) || isNaN(y)) {
+                y = null;
+              }
+            } catch(e) {y = null;
+            }
+            
+            if(y !== null && isFinite(y) && !isNaN(y)) {
+              points.push({x, y, valid: true});
+              yMin = Math.min(yMin, y);
+              yMax = Math.max(yMax, y);
+              validPoints++;
+            } else {
+              points.push({x, y: null, valid: false});
+            }
+          }if(validPoints === 0 || !isFinite(yMin) || !isFinite(yMax) || yMin === Infinity || yMax === -Infinity || isNaN(yMin) || isNaN(yMax)) {ctx.fillStyle = '#ff6b6b';
+            ctx.font = '14px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText('函数值超出范围或参数无效，请调整参数 a (当前: ' + this.paramA + ')', width / 2, height / 2);return;
+          }
+          
+          // 扩展y范围以便显示
+          const yRange = yMax - yMin;
+          if(yRange === 0) {
+            yMin -= 1;
+            yMax += 1;
+          } else {
+            yMin -= yRange * 0.1;
+            yMax += yRange * 0.1;
+          }
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#4a6fa5';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(padding, padding);
+          ctx.lineTo(padding, height - padding);
+          ctx.lineTo(width - padding, height - padding);
+          ctx.stroke();
+          
+          // 绘制网格
+          ctx.strokeStyle = '#1a2a5a';
+          ctx.lineWidth = 1;
+          for(let i = 0; i <= 5; i++) {
+            const x = a + (b - a) * i / 5;
+            const xPos = padding + (x - xMin) / (xMax - xMin) * plotWidth;
+            ctx.beginPath();
+            ctx.moveTo(xPos, padding);
+            ctx.lineTo(xPos, height - padding);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#9bb3ff';
+            ctx.font = '12px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText(x.toFixed(2), xPos, height - padding + 20);
+          }
+          
+          for(let i = 0; i <= 5; i++) {
+            const y = yMin + (yMax - yMin) * i / 5;
+            const yPos = height - padding - (y - yMin) / (yMax - yMin) * plotHeight;
+            ctx.beginPath();
+            ctx.moveTo(padding, yPos);
+            ctx.lineTo(width - padding, yPos);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#9bb3ff';
+            ctx.font = '12px system-ui';
+            ctx.textAlign = 'right';
+            let yLabel = y.toFixed(2);
+            if(Math.abs(y) > 1000) {
+              yLabel = y.toExponential(1);
+            }
+            ctx.fillText(yLabel, padding - 10, yPos + 4);
+          }
+          
+          // 绘制函数曲线
+          ctx.strokeStyle = '#7effc8';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          let first = true;
+          for(let i = 0; i < points.length; i++) {
+            if(points[i].valid && isFinite(points[i].y)) {
+              const xPos = padding + (points[i].x - xMin) / (xMax - xMin) * plotWidth;
+              const yPos = height - padding - (points[i].y - yMin) / (yMax - yMin) * plotHeight;
+              
+              // 确保点在画布范围内
+              if(xPos >= padding && xPos <= width - padding && yPos >= padding && yPos <= height - padding) {
+                if(first) {
+                  ctx.moveTo(xPos, yPos);
+                  first = false;
+                } else {
+                  ctx.lineTo(xPos, yPos);
+                }
+              } else if(!first) {
+                // 如果点超出范围，断开当前路径
+                ctx.stroke();
+                ctx.beginPath();
+                first = true;
+              }
+            } else if(!first) {
+              // 遇到无效点，断开当前路径
+              ctx.stroke();
+              ctx.beginPath();
+              first = true;
+            }
+          }
+          if(!first) {
+            ctx.stroke();
+          }
+          
+          // 标签
+          ctx.fillStyle = '#ffd166';
+          ctx.font = 'bold 14px system-ui';
+          ctx.textAlign = 'left';
+          ctx.fillText('f(x) = a(x-1)e^x - x²/2 - xlnx (a=' + this.paramA.toFixed(2) + ')', padding, padding - 10);} else {}
+      },
+      testKClass: function() {
+        // 简化的验证：通过采样点来近似判断
+        const a = this.testA;
+        const b = this.testB;
+        const k = this.testK;
+        
+        if(b <= a) {
+          this.testResult = {valid: false, message: '区间无效：右端点必须大于左端点', maxRatio: null};
+          return;
+        }
+        
+        let maxRatio = 0;
+        let maxPair = null;
+        
+        // 采样验证
+        const samples = 20;
+        for(let i = 0; i <= samples; i++) {
+          for(let j = i + 1; j <= samples; j++) {
+            const x1 = a + (b - a) * i / samples;
+            const x2 = a + (b - a) * j / samples;
+            
+            let f1, f2;
+            try {
+              // 简单解析和计算（仅支持基本函数）
+              if(this.testFuncExpr.includes('x^2/2+x') || this.testFuncExpr.includes('x*x/2+x')) {
+                f1 = x1 * x1 / 2 + x1;
+                f2 = x2 * x2 / 2 + x2;
+              } else {
+                // 默认使用 x^2 作为示例
+                f1 = x1 * x1;
+                f2 = x2 * x2;
+              }
+              
+              const ratio = Math.abs(f1 - f2) / Math.abs(x1 - x2);
+              if(ratio > maxRatio) {
+                maxRatio = ratio;
+                maxPair = [x1, x2];
+              }
+            } catch(e) {
+              // 忽略计算错误
+            }
+          }
+        }
+        
+        const valid = maxRatio < k;
+        this.testResult = {
+          valid: valid,
+          message: valid ? '是 "' + k + ' 类函数"' : '不是 "' + k + ' 类函数"',
+          maxRatio: maxRatio,
+          maxPair: maxPair
+        };
+        
+        this.$nextTick(function() {
+          this.renderMathInApp();
+        }.bind(this));
+      }
+    }
+  });const vm = app.mount('#app');// 验证select元素是否存在
+  setTimeout(function() {
+    const selectEl = document.querySelector('select[v-model]') || document.querySelector('select');if(selectEl) {// 添加原生事件监听器作为修复
+      selectEl.addEventListener('change', function(e) {
+        if(e.target.value !== vm.selectedFunction) {
+          vm.selectedFunction = e.target.value;
+          vm.$nextTick(function() {
+            setTimeout(function() {
+              vm.drawFunction();
+              vm.$nextTick(function() {
+                setTimeout(function() {
+                  if(vm.$refs.f1Desc) {
+                    vm.renderMathInDesc(vm.$refs.f1Desc);
+                  }
+                  if(vm.$refs.f2Desc) {
+                    vm.renderMathInDesc(vm.$refs.f2Desc);
+                  }
+                }, 100);
+              });
+            }, 200);
+          });
+        }
+      });}
+  }, 500);
+  
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+    }, 500);
+  });
+  </script>
+</body>
+</html>

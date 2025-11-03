@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="2024年河南高三校联考期末题目：三阶行列式定义与空间向量叉乘计算。详解行列式运算法则，向量叉乘几何意义，三角形面积和平行六面体体积计算。包含完整推导过程和三维可视化图形。">
+  <meta name="keywords" content="三阶行列式,向量叉乘,空间向量,三角形面积,平行六面体体积,空间几何,向量运算,立体几何,2024年高考,河南校联考">
+  <title>2024·河南·高三校联考期末 - 三阶行列式与空间向量叉乘</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .problem-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .problem-number {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px 0 0 20px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .problem-info {
+      background: #ecf0f1;
+      padding: 8px 15px;
+      border-radius: 0 20px 20px 0;
+      font-size: 14px;
+      color: #7f8c8d;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: block;
+      width: 100%;
+      max-width: 800px;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      .problem-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .problem-number {
+        border-radius: 20px;
+        margin-bottom: 10px;
+      }
+      .problem-info {
+        border-radius: 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>2024·河南·高三校联考期末 - 三阶行列式与空间向量叉乘</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre>
+      <h2>题目</h2>
+      
+      <h2>一、三阶行列式的定义</h2>
+      <div class="k">
+        <p>三阶行列式是解决复杂代数运算的算法，其运算法则如下：</p>
+        <div class="formula-box">
+          \[\begin{vmatrix}
+          a_1 & a_2 & a_3 \\
+          b_1 & b_2 & b_3 \\
+          c_1 & c_2 & c_3
+          \end{vmatrix} = a_1b_2c_3 + a_2b_3c_1 + a_3b_1c_2 - a_3b_2c_1 - a_2b_1c_3 - a_1b_3c_2\]
+        </div>
+      </div>
+
+      <h2>二、空间向量叉乘的定义</h2>
+      <div class="k">
+        <p>若 \(\vec{a} \times \vec{b} = \begin{vmatrix} \vec{i} & \vec{j} & \vec{k} \\ x_1 & y_1 & z_1 \\ x_2 & y_2 & z_2 \end{vmatrix}\)，</p>
+        <p>则称 \(\vec{a} \times \vec{b}\) 为空间向量 \(\vec{a}\) 与 \(\vec{b}\) 的叉乘。</p>
+        <br>
+        <p>其中 \(\vec{a} = x_1\vec{i} + y_1\vec{j} + z_1\vec{k} \quad (x_1, y_1, z_1 \in \mathbb{R})\)，</p>
+        <p>\(\vec{b} = x_2\vec{i} + y_2\vec{j} + z_2\vec{k} \quad (x_2, y_2, z_2 \in \mathbb{R})\)，</p>
+        <p>\(\{\vec{i}, \vec{j}, \vec{k}\}\) 为单位正交基底。</p>
+        <br>
+        <p>以 \(O\) 为坐标原点、分别以 \(\vec{i}, \vec{j}, \vec{k}\) 的方向为 \(x\) 轴、\(y\) 轴、\(z\) 轴的正方向建立空间直角坐标系，已知 \(A, B\) 是空间直角坐标系中异于 \(O\) 的不同两点。</p>
+      </div>
+
+      <h2>三、问题</h2>
+      <div class="k">
+        <p><strong>(1) ① 若 \(A(1, 2, 1), B(0, -1, 1)\)，求 \(\vec{OA} \times \vec{OB}\)</strong></p>
+        <br>
+        <p><strong>(1) ② 证明：\(\vec{OA} \times \vec{OB} + \vec{OB} \times \vec{OA} = \vec{0}\)</strong></p>
+        <br>
+        <p><strong>(2) 记 \(\triangle AOB\) 的面积为 \(S_{\triangle AOB}\)，证明：\(S_{\triangle AOB} = \frac{1}{2}|\vec{OA} \times \vec{OB}|\)</strong></p>
+        <br>
+        <p><strong>(3) 证明：\((\vec{OA} \times \vec{OB})^2\) 的几何意义表示以 \(\triangle AOB\) 为底面、\(|\vec{OA} \times \vec{OB}|\) 为高的三棱锥体积的 6 倍。</strong></p>
+      </div>
+    </div>
+    
+    <!-- 解答部分 -->
+    <div id="app">
+      <div class="card" v-pre>
+        <h2>三、(1) 已知条件求解</h2>
+        <div class="k">
+          <p><strong>① 若 \(A(1, 2, 1), B(0, -1, 1)\)，求 \(\vec{OA} \times \vec{OB}\)</strong></p>
+          
+          <div class="step">
+            <div class="step-title">解：</div>
+            <p>因为 \(A(1,2,1)\)，\(B(0,-1,1)\)，</p>
+            <p>所以 \(\vec{OA} = (1,2,1)\)，\(\vec{OB} = (0,-1,1)\)。</p>
+            <br>
+            <p>根据叉乘定义：</p>
+            \[\vec{OA} \times \vec{OB} = \begin{vmatrix}
+            \vec{i} & \vec{j} & \vec{k} \\
+            1 & 2 & 1 \\
+            0 & -1 & 1
+            \end{vmatrix}\]
+            
+            <p>按照行列式展开法则（第一行按代数余子式展开）：</p>
+            \[= \vec{i}\begin{vmatrix} 2 & 1 \\ -1 & 1 \end{vmatrix} - \vec{j}\begin{vmatrix} 1 & 1 \\ 0 & 1 \end{vmatrix} + \vec{k}\begin{vmatrix} 1 & 2 \\ 0 & -1 \end{vmatrix}\]
+            
+            \[= \vec{i}[2 \times 1 - 1 \times (-1)] - \vec{j}[1 \times 1 - 1 \times 0] + \vec{k}[1 \times (-1) - 2 \times 0]\]
+            
+            \[= \vec{i}(2 + 1) - \vec{j}(1 - 0) + \vec{k}(-1 - 0)\]
+            
+            \[= 3\vec{i} - \vec{j} - \vec{k}\]
+            
+            \[= (3, -1, -1)\]
+          </div>
+
+          <div class="ans" v-pre>
+            <strong>答：</strong> \(\vec{OA} \times \vec{OB} = (3, -1, -1)\)
+          </div>
+        </div>
+      </div>
+
+      <!-- 第四部分：问题1的证明 -->
+      <div class="card" v-pre>
+        <h2>三、(1) ② 证明</h2>
+        <div class="k">
+          <p><strong>证明：\(\vec{OA} \times \vec{OB} + \vec{OB} \times \vec{OA} = \vec{0}\)</strong></p>
+          
+          <div class="step">
+            <div class="step-title">证法一：利用叉乘的反对称性</div>
+            根据叉乘的性质，对于任意向量 \(\vec{a}, \vec{b}\)：
+            \[\vec{a} \times \vec{b} = -(\vec{b} \times \vec{a})\]
+            
+            因此：
+            \[\vec{OA} \times \vec{OB} + \vec{OB} \times \vec{OA} = \vec{OA} \times \vec{OB} - (\vec{OA} \times \vec{OB}) = \vec{0}\]
+          </div>
+
+          <div class="step">
+            <div class="step-title">证法二：直接展开计算</div>
+            设 \(\vec{OA} = (x_1, y_1, z_1), \vec{OB} = (x_2, y_2, z_2)\)
+            
+            \[\vec{OA} \times \vec{OB} = \begin{vmatrix}
+            \vec{i} & \vec{j} & \vec{k} \\
+            x_1 & y_1 & z_1 \\
+            x_2 & y_2 & z_2
+            \end{vmatrix}\]
+            
+            \[= \vec{i}(y_1z_2 - z_1y_2) - \vec{j}(x_1z_2 - z_1x_2) + \vec{k}(x_1y_2 - y_1x_2)\]
+            
+            交换 \(\vec{OA}\) 和 \(\vec{OB}\)：
+            \[\vec{OB} \times \vec{OA} = \begin{vmatrix}
+            \vec{i} & \vec{j} & \vec{k} \\
+            x_2 & y_2 & z_2 \\
+            x_1 & y_1 & z_1
+            \end{vmatrix}\]
+            
+            \[= \vec{i}(y_2z_1 - z_2y_1) - \vec{j}(x_2z_1 - z_2x_1) + \vec{k}(x_2y_1 - y_2x_1)\]
+            \[= -\vec{i}(y_1z_2 - z_1y_2) + \vec{j}(x_1z_2 - z_1x_2) - \vec{k}(x_1y_2 - y_1x_2)\]
+            
+            因此：
+            \[\vec{OA} \times \vec{OB} + \vec{OB} \times \vec{OA} = \vec{0}\]
+          </div>
+
+          <div class="ans" v-pre>
+            <strong>证毕。</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第五部分：问题2 三角形面积 -->
+      <div class="card" v-pre>
+        <h2>三、(2) 三角形面积</h2>
+        <div class="k">
+          <p><strong>记 \(\triangle AOB\) 的面积为 \(S_{\triangle AOB}\)，证明：\(S_{\triangle AOB} = \frac{1}{2}|\vec{OA} \times \vec{OB}|\)</strong></p>
+          
+          <div class="step">
+            <div class="step-title">证明：</div>
+            <p>设向量 \(\vec{OA}, \vec{OB}\) 的夹角为 \(\theta\)，则：</p>
+            
+            <p>\(\triangle AOB\) 的面积 = \(\frac{1}{2} \times |\vec{OA}| \times |\vec{OB}| \times \sin\theta\)</p>
+            
+            <p>根据叉乘的定义，\(|\vec{OA} \times \vec{OB}| = |\vec{OA}| \times |\vec{OB}| \times \sin\theta\)</p>
+            
+            <p>因此：</p>
+            \[S_{\triangle AOB} = \frac{1}{2}|\vec{OA}||\vec{OB}|\sin\theta = \frac{1}{2}|\vec{OA} \times \vec{OB}|\]
+          </div>
+
+          <div class="formula-box">
+            几何意义：叉乘的模长等于以这两个向量为邻边的平行四边形的面积，而三角形的面积是其一半。
+          </div>
+
+          <div class="ans" v-pre>
+            <strong>证毕。</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第六部分：问题3 棱锥体积 -->
+      <div class="card" v-pre>
+        <h2>三、(3) 三棱锥体积</h2>
+        <div class="k">
+          <p><strong>证明：\((\vec{OA} \times \vec{OB})^2\) 的几何意义表示以 \(\triangle AOB\) 为底面、\(|\vec{OA} \times \vec{OB}|\) 为高的三棱锥体积的 6 倍。</strong></p>
+          
+          <div class="step">
+            <div class="step-title">证明：</div>
+            <p>根据题意，三棱锥的：</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+              <li>底面面积：\(S_{\triangle AOB} = \frac{1}{2}|\vec{OA} \times \vec{OB}|\)</li>
+              <li>高：\(h = |\vec{OA} \times \vec{OB}|\)</li>
+            </ul>
+            
+            <p>三棱锥的体积公式：\(V = \frac{1}{3} \times S_{底} \times h\)</p>
+            
+            \[V = \frac{1}{3} \times \frac{1}{2}|\vec{OA} \times \vec{OB}| \times |\vec{OA} \times \vec{OB}|\]
+            \[V = \frac{1}{6}|\vec{OA} \times \vec{OB}|^2\]
+            \[|\vec{OA} \times \vec{OB}|^2 = 6V\]
+          </div>
+
+          <div class="formula-box">
+            <p>几何意义解释：</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+              <li>\(|\vec{OA} \times \vec{OB}|\) 表示 \(\triangle AOB\) 面积的两倍（平行四边形的面积）</li>
+              <li>以该平行四边形为底、自身长度为高的"长方体"体积为 \(|\vec{OA} \times \vec{OB}|^2\)</li>
+              <li>该长方体可以分割成 6 个体积相等的三棱锥</li>
+              <li>因此每个三棱锥的体积为 \(\frac{1}{6}|\vec{OA} \times \vec{OB}|^2\)</li>
+            </ul>
+          </div>
+
+          <div class="ans" v-pre>
+            <strong>证毕。</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 图形可视化部分 -->
+      <div class="card">
+        <h2>空间图形可视化</h2>
+        <div id="canvas-container" style="margin: 20px 0; position: relative;">
+          <canvas id="main-canvas"></canvas>
+          <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;">
+            三维空间中的三角形AOB和三棱锥示意图（可拖拽旋转视角）
+          </p>
+        </div>
+      </div>
+
+      <!-- 数值计算验证 -->
+      <div class="card">
+        <h2>数值验证</h2>
+        <div class="k">
+          <p><strong>已知 \(A(1, 2, 1), B(0, -1, 1)\)</strong></p>
+          
+          <div style="margin-top: 15px;">
+            <div style="margin-bottom: 10px;">
+              <strong>计算结果：</strong>
+            </div>
+            <ul style="margin-left: 20px;">
+              <li>\(\vec{OA} \times \vec{OB} = \) <span id="cross-result"></span></li>
+              <li>\(|\vec{OA} \times \vec{OB}| = \) <span id="cross-magnitude"></span></li>
+              <li>\(S_{\triangle AOB} = \frac{1}{2}|\vec{OA} \times \vec{OB}| = \) <span id="triangle-area"></span></li>
+              <li>三棱锥体积 \(V = \frac{1}{6}|\vec{OA} \times \vec{OB}|^2 = \) <span id="pyramid-volume"></span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const staticEl = document.getElementById('static-math');
+    if(staticEl && typeof renderMathInElement !== 'undefined') {
+      try {
+        renderMathInElement(staticEl, {
+          delimiters: [
+            {left: '\\[', right: '\\]', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ],
+          throwOnError: false
+        });
+      } catch(e) {}
+    }
+    
+    // 初始化3D可视化
+    if(typeof THREE !== 'undefined') {
+      setTimeout(() => {
+        init3DVisualization();
+      }, 300);
+    }
+  });
+  
+  function init3DVisualization() {
+    const container = document.getElementById('main-canvas');
+    if(!container || typeof THREE === 'undefined') return;
+    
+    // 场景设置
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf5f5f5);
+    
+    // 相机设置
+    const width = container.clientWidth || 800;
+    const height = 500;
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(6, 5, 6);
+    camera.lookAt(0, 0, 0);
+    
+    // 渲染器
+    const renderer = new THREE.WebGLRenderer({
+      canvas: container,
+      antialias: true
+    });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    
+    // 控制器
+    let controls = null;
+    try {
+      if(typeof THREE.OrbitControls !== 'undefined') {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+      } else if(typeof OrbitControls !== 'undefined') {
+        controls = new OrbitControls(camera, renderer.domElement);
+      }
+      
+      if(controls) {
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+        controls.enableZoom = true;
+        controls.enablePan = false;
+      }
+    } catch(e) {
+      console.warn('OrbitControls未加载:', e);
+    }
+    
+    // 添加光源
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 5);
+    scene.add(directionalLight);
+    
+    // 定义点
+    const O = new THREE.Vector3(0, 0, 0);
+    const A = new THREE.Vector3(1, 2, 1);
+    const B = new THREE.Vector3(0, -1, 1);
+    
+    // 绘制坐标轴
+    const axesHelper = new THREE.AxesHelper(3);
+    scene.add(axesHelper);
+    
+    // 计算叉乘结果
+    const cross = new THREE.Vector3();
+    cross.crossVectors(A, B); // OA × OB
+    
+    // 绘制向量OA和OB
+    function createArrow(from, to, color) {
+      const direction = to.clone().sub(from).normalize();
+      const length = from.distanceTo(to);
+      
+      if(typeof THREE.ArrowHelper !== 'undefined') {
+        const arrow = new THREE.ArrowHelper(direction, from, length, color, length * 0.1, length * 0.05);
+        scene.add(arrow);
+      } else {
+        // 简单线条表示
+        const geometry = new THREE.BufferGeometry().setFromPoints([from, to]);
+        const material = new THREE.LineBasicMaterial({color: color, linewidth: 3});
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+      }
+    }
+    
+    // 绘制向量
+    createArrow(O, A, 0x3498db); // OA - 蓝色
+    createArrow(O, B, 0xe74c3c); // OB - 红色
+    
+    // 绘制叉乘向量（从A点出发）
+    const crossEnd = A.clone().add(cross);
+    createArrow(A, crossEnd, 0x27ae60); // 绿色
+    
+    // 绘制三角形AOB
+    const triangleGeometry = new THREE.BufferGeometry().setFromPoints([O, A, B, O]);
+    const triangleMaterial = new THREE.LineBasicMaterial({color: 0x9b59b6, linewidth: 2});
+    const triangle = new THREE.Line(triangleGeometry, triangleMaterial);
+    scene.add(triangle);
+    
+    // 绘制三角形AOB的面
+    const faceGeometry = new THREE.BufferGeometry();
+    faceGeometry.setFromPoints([O, A, B]);
+    faceGeometry.computeVertexNormals();
+    const faceMaterial = new THREE.MeshBasicMaterial({
+      color: 0x9b59b6,
+      transparent: true,
+      opacity: 0.2,
+      side: THREE.DoubleSide
+    });
+    const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
+    scene.add(faceMesh);
+    
+    // 绘制三棱锥（以三角形AOB为底面，高为|OA×OB|）
+    const pyramidHeight = cross.length();
+    const apex = O.clone().add(cross.clone().normalize().multiplyScalar(pyramidHeight));
+    
+    // 绘制三棱锥的棱
+    const pyramidEdges = [
+      [O, A], [A, B], [B, O], // 底面
+      [O, apex], [A, apex], [B, apex] // 侧棱
+    ];
+    pyramidEdges.forEach(([start, end]) => {
+      const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+      const material = new THREE.LineBasicMaterial({color: 0xff9500, linewidth: 2});
+      const line = new THREE.Line(geometry, material);
+      scene.add(line);
+    });
+    
+    // 绘制三棱锥的侧面
+    const sides = [
+      [O, A, apex],
+      [A, B, apex],
+      [B, O, apex]
+    ];
+    sides.forEach(vertices => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setFromPoints(vertices);
+      geometry.computeVertexNormals();
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xff9500,
+        transparent: true,
+        opacity: 0.15,
+        side: THREE.DoubleSide
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+    });
+    
+    // 绘制点
+    function createSphere(position, color, label) {
+      const geometry = new THREE.SphereGeometry(0.15, 16, 16);
+      const material = new THREE.MeshBasicMaterial({color: color});
+      const sphere = new THREE.Mesh(geometry, material);
+      sphere.position.copy(position);
+      scene.add(sphere);
+      
+      // 添加标签
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 18px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 64, 32);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({map: texture, transparent: true});
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.position.copy(position);
+      sprite.position.y += 0.3;
+      sprite.scale.set(1, 0.5, 1);
+      scene.add(sprite);
+    }
+    
+    createSphere(O, 0x2c3e50, 'O');
+    createSphere(A, 0x3498db, 'A');
+    createSphere(B, 0xe74c3c, 'B');
+    createSphere(apex, 0xff9500, 'P');
+    
+    // 动画循环
+    const animate = () => {
+      requestAnimationFrame(animate);
+      if(controls) controls.update();
+      renderer.render(scene, camera);
+    };
+    animate();
+    
+    // 窗口大小调整
+    window.addEventListener('resize', () => {
+      const newWidth = container.clientWidth || 800;
+      camera.aspect = newWidth / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(newWidth, height);
+    });
+  }
+
+  const {createApp} = Vue;
+
+  const app = createApp({
+    data() {
+      return {};
+    },
+    mounted() {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          // 渲染KaTeX数学公式
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {
+                console.warn('Math rendering error:', e);
+              }
+            }
+          }
+          
+          // 数值计算
+          this.calculateResults();
+        }, 100);
+      });
+    },
+    methods: {
+      calculateResults() {
+        // 向量OA和OB
+        const OA = {x: 1, y: 2, z: 1};
+        const OB = {x: 0, y: -1, z: 1};
+        
+        // 计算叉乘
+        const cross = {
+          x: OA.y * OB.z - OA.z * OB.y,
+          y: OA.z * OB.x - OA.x * OB.z,
+          z: OA.x * OB.y - OA.y * OB.x
+        };
+        
+        // 计算模长
+        const magnitude = Math.sqrt(cross.x*cross.x + cross.y*cross.y + cross.z*cross.z);
+        
+        // 计算面积
+        const area = 0.5 * magnitude;
+        
+        // 计算体积
+        const volume = (1/6) * magnitude * magnitude;
+        
+        // 渲染结果
+        setTimeout(() => {
+          const crossResultEl = document.getElementById('cross-result');
+          const crossMagEl = document.getElementById('cross-magnitude');
+          const triangleAreaEl = document.getElementById('triangle-area');
+          const pyramidVolumeEl = document.getElementById('pyramid-volume');
+          
+          if(crossResultEl && typeof katex !== 'undefined') {
+            try {
+              crossResultEl.innerHTML = katex.renderToString('(3, -1, -1)', {throwOnError: false});
+            } catch(e) {
+              crossResultEl.textContent = '(3, -1, -1)';
+            }
+          }
+          
+          if(crossMagEl && typeof katex !== 'undefined') {
+            const magStr = magnitude.toFixed(4);
+            try {
+              crossMagEl.innerHTML = katex.renderToString('\\sqrt{11} \\approx ' + magStr, {throwOnError: false});
+            } catch(e) {
+              crossMagEl.textContent = '√11 ≈ ' + magStr;
+            }
+          }
+          
+          if(triangleAreaEl && typeof katex !== 'undefined') {
+            const areaStr = area.toFixed(4);
+            try {
+              triangleAreaEl.innerHTML = katex.renderToString('\\frac{\\sqrt{11}}{2} \\approx ' + areaStr, {throwOnError: false});
+            } catch(e) {
+              triangleAreaEl.textContent = '√11/2 ≈ ' + areaStr;
+            }
+          }
+          
+          if(pyramidVolumeEl && typeof katex !== 'undefined') {
+            const volStr = volume.toFixed(4);
+            try {
+              pyramidVolumeEl.innerHTML = katex.renderToString('\\frac{11}{6} \\approx ' + volStr, {throwOnError: false});
+            } catch(e) {
+              pyramidVolumeEl.textContent = '11/6 ≈ ' + volStr;
+            }
+          }
+        }, 200);
+      }
+    }
+  });
+  
+  const vm = app.mount('#app');
+  
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+      
+      setTimeout(function() {
+        if(vm && vm.calculateResults) {
+          vm.calculateResults();
+        }
+      }, 300);
+    }, 500);
+  });
+  </script>
+</body>
+</html>
+

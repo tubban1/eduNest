@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="函数图像平移问题：正弦函数按向量平移后的解析式求解，函数零点个数分析与区间长度最值，含参数的二次不等式恒成立问题。包含函数变换、三角函数性质和不等式求解。">
+  <meta name="keywords" content="函数平移,正弦函数,三角函数,零点,不等式恒成立,函数变换,解析式,区间长度">
+  <title>函数图像平移问题</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+    .solution-section {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .step {
+      margin: 20px 0;
+      padding: 15px;
+      background: #ffffff;
+      border-left: 3px solid #3498db;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px auto;
+      display: block;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://unpkg.com/vue@3.5.20/dist/vue.global.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>函数图像平移问题</h1>
+    
+    <!-- 题目部分 -->
+    <div class="problem-section" v-pre>
+      <h2>题目</h2>
+      <div class="k">
+        <p><strong>7.</strong> 将函数\(f(x)\)的图象按向量\(\vec{a} = (m, n)\)平移指的是：当\(m > 0\)时，\(f(x)\)图形向右平移\(m\)个单位；当\(m < 0\)时，\(f(x)\)图形向左平移\(|m|\)个单位；当\(n > 0\)时，\(f(x)\)图形向上平移\(n\)个单位；当\(n < 0\)时，\(f(x)\)图形向下平移\(|n|\)个单位。</p>
+        <br>
+        <p>已知\(f(x) = 2\sin(2x)\)，将\(f(x)\)的图象按\(\vec{a} = \left(-\frac{\pi}{3}, 1\right)\)平移得到函数\(g(x)\)的图象。</p>
+        <br>
+        <p><strong>(1)</strong> 求\(g(x)\)的解析式；</p>
+        <br>
+        <p><strong>(2)</strong> 若函数\(g(x)\)在区间\([a, b]\)上至少含30个零点，在所有满足上述条件的\([a, b]\)中，求\(b - a\)的最小值；</p>
+        <br>
+        <p><strong>(3)</strong> 对任意的\(x \in \left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)，不等式\(g^2(x) - mg(x) - 1 \leq 0\)恒成立，求实数\(m\)的取值范围。</p>
+      </div>
+    </div>
+
+    <!-- 解答部分 -->
+    <div id="app">
+      <div class="solution-section">
+        <h2>解答</h2>
+        
+        <!-- 第一问 -->
+        <div class="card" v-pre>
+          <h2>(1) 求\(g(x)\)的解析式</h2>
+          <div class="k">
+            <div class="step">
+              <div class="step-title">分析：</div>
+              <p>函数\(f(x) = 2\sin(2x)\)的图像按向量\(\vec{a} = \left(-\frac{\pi}{3}, 1\right)\)平移。</p>
+              <p>根据题意：</p>
+              <ul style="margin-left: 20px;">
+                <li>\(m = -\frac{\pi}{3} < 0\)，所以向左平移\(\frac{\pi}{3}\)个单位</li>
+                <li>\(n = 1 > 0\)，所以向上平移\(1\)个单位</li>
+              </ul>
+            </div>
+            
+            <div class="step">
+              <div class="step-title">解：</div>
+              <p>将函数图像向左平移\(\frac{\pi}{3}\)个单位，函数解析式变为：</p>
+              \[f_1(x) = f\left(x + \frac{\pi}{3}\right) = 2\sin\left[2\left(x + \frac{\pi}{3}\right)\right] = 2\sin\left(2x + \frac{2\pi}{3}\right)\]
+              <br>
+              <p>再将函数图像向上平移\(1\)个单位，函数解析式变为：</p>
+              \[g(x) = f_1(x) + 1 = 2\sin\left(2x + \frac{2\pi}{3}\right) + 1\]
+            </div>
+
+            <div class="step">
+              <div class="step-title">函数图像对比：</div>
+              <p>下图展示了原函数\(f(x) = 2\sin(2x)\)和变换后的函数\(g(x) = 2\sin\left(2x + \frac{2\pi}{3}\right) + 1\)的图像：</p>
+              <div style="margin: 20px 0; text-align: center;">
+                <canvas id="graph1" width="800" height="400"></canvas>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">图1：原函数\(f(x)\)和平移后的函数\(g(x)\)的图像对比</p>
+              </div>
+            </div>
+
+            <div class="ans" v-pre>
+              <strong>答：(1)</strong> \(g(x) = 2\sin\left(2x + \frac{2\pi}{3}\right) + 1\)
+            </div>
+          </div>
+        </div>
+
+        <!-- 第二问 -->
+        <div class="card" v-pre>
+          <h2>(2) 求区间长度的最小值</h2>
+          <div class="k">
+            <div class="step">
+              <div class="step-title">分析：</div>
+              <p>函数\(g(x) = 2\sin\left(2x + \frac{2\pi}{3}\right) + 1\)在区间\([a, b]\)上至少含30个零点。</p>
+              <p>首先需要求出\(g(x) = 0\)的解，即：</p>
+              \[2\sin\left(2x + \frac{2\pi}{3}\right) + 1 = 0\]
+              \[\sin\left(2x + \frac{2\pi}{3}\right) = -\frac{1}{2}\]
+            </div>
+            
+            <div class="step">
+              <div class="step-title">解：</div>
+              <p>函数\(g(x) = 2\sin\left(2x + \frac{2\pi}{3}\right) + 1\)的最小正周期为：</p>
+              \[T = \frac{2\pi}{2} = \pi\]
+              <br>
+              <p>由\(\sin\left(2x + \frac{2\pi}{3}\right) = -\frac{1}{2}\)，得：</p>
+              \[2x + \frac{2\pi}{3} = 2k\pi + \frac{7\pi}{6} \quad \text{或} \quad 2x + \frac{2\pi}{3} = 2k\pi + \frac{11\pi}{6} \quad (k \in Z)\]
+              <br>
+              <p>解第一个方程：</p>
+              \[2x = 2k\pi + \frac{7\pi}{6} - \frac{2\pi}{3} = 2k\pi + \frac{7\pi - 4\pi}{6} = 2k\pi + \frac{3\pi}{6} = 2k\pi + \frac{\pi}{2}\]
+              \[x = k\pi + \frac{\pi}{4}\]
+              <br>
+              <p>解第二个方程：</p>
+              \[2x = 2k\pi + \frac{11\pi}{6} - \frac{2\pi}{3} = 2k\pi + \frac{11\pi - 4\pi}{6} = 2k\pi + \frac{7\pi}{6}\]
+              \[x = k\pi + \frac{7\pi}{12}\]
+              <br>
+              <p>所以\(g(x)\)的零点为：</p>
+              \[x = k\pi + \frac{\pi}{4} \quad \text{或} \quad x = k\pi + \frac{7\pi}{12} \quad (k \in Z)\]
+              <br>
+              <p>计算相邻零点间距：</p>
+              <p>当\(k\)相同时，\(x = k\pi + \frac{\pi}{4}\)和\(x = k\pi + \frac{7\pi}{12}\)之间的距离为：</p>
+              \[\left(k\pi + \frac{7\pi}{12}\right) - \left(k\pi + \frac{\pi}{4}\right) = \frac{7\pi}{12} - \frac{3\pi}{12} = \frac{4\pi}{12} = \frac{\pi}{3}\]
+              <br>
+              <p>当\(k\)相邻时（例如\(k\)和\(k+1\)），间距为\(\pi\)，但这是两个周期之间的间距。</p>
+              <p>所以相邻零点最小间距为\(\frac{\pi}{3}\)。</p>
+              <br>
+              <p>要使\(b - a\)最小，且区间\([a, b]\)包含至少30个零点，则\(a\)和\(b\)都必须是零点。</p>
+              <br>
+              <p>设\(a\)是某个零点。由于函数周期为\(\pi\)，在每个周期内有两个零点，且相邻零点最小间距为\(\frac{\pi}{3}\)。</p>
+              <br>
+              <p>在区间\([a, a + 14\pi]\)内：</p>
+              <p>由于周期为\(\pi\)，\(14\pi\)包含\(14\)个周期，每个周期内有\(2\)个零点，所以有\(14 \times 2 = 28\)个零点。</p>
+              <p>如果包含端点\(a\)（也是一个零点），则区间\([a, a + 14\pi]\)内共有\(28 + 1 = 29\)个零点。</p>
+              <br>
+              <p>要包含至少30个零点，需要在区间\((a + 14\pi, b]\)内至少还有1个零点。</p>
+              <p>由于相邻零点最小间距为\(\frac{\pi}{3}\)，所以：</p>
+              \[b - (a + 14\pi) \geq \frac{\pi}{3}\]
+              <br>
+              <p>因此：</p>
+              \[b - a \geq 14\pi + \frac{\pi}{3} = \frac{42\pi + \pi}{3} = \frac{43\pi}{3}\]
+              <br>
+              <p>当等号成立时，\(b - a\)取得最小值\(\frac{43\pi}{3}\)。</p>
+            </div>
+
+            <div class="step">
+              <div class="step-title">零点分布示意图：</div>
+              <p>下图展示了函数\(g(x)\)的零点分布：</p>
+              <div style="margin: 20px 0; text-align: center;">
+                <canvas id="graph2" width="800" height="300"></canvas>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">图2：函数\(g(x)\)的零点分布（红色点表示零点）</p>
+              </div>
+            </div>
+
+            <div class="ans" v-pre>
+              <strong>答：(2)</strong> \(b - a\)的最小值为\(\frac{43\pi}{3}\)
+            </div>
+          </div>
+        </div>
+
+        <!-- 第三问 -->
+        <div class="card" v-pre>
+          <h2>(3) 求\(m\)的取值范围</h2>
+          <div class="k">
+            <div class="step">
+              <div class="step-title">分析：</div>
+              <p>对任意的\(x \in \left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)，不等式\(g^2(x) - mg(x) - 1 \leq 0\)恒成立。</p>
+              <p>即：对任意的\(x \in \left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)，有</p>
+              \[g^2(x) - mg(x) - 1 \leq 0\]
+              <p>令\(t = g(x)\)，则不等式变为：</p>
+              \[t^2 - mt - 1 \leq 0\]
+              <p>这是一个关于\(t\)的二次不等式。</p>
+            </div>
+            
+            <div class="step">
+              <div class="step-title">第一步：求\(g(x)\)在区间\(\left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)上的取值范围</div>
+              <p>由\(x \in \left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)，得：</p>
+              \[2x + \frac{2\pi}{3} \in \left[2 \times \left(-\frac{\pi}{6}\right) + \frac{2\pi}{3}, 2 \times \frac{\pi}{12} + \frac{2\pi}{3}\right]\]
+              \[= \left[-\frac{\pi}{3} + \frac{2\pi}{3}, \frac{\pi}{6} + \frac{2\pi}{3}\right] = \left[\frac{\pi}{3}, \frac{\pi}{6} + \frac{4\pi}{6}\right] = \left[\frac{\pi}{3}, \frac{5\pi}{6}\right]\]
+              <br>
+              <p>函数\(y = \sin x\)在\(\left[\frac{\pi}{3}, \frac{\pi}{2}\right]\)上单调递增，在\(\left(\frac{\pi}{2}, \frac{5\pi}{6}\right]\)上单调递减。</p>
+              <br>
+              <p>计算端点值：</p>
+              \[\sin\left(\frac{\pi}{3}\right) = \frac{\sqrt{3}}{2}\]
+              \[\sin\left(\frac{\pi}{2}\right) = 1\]
+              \[\sin\left(\frac{5\pi}{6}\right) = \sin\left(\pi - \frac{\pi}{6}\right) = \sin\left(\frac{\pi}{6}\right) = \frac{1}{2}\]
+              <br>
+              <p>所以：</p>
+              \[\sin\left(2x + \frac{2\pi}{3}\right) \in \left[\min\left\{\sin\left(\frac{\pi}{3}\right), \sin\left(\frac{5\pi}{6}\right)\right\}, \sin\left(\frac{\pi}{2}\right)\right] = \left[\frac{1}{2}, 1\right]\]
+              <br>
+              <p>因此：</p>
+              \[g(x) = 2\sin\left(2x + \frac{2\pi}{3}\right) + 1 \in [2 \times \frac{1}{2} + 1, 2 \times 1 + 1] = [2, 3]\]
+              <br>
+              <p>令\(t = g(x)\)，则\(t \in [2, 3]\)。</p>
+            </div>
+            
+            <div class="step">
+              <div class="step-title">第二步：分析二次不等式\(t^2 - mt - 1 \leq 0\)</div>
+              <p>设\(\varphi(t) = t^2 - mt - 1\)。</p>
+              <p>对任意的\(x \in \left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)，不等式\(g^2(x) - mg(x) - 1 \leq 0\)恒成立，</p>
+              <p>即对任意的\(t \in [2, 3]\)，不等式\(\varphi(t) = t^2 - mt - 1 \leq 0\)恒成立。</p>
+              <br>
+              <p>由于\(\varphi(t)\)是关于\(t\)的开口向上的二次函数，要使\(\varphi(t) \leq 0\)在\([2, 3]\)上恒成立，</p>
+              <p>只需保证区间端点处的值都\(\leq 0\)即可，即：</p>
+              \[\varphi(2) = 2^2 - 2m - 1 = 4 - 2m - 1 = 3 - 2m \leq 0\]
+              \[\varphi(3) = 3^2 - 3m - 1 = 9 - 3m - 1 = 8 - 3m \leq 0\]
+              <br>
+              <p>由\(3 - 2m \leq 0\)，得\(m \geq \frac{3}{2}\)；</p>
+              <p>由\(8 - 3m \leq 0\)，得\(m \geq \frac{8}{3}\)。</p>
+              <br>
+              <p>因此：</p>
+              \[m \geq \frac{8}{3}\]
+            </div>
+
+            <div class="step">
+              <div class="step-title">函数图像和取值范围：</div>
+              <p>下图展示了\(g(x)\)在区间\(\left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)上的图像：</p>
+              <div style="margin: 20px 0; text-align: center;">
+                <canvas id="graph3" width="800" height="400"></canvas>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">图3：\(g(x)\)在区间\(\left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)上的图像及取值范围</p>
+              </div>
+            </div>
+
+            <div class="ans" v-pre>
+              <strong>答：(3)</strong> 实数\(m\)的取值范围为：\(\left[\frac{8}{3}, +\infty\right)\)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 渲染数学公式的函数
+    function renderAllMath() {
+      if(typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: "$$", right: "$$", display: true},
+              {left: "\\[", right: "\\]", display: true},
+              {left: "$", right: "$", display: false},
+              {left: "\\(", right: "\\)", display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {
+          console.warn('KaTeX render error:', e);
+        }
+      } else if(typeof katex !== 'undefined') {
+        // 手动渲染
+        const mathBlocks = document.querySelectorAll('[v-pre]');
+        mathBlocks.forEach(block => {
+          let html = block.innerHTML;
+          // 处理显示公式 \[...\]
+          html = html.replace(/\\\[([^\]]+)\\\]/g, (match, formula) => {
+            try {
+              return katex.renderToString(formula, {throwOnError: false, displayMode: true});
+            } catch(e) {
+              return match;
+            }
+          });
+          // 处理行内公式 \(...\)
+          html = html.replace(/\\\(([^)]+)\\\)/g, (match, formula) => {
+            try {
+              return katex.renderToString(formula, {throwOnError: false, displayMode: false});
+            } catch(e) {
+              return match;
+            }
+          });
+          block.innerHTML = html;
+        });
+      }
+    }
+    
+    const {createApp} = Vue;
+    
+    const app = createApp({
+      mounted() {
+        this.$nextTick(() => {
+          // 初始化图形
+          this.initGraph1();
+          this.initGraph2();
+          this.initGraph3();
+          
+          // 等待DOM更新后渲染数学公式
+          setTimeout(() => {
+            renderAllMath();
+          }, 200);
+        });
+      },
+      methods: {
+        initGraph1() {
+          const canvas = document.getElementById('graph1');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 设置坐标系统
+          const scale = 80;
+          const originX = width / 2;
+          const originY = height / 2;
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, originY);
+          ctx.lineTo(width, originY);
+          ctx.moveTo(originX, 0);
+          ctx.lineTo(originX, height);
+          ctx.stroke();
+          
+          // 绘制刻度
+          ctx.font = '12px Arial';
+          ctx.fillStyle = '#333';
+          for(let i = -4; i <= 4; i++) {
+            if(i === 0) continue;
+            const x = originX + i * scale;
+            ctx.beginPath();
+            ctx.moveTo(x, originY - 5);
+            ctx.lineTo(x, originY + 5);
+            ctx.stroke();
+            ctx.fillText((i * Math.PI / 2).toFixed(2), x - 15, originY + 20);
+          }
+          for(let i = -3; i <= 3; i++) {
+            if(i === 0) continue;
+            const y = originY - i * scale;
+            ctx.beginPath();
+            ctx.moveTo(originX - 5, y);
+            ctx.lineTo(originX + 5, y);
+            ctx.stroke();
+            ctx.fillText(i.toString(), originX - 20, y + 5);
+          }
+          
+          // 绘制 f(x) = 2sin(2x)
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started1 = false;
+          for(let i = 0; i < width; i++) {
+            const x = (i - originX) / scale;
+            const y = 2 * Math.sin(2 * x);
+            const px = originX + x * scale;
+            const py = originY - y * scale;
+            if(py >= 0 && py <= height) {
+              if(!started1) {
+                ctx.moveTo(px, py);
+                started1 = true;
+              } else {
+                ctx.lineTo(px, py);
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 绘制 g(x) = 2sin(2x + 2π/3) + 1
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started2 = false;
+          for(let i = 0; i < width; i++) {
+            const x = (i - originX) / scale;
+            const y = 2 * Math.sin(2 * x + 2 * Math.PI / 3) + 1;
+            const px = originX + x * scale;
+            const py = originY - y * scale;
+            if(py >= 0 && py <= height) {
+              if(!started2) {
+                ctx.moveTo(px, py);
+                started2 = true;
+              } else {
+                ctx.lineTo(px, py);
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 添加标签
+          ctx.fillStyle = '#3498db';
+          ctx.font = 'bold 14px Arial';
+          ctx.fillText('f(x) = 2sin(2x)', width - 150, 30);
+          
+          ctx.fillStyle = '#e74c3c';
+          ctx.fillText('g(x) = 2sin(2x+2π/3)+1', width - 200, 50);
+          
+          // 标注平移方向
+          ctx.fillStyle = '#27ae60';
+          ctx.font = '12px Arial';
+          ctx.fillText('向左平移 π/3', originX - 60, 30);
+          ctx.fillText('向上平移 1', originX + 60, originY - 100);
+        },
+        
+        initGraph2() {
+          const canvas = document.getElementById('graph2');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 设置坐标系统
+          const scale = 100;
+          const originX = width / 2;
+          const originY = height / 2;
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, originY);
+          ctx.lineTo(width, originY);
+          ctx.moveTo(originX, 0);
+          ctx.lineTo(originX, height);
+          ctx.stroke();
+          
+          // 绘制 g(x)
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started = false;
+          for(let i = 0; i < width; i++) {
+            const x = (i - originX) / scale;
+            const y = 2 * Math.sin(2 * x + 2 * Math.PI / 3) + 1;
+            const px = originX + x * scale;
+            const py = originY - y * scale;
+            if(py >= 0 && py <= height) {
+              if(!started) {
+                ctx.moveTo(px, py);
+                started = true;
+              } else {
+                ctx.lineTo(px, py);
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 标记零点
+          ctx.fillStyle = '#e74c3c';
+          const zeroPoints = [];
+          for(let k = -10; k <= 10; k++) {
+            const x1 = -5 * Math.PI / 12 + k * Math.PI;
+            const x2 = Math.PI / 4 + k * Math.PI;
+            if(x1 >= -4 && x1 <= 4) {
+              zeroPoints.push(x1);
+            }
+            if(x2 >= -4 && x2 <= 4) {
+              zeroPoints.push(x2);
+            }
+          }
+          zeroPoints.sort((a, b) => a - b);
+          
+          zeroPoints.forEach(x => {
+            const px = originX + x * scale;
+            const py = originY;
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+          
+          // 标注30个零点的区间长度
+          if(zeroPoints.length >= 30) {
+            const startX = zeroPoints[0];
+            const endX = zeroPoints[29];
+            const startPx = originX + startX * scale;
+            const endPx = originX + endX * scale;
+            
+            ctx.strokeStyle = '#27ae60';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(startPx, originY - 50);
+            ctx.lineTo(endPx, originY - 50);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#27ae60';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('30个零点', (startPx + endPx) / 2, originY - 60);
+            ctx.fillText('区间长度 = 29π/2', (startPx + endPx) / 2, originY - 45);
+          }
+        },
+        
+        initGraph3() {
+          const canvas = document.getElementById('graph3');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 设置坐标系统
+          const scale = 300;
+          const originX = 100;
+          const originY = height / 2;
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, originY);
+          ctx.lineTo(width, originY);
+          ctx.moveTo(originX, 0);
+          ctx.lineTo(originX, height);
+          ctx.stroke();
+          
+          // 绘制区间 [-π/6, π/12]
+          const x1 = -Math.PI / 6;
+          const x2 = Math.PI / 12;
+          const px1 = originX + x1 * scale;
+          const px2 = originX + x2 * scale;
+          
+          ctx.strokeStyle = '#27ae60';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([10, 5]);
+          ctx.beginPath();
+          ctx.moveTo(px1, 0);
+          ctx.lineTo(px1, height);
+          ctx.moveTo(px2, 0);
+          ctx.lineTo(px2, height);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 绘制 g(x) 在区间内的图像
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started = false;
+          for(let i = px1; i <= px2; i++) {
+            const x = (i - originX) / scale;
+            const y = 2 * Math.sin(2 * x + 2 * Math.PI / 3) + 1;
+            const py = originY - y * scale;
+            if(py >= 0 && py <= height) {
+              if(!started) {
+                ctx.moveTo(i, py);
+                started = true;
+              } else {
+                ctx.lineTo(i, py);
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 标注取值范围
+          const minY = 2;
+          const maxY = 3;
+          const minPy = originY - minY * scale;
+          const maxPy = originY - maxY * scale;
+          
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(px1, minPy);
+          ctx.lineTo(px2, minPy);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(px1, maxPy);
+          ctx.lineTo(px2, maxPy);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          ctx.fillStyle = '#e74c3c';
+          ctx.font = '12px Arial';
+          ctx.fillText('g(x) ∈ [2, 3]', px2 + 10, originY);
+          
+          // 标注区间端点
+          ctx.fillStyle = '#27ae60';
+          ctx.font = 'bold 12px Arial';
+          ctx.fillText('-π/6', px1 - 20, height - 10);
+          ctx.fillText('π/12', px2 - 15, height - 10);
+        }
+      }
+    });
+    
+    app.mount('#app');
+    
+    // 确保在window load后也渲染数学公式
+    window.addEventListener('load', () => {
+      setTimeout(renderAllMath, 100);
+    });
+  </script>
+</body>
+</html>
+

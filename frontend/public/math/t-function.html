@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="T函数定义及判定问题：判断线性函数是否为T函数，指数函数与线性函数有交点时的T函数证明，余弦函数为T函数时参数取值范围求解。包含函数性质分析、图像交点判断和参数范围计算。">
+  <meta name="keywords" content="T函数,函数性质,指数函数,余弦函数,函数方程,参数范围,函数图像,函数判定">
+  <title>T函数定义及判定问题</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+    .solution-section {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .step {
+      margin: 20px 0;
+      padding: 15px;
+      background: #ffffff;
+      border-left: 3px solid #3498db;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px auto;
+      display: block;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://unpkg.com/vue@3.5.20/dist/vue.global.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>T函数定义及判定问题</h1>
+    
+    <!-- 题目部分 -->
+    <div class="problem-section" v-pre>
+      <h2>题目</h2>
+      <div class="k">
+        <p>对于定义域\(R\)上的函数\(f(x)\)，如果存在非零常数\(T\)，对任意\(x \in R\)，都有</p>
+        \[f(x + T) = Tf(x)\]
+        <p>成立，则称\(f(x)\)为"<strong>T函数</strong>"。</p>
+        <br>
+        <p><strong>(1)</strong> 设函数\(f(x) = x\)，判断\(f(x)\)是否为"T函数"，说明理由；</p>
+        <br>
+        <p><strong>(2)</strong> 若函数\(g(x) = a^x\)（\(a > 0\)且\(a \neq 1\)）的图象与函数\(y = x\)的图象有公共点，证明：\(g(x)\)为"T函数"；</p>
+        <br>
+        <p><strong>(3)</strong> 若函数\(h(x) = \cos mx\)为"T函数"，求实数\(m\)的取值范围。</p>
+      </div>
+    </div>
+
+    <!-- 解答部分 -->
+    <div id="app">
+      <div class="solution-section">
+        <h2>解答</h2>
+        
+        <!-- 第一问 -->
+        <div class="card" v-pre>
+          <h2>(1) 判断\(f(x) = x\)是否为"T函数"</h2>
+          <div class="k">
+            <div class="step">
+              <div class="step-title">分析：</div>
+              <p>需要判断是否存在非零常数\(T\)，使得对任意\(x \in R\)，都有\(f(x + T) = Tf(x)\)成立。</p>
+              <p>即：是否存在\(T \neq 0\)，使得对任意\(x \in R\)，有\(x + T = Tx\)。</p>
+            </div>
+            
+            <div class="step">
+              <div class="step-title">解：</div>
+              <p>假设\(f(x) = x\)是"T函数"，则存在非零常数\(T\)，使得对任意\(x \in R\)，有</p>
+              \[f(x + T) = Tf(x)\]
+              <p>即：</p>
+              \[x + T = Tx\]
+              <p>整理得：</p>
+              \[x + T = Tx\]
+              \[T = Tx - x = x(T - 1)\]
+              <br>
+              <p>由于\(T\)是常数，而\(x(T - 1)\)是\(x\)的函数，要使等式对任意\(x \in R\)成立，必须</p>
+              \[T - 1 = 0 \quad \text{且} \quad T = 0\]
+              <p>即\(T = 1\)且\(T = 0\)，这不可能。</p>
+              <br>
+              <p>因此，不存在非零常数\(T\)使得\(f(x + T) = Tf(x)\)对所有\(x \in R\)成立。</p>
+            </div>
+
+            <div class="ans" v-pre>
+              <strong>答：(1)</strong> \(f(x) = x\)不是"T函数"。
+            </div>
+          </div>
+        </div>
+
+        <!-- 第二问 -->
+        <div class="card" v-pre>
+          <h2>(2) 证明：若\(g(x) = a^x\)与\(y = x\)有公共点，则\(g(x)\)为"T函数"</h2>
+          <div class="k">
+            <div class="step">
+              <div class="step-title">分析：</div>
+              <p>函数\(g(x) = a^x\)（\(a > 0\)且\(a \neq 1\)）与\(y = x\)有公共点，即方程\(a^x = x\)有解。</p>
+              <p>设公共点为\((t, t)\)，则\(a^t = t\)，且\(t \neq 0\)（因为如果\(t = 0\)，则\(a^0 = 1 \neq 0\)）。</p>
+              <br>
+              <p>我们需要证明：存在非零常数\(T\)，使得对任意\(x \in R\)，有</p>
+              \[g(x + T) = Tg(x)\]
+              <p>即：</p>
+              \[a^{x + T} = Ta^x\]
+            </div>
+            
+            <div class="step">
+              <div class="step-title">解：</div>
+              <p>设\(g(x) = a^x\)与\(y = x\)的公共点为\((t, t)\)，则\(a^t = t\)，且\(t \neq 0\)。</p>
+              <br>
+              <p>取\(T = t\)（因为\(t \neq 0\)，所以\(T\)是非零常数）。</p>
+              <br>
+              <p>对任意\(x \in R\)，有：</p>
+              \[g(x + T) = a^{x + T} = a^x \cdot a^T = a^x \cdot a^t = a^x \cdot t = t \cdot a^x = Tg(x)\]
+              <br>
+              <p>因此，对任意\(x \in R\)，都有\(g(x + T) = Tg(x)\)成立，所以\(g(x)\)是"T函数"。</p>
+            </div>
+
+            <div class="step">
+              <div class="step-title">函数图像示意图：</div>
+              <p>当\(a > 1\)时，\(g(x) = a^x\)与\(y = x\)的交点情况：</p>
+              <div style="margin: 20px 0; text-align: center;">
+                <canvas id="graph1" width="600" height="400"></canvas>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">图1：指数函数\(a^x\)（\(a > 1\)）与直线\(y = x\)的交点</p>
+              </div>
+              <br>
+              <p>当\(0 < a < 1\)时，\(g(x) = a^x\)与\(y = x\)的交点情况：</p>
+              <div style="margin: 20px 0; text-align: center;">
+                <canvas id="graph2" width="600" height="400"></canvas>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">图2：指数函数\(a^x\)（\(0 < a < 1\)）与直线\(y = x\)的交点</p>
+              </div>
+            </div>
+
+            <div class="ans" v-pre>
+              <strong>答：(2)</strong> 若函数\(g(x) = a^x\)（\(a > 0\)且\(a \neq 1\)）的图象与函数\(y = x\)的图象有公共点，则\(g(x)\)为"T函数"。
+            </div>
+          </div>
+        </div>
+
+        <!-- 第三问 -->
+        <div class="card" v-pre>
+          <h2>(3) 若\(h(x) = \cos mx\)为"T函数"，求\(m\)的取值范围</h2>
+          <div class="k">
+            <div class="step">
+              <div class="step-title">分析：</div>
+              <p>若\(h(x) = \cos mx\)为"T函数"，则存在非零常数\(T\)，使得对任意\(x \in R\)，有</p>
+              \[h(x + T) = Th(x)\]
+              <p>即：</p>
+              \[\cos[m(x + T)] = T\cos(mx)\]
+              \[\cos(mx + mT) = T\cos(mx)\]
+            </div>
+            
+            <div class="step">
+              <div class="step-title">解：</div>
+              <p>由题意，存在非零常数\(T\)，使得对任意\(x \in R\)，有</p>
+              \[\cos(mx + mT) = T\cos(mx)\]
+              <br>
+              <p><strong>情况1：</strong>当\(m = 0\)时，\(h(x) = \cos 0 = 1\)（常数函数）。</p>
+              <p>对任意\(T \neq 0\)，有\(h(x + T) = 1\)，\(Th(x) = T \cdot 1 = T\)。</p>
+              <p>要使\(h(x + T) = Th(x)\)对所有\(x\)成立，需要\(1 = T\)，即\(T = 1\)。</p>
+              <p>因此，当\(m = 0\)时，\(h(x) = 1\)是"T函数"（取\(T = 1\)）。</p>
+              <br>
+              <p><strong>情况2：</strong>当\(m \neq 0\)时。</p>
+              <p>利用余弦函数的性质，对任意\(x \in R\)，有</p>
+              \[\cos(mx + mT) = \cos(mx)\cos(mT) - \sin(mx)\sin(mT)\]
+              <br>
+              <p>要使\(\cos(mx + mT) = T\cos(mx)\)对所有\(x\)成立，需要</p>
+              \[\cos(mx)\cos(mT) - \sin(mx)\sin(mT) = T\cos(mx)\]
+              <br>
+              <p>由于\(\sin(mx)\)和\(\cos(mx)\)线性无关，要使上式对所有\(x\)成立，必须</p>
+              \[\begin{cases}
+              \cos(mT) = T \\
+              \sin(mT) = 0
+              \end{cases}\]
+              <br>
+              <p>由\(\sin(mT) = 0\)，得\(mT = k\pi\)（\(k \in Z\)，且\(k \neq 0\)，因为\(T \neq 0\)且\(m \neq 0\)）。</p>
+              <p>即\(T = \frac{k\pi}{m}\)（\(k \in Z \setminus \{0\}\)）。</p>
+              <br>
+              <p>由\(\cos(mT) = T\)，代入\(mT = k\pi\)，得</p>
+              \[\cos(k\pi) = T\]
+              <br>
+              <p>当\(k\)为偶数时，\(\cos(k\pi) = 1\)，所以\(T = 1\)；</p>
+              <p>当\(k\)为奇数时，\(\cos(k\pi) = -1\)，所以\(T = -1\)。</p>
+              <br>
+              <p>因此，我们需要\(\cos(mT) = T = \pm 1\)，即\(mT = 2k\pi\)（当\(T = 1\)）或\(mT = (2k+1)\pi\)（当\(T = -1\)）。</p>
+              <br>
+              <p>由于\(T = \frac{k\pi}{m}\)，代入得：</p>
+              <p>当\(T = 1\)时：\(m \cdot \frac{k\pi}{m} = 2k_1\pi\)，即\(k = 2k_1\)（\(k_1 \in Z \setminus \{0\}\)）。</p>
+              <p>当\(T = -1\)时：\(m \cdot \frac{k\pi}{m} = (2k_2+1)\pi\)，即\(k = 2k_2+1\)（\(k_2 \in Z \setminus \{0\}\)）。</p>
+              <br>
+              <p>实际上，我们可以更直接地分析：</p>
+              <p>由\(\sin(mT) = 0\)，有\(mT = k\pi\)（\(k \in Z \setminus \{0\}\)）。</p>
+              <p>由\(\cos(mT) = T\)，且\(\cos(k\pi) = \pm 1\)，所以\(T = \pm 1\)。</p>
+              <br>
+              <p>当\(T = 1\)时，\(mT = 2n\pi\)（\(n \in Z \setminus \{0\}\)），所以\(m = \frac{2n\pi}{T} = 2n\pi\)（\(n \in Z \setminus \{0\}\)）。</p>
+              <p>当\(T = -1\)时，\(mT = (2n+1)\pi\)（\(n \in Z\)），所以\(m = \frac{(2n+1)\pi}{T} = -(2n+1)\pi\)（\(n \in Z\)）。</p>
+              <br>
+              <p>重新分析：我们需要\(\sin(mT) = 0\)且\(\cos(mT) = T = \pm 1\)。</p>
+              <p>当\(mT = 2k\pi\)时（\(k \in Z \setminus \{0\}\)），\(\cos(mT) = 1\)，所以\(T = 1\)，且\(m = \frac{2k\pi}{T} = 2k\pi\)。</p>
+              <p>当\(mT = (2k+1)\pi\)时（\(k \in Z\)），\(\cos(mT) = -1\)，所以\(T = -1\)，且\(m = \frac{(2k+1)\pi}{T} = -(2k+1)\pi\)。</p>
+              <br>
+              <p>由于\(m\)可以是正数或负数，而\(-(2k+1)\pi\)（\(k \in Z\)）可以表示所有奇数倍的\(\pi\)，所以综合起来：</p>
+              <p>\(m = k\pi\)（\(k \in Z \setminus \{0\}\)）或\(m = 0\)。</p>
+              <br>
+              <p>更严格地验证：</p>
+              <p>设\(m = k\pi\)（\(k \in Z \setminus \{0\}\)），取\(T = 1\)（当\(k\)为偶数）或\(T = -1\)（当\(k\)为奇数）。</p>
+              <p>验证：\(\cos[m(x + T)] = \cos[k\pi(x + T)] = \cos(k\pi x + k\pi T)\)</p>
+              <p>当\(k\)为偶数，\(T = 1\)时：\(\cos(k\pi x + k\pi) = \cos(k\pi x + 2n\pi) = \cos(k\pi x) = 1 \cdot \cos(k\pi x) = T\cos(mx)\)</p>
+              <p>当\(k\)为奇数，\(T = -1\)时：\(\cos(k\pi x + k\pi) = \cos(k\pi x + (2n+1)\pi) = -\cos(k\pi x) = (-1)\cos(k\pi x) = T\cos(mx)\)</p>
+              <br>
+              <p>实际上，我们需要更仔细地分析。设\(mT = k\pi\)（\(k \in Z \setminus \{0\}\)），且\(\cos(mT) = T = \pm 1\)。</p>
+              <p>如果\(\cos(mT) = 1\)，则\(mT = 2n\pi\)（\(n \in Z \setminus \{0\}\)），所以\(T = 1\)，\(m = 2n\pi\)（\(n \in Z \setminus \{0\}\)）。</p>
+              <p>如果\(\cos(mT) = -1\)，则\(mT = (2n+1)\pi\)（\(n \in Z\)），所以\(T = -1\)，\(m = -(2n+1)\pi\)（\(n \in Z\)）。</p>
+              <br>
+              <p>由于\(m\)可以是任意实数，综合两种情况：</p>
+              <p>当\(m = 2n\pi\)（\(n \in Z \setminus \{0\}\)）时，取\(T = 1\)；</p>
+              <p>当\(m = (2n+1)\pi\)（\(n \in Z \setminus \{0\}\)）时，取\(T = -1\)；</p>
+              <p>当\(m = 0\)时，取\(T = 1\)。</p>
+              <br>
+              <p>所以\(m\)的取值范围为：\(m = 0\)或\(m = k\pi\)（\(k \in Z \setminus \{0\}\)）。</p>
+              <br>
+              <p>更简洁地表达：\(m = k\pi\)，其中\(k \in Z\)。</p>
+            </div>
+
+            <div class="step">
+              <div class="step-title">函数图像示意图：</div>
+              <p>当\(m = \pi\)时的余弦函数图像（此时取\(T = -1\)）：</p>
+              <div style="margin: 20px 0; text-align: center;">
+                <canvas id="graph3" width="600" height="400"></canvas>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #666;">图3：\(h(x) = \cos(\pi x)\)的图象（当\(m = \pi\)时，为T函数）</p>
+              </div>
+            </div>
+
+            <div class="ans" v-pre>
+              <strong>答：(3)</strong> 实数\(m\)的取值范围为：\(m = k\pi\)（\(k \in Z\)）。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 渲染数学公式的函数
+    function renderAllMath() {
+      if(typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: "$$", right: "$$", display: true},
+              {left: "\\[", right: "\\]", display: true},
+              {left: "$", right: "$", display: false},
+              {left: "\\(", right: "\\)", display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {
+          console.warn('KaTeX render error:', e);
+        }
+      } else if(typeof katex !== 'undefined') {
+        // 手动渲染
+        const mathBlocks = document.querySelectorAll('[v-pre]');
+        mathBlocks.forEach(block => {
+          let html = block.innerHTML;
+          // 处理显示公式 \[...\]
+          html = html.replace(/\\\[([^\]]+)\\\]/g, (match, formula) => {
+            try {
+              return katex.renderToString(formula, {throwOnError: false, displayMode: true});
+            } catch(e) {
+              return match;
+            }
+          });
+          // 处理行内公式 \(...\)
+          html = html.replace(/\\\(([^)]+)\\\)/g, (match, formula) => {
+            try {
+              return katex.renderToString(formula, {throwOnError: false, displayMode: false});
+            } catch(e) {
+              return match;
+            }
+          });
+          block.innerHTML = html;
+        });
+      }
+    }
+    
+    const {createApp} = Vue;
+    
+    const app = createApp({
+      mounted() {
+        this.$nextTick(() => {
+          // 初始化图形
+          this.initGraph1();
+          this.initGraph2();
+          this.initGraph3();
+          
+          // 等待DOM更新后渲染数学公式
+          setTimeout(() => {
+            renderAllMath();
+          }, 200);
+        });
+      },
+      methods: {
+        
+        initGraph1() {
+          const canvas = document.getElementById('graph1');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 设置坐标系统
+          const scale = 50;
+          const originX = width / 2;
+          const originY = height / 2;
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, originY);
+          ctx.lineTo(width, originY);
+          ctx.moveTo(originX, 0);
+          ctx.lineTo(originX, height);
+          ctx.stroke();
+          
+          // 绘制刻度
+          ctx.font = '12px Arial';
+          ctx.fillStyle = '#333';
+          for(let i = -5; i <= 5; i++) {
+            if(i === 0) continue;
+            const x = originX + i * scale;
+            const y = originY - i * scale;
+            ctx.beginPath();
+            ctx.moveTo(x, originY - 5);
+            ctx.lineTo(x, originY + 5);
+            ctx.stroke();
+            ctx.fillText(i.toString(), x - 5, originY + 20);
+            
+            ctx.beginPath();
+            ctx.moveTo(originX - 5, y);
+            ctx.lineTo(originX + 5, y);
+            ctx.stroke();
+            if(i !== 0) {
+              ctx.fillText(i.toString(), originX - 20, y + 5);
+            }
+          }
+          
+          // 绘制 y = x
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for(let i = 0; i < width; i++) {
+            const x = (i - originX) / scale;
+            const y = x;
+            const px = originX + x * scale;
+            const py = originY - y * scale;
+            if(i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+          
+          // 绘制 a^x (a > 1, 例如 a = 2)
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started = false;
+          for(let i = 0; i < width; i++) {
+            const x = (i - originX) / scale;
+            const y = Math.pow(2, x);
+            const px = originX + x * scale;
+            const py = originY - y * scale;
+            if(py >= 0 && py <= height) {
+              if(!started) {
+                ctx.moveTo(px, py);
+                started = true;
+              } else {
+                ctx.lineTo(px, py);
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 标记交点（大约在 x ≈ 2）
+          const intersectionX = 2;
+          const intersectionY = 2;
+          ctx.fillStyle = '#27ae60';
+          ctx.beginPath();
+          ctx.arc(originX + intersectionX * scale, originY - intersectionY * scale, 5, 0, 2 * Math.PI);
+          ctx.fill();
+          
+          // 添加标签
+          ctx.fillStyle = '#3498db';
+          ctx.font = 'bold 14px Arial';
+          ctx.fillText('y = x', width - 100, 30);
+          
+          ctx.fillStyle = '#e74c3c';
+          ctx.fillText('y = 2^x', width - 100, 50);
+          
+          ctx.fillStyle = '#27ae60';
+          ctx.fillText('交点', originX + intersectionX * scale + 10, originY - intersectionY * scale - 10);
+        },
+        
+        initGraph2() {
+          const canvas = document.getElementById('graph2');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 设置坐标系统
+          const scale = 50;
+          const originX = width / 2;
+          const originY = height / 2;
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, originY);
+          ctx.lineTo(width, originY);
+          ctx.moveTo(originX, 0);
+          ctx.lineTo(originX, height);
+          ctx.stroke();
+          
+          // 绘制刻度
+          ctx.font = '12px Arial';
+          ctx.fillStyle = '#333';
+          for(let i = -5; i <= 5; i++) {
+            if(i === 0) continue;
+            const x = originX + i * scale;
+            const y = originY - i * scale;
+            ctx.beginPath();
+            ctx.moveTo(x, originY - 5);
+            ctx.lineTo(x, originY + 5);
+            ctx.stroke();
+            ctx.fillText(i.toString(), x - 5, originY + 20);
+            
+            ctx.beginPath();
+            ctx.moveTo(originX - 5, y);
+            ctx.lineTo(originX + 5, y);
+            ctx.stroke();
+            if(i !== 0) {
+              ctx.fillText(i.toString(), originX - 20, y + 5);
+            }
+          }
+          
+          // 绘制 y = x
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for(let i = 0; i < width; i++) {
+            const x = (i - originX) / scale;
+            const y = x;
+            const px = originX + x * scale;
+            const py = originY - y * scale;
+            if(i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+          
+          // 绘制 a^x (0 < a < 1, 例如 a = 0.5)
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started = false;
+          for(let i = 0; i < width; i++) {
+            const x = (i - originX) / scale;
+            const y = Math.pow(0.5, x);
+            const px = originX + x * scale;
+            const py = originY - y * scale;
+            if(py >= 0 && py <= height) {
+              if(!started) {
+                ctx.moveTo(px, py);
+                started = true;
+              } else {
+                ctx.lineTo(px, py);
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 标记交点（大约在 x ≈ 0.5）
+          const intersectionX = 0.5;
+          const intersectionY = 0.5;
+          ctx.fillStyle = '#27ae60';
+          ctx.beginPath();
+          ctx.arc(originX + intersectionX * scale, originY - intersectionY * scale, 5, 0, 2 * Math.PI);
+          ctx.fill();
+          
+          // 添加标签
+          ctx.fillStyle = '#3498db';
+          ctx.font = 'bold 14px Arial';
+          ctx.fillText('y = x', width - 100, 30);
+          
+          ctx.fillStyle = '#e74c3c';
+          ctx.fillText('y = 0.5^x', width - 100, 50);
+          
+          ctx.fillStyle = '#27ae60';
+          ctx.fillText('交点', originX + intersectionX * scale + 10, originY - intersectionY * scale - 10);
+        },
+        
+        initGraph3() {
+          const canvas = document.getElementById('graph3');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 设置坐标系统
+          const scale = 80;
+          const originX = width / 2;
+          const originY = height / 2;
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, originY);
+          ctx.lineTo(width, originY);
+          ctx.moveTo(originX, 0);
+          ctx.lineTo(originX, height);
+          ctx.stroke();
+          
+          // 绘制刻度
+          ctx.font = '12px Arial';
+          ctx.fillStyle = '#333';
+          for(let i = -3; i <= 3; i++) {
+            if(i === 0) continue;
+            const x = originX + i * scale;
+            ctx.beginPath();
+            ctx.moveTo(x, originY - 5);
+            ctx.lineTo(x, originY + 5);
+            ctx.stroke();
+            ctx.fillText(i.toString(), x - 5, originY + 20);
+          }
+          for(let i = -1; i <= 1; i++) {
+            if(i === 0) continue;
+            const y = originY - i * scale;
+            ctx.beginPath();
+            ctx.moveTo(originX - 5, y);
+            ctx.lineTo(originX + 5, y);
+            ctx.stroke();
+            ctx.fillText(i.toString(), originX - 20, y + 5);
+          }
+          
+          // 绘制 y = cos(πx)
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started = false;
+          for(let i = 0; i < width; i++) {
+            const x = (i - originX) / scale;
+            const y = Math.cos(Math.PI * x);
+            const px = originX + x * scale;
+            const py = originY - y * scale;
+            if(py >= 0 && py <= height) {
+              if(!started) {
+                ctx.moveTo(px, py);
+                started = true;
+              } else {
+                ctx.lineTo(px, py);
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 标记关键点：当 x 增加 T = -1 时，函数值变为原来的 -1 倍
+          // 例如：cos(π(x + (-1))) = cos(πx - π) = -cos(πx)
+          ctx.fillStyle = '#3498db';
+          ctx.font = 'bold 12px Arial';
+          ctx.fillText('T = -1', originX + 2 * scale, originY - scale + 20);
+          
+          // 添加标签
+          ctx.fillStyle = '#e74c3c';
+          ctx.font = 'bold 14px Arial';
+          ctx.fillText('y = cos(πx)', width - 120, 30);
+        }
+      }
+    });
+    
+    app.mount('#app');
+    
+    // 确保在window load后也渲染数学公式
+    window.addEventListener('load', () => {
+      setTimeout(renderAllMath, 100);
+    });
+  </script>
+</body>
+</html>
+

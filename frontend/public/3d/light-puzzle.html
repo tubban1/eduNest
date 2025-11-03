@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>光影谜题 - Light Puzzle</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: none;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      background: #000;
+    }
+    
+    #container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    
+    #canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      pointer-events: auto;
+      font-size: 14px;
+    }
+    
+    #controls h2 {
+      margin-bottom: 10px;
+      font-size: 18px;
+      color: #4CAF50;
+    }
+    
+    .control-group {
+      margin: 10px 0;
+    }
+    
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #ccc;
+    }
+    
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 5px;
+      margin-top: 5px;
+      pointer-events: auto;
+    }
+    
+    button:hover {
+      background: #45a049;
+    }
+    
+    button:active {
+      background: #3d8b40;
+    }
+    
+    button.toggle-off {
+      background: #666;
+    }
+    
+    #info {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      pointer-events: auto;
+      font-size: 14px;
+      max-width: 250px;
+    }
+    
+    #info h3 {
+      margin-bottom: 10px;
+      color: #FF9800;
+    }
+    
+    #info .status {
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    #instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      font-size: 12px;
+      max-width: 300px;
+      pointer-events: auto;
+    }
+    
+    #instructions h3 {
+      margin-bottom: 10px;
+      color: #00BCD4;
+    }
+    
+    #instructions ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    
+    #instructions li {
+      margin: 5px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+    
+    #instructions li:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #00BCD4;
+    }
+    
+    @media (max-width: 768px) {
+      #controls, #info, #instructions {
+        font-size: 12px;
+        padding: 10px;
+      }
+      
+      #controls h2, #info h3, #instructions h3 {
+        font-size: 14px;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="container">
+    <canvas id="canvas"></canvas>
+    
+    <div id="ui">
+      <div id="controls">
+        <h2>🎮 控制</h2>
+        <div class="control-group">
+          <label>光源开关:</label>
+          <button id="toggleLight">🔴 关闭</button>
+        </div>
+        <div class="control-group">
+          <label>重置场景:</label>
+          <button id="resetBtn">重置</button>
+        </div>
+        <div class="control-group">
+          <label>下一关:</label>
+          <button id="nextLevel">下一关</button>
+        </div>
+      </div>
+      
+      <div id="info">
+        <h3>📊 状态</h3>
+        <div class="status">关卡: <span id="levelNum">1</span></div>
+        <div class="status">目标数: <span id="targetCount">1</span></div>
+        <div class="status">击中数: <span id="hitCount">0</span></div>
+        <div class="status">反射次数: <span id="reflections">0</span></div>
+        <div class="status" id="gyroStatus" style="display:none;">🎯 陀螺仪: 未启用</div>
+      </div>
+      
+      <div id="instructions">
+        <h3>📖 操作说明</h3>
+        <ul>
+          <li>点击镜面可拖拽旋转</li>
+          <li>右键拖动旋转视角</li>
+          <li>滑轮缩放视图</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量
+    let scene, camera, renderer, controls;
+    let light, lightHelper, lightRay;
+    let mirrors = [];
+    let targets = [];
+    let levelConfigs = [];
+    let currentLevel = 0;
+    let selectedMirror = null;
+    let raycaster, mouse = new THREE.Vector2();
+    let isLightOn = true;
+    let hitCount = 0;
+    
+    // 陀螺仪相关
+    let hasGyro = false;
+    let gyroQuaternion = new THREE.Quaternion();
+    
+    // 初始化场景
+    function init() {
+      // 创建场景
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a0a);
+      
+      // 创建相机
+      camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(10, 8, 10);
+      camera.lookAt(0, 0, 0);
+      
+      // 创建渲染器
+      renderer = new THREE.WebGLRenderer({
+        canvas: document.getElementById('canvas'),
+        antialias: true,
+        alpha: true
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      
+      // 创建控制器
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.target.set(0, 0, 0);
+      controls.update();
+      
+      // 创建地板
+      const floorGeometry = new THREE.PlaneGeometry(20, 20);
+      const floorMaterial = new THREE.MeshStandardMaterial({
+        color: 0x2a2a2a,
+        roughness: 0.8,
+        metalness: 0.2
+      });
+      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+      
+      // 添加网格线
+      const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+      scene.add(gridHelper);
+      
+      // 添加环境光
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+      scene.add(ambientLight);
+      
+      // 创建主光源（点光源）
+      const pointLight = new THREE.PointLight(0xffffff, 2, 50);
+      pointLight.position.set(0, 5, 0);
+      pointLight.castShadow = true;
+      scene.add(pointLight);
+      
+      // 创建激光光源
+      createLightSource();
+      
+      // 创建光线追踪器
+      raycaster = new THREE.Raycaster();
+      
+      // 关卡配置
+      setupLevels();
+      
+      // 加载第一关
+      loadLevel(0);
+      
+      // 添加事件监听
+      setupEventListeners();
+      
+      // 检测陀螺仪
+      detectGyro();
+    }
+    
+    // 创建激光光源
+    function createLightSource() {
+      // 光源位置标记
+      const lightGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+      const lightMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff0000,
+        emissive: 0xff0000,
+        emissiveIntensity: 0.5
+      });
+      light = new THREE.Mesh(lightGeometry, lightMaterial);
+      light.position.set(0, 1, 8);
+      light.castShadow = true;
+      scene.add(light);
+      
+      // 添加光源指示器（小箭头表示发射方向）
+      const arrowHelper = new THREE.ArrowHelper(
+        new THREE.Vector3(0, 0, -1), // 向前发射
+        new THREE.Vector3(0, 0, 0),  // 从原点
+        0.5,                          // 长度
+        0xff0000,                     // 颜色
+        0.3,                          // 箭头长度
+        0.2                           // 箭头宽度
+      );
+      arrowHelper.position.copy(light.position);
+      scene.add(arrowHelper);
+      
+      // 创建激光束初始占位
+      lightRay = new THREE.Group();
+      scene.add(lightRay);
+    }
+    
+    // 设置关卡配置
+    function setupLevels() {
+      levelConfigs = [
+        {
+          name: "入门关卡",
+          mirrors: [
+            { position: [0, 2, 0], rotation: [0, Math.PI/4, 0] }
+          ],
+          targets: [
+            { position: [-6, 1, -3], color: 0x00ff00 }
+          ]
+        },
+        {
+          name: "双镜挑战",
+          mirrors: [
+            { position: [-2, 2, 2], rotation: [0, Math.PI/6, 0] },
+            { position: [2, 2, -2], rotation: [0, -Math.PI/6, 0] }
+          ],
+          targets: [
+            { position: [-6, 1, -3], color: 0x00ff00 },
+            { position: [6, 1, -3], color: 0x00ff00 }
+          ]
+        },
+        {
+          name: "三重反射",
+          mirrors: [
+            { position: [-1, 2, 1], rotation: [0, Math.PI/4, 0] },
+            { position: [1, 2, 1], rotation: [0, -Math.PI/4, 0] },
+            { position: [0, 2, -1], rotation: [0, Math.PI, 0] }
+          ],
+          targets: [
+            { position: [0, 1, -8], color: 0x00ff00 }
+          ]
+        }
+      ];
+    }
+    
+    // 创建镜子
+    function createMirror(position, rotation) {
+      // 镜面
+      const mirrorGeometry = new THREE.PlaneGeometry(2, 2);
+      const mirrorMaterial = new THREE.MeshStandardMaterial({
+        color: 0x666666,
+        metalness: 0.8,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 0.8
+      });
+      const mirror = new THREE.Mesh(mirrorGeometry, mirrorMaterial);
+      mirror.position.set(...position);
+      mirror.rotation.set(...rotation);
+      mirror.castShadow = true;
+      mirror.receiveShadow = true;
+      
+      // 添加边框
+      const frameGeometry = new THREE.BoxGeometry(2.1, 2.1, 0.1);
+      const frameMaterial = new THREE.MeshStandardMaterial({
+        color: 0x333333,
+        metalness: 0.5,
+        roughness: 0.5
+      });
+      const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+      frame.position.copy(mirror.position);
+      frame.rotation.copy(mirror.rotation);
+      frame.position.z += 0.06;
+      
+      scene.add(mirror);
+      scene.add(frame);
+      
+      mirrors.push(mirror);
+      return mirror;
+    }
+    
+    // 创建目标点
+    function createTarget(position, color) {
+      // 目标球体
+      const targetGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+      const targetMaterial = new THREE.MeshStandardMaterial({
+        color: color,
+        emissive: color,
+        emissiveIntensity: 0.2
+      });
+      const target = new THREE.Mesh(targetGeometry, targetMaterial);
+      target.position.set(...position);
+      scene.add(target);
+      
+      // 添加发光效果
+      const lightGeometry = new THREE.SphereGeometry(0.35, 32, 32);
+      const lightMaterial = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.1
+      });
+      const glow = new THREE.Mesh(lightGeometry, lightMaterial);
+      glow.position.copy(target.position);
+      scene.add(glow);
+      
+      targets.push({ obj: target, hit: false });
+    }
+    
+    // 加载关卡
+    function loadLevel(levelIndex) {
+      // 清除当前关卡
+      mirrors.forEach(mirror => {
+        scene.remove(mirror);
+      });
+      mirrors = [];
+      
+      targets.forEach(target => {
+        scene.remove(target.obj);
+      });
+      targets = [];
+      
+      const config = levelConfigs[levelIndex];
+      currentLevel = levelIndex;
+      hitCount = 0;
+      
+      // 创建关卡元素
+      config.mirrors.forEach(mirrorConfig => {
+        createMirror(mirrorConfig.position, mirrorConfig.rotation);
+      });
+      
+      config.targets.forEach(targetConfig => {
+        createTarget(targetConfig.position, targetConfig.color);
+      });
+      
+      // 更新UI
+      document.getElementById('levelNum').textContent = levelIndex + 1;
+      document.getElementById('targetCount').textContent = targets.length;
+      document.getElementById('hitCount').textContent = hitCount;
+    }
+    
+    // 光线追踪
+    function traceRay(origin, direction, maxReflections = 10) {
+      const rayPoints = [origin.clone()];
+      let currentOrigin = origin.clone();
+      let currentDirection = direction.clone().normalize();
+      let reflections = 0;
+      
+      // 主循环
+      for (let i = 0; i < maxReflections; i++) {
+        raycaster.set(currentOrigin, currentDirection);
+        
+        // 收集所有可能的碰撞对象（包括目标和镜子）
+        const allObjects = [...mirrors, ...targets.map(t => t.obj)];
+        const intersects = raycaster.intersectObjects(allObjects, false);
+        
+        if (intersects.length === 0) {
+          // 没有击中任何物体，延伸光线一段距离后结束
+          const farPoint = currentOrigin.clone().add(
+            currentDirection.clone().multiplyScalar(20)
+          );
+          rayPoints.push(farPoint);
+          break;
+        }
+        
+        const intersect = intersects[0];
+        rayPoints.push(intersect.point.clone());
+        
+        // 检查是否击中目标
+        const isTarget = targets.some(t => t.obj === intersect.object);
+        if (isTarget) {
+          targets.forEach(target => {
+            if (target.obj === intersect.object && !target.hit) {
+              target.hit = true;
+              hitCount++;
+              target.obj.material.emissiveIntensity = 1.0;
+              
+              // 震动反馈
+              if ('vibrate' in navigator) {
+                navigator.vibrate(100);
+              }
+            }
+          });
+          break; // 击中目标，结束追踪
+        }
+        
+        // 击中镜子，计算反射
+        if (mirrors.includes(intersect.object)) {
+          // 获取镜面法向量（世界坐标系）
+          // PlaneGeometry的法向量在局部坐标系中是 (0, 0, 1)
+          const localNormal = new THREE.Vector3(0, 0, 1);
+          const normal = localNormal.clone();
+          normal.applyMatrix4(intersect.object.matrixWorld).normalize();
+          
+          // 确保法向量指向光线来源（这样反射计算更准确）
+          if (normal.dot(currentDirection) > 0) {
+            normal.negate();
+          }
+          
+          // 计算反射方向：R = I - 2(I·N)N
+          const dot = currentDirection.dot(normal);
+          currentDirection = currentDirection.clone()
+            .sub(normal.clone().multiplyScalar(2 * dot));
+          currentDirection.normalize();
+          
+          currentOrigin = intersect.point.clone();
+          reflections++;
+          
+          // 稍微偏移起点避免重复击中同一镜面
+          currentOrigin.add(currentDirection.clone().multiplyScalar(0.05));
+        } else {
+          // 击中了其他物体，结束追踪
+          break;
+        }
+      }
+      
+      document.getElementById('reflections').textContent = reflections;
+      document.getElementById('hitCount').textContent = hitCount;
+      
+      return rayPoints;
+    }
+    
+    // 绘制光线
+    function drawRay(rayPoints) {
+      if (!lightRay) {
+        console.warn('lightRay not initialized');
+        return;
+      }
+      
+      if (rayPoints.length < 2) {
+        lightRay.visible = false;
+        return;
+      }
+      
+      lightRay.visible = true;
+      
+      // 清除旧的子元素
+      if (lightRay.children) {
+        while(lightRay.children.length > 0) {
+          const child = lightRay.children[0];
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) child.material.dispose();
+          lightRay.remove(child);
+        }
+      }
+      
+      // 创建连续的圆柱体代表光线路径
+      for (let i = 0; i < rayPoints.length - 1; i++) {
+        const start = rayPoints[i];
+        const end = rayPoints[i + 1];
+        const distance = start.distanceTo(end);
+        
+        if (distance < 0.01) continue; // 跳过太短的线段
+        
+        const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+        
+        const geometry = new THREE.CylinderGeometry(0.08, 0.08, distance, 8);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0xff4444,
+          emissive: 0xff0000,
+          emissiveIntensity: 2
+        });
+        const cylinder = new THREE.Mesh(geometry, material);
+        
+        // 计算方向向量
+        const direction = new THREE.Vector3().subVectors(end, start).normalize();
+        
+        // 创建旋转四元数：从Y轴旋转到目标方向
+        const axis = new THREE.Vector3(0, 1, 0);
+        const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, direction);
+        
+        cylinder.setRotationFromQuaternion(quaternion);
+        cylinder.position.copy(midPoint);
+        
+        lightRay.add(cylinder);
+      }
+      
+      // 确保场景已更新
+      if (lightRay.parent !== scene) {
+        scene.add(lightRay);
+      }
+    }
+    
+    // 更新光线
+    function updateLight() {
+      if (!isLightOn) {
+        if (lightRay) lightRay.visible = false;
+        return;
+      }
+      
+      const origin = light.position.clone();
+      const direction = new THREE.Vector3(0, 0, -1);
+      
+      // 陀螺仪影响方向
+      if (hasGyro) {
+        const tempDir = new THREE.Vector3(0, 0, -1);
+        tempDir.applyQuaternion(gyroQuaternion);
+        direction.copy(tempDir);
+      }
+      
+      // 重置所有目标状态
+      targets.forEach(target => {
+        target.hit = false;
+        target.obj.material.emissiveIntensity = 0.2;
+      });
+      hitCount = 0;
+      
+      const rayPoints = traceRay(origin, direction);
+      drawRay(rayPoints);
+    }
+    
+    // 设置事件监听
+    function setupEventListeners() {
+      // 窗口大小调整
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+      
+      // 光源开关
+      document.getElementById('toggleLight').addEventListener('click', () => {
+        isLightOn = !isLightOn;
+        const btn = document.getElementById('toggleLight');
+        btn.textContent = isLightOn ? '🔴 关闭' : '🟢 开启';
+        btn.classList.toggle('toggle-off', !isLightOn);
+        if (lightRay) lightRay.visible = isLightOn;
+      });
+      
+      // 重置按钮
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        loadLevel(currentLevel);
+      });
+      
+      // 下一关
+      document.getElementById('nextLevel').addEventListener('click', () => {
+        if (currentLevel < levelConfigs.length - 1) {
+          loadLevel(currentLevel + 1);
+        }
+      });
+      
+      // 镜面拖拽
+      let isDragging = false;
+      
+      renderer.domElement.addEventListener('mousedown', (e) => {
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(mirrors, false);
+        
+        if (intersects.length > 0) {
+          selectedMirror = intersects[0].object;
+          isDragging = true;
+          controls.enabled = false;
+        }
+      });
+      
+      renderer.domElement.addEventListener('mousemove', (e) => {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        
+        if (isDragging && selectedMirror) {
+          // 简单的旋转控制
+          selectedMirror.rotation.y += e.movementX * 0.01;
+        }
+      });
+      
+      renderer.domElement.addEventListener('mouseup', () => {
+        if (isDragging) {
+          selectedMirror = null;
+          isDragging = false;
+          controls.enabled = true;
+        }
+      });
+      
+      // 触摸支持
+      let touchStartPos = null;
+      
+      renderer.domElement.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+          touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          const touch = e.touches[0];
+          mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+          mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+          
+          raycaster.setFromCamera(mouse, camera);
+          const intersects = raycaster.intersectObjects(mirrors, false);
+          
+          if (intersects.length > 0) {
+            selectedMirror = intersects[0].object;
+            isDragging = true;
+          }
+        }
+      });
+      
+      renderer.domElement.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (isDragging && selectedMirror && e.touches.length === 1) {
+          const touch = e.touches[0];
+          if (touchStartPos) {
+            const deltaX = touch.clientX - touchStartPos.x;
+            selectedMirror.rotation.y += deltaX * 0.01;
+            touchStartPos = { x: touch.clientX, y: touch.clientY };
+          }
+        }
+      });
+      
+      renderer.domElement.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (isDragging) {
+          selectedMirror = null;
+          isDragging = false;
+        }
+        touchStartPos = null;
+      });
+    }
+    
+    // 检测陀螺仪
+    function detectGyro() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && 
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS 13+ 需要权限
+        document.getElementById('gyroStatus').style.display = 'block';
+        const gyroBtn = document.createElement('button');
+        gyroBtn.textContent = '启用陀螺仪';
+        gyroBtn.id = 'enableGyro';
+        gyroBtn.addEventListener('click', () => {
+          DeviceOrientationEvent.requestPermission().then(response => {
+            if (response === 'granted') {
+              startGyro();
+            }
+          });
+        });
+        document.getElementById('controls').appendChild(gyroBtn);
+      } else if (window.DeviceOrientationEvent) {
+        startGyro();
+      }
+    }
+    
+    // 启动陀螺仪
+    function startGyro() {
+      hasGyro = true;
+      document.getElementById('gyroStatus').innerHTML = '🎯 陀螺仪: 已启用';
+      
+      window.addEventListener('deviceorientation', (e) => {
+        const alpha = (e.alpha || 0) * Math.PI / 180;
+        const beta = (e.beta || 0) * Math.PI / 180;
+        const gamma = (e.gamma || 0) * Math.PI / 180;
+        
+        const euler = new THREE.Euler(beta, alpha, -gamma, 'YXZ');
+        gyroQuaternion.setFromEuler(euler);
+      });
+    }
+    
+    // 动画循环
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      controls.update();
+      updateLight();
+      
+      renderer.render(scene, camera);
+    }
+    
+    // 启动
+    init();
+    animate();
+  </script>
+</body>
+</html>
+

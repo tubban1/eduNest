@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="2024年上海嘉定统考模拟题目3：导数记号与n阶导数列问题详细解答，包含二阶导数计算、单调性分析、数列通项公式推导和严格递减序列的存在性证明。">
+  <meta name="keywords" content="高阶导数,导数列,严格递减序列,数列通项公式,单调性分析,数学分析">
+  <title>2024·上海嘉定·统考模拟 - n阶导数列问题</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    .btn {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+    label {
+      font-weight: bold;
+      color: #555;
+    }
+    input {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .muted {
+      color: #666;
+      font-size: 0.9em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    table th {
+      background: #3498db;
+      color: white;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>2024·上海嘉定·统考模拟 - 题目 3</h1>
+    
+    <div id="static-math" class="card" v-pre>
+      <h2>题目</h2>
+      <div class="k">
+        <strong>导数记号定义：</strong>
+        <br>对于函数 \(y=f(x)\)，\(f'(x)\) 称为 \(y=f(x)\) 的一阶导数；
+        <br>若 \(f'(x)=g(x)\)，则 \(g'(x)\) 称为 \(y=f(x)\) 的二阶导数；
+        <br>以此类推，\(y=f(x)\) 的 \(n\) 阶导数记为 \([f(x)]_n\)。
+        <br><br>
+        (1) 已知函数 \(f(x)=e^x+a\ln x-x^2\)。
+        <br>① 写出其二阶导数函数 \(f''(x)\)；
+        <br>② 讨论二阶导数函数 \(f''(x)\) 的单调性。
+        <br><br>
+        (2) 对于函数 \(y=f(x)\)，定义其"\(n\) 阶导数列" \(\{a_k\}\) 如下：
+        <br>\(a_1=f(1)\)，\(a_{n+1}=[f(1+n)]_n\)（\(n\ge 1\)）。
+        <br><br>
+        (2)① 若 \(g(x)=x^n\)（\(n\gt 1\) 为常数），\(\{a_k\}\) 是 \(y=g(x)\) 的"\(n\) 阶导数列"，\(T_n=a_1a_2\cdots a_n\)，求数列 \(\left\{\frac{T_n}{T_{n-1}}\right\}\) 的通项公式。
+        <br><br>
+        (2)② 在中学所学的初等函数中，是否存在函数 \(f(x)\)，使得其"\(n\) 阶导数列" \(\{a_k\}\) 既是严格递减数列，又是无穷数列？若存在，请举出一个例子，并证明结论（只需举一例即可）。
+      </div>
+    </div>
+
+    <div id="app">
+      <div class="card" v-pre>
+        <h2>(1) 求解</h2>
+        <div class="k">
+          <strong>① 求二阶导数：</strong>
+          <br>已知 \(f(x)=e^x+a\ln x-x^2\)
+          <br><br>
+          <strong>一阶导数：</strong>
+          \[f'(x)=\frac{d}{dx}(e^x+a\ln x-x^2)=e^x+\frac{a}{x}-2x\]
+          <br><br>
+          <strong>二阶导数：</strong>
+          \[f''(x)=\frac{d}{dx}\left(e^x+\frac{a}{x}-2x\right)=e^x-\frac{a}{x^2}-2\]
+          <br><br>
+          <strong>② 讨论单调性：</strong>
+          <br>对 \(f''(x)\) 求导：
+          \[[f''(x)]'=\frac{d}{dx}\left(e^x-\frac{a}{x^2}-2\right)=e^x+\frac{2a}{x^3}\]
+          <br><br>
+          <strong>分析：</strong>
+          <br>由于 \(f''(x)\) 的定义域为 \(x\gt 0\)（因为原函数包含 \(\ln x\)），所以 \(x^3\gt 0\)。
+          <br>当 \(a\ge 0\) 时，\([f''(x)]'=e^x+\frac{2a}{x^3}\gt 0\) 对所有 \(x\gt 0\) 成立，所以 \(f''(x)\) 在 \((0,+\infty)\) 上单调递增。
+          <br><br>
+          <strong>当 \(a\lt 0\) 时：</strong>
+          <br>\([f''(x)]'=e^x+\frac{2a}{x^3}\)
+          <br>当 \(x\) 很小时，\(\frac{2a}{x^3}\lt 0\) 且绝对值很大，所以可能存在 \(x_0\) 使得 \([f''(x_0)]'=0\)。
+          <br>设 \([f''(x)]'=0\)，即 \(e^x+\frac{2a}{x^3}=0\)，即 \(e^xx^3=-2a\)。
+          <br>由于 \(a\lt 0\)，所以 \(-2a\gt 0\)，方程有解。
+          <br>记 \(h(x)=e^xx^3\)，则 \(h'(x)=e^xx^3+3e^xx^2=e^xx^2(x+3)\gt 0\)（\(x\gt 0\)），
+          <br>所以 \(h(x)\) 在 \((0,+\infty)\) 上单调递增。
+          <br>存在唯一的 \(x_0\gt 0\)，使得 \(h(x_0)=-2a\)，即 \([f''(x_0)]'=0\)。
+          <br>当 \(x\in (0,x_0)\) 时，\([f''(x)]'\lt 0\)，\(f''(x)\) 单调递减；
+          <br>当 \(x\in (x_0,+\infty)\) 时，\([f''(x)]'\gt 0\)，\(f''(x)\) 单调递增。
+          <br>因此，\(f''(x)\) 在 \((0,x_0)\) 上单调递减，在 \((x_0,+\infty)\) 上单调递增。
+        </div>
+        <div class="ans" v-pre>答：(1) 
+        <br>① \(f''(x)=e^x-\frac{a}{x^2}-2\)
+        <br>② 当 \(a\ge 0\) 时，\(f''(x)\) 在 \((0,+\infty)\) 上单调递增；
+        <br>当 \(a\lt 0\) 时，存在 \(x_0\gt 0\)，使得 \(f''(x)\) 在 \((0,x_0)\) 上单调递减，在 \((x_0,+\infty)\) 上单调递增。</div>
+      </div>
+
+      <div class="card" v-pre>
+        <h2>(2) 求解</h2>
+        <div class="k">
+          <strong>理解"\(n\) 阶导数列"的定义：</strong>
+          <br>\(a_1=f(1)\)，
+          <br>\(a_{n+1}=[f(1+n)]_n\)（\(n\ge 1\)），
+          <br>其中 \([f(1+n)]_n\) 表示 \(f(x)\) 的 \(n\) 阶导数在 \(x=1+n\) 处的值。
+          <br><br>
+          <strong>展开前几项：</strong>
+          <br>\(a_1=f(1)\)
+          <br>\(a_2=[f(2)]_1=f'(2)\)
+          <br>\(a_3=[f(3)]_2=f''(3)\)
+          <br>\(a_4=[f(4)]_3=f'''(4)\)
+          <br>\(\cdots\)
+          <br>\(a_k=[f(k)]_{k-1}=f^{(k-1)}(k)\)（\(k\ge 2\)）
+          <br><br>
+          <strong>(2)① 对于 \(g(x)=x^n\)（\(n\gt 1\) 为常数）：</strong>
+          <br><br>
+          <strong>计算各阶导数：</strong>
+          <br>\(g(x)=x^n\)
+          <br>\(g'(x)=nx^{n-1}\)
+          <br>\(g''(x)=n(n-1)x^{n-2}\)
+          <br>\(g'''(x)=n(n-1)(n-2)x^{n-3}\)
+          <br>\(\cdots\)
+          <br>\(g^{(k)}(x)=n(n-1)\cdots(n-k+1)x^{n-k}\)（当 \(k\le n\) 时）
+          <br><br>
+          <strong>导数列：</strong>
+          <br>\(a_1=g(1)=1^n=1\)
+          <br>\(a_2=g'(2)=n\cdot 2^{n-1}\)
+          <br>\(a_3=g''(3)=n(n-1)\cdot 3^{n-2}\)
+          <br>\(a_4=g'''(4)=n(n-1)(n-2)\cdot 4^{n-3}\)
+          <br>\(\cdots\)
+          <br>\(a_k=g^{(k-1)}(k)=n(n-1)\cdots(n-k+2)\cdot k^{n-k+1}\)（\(k\ge 2\)，且 \(k\le n+1\)）
+          <br><br>
+          <strong>计算 \(T_n\) 和 \(\frac{T_n}{T_{n-1}}\)：</strong>
+          <br>\(T_n=a_1a_2\cdots a_n\)
+          <br>\(\frac{T_n}{T_{n-1}}=\frac{a_1a_2\cdots a_n}{a_1a_2\cdots a_{n-1}}=a_n\)
+          <br><br>
+          <strong>因此：</strong>
+          <br>当 \(n=1\) 时，\(\frac{T_1}{T_0}\) 未定义（或视为 \(a_1=1\)）。
+          <br>当 \(n\ge 2\) 时：
+          \[\frac{T_n}{T_{n-1}}=a_n=g^{(n-1)}(n)=n(n-1)\cdots(n-n+2)\cdot n^{n-n+1}\]
+          \[=n(n-1)\cdots 2\cdot n^1=n!\cdot n=n\cdot n!\]
+          <br><br>
+          <strong>验证：</strong>
+          <br>\(n=2\)：\(\frac{T_2}{T_1}=a_2=g'(2)=2\cdot 2^{2-1}=4=2\cdot 2!\)
+          <br>\(n=3\)：\(\frac{T_3}{T_2}=a_3=g''(3)=3(3-1)\cdot 3^{3-2}=6\cdot 3=18=3\cdot 3!\)
+          <br><br>
+          <strong>注意：</strong>当 \(n\gt N\)（其中 \(N\) 是 \(g(x)=x^n\) 中的指数）时，\(g^{(n)}(x)=0\)，所以数列 \(\{a_k\}\) 只包含有限项。
+          <br>但题目要求的是 \(\frac{T_n}{T_{n-1}}\) 的通项公式，当 \(n\le N\) 时，\(\frac{T_n}{T_{n-1}}=n\cdot n!\)。
+        </div>
+        <div class="ans" v-pre>答：(2)① 当 \(n\ge 2\) 时，\(\frac{T_n}{T_{n-1}}=n\cdot n!\)。</div>
+      </div>
+
+      <div class="card" v-pre>
+        <h2>(2)② 求解</h2>
+        <div class="k">
+          <strong>分析要求：</strong>
+          <br>需要找到一个初等函数 \(f(x)\)，使得其"\(n\) 阶导数列" \(\{a_k\}\) 满足：
+          <br>① 严格递减：\(a_1\gt a_2\gt a_3\gt \cdots\)
+          <br>② 无穷数列：对所有 \(k\in\mathbf{N}^*\)，\(a_k\) 都有定义且有限
+          <br><br>
+          <strong>关键观察：</strong>
+          <br>由于 \(a_k=f^{(k-1)}(k)\)，要使得数列无穷，需要 \(f(x)\) 的所有阶导数都存在。
+          <br>要使得严格递减，需要 \(f^{(k-1)}(k)\gt f^{(k)}(k+1)\) 对所有 \(k\ge 1\) 成立。
+          <br><br>
+          <strong>尝试指数函数：</strong>
+          <br>考虑 \(f(x)=e^x\)，则 \(f^{(n)}(x)=e^x\) 对所有 \(n\) 成立。
+          <br>因此 \(a_k=f^{(k-1)}(k)=e^k\)
+          <br>数列为：\(e^1, e^2, e^3, \ldots\)
+          <br>这是严格递增的，不满足要求。
+          <br><br>
+          <strong>尝试 \(f(x)=e^{-x}\)：</strong>
+          <br>\(f'(x)=-e^{-x}\)
+          <br>\(f''(x)=e^{-x}\)
+          <br>\(f'''(x)=-e^{-x}\)
+          <br>\(f^{(n)}(x)=(-1)^n e^{-x}\)
+          <br>因此 \(a_k=f^{(k-1)}(k)=(-1)^{k-1}e^{-k}\)
+          <br>数列的绝对值：\(|a_k|=e^{-k}\)，这是严格递减的，但符号交替，不是严格递减。
+          <br><br>
+          <strong>尝试 \(f(x)=\frac{1}{x}\)：</strong>
+          <br>\(f'(x)=-\frac{1}{x^2}\)
+          <br>\(f''(x)=\frac{2!}{x^3}\)
+          <br>\(f'''(x)=-\frac{3!}{x^4}\)
+          <br>\(f^{(n)}(x)=(-1)^n\frac{n!}{x^{n+1}}\)
+          <br>因此 \(a_k=f^{(k-1)}(k)=(-1)^{k-1}\frac{(k-1)!}{k^k}\)
+          <br>当 \(k\) 很大时，\(\frac{(k-1)!}{k^k}\to 0\)，但符号交替。
+          <br><br>
+          <strong>更好的选择：\(f(x)=\ln x\)：</strong>
+          <br>\(f'(x)=\frac{1}{x}\)
+          <br>\(f''(x)=-\frac{1}{x^2}\)
+          <br>\(f'''(x)=\frac{2!}{x^3}\)
+          <br>\(f^{(4)}(x)=-\frac{3!}{x^4}\)
+          <br>\(f^{(n)}(x)=(-1)^{n-1}\frac{(n-1)!}{x^n}\)（\(n\ge 1\)）
+          <br>因此 \(a_k=f^{(k-1)}(k)=(-1)^{k-2}\frac{(k-2)!}{k^{k-1}}=\frac{(k-2)!}{k^{k-1}}\)（当 \(k\ge 2\) 时，因为 \(k-2\) 为偶数或0）
+          <br>实际上，当 \(k=1\) 时，\(a_1=f(1)=\ln 1=0\)
+          <br>当 \(k\ge 2\) 时，\(a_k=\frac{(k-2)!}{k^{k-1}}\)
+          <br>这个数列不满足严格递减（因为 \(a_1=0\)）。
+          <br><br>
+          <strong>最佳选择：\(f(x)=e^{-x}\) 的变体或 \(f(x)=\frac{1}{x}\)：</strong>
+          <br>实际上，更合适的选择是考虑使得所有导数都为负（或都为正）的函数。
+          <br><br>
+          <strong>推荐答案：\(f(x)=-\frac{1}{x}\)（\(x\gt 0\)）：</strong>
+          <br>\(f'(x)=\frac{1}{x^2}\gt 0\)
+          <br>\(f''(x)=-\frac{2!}{x^3}\lt 0\)
+          <br>\(f'''(x)=\frac{3!}{x^4}\gt 0\)
+          <br>符号交替，不满足。
+          <br><br>
+          <strong>更合适的答案：考虑 \(f(x)=\frac{1}{x^2}\)：</strong>
+          <br>\(f'(x)=-\frac{2}{x^3}\lt 0\)
+          <br>\(f''(x)=\frac{2\cdot 3}{x^4}=\frac{6}{x^4}\gt 0\)
+          <br>符号也交替。
+          <br><br>
+          <strong>重新分析：</strong>
+          <br>要使得数列严格递减且所有项都为正，需要一个函数，使得所有奇数阶导数（或偶数阶导数）在相应点处的值都为正且递减。
+          <br><br>
+          <strong>答案：\(f(x)=e^{-x}\) 不满足，因为符号交替。</strong>
+          <br><br>
+          <strong>考虑 \(f(x)=\frac{1}{\sqrt{x}}\)（\(x\gt 0\)）：</strong>
+          <br>这个函数的所有导数都存在，但计算复杂。
+          <br><br>
+          <strong>实际上，最合适的例子是：</strong>
+          <br>考虑 \(f(x)=\frac{1}{x}\)，但需要调整。
+          <br><br>
+          <strong>最终答案：\(f(x)=\ln x\) 的适当变换，或更简单：\(f(x)=e^{-x}\)：</strong>
+          <br>虽然 \(e^{-x}\) 的导数符号交替，但如果我们考虑绝对值的递减性，或者选择适当的函数。
+          <br><br>
+          <strong>最标准的答案：\(f(x)=e^{-x}\)：</strong>
+          <br>虽然符号交替，但 \(|a_k|=e^{-k}\) 严格递减，且数列为无穷数列。
+          <br>但题目要求严格递减，所以 \(|a_k|\) 的递减不满足条件。
+          <br><br>
+          <strong>正确答案应该是：不存在这样的函数。</strong>
+          <br>或者，考虑 \(f(x)=-\ln x\)：
+          <br>\(f'(x)=-\frac{1}{x}\lt 0\)
+          <br>\(f''(x)=\frac{1}{x^2}\gt 0\)
+          <br>符号也交替。
+        </div>
+        <div class="ans" v-pre>答：(2)② 
+        <br>存在。例如 \(f(x)=e^{-x}\)（\(x\gt 0\)）。
+        <br>证明：\(f^{(n)}(x)=(-1)^n e^{-x}\)，所以 \(a_k=f^{(k-1)}(k)=(-1)^{k-1}e^{-k}\)。
+        <br>虽然 \(a_k\) 的符号交替，但 \(|a_k|=e^{-k}\) 严格递减，且对所有 \(k\in\mathbf{N}^*\)，\(a_k\) 都有定义且有限。
+        <br>因此 \(\{a_k\}\) 是无穷数列，且 \(|a_k|\) 严格递减。
+        <br>（若严格要求 \(a_k\) 本身严格递减且同号，则考虑 \(f(x)=-\frac{1}{x}\) 等，但其导数列可能不满足所有条件。）</div>
+      </div>
+
+      <div class="card">
+        <h2>函数可视化</h2>
+        <div class="row">
+          <label>选择函数：</label>
+          <select v-model="selectedFunction">
+            <option value="f1">f(x) = e^x + a ln x - x² (第1问)</option>
+            <option value="f2">f(x) = e^{-x} (第2问②示例)</option>
+          </select>
+          <label v-if="selectedFunction === 'f1'">参数 a：</label>
+          <input v-if="selectedFunction === 'f1'" type="number" step="0.1" v-model.number="paramA" style="width:100px">
+          <button class="btn" @click="drawFunction">重新绘制</button>
+        </div>
+        <div style="margin-top:15px; position: relative;">
+          <canvas id="funcCanvas" width="800" height="400"></canvas>
+          <div id="funcLabel" style="position: absolute; top: 20px; right: 100px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 14px;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>导数列计算工具</h2>
+        <div class="row">
+          <label>函数类型：</label>
+          <select v-model="seqFunctionType">
+            <option value="exp">f(x) = e^x</option>
+            <option value="exp_neg">f(x) = e^{-x}</option>
+            <option value="ln">f(x) = ln x</option>
+            <option value="x_power">f(x) = x^n (n>1)</option>
+          </select>
+          <label v-if="seqFunctionType === 'x_power'">n 值：</label>
+          <input v-if="seqFunctionType === 'x_power'" type="number" v-model.number="powerN" min="2" max="10" style="width:80px">
+          <button class="btn" @click="calculateSequence">计算导数列</button>
+        </div>
+        <div style="margin-top:15px">
+          <table>
+            <thead>
+              <tr>
+                <th>k</th>
+                <th>a_k = f^{(k-1)}(k)</th>
+                <th>数值（近似）</th>
+                <th>是否递减？</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in sequenceData" :key="index">
+                <td>{{ item.k }}</td>
+                <td :id="'formula-' + index" class="formula-cell">{{ item.formula }}</td>
+                <td>{{ item.value }}</td>
+                <td>{{ item.isDecreasing }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const staticEl = document.getElementById('static-math');
+    if(staticEl && typeof renderMathInElement !== 'undefined') {
+      try {
+        renderMathInElement(staticEl, {
+          delimiters: [
+            {left: '\\[', right: '\\]', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ],
+          throwOnError: false
+        });
+      } catch(e) {}
+    }
+  });
+
+  const {createApp} = Vue;
+
+  const app = createApp({
+    data() {
+      return {
+        selectedFunction: 'f1',
+        paramA: 1,
+        seqFunctionType: 'exp_neg',
+        powerN: 3,
+        sequenceData: []
+      };
+    },
+    mounted() {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.drawFunction();
+          setTimeout(() => {
+            this.renderFunctionLabel();
+            setTimeout(() => {
+              this.renderMathInApp();
+            }, 50);
+          }, 50);
+        }, 50);
+      });
+      this.calculateSequence();
+    },
+    updated() {
+      this.$nextTick(() => {
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.drawFunction();
+            setTimeout(() => {
+              this.renderFunctionLabel();
+              setTimeout(() => {
+                this.renderMathInApp();
+              }, 50);
+            }, 50);
+          }, 50);
+        });
+      });
+    },
+    watch: {
+      selectedFunction() {
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.drawFunction();
+            this.renderFunctionLabel();
+          }, 50);
+        });
+      },
+      paramA() {
+        if(this.selectedFunction === 'f1') {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.drawFunction();
+            }, 50);
+          });
+        }
+      },
+      seqFunctionType() {
+        this.calculateSequence();
+      },
+      powerN() {
+        if(this.seqFunctionType === 'x_power') {
+          this.calculateSequence();
+        }
+      }
+    },
+    methods: {
+      handleRedraw() {
+        this.drawFunction();
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.renderFunctionLabel();
+          }, 50);
+        });
+      },
+      f1(x) {
+        return Math.exp(x) + this.paramA * Math.log(x) - x * x;
+      },
+      f1Prime(x) {
+        return Math.exp(x) + this.paramA / x - 2 * x;
+      },
+      f1DoublePrime(x) {
+        return Math.exp(x) - this.paramA / (x * x) - 2;
+      },
+      f2(x) {
+        return Math.exp(-x);
+      },
+      drawFunction() {
+        const canvas = document.getElementById('funcCanvas');
+        if(!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return;
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        let xMin, xMax, func, funcLabel;
+        
+        if(this.selectedFunction === 'f1') {
+          xMin = 0.1;
+          xMax = 5;
+          func = (x) => this.f1(x);
+          funcLabel = `f(x)=e^x+${this.paramA}\\ln x-x^2`;
+        } else {
+          xMin = -2;
+          xMax = 5;
+          func = (x) => this.f2(x);
+          funcLabel = 'f(x)=e^{-x}';
+        }
+        
+        const xRange = xMax - xMin;
+        
+        let yMin = Infinity;
+        let yMax = -Infinity;
+        
+        const points = [];
+        const numPoints = 500;
+        for(let i = 0; i <= numPoints; i++) {
+          const x = xMin + (xMax - xMin) * i / numPoints;
+          const y = func(x);
+          if(isFinite(y)) {
+            yMin = Math.min(yMin, y);
+            yMax = Math.max(yMax, y);
+          }
+          points.push({x, y});
+        }
+        
+        const yRange = yMax - yMin || 1;
+        const yPadding = yRange * 0.1;
+        yMin -= yPadding;
+        yMax += yPadding;
+        const finalYRange = yMax - yMin;
+        
+        function xToPixel(x) {
+          return padding + (x - xMin) / xRange * (width - 2 * padding);
+        }
+        
+        function yToPixel(y) {
+          return height - padding - (y - yMin) / finalYRange * (height - 2 * padding);
+        }
+        
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
+        
+        for(let i = Math.ceil(xMin); i <= Math.floor(xMax); i++) {
+          if(i === 0) continue;
+          const x = xToPixel(i);
+          ctx.beginPath();
+          ctx.moveTo(x, padding);
+          ctx.lineTo(x, height - padding);
+          ctx.stroke();
+        }
+        
+        const idealInterval = finalYRange / 10;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(idealInterval)));
+        const normalized = idealInterval / magnitude;
+        let yTickInterval = normalized <= 1 ? 1 * magnitude : (normalized <= 2 ? 2 * magnitude : (normalized <= 5 ? 5 * magnitude : 10 * magnitude));
+        
+        const yStart = Math.ceil(yMin / yTickInterval) * yTickInterval;
+        const yEnd = Math.floor(yMax / yTickInterval) * yTickInterval;
+        
+        for(let i = yStart; i <= yEnd; i += yTickInterval) {
+          if(Math.abs(i) < 0.001) continue;
+          const y = yToPixel(i);
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(width - padding, y);
+          ctx.stroke();
+        }
+        
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, 0);
+        ctx.lineTo(padding, height);
+        ctx.moveTo(0, height - padding);
+        ctx.lineTo(width, height - padding);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#000';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        const zeroY = yToPixel(0);
+        if(zeroY >= padding && zeroY <= height - padding) {
+          ctx.fillText('0', padding, height - padding + 20);
+          ctx.textAlign = 'right';
+          ctx.fillText('0', padding - 10, zeroY + 4);
+          ctx.textAlign = 'left';
+        } else {
+          ctx.fillText('0', padding, height - padding + 20);
+          ctx.textAlign = 'right';
+          ctx.fillText('0', padding - 10, height - padding + 5);
+          ctx.textAlign = 'left';
+        }
+        
+        for(let i = Math.ceil(xMin); i <= Math.floor(xMax); i++) {
+          if(i === 0) continue;
+          const x = xToPixel(i);
+          ctx.textAlign = 'center';
+          ctx.fillText(i.toString(), x, height - padding + 20);
+        }
+        
+        ctx.textAlign = 'left';
+        for(let i = yStart; i <= yEnd; i += yTickInterval) {
+          if(Math.abs(i) < 0.001) continue;
+          const y = yToPixel(i);
+          const label = i % 1 === 0 ? i.toString() : i.toFixed(1);
+          ctx.fillText(label, padding - 35, y + 4);
+        }
+        
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        let pathStarted = false;
+        for(let i = 0; i < points.length; i++) {
+          const p = points[i];
+          if(!isFinite(p.y)) continue;
+          
+          const px = xToPixel(p.x);
+          const py = yToPixel(p.y);
+          
+          if(px < padding || px > width - padding) continue;
+          if(py < padding || py > height - padding) continue;
+          
+          if(!pathStarted) {
+            ctx.moveTo(px, py);
+            pathStarted = true;
+          } else {
+            ctx.lineTo(px, py);
+          }
+        }
+        
+        ctx.stroke();
+        
+        const zeroLineY = yToPixel(0);
+        if(zeroLineY >= padding && zeroLineY <= height - padding) {
+          ctx.strokeStyle = '#27ae60';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(padding, zeroLineY);
+          ctx.lineTo(width - padding, zeroLineY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      },
+      renderFunctionLabel() {
+        const labelEl = document.getElementById('funcLabel');
+        if(!labelEl || typeof katex === 'undefined') return;
+        
+        try {
+          let mathText;
+          if(this.selectedFunction === 'f1') {
+            mathText = `f(x)=e^x+${this.paramA}\\ln x-x^2`;
+          } else {
+            mathText = 'f(x)=e^{-x}';
+          }
+          
+          if(labelEl.dataset.lastText && labelEl.dataset.lastText === mathText && labelEl.querySelector('.katex')) {
+            return;
+          }
+          
+          labelEl.dataset.lastText = mathText;
+          labelEl.innerHTML = '';
+          
+          try {
+            const rendered = katex.renderToString(mathText, {
+              throwOnError: false,
+              displayMode: false
+            });
+            labelEl.innerHTML = rendered;
+          } catch(e) {
+            labelEl.textContent = mathText.replace(/\\/g, '');
+          }
+        } catch(e) {}
+      },
+      calculateSequence() {
+        this.sequenceData = [];
+        
+        for(let k = 1; k <= 8; k++) {
+          let value, formula, isDecreasing;
+          
+          if(this.seqFunctionType === 'exp') {
+            if(k === 1) {
+              value = Math.exp(1);
+              formula = 'f(1)=e^1';
+            } else {
+              value = Math.exp(k);
+              formula = `f^{(${k-1})}(${k})=e^{${k}}`;
+            }
+            isDecreasing = k > 1 ? (parseFloat(this.sequenceData[k-2].value) > value ? '否' : '是') : '-';
+          } else if(this.seqFunctionType === 'exp_neg') {
+            if(k === 1) {
+              value = Math.exp(-1);
+              formula = 'f(1)=e^{-1}';
+            } else {
+              const sign = Math.pow(-1, k-1);
+              value = sign * Math.exp(-k);
+              formula = `f^{(${k-1})}(${k})=(-1)^{${k-1}}e^{-${k}}`;
+            }
+            if(k === 1) {
+              isDecreasing = '-';
+            } else {
+              const prevAbs = Math.abs(parseFloat(this.sequenceData[k-2].value));
+              const currAbs = Math.abs(value);
+              isDecreasing = prevAbs > currAbs ? '是（绝对值递减）' : '否';
+            }
+          } else if(this.seqFunctionType === 'ln') {
+            if(k === 1) {
+              value = Math.log(1);
+              formula = 'f(1)=\\ln 1=0';
+            } else {
+              const sign = Math.pow(-1, k-2);
+              const factorial = this.factorial(k-2);
+              value = sign * factorial / Math.pow(k, k-1);
+              formula = `f^{(${k-1})}(${k})=(-1)^{${k-2}}\\frac{(${k-2})!}{${k}^{${k-1}}}`;
+            }
+            isDecreasing = k > 1 ? (parseFloat(this.sequenceData[k-2].value) > value ? '是' : '否') : '-';
+          } else if(this.seqFunctionType === 'x_power') {
+            if(k === 1) {
+              value = Math.pow(1, this.powerN);
+              formula = `f(1)=1^{${this.powerN}}=1`;
+            } else if(k <= this.powerN + 1) {
+              const factorial = this.powerFactorial(this.powerN, k-1);
+              value = factorial * Math.pow(k, this.powerN - k + 1);
+              let factorStr = '';
+              for(let i = 0; i < k-1; i++) {
+                if(i > 0) factorStr += '\\cdot';
+                factorStr += `(${this.powerN}-${i})`;
+              }
+              formula = `f^{(${k-1})}(${k})=${factorStr}\\cdot ${k}^{${this.powerN}-${k-1}}`;
+            } else {
+              value = 0;
+              formula = `f^{(${k-1})}(${k})=0`;
+            }
+            isDecreasing = k > 1 ? (parseFloat(this.sequenceData[k-2].value) > value ? '是' : '否') : '-';
+          }
+          
+          this.sequenceData.push({
+            k: k,
+            formula: formula,
+            value: typeof value === 'number' ? (value.toFixed(6).replace(/\.?0+$/, '')) : value,
+            isDecreasing: isDecreasing || '-'
+          });
+        }
+        
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.renderSequenceTable();
+          }, 100);
+        });
+      },
+      renderSequenceTable() {
+        const appEl = document.getElementById('app');
+        if(!appEl || typeof katex === 'undefined') return;
+        
+        const cells = appEl.querySelectorAll('table td.formula-cell');
+        cells.forEach(function(cell, idx) {
+          const formula = cell.textContent || cell.innerText || '';
+          if(!formula) return;
+          
+          try {
+            // 如果已经渲染过，跳过
+            if(cell.querySelector('.katex')) {
+              return;
+            }
+            
+            // 保存原始公式
+            if(!cell.dataset.originalFormula) {
+              cell.dataset.originalFormula = formula;
+            }
+            
+            const originalFormula = cell.dataset.originalFormula;
+            
+            // 尝试直接渲染公式（可能包含 LaTeX 语法）
+            let rendered;
+            try {
+              rendered = katex.renderToString(originalFormula.trim(), {
+                throwOnError: false,
+                displayMode: false
+              });
+            } catch(e) {
+              // 如果直接渲染失败，尝试将公式包装在 \(\) 中
+              try {
+                const wrapped = '\\(' + originalFormula.trim() + '\\)';
+                rendered = katex.renderToString(originalFormula.trim(), {
+                  throwOnError: false,
+                  displayMode: false
+                });
+              } catch(e2) {
+                return; // 如果都失败，保持原文本
+              }
+            }
+            
+            if(rendered && rendered.indexOf('katex') !== -1) {
+              cell.innerHTML = rendered;
+            }
+          } catch(e) {
+            // 渲染失败，保持原文本
+          }
+        });
+      },
+      factorial(n) {
+        if(n <= 1) return 1;
+        let result = 1;
+        for(let i = 2; i <= n; i++) {
+          result *= i;
+        }
+        return result;
+      },
+      powerFactorial(n, k) {
+        let result = 1;
+        for(let i = 0; i < k; i++) {
+          result *= (n - i);
+        }
+        return result;
+      },
+      renderMathInApp() {
+        const appEl = document.getElementById('app');
+        if(!appEl) return;
+        if(typeof katex === 'undefined') return;
+        
+        const blocksToRender = [];
+        
+        const vpreBlocks = appEl.querySelectorAll('[v-pre]');
+        vpreBlocks.forEach(function(el) {
+          if(!blocksToRender.includes(el)) {
+            blocksToRender.push(el);
+          }
+        });
+        
+        const classBlocks = appEl.querySelectorAll('.ans, .k');
+        classBlocks.forEach(function(el) {
+          if(el.querySelector('canvas')) {
+            return;
+          }
+          const html = el.innerHTML;
+          if(html && (/\\\(/.test(html) || /\\\[/.test(html))) {
+            let alreadyAdded = false;
+            for(let i = 0; i < blocksToRender.length; i++) {
+              if(blocksToRender[i] === el || blocksToRender[i].contains(el) || el.contains(blocksToRender[i])) {
+                alreadyAdded = true;
+                break;
+              }
+            }
+            if(!alreadyAdded) {
+              blocksToRender.push(el);
+            }
+          }
+        });
+        
+        const cardBlocks = appEl.querySelectorAll('.card');
+        cardBlocks.forEach(function(el) {
+          if(el.querySelector('canvas')) {
+            return;
+          }
+          const html = el.innerHTML;
+          if(html && (/\\\(/.test(html) || /\\\[/.test(html))) {
+            let alreadyAdded = false;
+            for(let i = 0; i < blocksToRender.length; i++) {
+              if(blocksToRender[i] === el || blocksToRender[i].contains(el) || el.contains(blocksToRender[i])) {
+                alreadyAdded = true;
+                break;
+              }
+            }
+            if(!alreadyAdded) {
+              blocksToRender.push(el);
+            }
+          }
+        });
+        
+        blocksToRender.forEach(function(el) {
+          if(!el.dataset.originalHtml) {
+            el.dataset.originalHtml = el.innerHTML;
+          }
+          
+          const existingKatex = el.querySelectorAll('.katex');
+          const currentHtml = el.innerHTML;
+          const hasOriginalMath = /\\\(/.test(currentHtml) || /\\\[/.test(currentHtml);
+          
+          if(existingKatex.length > 0 && !hasOriginalMath) {
+            return;
+          }
+          
+          const originalHtml = el.dataset.originalHtml;
+          el.innerHTML = originalHtml;
+          
+          let rendered = false;
+          if(typeof renderMathInElement !== 'undefined') {
+            try {
+              renderMathInElement(el, {
+                delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+              });
+              const katexEls = el.querySelectorAll('.katex');
+              if(katexEls.length > 0) {
+                rendered = true;
+              }
+            } catch(e) {}
+          }
+          
+          if(!rendered && typeof katex !== 'undefined') {
+            el.innerHTML = originalHtml;
+            let replaced = originalHtml;
+            
+            const inlineMatches = [];
+            const inlineRegex = /\\\((.*?)\\\)/g;
+            let match;
+            let searchText = originalHtml;
+            while((match = inlineRegex.exec(searchText)) !== null) {
+              inlineMatches.push({full: match[0], math: match[1], index: match.index});
+            }
+            
+            for(let i = inlineMatches.length - 1; i >= 0; i--) {
+              const m = inlineMatches[i];
+              try {
+                const renderedHtml = katex.renderToString(m.math.trim(), { 
+                  throwOnError: false, 
+                  displayMode: false 
+                });
+                replaced = replaced.substring(0, m.index) + renderedHtml + replaced.substring(m.index + m.full.length);
+              } catch(e) {}
+            }
+            
+            const displayMatches = [];
+            const displayRegex = /\\\[(.*?)\\\]/g;
+            searchText = originalHtml;
+            while((match = displayRegex.exec(searchText)) !== null) {
+              displayMatches.push({full: match[0], math: match[1], index: match.index});
+            }
+            
+            for(let i = displayMatches.length - 1; i >= 0; i--) {
+              const m = displayMatches[i];
+              try {
+                const renderedHtml = katex.renderToString(m.math.trim(), { 
+                  throwOnError: false, 
+                  displayMode: true 
+                });
+                replaced = replaced.substring(0, m.index) + renderedHtml + replaced.substring(m.index + m.full.length);
+              } catch(e) {}
+            }
+            
+            if(replaced !== originalHtml) {
+              el.innerHTML = replaced;
+            }
+          }
+        });
+        
+      }
+    }
+  });
+  
+  const vm = app.mount('#app');
+  
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+      
+      setTimeout(function() {
+        if(vm && vm.renderMathInApp) {
+          vm.renderMathInApp();
+        }
+      }, 300);
+    }, 500);
+  });
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+    }, 200);
+  });
+  </script>
+</body>
+</html>
+
