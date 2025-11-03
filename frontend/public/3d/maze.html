@@ -84,6 +84,30 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 2000);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 18; controls.maxDistance = 80;
+
+// 相机初始位置函数：同时看到起点（近）和终点（远）
+function setupCameraViewBoth(playerPos, goalPos) {
+  // 计算起点和终点的方向向量
+  const direction = new THREE.Vector3().subVectors(goalPos, playerPos);
+  const distance = direction.length();
+  
+  // 相机放在起点附近，稍微偏向起点一侧，以便近处看到起点，远处看到终点
+  // 从起点向后、向上偏移，形成俯视角度
+  const offsetBack = direction.clone().normalize().multiplyScalar(-distance * 0.3); // 向后偏移
+  const offsetUp = new THREE.Vector3(0, distance * 0.4, 0); // 向上偏移
+  
+  // 相机位置：起点位置 + 向后偏移 + 向上偏移
+  const cameraPos = playerPos.clone().add(offsetBack).add(offsetUp);
+  camera.position.copy(cameraPos);
+  
+  // 看向起点和终点的中点，这样可以看到两者
+  const lookAtPoint = new THREE.Vector3().addVectors(playerPos, goalPos).multiplyScalar(0.5);
+  camera.lookAt(lookAtPoint);
+  
+  // OrbitControls以起点为中心，这样旋转时起点在近处
+  controls.target.copy(playerPos);
+  controls.update();
+}
 const lightA = new THREE.AmbientLight(0xffffff, 0.85); scene.add(lightA);
 const lightB = new THREE.DirectionalLight(0xffffff, 0.75); lightB.position.set(40,60,30); scene.add(lightB);
 const grid = new THREE.GridHelper(40, 20, 0x2f7fff, 0x173a7f); grid.material.opacity=0.25; grid.material.transparent=true; scene.add(grid);
@@ -142,6 +166,8 @@ function startMaze(){
   goal.position.set(origin+(size-1)*cell, origin+(size-1)*cell, origin+(size-1)*cell); scene.add(goal);
   player = new THREE.Mesh(new THREE.SphereGeometry(cell*0.36, 26, 26), new THREE.MeshStandardMaterial({ color:0x47e6f2 }));
   player.position.set(origin, origin, origin); player.cell=[0,0,0]; scene.add(player);
+  // 设置相机初始位置：近处看到蓝色小球，远处看到黄色目标
+  setupCameraViewBoth(player.position.clone(), goal.position.clone());
   allowInput=true; steps=0; gameStartTime=performance.now(); updateStat('新局：找到通往终点的路线！'); scorePanel();
 }
 
@@ -153,10 +179,58 @@ function scorePanel(){
 
 function toggleHint(){ if(!mazeData||!pathHint) return; const { size,cell,origin }=mazeData; if(pathLine){ scene.remove(pathLine); pathLine=null; updateStat('提示关闭'); return;} const pts=[]; for(const [x,y,z] of pathHint){ pts.push(new THREE.Vector3(origin+x*cell,origin+y*cell,origin+z*cell)); } const g=new THREE.BufferGeometry().setFromPoints(pts); pathLine=new THREE.Line(g,new THREE.LineBasicMaterial({ color:0x8ef6ff, linewidth:4 })); scene.add(pathLine); updateStat('蓝线为主路径提示'); }
 
-function joyEv(dir) {
-  const map={up:[0,1,0],down:[0,-1,0],left:[-1,0,0],right:[1,0,0],in:[0,0,1],out:[0,0,-1]};
-  joyMove(map[dir]);
+// 根据相机视角获取方向向量
+function getCameraRelativeDirection(dir) {
+  if (!mazeData) return null;
+  
+  // 上下方向直接处理，不依赖相机视角
+  if (dir === 'in') return [0, -1, 0];  // 向下（Y轴负方向）
+  if (dir === 'out') return [0, 1, 0]; // 向上（Y轴正方向）
+  
+  // 获取相机的朝向向量（投影到水平面）
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  const forwardH = new THREE.Vector3(forward.x, 0, forward.z).normalize();
+  
+  // 相机的右侧向量（在水平面）
+  const rightH = new THREE.Vector3();
+  rightH.crossVectors(forwardH, new THREE.Vector3(0, 1, 0)).normalize();
+  
+  // 根据方向名称获取世界坐标方向
+  let worldDir = null;
+  if (dir === 'up') worldDir = forwardH;
+  else if (dir === 'down') worldDir = forwardH.clone().negate();
+  else if (dir === 'right') worldDir = rightH;
+  else if (dir === 'left') worldDir = rightH.clone().negate();
+  else return null;
+  
+  // 将世界坐标方向转换为迷宫坐标系的移动方向
+  // 找到世界方向向量在迷宫坐标系中的主要分量
+  const absX = Math.abs(worldDir.x);
+  const absY = Math.abs(worldDir.y);
+  const absZ = Math.abs(worldDir.z);
+  
+  let dx = 0, dy = 0, dz = 0;
+  
+  // 找到主要方向（最大的分量）
+  if (absX > absY && absX > absZ) {
+    dx = worldDir.x > 0 ? 1 : -1;
+  } else if (absY > absZ) {
+    dy = worldDir.y > 0 ? 1 : -1;
+  } else {
+    dz = worldDir.z > 0 ? 1 : -1;
+  }
+  
+  return [dx, dy, dz];
 }
+
+function joyEv(dir) {
+  const mazeDir = getCameraRelativeDirection(dir);
+  if (mazeDir && (mazeDir[0] !== 0 || mazeDir[1] !== 0 || mazeDir[2] !== 0)) {
+    joyMove(mazeDir);
+  }
+}
+
 function joyMove(kdir){
   if(!allowInput||moving||!player||!mazeData) return;
   let [x,y,z]=player.cell; const [dx,dy,dz]=kdir; let nx=x+dx,ny=y+dy,nz=z+dz; const { maze,size,cell,origin }=mazeData;
@@ -174,8 +248,18 @@ Array.from(document.querySelectorAll('.joybtn')).forEach(btn=>{
 // 禁止滚动穿透
 ['touchmove','touchstart','touchend'].forEach(ev=>document.body.addEventListener(ev,ev=>{if(ev.target.closest('#game-canvas'))ev.preventDefault();},{passive:false}));
 
-const keyDirs = { 'w':[0,1,0],'s':[0,-1,0],'a':[-1,0,0],'d':[1,0,0],'ArrowUp':[0,1,0],'ArrowDown':[0,-1,0],'ArrowLeft':[-1,0,0],'ArrowRight':[1,0,0],' ':[0,0,1],'Shift':[0,0,-1] };
-document.onkeydown = (ev)=>{ if(!allowInput||moving||!player||!mazeData||isMobile) return; const dir = keyDirs[ev.key]; if(!dir) return; joyMove(dir); };
+// 键盘映射到方向名称
+const keyDirs = { 
+  'w':'up', 's':'down', 'a':'left', 'd':'right',
+  'ArrowUp':'up', 'ArrowDown':'down', 'ArrowLeft':'left', 'ArrowRight':'right',
+  ' ':'in', 'Shift':'out'
+};
+document.onkeydown = (ev)=>{ 
+  if(!allowInput||moving||!player||!mazeData||isMobile) return; 
+  const dirName = keyDirs[ev.key]; 
+  if(!dirName) return; 
+  joyEv(dirName); 
+};
 
 function checkWin(){ const { size }=mazeData; const [x,y,z]=player.cell; if(x===size-1&&y===size-1&&z===size-1){ allowInput=false; const secs=Math.round((performance.now()-gameStartTime)/1000); updateStat(`通关成功！用时${secs}s，步数${steps}`); storeHistory(secs,size); const mat=player.material; const old=mat.color.getHex(); let k=0; (function flash(){ mat.color.setHex(k%2?0x7cffcb:0x47e6f2); if(k++<10) setTimeout(flash,80); else mat.color.setHex(old); })(); } }
 // 本地榜/全局榜切换及弹窗
