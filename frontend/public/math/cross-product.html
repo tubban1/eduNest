@@ -147,8 +147,16 @@
       background: #fafafa;
     }
     @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
       .container {
         padding: 15px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
       }
       .problem-header {
         flex-direction: column;
@@ -868,31 +876,87 @@ function init3DVisualization(canvasId) {
           if(typeof d3 === 'undefined') return;
           const el = document.getElementById('knowledge-d3');
           if(!el) return;
+          // 确保元素可见
+          const rect = el.getBoundingClientRect();
+          if(rect.width === 0 || rect.height === 0) {
+            const self = this;
+            setTimeout(() => {
+              self.renderD3Knowledge();
+            }, 100);
+            return;
+          }
           // 清空
           el.innerHTML = '';
           const width = el.clientWidth || 800;
           const height = el.clientHeight || 420;
-          const svg = d3.select(el).append('svg').attr('width', width).attr('height', height);
+          
+          const padding = 60;
+          const innerWidth = width - 2 * padding;
+          const innerHeight = height - 2 * padding;
+          
+          const svg = d3.select(el).append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .style('overflow', 'hidden');
+          
+          const g = svg.append('g')
+            .attr('transform', `translate(${padding},${padding})`);
+          
           const { nodes, links } = this.getKnowledgeGraph();
           const color = d3.scaleOrdinal(['#2c3e50','#3498db','#9b59b6','#e67e22','#27ae60','#e74c3c','#16a085','#7f8c8d']);
           const sim = d3.forceSimulation(nodes)
-            .force('link', d3.forceLink(links).id(d=>d.id).distance(110).strength(0.5))
-            .force('charge', d3.forceManyBody().strength(-280))
-            .force('center', d3.forceCenter(width/2, height/2))
-            .force('collision', d3.forceCollide().radius(50));
-          const link = svg.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
+            .force('link', d3.forceLink(links).id(d=>d.id).distance(100).strength(0.5))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(innerWidth/2, innerHeight/2))
+            .force('collision', d3.forceCollide().radius(45))
+            .force('x', d3.forceX(innerWidth/2).strength(0.1))
+            .force('y', d3.forceY(innerHeight/2).strength(0.1));
+          
+          const link = g.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
             .selectAll('line').data(links).enter().append('line').attr('stroke-opacity',0.8);
-          const node = svg.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
-            .on('start', (e,d)=>{ if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-            .on('drag', (e,d)=>{ d.fx=e.x; d.fy=e.y; })
-            .on('end',  (e,d)=>{ if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }));
+          
+          const node = g.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
+            .on('start', (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0.3).restart(); 
+              d.fx=d.x; 
+              d.fy=d.y; 
+            })
+            .on('drag', (e,d)=>{ 
+              const radius = 45;
+              d.fx = Math.max(radius, Math.min(innerWidth - radius, e.x - padding));
+              d.fy = Math.max(radius, Math.min(innerHeight - radius, e.y - padding));
+            })
+            .on('end',  (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0); 
+              if(d.fx !== null && d.fy !== null) {
+                const radius = 45;
+                d.fx = Math.max(radius, Math.min(innerWidth - radius, d.fx));
+                d.fy = Math.max(radius, Math.min(innerHeight - radius, d.fy));
+              } else {
+                d.fx=null; 
+                d.fy=null; 
+              }
+            }));
+          
           node.append('circle').attr('r', 18).attr('fill',(d,i)=>color(i)).attr('stroke','#fff').attr('stroke-width',1.2);
           node.append('text').text(d=>d.name).attr('x', 24).attr('y', 5).attr('font-size','12px').attr('fill','#1f2937');
+          
           sim.on('tick', ()=>{
-            link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y).attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+            const radius = 45;
+            nodes.forEach(d => {
+              if(d.fx === null && d.fy === null) {
+                d.x = Math.max(radius, Math.min(innerWidth - radius, d.x));
+                d.y = Math.max(radius, Math.min(innerHeight - radius, d.y));
+              }
+            });
+            
+            link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+                .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
             node.attr('transform', d=>`translate(${d.x},${d.y})`);
           });
-        } catch(e) { /* 忽略渲染失败 */ }
+        } catch(e) { 
+          console.error('D3 knowledge graph rendering error:', e);
+        }
       },
       
       updateAndValidate() {
