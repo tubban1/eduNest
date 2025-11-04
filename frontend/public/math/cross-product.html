@@ -226,7 +226,7 @@
           <!-- 启发引导 -->
           <div class="tab-panel" v-show="activeTab==='intro'">
             <div class="k" v-pre>
-              <p><strong>直观想象：</strong>把 \(\vec{OA}\) 和 \(\vec{OB}\) 当作两根“魔法箭矢”，它们在空间里张成一块“紫色帆布”（平行四边形）。叉乘 \(\vec{OA} \times \vec{OB}\) 就像从这块帆布里“长出来”的绿色旗杆，方向由右手定则决定，长度正好等于这块帆布的面积。</p>
+              <p><strong>直观想象：</strong>把 \(\vec{OA}\) 和 \(\vec{OB}\) 当作两根"魔法箭矢"，它们在空间里张成一块"紫色帆布"（平行四边形）。叉乘 \(\vec{OA} \times \vec{OB}\) 就像从这块帆布里"长出来"的绿色旗杆，方向由右手定则决定，叉乘向量的模长在数值上等于这块帆布的面积。</p>
               <div class="formula-box">
                 <p>三个关键问题：</p>
                 <ul style="margin-left: 20px; margin-top: 10px;">
@@ -477,9 +477,47 @@ function init3DVisualization(canvasId) {
     const A = new THREE.Vector3(params.A.x, params.A.y, params.A.z);
     const B = new THREE.Vector3(params.B.x, params.B.y, params.B.z);
     
-    // 绘制坐标轴
-    const axesHelper = new THREE.AxesHelper(3);
-    scene.add(axesHelper);
+    // 绘制坐标轴（黑色带箭头）
+    function createAxisArrow(origin, direction, length, label) {
+      const dir = direction.clone().normalize();
+      const end = origin.clone().add(dir.clone().multiplyScalar(length));
+      
+      if(typeof THREE.ArrowHelper !== 'undefined') {
+        const arrow = new THREE.ArrowHelper(dir, origin, length, 0x000000, length * 0.08, length * 0.04);
+        scene.add(arrow);
+      } else {
+        // 简单线条表示
+        const geometry = new THREE.BufferGeometry().setFromPoints([origin, end]);
+        const material = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 2});
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+      }
+      
+      // 添加轴标签
+      const labelCanvas = document.createElement('canvas');
+      labelCanvas.width = 64;
+      labelCanvas.height = 64;
+      const labelCtx = labelCanvas.getContext('2d');
+      labelCtx.fillStyle = '#000000';
+      labelCtx.font = 'bold 20px Arial';
+      labelCtx.textAlign = 'center';
+      labelCtx.textBaseline = 'middle';
+      labelCtx.fillText(label, 32, 32);
+      
+      const labelTexture = new THREE.CanvasTexture(labelCanvas);
+      const labelSpriteMaterial = new THREE.SpriteMaterial({map: labelTexture, transparent: true});
+      const labelSprite = new THREE.Sprite(labelSpriteMaterial);
+      labelSprite.position.copy(end);
+      labelSprite.position.add(dir.clone().multiplyScalar(0.3));
+      labelSprite.scale.set(0.5, 0.5, 1);
+      scene.add(labelSprite);
+    }
+    
+    // 绘制xyz轴（黑色箭头）
+    const axisLength = 4;
+    createAxisArrow(O, new THREE.Vector3(1, 0, 0), axisLength, 'x');
+    createAxisArrow(O, new THREE.Vector3(0, 1, 0), axisLength, 'y');
+    createAxisArrow(O, new THREE.Vector3(0, 0, 1), axisLength, 'z');
     
     // 计算叉乘结果
     const cross = new THREE.Vector3();
@@ -506,9 +544,9 @@ function init3DVisualization(canvasId) {
     createArrow(O, A, 0x3498db); // OA - 蓝色
     createArrow(O, B, 0xe74c3c); // OB - 红色
     
-    // 绘制叉乘向量（从A点出发）
-    const crossEnd = A.clone().add(cross);
-    createArrow(A, crossEnd, 0x27ae60); // 绿色
+    // 绘制叉乘向量（从O点出发，符合文字描述）
+    const crossEnd = O.clone().add(cross);
+    createArrow(O, crossEnd, 0x27ae60); // 绿色
     
     // 绘制三角形AOB
     const triangleGeometry = new THREE.BufferGeometry().setFromPoints([O, A, B, O]);
@@ -596,7 +634,10 @@ function init3DVisualization(canvasId) {
     createSphere(O, 0x2c3e50, 'O');
     createSphere(A, 0x3498db, 'A');
     createSphere(B, 0xe74c3c, 'B');
-    createSphere(apex, 0xff9500, 'P');
+    // 三棱锥顶点（文字中未命名，只显示点不显示标签）
+    const apexSphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), new THREE.MeshBasicMaterial({color: 0xff9500}));
+    apexSphere.position.copy(apex);
+    scene.add(apexSphere);
     
     // 动画循环
     const animate = () => {
