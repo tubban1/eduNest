@@ -111,8 +111,86 @@
       background: #3498db;
       color: white;
     }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #ecf0f1;
+      color: #34495e;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 14px;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #e8eef3;
+    }
+    .tab-header.active {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: #fff;
+      border-color: #2980b9;
+      box-shadow: 0 2px 6px rgba(52,152,219,0.25);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 8px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 6px;
+      }
+      .problem-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .problem-number {
+        border-radius: 20px;
+        margin-bottom: 10px;
+      }
+      .problem-info {
+        border-radius: 20px;
+      }
+    }
   </style>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <link rel="stylesheet" href="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css">
 </head>
 <body>
   <div class="container">
@@ -139,249 +217,364 @@
       </div>
     </div>
 
+    <!-- 解答部分（Tab版） -->
     <div id="app">
-      <div class="card" v-pre>
-        <h2>(1) 求解</h2>
-        <div class="k">
-          <strong>① 求二阶导数：</strong>
-          <br>已知 \(f(x)=e^x+a\ln x-x^2\)
-          <br><br>
-          <strong>一阶导数：</strong>
-          \[f'(x)=\frac{d}{dx}(e^x+a\ln x-x^2)=e^x+\frac{a}{x}-2x\]
-          <br><br>
-          <strong>二阶导数：</strong>
-          \[f''(x)=\frac{d}{dx}\left(e^x+\frac{a}{x}-2x\right)=e^x-\frac{a}{x^2}-2\]
-          <br><br>
-          <strong>② 讨论单调性：</strong>
-          <br>对 \(f''(x)\) 求导：
-          \[[f''(x)]'=\frac{d}{dx}\left(e^x-\frac{a}{x^2}-2\right)=e^x+\frac{2a}{x^3}\]
-          <br><br>
-          <strong>分析：</strong>
-          <br>由于 \(f''(x)\) 的定义域为 \(x\gt 0\)（因为原函数包含 \(\ln x\)），所以 \(x^3\gt 0\)。
-          <br>当 \(a\ge 0\) 时，\([f''(x)]'=e^x+\frac{2a}{x^3}\gt 0\) 对所有 \(x\gt 0\) 成立，所以 \(f''(x)\) 在 \((0,+\infty)\) 上单调递增。
-          <br><br>
-          <strong>当 \(a\lt 0\) 时：</strong>
-          <br>\([f''(x)]'=e^x+\frac{2a}{x^3}\)
-          <br>当 \(x\) 很小时，\(\frac{2a}{x^3}\lt 0\) 且绝对值很大，所以可能存在 \(x_0\) 使得 \([f''(x_0)]'=0\)。
-          <br>设 \([f''(x)]'=0\)，即 \(e^x+\frac{2a}{x^3}=0\)，即 \(e^xx^3=-2a\)。
-          <br>由于 \(a\lt 0\)，所以 \(-2a\gt 0\)，方程有解。
-          <br>记 \(h(x)=e^xx^3\)，则 \(h'(x)=e^xx^3+3e^xx^2=e^xx^2(x+3)\gt 0\)（\(x\gt 0\)），
-          <br>所以 \(h(x)\) 在 \((0,+\infty)\) 上单调递增。
-          <br>存在唯一的 \(x_0\gt 0\)，使得 \(h(x_0)=-2a\)，即 \([f''(x_0)]'=0\)。
-          <br>当 \(x\in (0,x_0)\) 时，\([f''(x)]'\lt 0\)，\(f''(x)\) 单调递减；
-          <br>当 \(x\in (x_0,+\infty)\) 时，\([f''(x)]'\gt 0\)，\(f''(x)\) 单调递增。
-          <br>因此，\(f''(x)\) 在 \((0,x_0)\) 上单调递减，在 \((x_0,+\infty)\) 上单调递增。
-        </div>
-        <div class="ans" v-pre>答：(1) 
-        <br>① \(f''(x)=e^x-\frac{a}{x^2}-2\)
-        <br>② 当 \(a\ge 0\) 时，\(f''(x)\) 在 \((0,+\infty)\) 上单调递增；
-        <br>当 \(a\lt 0\) 时，存在 \(x_0\gt 0\)，使得 \(f''(x)\) 在 \((0,x_0)\) 上单调递减，在 \((x_0,+\infty)\) 上单调递增。</div>
-      </div>
-
-      <div class="card" v-pre>
-        <h2>(2) 求解</h2>
-        <div class="k">
-          <strong>理解"\(n\) 阶导数列"的定义：</strong>
-          <br>\(a_1=f(1)\)，
-          <br>\(a_{n+1}=[f(1+n)]_n\)（\(n\ge 1\)），
-          <br>其中 \([f(1+n)]_n\) 表示 \(f(x)\) 的 \(n\) 阶导数在 \(x=1+n\) 处的值。
-          <br><br>
-          <strong>展开前几项：</strong>
-          <br>\(a_1=f(1)\)
-          <br>\(a_2=[f(2)]_1=f'(2)\)
-          <br>\(a_3=[f(3)]_2=f''(3)\)
-          <br>\(a_4=[f(4)]_3=f'''(4)\)
-          <br>\(\cdots\)
-          <br>\(a_k=[f(k)]_{k-1}=f^{(k-1)}(k)\)（\(k\ge 2\)）
-          <br><br>
-          <strong>(2)① 对于 \(g(x)=x^n\)（\(n\gt 1\) 为常数）：</strong>
-          <br><br>
-          <strong>计算各阶导数：</strong>
-          <br>\(g(x)=x^n\)
-          <br>\(g'(x)=nx^{n-1}\)
-          <br>\(g''(x)=n(n-1)x^{n-2}\)
-          <br>\(g'''(x)=n(n-1)(n-2)x^{n-3}\)
-          <br>\(\cdots\)
-          <br>\(g^{(k)}(x)=n(n-1)\cdots(n-k+1)x^{n-k}\)（当 \(k\le n\) 时）
-          <br><br>
-          <strong>导数列：</strong>
-          <br>\(a_1=g(1)=1^n=1\)
-          <br>\(a_2=g'(2)=n\cdot 2^{n-1}\)
-          <br>\(a_3=g''(3)=n(n-1)\cdot 3^{n-2}\)
-          <br>\(a_4=g'''(4)=n(n-1)(n-2)\cdot 4^{n-3}\)
-          <br>\(\cdots\)
-          <br>\(a_k=g^{(k-1)}(k)=n(n-1)\cdots(n-k+2)\cdot k^{n-k+1}\)（\(k\ge 2\)，且 \(k\le n+1\)）
-          <br><br>
-          <strong>计算 \(T_n\) 和 \(\frac{T_n}{T_{n-1}}\)：</strong>
-          <br>\(T_n=a_1a_2\cdots a_n\)
-          <br>\(\frac{T_n}{T_{n-1}}=\frac{a_1a_2\cdots a_n}{a_1a_2\cdots a_{n-1}}=a_n\)
-          <br><br>
-          <strong>因此：</strong>
-          <br>当 \(n=1\) 时，\(\frac{T_1}{T_0}\) 未定义（或视为 \(a_1=1\)）。
-          <br>当 \(n\ge 2\) 时：
-          \[\frac{T_n}{T_{n-1}}=a_n=g^{(n-1)}(n)=n(n-1)\cdots(n-n+2)\cdot n^{n-n+1}\]
-          \[=n(n-1)\cdots 2\cdot n^1=n!\cdot n=n\cdot n!\]
-          <br><br>
-          <strong>验证：</strong>
-          <br>\(n=2\)：\(\frac{T_2}{T_1}=a_2=g'(2)=2\cdot 2^{2-1}=4=2\cdot 2!\)
-          <br>\(n=3\)：\(\frac{T_3}{T_2}=a_3=g''(3)=3(3-1)\cdot 3^{3-2}=6\cdot 3=18=3\cdot 3!\)
-          <br><br>
-          <strong>注意：</strong>当 \(n\gt N\)（其中 \(N\) 是 \(g(x)=x^n\) 中的指数）时，\(g^{(n)}(x)=0\)，所以数列 \(\{a_k\}\) 只包含有限项。
-          <br>但题目要求的是 \(\frac{T_n}{T_{n-1}}\) 的通项公式，当 \(n\le N\) 时，\(\frac{T_n}{T_{n-1}}=n\cdot n!\)。
-        </div>
-        <div class="ans" v-pre>答：(2)① 当 \(n\ge 2\) 时，\(\frac{T_n}{T_{n-1}}=n\cdot n!\)。</div>
-      </div>
-
-      <div class="card" v-pre>
-        <h2>(2)② 求解</h2>
-        <div class="k">
-          <strong>分析要求：</strong>
-          <br>需要找到一个初等函数 \(f(x)\)，使得其"\(n\) 阶导数列" \(\{a_k\}\) 满足：
-          <br>① 严格递减：\(a_1\gt a_2\gt a_3\gt \cdots\)
-          <br>② 无穷数列：对所有 \(k\in\mathbf{N}^*\)，\(a_k\) 都有定义且有限
-          <br><br>
-          <strong>关键观察：</strong>
-          <br>由于 \(a_k=f^{(k-1)}(k)\)，要使得数列无穷，需要 \(f(x)\) 的所有阶导数都存在。
-          <br>要使得严格递减，需要 \(f^{(k-1)}(k)\gt f^{(k)}(k+1)\) 对所有 \(k\ge 1\) 成立。
-          <br><br>
-          <strong>尝试指数函数：</strong>
-          <br>考虑 \(f(x)=e^x\)，则 \(f^{(n)}(x)=e^x\) 对所有 \(n\) 成立。
-          <br>因此 \(a_k=f^{(k-1)}(k)=e^k\)
-          <br>数列为：\(e^1, e^2, e^3, \ldots\)
-          <br>这是严格递增的，不满足要求。
-          <br><br>
-          <strong>尝试 \(f(x)=e^{-x}\)：</strong>
-          <br>\(f'(x)=-e^{-x}\)
-          <br>\(f''(x)=e^{-x}\)
-          <br>\(f'''(x)=-e^{-x}\)
-          <br>\(f^{(n)}(x)=(-1)^n e^{-x}\)
-          <br>因此 \(a_k=f^{(k-1)}(k)=(-1)^{k-1}e^{-k}\)
-          <br>数列的绝对值：\(|a_k|=e^{-k}\)，这是严格递减的，但符号交替，不是严格递减。
-          <br><br>
-          <strong>尝试 \(f(x)=\frac{1}{x}\)：</strong>
-          <br>\(f'(x)=-\frac{1}{x^2}\)
-          <br>\(f''(x)=\frac{2!}{x^3}\)
-          <br>\(f'''(x)=-\frac{3!}{x^4}\)
-          <br>\(f^{(n)}(x)=(-1)^n\frac{n!}{x^{n+1}}\)
-          <br>因此 \(a_k=f^{(k-1)}(k)=(-1)^{k-1}\frac{(k-1)!}{k^k}\)
-          <br>当 \(k\) 很大时，\(\frac{(k-1)!}{k^k}\to 0\)，但符号交替。
-          <br><br>
-          <strong>更好的选择：\(f(x)=\ln x\)：</strong>
-          <br>\(f'(x)=\frac{1}{x}\)
-          <br>\(f''(x)=-\frac{1}{x^2}\)
-          <br>\(f'''(x)=\frac{2!}{x^3}\)
-          <br>\(f^{(4)}(x)=-\frac{3!}{x^4}\)
-          <br>\(f^{(n)}(x)=(-1)^{n-1}\frac{(n-1)!}{x^n}\)（\(n\ge 1\)）
-          <br>因此 \(a_k=f^{(k-1)}(k)=(-1)^{k-2}\frac{(k-2)!}{k^{k-1}}=\frac{(k-2)!}{k^{k-1}}\)（当 \(k\ge 2\) 时，因为 \(k-2\) 为偶数或0）
-          <br>实际上，当 \(k=1\) 时，\(a_1=f(1)=\ln 1=0\)
-          <br>当 \(k\ge 2\) 时，\(a_k=\frac{(k-2)!}{k^{k-1}}\)
-          <br>这个数列不满足严格递减（因为 \(a_1=0\)）。
-          <br><br>
-          <strong>最佳选择：\(f(x)=e^{-x}\) 的变体或 \(f(x)=\frac{1}{x}\)：</strong>
-          <br>实际上，更合适的选择是考虑使得所有导数都为负（或都为正）的函数。
-          <br><br>
-          <strong>推荐答案：\(f(x)=-\frac{1}{x}\)（\(x\gt 0\)）：</strong>
-          <br>\(f'(x)=\frac{1}{x^2}\gt 0\)
-          <br>\(f''(x)=-\frac{2!}{x^3}\lt 0\)
-          <br>\(f'''(x)=\frac{3!}{x^4}\gt 0\)
-          <br>符号交替，不满足。
-          <br><br>
-          <strong>更合适的答案：考虑 \(f(x)=\frac{1}{x^2}\)：</strong>
-          <br>\(f'(x)=-\frac{2}{x^3}\lt 0\)
-          <br>\(f''(x)=\frac{2\cdot 3}{x^4}=\frac{6}{x^4}\gt 0\)
-          <br>符号也交替。
-          <br><br>
-          <strong>重新分析：</strong>
-          <br>要使得数列严格递减且所有项都为正，需要一个函数，使得所有奇数阶导数（或偶数阶导数）在相应点处的值都为正且递减。
-          <br><br>
-          <strong>答案：\(f(x)=e^{-x}\) 不满足，因为符号交替。</strong>
-          <br><br>
-          <strong>考虑 \(f(x)=\frac{1}{\sqrt{x}}\)（\(x\gt 0\)）：</strong>
-          <br>这个函数的所有导数都存在，但计算复杂。
-          <br><br>
-          <strong>实际上，最合适的例子是：</strong>
-          <br>考虑 \(f(x)=\frac{1}{x}\)，但需要调整。
-          <br><br>
-          <strong>最终答案：\(f(x)=\ln x\) 的适当变换，或更简单：\(f(x)=e^{-x}\)：</strong>
-          <br>虽然 \(e^{-x}\) 的导数符号交替，但如果我们考虑绝对值的递减性，或者选择适当的函数。
-          <br><br>
-          <strong>最标准的答案：\(f(x)=e^{-x}\)：</strong>
-          <br>虽然符号交替，但 \(|a_k|=e^{-k}\) 严格递减，且数列为无穷数列。
-          <br>但题目要求严格递减，所以 \(|a_k|\) 的递减不满足条件。
-          <br><br>
-          <strong>正确答案应该是：不存在这样的函数。</strong>
-          <br>或者，考虑 \(f(x)=-\ln x\)：
-          <br>\(f'(x)=-\frac{1}{x}\lt 0\)
-          <br>\(f''(x)=\frac{1}{x^2}\gt 0\)
-          <br>符号也交替。
-        </div>
-        <div class="ans" v-pre>答：(2)② 
-        <br>存在。例如 \(f(x)=e^{-x}\)（\(x\gt 0\)）。
-        <br>证明：\(f^{(n)}(x)=(-1)^n e^{-x}\)，所以 \(a_k=f^{(k-1)}(k)=(-1)^{k-1}e^{-k}\)。
-        <br>虽然 \(a_k\) 的符号交替，但 \(|a_k|=e^{-k}\) 严格递减，且对所有 \(k\in\mathbf{N}^*\)，\(a_k\) 都有定义且有限。
-        <br>因此 \(\{a_k\}\) 是无穷数列，且 \(|a_k|\) 严格递减。
-        <br>（若严格要求 \(a_k\) 本身严格递减且同号，则考虑 \(f(x)=-\frac{1}{x}\) 等，但其导数列可能不满足所有条件。）</div>
-      </div>
-
       <div class="card">
-        <h2>函数可视化</h2>
-        <div class="row">
-          <label>选择函数：</label>
-          <select v-model="selectedFunction">
-            <option value="f1">f(x) = e^x + a ln x - x² (第1问)</option>
-            <option value="f2">f(x) = e^{-x} (第2问②示例)</option>
-          </select>
-          <label v-if="selectedFunction === 'f1'">参数 a：</label>
-          <input v-if="selectedFunction === 'f1'" type="number" step="0.1" v-model.number="paramA" style="width:100px">
-          <button class="btn" @click="drawFunction">重新绘制</button>
-        </div>
-        <div style="margin-top:15px; position: relative;">
-          <canvas id="funcCanvas" width="800" height="400"></canvas>
-          <div id="funcLabel" style="position: absolute; top: 20px; right: 100px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 14px;"></div>
-        </div>
-      </div>
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 二阶导数与单调性</div>
+            <div class="tab-header" :class="{active: activeTab==='q2a'}" @click="setTab('q2a')">(2)① 导数列通项</div>
+            <div class="tab-header" :class="{active: activeTab==='q2b'}" @click="setTab('q2b')">(2)② 严格递减数列</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>把导数想象成函数变化的"速度计"，一阶导数 \(f'(x)\) 告诉我们"函数爬坡的速度"，二阶导数 \(f''(x)\) 告诉我们"加速度"（爬坡速度的变化率）。而"\(n\) 阶导数列"就像把不同位置的"加速度"记录成数列，<span class="highlight">寻找严格递减的无穷数列</span>就像在寻找一个"越来越慢"的变化过程。</p>
 
-      <div class="card">
-        <h2>导数列计算工具</h2>
-        <div class="row">
-          <label>函数类型：</label>
-          <select v-model="seqFunctionType">
-            <option value="exp">f(x) = e^x</option>
-            <option value="exp_neg">f(x) = e^{-x}</option>
-            <option value="ln">f(x) = ln x</option>
-            <option value="x_power">f(x) = x^n (n>1)</option>
-          </select>
-          <label v-if="seqFunctionType === 'x_power'">n 值：</label>
-          <input v-if="seqFunctionType === 'x_power'" type="number" v-model.number="powerN" min="2" max="10" style="width:80px">
-          <button class="btn" @click="calculateSequence">计算导数列</button>
-        </div>
-        <div style="margin-top:15px">
-          <table>
-            <thead>
-              <tr>
-                <th>k</th>
-                <th>a_k = f^{(k-1)}(k)</th>
-                <th>数值（近似）</th>
-                <th>是否递减？</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, index) in sequenceData" :key="index">
-                <td>{{ item.k }}</td>
-                <td :id="'formula-' + index" class="formula-cell">{{ item.formula }}</td>
-                <td>{{ item.value }}</td>
-                <td>{{ item.isDecreasing }}</td>
-              </tr>
-            </tbody>
-          </table>
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">读题抓要点</div>
+                <ul style="margin-left:20px;">
+                  <li>已知函数：\(f(x)=e^x+a\ln x-x^2\)（第1问）</li>
+                  <li>核心概念："\(n\) 阶导数列"：\(a_1=f(1),\;a_{n+1}=[f(1+n)]_n\)</li>
+                  <li>目标：①求二阶导数并讨论单调性；②求导数列通项；③构造严格递减的无穷导数列</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点（树状图）</h3>
+              <div class="step">
+                <ul style="margin-left:12px; list-style: none;">
+                  <li><strong>导数基础</strong>
+                    <ul style="margin-left:18px;">
+                      <li>一阶导数：\(f'(x)\) 表示函数变化率</li>
+                      <li>高阶导数：\(f^{(n)}(x)\) 表示 \(n\) 阶导数</li>
+                      <li>导数运算：指数、对数、幂函数的求导法则</li>
+                    </ul>
+                  </li>
+                  <li><strong>单调性分析</strong>
+                    <ul style="margin-left:18px;">
+                      <li>通过导数的导数（二阶导数）判断原导数的增减</li>
+                      <li>参数 \(a\) 对单调性的影响（分类讨论）</li>
+                    </ul>
+                  </li>
+                  <li><strong>导数列与数列</strong>
+                    <ul style="margin-left:18px;">
+                      <li>导数列定义：\(a_k=f^{(k-1)}(k)\)</li>
+                      <li>数列通项：从函数形式推导</li>
+                      <li>严格递减：\(a_k\gt a_{k+1}\) 对所有 \(k\)</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div style="margin-top:12px;">
+                <div id="knowledge-d3" style="width:100%;height:420px;border:1px solid #e0e0e0;border-radius:6px;background:#ffffff"></div>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拔高与拓展</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li>泰勒级数与导数的关系：函数在某点的各阶导数决定了其泰勒展开</li>
+                  <li>导数列的收敛性：研究 \(\lim_{k\to\infty} a_k\) 的极限行为</li>
+                  <li>与函数性质的联系：严格递减导数列对应函数的"衰减"特性</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本地考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：高阶导数计算；单调性分类讨论；数列通项推导；构造性证明</li>
+                  <li><strong>易错点</strong>：导数列定义的理解（\(a_{n+1}=[f(1+n)]_n\) 中下标关系）；符号交替的误判</li>
+                  <li><strong>难点</strong>：构造严格递减且无穷的导数列（需要所有阶导数都存在且满足递减条件）</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略（知识不全也能拿分）</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>只会基本求导</strong>：先算出 \(f'(x)\) 和 \(f''(x)\) 的表达式，拿到计算分</li>
+                  <li><strong>不会分类讨论</strong>：写出 \(a\ge 0\) 和 \(a\lt 0\) 两种情况，即使分析不完整也能得步骤分</li>
+                  <li><strong>不会构造严格递减数列</strong>：尝试 \(e^{-x}\)、\(\frac{1}{x}\) 等常见函数，写出导数列的前几项，说明问题或给出部分结论可得部分分数</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- (1) 二阶导数与单调性 -->
+          <div class="tab-panel" v-show="activeTab==='q1'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(1) 求解</h3>
+              <strong>① 求二阶导数：</strong>
+              <br>已知 \(f(x)=e^x+a\ln x-x^2\)
+              <br><br>
+              <strong>一阶导数：</strong>
+              \[f'(x)=\frac{d}{dx}(e^x+a\ln x-x^2)=e^x+\frac{a}{x}-2x\]
+              <br><br>
+              <strong>二阶导数：</strong>
+              \[f''(x)=\frac{d}{dx}\left(e^x+\frac{a}{x}-2x\right)=e^x-\frac{a}{x^2}-2\]
+              <br><br>
+              <strong>② 讨论单调性：</strong>
+              <br>对 \(f''(x)\) 求导：
+              \[[f''(x)]'=\frac{d}{dx}\left(e^x-\frac{a}{x^2}-2\right)=e^x+\frac{2a}{x^3}\]
+              <br><br>
+              <div class="step">
+                <div class="step-title">分析：</div>
+                <p>由于 \(f''(x)\) 的定义域为 \(x\gt 0\)（因为原函数包含 \(\ln x\)），所以 \(x^3\gt 0\)。</p>
+                <p>当 \(a\ge 0\) 时，\([f''(x)]'=e^x+\frac{2a}{x^3}\gt 0\) 对所有 \(x\gt 0\) 成立，所以 \(f''(x)\) 在 \((0,+\infty)\) 上单调递增。</p>
+                <br>
+                <p><strong>当 \(a\lt 0\) 时：</strong></p>
+                <p>\([f''(x)]'=e^x+\frac{2a}{x^3}\)</p>
+                <p>当 \(x\) 很小时，\(\frac{2a}{x^3}\lt 0\) 且绝对值很大，所以可能存在 \(x_0\) 使得 \([f''(x_0)]'=0\)。</p>
+                <p>设 \([f''(x)]'=0\)，即 \(e^x+\frac{2a}{x^3}=0\)，即 \(e^xx^3=-2a\)。</p>
+                <p>由于 \(a\lt 0\)，所以 \(-2a\gt 0\)，方程有解。</p>
+                <p>记 \(h(x)=e^xx^3\)，则 \(h'(x)=e^xx^3+3e^xx^2=e^xx^2(x+3)\gt 0\)（\(x\gt 0\)），</p>
+                <p>所以 \(h(x)\) 在 \((0,+\infty)\) 上单调递增。</p>
+                <p>存在唯一的 \(x_0\gt 0\)，使得 \(h(x_0)=-2a\)，即 \([f''(x_0)]'=0\)。</p>
+                <p>当 \(x\in (0,x_0)\) 时，\([f''(x)]'\lt 0\)，\(f''(x)\) 单调递减；</p>
+                <p>当 \(x\in (x_0,+\infty)\) 时，\([f''(x)]'\gt 0\)，\(f''(x)\) 单调递增。</p>
+                <p>因此，\(f''(x)\) 在 \((0,x_0)\) 上单调递减，在 \((x_0,+\infty)\) 上单调递增。</p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">图形辅助理解</h3>
+              <p><strong>参数 a 对单调性的影响：</strong></p>
+              <div class="row">
+                <label>参数 a：</label>
+                <input type="number" step="0.5" v-model.number="paramA2" style="width:100px" @input="drawSecondDerivative">
+                <button class="btn" @click="drawSecondDerivative">更新图像</button>
+              </div>
+              <div style="margin-top:15px; position: relative;">
+                <canvas id="secondDerivCanvas" width="800" height="400"></canvas>
+                <div id="secondDerivLabel" style="position: absolute; top: 20px; right: 100px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 14px;"></div>
+              </div>
+              <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                <strong>观察：</strong>当 \(a\ge 0\) 时，\(f''(x)\) 单调递增（蓝线）；当 \(a\lt 0\) 时，\(f''(x)\) 先减后增，存在极小值点 \(x_0\)（红线）。
+              </p>
+            </div>
+            <div class="ans" v-pre>答：(1) 
+            <br>① \(f''(x)=e^x-\frac{a}{x^2}-2\)
+            <br>② 当 \(a\ge 0\) 时，\(f''(x)\) 在 \((0,+\infty)\) 上单调递增；
+            <br>当 \(a\lt 0\) 时，存在 \(x_0\gt 0\)，使得 \(f''(x)\) 在 \((0,x_0)\) 上单调递减，在 \((x_0,+\infty)\) 上单调递增。</div>
+          </div>
+
+          <!-- (2)① 导数列通项 -->
+          <div class="tab-panel" v-show="activeTab==='q2a'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(2)① 求解</h3>
+              <strong>理解"\(n\) 阶导数列"的定义：</strong>
+              <br>\(a_1=f(1)\)，
+              <br>\(a_{n+1}=[f(1+n)]_n\)（\(n\ge 1\)），
+              <br>其中 \([f(1+n)]_n\) 表示 \(f(x)\) 的 \(n\) 阶导数在 \(x=1+n\) 处的值。
+              <br><br>
+              <div class="step">
+                <div class="step-title">展开前几项：</div>
+                <p>\(a_1=f(1)\)</p>
+                <p>\(a_2=[f(2)]_1=f'(2)\)</p>
+                <p>\(a_3=[f(3)]_2=f''(3)\)</p>
+                <p>\(a_4=[f(4)]_3=f'''(4)\)</p>
+                <p>\(\cdots\)</p>
+                <p>\(a_k=[f(k)]_{k-1}=f^{(k-1)}(k)\)（\(k\ge 2\)）</p>
+              </div>
+              <br>
+              <strong>对于 \(g(x)=x^n\)（\(n\gt 1\) 为常数）：</strong>
+              <br><br>
+              <div class="step">
+                <div class="step-title">计算各阶导数：</div>
+                <p>\(g(x)=x^n\)</p>
+                <p>\(g'(x)=nx^{n-1}\)</p>
+                <p>\(g''(x)=n(n-1)x^{n-2}\)</p>
+                <p>\(g'''(x)=n(n-1)(n-2)x^{n-3}\)</p>
+                <p>\(\cdots\)</p>
+                <p>\(g^{(k)}(x)=n(n-1)\cdots(n-k+1)x^{n-k}\)（当 \(k\le n\) 时）</p>
+              </div>
+              <br>
+              <div class="step">
+                <div class="step-title">导数列：</div>
+                <p>\(a_1=g(1)=1^n=1\)</p>
+                <p>\(a_2=g'(2)=n\cdot 2^{n-1}\)</p>
+                <p>\(a_3=g''(3)=n(n-1)\cdot 3^{n-2}\)</p>
+                <p>\(a_4=g'''(4)=n(n-1)(n-2)\cdot 4^{n-3}\)</p>
+                <p>\(\cdots\)</p>
+                <p>\(a_k=g^{(k-1)}(k)=n(n-1)\cdots(n-k+2)\cdot k^{n-k+1}\)（\(k\ge 2\)，且 \(k\le n+1\)）</p>
+              </div>
+              <br>
+              <div class="step">
+                <div class="step-title">计算 \(T_n\) 和 \(\frac{T_n}{T_{n-1}}\)：</div>
+                <p>\(T_n=a_1a_2\cdots a_n\)</p>
+                <p>\(\frac{T_n}{T_{n-1}}=\frac{a_1a_2\cdots a_n}{a_1a_2\cdots a_{n-1}}=a_n\)</p>
+                <br>
+                <p><strong>因此：</strong></p>
+                <p>当 \(n=1\) 时，\(\frac{T_1}{T_0}\) 未定义（或视为 \(a_1=1\)）。</p>
+                <p>当 \(n\ge 2\) 时：</p>
+                \[\frac{T_n}{T_{n-1}}=a_n=g^{(n-1)}(n)=n(n-1)\cdots(n-n+2)\cdot n^{n-n+1}\]
+                \[=n(n-1)\cdots 2\cdot n^1=n!\cdot n=n\cdot n!\]
+              </div>
+              <br>
+              <div class="step">
+                <div class="step-title">验证：</div>
+                <p>\(n=2\)：\(\frac{T_2}{T_1}=a_2=g'(2)=2\cdot 2^{2-1}=4=2\cdot 2!\)</p>
+                <p>\(n=3\)：\(\frac{T_3}{T_2}=a_3=g''(3)=3(3-1)\cdot 3^{3-2}=6\cdot 3=18=3\cdot 3!\)</p>
+              </div>
+              <br>
+              <p><strong>注意：</strong>当 \(n\gt N\)（其中 \(N\) 是 \(g(x)=x^n\) 中的指数）时，\(g^{(n)}(x)=0\)，所以数列 \(\{a_k\}\) 只包含有限项。</p>
+              <p>但题目要求的是 \(\frac{T_n}{T_{n-1}}\) 的通项公式，当 \(n\le N\) 时，\(\frac{T_n}{T_{n-1}}=n\cdot n!\)。</p>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">导数列可视化</h3>
+              <p><strong>对于 \(g(x)=x^n\)，导数列 \(a_k\) 的数值变化：</strong></p>
+              <div class="row">
+                <label>n 值（指数）：</label>
+                <input type="number" v-model.number="powerN2" min="2" max="10" style="width:80px" @input="drawSequenceChart">
+                <button class="btn" @click="drawSequenceChart">更新图表</button>
+              </div>
+              <div style="margin-top:15px; position: relative;">
+                <canvas id="sequenceChartCanvas" width="800" height="400"></canvas>
+              </div>
+              <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                <strong>观察：</strong>导数列 \(a_k\) 的数值变化，以及 \(\frac{T_n}{T_{n-1}}=n\cdot n!\) 的规律。
+              </p>
+            </div>
+            <div class="ans" v-pre>答：(2)① 当 \(n\ge 2\) 时，\(\frac{T_n}{T_{n-1}}=n\cdot n!\)。</div>
+          </div>
+
+          <!-- (2)② 严格递减数列 -->
+          <div class="tab-panel" v-show="activeTab==='q2b'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(2)② 求解</h3>
+              <div class="step">
+                <div class="step-title">分析要求：</div>
+                <p>需要找到一个初等函数 \(f(x)\)，使得其"\(n\) 阶导数列" \(\{a_k\}\) 满足：</p>
+                <p>① 严格递减：\(a_1\gt a_2\gt a_3\gt \cdots\)</p>
+                <p>② 无穷数列：对所有 \(k\in\mathbf{N}^*\)，\(a_k\) 都有定义且有限</p>
+              </div>
+              <br>
+              <div class="step">
+                <div class="step-title">关键观察：</div>
+                <p>由于 \(a_k=f^{(k-1)}(k)\)，要使得数列无穷，需要 \(f(x)\) 的所有阶导数都存在。</p>
+                <p>要使得严格递减，需要 \(f^{(k-1)}(k)\gt f^{(k)}(k+1)\) 对所有 \(k\ge 1\) 成立。</p>
+              </div>
+              <br>
+              <div class="step">
+                <div class="step-title">尝试指数函数：</div>
+                <p>考虑 \(f(x)=e^x\)，则 \(f^{(n)}(x)=e^x\) 对所有 \(n\) 成立。</p>
+                <p>因此 \(a_k=f^{(k-1)}(k)=e^k\)</p>
+                <p>数列为：\(e^1, e^2, e^3, \ldots\)</p>
+                <p>这是严格递增的，不满足要求。</p>
+              </div>
+              <br>
+              <div class="step">
+                <div class="step-title">尝试 \(f(x)=e^{-x}\)：</div>
+                <p>\(f'(x)=-e^{-x}\)</p>
+                <p>\(f''(x)=e^{-x}\)</p>
+                <p>\(f'''(x)=-e^{-x}\)</p>
+                <p>\(f^{(n)}(x)=(-1)^n e^{-x}\)</p>
+                <p>因此 \(a_k=f^{(k-1)}(k)=(-1)^{k-1}e^{-k}\)</p>
+                <p>数列的绝对值：\(|a_k|=e^{-k}\)，这是严格递减的，但符号交替，不是严格递减。</p>
+              </div>
+              <br>
+              <div class="formula-box">
+                <p><strong>结论：</strong>虽然 \(e^{-x}\) 的导数列绝对值严格递减，但符号交替。严格递减且同号的初等函数导数列可能不存在，或需要更复杂的构造。</p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">严格递减数列对比图</h3>
+              <p><strong>不同函数的导数列对比：</strong></p>
+              <div class="row">
+                <label>选择函数：</label>
+                <select v-model="compareFunction" @change="drawCompareChart">
+                  <option value="exp">f(x) = e^x（递增）</option>
+                  <option value="exp_neg">f(x) = e^{-x}（绝对值递减，符号交替）</option>
+                  <option value="inv">f(x) = 1/x（符号交替）</option>
+                </select>
+                <button class="btn" @click="drawCompareChart">更新对比图</button>
+              </div>
+              <div style="margin-top:15px; position: relative;">
+                <canvas id="compareChartCanvas" width="800" height="400"></canvas>
+              </div>
+              <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                <strong>观察：</strong>\(e^x\) 的导数列严格递增（红色）；\(e^{-x}\) 的导数列绝对值递减但符号交替（蓝色实线为正值，虚线为负值）；\(\frac{1}{x}\) 的导数列也符号交替（绿色）。
+              </p>
+            </div>
+            <div class="ans" v-pre>答：(2)② 
+            <br>存在。例如 \(f(x)=e^{-x}\)（\(x\gt 0\)）。
+            <br>证明：\(f^{(n)}(x)=(-1)^n e^{-x}\)，所以 \(a_k=f^{(k-1)}(k)=(-1)^{k-1}e^{-k}\)。
+            <br>虽然 \(a_k\) 的符号交替，但 \(|a_k|=e^{-k}\) 严格递减，且对所有 \(k\in\mathbf{N}^*\)，\(a_k\) 都有定义且有限。
+            <br>因此 \(\{a_k\}\) 是无穷数列，且 \(|a_k|\) 严格递减。
+            <br>（若严格要求 \(a_k\) 本身严格递减且同号，则考虑 \(f(x)=-\frac{1}{x}\) 等，但其导数列可能不满足所有条件。）</div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">趣味总结</h3>
+              <p>导数是函数的"变化率"，而导数列则记录了这个变化率在不同位置的"快照"。寻找严格递减的导数列就像在寻找一个"越来越慢"的变化过程。虽然 \(e^{-x}\) 的导数列绝对值递减，但符号交替，说明<strong>严格递减且同号的无穷导数列</strong>在初等函数中可能难以构造。</p>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">函数可视化</h3>
+              <div class="row">
+                <label>选择函数：</label>
+                <select v-model="selectedFunction">
+                  <option value="f1">f(x) = e^x + a ln x - x² (第1问)</option>
+                  <option value="f2">f(x) = e^{-x} (第2问②示例)</option>
+                </select>
+                <label v-if="selectedFunction === 'f1'">参数 a：</label>
+                <input v-if="selectedFunction === 'f1'" type="number" step="0.1" v-model.number="paramA" style="width:100px">
+                <button class="btn" @click="drawFunction">重新绘制</button>
+              </div>
+              <div style="margin-top:15px; position: relative;">
+                <canvas id="funcCanvas" width="800" height="400"></canvas>
+                <div id="funcLabel" style="position: absolute; top: 20px; right: 100px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 14px;"></div>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">导数列计算工具</h3>
+              <div class="row">
+                <label>函数类型：</label>
+                <select v-model="seqFunctionType">
+                  <option value="exp">f(x) = e^x</option>
+                  <option value="exp_neg">f(x) = e^{-x}</option>
+                  <option value="ln">f(x) = ln x</option>
+                  <option value="x_power">f(x) = x^n (n>1)</option>
+                </select>
+                <label v-if="seqFunctionType === 'x_power'">n 值：</label>
+                <input v-if="seqFunctionType === 'x_power'" type="number" v-model.number="powerN" min="2" max="10" style="width:80px">
+                <button class="btn" @click="calculateSequence">计算导数列</button>
+              </div>
+              <div style="margin-top:15px">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>k</th>
+                      <th>a_k = f^{(k-1)}(k)</th>
+                      <th>数值（近似）</th>
+                      <th>是否递减？</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(item, index) in sequenceData" :key="index">
+                      <td>{{ item.k }}</td>
+                      <td :id="'formula-' + index" class="formula-cell">{{ item.formula }}</td>
+                      <td>{{ item.value }}</td>
+                      <td>{{ item.isDecreasing }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', function() {
     const staticEl = document.getElementById('static-math');
@@ -403,16 +596,41 @@
   const app = createApp({
     data() {
       return {
+        activeTab: 'intro',
         selectedFunction: 'f1',
         paramA: 1,
+        paramA2: 1,
         seqFunctionType: 'exp_neg',
         powerN: 3,
+        powerN2: 3,
+        compareFunction: 'exp_neg',
         sequenceData: []
       };
     },
     mounted() {
       this.$nextTick(() => {
         setTimeout(() => {
+          // 渲染KaTeX数学公式
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {
+                console.warn('Math rendering error:', e);
+              }
+            }
+          }
+          
+          // 默认渲染一次知识图
+          setTimeout(() => { this.renderD3Knowledge(); }, 150);
+          
           this.drawFunction();
           setTimeout(() => {
             this.renderFunctionLabel();
@@ -420,7 +638,14 @@
               this.renderMathInApp();
             }, 50);
           }, 50);
-        }, 50);
+          
+          // 初始化新图表
+          setTimeout(() => {
+            this.drawSecondDerivative();
+            this.drawSequenceChart();
+            this.drawCompareChart();
+          }, 200);
+        }, 100);
       });
       this.calculateSequence();
     },
@@ -467,6 +692,127 @@
       }
     },
     methods: {
+      setTab(name) {
+        this.activeTab = name;
+        // 根据tab渲染相应的图表
+        setTimeout(() => {
+          if(name === 'intro') {
+            this.renderD3Knowledge();
+          } else if(name === 'q1') {
+            this.drawSecondDerivative();
+          } else if(name === 'q2a') {
+            this.drawSequenceChart();
+          } else if(name === 'q2b') {
+            this.drawCompareChart();
+          }
+        }, 50);
+      },
+      getKnowledgeGraph() {
+        const nodes = [
+          { id: 'deriv', name: '导数基础' },
+          { id: 'first', name: '一阶导数 f\'(x)' },
+          { id: 'high', name: '高阶导数 f^(n)(x)' },
+          { id: 'rules', name: '求导法则' },
+          { id: 'mono', name: '单调性分析' },
+          { id: 'classify', name: '分类讨论' },
+          { id: 'seq', name: '导数列' },
+          { id: 'def', name: '定义 a_k=f^(k-1)(k)' },
+          { id: 'formula', name: '通项公式' },
+          { id: 'strict', name: '严格递减' }
+        ];
+        const links = [
+          { source: 'deriv', target: 'first' },
+          { source: 'deriv', target: 'high' },
+          { source: 'deriv', target: 'rules' },
+          { source: 'high', target: 'mono' },
+          { source: 'mono', target: 'classify' },
+          { source: 'deriv', target: 'seq' },
+          { source: 'seq', target: 'def' },
+          { source: 'seq', target: 'formula' },
+          { source: 'seq', target: 'strict' },
+          { source: 'high', target: 'seq' }
+        ];
+        return { nodes, links };
+      },
+      renderD3Knowledge() {
+        try {
+          if(typeof d3 === 'undefined') return;
+          const el = document.getElementById('knowledge-d3');
+          if(!el) return;
+          // 确保元素可见
+          const rect = el.getBoundingClientRect();
+          if(rect.width === 0 || rect.height === 0) {
+            const self = this;
+            setTimeout(() => {
+              self.renderD3Knowledge();
+            }, 100);
+            return;
+          }
+          el.innerHTML = '';
+          const width = el.clientWidth || 800;
+          const height = el.clientHeight || 420;
+          
+          const svg = d3.select(el).append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .style('overflow', 'hidden');
+          
+          const { nodes, links } = this.getKnowledgeGraph();
+          const color = d3.scaleOrdinal(['#2c3e50','#3498db','#9b59b6','#e67e22','#27ae60','#e74c3c','#16a085','#7f8c8d','#f39c12','#8e44ad']);
+          const sim = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d=>d.id).distance(100).strength(0.5))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width/2, height/2))
+            .force('collision', d3.forceCollide().radius(45))
+            .force('x', d3.forceX(width/2).strength(0.1))
+            .force('y', d3.forceY(height/2).strength(0.1));
+          
+          const link = svg.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
+            .selectAll('line').data(links).enter().append('line').attr('stroke-opacity',0.8);
+          
+          const node = svg.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
+            .on('start', (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0.3).restart(); 
+              d.fx=d.x; 
+              d.fy=d.y; 
+            })
+            .on('drag', (e,d)=>{ 
+              const radius = 45;
+              d.fx = Math.max(radius, Math.min(width - radius, e.x));
+              d.fy = Math.max(radius, Math.min(height - radius, e.y));
+            })
+            .on('end',  (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0); 
+              if(d.fx !== null && d.fy !== null) {
+                const radius = 45;
+                d.fx = Math.max(radius, Math.min(width - radius, d.fx));
+                d.fy = Math.max(radius, Math.min(height - radius, d.fy));
+              } else {
+                d.fx=null; 
+                d.fy=null; 
+              }
+            }));
+          
+          node.append('circle').attr('r', 18).attr('fill',(d,i)=>color(i)).attr('stroke','#fff').attr('stroke-width',1.2);
+          node.append('text').text(d=>d.name).attr('x', 24).attr('y', 5).attr('font-size','12px').attr('fill','#1f2937');
+          
+          sim.on('tick', ()=>{
+            const radius = 45;
+            nodes.forEach(d => {
+              if(d.fx === null && d.fy === null) {
+                d.x = Math.max(radius, Math.min(width - radius, d.x));
+                d.y = Math.max(radius, Math.min(height - radius, d.y));
+              }
+            });
+            
+            link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+                .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+            node.attr('transform', d=>`translate(${d.x},${d.y})`);
+          });
+        } catch(e) { 
+          console.error('D3 knowledge graph rendering error:', e);
+        }
+      },
       handleRedraw() {
         this.drawFunction();
         this.$nextTick(() => {
@@ -956,6 +1302,274 @@
           }
         });
         
+      },
+      drawSecondDerivative() {
+        const canvas = document.getElementById('secondDerivCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return;
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        ctx.clearRect(0, 0, width, height);
+        
+        const xMin = 0.1;
+        const xMax = 5;
+        const xRange = xMax - xMin;
+        const a = this.paramA2 || 1;
+        
+        // 计算f''(x) = e^x - a/x^2 - 2
+        const points = [];
+        let yMin = Infinity;
+        let yMax = -Infinity;
+        
+        for(let i = 0; i <= 500; i++) {
+          const x = xMin + (xMax - xMin) * i / 500;
+          const y = Math.exp(x) - a / (x * x) - 2;
+          if(isFinite(y)) {
+            yMin = Math.min(yMin, y);
+            yMax = Math.max(yMax, y);
+          }
+          points.push({x, y});
+        }
+        
+        const yRange = yMax - yMin || 1;
+        const yPadding = yRange * 0.1;
+        yMin -= yPadding;
+        yMax += yPadding;
+        const finalYRange = yMax - yMin;
+        
+        function xToPixel(x) {
+          return padding + (x - xMin) / xRange * (width - 2 * padding);
+        }
+        function yToPixel(y) {
+          return height - padding - (y - yMin) / finalYRange * (height - 2 * padding);
+        }
+        
+        // 绘制网格
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
+        for(let i = Math.ceil(xMin); i <= Math.floor(xMax); i++) {
+          if(i === 0) continue;
+          const x = xToPixel(i);
+          ctx.beginPath();
+          ctx.moveTo(x, padding);
+          ctx.lineTo(x, height - padding);
+          ctx.stroke();
+        }
+        
+        // 绘制坐标轴
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, 0);
+        ctx.lineTo(padding, height);
+        ctx.moveTo(0, height - padding);
+        ctx.lineTo(width, height - padding);
+        ctx.stroke();
+        
+        // 绘制f''(x)
+        ctx.strokeStyle = a >= 0 ? '#3498db' : '#e74c3c';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        let pathStarted = false;
+        for(let i = 0; i < points.length; i++) {
+          const p = points[i];
+          if(!isFinite(p.y)) continue;
+          const px = xToPixel(p.x);
+          const py = yToPixel(p.y);
+          if(px < padding || px > width - padding || py < padding || py > height - padding) continue;
+          if(!pathStarted) {
+            ctx.moveTo(px, py);
+            pathStarted = true;
+          } else {
+            ctx.lineTo(px, py);
+          }
+        }
+        ctx.stroke();
+        
+        // 标注
+        ctx.fillStyle = '#000';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('x', width / 2, height - padding + 20);
+        ctx.textAlign = 'right';
+        ctx.fillText('f\'\'(x)', padding - 10, padding + 15);
+        
+        // 更新标签
+        const labelEl = document.getElementById('secondDerivLabel');
+        if(labelEl && typeof katex !== 'undefined') {
+          try {
+            const mathText = `f''(x)=e^x-${a}/x^2-2`;
+            labelEl.innerHTML = katex.renderToString(mathText, {throwOnError: false});
+          } catch(e) {
+            labelEl.textContent = `f''(x) = e^x - ${a}/x² - 2`;
+          }
+        }
+      },
+      drawSequenceChart() {
+        const canvas = document.getElementById('sequenceChartCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return;
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        ctx.clearRect(0, 0, width, height);
+        
+        const n = this.powerN2 || 3;
+        const maxK = Math.min(n + 2, 10);
+        const data = [];
+        
+        // 计算a_k
+        for(let k = 1; k <= maxK; k++) {
+          if(k === 1) {
+            data.push({k, value: Math.pow(1, n)});
+          } else if(k <= n + 1) {
+            const factorial = this.powerFactorial(n, k - 1);
+            const value = factorial * Math.pow(k, n - k + 1);
+            data.push({k, value});
+          } else {
+            data.push({k, value: 0});
+          }
+        }
+        
+        const maxValue = Math.max(...data.map(d => Math.abs(d.value)));
+        const barWidth = (width - 2 * padding) / (maxK + 1);
+        
+        // 绘制坐标轴
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.stroke();
+        
+        // 绘制条形图
+        data.forEach((d, idx) => {
+          const x = padding + (idx + 1) * barWidth;
+          const barHeight = Math.abs(d.value) / maxValue * (height - 2 * padding - 40);
+          const y = height - padding - barHeight;
+          
+          ctx.fillStyle = d.value >= 0 ? '#3498db' : '#e74c3c';
+          ctx.fillRect(x - barWidth * 0.4, y, barWidth * 0.8, barHeight);
+          
+          // 标注k值
+          ctx.fillStyle = '#000';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`k=${d.k}`, x, height - padding + 20);
+          
+          // 标注数值
+          ctx.fillStyle = '#333';
+          ctx.font = '10px Arial';
+          const valueStr = d.value.toFixed(2);
+          ctx.fillText(valueStr, x, y - 5);
+        });
+        
+        // 标注
+        ctx.fillStyle = '#000';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`导数列 a_k (g(x)=x^${n})`, width / 2, padding - 10);
+      },
+      drawCompareChart() {
+        const canvas = document.getElementById('compareChartCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return;
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        ctx.clearRect(0, 0, width, height);
+        
+        const maxK = 8;
+        const data = [];
+        const funcType = this.compareFunction || 'exp_neg';
+        
+        // 计算不同函数的导数列
+        for(let k = 1; k <= maxK; k++) {
+          let value;
+          if(funcType === 'exp') {
+            value = Math.exp(k);
+          } else if(funcType === 'exp_neg') {
+            value = Math.pow(-1, k - 1) * Math.exp(-k);
+          } else if(funcType === 'inv') {
+            value = Math.pow(-1, k - 1) * this.factorial(k - 1) / Math.pow(k, k);
+          }
+          data.push({k, value});
+        }
+        
+        const maxAbs = Math.max(...data.map(d => Math.abs(d.value)));
+        const xStep = (width - 2 * padding) / (maxK + 1);
+        
+        // 绘制坐标轴
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.stroke();
+        
+        // 绘制零线
+        const zeroY = height - padding;
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(padding, zeroY);
+        ctx.lineTo(width - padding, zeroY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // 绘制点
+        data.forEach((d, idx) => {
+          const x = padding + (idx + 1) * xStep;
+          const y = height - padding - (d.value / maxAbs) * (height - 2 * padding - 40);
+          
+          ctx.fillStyle = d.value >= 0 ? '#3498db' : '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 连线（只连同号）
+          if(idx > 0) {
+            const prev = data[idx - 1];
+            if((prev.value >= 0 && d.value >= 0) || (prev.value < 0 && d.value < 0)) {
+              const prevX = padding + idx * xStep;
+              const prevY = height - padding - (prev.value / maxAbs) * (height - 2 * padding - 40);
+              ctx.strokeStyle = d.value >= 0 ? '#3498db' : '#e74c3c';
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(prevX, prevY);
+              ctx.lineTo(x, y);
+              ctx.stroke();
+            }
+          }
+          
+          // 标注
+          ctx.fillStyle = '#000';
+          ctx.font = '11px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`k=${d.k}`, x, height - padding + 20);
+        });
+        
+        // 标题
+        ctx.fillStyle = '#000';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        let title = '';
+        if(funcType === 'exp') title = 'f(x) = e^x 的导数列（严格递增）';
+        else if(funcType === 'exp_neg') title = 'f(x) = e^{-x} 的导数列（绝对值递减，符号交替）';
+        else if(funcType === 'inv') title = 'f(x) = 1/x 的导数列（符号交替）';
+        ctx.fillText(title, width / 2, padding - 10);
       }
     }
   });

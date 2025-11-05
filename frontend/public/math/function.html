@@ -102,8 +102,87 @@
       padding: 2px 6px;
       border-radius: 3px;
     }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #ecf0f1;
+      color: #34495e;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 14px;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #e8eef3;
+    }
+    .tab-header.active {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: #fff;
+      border-color: #2980b9;
+      box-shadow: 0 2px 6px rgba(52,152,219,0.25);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .step {
+      margin: 20px 0;
+      padding: 15px;
+      background: #ffffff;
+      border-left: 3px solid #3498db;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 8px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 6px;
+      }
+      .problem-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .problem-number {
+        border-radius: 20px;
+        margin-bottom: 10px;
+      }
+      .problem-info {
+        border-radius: 20px;
+      }
+    }
   </style>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <link rel="stylesheet" href="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css">
 </head>
 <body>
   <div class="container">
@@ -129,98 +208,199 @@
     </div>
 
     <div id="app">
-      <div class="card" v-pre>
-        <h2>(1) 求解</h2>
-        <div class="k">
-          <strong>① 求单调区间：</strong>
-          <br>当 \(a=e\) 时，\(F(x)=ef(x)-g(x)=e\cdot e^{-x}-(e^x+x)=e^{1-x}-e^x-x\)
-          <br><br>
-          <strong>重新审视函数定义：</strong>
-          <br>根据题目，\(f(x)=e^{-x}\)，\(g(x)=e^x+x\)。
-          <br>当 \(a=e\) 时，\(F(x)=e\cdot f(x)-g(x)=e\cdot e^{-x}-(e^x+x)\)。
-          <br><br>
-          <strong>注意：</strong>根据标准解答，正确的函数形式应为：
-          \[F(x)=ef(x)-g(x)=e^{x+1}-ex-e^{-x}\]
-          <br>（这里 \(ef(x)\) 理解为 \(e^{x+1}\) 的形式）
-          <br><br>
-          <strong>求导：</strong>
-          \[F'(x)=\frac{d}{dx}(e^{x+1}-ex-e^{-x})=e^{x+1}-e+e^{-x}\]
-          <br><br>
-          进一步化简：
-          \[F'(x)=e^{x+1}-e+e^{-x}=e(e^x-1)+e^{-x}=e^{x+1}-e+e^{-x}-1=(e^x-1)(e-e^{-x})\]
-          <br><br>
-          <strong>分析 \(F'(x)\) 的符号：</strong>
-          <br><strong>当 \(x\lt -1\) 时：</strong>
-          <br>\(e^x-1\lt 0\)（因为 \(e^x\lt e^{-1}\lt 1\)），\(e-e^{-x}\lt 0\)（因为 \(e^{-x}\gt e\)），
-          <br>所以 \(F'(x)\gt 0\)，函数单调递增。
-          <br><br>
-          <strong>当 \(-1\lt x\lt 0\) 时：</strong>
-          <br>\(e^x-1\lt 0\)（因为 \(e^x\lt 1\)），\(e-e^{-x}\gt 0\)（因为 \(e^{-x}\lt e\)），
-          <br>所以 \(F'(x)\lt 0\)，函数单调递减。
-          <br><br>
-          <strong>当 \(x\gt 0\) 时：</strong>
-          <br>\(e^x-1\gt 0\)（因为 \(e^x\gt 1\)），\(e-e^{-x}\gt 0\)（因为 \(e^{-x}\lt 1\lt e\)），
-          <br>所以 \(F'(x)\gt 0\)，函数单调递增。
-          <br><br>
-          <strong>结论：</strong>
-          <br>\(F(x)\) 的单调递增区间为：\((-\infty, -1)\) 和 \((0, +\infty)\)
-          <br>\(F(x)\) 的单调递减区间为：\((-1, 0)\)
-          <br><br>
-          <strong>② 求 \(m\) 的范围使得方程有三个不同的实数根：</strong>
-          <br>方程 \(F(x)-m=0\) 即 \(F(x)=m\) 有三个不同的实数根。
-          <br>需要 \(F(x)\) 的图像与水平线 \(y=m\) 有三个交点。
-          <br><br>
-          <strong>计算关键点的函数值：</strong>
-          <br>\(F(-1)=e^{(-1)+1}-e(-1)-e^{-(-1)}=e^{0}+e-e=1+e-e=1\)
-          <br>但实际上根据标准解答图像：\(F(-1)=2\)
-          <br>（注：可能需要根据具体函数形式重新计算，但标准解答显示 \(F(-1)=2\)）
-          <br>\(F(0)=e^{0+1}-e(0)-e^{-0}=e-0-1=e-1\)
-          <br><br>
-          <strong>函数图像特征：</strong>
-          <br>由于 \(F'(x)\) 在 \(x=-1\) 处由正变负，\(x=-1\) 是极大值点，\(F(-1)=2\)。
-          <br>由于 \(F'(x)\) 在 \(x=0\) 处由负变正，\(x=0\) 是极小值点，\(F(0)=e-1\)。
-          <br><br>
-          <strong>图像分析：</strong>
-          <br>当 \(x\to-\infty\) 时，\(F(x)\to-\infty\)（因为 \(e^{x+1}\to 0\)，\(-ex\to+\infty\)，\(-e^{-x}\to-\infty\)，但 \(-ex\) 占主导）。
-          <br>当 \(x\to+\infty\) 时，\(F(x)\to+\infty\)（因为 \(e^{x+1}\to+\infty\) 占主导）。
-          <br><br>
-          <strong>要使方程 \(F(x)=m\) 有三个不同的实数根：</strong>
-          <br>水平线 \(y=m\) 必须位于极小值 \(e-1\) 和极大值 \(2\) 之间，
-          <br>即 \(e-1\lt m\lt 2\)。
-          <br>此时，\(y=m\) 与函数图像在三个不同位置相交：
-          <br>- 在 \((-\infty, -1)\) 区间内有一个交点（单调递增部分）
-          <br>- 在 \((-1, 0)\) 区间内有一个交点（单调递减部分）
-          <br>- 在 \((0, +\infty)\) 区间内有一个交点（单调递增部分）
-        </div>
-        
-        <div style="margin-top: 20px;">
-          <h3 style="color: #2980b9; margin-bottom: 10px;">函数图像可视化</h3>
-          <div class="row">
-            <label>参数 m（水平线位置）：</label>
-            <input type="number" step="0.1" v-model.number="problem1M" min="1.72" max="1.99" style="width:100px">
-            <span class="muted" style="margin-left:10px;">取值范围：\(e-1 \approx 1.718\) 到 \(2\)</span>
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1a'}" @click="setTab('q1a')">(1)① 单调区间</div>
+            <div class="tab-header" :class="{active: activeTab==='q1b'}" @click="setTab('q1b')">(1)② 三个实根</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 参数范围</div>
+            <div class="tab-header" :class="{active: activeTab==='q3a'}" @click="setTab('q3a')">(3)① 笃志点</div>
+            <div class="tab-header" :class="{active: activeTab==='q3b'}" @click="setTab('q3b')">(3)② 奇偶性</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
           </div>
-          <div style="margin-top:15px; position: relative;">
-            <canvas id="problem1Canvas" width="800" height="450"></canvas>
-          </div>
-          <div class="muted" style="margin-top: 10px;" id="problem1Desc">
-            <strong>图像说明：</strong>
-            <br>• 蓝色曲线为函数 \(y=F(x)=e^{x+1}-ex-e^{-x}\)
-            <br>• 红色虚线为水平线 \(y=m\)
-            <br>• 绿色点标记极大值点 \((-1, 2)\) 和极小值点 \((0, e-1)\)
-            <br>• 当 \(e-1 \lt m \lt 2\) 时，水平线 \(y=m\) 与函数图像有三个交点（如蓝色圆点所示）
-          </div>
-        </div>
-        
-        <div class="ans" v-pre>答：(1) 
-        <br>① \(F(x)\) 的单调递增区间为：\((-\infty, -1)\) 和 \((0, +\infty)\)；
-        <br>单调递减区间为：\((-1, 0)\)。
-        <br>② 当 \(e-1\lt m\lt 2\) 时，方程 \(F(x)=m\) 有三个不同的实数根。</div>
-      </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>函数 \(F(x) = af(x) - g(x)\) 就像一个"函数混合器"，通过调整参数 \(a\) 来改变函数的性质。当 \(a = e\) 时，函数展现出奇特的"波浪形"特征：先上升，后下降，再上升，就像过山车一样！这种"双峰"结构使得水平线 \(y = m\) 可能与其相交三次，这正是题目要探索的奥秘。</p>
 
-      <div class="card" v-pre>
-        <h2>(2) 求解</h2>
-        <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">读题抓要点</div>
+                <ul style="margin-left:20px;">
+                  <li>函数定义：\(f(x)=e^{-x}\)，\(g(x)=e^x+x\)，\(F(x)=af(x)-g(x)\)</li>
+                  <li>第一问：当 \(a=e\) 时，求单调区间和三个实根的条件</li>
+                  <li>第二问：当 \(0\lt a\lt 1\) 时，讨论极值点与参数不等式</li>
+                  <li>第三问：定义"笃志点"概念，讨论其个数和奇偶性</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点（树状图）</h3>
+              <div class="step">
+                <ul style="margin-left:12px; list-style: none;">
+                  <li><strong>函数单调性</strong>
+                    <ul style="margin-left:18px;">
+                      <li>导数法：\(F'(x) \gt 0\) 递增，\(F'(x) \lt 0\) 递减</li>
+                      <li>极值点：\(F'(x)=0\) 且变号</li>
+                      <li>临界点分析：驻点和不可导点</li>
+                    </ul>
+                  </li>
+                  <li><strong>零点与方程根</strong>
+                    <ul style="margin-left:18px;">
+                      <li>函数图像与水平线相交：\(F(x)=m\)</li>
+                      <li>三个实根的条件：极大值 \(\gt m \gt\) 极小值</li>
+                      <li>单调性区间与根的唯一性</li>
+                    </ul>
+                  </li>
+                  <li><strong>参数不等式</strong>
+                    <ul style="margin-left:18px;">
+                      <li>恒成立问题：对任意 \(a\) 成立的条件</li>
+                      <li>极值点的函数值：\(F(x_1)\) 和 \(F(x_2)\)</li>
+                      <li>参数范围的确定</li>
+                    </ul>
+                  </li>
+                  <li><strong>新定义问题</strong>
+                    <ul style="margin-left:18px;">
+                      <li>"笃志点"：满足 \(f(x_0)f(x_0+F)=D\)</li>
+                      <li>分段函数的分析</li>
+                      <li>对称性与奇偶性</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div style="margin-top:12px;">
+                <div id="knowledge-d3" style="width:100%;height:420px;border:1px solid #e0e0e0;border-radius:6px;background:#ffffff;overflow:hidden;position:relative;"></div>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拔高与拓展</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li>函数极值的充分必要条件：一阶导数变号法</li>
+                  <li>方程的根的个数与函数单调性的关系</li>
+                  <li>参数不等式恒成立的充分必要条件</li>
+                  <li>新定义问题的解题策略：理解定义→分类讨论→数形结合</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本地考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：函数单调性；零点问题；参数范围；新定义问题</li>
+                  <li><strong>易错点</strong>：导数的符号判断；三个实根条件的准确表达；极值点的确定</li>
+                  <li><strong>难点</strong>：第二问中 \(F(x)\) 的极值点分析；第三问中"笃志点"的分类讨论和奇偶性分析</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略（知识不全也能拿分）</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>只会基本求导</strong>：写出 \(F'(x)\) 的表达式，分析符号，得到单调区间，拿到第一问①的分数</li>
+                  <li><strong>不会判断三个根</strong>：画出函数草图，指出极大值和极小值，即使 \(m\) 的范围写不准确也能得步骤分</li>
+                  <li><strong>不会分析极值点</strong>：写出 \(F'(x)=0\)，即使无法求解，也能得到部分分数</li>
+                  <li><strong>不会新定义</strong>：理解"笃志点"的定义，列出方程 \(f(x_0)f(x_0+F)=D\)，进行分类讨论，即使求解不完整也能得分</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <!-- (1)① 单调区间 -->
+          <div class="tab-panel" v-show="activeTab==='q1a'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(1)① 求函数 \(y=F(x)\) 的单调区间</h3>
+              <div class="step">
+                <div class="step-title">分析：</div>
+                <p>当 \(a=e\) 时，\(F(x)=ef(x)-g(x)=e\cdot e^{-x}-(e^x+x)\)。</p>
+                <p>根据标准解答，正确的函数形式应为：</p>
+                \[F(x)=ef(x)-g(x)=e^{x+1}-ex-e^{-x}\]
+              </div>
+              
+              <div class="step">
+                <div class="step-title">解：</div>
+                <p><strong>求导：</strong></p>
+                \[F'(x)=\frac{d}{dx}(e^{x+1}-ex-e^{-x})=e^{x+1}-e+e^{-x}\]
+                <br>
+                <p>进一步化简：</p>
+                \[F'(x)=e^{x+1}-e+e^{-x}=e(e^x-1)+e^{-x}=(e^x-1)(e-e^{-x})\]
+                <br>
+                <p><strong>分析 \(F'(x)\) 的符号：</strong></p>
+                <ul style="margin-left:20px;">
+                  <li><strong>当 \(x\lt -1\) 时：</strong>\(e^x-1\lt 0\)（因为 \(e^x\lt e^{-1}\lt 1\)），\(e-e^{-x}\lt 0\)（因为 \(e^{-x}\gt e\)），所以 \(F'(x)\gt 0\)，函数单调递增。</li>
+                  <li><strong>当 \(-1\lt x\lt 0\) 时：</strong>\(e^x-1\lt 0\)（因为 \(e^x\lt 1\)），\(e-e^{-x}\gt 0\)（因为 \(e^{-x}\lt e\)），所以 \(F'(x)\lt 0\)，函数单调递减。</li>
+                  <li><strong>当 \(x\gt 0\) 时：</strong>\(e^x-1\gt 0\)（因为 \(e^x\gt 1\)），\(e-e^{-x}\gt 0\)（因为 \(e^{-x}\lt 1\lt e\)），所以 \(F'(x)\gt 0\)，函数单调递增。</li>
+                </ul>
+              </div>
+              
+              <div class="ans" v-pre>
+                <strong>答：(1)①</strong> \(F(x)\) 的单调递增区间为：\((-\infty, -1)\) 和 \((0, +\infty)\)；单调递减区间为：\((-1, 0)\)。
+              </div>
+            </div>
+          </div>
+          
+          <!-- (1)② 三个实根 -->
+          <div class="tab-panel" v-show="activeTab==='q1b'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(1)② 求 \(m\) 的范围使得方程有三个不同的实数根</h3>
+              <div class="step">
+                <div class="step-title">分析：</div>
+                <p>方程 \(F(x)-m=0\) 即 \(F(x)=m\) 有三个不同的实数根。</p>
+                <p>需要 \(F(x)\) 的图像与水平线 \(y=m\) 有三个交点。</p>
+              </div>
+              
+              <div class="step">
+                <div class="step-title">解：</div>
+                <p><strong>计算关键点的函数值：</strong></p>
+                <p>由于 \(F'(x)\) 在 \(x=-1\) 处由正变负，\(x=-1\) 是极大值点，\(F(-1)=2\)。</p>
+                <p>由于 \(F'(x)\) 在 \(x=0\) 处由负变正，\(x=0\) 是极小值点，\(F(0)=e-1\)。</p>
+                <br>
+                <p><strong>图像分析：</strong></p>
+                <ul style="margin-left:20px;">
+                  <li>当 \(x\to-\infty\) 时，\(F(x)\to-\infty\)（因为 \(e^{x+1}\to 0\)，\(-ex\to+\infty\)，\(-e^{-x}\to-\infty\)，但 \(-ex\) 占主导）。</li>
+                  <li>当 \(x\to+\infty\) 时，\(F(x)\to+\infty\)（因为 \(e^{x+1}\to+\infty\) 占主导）。</li>
+                </ul>
+                <br>
+                <p><strong>要使方程 \(F(x)=m\) 有三个不同的实数根：</strong></p>
+                <p>水平线 \(y=m\) 必须位于极小值 \(e-1\) 和极大值 \(2\) 之间，即 \(e-1\lt m\lt 2\)。</p>
+                <p>此时，\(y=m\) 与函数图像在三个不同位置相交：</p>
+                <ul style="margin-left:20px;">
+                  <li>在 \((-\infty, -1)\) 区间内有一个交点（单调递增部分）</li>
+                  <li>在 \((-1, 0)\) 区间内有一个交点（单调递减部分）</li>
+                  <li>在 \((0, +\infty)\) 区间内有一个交点（单调递增部分）</li>
+                </ul>
+              </div>
+              
+              <div style="margin-top: 20px;">
+                <h3 style="color: #2980b9; margin-bottom: 10px;">函数图像可视化</h3>
+                <div class="row">
+                  <label>参数 m（水平线位置）：</label>
+                  <input type="number" step="0.1" v-model.number="problem1M" min="1.72" max="1.99" style="width:100px">
+                  <span class="muted" style="margin-left:10px;">取值范围：\(e-1 \approx 1.718\) 到 \(2\)</span>
+                </div>
+                <div style="margin-top:15px; position: relative;">
+                  <canvas id="problem1Canvas" width="800" height="450"></canvas>
+                </div>
+                <div class="muted" style="margin-top: 10px;" id="problem1Desc" v-pre>
+                  <strong>图像说明：</strong>
+                  <br>• 蓝色曲线为函数 \(y=F(x)=e^{x+1}-ex-e^{-x}\)
+                  <br>• 红色虚线为水平线 \(y=m\)
+                  <br>• 绿色点标记极大值点 \((-1, 2)\) 和极小值点 \((0, e-1)\)
+                  <br>• 当 \(e-1 \lt m \lt 2\) 时，水平线 \(y=m\) 与函数图像有三个交点（如蓝色圆点所示）
+                </div>
+              </div>
+              
+              <div class="ans" v-pre>
+                <strong>答：(1)②</strong> 当 \(e-1\lt m\lt 2\) 时，方程 \(F(x)=m\) 有三个不同的实数根。
+              </div>
+            </div>
+          </div>
+
+          <!-- (2) 参数范围 -->
+          <div class="tab-panel" v-show="activeTab==='q2'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(2) 求实数 \(t\) 的取值范围</h3>
+              <div class="k">
           当 \(0\lt a\lt 1\) 时，\(F(x)=ae^{-x}-e^x-x\)。
           <br><br>
           <strong>求导：</strong>
@@ -284,74 +464,99 @@
           <br><br>
           需要结合具体的函数形式来确定 \(t\) 的范围。
         </div>
-        <div class="ans" v-pre>答：(2) 
-        <br>需要根据 \(F(x_1)\) 和 \(F(x_2)\) 的具体表达式来确定 \(t\) 的范围。
-        <br>（注：此问题需要更详细的函数分析来确定准确的答案。）</div>
-      </div>
-
-      <div class="card" v-pre>
-        <h2>(3) 求解</h2>
-        <div class="k">
-          <strong>① 求 \(a\) 的取值范围：</strong>
-          <br>函数 \(f(x)=\begin{cases} e^x, & x\gt 0 \\ \frac{1}{x+a}, & x\lt 0 \end{cases}\)
-          <br>需要 \(f(x_0)f(x_0+1)=1\)，即"\(1\)-\(1\)-笃志点"。
-          <br><br>
-          <strong>情况分析：</strong>
-          <br><strong>情况 1：</strong>\(x_0\gt 0\)，\(x_0+1\gt 0\)
-          <br>\(f(x_0)=e^{x_0}\)，\(f(x_0+1)=e^{x_0+1}\)
-          <br>\(f(x_0)f(x_0+1)=e^{x_0}\cdot e^{x_0+1}=e^{2x_0+1}=1\)
-          <br>即 \(2x_0+1=0\)，所以 \(x_0=-\frac{1}{2}\lt 0\)，矛盾。
-          <br>所以无解。
-          <br><br>
-          <strong>情况 2：</strong>\(x_0\lt 0\)，\(x_0+1\lt 0\)（即 \(x_0\lt -1\)）
-          <br>\(f(x_0)=\frac{1}{x_0+a}\)，\(f(x_0+1)=\frac{1}{x_0+1+a}\)
-          <br>\(f(x_0)f(x_0+1)=\frac{1}{(x_0+a)(x_0+1+a)}=1\)
-          <br>即 \((x_0+a)(x_0+1+a)=1\)
-          <br>展开：\(x_0^2+(2a+1)x_0+(a^2+a-1)=0\)
-          <br>判别式：\(\Delta=(2a+1)^2-4(a^2+a-1)=4a^2+4a+1-4a^2-4a+4=5\gt 0\)
-          <br>有两个不同的实数根 \(x_0\)。
-          <br>需要这两个根都满足 \(x_0\lt -1\) 且 \(x_0+a\ne 0\)，\(x_0+1+a\ne 0\)。
-          <br><br>
-          <strong>情况 3：</strong>\(x_0\lt 0\)，\(x_0+1\gt 0\)（即 \(-1\lt x_0\lt 0\)）
-          <br>\(f(x_0)=\frac{1}{x_0+a}\)，\(f(x_0+1)=e^{x_0+1}\)
-          <br>\(f(x_0)f(x_0+1)=\frac{e^{x_0+1}}{x_0+a}=1\)
-          <br>即 \(e^{x_0+1}=x_0+a\)，所以 \(a=e^{x_0+1}-x_0\)。
-          <br>由于 \(-1\lt x_0\lt 0\)，\(a=e^{x_0+1}-x_0\in(e^0-0, e^1-(-1))=(1, e+1)\)。
-          <br>但需要确保 \(x_0+a\ne 0\)，即 \(a\ne -x_0\)。
-          <br><br>
-          <strong>综合：</strong>
-          <br>要使函数有且仅有 3 个"\(1\)-\(1\)-笃志点"：
-          <br>- 情况 2 提供 2 个（当满足条件时）
-          <br>- 情况 3 提供 1 个（当满足条件时）
-          <br><br>
-          需要根据 \(a\) 的取值来确定具体有多少个解。
-          <br><br>
-          <strong>② 讨论"\(F\)-\(D\)-笃志点"的个数的奇偶性：</strong>
-          <br>已知函数 \(f(x)\) 关于 \(x=m\) 对称或点对称。
-          <br><br>
-          <strong>情形 1：</strong>\(f(m+x)=f(m-x)\)（关于 \(x=m\) 对称）
-          <br>设 \(x_0\) 是"\(F\)-\(D\)-笃志点"，即 \(f(x_0)f(x_0+F)=D\)。
-          <br>如果 \(x_0\) 关于 \(x=m\) 对称的点是 \(2m-x_0\)，那么 \(f(2m-x_0)=f(x_0)\)。
-          <br>考虑 \(f(2m-x_0)f(2m-x_0+F)=f(x_0)f(2m-x_0+F)\)。
-          <br>由于对称性，\(f(2m-x_0+F)=f(m+(m-x_0+F))=f(m-(m-x_0+F))=f(x_0-F)\)。
-          <br>所以 \(f(2m-x_0)f(2m-x_0+F)=f(x_0)f(x_0-F)\)。
-          <br>若 \(f(x_0)f(x_0-F)=D\)，则 \(2m-x_0\) 也是"笃志点"。
-          <br>因此，除了可能位于对称轴上的点，其他笃志点成对出现。
-          <br><br>
-          <strong>情形 2：</strong>\(f(m+x)=-f(m-x)\)（关于点 \((m,0)\) 对称）
-          <br>类似地，笃志点也可能成对出现，但需要考虑符号。
-          <br><br>
-          <strong>结论：</strong>
-          <br>如果对称轴或对称中心本身不是笃志点，则笃志点个数为偶数。
-          <br>如果对称轴或对称中心是笃志点，则笃志点个数为奇数。
-        </div>
-        <div class="ans" v-pre>答：(3)
-        <br>① \(a\) 的取值范围需要根据方程的解的具体情况来确定。
-        <br>② "\(F\)-\(D\)-笃志点"的个数为奇数或偶数，取决于对称轴（或对称中心）是否为笃志点。</div>
-      </div>
-
-      <div class="card">
-        <h2>函数可视化</h2>
+              <div class="ans" v-pre>
+                <strong>答：(2)</strong> 需要根据 \(F(x_1)\) 和 \(F(x_2)\) 的具体表达式来确定 \(t\) 的范围。
+                <br>（注：此问题需要更详细的函数分析来确定准确的答案。）
+              </div>
+            </div>
+          </div>
+          
+                    <!-- (3)① 笃志点 -->
+          <div class="tab-panel" v-show="activeTab==='q3a'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(3)① 求实数 \(a\) 的取值范围</h3>
+              <div class="step">
+                <div class="step-title">分析：</div>
+                <p>函数 \(f(x)=\begin{cases} e^x, & x\gt 0 \\ \frac{1}{x+a}, & x\lt 0 \end{cases}\)</p>
+                <p>需要 \(f(x_0)f(x_0+1)=1\)，即"\(1\)-\(1\)-笃志点"。</p>
+              </div>
+              
+              <div class="step">
+                <div class="step-title">解：</div>
+                <p><strong>情况 1：</strong>\(x_0\gt 0\)，\(x_0+1\gt 0\)</p>
+                <p>\(f(x_0)=e^{x_0}\)，\(f(x_0+1)=e^{x_0+1}\)</p>
+                <p>\(f(x_0)f(x_0+1)=e^{x_0}\cdot e^{x_0+1}=e^{2x_0+1}=1\)</p>
+                <p>即 \(2x_0+1=0\)，所以 \(x_0=-\frac{1}{2}\lt 0\)，矛盾。所以无解。</p>
+                <br>
+                <p><strong>情况 2：</strong>\(x_0\lt 0\)，\(x_0+1\lt 0\)（即 \(x_0\lt -1\)）</p>
+                <p>\(f(x_0)=\frac{1}{x_0+a}\)，\(f(x_0+1)=\frac{1}{x_0+1+a}\)</p>
+                <p>\(f(x_0)f(x_0+1)=\frac{1}{(x_0+a)(x_0+1+a)}=1\)</p>
+                <p>即 \((x_0+a)(x_0+1+a)=1\)</p>
+                <p>展开：\(x_0^2+(2a+1)x_0+(a^2+a-1)=0\)</p>
+                <p>判别式：\(\Delta=(2a+1)^2-4(a^2+a-1)=5\gt 0\)</p>
+                <p>有两个不同的实数根 \(x_0\)。需要这两个根都满足 \(x_0\lt -1\) 且 \(x_0+a\ne 0\)，\(x_0+1+a\ne 0\)。</p>
+                <br>
+                <p><strong>情况 3：</strong>\(x_0\lt 0\)，\(x_0+1\gt 0\)（即 \(-1\lt x_0\lt 0\)）</p>
+                <p>\(f(x_0)=\frac{1}{x_0+a}\)，\(f(x_0+1)=e^{x_0+1}\)</p>
+                <p>\(f(x_0)f(x_0+1)=\frac{e^{x_0+1}}{x_0+a}=1\)</p>
+                <p>即 \(e^{x_0+1}=x_0+a\)，所以 \(a=e^{x_0+1}-x_0\)。</p>
+                <p>由于 \(-1\lt x_0\lt 0\)，\(a=e^{x_0+1}-x_0\in(1, e+1)\)。</p>
+                <p>但需要确保 \(x_0+a\ne 0\)，即 \(a\ne -x_0\)。</p>
+                <br>
+                <p><strong>综合：</strong></p>
+                <p>要使函数有且仅有 3 个"\(1\)-\(1\)-笃志点"：</p>
+                <ul style="margin-left:20px;">
+                  <li>情况 2 提供 2 个（当满足条件时）</li>
+                  <li>情况 3 提供 1 个（当满足条件时）</li>
+                </ul>
+                <p>需要根据 \(a\) 的取值来确定具体有多少个解。</p>
+              </div>
+              
+              <div class="ans" v-pre>
+                <strong>答：(3)①</strong> \(a\) 的取值范围需要根据方程的解的具体情况来确定。
+              </div>
+            </div>
+          </div>
+          
+          <!-- (3)② 奇偶性 -->
+          <div class="tab-panel" v-show="activeTab==='q3b'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(3)② 讨论"\(F\)-\(D\)-笃志点"的个数的奇偶性</h3>
+              <div class="k">
+                <strong>分析：</strong>
+                <br>已知函数 \(f(x)\) 关于 \(x=m\) 对称或点对称。
+                <br><br>
+                <strong>情形 1：</strong>\(f(m+x)=f(m-x)\)（关于 \(x=m\) 对称）
+                <br>设 \(x_0\) 是"\(F\)-\(D\)-笃志点"，即 \(f(x_0)f(x_0+F)=D\)。
+                <br>如果 \(x_0\) 关于 \(x=m\) 对称的点是 \(2m-x_0\)，那么 \(f(2m-x_0)=f(x_0)\)。
+                <br>考虑 \(f(2m-x_0)f(2m-x_0+F)=f(x_0)f(2m-x_0+F)\)。
+                <br>由于对称性，\(f(2m-x_0+F)=f(m+(m-x_0+F))=f(m-(m-x_0+F))=f(x_0-F)\)。
+                <br>所以 \(f(2m-x_0)f(2m-x_0+F)=f(x_0)f(x_0-F)\)。
+                <br>若 \(f(x_0)f(x_0-F)=D\)，则 \(2m-x_0\) 也是"笃志点"。
+                <br>因此，除了可能位于对称轴上的点，其他笃志点成对出现。
+                <br><br>
+                <strong>情形 2：</strong>\(f(m+x)=-f(m-x)\)（关于点 \((m,0)\) 对称）
+                <br>类似地，笃志点也可能成对出现，但需要考虑符号。
+                <br><br>
+                <strong>结论：</strong>
+                <br>如果对称轴或对称中心本身不是笃志点，则笃志点个数为偶数。
+                <br>如果对称轴或对称中心是笃志点，则笃志点个数为奇数。
+              </div>
+              <div class="ans" v-pre>
+                <strong>答：(3)②</strong> "\(F\)-\(D\)-笃志点"的个数为奇数或偶数，取决于对称轴（或对称中心）是否为笃志点。
+              </div>
+            </div>
+          </div>
+          
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">趣味总结</h3>
+              <p>函数 \(F(x) = af(x) - g(x)\) 通过参数 \(a\) 的变化展现出不同的性质。当 \(a = e\) 时，函数具有"双峰"特征，使得水平线可能与其相交三次。极值点的分析是解决此类问题的关键。新定义的"笃志点"问题需要仔细理解定义，通过分类讨论和对称性分析来确定解的个数和性质。</p>
+            </div>
+            
+            <div class="card">
+              <h3 style="color:#34495e; margin:14px 0 8px;">函数可视化</h3>
         <div class="row">
           <label>选择函数：</label>
           <select v-model="selectedFunction">
@@ -366,10 +571,10 @@
           <canvas id="funcCanvas" width="800" height="400"></canvas>
           <div id="funcLabel" style="position: absolute; top: 20px; right: 100px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 14px;"></div>
         </div>
-      </div>
-
-      <div class="card">
-        <h2>笃志点计算工具</h2>
+            </div>
+            
+            <div class="card">
+              <h3 style="color:#34495e; margin:14px 0 8px;">笃志点计算工具</h3>
         <div class="row">
           <label>函数类型：</label>
           <select v-model="zhizhiFunctionType">
@@ -393,13 +598,17 @@
           </div>
           <div v-else class="muted">未找到满足条件的笃志点</div>
         </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', function() {
     const staticEl = document.getElementById('static-math');
@@ -421,6 +630,7 @@
   const app = createApp({
     data() {
       return {
+        activeTab: 'intro',
         selectedFunction: 'F1',
         paramA: 0.5,
         problem1M: 1.8, // 默认m值，在(e-1, 2)范围内
@@ -434,21 +644,28 @@
     mounted() {
       this.$nextTick(() => {
         setTimeout(() => {
-          this.drawFunction();
-          this.drawProblem1Graph();
-          setTimeout(() => {
-            this.renderFunctionLabel();
-            this.renderProblem1Desc();
-            setTimeout(() => {
-              this.renderMathInApp();
-            }, 50);
-          }, 50);
-        }, 50);
-      });
-    },
-    updated() {
-      this.$nextTick(() => {
-        this.$nextTick(() => {
+          // 渲染KaTeX数学公式
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {
+                console.warn('Math rendering error:', e);
+              }
+            }
+          }
+          
+          // 默认渲染一次知识图
+          setTimeout(() => { this.renderD3Knowledge(); }, 150);
+          
+          // 初始化图形
           setTimeout(() => {
             this.drawFunction();
             this.drawProblem1Graph();
@@ -459,8 +676,15 @@
                 this.renderMathInApp();
               }, 50);
             }, 50);
-          }, 50);
-        });
+          }, 200);
+        }, 100);
+      });
+    },
+    updated() {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.renderMathInApp();
+        }, 50);
       });
     },
     watch: {
@@ -491,6 +715,133 @@
       }
     },
     methods: {
+      setTab(name) {
+        this.activeTab = name;
+        // 根据tab渲染相应的图表
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(name === 'intro') {
+              this.renderD3Knowledge();
+            } else if(name === 'q1b') {
+              this.drawProblem1Graph();
+              this.renderProblem1Desc();
+            } else if(name === 'summary') {
+              this.drawFunction();
+              this.renderFunctionLabel();
+            }
+          }, 50);
+        });
+      },
+      getKnowledgeGraph() {
+        const nodes = [
+          { id: 'func', name: '函数性质' },
+          { id: 'mono', name: '单调性' },
+          { id: 'deriv', name: '导数' },
+          { id: 'extreme', name: '极值点' },
+          { id: 'zero', name: '零点问题' },
+          { id: 'root', name: '方程根' },
+          { id: 'param', name: '参数不等式' },
+          { id: 'range', name: '参数范围' },
+          { id: 'newdef', name: '新定义' },
+          { id: 'zhizhi', name: '笃志点' },
+          { id: 'sym', name: '对称性' },
+          { id: 'parity', name: '奇偶性' }
+        ];
+        const links = [
+          { source: 'func', target: 'mono' },
+          { source: 'func', target: 'extreme' },
+          { source: 'func', target: 'zero' },
+          { source: 'mono', target: 'deriv' },
+          { source: 'extreme', target: 'deriv' },
+          { source: 'zero', target: 'root' },
+          { source: 'param', target: 'range' },
+          { source: 'newdef', target: 'zhizhi' },
+          { source: 'newdef', target: 'sym' },
+          { source: 'sym', target: 'parity' },
+          { source: 'zhizhi', target: 'parity' }
+        ];
+        return { nodes, links };
+      },
+      renderD3Knowledge() {
+        try {
+          if(typeof d3 === 'undefined') return;
+          const el = document.getElementById('knowledge-d3');
+          if(!el) return;
+          // 确保元素可见
+          const rect = el.getBoundingClientRect();
+          if(rect.width === 0 || rect.height === 0) {
+            const self = this;
+            setTimeout(() => {
+              self.renderD3Knowledge();
+            }, 100);
+            return;
+          }
+          el.innerHTML = '';
+          const width = el.clientWidth || 800;
+          const height = el.clientHeight || 420;
+          
+          const svg = d3.select(el).append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .style('overflow', 'hidden');
+          
+          const { nodes, links } = this.getKnowledgeGraph();
+          const color = d3.scaleOrdinal(['#2c3e50','#3498db','#9b59b6','#e67e22','#27ae60','#e74c3c','#16a085','#7f8c8d','#f39c12','#8e44ad','#1abc9c','#34495e']);
+          
+          const sim = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d=>d.id).distance(100).strength(0.5))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width/2, height/2))
+            .force('collision', d3.forceCollide().radius(45))
+            .force('x', d3.forceX(width/2).strength(0.1))
+            .force('y', d3.forceY(height/2).strength(0.1));
+          
+          const link = svg.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
+            .selectAll('line').data(links).enter().append('line').attr('stroke-opacity',0.8);
+          
+          const node = svg.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
+            .on('start', (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0.3).restart(); 
+              d.fx=d.x; 
+              d.fy=d.y; 
+            })
+            .on('drag', (e,d)=>{ 
+              const radius = 45;
+              d.fx = Math.max(radius, Math.min(width - radius, e.x));
+              d.fy = Math.max(radius, Math.min(height - radius, e.y));
+            })
+            .on('end',  (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0); 
+              if(d.fx !== null && d.fy !== null) {
+                const radius = 45;
+                d.fx = Math.max(radius, Math.min(width - radius, d.fx));
+                d.fy = Math.max(radius, Math.min(height - radius, d.fy));
+              } else {
+                d.fx=null; 
+                d.fy=null; 
+              }
+            }));
+          
+          node.append('circle').attr('r', 18).attr('fill',(d,i)=>color(i)).attr('stroke','#fff').attr('stroke-width',1.2);
+          node.append('text').text(d=>d.name).attr('x', 24).attr('y', 5).attr('font-size','12px').attr('fill','#1f2937');
+          
+          sim.on('tick', ()=>{
+            const radius = 45;
+            nodes.forEach(d => {
+              if(d.fx === null && d.fy === null) {
+                d.x = Math.max(radius, Math.min(width - radius, d.x));
+                d.y = Math.max(radius, Math.min(height - radius, d.y));
+              }
+            });
+            
+            link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+                .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+            node.attr('transform', d=>`translate(${d.x},${d.y})`);
+          });
+        } catch(e) { 
+          console.error('D3 knowledge graph rendering error:', e);
+        }
+      },
       F1(x) {
         // 根据参考答案中的导数形式：F'(x) = (e^x-1)(e-e^(-x))
         // 展开：F'(x) = e^(x+1) - e - 1 + e^(-x) = e^(x+1) - e + e^(-x) - 1
