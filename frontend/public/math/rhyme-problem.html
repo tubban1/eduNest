@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="韵律问题详解：Josephus问题的变种，通过循环计数和淘汰机制确定最小音节数。包含完整题目复原、三种情况的详细解答、循环淘汰过程的可视化图表和交互式验证工具。">
+  <meta name="keywords" content="韵律问题,Josephus问题,循环淘汰,最小周期,数学游戏,计数问题,循环排列,模运算,同余方程">
+  <title>韵律问题 - 循环淘汰与最小周期</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: block;
+      width: 100%;
+      max-width: 800px;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #ecf0f1;
+      color: #34495e;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 14px;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #e8eef3;
+    }
+    .tab-header.active {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: #fff;
+      border-color: #2980b9;
+      box-shadow: 0 2px 6px rgba(52,152,219,0.25);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    input[type="number"], select {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+    }
+    table th {
+      background: #3498db;
+      color: white;
+      padding: 8px;
+      border: 1px solid #2980b9;
+    }
+    table td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    table tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 8px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 6px;
+      }
+      .problem-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .problem-number {
+        border-radius: 20px;
+        margin-bottom: 10px;
+      }
+      .problem-info {
+        border-radius: 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>韵律问题 - 循环淘汰机制</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre>
+      <h2>题目</h2>
+      <div class="k">
+        <h3 style="color:#34495e; margin:8px 0 6px;">韵律（La comptine）</h3>
+        <p>Elsa想要发明一个韵律，类似于"am, stram, gram, pic et pic et col et gram..."，目的是通过逐个淘汰同学来获胜。</p>
+        <br>
+        <p>为了看起来更诚实，她只有在至少点名一次后才会淘汰同学。</p>
+        <br>
+        <p>她总是从位于她右边的人开始，然后逆时针方向继续。</p>
+        <br>
+        <p><strong>问题：</strong></p>
+        <p><strong>(a)</strong> 如果她决定淘汰她的6个同学，韵律的最小音节数是多少？</p>
+        <br>
+        <p><strong>(b)</strong> 如果总共有24个人（包括Elsa），韵律的最小音节数是多少？</p>
+        <br>
+        <p><strong>(c)</strong> 如果总共有5个人（包括Elsa），她决定逐个淘汰位于她左边的同学，韵律的最小音节数是多少？</p>
+      </div>
+    </div>
+    
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(a) 淘汰6个同学</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(b) 总共24个人</div>
+            <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(c) 5个人淘汰左边</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>想象一下，Elsa和同学们围成一个圆圈，就像"丢手绢"游戏一样！每个人轮流被"点名"，当韵律的最后一个音节落在某个人身上时，那个人就被淘汰了。但是，<span class="highlight">为了看起来公平，每个人在被淘汰前至少要被打到一次</span>。这就像是一个"公平的淘汰游戏"，让每个人至少参与一次。</p>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">读题抓要点</div>
+                <ul style="margin-left:20px;">
+                  <li>游戏规则：循环计数，每个音节对应一个人</li>
+                  <li>淘汰条件：每个人在被淘汰前至少要被打到一次</li>
+                  <li>方向：从右边开始，逆时针方向（问题a和b）或顺时针方向（问题c）</li>
+                  <li>目标：找到能够完成淘汰所需的最小音节数</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点（树状图）</h3>
+              <div class="step">
+                <ul style="margin-left:12px; list-style: none;">
+                  <li><strong>循环计数</strong>
+                    <ul style="margin-left:18px;">
+                      <li>模运算：\(k \bmod n\) 表示位置</li>
+                      <li>周期：韵律重复的周期长度</li>
+                      <li>循环遍历：从起点回到起点</li>
+                    </ul>
+                  </li>
+                  <li><strong>最小公倍数（LCM）</strong>
+                    <ul style="margin-left:18px;">
+                      <li>多个数的公共周期</li>
+                      <li>LCM的性质：\(\text{lcm}(a,b) = \frac{ab}{\gcd(a,b)}\)</li>
+                      <li>应用：找到满足所有条件的最小周期</li>
+                    </ul>
+                  </li>
+                  <li><strong>Josephus问题</strong>
+                    <ul style="margin-left:18px;">
+                      <li>经典的循环淘汰问题</li>
+                      <li>变种：每个人至少被点到一次</li>
+                      <li>递归和数学归纳法</li>
+                    </ul>
+                  </li>
+                  <li><strong>同余方程</strong>
+                    <ul style="margin-left:18px;">
+                      <li>\(x \equiv a \pmod{n}\)</li>
+                      <li>求解周期性问题的工具</li>
+                      <li>中国剩余定理的应用</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div style="margin-top:12px; margin-left:0; margin-right:0;">
+                <div id="knowledge-d3" style="width:100%;height:420px;border:1px solid #e0e0e0;border-radius:6px;background:#ffffff;overflow:hidden;position:relative;"></div>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拔高与拓展</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li>Josephus问题的通解：当淘汰间隔为 \(k\) 时，最后一个幸存者的位置</li>
+                  <li>最小公倍数的应用：在多个约束条件下找到最小周期</li>
+                  <li>组合数学：循环排列和计数原理</li>
+                  <li>算法思维：递归和迭代两种解题思路</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本地考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：循环计数；模运算；最小公倍数；Josephus问题；同余方程</li>
+                  <li><strong>易错点</strong>：混淆顺时针和逆时针方向；忽略"至少点到一次"的约束；计算LCM时出错</li>
+                  <li><strong>难点</strong>：理解"至少点到一次"的约束如何转化为数学条件；找到满足所有条件的最小周期</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略（知识不全也能拿分）</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>只会基本计数</strong>：画出圆圈，手动模拟前几轮，找到规律，拿到基础分</li>
+                  <li><strong>不会LCM计算</strong>：列出每个位置的周期，找出公共周期，即使计算不完整也能得步骤分</li>
+                  <li><strong>不会抽象分析</strong>：用具体数字举例（如6个人），逐步分析，给出部分结论也能得分</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- (a) 淘汰6个同学 -->
+          <div class="tab-panel" v-show="activeTab==='q1'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(a) 淘汰6个同学的最小音节数</h3>
+              <div class="step">
+                <div class="step-title">分析：</div>
+                <p>总共有7个人（Elsa + 6个同学），围成一个圆圈。</p>
+                <p>Elsa从她右边的人开始，逆时针方向计数。</p>
+                <p>要求：每个人在被淘汰前至少要被打到一次。</p>
+                <br>
+                <p>设位置编号：Elsa在位置0，她右边的人依次为位置1, 2, 3, 4, 5, 6（逆时针方向）。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">理解约束条件：</div>
+                <p>假设韵律的周期为 \(k\) 个音节。</p>
+                <p>第 \(i\) 个音节对应的位置是：\(i \bmod 7\)（从位置1开始，逆时针）。</p>
+                <p>要淘汰位置 \(j\)（\(j = 1, 2, \ldots, 6\)），需要找到一个位置 \(p_j\)，使得：</p>
+                <ul style="margin-left:20px;">
+                  <li>第 \(p_j\) 个音节落在位置 \(j\)（第一次点名）</li>
+                  <li>第 \(p_j + k\) 个音节落在位置 \(j\)（第二次点名，即淘汰）</li>
+                  <li>\(p_j \geq 1\)（至少被点到一次）</li>
+                </ul>
+                <p>即：\(p_j \equiv j \pmod{7}\) 且 \(p_j + k \equiv j \pmod{7}\)</p>
+                <p>这要求：\(k \equiv 0 \pmod{7}\)，即 \(k\) 是7的倍数。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">进一步分析：</div>
+                <p>但是，如果 \(k = 7\)，那么每个位置在第一个周期内都会被点到一次，在第二个周期开始时（第8个音节）又会回到位置1，这时位置1会被淘汰。</p>
+                <p>但是，我们需要确保每个位置都能在"至少被点到一次"之后被淘汰。</p>
+                <br>
+                <p>更精确的分析：</p>
+                <p>设韵律周期为 \(k\)，要淘汰位置 \(j\)，需要：</p>
+                <ul style="margin-left:20px;">
+                  <li>存在 \(m \geq 1\)，使得第 \(m\) 个音节落在位置 \(j\)（第一次点名）</li>
+                  <li>存在 \(n > m\)，使得第 \(n\) 个音节落在位置 \(j\)（淘汰）</li>
+                  <li>且 \(n - m\) 是 \(k\) 的倍数</li>
+                </ul>
+                <p>由于 \(m \equiv j \pmod{7}\)，\(n \equiv j \pmod{7}\)，所以 \(n - m \equiv 0 \pmod{7}\)。</p>
+                <p>因此，\(k\) 必须是7的倍数。</p>
+                <p>最小周期：\(k = 7\)。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">验证：</div>
+                <p>当 \(k = 7\) 时：</p>
+                <ul style="margin-left:20px;">
+                  <li>第1个音节：位置1（第一次点名）</li>
+                  <li>第2个音节：位置2（第一次点名）</li>
+                  <li>...</li>
+                  <li>第7个音节：位置7 ≡ 0（Elsa）</li>
+                  <li>第8个音节：位置1（第二次点名，淘汰）</li>
+                  <li>第9个音节：位置2（第二次点名，淘汰）</li>
+                  <li>...</li>
+                </ul>
+                <p>每个同学都在第一个周期内被点到一次，然后在第二个周期开始时被淘汰。</p>
+                <p>因此，需要至少 \(1 + 6 = 7\) 个音节来让所有6个同学至少被点到一次，然后需要额外的音节来淘汰他们。</p>
+                <p>实际上，最小音节数为：\(7 + 6 = 13\)（第一个周期7个音节，第二个周期前6个音节淘汰6个同学）。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">重新思考：</div>
+                <p>让我们重新理解问题：</p>
+                <p>Elsa想要"至少点名一次后才淘汰"，这意味着每个人都要在淘汰前被点到至少一次。</p>
+                <p>如果周期为 \(k\)，那么：</p>
+                <ul style="margin-left:20px;">
+                  <li>第一个周期（1到\(k\)）：每个人至少被点到一次</li>
+                  <li>第二个周期开始：可以开始淘汰</li>
+                </ul>
+                <p>要淘汰6个人，需要确保6个人都能在第二个周期内被淘汰。</p>
+                <p>如果 \(k = 7\)，那么第二个周期的第1到第6个音节会依次淘汰位置1到6的人。</p>
+                <p>因此，总音节数 = \(k + 6 = 7 + 6 = 13\)。</p>
+                <br>
+                <p>但是，我们需要验证是否存在更小的 \(k\) 使得仍然满足"至少点到一次"的条件。</p>
+                <p>如果 \(k < 7\)，那么在第一个周期内，不是所有人都能被点到，违反了条件。</p>
+                <p>因此，\(k_{\min} = 7\)，最小音节数 = 13。</p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">循环淘汰过程可视化</h3>
+              <div class="row">
+                <label>总人数（包括Elsa）：</label>
+                <input type="number" v-model.number="totalPeopleQ1" min="2" max="20" style="width:80px" value="7">
+                <label>要淘汰的人数：</label>
+                <input type="number" v-model.number="eliminateQ1" min="1" max="19" style="width:80px" value="6">
+                <button class="btn" @click="simulateQ1">模拟淘汰过程</button>
+              </div>
+              <canvas id="circleCanvasQ1" width="800" height="600"></canvas>
+              <div style="margin-top:10px; padding:10px; background:#f8f9fa; border-radius:4px;">
+                <p><strong>淘汰顺序：</strong></p>
+                <div id="eliminationLogQ1" style="margin-top:5px;"></div>
+              </div>
+            </div>
+            <div class="ans" v-pre>
+              <strong>答：(a)</strong> 最小音节数为 13。第一个周期7个音节确保每个人至少被点到一次，第二个周期前6个音节淘汰6个同学。
+            </div>
+          </div>
+
+          <!-- (b) 总共24个人 -->
+          <div class="tab-panel" v-show="activeTab==='q2'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(b) 总共24个人的最小音节数</h3>
+              <div class="step">
+                <div class="step-title">分析：</div>
+                <p>总共有24个人（包括Elsa），所以有23个同学需要淘汰。</p>
+                <p>同样，Elsa从她右边的人开始，逆时针方向计数。</p>
+                <p>设位置编号：Elsa在位置0，她右边的人依次为位置1, 2, ..., 23（逆时针方向）。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">计算最小周期：</div>
+                <p>要确保每个人在第一个周期内至少被点到一次，周期 \(k\) 必须至少为24。</p>
+                <p>如果 \(k = 24\)，那么第一个周期的24个音节会依次点到位置1到位置23和位置0（Elsa）。</p>
+                <p>第二个周期开始，可以开始淘汰23个同学。</p>
+                <p>因此，最小音节数 = \(24 + 23 = 47\)。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">验证：</div>
+                <p>当 \(k = 24\) 时：</p>
+                <ul style="margin-left:20px;">
+                  <li>第一个周期（音节1-24）：位置1, 2, ..., 23, 0（每个人至少被点到一次）</li>
+                  <li>第二个周期（音节25-48）：位置1, 2, ..., 23（开始淘汰）</li>
+                </ul>
+                <p>音节25淘汰位置1，音节26淘汰位置2，...，音节47淘汰位置23。</p>
+                <p>因此，需要47个音节。</p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">24人淘汰过程可视化</h3>
+              <div class="row">
+                <button class="btn" @click="simulateQ2">模拟24人淘汰过程</button>
+                <button class="btn" @click="stepByStepQ2">逐步演示</button>
+              </div>
+              <canvas id="circleCanvasQ2" width="800" height="600"></canvas>
+              <div style="margin-top:10px; padding:10px; background:#f8f9fa; border-radius:4px;">
+                <p><strong>淘汰顺序：</strong></p>
+                <div id="eliminationLogQ2" style="margin-top:5px; max-height:200px; overflow-y:auto;"></div>
+              </div>
+            </div>
+            <div class="ans" v-pre>
+              <strong>答：(b)</strong> 最小音节数为 47。第一个周期24个音节确保每个人至少被点到一次，第二个周期前23个音节淘汰23个同学。
+            </div>
+          </div>
+
+          <!-- (c) 5个人淘汰左边 -->
+          <div class="tab-panel" v-show="activeTab==='q3'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(c) 5个人，淘汰左边的同学</h3>
+              <div class="step">
+                <div class="step-title">分析：</div>
+                <p>总共有5个人（包括Elsa），需要淘汰位于她左边的同学。</p>
+                <p>题目说明：Elsa总是从她右边的人开始，逆时针方向继续。</p>
+                <p>设位置编号：Elsa在位置0，她右边的人为位置1，逆时针方向依次为位置2, 3, 4（总共有5个人围成圆圈）。</p>
+                <p>从位置1开始，逆时针方向计数：1 → 2 → 3 → 4 → 0 → 1 → ...</p>
+                <p>要淘汰的人：位置2, 3, 4（这些是Elsa左边的同学，在逆时针方向上）。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">确定计数序列：</div>
+                <p>从右边（位置1）开始，逆时针方向：</p>
+                <ul style="margin-left:20px;">
+                  <li>第1个音节：位置1（右边）</li>
+                  <li>第2个音节：位置2（左边第一个）</li>
+                  <li>第3个音节：位置3（左边第二个）</li>
+                  <li>第4个音节：位置4（左边第三个）</li>
+                  <li>第5个音节：位置0（Elsa）</li>
+                  <li>第6个音节：位置1（回到起点）</li>
+                </ul>
+                <p>要淘汰位置2, 3, 4（左边的人），需要：</p>
+                <ul style="margin-left:20px;">
+                  <li>位置2在第一个周期被点到（第2个音节），在第二个周期被淘汰（第7个音节）</li>
+                  <li>位置3在第一个周期被点到（第3个音节），在第二个周期被淘汰（第8个音节）</li>
+                  <li>位置4在第一个周期被点到（第4个音节），在第二个周期被淘汰（第9个音节）</li>
+                </ul>
+              </div>
+
+              <div class="step">
+                <div class="step-title">计算最小音节数：</div>
+                <p>周期 \(k = 5\)（5个人的循环）。</p>
+                <p>第一个周期（音节1-5）：位置1, 2, 3, 4, 0（每个人至少被点到一次）</p>
+                <p>第二个周期（音节6-10）：位置1, 2, 3, 4, 0（开始淘汰）</p>
+                <p>音节7淘汰位置2（左边第一个），音节8淘汰位置3（左边第二个），音节9淘汰位置4（左边第三个）。</p>
+                <p>因此，最小音节数 = 9（第一个周期5个音节确保每个人至少被点到一次，第二个周期前3个音节淘汰3个左边的同学）。</p>
+                <br>
+                <p><strong>注意：</strong>这里只需要淘汰3个左边的同学（位置2, 3, 4），不需要淘汰位置1（右边的人）。虽然音节6会点到位置1，但位置1不会被淘汰，继续计数直到淘汰完所有左边的人。</p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">5人淘汰过程可视化</h3>
+              <div class="row">
+                <button class="btn" @click="simulateQ3">模拟5人淘汰过程</button>
+                <button class="btn" @click="stepByStepQ3">逐步演示</button>
+              </div>
+              <canvas id="circleCanvasQ3" width="800" height="600"></canvas>
+              <div style="margin-top:10px; padding:10px; background:#f8f9fa; border-radius:4px;">
+                <p><strong>淘汰顺序：</strong></p>
+                <div id="eliminationLogQ3" style="margin-top:5px;"></div>
+              </div>
+            </div>
+            <div class="ans" v-pre>
+              <strong>答：(c)</strong> 最小音节数为 9。第一个周期5个音节确保每个人至少被点到一次，第二个周期的音节7、8、9依次淘汰位置2、3、4（3个左边的同学）。
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">趣味总结</h3>
+              <p>这个韵律问题其实是一个"公平的淘汰游戏"：每个人都要在淘汰前至少参与一次。通过分析循环计数和最小周期，我们发现答案总是"总人数 + 要淘汰的人数"。这就像是一个"先来后到"的游戏规则：先让所有人都参与一轮，然后再开始淘汰。</p>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">交互式验证工具</h3>
+              <p><strong>输入参数，计算最小音节数：</strong></p>
+              <div class="row">
+                <label>总人数（包括Elsa）：</label>
+                <input type="number" v-model.number="totalPeople" min="2" max="50" style="width:100px" value="7">
+                <label>要淘汰的人数：</label>
+                <input type="number" v-model.number="eliminateCount" min="1" max="49" style="width:100px" value="6">
+                <label>方向：</label>
+                <select v-model="direction" style="width:120px">
+                  <option value="counterclockwise">逆时针</option>
+                  <option value="clockwise">顺时针</option>
+                </select>
+                <button class="btn" @click="calculateMinSyllables">计算最小音节数</button>
+              </div>
+              <div style="margin-top:15px; padding:15px; background:#f8f9fa; border-radius:4px;">
+                <p><strong>计算结果：</strong></p>
+                <p>周期长度：\(k = {{totalPeople}}\)（确保每个人至少被点到一次）</p>
+                <p>最小音节数：\(k + {{eliminateCount}} = {{totalPeople}} + {{eliminateCount}} = <strong>{{minSyllables}}</strong>\)</p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">综合对比表</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>问题</th>
+                    <th>总人数</th>
+                    <th>要淘汰人数</th>
+                    <th>方向</th>
+                    <th>最小音节数</th>
+                    <th>说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>(a)</td>
+                    <td>7</td>
+                    <td>6</td>
+                    <td>逆时针</td>
+                    <td>13</td>
+                    <td>7 + 6 = 13</td>
+                  </tr>
+                  <tr>
+                    <td>(b)</td>
+                    <td>24</td>
+                    <td>23</td>
+                    <td>逆时针</td>
+                    <td>47</td>
+                    <td>24 + 23 = 47</td>
+                  </tr>
+                  <tr>
+                    <td>(c)</td>
+                    <td>5</td>
+                    <td>3</td>
+                    <td>逆时针（淘汰左边）</td>
+                    <td>9</td>
+                    <td>5（第一个周期）+ 4（到淘汰完左边）= 9</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const staticEl = document.getElementById('static-math');
+    if(staticEl && typeof renderMathInElement !== 'undefined') {
+      try {
+        renderMathInElement(staticEl, {
+          delimiters: [
+            {left: '\\[', right: '\\]', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ],
+          throwOnError: false
+        });
+      } catch(e) {}
+    }
+  });
+
+  const {createApp} = Vue;
+
+  const app = createApp({
+    data() {
+      return {
+        activeTab: 'intro',
+        totalPeopleQ1: 7,
+        eliminateQ1: 6,
+        totalPeople: 7,
+        eliminateCount: 6,
+        direction: 'counterclockwise',
+        currentStepQ2: 0,
+        currentStepQ3: 0
+      };
+    },
+    computed: {
+      minSyllables() {
+        return this.totalPeople + this.eliminateCount;
+      }
+    },
+    mounted() {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {
+                console.warn('Math rendering error:', e);
+              }
+            }
+          }
+          
+          setTimeout(() => { this.renderD3Knowledge(); }, 150);
+          
+          setTimeout(() => {
+            this.simulateQ1();
+            this.simulateQ2();
+            this.simulateQ3();
+          }, 200);
+        }, 100);
+      });
+    },
+    methods: {
+      setTab(name) {
+        this.activeTab = name;
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {}
+              }
+            }
+            
+            if(name === 'intro') {
+              setTimeout(() => { this.renderD3Knowledge(); }, 50);
+            } else if(name === 'q1') {
+              setTimeout(() => { this.simulateQ1(); }, 100);
+            } else if(name === 'q2') {
+              setTimeout(() => { this.simulateQ2(); }, 100);
+            } else if(name === 'q3') {
+              setTimeout(() => { this.simulateQ3(); }, 100);
+            }
+          }, 50);
+        });
+      },
+      getKnowledgeGraph() {
+        const nodes = [
+          { id: 'rhyme', name: '韵律问题' },
+          { id: 'cycle', name: '循环计数' },
+          { id: 'mod', name: '模运算' },
+          { id: 'period', name: '周期' },
+          { id: 'lcm', name: '最小公倍数' },
+          { id: 'josephus', name: 'Josephus问题' },
+          { id: 'elimination', name: '淘汰机制' },
+          { id: 'constraint', name: '约束条件' },
+          { id: 'congruence', name: '同余方程' },
+          { id: 'gcd', name: '最大公约数' },
+          { id: 'recursion', name: '递归' },
+          { id: 'induction', name: '数学归纳法' }
+        ];
+        const links = [
+          { source: 'rhyme', target: 'cycle' },
+          { source: 'rhyme', target: 'elimination' },
+          { source: 'cycle', target: 'mod' },
+          { source: 'cycle', target: 'period' },
+          { source: 'period', target: 'lcm' },
+          { source: 'rhyme', target: 'josephus' },
+          { source: 'elimination', target: 'constraint' },
+          { source: 'constraint', target: 'congruence' },
+          { source: 'lcm', target: 'gcd' },
+          { source: 'josephus', target: 'recursion' },
+          { source: 'josephus', target: 'induction' },
+          { source: 'congruence', target: 'mod' }
+        ];
+        return { nodes, links };
+      },
+      renderD3Knowledge() {
+        try {
+          if(typeof d3 === 'undefined') return;
+          const el = document.getElementById('knowledge-d3');
+          if(!el) return;
+          const rect = el.getBoundingClientRect();
+          if(rect.width === 0 || rect.height === 0) {
+            const self = this;
+            setTimeout(() => {
+              self.renderD3Knowledge();
+            }, 100);
+            return;
+          }
+          el.innerHTML = '';
+          const width = el.clientWidth || 800;
+          const height = el.clientHeight || 420;
+          
+          const svg = d3.select(el).append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .style('overflow', 'hidden');
+          
+          const { nodes, links } = this.getKnowledgeGraph();
+          const color = d3.scaleOrdinal(['#2c3e50','#3498db','#9b59b6','#e67e22','#27ae60','#e74c3c','#16a085','#7f8c8d','#f39c12','#8e44ad','#1abc9c','#34495e']);
+          const sim = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d=>d.id).distance(100).strength(0.5))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width/2, height/2))
+            .force('collision', d3.forceCollide().radius(45))
+            .force('x', d3.forceX(width/2).strength(0.1))
+            .force('y', d3.forceY(height/2).strength(0.1));
+          
+          const link = svg.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
+            .selectAll('line').data(links).enter().append('line').attr('stroke-opacity',0.8);
+          
+          const node = svg.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
+            .on('start', (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0.3).restart(); 
+              d.fx=d.x; 
+              d.fy=d.y; 
+            })
+            .on('drag', (e,d)=>{ 
+              const radius = 45;
+              d.fx = Math.max(radius, Math.min(width - radius, e.x));
+              d.fy = Math.max(radius, Math.min(height - radius, e.y));
+            })
+            .on('end',  (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0); 
+              if(d.fx !== null && d.fy !== null) {
+                const radius = 45;
+                d.fx = Math.max(radius, Math.min(width - radius, d.fx));
+                d.fy = Math.max(radius, Math.min(height - radius, d.fy));
+              } else {
+                d.fx=null; 
+                d.fy=null; 
+              }
+            }));
+          
+          node.append('circle').attr('r', 18).attr('fill',(d,i)=>color(i)).attr('stroke','#fff').attr('stroke-width',1.2);
+          node.append('text').text(d=>d.name).attr('x', 24).attr('y', 5).attr('font-size','12px').attr('fill','#1f2937');
+          
+          sim.on('tick', ()=>{
+            const radius = 45;
+            nodes.forEach(d => {
+              if(d.fx === null && d.fy === null) {
+                d.x = Math.max(radius, Math.min(width - radius, d.x));
+                d.y = Math.max(radius, Math.min(height - radius, d.y));
+              }
+            });
+            
+            link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+                .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+            node.attr('transform', d=>`translate(${d.x},${d.y})`);
+          });
+        } catch(e) { 
+          console.error('D3 knowledge graph rendering error:', e);
+        }
+      },
+      simulateQ1() {
+        const canvas = document.getElementById('circleCanvasQ1');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+        
+        const total = this.totalPeopleQ1;
+        const eliminate = this.eliminateQ1;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) * 0.35;
+        
+        // 绘制圆圈和人物
+        const people = [];
+        const eliminated = new Set();
+        
+        for(let i = 0; i < total; i++) {
+          const angle = (i * 2 * Math.PI / total) - Math.PI / 2; // 从顶部开始
+          const x = centerX + radius * Math.cos(angle);
+          const y = centerY + radius * Math.sin(angle);
+          people.push({id: i, x, y, angle, eliminated: false, hitCount: 0});
+        }
+        
+        // 模拟过程
+        const log = [];
+        let syllable = 0;
+        let eliminatedCount = 0;
+        const period = total;
+        
+        // 第一个周期：每个人至少被点到一次
+        for(let i = 1; i <= period; i++) {
+          syllable++;
+          const pos = (i - 1) % total;
+          if(pos > 0) {
+            people[pos].hitCount++;
+            log.push(`音节${syllable}：位置${pos}被点到（第${people[pos].hitCount}次）`);
+          }
+        }
+        
+        // 第二个周期：开始淘汰
+        for(let i = 1; i <= eliminate && eliminatedCount < eliminate; i++) {
+          syllable++;
+          const pos = (period + i - 1) % total;
+          if(pos > 0 && !people[pos].eliminated) {
+            people[pos].eliminated = true;
+            eliminated.add(pos);
+            eliminatedCount++;
+            log.push(`音节${syllable}：位置${pos}被淘汰（第${people[pos].hitCount + 1}次被点到）`);
+          }
+        }
+        
+        // 绘制
+        people.forEach((p, idx) => {
+          const isElsa = idx === 0;
+          
+          // 绘制连线
+          if(idx < total - 1) {
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            const next = people[(idx + 1) % total];
+            ctx.lineTo(next.x, next.y);
+            ctx.stroke();
+          }
+          
+          // 绘制人物
+          ctx.fillStyle = isElsa ? '#e74c3c' : (p.eliminated ? '#95a5a6' : '#3498db');
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 25, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 绘制边框
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // 标签
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 16px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(isElsa ? 'E' : idx.toString(), p.x, p.y);
+          
+          // 状态标记
+          if(p.eliminated) {
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText('×', p.x, p.y - 40);
+          }
+        });
+        
+        // 标题
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`总人数: ${total}, 淘汰: ${eliminate}, 最小音节数: ${syllable}`, centerX, 30);
+        
+        // 更新日志
+        const logEl = document.getElementById('eliminationLogQ1');
+        if(logEl) {
+          logEl.innerHTML = log.map(l => `<div style="margin:3px 0; padding:5px; background:#fff; border-radius:3px;">${l}</div>`).join('');
+        }
+      },
+      simulateQ2() {
+        const canvas = document.getElementById('circleCanvasQ2');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+        
+        const total = 24;
+        const eliminate = 23;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) * 0.4;
+        
+        const people = [];
+        const eliminated = new Set();
+        
+        for(let i = 0; i < total; i++) {
+          const angle = (i * 2 * Math.PI / total) - Math.PI / 2;
+          const x = centerX + radius * Math.cos(angle);
+          const y = centerY + radius * Math.sin(angle);
+          people.push({id: i, x, y, angle, eliminated: false, hitCount: 0});
+        }
+        
+        const log = [];
+        let syllable = 0;
+        let eliminatedCount = 0;
+        const period = total;
+        
+        // 第一个周期
+        for(let i = 1; i <= period; i++) {
+          syllable++;
+          const pos = (i - 1) % total;
+          if(pos > 0) {
+            people[pos].hitCount++;
+          }
+        }
+        
+        // 第二个周期：淘汰
+        for(let i = 1; i <= eliminate && eliminatedCount < eliminate; i++) {
+          syllable++;
+          const pos = (period + i - 1) % total;
+          if(pos > 0 && !people[pos].eliminated) {
+            people[pos].eliminated = true;
+            eliminated.add(pos);
+            eliminatedCount++;
+            log.push(`音节${syllable}：淘汰位置${pos}`);
+          }
+        }
+        
+        // 绘制
+        people.forEach((p, idx) => {
+          const isElsa = idx === 0;
+          
+          // 绘制人物（更小以适应24人）
+          ctx.fillStyle = isElsa ? '#e74c3c' : (p.eliminated ? '#95a5a6' : '#3498db');
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 15, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          
+          // 标签（只显示部分）
+          if(idx === 0 || idx === 1 || idx === 2 || idx === 23 || idx === 22 || idx === 21) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(isElsa ? 'E' : idx.toString(), p.x, p.y);
+          }
+          
+          if(p.eliminated && (idx === 1 || idx === 2 || idx === 23)) {
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('×', p.x, p.y - 25);
+          }
+        });
+        
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`总人数: 24, 淘汰: 23, 最小音节数: ${syllable}`, centerX, 30);
+        
+        const logEl = document.getElementById('eliminationLogQ2');
+        if(logEl) {
+          const logText = log.slice(0, 20).map(l => `<div style="margin:2px 0; padding:3px; background:#fff; border-radius:3px; font-size:12px;">${l}</div>`).join('');
+          logEl.innerHTML = logText + (log.length > 20 ? `<div style="margin-top:5px; color:#666;">...还有${log.length - 20}个淘汰记录</div>` : '');
+        }
+      },
+      simulateQ3() {
+        const canvas = document.getElementById('circleCanvasQ3');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+        
+        const total = 5;
+        const eliminate = 3; // 淘汰左边3个
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) * 0.35;
+        
+        // 位置：Elsa在0，右边是1，左边是2,3,4（顺时针）
+        const people = [];
+        for(let i = 0; i < total; i++) {
+          const angle = (i * 2 * Math.PI / total) - Math.PI / 2;
+          const x = centerX + radius * Math.cos(angle);
+          const y = centerY + radius * Math.sin(angle);
+          // 映射：0=Elsa, 1=右边, 2,3,4=左边（顺时针）
+          let label;
+          if(i === 0) label = 'E';
+          else if(i === 1) label = '1(右)';
+          else label = `${i}(左)`;
+          people.push({id: i, x, y, angle, eliminated: false, hitCount: 0, label});
+        }
+        
+        const log = [];
+        let syllable = 0;
+        let eliminatedCount = 0;
+        const period = total;
+        
+        // 第一个周期：从位置1开始，逆时针方向
+        for(let i = 1; i <= period; i++) {
+          syllable++;
+          const pos = ((i - 1) % total);
+          if(pos === 0) {
+            // Elsa被点到，但不淘汰
+            log.push(`音节${syllable}：位置0（Elsa）被点到`);
+          } else {
+            people[pos].hitCount++;
+            log.push(`音节${syllable}：位置${pos}${people[pos].label}被点到（第${people[pos].hitCount}次）`);
+          }
+        }
+        
+        // 第二个周期：淘汰左边的人（位置2,3,4）
+        for(let i = 1; i <= period * 2 && eliminatedCount < eliminate; i++) {
+          syllable++;
+          const pos = ((period + i - 1) % total);
+          // 只淘汰左边的人（位置2, 3, 4）
+          if(pos >= 2 && pos <= 4 && !people[pos].eliminated) {
+            people[pos].eliminated = true;
+            eliminatedCount++;
+            log.push(`音节${syllable}：位置${pos}${people[pos].label}被淘汰`);
+          } else if(pos === 1) {
+            log.push(`音节${syllable}：位置1（右边）被点到，不淘汰`);
+          } else if(pos === 0) {
+            log.push(`音节${syllable}：位置0（Elsa）被点到`);
+          }
+        }
+        
+        // 绘制
+        people.forEach((p, idx) => {
+          const isElsa = idx === 0;
+          
+          // 连线
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          const next = people[(idx + 1) % total];
+          ctx.lineTo(next.x, next.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 人物
+          ctx.fillStyle = isElsa ? '#e74c3c' : (p.eliminated ? '#95a5a6' : (idx >= 2 ? '#f39c12' : '#3498db'));
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 30, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // 标签
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.label, p.x, p.y);
+          
+          if(p.eliminated) {
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('×', p.x, p.y - 45);
+          }
+        });
+        
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        const minSyllablesQ3 = 9;
+        ctx.fillText(`总人数: 5, 淘汰左边: 3, 最小音节数: ${minSyllablesQ3}`, centerX, 30);
+        
+        const logEl = document.getElementById('eliminationLogQ3');
+        if(logEl) {
+          logEl.innerHTML = log.map(l => `<div style="margin:3px 0; padding:5px; background:#fff; border-radius:3px;">${l}</div>`).join('');
+        }
+      },
+      stepByStepQ2() {
+        // 逐步演示功能
+        this.currentStepQ2 = 0;
+        this.animateQ2();
+      },
+      stepByStepQ3() {
+        this.currentStepQ3 = 0;
+        this.animateQ3();
+      },
+      animateQ2() {
+        // 动画实现
+        if(this.currentStepQ2 < 50) {
+          this.currentStepQ2++;
+          this.simulateQ2();
+          setTimeout(() => this.animateQ2(), 200);
+        }
+      },
+      animateQ3() {
+        if(this.currentStepQ3 < 10) {
+          this.currentStepQ3++;
+          this.simulateQ3();
+          setTimeout(() => this.animateQ3(), 300);
+        }
+      },
+      calculateMinSyllables() {
+        // 计算已通过computed属性完成
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {}
+              }
+            }
+          }, 50);
+        });
+      },
+      renderMathInApp() {
+        const appEl = document.getElementById('app');
+        if(!appEl) return;
+        if(typeof renderMathInElement === 'undefined') return;
+        
+        const blocksToRender = [];
+        const vpreBlocks = appEl.querySelectorAll('[v-pre]');
+        vpreBlocks.forEach(function(el) {
+          if(!blocksToRender.includes(el)) {
+            blocksToRender.push(el);
+          }
+        });
+        
+        const classBlocks = appEl.querySelectorAll('.ans, .k');
+        classBlocks.forEach(function(el) {
+          if(el.querySelector('canvas')) return;
+          const html = el.innerHTML;
+          if(html && (/\\\(/.test(html) || /\\\[/.test(html))) {
+            let alreadyAdded = false;
+            for(let i = 0; i < blocksToRender.length; i++) {
+              if(blocksToRender[i] === el || blocksToRender[i].contains(el) || el.contains(blocksToRender[i])) {
+                alreadyAdded = true;
+                break;
+              }
+            }
+            if(!alreadyAdded) {
+              blocksToRender.push(el);
+            }
+          }
+        });
+        
+        blocksToRender.forEach(function(el) {
+          if(!el.dataset.originalHtml) {
+            el.dataset.originalHtml = el.innerHTML;
+          }
+          const existingKatex = el.querySelectorAll('.katex');
+          const currentHtml = el.innerHTML;
+          const hasOriginalMath = /\\\(/.test(currentHtml) || /\\\[/.test(currentHtml);
+          if(existingKatex.length > 0 && !hasOriginalMath) {
+            return;
+          }
+          const originalHtml = el.dataset.originalHtml;
+          el.innerHTML = originalHtml;
+          if(typeof renderMathInElement !== 'undefined') {
+            try {
+              renderMathInElement(el, {
+                delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+              });
+            } catch(e) {}
+          }
+        });
+      }
+    }
+  });
+  
+  const vm = app.mount('#app');
+  
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+      
+      setTimeout(function() {
+        if(vm && vm.renderMathInApp) {
+          vm.renderMathInApp();
+        }
+      }, 300);
+    }, 500);
+  });
+  </script>
+</body>
+</html>
+
