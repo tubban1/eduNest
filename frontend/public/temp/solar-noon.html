@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="太阳正午问题详解：通过实验观察阴影长度变化和星历表计算确定太阳正午时刻。包含时区与经度关系、太阳运动轨迹、阴影长度变化曲线等完整解析和可视化图表。">
+  <meta name="keywords" content="太阳正午,时区,经度,阴影观测,星历表,太阳运动,地理天文,实验方法,时间校正">
+  <title>太阳正午问题 - 实验测定与理论计算</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: block;
+      width: 100%;
+      max-width: 800px;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #ecf0f1;
+      color: #34495e;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 14px;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #e8eef3;
+    }
+    .tab-header.active {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: #fff;
+      border-color: #2980b9;
+      box-shadow: 0 2px 6px rgba(52,152,219,0.25);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    input[type="number"], input[type="text"] {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 8px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 6px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>太阳正午问题</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre>
+      <h2>题目</h2>
+      <div class="k">
+        <h3 style="color:#34495e; margin:8px 0 6px;">确定太阳正午</h3>
+        <p><strong>太阳正午的定义：</strong></p>
+        <p>太阳正午是一天中太阳在天空中位置最高的时刻。</p>
+        <br>
+        <p>从地球上看，太阳从东方升起，画出一个弧形轨迹，然后在西方落下。在太阳正午时，太阳正好位于指向南方的方向上。</p>
+        <br>
+        <p><strong>时区与经度的关系：</strong></p>
+        <p>这个时刻不一定正好发生在12点整，它取决于所在地的经度。</p>
+        <p>一个时区是一个宽带，在这个带内所有城市的时间都相同。例如，洛桑和巴塞罗那在同一个时区，所以它们的时间相同，即使它们的经度不同。</p>
+        <p>要确定太阳正午，似乎需要根据我们城市的经度来修正当地时间。</p>
+        <br>
+        <p><strong>问题：</strong></p>
+        <p><strong>(a)</strong> 通过观察垂直杆子在一整天中形成阴影的长度，实验性地确定太阳正午。阴影长度在太阳正午前减小，之后随着太阳向地平线下降而增加。</p>
+        <br>
+        <p><strong>(b)</strong> 查阅你所在地区当天的星历表。使用这些值确定太阳正午，并将这个结果与前面找到的结果进行比较。</p>
+      </div>
+    </div>
+    
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(a) 实验性确定太阳正午</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(b) 星历表计算与比较</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>想象你站在地面上，手里拿着一根垂直的杆子。当太阳在天空中移动时，杆子的阴影会像"时钟指针"一样变化。<span class="highlight">阴影最短的那一刻，就是太阳正午</span>——此时太阳在天空中最高，影子也最短。</p>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">读题抓要点</div>
+                <ul style="margin-left:20px;">
+                  <li>核心概念：太阳正午 = 太阳在天空中最高 = 阴影最短的时刻</li>
+                  <li>方法一（实验）：观察垂直杆子阴影长度的变化</li>
+                  <li>方法二（理论）：查阅星历表，根据经度计算</li>
+                  <li>关键因素：时区与经度的关系</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点</h3>
+              <div class="step">
+                <ul style="margin-left:12px; list-style: none;">
+                  <li><strong>太阳运动</strong>
+                    <ul style="margin-left:18px;">
+                      <li>太阳轨迹：从东到西的弧形路径</li>
+                      <li>太阳高度角：一天中不断变化</li>
+                      <li>太阳正午：高度角最大的时刻</li>
+                    </ul>
+                  </li>
+                  <li><strong>时区与经度</strong>
+                    <ul style="margin-left:18px;">
+                      <li>时区：同一时间带内所有地方时间相同</li>
+                      <li>经度：影响太阳正午的实际时刻</li>
+                      <li>时间修正：根据经度差计算太阳正午</li>
+                    </ul>
+                  </li>
+                  <li><strong>阴影观测</strong>
+                    <ul style="margin-left:18px;">
+                      <li>阴影长度与太阳高度角的关系</li>
+                      <li>最短阴影对应最高太阳</li>
+                      <li>观测时间间隔与精度</li>
+                    </ul>
+                  </li>
+                  <li><strong>星历表</strong>
+                    <ul style="margin-left:18px;">
+                      <li>太阳位置数据：方位角、高度角、时间</li>
+                      <li>经度修正公式</li>
+                      <li>理论计算与实验验证</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拔高与拓展</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li>地球自转与太阳视运动：理解为什么太阳会"移动"</li>
+                  <li>纬度对太阳轨迹的影响：不同纬度太阳轨迹不同</li>
+                  <li>季节变化：夏至、冬至时太阳轨迹的差异</li>
+                  <li>时差计算：经度每差1度，时间差约4分钟</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本地考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：太阳运动规律；时区与经度关系；实验观测方法；数据处理与分析</li>
+                  <li><strong>易错点</strong>：混淆当地时间与太阳正午时间；忽略经度修正；观测时间间隔过大导致精度不够</li>
+                  <li><strong>难点</strong>：理解时区与经度的关系；如何从实验数据中准确找到最短阴影时刻</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略（知识不全也能拿分）</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>只会基本概念</strong>：先画出太阳运动轨迹图，说明阴影长度变化规律，拿到基础分</li>
+                  <li><strong>不会精确计算</strong>：列出观测数据表格，标出最短阴影时刻，即使计算不完整也能得步骤分</li>
+                  <li><strong>不会星历表计算</strong>：说明需要查阅星历表，列出经度修正公式，即使具体计算有误也能得部分分数</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- (a) 实验性确定太阳正午 -->
+          <div class="tab-panel" v-show="activeTab==='q1'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(a) 实验性确定太阳正午</h3>
+              <div class="step">
+                <div class="step-title">实验原理：</div>
+                <p>当太阳在天空中移动时，垂直杆子的阴影长度会发生变化。太阳高度角越大，阴影越短；太阳高度角越小，阴影越长。</p>
+                <p>在太阳正午时，太阳达到一天中的最高位置，此时阴影长度最短。</p>
+                <p>因此，通过连续观测阴影长度，找到最短阴影的时刻，就是太阳正午。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">实验步骤：</div>
+                <ol style="margin-left:20px;">
+                  <li>在平坦的地面上竖直插入一根杆子（长度约1米）</li>
+                  <li>从早晨开始，每隔一定时间（如每30分钟）测量一次阴影长度</li>
+                  <li>记录每次测量的时间和对应的阴影长度</li>
+                  <li>在太阳正午前后，缩短观测间隔（如每15分钟）以提高精度</li>
+                  <li>绘制阴影长度随时间变化的曲线图</li>
+                  <li>找到曲线的最低点，对应的时间就是太阳正午</li>
+                </ol>
+              </div>
+
+              <div class="step">
+                <div class="step-title">太阳运动轨迹：</div>
+                <p>下图展示了太阳从日出到日落的运动轨迹，以及不同时刻阴影的方向：</p>
+              </div>
+            </div>
+            <div class="k">
+              <canvas id="sunPathCanvas" width="800" height="500"></canvas>
+              <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                <strong>说明：</strong>太阳从东方（右侧）升起，经过南方（上方），在西方（左侧）落下。中午时太阳在南方，高度角最大。
+              </p>
+            </div>
+            <div class="k" v-pre>
+              <div class="step">
+                <div class="step-title">阴影长度变化曲线：</div>
+                <p>阴影长度随时间的变化呈现U形曲线，最低点对应太阳正午：</p>
+              </div>
+            </div>
+            <div class="k">
+              <canvas id="shadowLengthCanvas" width="800" height="400"></canvas>
+              <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                <strong>说明：</strong>横轴表示时间，纵轴表示阴影长度。曲线的最低点（最短阴影）对应太阳正午时刻。
+              </p>
+            </div>
+            <div class="k" v-pre>
+              <div class="step">
+                <div class="step-title">数据处理示例：</div>
+                <p>假设我们得到以下观测数据：</p>
+                <table style="width:100%; border-collapse:collapse; margin:10px 0;">
+                  <thead>
+                    <tr style="background:#3498db; color:white;">
+                      <th style="padding:8px; border:1px solid #ddd;">时间</th>
+                      <th style="padding:8px; border:1px solid #ddd;">阴影长度 (cm)</th>
+                      <th style="padding:8px; border:1px solid #ddd;">备注</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">8:00</td>
+                      <td style="padding:8px; border:1px solid #ddd;">150</td>
+                      <td style="padding:8px; border:1px solid #ddd;">早晨，太阳较低</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">10:00</td>
+                      <td style="padding:8px; border:1px solid #ddd;">80</td>
+                      <td style="padding:8px; border:1px solid #ddd;">太阳升高</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">11:30</td>
+                      <td style="padding:8px; border:1px solid #ddd;">45</td>
+                      <td style="padding:8px; border:1px solid #ddd;">接近正午</td>
+                    </tr>
+                    <tr style="background:#fff3cd;">
+                      <td style="padding:8px; border:1px solid #ddd;"><strong>12:15</strong></td>
+                      <td style="padding:8px; border:1px solid #ddd;"><strong>38</strong></td>
+                      <td style="padding:8px; border:1px solid #ddd;"><strong>最短阴影（太阳正午）</strong></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">13:00</td>
+                      <td style="padding:8px; border:1px solid #ddd;">50</td>
+                      <td style="padding:8px; border:1px solid #ddd;">太阳下降</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">15:00</td>
+                      <td style="padding:8px; border:1px solid #ddd;">100</td>
+                      <td style="padding:8px; border:1px solid #ddd;">下午</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">17:00</td>
+                      <td style="padding:8px; border:1px solid #ddd;">180</td>
+                      <td style="padding:8px; border:1px solid #ddd;">傍晚</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p style="margin-top:10px;">从数据可以看出，阴影在12:15时达到最短（38 cm），因此太阳正午大约在12:15。</p>
+              </div>
+            </div>
+            <div class="ans" v-pre>
+              <strong>答：(a)</strong> 通过实验观测，我们发现阴影长度在12:15时最短（38 cm），因此太阳正午大约在12:15。
+            </div>
+          </div>
+
+          <!-- (b) 星历表计算与比较 -->
+          <div class="tab-panel" v-show="activeTab==='q2'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">(b) 星历表计算与比较</h3>
+              <div class="step">
+                <div class="step-title">星历表方法：</div>
+                <p>星历表提供了太阳在特定日期和地点的精确位置数据，包括太阳高度角、方位角等信息。</p>
+                <p>要计算太阳正午，需要知道：</p>
+                <ul style="margin-left:20px;">
+                  <li>当地经度 \(\lambda\)</li>
+                  <li>标准时区经度 \(\lambda_0\)（例如东八区为120°E）</li>
+                  <li>时差修正：\(\Delta t = 4 \times (\lambda - \lambda_0)\) 分钟</li>
+                </ul>
+              </div>
+
+              <div class="step">
+                <div class="step-title">计算示例：</div>
+                <p>假设观测地点：北京（经度约116.4°E，东八区，标准经度120°E）</p>
+                <p>经度差：\(\Delta\lambda = 116.4° - 120° = -3.6°\)</p>
+                <p>时差修正：\(\Delta t = 4 \times (-3.6) = -14.4\) 分钟 ≈ -14分钟</p>
+                <p>因此，太阳正午 = 标准时间12:00 + (-14分钟) = <strong>11:46</strong></p>
+                <br>
+                <p><strong>注意：</strong>如果地点在标准经度以西（如北京），太阳正午早于12:00；如果在标准经度以东，太阳正午晚于12:00。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">时区与经度关系图：</div>
+                <p>下图展示了不同经度位置相对于标准时区的太阳正午时刻：</p>
+              </div>
+            </div>
+            <div class="k">
+              <canvas id="timezoneCanvas" width="800" height="400"></canvas>
+              <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                <strong>说明：</strong>横轴表示经度，纵轴表示太阳正午相对于标准时间12:00的偏差（分钟）。每差1度经度，时间差约4分钟。
+              </p>
+            </div>
+            <div class="k" v-pre>
+              <div class="step">
+                <div class="step-title">计算结果比较：</div>
+                <table style="width:100%; border-collapse:collapse; margin:10px 0;">
+                  <thead>
+                    <tr style="background:#3498db; color:white;">
+                      <th style="padding:8px; border:1px solid #ddd;">方法</th>
+                      <th style="padding:8px; border:1px solid #ddd;">太阳正午时刻</th>
+                      <th style="padding:8px; border:1px solid #ddd;">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">实验观测（阴影长度）</td>
+                      <td style="padding:8px; border:1px solid #ddd;">12:15</td>
+                      <td style="padding:8px; border:1px solid #ddd;">通过观测得到的近似值</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">星历表计算（经度修正）</td>
+                      <td style="padding:8px; border:1px solid #ddd;">11:46</td>
+                      <td style="padding:8px; border:1px solid #ddd;">理论计算值</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #ddd;">差异</td>
+                      <td style="padding:8px; border:1px solid #ddd;">29分钟</td>
+                      <td style="padding:8px; border:1px solid #ddd;">可能的原因：观测精度、云层影响、杆子位置等</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p style="margin-top:10px;">实验值与理论值存在一定差异，这是正常的，因为：</p>
+                <ul style="margin-left:20px;">
+                  <li>实验观测受到天气、测量精度等因素影响</li>
+                  <li>杆子可能不完全垂直，地面可能不完全水平</li>
+                  <li>观测时间间隔可能不够密集，导致错过真正的极值点</li>
+                  <li>理论计算基于理想条件和精确的星历表数据</li>
+                </ul>
+              </div>
+            </div>
+            <div class="ans" v-pre>
+              <strong>答：(b)</strong> 根据星历表和经度修正计算，太阳正午为11:46。与实验观测值（12:15）相比，存在29分钟的差异，这主要是由于观测精度和实验条件限制造成的。理论计算值更准确，但实验方法也能得到较为接近的结果。
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">趣味总结</h3>
+              <p>太阳正午就像"一天的巅峰时刻"——太阳爬到了天空的最高点，阴影缩到了最短。通过"观察影子"和"查星历表"两种方法，我们可以像古代天文学家一样，准确地找到这个特殊时刻。时区让我们的生活时间统一，但每个地方的太阳正午时刻其实不同，这取决于它们的经度位置。</p>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">交互式验证工具</h3>
+              <p><strong>输入参数，计算太阳正午：</strong></p>
+              <div class="row">
+                <label>当地经度 (°E)：</label>
+                <input type="number" v-model.number="longitude" step="0.1" style="width:120px" placeholder="例如：116.4">
+                <label>时区标准经度 (°E)：</label>
+                <input type="number" v-model.number="timezoneLongitude" step="1" style="width:120px" placeholder="例如：120">
+                <button class="btn" @click="calculateSolarNoon">计算太阳正午</button>
+              </div>
+              <div style="margin-top:15px; padding:15px; background:#f8f9fa; border-radius:4px;">
+                <p><strong>计算结果：</strong></p>
+                <p>经度差：\(\Delta\lambda = {{longitude}}° - {{timezoneLongitude}}° = {{longitudeDifference}}°\)</p>
+                <p>时差修正：\(\Delta t = 4 \times {{longitudeDifference}} = {{timeCorrection}}\) 分钟</p>
+                <p><strong>太阳正午时刻：{{solarNoonTime}}</strong></p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">综合可视化</h3>
+              <canvas id="summaryCanvas" width="800" height="500"></canvas>
+              <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                <strong>说明：</strong>综合展示太阳运动轨迹、阴影长度变化和太阳正午时刻的关系。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const staticEl = document.getElementById('static-math');
+    if(staticEl && typeof renderMathInElement !== 'undefined') {
+      try {
+        renderMathInElement(staticEl, {
+          delimiters: [
+            {left: '\\[', right: '\\]', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ],
+          throwOnError: false
+        });
+      } catch(e) {}
+    }
+  });
+
+  const {createApp} = Vue;
+
+  const app = createApp({
+    data() {
+      return {
+        activeTab: 'intro',
+        longitude: 116.4,
+        timezoneLongitude: 120
+      };
+    },
+    computed: {
+      longitudeDifference() {
+        return (this.longitude - this.timezoneLongitude).toFixed(1);
+      },
+      timeCorrection() {
+        const diff = this.longitude - this.timezoneLongitude;
+        return (4 * diff).toFixed(1);
+      },
+      solarNoonTime() {
+        const diff = this.longitude - this.timezoneLongitude;
+        const correction = 4 * diff; // 分钟
+        const totalMinutes = 12 * 60 + correction;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = Math.floor(totalMinutes % 60);
+        const sign = correction >= 0 ? '+' : '';
+        return `${hours}:${String(minutes).padStart(2, '0')} (标准时间12:00 ${sign}${correction.toFixed(1)}分钟)`;
+      }
+    },
+    mounted() {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {
+                console.warn('Math rendering error:', e);
+              }
+            }
+          }
+          
+          // 初始化图表
+          setTimeout(() => {
+            this.drawSunPath();
+            this.drawShadowLength();
+            this.drawTimezone();
+            this.drawSummary();
+          }, 200);
+        }, 100);
+      });
+    },
+    methods: {
+      setTab(name) {
+        this.activeTab = name;
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {}
+              }
+            }
+            
+            // 根据tab绘制相应图表
+            if(name === 'q1') {
+              setTimeout(() => {
+                this.drawSunPath();
+                this.drawShadowLength();
+              }, 100);
+            } else if(name === 'q2') {
+              setTimeout(() => {
+                this.drawTimezone();
+              }, 100);
+            } else if(name === 'summary') {
+              setTimeout(() => {
+                this.drawSummary();
+              }, 100);
+            }
+          }, 50);
+        });
+      },
+      calculateSolarNoon() {
+        // 计算已通过computed属性完成
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {}
+              }
+            }
+          }, 50);
+        });
+      },
+      drawSunPath() {
+        const canvas = document.getElementById('sunPathCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height - 80;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 绘制地平线
+        ctx.strokeStyle = '#95a5a6';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(50, centerY);
+        ctx.lineTo(width - 50, centerY);
+        ctx.stroke();
+        
+        // 绘制方向标签
+        ctx.fillStyle = '#34495e';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('东', 100, centerY + 25);
+        ctx.fillText('南', centerX, centerY - 350);
+        ctx.fillText('西', width - 100, centerY + 25);
+        
+        // 绘制太阳运动轨迹（弧形）
+        ctx.strokeStyle = '#f39c12';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        const radius = 300;
+        const startAngle = Math.PI * 0.2; // 从东方（右侧）
+        const endAngle = Math.PI * 0.8;   // 到西方（左侧）
+        ctx.arc(centerX, centerY + radius * 0.3, radius, startAngle, endAngle);
+        ctx.stroke();
+        
+        // 绘制几个关键时刻的太阳位置
+        const times = [
+          {angle: 0.25, time: '8:00', label: '早晨'},
+          {angle: 0.4, time: '10:00', label: '上午'},
+          {angle: 0.5, time: '12:15', label: '正午', color: '#e74c3c'},
+          {angle: 0.6, time: '14:00', label: '下午'},
+          {angle: 0.75, time: '17:00', label: '傍晚'}
+        ];
+        
+        times.forEach(({angle, time, label, color}) => {
+          const a = Math.PI * (0.2 + angle * 0.6);
+          const x = centerX + radius * Math.cos(a);
+          const y = centerY + radius * 0.3 + radius * Math.sin(a);
+          
+          // 绘制太阳
+          ctx.fillStyle = color || '#f39c12';
+          ctx.beginPath();
+          ctx.arc(x, y, 15, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 绘制阴影
+          const shadowLength = 30 + Math.abs(angle - 0.5) * 100;
+          ctx.strokeStyle = '#34495e';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          const shadowX = centerX + (x - centerX) / 3;
+          const shadowY = centerY + shadowLength;
+          ctx.lineTo(shadowX, shadowY);
+          ctx.stroke();
+          
+          // 绘制阴影长度标记
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(shadowX, shadowY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 时间标签
+          ctx.fillStyle = '#34495e';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(time, x, y - 25);
+          ctx.fillText(label, x, y + 35);
+        });
+        
+        // 绘制垂直杆子
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(centerX - 5, centerY - 60, 10, 60);
+        
+        // 标题
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('太阳运动轨迹与阴影变化', centerX, 30);
+      },
+      drawShadowLength() {
+        const canvas = document.getElementById('shadowLengthCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 数据点
+        const data = [
+          {time: 8, length: 150},
+          {time: 9, length: 120},
+          {time: 10, length: 80},
+          {time: 11, length: 55},
+          {time: 11.5, length: 45},
+          {time: 12.25, length: 38}, // 最短点
+          {time: 13, length: 50},
+          {time: 14, length: 70},
+          {time: 15, length: 100},
+          {time: 16, length: 130},
+          {time: 17, length: 180}
+        ];
+        
+        // 坐标转换
+        const timeRange = 17 - 8;
+        const lengthRange = 180 - 38;
+        const lengthMin = 38;
+        
+        function timeToX(t) {
+          return padding + (t - 8) / timeRange * (width - 2 * padding);
+        }
+        
+        function lengthToY(l) {
+          return height - padding - (l - lengthMin) / lengthRange * (height - 2 * padding);
+        }
+        
+        // 绘制网格
+        ctx.strokeStyle = '#ecf0f1';
+        ctx.lineWidth = 1;
+        for(let t = 8; t <= 17; t++) {
+          const x = timeToX(t);
+          ctx.beginPath();
+          ctx.moveTo(x, padding);
+          ctx.lineTo(x, height - padding);
+          ctx.stroke();
+        }
+        
+        // 绘制坐标轴
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+        
+        // 绘制曲线
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        data.forEach((d, i) => {
+          const x = timeToX(d.time);
+          const y = lengthToY(d.length);
+          if(i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+        ctx.stroke();
+        
+        // 标记最低点（太阳正午）
+        const minPoint = data.find(d => d.length === 38);
+        if(minPoint) {
+          const minX = timeToX(minPoint.time);
+          const minY = lengthToY(minPoint.length);
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(minX, minY, 6, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 标注
+          ctx.fillStyle = '#e74c3c';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('太阳正午', minX, minY - 20);
+          ctx.fillText('12:15', minX, minY - 35);
+        }
+        
+        // 数据点
+        ctx.fillStyle = '#3498db';
+        data.forEach(d => {
+          const x = timeToX(d.time);
+          const y = lengthToY(d.length);
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        // 坐标轴标签
+        ctx.fillStyle = '#34495e';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('时间 (时)', width / 2, height - 20);
+        ctx.save();
+        ctx.translate(20, height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('阴影长度 (cm)', 0, 0);
+        ctx.restore();
+        
+        // 标题
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('阴影长度随时间变化曲线', width / 2, 30);
+      },
+      drawTimezone() {
+        const canvas = document.getElementById('timezoneCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 标准时区经度（120°E）
+        const standardLongitude = 120;
+        const longitudeRange = 20; // ±10度
+        
+        // 坐标转换
+        function longToX(lon) {
+          return padding + (lon - standardLongitude + longitudeRange) / (2 * longitudeRange) * (width - 2 * padding);
+        }
+        
+        function timeToY(minutes) {
+          return height - padding - (minutes + 40) / 80 * (height - 2 * padding);
+        }
+        
+        // 绘制网格
+        ctx.strokeStyle = '#ecf0f1';
+        ctx.lineWidth = 1;
+        for(let lon = standardLongitude - 10; lon <= standardLongitude + 10; lon += 2) {
+          const x = longToX(lon);
+          ctx.beginPath();
+          ctx.moveTo(x, padding);
+          ctx.lineTo(x, height - padding);
+          ctx.stroke();
+        }
+        
+        // 绘制坐标轴
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+        
+        // 绘制标准时区线（0分钟偏差）
+        const standardX = longToX(standardLongitude);
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(standardX, padding);
+        ctx.lineTo(standardX, height - padding);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // 绘制时间偏差曲线（每度4分钟）
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for(let lon = standardLongitude - 10; lon <= standardLongitude + 10; lon += 0.5) {
+          const diff = lon - standardLongitude;
+          const minutes = 4 * diff;
+          const x = longToX(lon);
+          const y = timeToY(minutes);
+          if(lon === standardLongitude - 10) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+        
+        // 标记几个城市
+        const cities = [
+          {lon: 116.4, name: '北京', color: '#e74c3c'},
+          {lon: 121.5, name: '上海', color: '#27ae60'},
+          {lon: 113.0, name: '广州', color: '#9b59b6'}
+        ];
+        
+        cities.forEach(city => {
+          const diff = city.lon - standardLongitude;
+          const minutes = 4 * diff;
+          const x = longToX(city.lon);
+          const y = timeToY(minutes);
+          
+          ctx.fillStyle = city.color;
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = '#34495e';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(city.name, x, y - 15);
+          ctx.fillText(`${minutes > 0 ? '+' : ''}${minutes.toFixed(1)}分`, x, y + 20);
+        });
+        
+        // 坐标轴标签
+        ctx.fillStyle = '#34495e';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('经度 (°E)', width / 2, height - 20);
+        ctx.save();
+        ctx.translate(20, height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('时间偏差 (分钟)', 0, 0);
+        ctx.restore();
+        
+        // 标注标准时区
+        ctx.fillStyle = '#3498db';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('标准时区 (120°E)', standardX, padding - 10);
+        
+        // 标题
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('时区与太阳正午时间偏差', width / 2, 30);
+      },
+      drawSummary() {
+        const canvas = document.getElementById('summaryCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height - 100;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 绘制上半部分：太阳轨迹
+        const radius = 200;
+        ctx.strokeStyle = '#f39c12';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - 150, radius, Math.PI * 0.2, Math.PI * 0.8);
+        ctx.stroke();
+        
+        // 标记太阳正午位置
+        const noonX = centerX;
+        const noonY = centerY - 150 - radius * 0.6;
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(noonX, noonY, 12, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制下半部分：阴影长度曲线
+        const curveHeight = 150;
+        const curveTop = centerY + 50;
+        const curveData = [
+          {time: 8, length: 150},
+          {time: 10, length: 80},
+          {time: 12.25, length: 38},
+          {time: 14, length: 70},
+          {time: 16, length: 130}
+        ];
+        
+        const timeRange = 16 - 8;
+        const lengthRange = 150 - 38;
+        
+        function timeToX(t) {
+          return 100 + (t - 8) / timeRange * (width - 200);
+        }
+        
+        function lengthToY(l) {
+          return curveTop + curveHeight - (l - 38) / lengthRange * curveHeight;
+        }
+        
+        // 绘制阴影曲线
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        curveData.forEach((d, i) => {
+          const x = timeToX(d.time);
+          const y = lengthToY(d.length);
+          if(i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+        ctx.stroke();
+        
+        // 标记最低点
+        const minPoint = curveData.find(d => d.length === 38);
+        if(minPoint) {
+          const minX = timeToX(minPoint.time);
+          const minY = lengthToY(minPoint.length);
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(minX, minY, 6, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 连接线
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(noonX, noonY + 12);
+          ctx.lineTo(minX, minY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        
+        // 标题
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('太阳正午综合示意图', centerX, 30);
+        
+        // 说明文字
+        ctx.fillStyle = '#7f8c8d';
+        ctx.font = '14px Arial';
+        ctx.fillText('上：太阳运动轨迹（正午时太阳最高）', centerX, centerY - 200);
+        ctx.fillText('下：阴影长度变化（正午时阴影最短）', centerX, curveTop + curveHeight + 30);
+      }
+    }
+  });
+  
+  const vm = app.mount('#app');
+  
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+      
+      setTimeout(function() {
+        if(vm && vm.drawSummary) {
+          vm.drawSummary();
+        }
+        if(typeof renderMathInElement !== 'undefined') {
+          const appEl = document.getElementById('app');
+          if(appEl) {
+            try {
+              renderMathInElement(appEl, {
+                delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+              });
+            } catch(e) {}
+          }
+        }
+      }, 300);
+    }, 500);
+  });
+  </script>
+</body>
+</html>
+
