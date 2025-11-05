@@ -344,8 +344,8 @@
               <p><strong>参数 a 对单调性的影响：</strong></p>
               <div class="row">
                 <label>参数 a：</label>
-                <input type="number" step="0.5" v-model.number="paramA2" style="width:100px" @input="drawSecondDerivative">
-                <button class="btn" @click="drawSecondDerivative">更新图像</button>
+                <input type="number" step="0.5" v-model.number="paramA2" style="width:100px" @input="drawSecondDerivative; updateDesmos()">
+                <button class="btn" @click="drawSecondDerivative; updateDesmos()">更新图像</button>
               </div>
               <div style="margin-top:15px; position: relative;">
                 <canvas id="secondDerivCanvas" width="800" height="400"></canvas>
@@ -354,6 +354,15 @@
               <p style="margin-top:10px; font-size:0.9em; color:#666;">
                 <strong>观察：</strong>当 \(a\ge 0\) 时，\(f''(x)\) 单调递增（蓝线）；当 \(a\lt 0\) 时，\(f''(x)\) 先减后增，存在极小值点 \(x_0\)（红线）。
               </p>
+            </div>
+            <!-- Desmos 联动可视化 -->
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">函数与切线联动（Desmos）</h3>
+              <div id="desmos-fx" style="width:100%;height:320px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;"></div>
+            </div>
+            <div class="k">
+              <h3 style="color:#34495e; margin:14px 0 8px;">导数曲线同步高亮</h3>
+              <div id="desmos-fprime" style="width:100%;height:320px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;"></div>
             </div>
             <div class="ans" v-pre>答：(1) 
             <br>① \(f''(x)=e^x-\frac{a}{x^2}-2\)
@@ -575,6 +584,7 @@
   <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js"></script>
   <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js"></script>
   <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/desmo.index.min.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', function() {
     const staticEl = document.getElementById('static-math');
@@ -644,6 +654,10 @@
             this.drawSecondDerivative();
             this.drawSequenceChart();
             this.drawCompareChart();
+            // 初始化 Desmos（仅当 q1 可见时）
+            if(this.activeTab === 'q1') {
+              setTimeout(() => { this.initDesmos(); }, 100);
+            }
           }, 200);
         }, 100);
       });
@@ -695,17 +709,22 @@
       setTab(name) {
         this.activeTab = name;
         // 根据tab渲染相应的图表
-        setTimeout(() => {
-          if(name === 'intro') {
-            this.renderD3Knowledge();
-          } else if(name === 'q1') {
-            this.drawSecondDerivative();
-          } else if(name === 'q2a') {
-            this.drawSequenceChart();
-          } else if(name === 'q2b') {
-            this.drawCompareChart();
-          }
-        }, 50);
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(name === 'intro') {
+              this.renderD3Knowledge();
+            } else if(name === 'q1') {
+              this.drawSecondDerivative();
+              // 初始化或更新 Desmos
+              this.initDesmos();
+              this.updateDesmos();
+            } else if(name === 'q2a') {
+              this.drawSequenceChart();
+            } else if(name === 'q2b') {
+              this.drawCompareChart();
+            }
+          }, 50);
+        });
       },
       getKnowledgeGraph() {
         const nodes = [
@@ -1570,6 +1589,57 @@
         else if(funcType === 'exp_neg') title = 'f(x) = e^{-x} 的导数列（绝对值递减，符号交替）';
         else if(funcType === 'inv') title = 'f(x) = 1/x 的导数列（符号交替）';
         ctx.fillText(title, width / 2, padding - 10);
+      },
+      // ===== Desmos 可视化 =====
+      initDesmos() {
+        if (typeof Desmos === 'undefined') return;
+        // 防止重复初始化
+        if (!this._desmos) this._desmos = {};
+        const fxEl = document.getElementById('desmos-fx');
+        const fpEl = document.getElementById('desmos-fprime');
+        if (fxEl && !this._desmos.fx) {
+          this._desmos.fx = Desmos.GraphingCalculator(fxEl, { expressions: true, keypad: false, expressionsCollapsed: true });
+        }
+        if (fpEl && !this._desmos.fp) {
+          this._desmos.fp = Desmos.GraphingCalculator(fpEl, { expressions: true, keypad: false, expressionsCollapsed: true });
+        }
+        // 初次装载表达式
+        this.updateDesmos(true);
+      },
+      updateDesmos(initial=false) {
+        if (!this._desmos || typeof Desmos === 'undefined') return;
+        const a = Number(this.paramA2 || 1);
+        const fExpr = `f(x)=e^x+${a}*ln(x)-x^2`;
+        const fpExpr = `f'(x)`; // Desmos 可直接用导数
+        const x0 = this._desmos_x0 ?? 1.5; // 默认点
+        this._desmos_x0 = x0;
+
+        const tanExpr = `y = derivative(f)(x0)*(x - x0) + f(x0)`;
+
+        if (this._desmos.fx) {
+          if (initial) this._desmos.fx.setExpressions([]);
+          this._desmos.fx.setExpression({ id: 'f', latex: fExpr });
+          this._desmos.fx.setExpression({ id: 'x0', latex: `x0=${x0}` });
+          this._desmos.fx.setExpression({ id: 'A', latex: `(x0, f(x0))`, showLabel: true, label: 'A(x0,f(x0))' });
+          this._desmos.fx.setExpression({ id: 'tan', latex: tanExpr, color: Desmos.Colors.RED });
+          this._desmos.fx.setViewport({ left: -1, right: 6, bottom: -6, top: 6 });
+        }
+        if (this._desmos.fp) {
+          if (initial) this._desmos.fp.setExpressions([]);
+          this._desmos.fp.setExpression({ id: 'f', latex: fExpr, hidden: true });
+          this._desmos.fp.setExpression({ id: 'fp', latex: `y=derivative(f)(x)` });
+          this._desmos.fp.setExpression({ id: 'x0', latex: `x0=${x0}` });
+          this._desmos.fp.setExpression({ id: 'B', latex: `(x0, derivative(f)(x0))`, showLabel: true, label: "f'(x0)" });
+          this._desmos.fp.setViewport({ left: -1, right: 6, bottom: -6, top: 6 });
+        }
+      },
+      // 可选：销毁
+      disposeDesmos() {
+        if (this._desmos) {
+          if (this._desmos.fx && this._desmos.fx.destroy) this._desmos.fx.destroy();
+          if (this._desmos.fp && this._desmos.fp.destroy) this._desmos.fp.destroy();
+          this._desmos = null;
+        }
       }
     }
   });
