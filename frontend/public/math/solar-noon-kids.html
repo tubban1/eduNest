@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="太阳正午趣味探索：用简单的实验方法观察影子找太阳正午，了解为什么不同地方的正午时间不一样。包含有趣的实验步骤、生动的动画图解和互动小游戏。">
+  <meta name="keywords" content="太阳正午,影子实验,时区,经度,太阳运动,地理知识,科学实验,小学生,天文入门">
+  <title>太阳正午的秘密 - 用影子找太阳！</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 4px solid #f39c12;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+      font-size: 32px;
+      text-align: center;
+    }
+    h2 {
+      color: #e67e22;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 15px;
+      border-left: 5px solid #f39c12;
+      font-size: 24px;
+    }
+    .card {
+      background: #fff;
+      border: 2px solid #f39c12;
+      border-radius: 10px;
+      padding: 25px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(243,156,18,0.2);
+    }
+    .card strong {
+      color: #e67e22;
+      font-size: 1.1em;
+    }
+    .k {
+      line-height: 2.2;
+      font-size: 16px;
+    }
+    .ans {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-left: 5px solid #4caf50;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    canvas {
+      border: 2px solid #f39c12;
+      border-radius: 8px;
+      margin: 15px 0;
+      display: block;
+      width: 100%;
+      max-width: 800px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .highlight {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-weight: bold;
+      color: #e67e22;
+    }
+    .fun-box {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      border-left: 5px solid #2196f3;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .step {
+      margin: 15px 0;
+      padding: 15px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    .story-box {
+      background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+      border-left: 5px solid #e91e63;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+      font-size: 17px;
+      line-height: 1.9;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 15px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
+      color: #34495e;
+      border: 2px solid #bdc3c7;
+      border-radius: 25px;
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all .3s ease;
+    }
+    .tab-header:hover {
+      background: linear-gradient(135deg, #e8eef3 0%, #d5dbdb 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .tab-header.active {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+      color: #fff;
+      border-color: #e67e22;
+      box-shadow: 0 4px 12px rgba(243,156,18,0.4);
+      transform: translateY(-2px);
+    }
+    .tab-panel {
+      border: 2px solid #f39c12;
+      border-radius: 10px;
+      padding: 20px;
+      background: #fff;
+      min-height: 400px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 25px;
+      cursor: pointer;
+      margin: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 4px 8px rgba(52,152,219,0.3);
+      transition: all .3s ease;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(52,152,219,0.4);
+    }
+    input[type="number"], input[type="text"] {
+      padding: 10px 15px;
+      border: 2px solid #3498db;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 16px;
+    }
+    table th {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      padding: 12px;
+      border: 2px solid #2980b9;
+    }
+    table td {
+      padding: 10px;
+      border: 2px solid #ddd;
+      text-align: center;
+    }
+    table tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 10px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 15px;
+        margin: 15px 0;
+      }
+      .tab-panel {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      h2 {
+        font-size: 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🌞 太阳正午的秘密 - 用影子找太阳！🌞</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre>
+      <h2>📖 今天我们要做什么？</h2>
+      <div class="story-box">
+        <p>小明和小红在公园里玩，突然发现了一个有趣的现象：早上他们的影子很长很长，中午的时候影子变得很短很短，到了下午影子又变长了！</p>
+        <p>小明问："为什么影子会变来变去呢？"</p>
+        <p>小红说："因为太阳在天空中移动呀！"</p>
+        <p>老师走过来说："你们知道吗？影子最短的时候，就是太阳在天空中最高的时候，我们把这个时刻叫做<span class="highlight">太阳正午</span>！今天，我们就来一起找找太阳正午是几点！"</p>
+      </div>
+      <div class="k">
+        <h3 style="color:#e67e22; margin:15px 0 10px; font-size:20px;">✨ 什么是太阳正午？</h3>
+        <p><strong>太阳正午</strong>就是一天中太阳在天空中爬得最高的时刻！就像太阳爬到了天空的"山顶"一样！</p>
+        <br>
+        <p>你观察过太阳吗？早上太阳从东边升起，中午的时候太阳在南方（对我们来说），下午太阳从西边落下。就像太阳在天空中画了一个大大的弧形！</p>
+        <br>
+        <p><strong>🕐 有趣的时间秘密：</strong></p>
+        <p>你知道吗？虽然我们都说"中午12点"，但是每个地方的太阳正午时间其实不一样哦！</p>
+        <p>比如，北京和上海虽然都在同一个时区（时间一样），但是它们的太阳正午时间可能相差几分钟！</p>
+        <p>这是因为地球是圆的，不同地方的位置不一样。就像你站在操场的不同位置，看到的景色也不一样！</p>
+        <br>
+        <p><strong>🎯 我们的任务：</strong></p>
+        <p><strong>(a)</strong> 做一个超级简单的实验：在地上插一根棍子，观察它的影子，看看什么时候影子最短！</p>
+        <br>
+        <p><strong>(b)</strong> 查一查科学资料（星历表），看看科学家是怎么计算太阳正午的，然后和我们实验的结果比比看！</p>
+      </div>
+    </div>
+    
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>🎓 让我们一起来探索吧！（点击下面的标签）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">🌟 开始探索</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">🔬 (a) 影子实验</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">📚 (b) 科学计算</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">🎉 总结与游戏</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k" v-pre>
+              <h3 style="color:#e67e22; margin:10px 0 8px; font-size:22px;">🌟 开始我们的探索之旅！</h3>
+              <div class="story-box">
+                <p>想象一下，你手里拿着一根魔法棒（其实是一根普通的棍子），把它竖着插在地上。</p>
+                <p>当太阳在天空中"走路"的时候，这根棍子的影子就像一个小精灵一样，一会儿变长，一会儿变短！</p>
+                <p><span class="highlight">影子最短的时候，就是太阳正午！</span>这时候太阳爬到了天空的最高处，就像爬到了山顶一样！</p>
+              </div>
+
+              <h3 style="color:#e67e22; margin:15px 0 10px; font-size:20px;">🔍 让我们理解一下题目</h3>
+              <div class="step">
+                <div class="step-title">📝 题目告诉我们什么？</div>
+                <ul style="margin-left:25px; font-size:16px;">
+                  <li>太阳正午 = 太阳在天空中最高 = 影子最短的时候</li>
+                  <li>方法一：做一个超简单的实验，观察影子</li>
+                  <li>方法二：查科学资料，用数学算出来</li>
+                  <li>重要的是：不同地方的太阳正午时间可能不一样！</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#e67e22; margin:15px 0 10px; font-size:20px;">📚 我们需要知道的知识</h3>
+              <div class="step">
+                <ul style="margin-left:15px; list-style: none; font-size:16px;">
+                  <li><strong>🌞 太阳的运动</strong>
+                    <ul style="margin-left:25px; margin-top:8px;">
+                      <li>太阳从东边升起，画一个弧形，从西边落下</li>
+                      <li>太阳在天空中的高度会变化（就像爬楼梯一样）</li>
+                      <li>中午时太阳爬得最高！</li>
+                    </ul>
+                  </li>
+                  <li><strong>🕐 时间的小秘密</strong>
+                    <ul style="margin-left:25px; margin-top:8px;">
+                      <li>时区：同一时间带内所有地方时间一样</li>
+                      <li>经度：地球上的位置，影响太阳正午的时间</li>
+                      <li>每差1度经度，时间差大约4分钟！</li>
+                    </ul>
+                  </li>
+                  <li><strong>👥 影子的秘密</strong>
+                    <ul style="margin-left:25px; margin-top:8px;">
+                      <li>太阳越高，影子越短</li>
+                      <li>太阳越低，影子越长</li>
+                      <li>最短的影子 = 最高的太阳 = 太阳正午！</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+
+              <h3 style="color:#e67e22; margin:15px 0 10px; font-size:20px;">💡 小知识扩展</h3>
+              <div class="fun-box">
+                <ul style="margin-left:25px; font-size:16px;">
+                  <li>地球在不停地转动，所以我们看到太阳在"移动"，其实是我们自己在转！</li>
+                  <li>不同地方（不同纬度）看到的太阳轨迹不一样哦！</li>
+                  <li>夏天和冬天，太阳的轨迹也不一样！</li>
+                  <li>科学家发现：经度每差1度，时间差约4分钟（就像地球转一圈需要24小时，360度 ÷ 24小时 = 15度/小时 = 4分钟/度）</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#e67e22; margin:15px 0 10px; font-size:20px;">🎯 小技巧</h3>
+              <div class="step">
+                <ul style="margin-left:25px; font-size:16px;">
+                  <li><strong>如果你只会看太阳：</strong>画个太阳运动图，说明影子怎么变，就能得分！</li>
+                  <li><strong>如果你不会算：</strong>把观察到的数据列成表格，标出影子最短的时候，也能得分！</li>
+                  <li><strong>如果你不会查资料：</strong>说明需要查星历表，即使不会算，也能得一些分数！</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- (a) 实验性确定太阳正午 -->
+          <div class="tab-panel" v-show="activeTab==='q1'">
+            <div class="k" v-pre>
+              <h3 style="color:#e67e22; margin:10px 0 8px; font-size:22px;">🔬 (a) 超级简单的影子实验</h3>
+              <div class="story-box">
+                <p>小明和小红决定做一个实验！他们找了一根1米长的棍子，把它竖直插在平坦的地面上。</p>
+                <p>从早上8点开始，他们每30分钟就去测量一次影子的长度，然后把数字记下来。</p>
+                <p>快到中午的时候，他们每15分钟就测量一次，因为这时候影子变化最快！</p>
+              </div>
+              
+              <div class="step">
+                <div class="step-title">🔬 为什么影子会变？</div>
+                <p style="font-size:16px;">当太阳在天空中移动时，就像在"爬楼梯"一样，越爬越高！</p>
+                <p style="font-size:16px;">太阳越高，影子越短；太阳越低，影子越长。</p>
+                <p style="font-size:16px;">在太阳正午时，太阳爬到了最高处，就像爬到了山顶，这时候影子最短！</p>
+                <p style="font-size:16px; margin-top:10px;"><strong>所以，我们只要找到影子最短的那一刻，就找到了太阳正午！</strong></p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">📋 实验步骤（超级简单！）</div>
+                <ol style="margin-left:25px; font-size:16px; line-height:2;">
+                  <li>找一根棍子（大约1米长），把它竖着插在平坦的地面上</li>
+                  <li>从早上开始（比如8点），每30分钟测量一次影子的长度</li>
+                  <li>把每次测量的时间和影子长度都记下来</li>
+                  <li>快到中午的时候（11点到1点），每15分钟测量一次，这样更准确！</li>
+                  <li>把所有的数据画成一张图（就像下面的图一样）</li>
+                  <li>找到图上最低的点，那就是影子最短的时候，也就是太阳正午！</li>
+                </ol>
+              </div>
+
+              <div class="step">
+                <div class="step-title">🌞 看看太阳是怎么移动的</div>
+                <p style="font-size:16px;">下面这张图展示了太阳从早到晚的移动路径，还有影子是怎么变化的：</p>
+              </div>
+            </div>
+            <div class="k">
+              <canvas id="sunPathCanvas" width="800" height="500"></canvas>
+              <p style="margin-top:10px; font-size:16px; color:#e67e22; font-weight:bold;">
+                💡 <strong>看图小提示：</strong>太阳从东边（右边）升起，爬到南方（上面），然后从西边（左边）落下。中午的时候，太阳在南方，影子最短！
+              </p>
+            </div>
+            <div class="k" v-pre>
+              <div class="step">
+                <div class="step-title">📊 影子长度变化图</div>
+                <p style="font-size:16px;">下面这张图展示了影子长度是怎么变化的，就像一条U形的曲线！</p>
+              </div>
+            </div>
+            <div class="k">
+              <canvas id="shadowLengthCanvas" width="800" height="400"></canvas>
+              <p style="margin-top:10px; font-size:16px; color:#e67e22; font-weight:bold;">
+                💡 <strong>看图小提示：</strong>横轴是时间，纵轴是影子长度。曲线的最低点（最短的影子）就是太阳正午！
+              </p>
+            </div>
+            <div class="k" v-pre>
+              <div class="step">
+                <div class="step-title">📝 小明和小红的实验记录</div>
+                <p style="font-size:16px;">小明和小红认真地记录了一整天的数据：</p>
+              </div>
+            </div>
+            <div class="k">
+              <table>
+                <thead>
+                  <tr>
+                    <th>⏰ 时间</th>
+                    <th>📏 影子长度 (厘米)</th>
+                    <th>💭 小明和小红的观察</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>8:00</td>
+                    <td>150</td>
+                    <td>早晨，太阳还在"爬山"，影子很长</td>
+                  </tr>
+                  <tr>
+                    <td>10:00</td>
+                    <td>80</td>
+                    <td>太阳爬高了一些，影子变短了</td>
+                  </tr>
+                  <tr>
+                    <td>11:30</td>
+                    <td>45</td>
+                    <td>快中午了，影子越来越短！</td>
+                  </tr>
+                  <tr style="background:linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%); font-weight:bold;">
+                    <td>🎉 12:15</td>
+                    <td>🎉 38</td>
+                    <td>🎉 最短的影子！太阳正午！</td>
+                  </tr>
+                  <tr>
+                    <td>13:00</td>
+                    <td>50</td>
+                    <td>太阳开始"下山"了，影子又变长了</td>
+                  </tr>
+                  <tr>
+                    <td>15:00</td>
+                    <td>100</td>
+                    <td>下午，影子越来越长</td>
+                  </tr>
+                  <tr>
+                    <td>17:00</td>
+                    <td>180</td>
+                    <td>傍晚，太阳快下山了，影子很长很长</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p style="margin-top:15px; font-size:16px; font-weight:bold; color:#27ae60;">
+                ✅ <strong>小明和小红发现：</strong>影子在12:15时最短（只有38厘米），所以太阳正午大约是12:15！
+              </p>
+            </div>
+            <div class="ans" v-pre>
+              <strong>🎯 答案：(a)</strong> 通过实验，我们发现影子长度在12:15时最短（38厘米），所以太阳正午大约是12:15！
+            </div>
+          </div>
+
+          <!-- (b) 星历表计算与比较 -->
+          <div class="tab-panel" v-show="activeTab==='q2'">
+            <div class="k" v-pre>
+              <h3 style="color:#e67e22; margin:10px 0 8px; font-size:22px;">📚 (b) 科学家的计算方法</h3>
+              <div class="story-box">
+                <p>老师告诉小明和小红："科学家们早就知道怎么计算太阳正午了！他们用一本叫做'星历表'的书，里面记录了太阳在不同时间和地点的位置。"</p>
+                <p>小红问："那科学家是怎么算的呢？"</p>
+                <p>老师说："科学家发现了一个秘密：每差1度经度，太阳正午的时间就差4分钟！"</p>
+              </div>
+              
+              <div class="step">
+                <div class="step-title">📖 什么是星历表？</div>
+                <p style="font-size:16px;">星历表就像一本"太阳日历"，记录了太阳在什么时候、在什么地方、在天空的什么位置。</p>
+                <p style="font-size:16px;">科学家可以用它来精确计算太阳正午的时间！</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">🧮 科学家是怎么算的？</div>
+                <p style="font-size:16px;">要算出太阳正午，需要知道：</p>
+                <ul style="margin-left:25px; font-size:16px;">
+                  <li>你所在地方的经度（就像地球上的地址）</li>
+                  <li>你所在时区的标准经度</li>
+                  <li>然后算一个简单的公式：<strong>时间差 = 4分钟 × 经度差</strong></li>
+                </ul>
+              </div>
+
+              <div class="step">
+                <div class="step-title">📝 举个例子：</div>
+                <p style="font-size:16px;">假设我们在北京做实验：</p>
+                <ul style="margin-left:25px; font-size:16px;">
+                  <li>北京的经度大约是：116.4°（东经）</li>
+                  <li>我们时区的标准经度是：120°（东经）</li>
+                  <li>经度差 = 116.4° - 120° = -3.6°</li>
+                  <li>时间差 = 4分钟 × (-3.6) = -14.4分钟 ≈ -14分钟</li>
+                  <li>所以，太阳正午 = 12:00 - 14分钟 = <strong style="color:#e74c3c; font-size:18px;">11:46</strong></li>
+                </ul>
+                <p style="margin-top:15px; font-size:16px; color:#e67e22; font-weight:bold;">
+                  💡 <strong>小提示：</strong>如果地点在标准经度以西（就像北京），太阳正午比12:00早；如果在标准经度以东，太阳正午比12:00晚！
+                </p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">🗺️ 看看不同地方的时间差</div>
+                <p style="font-size:16px;">下面这张图展示了不同地方相对于标准时间的太阳正午时间差：</p>
+              </div>
+            </div>
+            <div class="k">
+              <canvas id="timezoneCanvas" width="800" height="400"></canvas>
+              <p style="margin-top:10px; font-size:16px; color:#e67e22; font-weight:bold;">
+                💡 <strong>看图小提示：</strong>横轴是经度，纵轴是时间差。每差1度经度，时间差约4分钟！
+              </p>
+            </div>
+            <div class="k" v-pre>
+              <div class="step">
+                <div class="step-title">🔍 比较两种方法</div>
+                <p style="font-size:16px;">让我们看看实验的结果和科学家的计算有什么不同：</p>
+              </div>
+            </div>
+            <div class="k">
+              <table>
+                <thead>
+                  <tr>
+                    <th>🔬 方法</th>
+                    <th>⏰ 太阳正午时刻</th>
+                    <th>💭 说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>🔬 影子实验</td>
+                    <td>12:15</td>
+                    <td>我们自己做实验得到的</td>
+                  </tr>
+                  <tr>
+                    <td>📚 科学计算</td>
+                    <td>11:46</td>
+                    <td>科学家用公式算出来的</td>
+                  </tr>
+                  <tr style="background:linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);">
+                    <td>🤔 差异</td>
+                    <td>29分钟</td>
+                    <td>这是正常的！因为实验会有误差</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="fun-box" style="margin-top:15px;">
+                <p style="font-size:16px; font-weight:bold;">🤔 为什么会有差异呢？</p>
+                <ul style="margin-left:25px; font-size:16px;">
+                  <li>天气可能影响我们的观察（比如云层）</li>
+                  <li>棍子可能不是完全垂直的</li>
+                  <li>地面可能不是完全平的</li>
+                  <li>我们测量时间可能有误差</li>
+                  <li>科学家的计算是基于理想条件的</li>
+                </ul>
+                <p style="margin-top:10px; font-size:16px; font-weight:bold; color:#27ae60;">
+                  ✅ <strong>但是，两种方法都很棒！</strong>实验方法虽然没那么精确，但能让我们亲手观察；科学计算更准确，但需要查资料和计算。
+                </p>
+              </div>
+            </div>
+            <div class="ans" v-pre>
+              <strong>🎯 答案：(b)</strong> 根据科学家的计算方法，太阳正午是11:46。和我们实验的结果（12:15）相比，差了29分钟。这是因为实验会有误差，这是完全正常的！科学计算更准确，但我们的实验也很有价值，因为它让我们亲手观察了太阳的运动！
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k" v-pre>
+              <h3 style="color:#e67e22; margin:10px 0 8px; font-size:22px;">🎉 我们学到了什么？</h3>
+              <div class="story-box">
+                <p>小明和小红通过这次实验，学到了很多有趣的知识！</p>
+                <p>他们知道了：太阳正午就像"一天的巅峰时刻"——太阳爬到了天空的最高点，影子缩到了最短！</p>
+                <p>通过"观察影子"和"查科学资料"两种方法，他们像小科学家一样，准确地找到了这个特殊时刻！</p>
+                <p>最重要的是，他们发现：虽然我们都说"中午12点"，但每个地方的太阳正午时间其实不一样，这取决于它们在地球上的位置！</p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#e67e22; margin:15px 0 10px; font-size:20px;">🎮 试试看：计算你家乡的太阳正午</h3>
+              <p style="font-size:16px; margin-bottom:15px;"><strong>输入你家乡的经度，看看太阳正午是几点！</strong></p>
+              <div class="row">
+                <label style="font-size:16px; font-weight:bold;">📍 你家乡的经度 (°E)：</label>
+                <input type="number" v-model.number="longitude" step="0.1" style="width:150px" placeholder="例如：116.4">
+                <label style="font-size:16px; font-weight:bold;">🗺️ 时区标准经度 (°E)：</label>
+                <input type="number" v-model.number="timezoneLongitude" step="1" style="width:150px" placeholder="例如：120">
+                <button class="btn" @click="calculateSolarNoon">🧮 计算！</button>
+              </div>
+              <div class="fun-box" style="margin-top:20px;">
+                <p style="font-size:17px; font-weight:bold; color:#e67e22; margin-bottom:10px;">📊 计算结果：</p>
+                <p style="font-size:16px;">经度差：{{longitude}}° - {{timezoneLongitude}}° = <strong>{{longitudeDifference}}°</strong></p>
+                <p style="font-size:16px;">时间差：4分钟 × {{longitudeDifference}} = <strong>{{timeCorrection}}分钟</strong></p>
+                <p style="font-size:18px; font-weight:bold; color:#e74c3c; margin-top:15px;">
+                  ⏰ <strong>太阳正午时刻：{{solarNoonTime}}</strong>
+                </p>
+              </div>
+            </div>
+            <div class="k">
+              <h3 style="color:#e67e22; margin:15px 0 10px; font-size:20px;">🎨 综合大图</h3>
+              <canvas id="summaryCanvas" width="800" height="500"></canvas>
+              <p style="margin-top:10px; font-size:16px; color:#e67e22; font-weight:bold;">
+                💡 <strong>看图小提示：</strong>上面是太阳的运动轨迹（正午时太阳最高），下面是影子长度的变化（正午时影子最短）。你看，它们是不是对应得很好？
+              </p>
+            </div>
+            <div class="ans">
+              <p style="font-size:17px; font-weight:bold; color:#27ae60;">
+                🎊 <strong>恭喜你！</strong>你已经学会了用两种方法找太阳正午！现在你可以去户外做一个真正的实验，或者用科学公式计算你家乡的太阳正午时间了！
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const staticEl = document.getElementById('static-math');
+    if(staticEl && typeof renderMathInElement !== 'undefined') {
+      try {
+        renderMathInElement(staticEl, {
+          delimiters: [
+            {left: '\\[', right: '\\]', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ],
+          throwOnError: false
+        });
+      } catch(e) {}
+    }
+  });
+
+  const {createApp} = Vue;
+
+  const app = createApp({
+    data() {
+      return {
+        activeTab: 'intro',
+        longitude: 116.4,
+        timezoneLongitude: 120
+      };
+    },
+    computed: {
+      longitudeDifference() {
+        return (this.longitude - this.timezoneLongitude).toFixed(1);
+      },
+      timeCorrection() {
+        const diff = this.longitude - this.timezoneLongitude;
+        return (4 * diff).toFixed(1);
+      },
+      solarNoonTime() {
+        const diff = this.longitude - this.timezoneLongitude;
+        const correction = 4 * diff;
+        const totalMinutes = 12 * 60 + correction;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = Math.floor(totalMinutes % 60);
+        const sign = correction >= 0 ? '+' : '';
+        return `${hours}:${String(minutes).padStart(2, '0')} (标准时间12:00 ${sign}${correction.toFixed(1)}分钟)`;
+      }
+    },
+    mounted() {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {
+                console.warn('Math rendering error:', e);
+              }
+            }
+          }
+          
+          setTimeout(() => {
+            this.drawSunPath();
+            this.drawShadowLength();
+            this.drawTimezone();
+            this.drawSummary();
+          }, 200);
+        }, 100);
+      });
+    },
+    methods: {
+      setTab(name) {
+        this.activeTab = name;
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {}
+              }
+            }
+            
+            if(name === 'q1') {
+              setTimeout(() => {
+                this.drawSunPath();
+                this.drawShadowLength();
+              }, 100);
+            } else if(name === 'q2') {
+              setTimeout(() => {
+                this.drawTimezone();
+              }, 100);
+            } else if(name === 'summary') {
+              setTimeout(() => {
+                this.drawSummary();
+              }, 100);
+            }
+          }, 50);
+        });
+      },
+      calculateSolarNoon() {
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {}
+              }
+            }
+          }, 50);
+        });
+      },
+      drawSunPath() {
+        const canvas = document.getElementById('sunPathCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height - 80;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 绘制地平线
+        ctx.strokeStyle = '#95a5a6';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(50, centerY);
+        ctx.lineTo(width - 50, centerY);
+        ctx.stroke();
+        
+        // 绘制方向标签（更大更清晰）
+        ctx.fillStyle = '#e67e22';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌅 东', 100, centerY + 30);
+        ctx.fillText('☀️ 南', centerX, centerY - 350);
+        ctx.fillText('🌇 西', width - 100, centerY + 30);
+        
+        // 绘制太阳运动轨迹（弧形）
+        ctx.strokeStyle = '#f39c12';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        const radius = 300;
+        const startAngle = Math.PI * 0.2;
+        const endAngle = Math.PI * 0.8;
+        ctx.arc(centerX, centerY + radius * 0.3, radius, startAngle, endAngle);
+        ctx.stroke();
+        
+        // 绘制几个关键时刻的太阳位置
+        const times = [
+          {angle: 0.25, time: '8:00', label: '早晨', emoji: '🌅'},
+          {angle: 0.4, time: '10:00', label: '上午', emoji: '☀️'},
+          {angle: 0.5, time: '12:15', label: '正午', color: '#e74c3c', emoji: '🔥'},
+          {angle: 0.6, time: '14:00', label: '下午', emoji: '☀️'},
+          {angle: 0.75, time: '17:00', label: '傍晚', emoji: '🌇'}
+        ];
+        
+        times.forEach(({angle, time, label, color, emoji}) => {
+          const a = Math.PI * (0.2 + angle * 0.6);
+          const x = centerX + radius * Math.cos(a);
+          const y = centerY + radius * 0.3 + radius * Math.sin(a);
+          
+          // 绘制太阳（更大更明显）
+          ctx.fillStyle = color || '#f39c12';
+          ctx.beginPath();
+          ctx.arc(x, y, 20, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 太阳光晕
+          ctx.strokeStyle = color || '#f39c12';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(x, y, 25, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // 绘制阴影
+          const shadowLength = 30 + Math.abs(angle - 0.5) * 100;
+          ctx.strokeStyle = '#34495e';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          const shadowX = centerX + (x - centerX) / 3;
+          const shadowY = centerY + shadowLength;
+          ctx.lineTo(shadowX, shadowY);
+          ctx.stroke();
+          
+          // 时间标签（更大更清晰）
+          ctx.fillStyle = '#34495e';
+          ctx.font = 'bold 16px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${emoji} ${time}`, x, y - 30);
+          ctx.fillText(label, x, y + 40);
+        });
+        
+        // 绘制垂直杆子（更粗更明显）
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(centerX - 8, centerY - 80, 16, 80);
+        
+        // 标题（更大更醒目）
+        ctx.fillStyle = '#e67e22';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌞 太阳运动轨迹与影子变化 🌞', centerX, 40);
+      },
+      drawShadowLength() {
+        const canvas = document.getElementById('shadowLengthCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 数据点
+        const data = [
+          {time: 8, length: 150},
+          {time: 9, length: 120},
+          {time: 10, length: 80},
+          {time: 11, length: 55},
+          {time: 11.5, length: 45},
+          {time: 12.25, length: 38},
+          {time: 13, length: 50},
+          {time: 14, length: 70},
+          {time: 15, length: 100},
+          {time: 16, length: 130},
+          {time: 17, length: 180}
+        ];
+        
+        const timeRange = 17 - 8;
+        const lengthRange = 180 - 38;
+        const lengthMin = 38;
+        
+        function timeToX(t) {
+          return padding + (t - 8) / timeRange * (width - 2 * padding);
+        }
+        
+        function lengthToY(l) {
+          return height - padding - (l - lengthMin) / lengthRange * (height - 2 * padding);
+        }
+        
+        // 绘制网格
+        ctx.strokeStyle = '#ecf0f1';
+        ctx.lineWidth = 1;
+        for(let t = 8; t <= 17; t++) {
+          const x = timeToX(t);
+          ctx.beginPath();
+          ctx.moveTo(x, padding);
+          ctx.lineTo(x, height - padding);
+          ctx.stroke();
+        }
+        
+        // 绘制坐标轴
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+        
+        // 绘制曲线（更粗更明显）
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        data.forEach((d, i) => {
+          const x = timeToX(d.time);
+          const y = lengthToY(d.length);
+          if(i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+        ctx.stroke();
+        
+        // 标记最低点（太阳正午）
+        const minPoint = data.find(d => d.length === 38);
+        if(minPoint) {
+          const minX = timeToX(minPoint.time);
+          const minY = lengthToY(minPoint.length);
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(minX, minY, 10, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 标注（更大更醒目）
+          ctx.fillStyle = '#e74c3c';
+          ctx.font = 'bold 18px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('🔥 太阳正午！', minX, minY - 25);
+          ctx.fillText('12:15', minX, minY - 45);
+        }
+        
+        // 数据点（更大）
+        ctx.fillStyle = '#3498db';
+        data.forEach(d => {
+          const x = timeToX(d.time);
+          const y = lengthToY(d.length);
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        // 坐标轴标签（更大）
+        ctx.fillStyle = '#34495e';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('⏰ 时间 (时)', width / 2, height - 15);
+        ctx.save();
+        ctx.translate(25, height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('📏 影子长度 (厘米)', 0, 0);
+        ctx.restore();
+        
+        // 标题（更大更醒目）
+        ctx.fillStyle = '#e67e22';
+        ctx.font = 'bold 22px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('📊 影子长度变化曲线', width / 2, 35);
+      },
+      drawTimezone() {
+        const canvas = document.getElementById('timezoneCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 60;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        const standardLongitude = 120;
+        const longitudeRange = 20;
+        
+        function longToX(lon) {
+          return padding + (lon - standardLongitude + longitudeRange) / (2 * longitudeRange) * (width - 2 * padding);
+        }
+        
+        function timeToY(minutes) {
+          return height - padding - (minutes + 40) / 80 * (height - 2 * padding);
+        }
+        
+        // 绘制网格
+        ctx.strokeStyle = '#ecf0f1';
+        ctx.lineWidth = 1;
+        for(let lon = standardLongitude - 10; lon <= standardLongitude + 10; lon += 2) {
+          const x = longToX(lon);
+          ctx.beginPath();
+          ctx.moveTo(x, padding);
+          ctx.lineTo(x, height - padding);
+          ctx.stroke();
+        }
+        
+        // 绘制坐标轴
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+        
+        // 绘制标准时区线
+        const standardX = longToX(standardLongitude);
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.moveTo(standardX, padding);
+        ctx.lineTo(standardX, height - padding);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // 绘制时间偏差曲线
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        for(let lon = standardLongitude - 10; lon <= standardLongitude + 10; lon += 0.5) {
+          const diff = lon - standardLongitude;
+          const minutes = 4 * diff;
+          const x = longToX(lon);
+          const y = timeToY(minutes);
+          if(lon === standardLongitude - 10) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+        
+        // 标记几个城市（更大更明显）
+        const cities = [
+          {lon: 116.4, name: '北京', color: '#e74c3c', emoji: '🏛️'},
+          {lon: 121.5, name: '上海', color: '#27ae60', emoji: '🏙️'},
+          {lon: 113.0, name: '广州', color: '#9b59b6', emoji: '🌆'}
+        ];
+        
+        cities.forEach(city => {
+          const diff = city.lon - standardLongitude;
+          const minutes = 4 * diff;
+          const x = longToX(city.lon);
+          const y = timeToY(minutes);
+          
+          ctx.fillStyle = city.color;
+          ctx.beginPath();
+          ctx.arc(x, y, 10, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = '#34495e';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${city.emoji} ${city.name}`, x, y - 20);
+          ctx.fillText(`${minutes > 0 ? '+' : ''}${minutes.toFixed(1)}分`, x, y + 25);
+        });
+        
+        // 坐标轴标签（更大）
+        ctx.fillStyle = '#34495e';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🗺️ 经度 (°E)', width / 2, height - 15);
+        ctx.save();
+        ctx.translate(25, height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('⏰ 时间差 (分钟)', 0, 0);
+        ctx.restore();
+        
+        // 标注标准时区（更大）
+        ctx.fillStyle = '#3498db';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('标准时区 (120°E)', standardX, padding - 15);
+        
+        // 标题（更大更醒目）
+        ctx.fillStyle = '#e67e22';
+        ctx.font = 'bold 22px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌍 不同地方的太阳正午时间差', width / 2, 35);
+      },
+      drawSummary() {
+        const canvas = document.getElementById('summaryCanvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height - 100;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 绘制上半部分：太阳轨迹
+        const radius = 200;
+        ctx.strokeStyle = '#f39c12';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - 150, radius, Math.PI * 0.2, Math.PI * 0.8);
+        ctx.stroke();
+        
+        // 标记太阳正午位置（更大）
+        const noonX = centerX;
+        const noonY = centerY - 150 - radius * 0.6;
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(noonX, noonY, 18, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制下半部分：阴影长度曲线
+        const curveHeight = 150;
+        const curveTop = centerY + 50;
+        const curveData = [
+          {time: 8, length: 150},
+          {time: 10, length: 80},
+          {time: 12.25, length: 38},
+          {time: 14, length: 70},
+          {time: 16, length: 130}
+        ];
+        
+        const timeRange = 16 - 8;
+        const lengthRange = 150 - 38;
+        
+        function timeToX(t) {
+          return 100 + (t - 8) / timeRange * (width - 200);
+        }
+        
+        function lengthToY(l) {
+          return curveTop + curveHeight - (l - 38) / lengthRange * curveHeight;
+        }
+        
+        // 绘制阴影曲线（更粗）
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        curveData.forEach((d, i) => {
+          const x = timeToX(d.time);
+          const y = lengthToY(d.length);
+          if(i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+        ctx.stroke();
+        
+        // 标记最低点（更大）
+        const minPoint = curveData.find(d => d.length === 38);
+        if(minPoint) {
+          const minX = timeToX(minPoint.time);
+          const minY = lengthToY(minPoint.length);
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(minX, minY, 10, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 连接线
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([8, 4]);
+          ctx.beginPath();
+          ctx.moveTo(noonX, noonY + 18);
+          ctx.lineTo(minX, minY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        
+        // 标题（更大更醒目）
+        ctx.fillStyle = '#e67e22';
+        ctx.font = 'bold 26px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🎨 太阳正午综合图', centerX, 35);
+        
+        // 说明文字（更大）
+        ctx.fillStyle = '#7f8c8d';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText('☀️ 上：太阳运动轨迹（正午时太阳最高）', centerX, centerY - 200);
+        ctx.fillText('📏 下：影子长度变化（正午时影子最短）', centerX, curveTop + curveHeight + 35);
+      }
+    }
+  });
+  
+  const vm = app.mount('#app');
+  
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+      
+      setTimeout(function() {
+        if(vm && vm.drawSummary) {
+          vm.drawSummary();
+        }
+        if(typeof renderMathInElement !== 'undefined') {
+          const appEl = document.getElementById('app');
+          if(appEl) {
+            try {
+              renderMathInElement(appEl, {
+                delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+              });
+            } catch(e) {}
+          }
+        }
+      }, 300);
+    }, 500);
+  });
+  </script>
+</body>
+</html>
+
+
