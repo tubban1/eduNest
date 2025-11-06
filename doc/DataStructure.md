@@ -295,6 +295,13 @@
   },
   {
     "table_name": "content",
+    "column_name": "full_html",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
     "column_name": "short_id",
     "data_type": "text",
     "is_nullable": "NO",

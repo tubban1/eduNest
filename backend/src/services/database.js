@@ -258,12 +258,12 @@ function generateShortId() {
 
 const createContent = async (contentData, userId) => {
   try {
-    const { title, code_html, code_css, code_js, tags, external_links, description, content_type, language_code } = contentData;
+    const { title, code_html, code_css, code_js, full_html, tags, external_links, description, content_type, language_code } = contentData;
     
     const result = await supabase
       .from('content')
       .insert({
-        title, code_html, code_css, code_js, tags, external_links, description, content_type, language_code,
+        title, code_html, code_css, code_js, full_html, tags, external_links, description, content_type, language_code,
         created_by: userId,
         short_id: generateShortId(),
         created_at: new Date().toISOString(),
@@ -512,6 +512,7 @@ const updateContent = async (contentId, contentData) => {
     code_html,
     code_css,
     code_js,
+    full_html,
     tags,
     external_links,
     description,
@@ -526,6 +527,7 @@ const updateContent = async (contentId, contentData) => {
       code_html,
       code_css,
       code_js,
+      full_html,
       tags,
       external_links,
       description,

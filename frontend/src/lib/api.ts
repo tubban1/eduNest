@@ -475,6 +475,7 @@ export interface Content {
   code_html?: string;
   code_css?: string;
   code_js?: string;
+  full_html?: string; // 完整的 HTML 文件内容
   external_links?: string[];
   language_code?: string;
   content_type?: string;
