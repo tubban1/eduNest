@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="用圆规找出三角形内心并画出内切圆。通过有趣的动画演示，学习如何用圆规和直尺画出与三角形三条边都相切的圆。适合小学生学习的几何作图方法。">
+  <meta name="keywords" content="三角形内心,内切圆,圆规作图,几何作图,角平分线,平面几何,小学生几何,几何学习">
+  <title>用圆规画三角形的内切圆 - 几何作图学习</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .problem-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .problem-number {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px 0 0 20px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .problem-info {
+      background: #ecf0f1;
+      padding: 8px 15px;
+      border-radius: 0 20px 20px 0;
+      font-size: 14px;
+      color: #7f8c8d;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: block;
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #ecf0f1;
+      color: #34495e;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 14px;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #e8eef3;
+    }
+    .tab-header.active {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: #fff;
+      border-color: #2980b9;
+      box-shadow: 0 2px 6px rgba(52,152,219,0.25);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .control-panel {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .control-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .control-group label {
+      font-weight: bold;
+      color: #34495e;
+      min-width: 80px;
+    }
+    .control-group input {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 80px;
+    }
+    .control-group button {
+      padding: 8px 16px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .control-group button:hover {
+      background: #2980b9;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 8px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 6px;
+      }
+      .problem-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .problem-number {
+        border-radius: 20px;
+        margin-bottom: 10px;
+      }
+      .problem-info {
+        border-radius: 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>用圆规画三角形的内切圆</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre>
+      <h2>📐 题目</h2>
+      
+      <div class="problem-header">
+        <div class="problem-number">题目</div>
+        <div class="problem-info">几何作图 - 用圆规和直尺画内切圆</div>
+      </div>
+      
+      <div class="k">
+        <p><strong>🎯 任务：</strong>有一个三角形 \(ABC\)，我们要用圆规画一个圆，让这个圆能够"紧贴"三角形的三条边，就像一个小球被三条边"夹住"一样！</p>
+        <br>
+        <p><strong>📋 步骤：</strong></p>
+        <ol style="margin-left: 20px; line-height: 2;">
+          <li><strong>第一步：</strong>用直尺画出三角形的三条<strong>角平分线</strong>（把每个角分成两半的线）</li>
+          <li><strong>第二步：</strong>找到三条角平分线的<strong>交点</strong>，这个点叫做<strong>内心</strong>（用字母 \(I\) 表示）</li>
+          <li><strong>第三步：</strong>用圆规以内心 \(I\) 为圆心，画一个圆，让这个圆刚好碰到三角形的三条边</li>
+          <li><strong>第四步：</strong>检查一下，这个圆是不是真的和三条边都"贴"在一起了？</li>
+        </ol>
+        <br>
+        <p><strong>💡 小提示：</strong>内心到三角形三条边的距离是相等的，这个距离就是我们要画的圆的半径！</p>
+      </div>
+    </div>
+    
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='def'}" @click="setTab('def')">定义与性质</div>
+            <div class="tab-header" :class="{active: activeTab==='step1'}" @click="setTab('step1')">步骤一：找内心</div>
+            <div class="tab-header" :class="{active: activeTab==='step2'}" @click="setTab('step2')">步骤二：画内切圆</div>
+            <div class="tab-header" :class="{active: activeTab==='step3'}" @click="setTab('step3')">步骤三：计算半径</div>
+            <div class="tab-header" :class="{active: activeTab==='step4'}" @click="setTab('step4')">步骤四：证明相切</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">🎨 想象一下</h3>
+              <p>在一个三角形里面，有一个圆能够"紧贴"三条边，就像一个小球被三条边"夹住"一样！这个圆的圆心叫做<strong>内心</strong>，它是三条<strong>角平分线</strong>的交点。</p>
+              <p style="margin-top:10px;">💭 <strong>什么是角平分线？</strong>就是把一个角分成两个一样大的角的线，就像把一块蛋糕平均切成两半！</p>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">🔍 我们要做什么？</h3>
+              <div class="step">
+                <div class="step-title">📝 任务清单</div>
+                <ul style="margin-left:20px; line-height: 2;">
+                  <li>🎯 找出三角形的内心（三条角平分线的交点）</li>
+                  <li>📏 测量内心到边的距离（这就是圆的半径）</li>
+                  <li>🔄 用圆规以内心为圆心画圆</li>
+                  <li>✅ 检查圆是否和三条边都"贴"在一起</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">📚 需要知道的知识</h3>
+              <div class="step">
+                <ul style="margin-left:12px; list-style: none; line-height: 2;">
+                  <li>📐 <strong>角平分线</strong>
+                    <ul style="margin-left:18px;">
+                      <li>把一个角分成两个一样大的角的线</li>
+                      <li>角平分线上的点到角的两边距离一样远</li>
+                    </ul>
+                  </li>
+                  <li>🎯 <strong>内心</strong>
+                    <ul style="margin-left:18px;">
+                      <li>三条角平分线的交点</li>
+                      <li>内心到三条边的距离都一样远</li>
+                    </ul>
+                  </li>
+                  <li>⭕ <strong>内切圆</strong>
+                    <ul style="margin-left:18px;">
+                      <li>圆心在内心</li>
+                      <li>半径 = 内心到边的距离</li>
+                      <li>和三条边都"贴"在一起</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">🛠️ 需要什么工具？</h3>
+              <div class="step">
+                <ul style="margin-left:20px; line-height: 2;">
+                  <li>🔄 <strong>圆规</strong>：用来画弧和画圆（这是最重要的工具！）</li>
+                  <li>📏 <strong>直尺</strong>：用来连接点和画直线</li>
+                  <li>✏️ <strong>铅笔</strong>：用来标记点和画线</li>
+                </ul>
+                <p style="margin-top:10px;">💡 <strong>圆规的两个作用：</strong></p>
+                <ol style="margin-left:20px; line-height: 2;">
+                  <li>画弧，帮助我们找到角平分线上的点</li>
+                  <li>以内心为圆心画内切圆</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <!-- 定义与性质 -->
+          <div class="tab-panel" v-show="activeTab==='def'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">📐 什么是角平分线？</h3>
+              <div class="formula-box">
+                <p><strong>角平分线：</strong>把一个角分成两个一样大的角的线，就像把一块蛋糕平均切成两半！</p>
+                <p style="margin-top:10px;">🎯 <strong>特点：</strong>角平分线上的点到角的两边距离一样远。</p>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">🎯 什么是内心？</h3>
+              <div class="step">
+                <div class="step-title">内心的定义</div>
+                <p>三角形的三条角平分线会交于一点，这个点叫做<strong>内心</strong>，用字母 \(I\) 表示。</p>
+                <p style="margin-top:10px;">💡 <strong>为什么叫"内心"？</strong>因为它在这个三角形的"里面"（内部）！</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">✨ 内心的神奇性质</div>
+                <p><strong>最重要的性质：</strong>内心到三角形三条边的距离<strong>完全一样</strong>！</p>
+                <p style="margin-top:10px;">📏 这个距离就是我们用圆规画圆时的<strong>半径</strong>！</p>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">⭕ 什么是内切圆？</h3>
+              <div class="formula-box">
+                <p><strong>内切圆：</strong>在三角形里面，和三条边都"贴"在一起的圆。</p>
+                <ul style="margin-left:20px; margin-top:10px; line-height: 2;">
+                  <li>🎯 <strong>圆心：</strong>三角形的内心 \(I\)</li>
+                  <li>📏 <strong>半径：</strong>内心到任意一边的距离（三条边都一样！）</li>
+                  <li>📍 <strong>切点：</strong>圆和边"贴"在一起的那个点</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">🔄 圆规的两个重要作用</h3>
+              <div class="step">
+                <div class="step-title">作用一：用圆规画角平分线</div>
+                <ol style="margin-left:20px; line-height: 2;">
+                  <li>📌 把圆规的<strong>针尖</strong>放在角的顶点上</li>
+                  <li>📏 调整圆规的<strong>开口</strong>，画一个弧，与角的两边相交</li>
+                  <li>🔄 保持圆规开口不变，以两个交点为圆心画两个弧</li>
+                  <li>📏 用直尺连接顶点和两个弧的交点，就是角平分线</li>
+                </ol>
+              </div>
+              <div class="step">
+                <div class="step-title">作用二：用圆规画内切圆</div>
+                <ol style="margin-left:20px; line-height: 2;">
+                  <li>📌 把圆规的<strong>针尖</strong>放在内心 \(I\) 上（这是圆心）</li>
+                  <li>📏 调整圆规的<strong>开口</strong>，让两脚之间的距离等于半径 \(r\)</li>
+                  <li>🔄 转动圆规，画出一个完整的圆</li>
+                  <li>✅ 检查一下，这个圆是不是刚好碰到三条边？</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <!-- 步骤一：找内心 -->
+          <div class="tab-panel" v-show="activeTab==='step1'">
+            <div class="k" v-pre>
+              <p><strong>📐 步骤一：找出三角形的内心 \(I\)</strong></p>
+              
+              <div class="step">
+                <div class="step-title">🔄 用圆规和直尺画角平分线</div>
+                <p><strong>第一步：以角的顶点为圆心画弧</strong></p>
+                <p>把圆规的针尖放在角的顶点（比如顶点 \(A\)），调整圆规的开口，画一个弧，让这个弧和角的两边都相交。这样我们就得到了两个交点。</p>
+                
+                <p><strong>第二步：以两个交点为圆心画弧</strong></p>
+                <p>保持圆规的开口不变，分别以刚才得到的两个交点为圆心，画两个弧。这两个弧会在角内部相交于一点。</p>
+                
+                <p><strong>第三步：连接顶点和交点</strong></p>
+                <p>用直尺连接角的顶点和刚才找到的交点，这条线就是<strong>角平分线</strong>！</p>
+                
+                <p><strong>第四步：重复以上步骤</strong></p>
+                <p>用同样的方法画出另外两个角的角平分线。</p>
+                
+                <p><strong>第五步：找交点</strong></p>
+                <p>三条角平分线会交于一点，这个点就是<strong>内心 \(I\)</strong>！</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">💡 小技巧</div>
+                <p>如果三条线没有交于一点，可能是画得不够准确。多练习几次就会画得更准确了！</p>
+              </div>
+
+              <div class="ans" v-pre>
+                <strong>✅ 找到了！</strong>内心 \(I\) 就是三条角平分线的交点。在下面的动画中，你可以看到如何用圆规一步一步画出角平分线，然后找到它们的交点（内心）！
+              </div>
+              <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                💡 <strong>提示：</strong>点击"用圆规做角平分线"按钮，看看圆规是如何帮助我们画出角平分线的！
+              </p>
+            </div>
+
+            <!-- 可视化：找内心 -->
+            <div class="control-panel">
+              <div class="control-group">
+                <button @click="animateBisectorConstruction">🔄 用圆规做角平分线（动画演示）</button>
+                <button @click="resetBisectorAnimation">重置</button>
+              </div>
+            </div>
+            <div class="control-panel">
+              <div class="control-group">
+                <label>顶点 A:</label>
+                <input type="number" v-model.number="ax" step="0.1">,
+                <input type="number" v-model.number="ay" step="0.1">
+              </div>
+              <div class="control-group">
+                <label>顶点 B:</label>
+                <input type="number" v-model.number="bx" step="0.1">,
+                <input type="number" v-model.number="by" step="0.1">
+              </div>
+              <div class="control-group">
+                <label>顶点 C:</label>
+                <input type="number" v-model.number="cx" step="0.1">,
+                <input type="number" v-model.number="cy" step="0.1">
+              </div>
+              <div class="control-group">
+                <button @click="updateTriangle">更新三角形</button>
+                <button @click="animateIncenter">动画演示找内心</button>
+                <button @click="resetAnimation">重置</button>
+              </div>
+            </div>
+            <canvas id="canvas-step1" width="800" height="500"></canvas>
+            <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;">
+              当前内心坐标：\(I({{ incenterX.toFixed(2) }}, {{ incenterY.toFixed(2) }})\)
+            </p>
+          </div>
+
+          <!-- 步骤二：画内切圆 -->
+          <div class="tab-panel" v-show="activeTab==='step2'">
+            <div class="k" v-pre>
+              <p><strong>🔄 步骤二：用圆规画内切圆</strong></p>
+              
+              <div class="step">
+                <div class="step-title">📏 第一步：测量半径</div>
+                <p>用直尺测量从内心 \(I\) 到任意一条边的距离，这个距离就是我们要画的圆的<strong>半径</strong>！</p>
+                <p style="margin-top:10px;">💡 <strong>小秘密：</strong>因为内心到三条边的距离都一样，所以测量哪条边都可以！</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">🔄 第二步：调整圆规</div>
+                <p><strong>这是圆规最重要的作用！</strong></p>
+                <ol style="margin-left:20px; line-height: 2;">
+                  <li>📌 把圆规的<strong>针尖</strong>（固定脚）放在内心 \(I\) 上</li>
+                  <li>📏 把圆规的<strong>铅笔脚</strong>调整到刚才测量的距离（半径）</li>
+                  <li>✅ 检查一下，圆规两脚之间的距离是不是刚好等于半径？</li>
+                </ol>
+              </div>
+
+              <div class="step">
+                <div class="step-title">⭕ 第三步：转动圆规画圆</div>
+                <p>现在可以开始画圆了！</p>
+                <ol style="margin-left:20px; line-height: 2;">
+                  <li>🔄 保持圆规的针尖在内心 \(I\) 上不动</li>
+                  <li>✏️ 慢慢转动圆规，让铅笔脚画出一个完整的圆</li>
+                  <li>👀 仔细观察，这个圆是不是刚好"贴"到三条边？</li>
+                </ol>
+                <p style="margin-top:10px;">🎉 <strong>完成了！</strong>这就是三角形的内切圆！</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">📍 切点在哪里？</div>
+                <p>圆和三条边"贴"在一起的那个点叫做<strong>切点</strong>：</p>
+                <ul style="margin-left:20px; line-height: 2;">
+                  <li>点 \(D\)：圆和边 \(AB\) 的切点</li>
+                  <li>点 \(E\)：圆和边 \(BC\) 的切点</li>
+                  <li>点 \(F\)：圆和边 \(CA\) 的切点</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 可视化：画内切圆 -->
+            <div class="control-panel">
+              <div class="control-group">
+                <button @click="animateCompassDrawing">🔄 用圆规画圆（动画演示）</button>
+                <button @click="resetCompassAnimation">重置</button>
+              </div>
+            </div>
+            <canvas id="canvas-step2" width="800" height="500"></canvas>
+            <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;">
+              内切圆半径：\(r = {{ inradius.toFixed(2) }}\)
+            </p>
+            <p style="text-align: center; margin-top: 5px; font-size: 0.85em; color: #999;">
+              💡 点击"用圆规画圆"按钮，看看圆规是如何转动画出内切圆的！
+            </p>
+          </div>
+
+          <!-- 步骤三：计算半径 -->
+          <div class="tab-panel" v-show="activeTab==='step3'">
+            <div class="k" v-pre>
+              <p><strong>📏 步骤三：计算内切圆的半径</strong></p>
+              
+              <div class="step">
+                <div class="step-title">💡 简单的方法</div>
+                <p>内切圆的半径可以用一个简单的公式计算：</p>
+                \[r = \frac{\text{三角形的面积}}{\text{半周长}}\]
+                <p style="margin-top:10px;">📐 <strong>半周长</strong>就是三条边的长度加起来，再除以2：</p>
+                \[p = \frac{a + b + c}{2}\]
+                <p>其中 \(a\)、\(b\)、\(c\) 是三角形的三条边的长度。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">📊 计算步骤</div>
+                <p><strong>第一步：</strong>测量三角形的三条边</p>
+                <ul style="margin-left:20px; line-height: 2;">
+                  <li>边 \(AB\) 的长度 = \(c\)</li>
+                  <li>边 \(BC\) 的长度 = \(a\)</li>
+                  <li>边 \(CA\) 的长度 = \(b\)</li>
+                </ul>
+                
+                <p><strong>第二步：</strong>计算半周长</p>
+                \[p = \frac{a + b + c}{2}\]
+                
+                <p><strong>第三步：</strong>计算面积（可以用底×高÷2的方法）</p>
+                
+                <p><strong>第四步：</strong>计算半径</p>
+                \[r = \frac{S}{p}\]
+              </div>
+
+              <div class="step">
+                <div class="step-title">🔄 用圆规测量</div>
+                <p>除了用公式计算，我们还可以：</p>
+                <ol style="margin-left:20px; line-height: 2;">
+                  <li>📏 用直尺从内心 \(I\) 画一条<strong>垂线</strong>到任意一条边</li>
+                  <li>📐 测量这条垂线的长度，这就是半径 \(r\)</li>
+                  <li>🔄 用圆规的两脚量出这个距离，调整圆规的开口</li>
+                </ol>
+              </div>
+
+              <div class="ans" v-pre>
+                <strong>✅ 答案：</strong>内切圆的半径 \(r = \frac{\text{面积}}{\text{半周长}}\)。在下面的计算中，你可以看到具体的数值！
+              </div>
+            </div>
+
+            <!-- 可视化：计算半径 -->
+            <div class="control-panel">
+              <div class="k" v-pre>
+                <p><strong>当前计算结果：</strong></p>
+                <ul style="margin-left:20px;">
+                  <li>三边长度：\(a = {{ sideA.toFixed(2) }}\)，\(b = {{ sideB.toFixed(2) }}\)，\(c = {{ sideC.toFixed(2) }}\)</li>
+                  <li>半周长：\(p = {{ semiPerimeter.toFixed(2) }}\)</li>
+                  <li>面积：\(S = {{ area.toFixed(2) }}\)</li>
+                  <li>内切圆半径：\(r = \frac{S}{p} = \frac{{{ area.toFixed(2) }}}{{{ semiPerimeter.toFixed(2) }}} = {{ inradius.toFixed(2) }}\)</li>
+                </ul>
+              </div>
+            </div>
+            <canvas id="canvas-step3" width="800" height="500"></canvas>
+          </div>
+
+          <!-- 步骤四：证明相切 -->
+          <div class="tab-panel" v-show="activeTab==='step4'">
+            <div class="k" v-pre>
+              <p><strong>✅ 步骤四：检查圆是否和三条边都"贴"在一起</strong></p>
+              
+              <div class="step">
+                <div class="step-title">🔍 怎么检查？</div>
+                <p>我们要检查从内心 \(I\) 到三条边的距离是不是都一样：</p>
+                <ol style="margin-left:20px; line-height: 2;">
+                  <li>📏 测量从 \(I\) 到边 \(AB\) 的距离</li>
+                  <li>📏 测量从 \(I\) 到边 \(BC\) 的距离</li>
+                  <li>📏 测量从 \(I\) 到边 \(CA\) 的距离</li>
+                  <li>✅ 如果三个距离都一样，说明圆和三条边都"贴"在一起了！</li>
+                </ol>
+              </div>
+
+              <div class="step">
+                <div class="step-title">💡 为什么距离一样？</div>
+                <p><strong>因为内心在角平分线上！</strong></p>
+                <p>角平分线有一个神奇的性质：<strong>角平分线上的点到角的两边距离一样远</strong>！</p>
+                
+                <p style="margin-top:10px;">📐 内心 \(I\) 在角 \(A\) 的平分线上，所以：</p>
+                <p style="margin-left:20px;">\(I\) 到边 \(AB\) 的距离 = \(I\) 到边 \(AC\) 的距离</p>
+                
+                <p style="margin-top:10px;">📐 内心 \(I\) 也在角 \(B\) 的平分线上，所以：</p>
+                <p style="margin-left:20px;">\(I\) 到边 \(AB\) 的距离 = \(I\) 到边 \(BC\) 的距离</p>
+                
+                <p style="margin-top:10px;">🎉 <strong>所以：</strong>\(I\) 到三条边的距离<strong>完全一样</strong>！</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">⭕ 为什么圆会"贴"在边上？</div>
+                <p>我们用圆规画的圆，半径正好等于内心到边的距离。</p>
+                <p style="margin-top:10px;">因为：</p>
+                <ul style="margin-left:20px; line-height: 2;">
+                  <li>圆心在内心 \(I\)</li>
+                  <li>半径 = 内心到边的距离</li>
+                  <li>所以圆刚好"贴"在三条边上，不多也不少！</li>
+                </ul>
+              </div>
+
+              <div class="step">
+                <div class="step-title">📍 切点在哪里？</div>
+                <p>圆和边"贴"在一起的那个点叫做<strong>切点</strong>。从内心画一条<strong>垂线</strong>到边，垂足就是切点！</p>
+                <p style="margin-top:10px;">在下面的图中，你可以看到三条灰色的虚线，它们是从内心到三条边的垂线，垂足就是切点 \(D\)、\(E\)、\(F\)。</p>
+              </div>
+
+              <div class="ans" v-pre>
+                <strong>✅ 完成了！</strong>我们画的圆确实和三角形的三条边都"贴"在一起了！这就是内切圆！
+              </div>
+            </div>
+
+            <!-- 可视化：证明相切 -->
+            <canvas id="canvas-step4" width="800" height="500"></canvas>
+            <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;">
+              验证：圆心到三边的距离分别为 \(d_1 = {{ distAB.toFixed(2) }}\)，\(d_2 = {{ distBC.toFixed(2) }}\)，\(d_3 = {{ distCA.toFixed(2) }}\)，都等于半径 \(r = {{ inradius.toFixed(2) }}\)
+            </p>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k" v-pre>
+              <p><strong>🎉 总结：我们学会了什么？</strong></p>
+              <div class="step">
+                <ul style="margin-left:20px; line-height: 2;">
+                  <li>📐 <strong>角平分线</strong>：把一个角分成两个一样大的角的线</li>
+                  <li>🎯 <strong>内心</strong>：三条角平分线的交点</li>
+                  <li>📏 <strong>半径</strong>：内心到任意一边的距离（三条边都一样！）</li>
+                  <li>🔄 <strong>圆规的作用</strong>：以内心为圆心，用测量的半径画圆</li>
+                  <li>⭕ <strong>内切圆</strong>：和三角形三条边都"贴"在一起的圆</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">🎬 完整动画演示</h3>
+              <p>点击"开始完整动画"按钮，看看完整的作图过程：</p>
+              <ol style="margin-left:20px; line-height: 2;">
+                <li>📐 画出三角形 \(ABC\)</li>
+                <li>🔄 <strong>用圆规画角平分线</strong>（先画弧，再连接）</li>
+                <li>🎯 找出内心 \(I\)（三条角平分线的交点）</li>
+                <li>📏 测量半径（内心到边的距离）</li>
+                <li>🔄 <strong>用圆规画内切圆</strong>（以内心为圆心）</li>
+                <li>✅ 检查圆是否和三条边都"贴"在一起</li>
+              </ol>
+              <p style="margin-top:15px;">💡 <strong>注意观察：</strong>动画会展示圆规的两个重要作用：</p>
+              <ul style="margin-left:20px; line-height: 2;">
+                <li>🔄 用圆规画弧，帮助我们找到角平分线</li>
+                <li>⭕ 用圆规以内心为圆心，慢慢画出一个完整的圆</li>
+              </ul>
+            </div>
+
+            <!-- 完整动画演示 -->
+            <div class="control-panel">
+              <div class="control-group">
+                <button @click="startFullAnimation">开始完整动画</button>
+                <button @click="pauseAnimation">暂停</button>
+                <button @click="resetAnimation">重置</button>
+              </div>
+            </div>
+            <canvas id="canvas-summary" width="800" height="500"></canvas>
+            <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;">
+              {{ animationStatus }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const staticEl = document.getElementById('static-math');
+    if(staticEl && typeof renderMathInElement !== 'undefined') {
+      try {
+        renderMathInElement(staticEl, {
+          delimiters: [
+            {left: '\\[', right: '\\]', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ],
+          throwOnError: false
+        });
+      } catch(e) {}
+    }
+  });
+
+  const {createApp} = Vue;
+
+  const app = createApp({
+    data() {
+      return {
+        activeTab: 'intro',
+        // 三角形顶点坐标（默认值）
+        ax: 100, ay: 400,
+        bx: 400, by: 100,
+        cx: 700, cy: 400,
+        // 计算值
+        incenterX: 0,
+        incenterY: 0,
+        inradius: 0,
+        sideA: 0,
+        sideB: 0,
+        sideC: 0,
+        area: 0,
+        semiPerimeter: 0,
+        distAB: 0,
+        distBC: 0,
+        distCA: 0,
+        // 动画状态
+        animationStatus: '点击"开始完整动画"按钮查看演示',
+        animationFrame: null,
+        animationStep: 0,
+        isAnimating: false,
+        compassAngle: 0,
+        showCompass: false,
+        // 角平分线构造动画状态
+        bisectorAnimationStep: 0,
+        isBisectorAnimating: false,
+        showBisectorCompass: false,
+        currentBisectorAngle: 'A' // 'A', 'B', 'C', 'done'
+      };
+    },
+    mounted() {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          // 渲染KaTeX数学公式
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {
+                console.warn('Math rendering error:', e);
+              }
+            }
+          }
+          
+          // 初始化计算
+          this.updateTriangle();
+        }, 100);
+      });
+    },
+    methods: {
+      setTab(name) {
+        this.activeTab = name;
+        this.$nextTick(() => {
+          setTimeout(() => {
+            // 根据tab绘制不同的canvas
+            if(name === 'step1') {
+              this.drawStep1(this.showBisectorCompass, this.bisectorAnimationStep, this.currentBisectorAngle);
+            } else if(name === 'step2') {
+              this.drawStep2(this.showCompass, this.compassAngle);
+            } else if(name === 'step3') {
+              this.drawStep3();
+            } else if(name === 'step4') {
+              this.drawStep4();
+            } else if(name === 'summary') {
+              this.drawSummary();
+            }
+            this.renderMathInApp();
+          }, 50);
+        });
+      },
+      
+      // 计算三角形相关数据
+      calculateTriangle() {
+        // 计算三边长度
+        this.sideA = Math.sqrt((this.cx - this.bx) ** 2 + (this.cy - this.by) ** 2);
+        this.sideB = Math.sqrt((this.ax - this.cx) ** 2 + (this.ay - this.cy) ** 2);
+        this.sideC = Math.sqrt((this.bx - this.ax) ** 2 + (this.by - this.ay) ** 2);
+        
+        // 计算面积（向量叉乘）
+        this.area = Math.abs((this.bx - this.ax) * (this.cy - this.ay) - (this.cx - this.ax) * (this.by - this.ay)) / 2;
+        
+        // 计算半周长
+        this.semiPerimeter = (this.sideA + this.sideB + this.sideC) / 2;
+        
+        // 计算内心坐标
+        const total = this.sideA + this.sideB + this.sideC;
+        this.incenterX = (this.sideA * this.ax + this.sideB * this.bx + this.sideC * this.cx) / total;
+        this.incenterY = (this.sideA * this.ay + this.sideB * this.by + this.sideC * this.cy) / total;
+        
+        // 计算内切圆半径
+        this.inradius = this.area / this.semiPerimeter;
+        
+        // 计算内心到三边的距离
+        this.distAB = this.pointToLineDistance(this.incenterX, this.incenterY, this.ax, this.ay, this.bx, this.by);
+        this.distBC = this.pointToLineDistance(this.incenterX, this.incenterY, this.bx, this.by, this.cx, this.cy);
+        this.distCA = this.pointToLineDistance(this.incenterX, this.incenterY, this.cx, this.cy, this.ax, this.ay);
+      },
+      
+      // 点到直线的距离
+      pointToLineDistance(px, py, x1, y1, x2, y2) {
+        const A = y2 - y1;
+        const B = x1 - x2;
+        const C = x2 * y1 - x1 * y2;
+        return Math.abs(A * px + B * py + C) / Math.sqrt(A * A + B * B);
+      },
+      
+      // 更新三角形
+      updateTriangle() {
+        this.calculateTriangle();
+        this.setTab(this.activeTab);
+      },
+      
+      // 绘制步骤一：找内心（支持角平分线构造动画）
+      drawStep1(showBisectorConstruction = false, bisectorStep = 0, currentAngle = 'A') {
+        const canvas = document.getElementById('canvas-step1');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 设置坐标系（原点在左下角）
+        ctx.save();
+        ctx.translate(0, height);
+        ctx.scale(1, -1);
+        
+        // 绘制三角形
+        ctx.beginPath();
+        ctx.moveTo(this.ax, this.ay);
+        ctx.lineTo(this.bx, this.by);
+        ctx.lineTo(this.cx, this.cy);
+        ctx.closePath();
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制顶点
+        this.drawPoint(ctx, this.ax, this.ay, 'A', '#e74c3c');
+        this.drawPoint(ctx, this.bx, this.by, 'B', '#3498db');
+        this.drawPoint(ctx, this.cx, this.cy, 'C', '#27ae60');
+        
+        // 如果显示角平分线构造动画
+        if(showBisectorConstruction) {
+          this.drawBisectorConstruction(ctx, bisectorStep, currentAngle);
+        } else {
+          // 直接绘制角平分线
+          this.drawAngleBisector(ctx, this.ax, this.ay, this.bx, this.by, this.cx, this.cy, '#9b59b6');
+          this.drawAngleBisector(ctx, this.bx, this.by, this.cx, this.cy, this.ax, this.ay, '#9b59b6');
+          this.drawAngleBisector(ctx, this.cx, this.cy, this.ax, this.ay, this.bx, this.by, '#9b59b6');
+          
+          // 绘制内心
+          this.drawPoint(ctx, this.incenterX, this.incenterY, 'I', '#e67e22', 8);
+        }
+        
+        ctx.restore();
+      },
+      
+      // 绘制角平分线构造过程（用圆规）
+      drawBisectorConstruction(ctx, step, currentAngle) {
+        const progress = step / 100;
+        
+        if(currentAngle === 'A') {
+          this.drawBisectorConstructionForAngle(ctx, this.ax, this.ay, this.bx, this.by, this.cx, this.cy, progress, 'A');
+        } else if(currentAngle === 'B') {
+          // 先绘制角A的完整平分线
+          this.drawAngleBisector(ctx, this.ax, this.ay, this.bx, this.by, this.cx, this.cy, '#9b59b6');
+          this.drawBisectorConstructionForAngle(ctx, this.bx, this.by, this.cx, this.cy, this.ax, this.ay, progress, 'B');
+        } else if(currentAngle === 'C') {
+          // 先绘制角A和B的完整平分线
+          this.drawAngleBisector(ctx, this.ax, this.ay, this.bx, this.by, this.cx, this.cy, '#9b59b6');
+          this.drawAngleBisector(ctx, this.bx, this.by, this.cx, this.cy, this.ax, this.ay, '#9b59b6');
+          this.drawBisectorConstructionForAngle(ctx, this.cx, this.cy, this.ax, this.ay, this.bx, this.by, progress, 'C');
+        } else if(currentAngle === 'done') {
+          // 绘制所有角平分线
+          this.drawAngleBisector(ctx, this.ax, this.ay, this.bx, this.by, this.cx, this.cy, '#9b59b6');
+          this.drawAngleBisector(ctx, this.bx, this.by, this.cx, this.cy, this.ax, this.ay, '#9b59b6');
+          this.drawAngleBisector(ctx, this.cx, this.cy, this.ax, this.ay, this.bx, this.by, '#9b59b6');
+          // 绘制内心
+          this.drawPoint(ctx, this.incenterX, this.incenterY, 'I', '#e67e22', 8);
+        }
+      },
+      
+      // 为特定角绘制角平分线构造过程
+      drawBisectorConstructionForAngle(ctx, vertexX, vertexY, point1X, point1Y, point2X, point2Y, progress, angleLabel) {
+        // 计算角的两边向量
+        const v1x = point1X - vertexX;
+        const v1y = point1Y - vertexY;
+        const v2x = point2X - vertexX;
+        const v2y = point2Y - vertexY;
+        
+        const len1 = Math.sqrt(v1x * v1x + v1y * v1y);
+        const len2 = Math.sqrt(v2x * v2x + v2y * v2y);
+        
+        const u1x = v1x / len1;
+        const u1y = v1y / len1;
+        const u2x = v2x / len2;
+        const u2y = v2y / len2;
+        
+        // 选择适当的半径（取两边长度的较小值的一半）
+        const radius = Math.min(len1, len2) * 0.4;
+        
+        // 步骤1: 以顶点为圆心画弧，与两边相交
+        if(progress >= 0.1) {
+          const arcProgress = Math.min(1, (progress - 0.1) / 0.3);
+          const startAngle = Math.atan2(u1y, u1x);
+          const endAngle = Math.atan2(u2y, u2x);
+          let angleDiff = endAngle - startAngle;
+          
+          // 处理角度差（确保在0到π之间）
+          if(angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+          if(angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+          if(angleDiff < 0) angleDiff = -angleDiff;
+          
+          // 绘制圆弧
+          ctx.beginPath();
+          ctx.arc(vertexX, vertexY, radius, startAngle, startAngle + angleDiff * arcProgress);
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // 绘制圆规（在画弧时显示）
+          if(arcProgress < 1) {
+            const currentAngle = startAngle + angleDiff * arcProgress;
+            this.drawCompassForArc(ctx, vertexX, vertexY, radius, currentAngle);
+          }
+          
+          // 标记交点
+          if(arcProgress >= 1) {
+            const intersection1X = vertexX + radius * u1x;
+            const intersection1Y = vertexY + radius * u1y;
+            const intersection2X = vertexX + radius * u2x;
+            const intersection2Y = vertexY + radius * u2y;
+            
+            this.drawPoint(ctx, intersection1X, intersection1Y, '', '#3498db', 4);
+            this.drawPoint(ctx, intersection2X, intersection2Y, '', '#3498db', 4);
+          }
+        }
+        
+        // 步骤2: 分别以两个交点为圆心画弧
+        if(progress >= 0.4) {
+          const arc2Progress = Math.min(1, (progress - 0.4) / 0.3);
+          const intersection1X = vertexX + radius * u1x;
+          const intersection1Y = vertexY + radius * u1y;
+          const intersection2X = vertexX + radius * u2x;
+          const intersection2Y = vertexY + radius * u2y;
+          
+          // 计算两个交点之间的距离
+          const dist = Math.sqrt((intersection2X - intersection1X) ** 2 + (intersection2Y - intersection1Y) ** 2);
+          const arcRadius = dist * 0.6;
+          
+          // 计算角平分线方向
+          const bisectorDirX = u1x + u2x;
+          const bisectorDirY = u1y + u2y;
+          const bisectorLen = Math.sqrt(bisectorDirX ** 2 + bisectorDirY ** 2);
+          const bisectorX = bisectorDirX / bisectorLen;
+          const bisectorY = bisectorDirY / bisectorLen;
+          
+          // 计算两个弧的交点（在角平分线上）
+          const midX = (intersection1X + intersection2X) / 2;
+          const midY = (intersection1Y + intersection2Y) / 2;
+          const bisectorPointX = midX + bisectorX * arcRadius * 0.5;
+          const bisectorPointY = midY + bisectorY * arcRadius * 0.5;
+          
+          // 绘制从第一个交点的弧
+          if(arc2Progress >= 0.5) {
+            const angle1 = Math.atan2(bisectorPointY - intersection1Y, bisectorPointX - intersection1X);
+            const arc1Progress = Math.min(1, (arc2Progress - 0.5) * 2);
+            ctx.beginPath();
+            ctx.arc(intersection1X, intersection1Y, arcRadius, angle1 - Math.PI/3, angle1 - Math.PI/3 + (Math.PI * 2 / 3) * arc1Progress);
+            ctx.strokeStyle = '#27ae60';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 显示圆规
+            if(arc1Progress < 1) {
+              const currentArcAngle = angle1 - Math.PI/3 + (Math.PI * 2 / 3) * arc1Progress;
+              this.drawCompassForArc(ctx, intersection1X, intersection1Y, arcRadius, currentArcAngle);
+            }
+          }
+          
+          // 绘制第二个弧
+          if(arc2Progress >= 0.75) {
+            const angle2 = Math.atan2(bisectorPointY - intersection2Y, bisectorPointX - intersection2X);
+            const arc2Progress2 = Math.min(1, (arc2Progress - 0.75) * 4);
+            ctx.beginPath();
+            ctx.arc(intersection2X, intersection2Y, arcRadius, angle2 - Math.PI/3, angle2 - Math.PI/3 + (Math.PI * 2 / 3) * arc2Progress2);
+            ctx.strokeStyle = '#27ae60';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 标记两个弧的交点
+            if(arc2Progress >= 1) {
+              this.drawPoint(ctx, bisectorPointX, bisectorPointY, '', '#e67e22', 5);
+            }
+          }
+        }
+        
+        // 步骤3: 连接顶点和交点，得到角平分线
+        if(progress >= 0.7) {
+          const lineProgress = Math.min(1, (progress - 0.7) / 0.3);
+          const bisectorDirX = u1x + u2x;
+          const bisectorDirY = u1y + u2y;
+          const bisectorLen = Math.sqrt(bisectorDirX ** 2 + bisectorDirY ** 2);
+          const bisectorX = bisectorDirX / bisectorLen;
+          const bisectorY = bisectorDirY / bisectorLen;
+          
+          // 计算角平分线的终点（延伸到三角形外部）
+          const lineLength = Math.max(len1, len2) * 1.5;
+          const endX = vertexX + bisectorX * lineLength * lineProgress;
+          const endY = vertexY + bisectorY * lineLength * lineProgress;
+          
+          ctx.beginPath();
+          ctx.moveTo(vertexX, vertexY);
+          ctx.lineTo(endX, endY);
+          ctx.strokeStyle = '#9b59b6';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      },
+      
+      // 绘制用于画弧的圆规
+      drawCompassForArc(ctx, centerX, centerY, radius, angle) {
+        // 计算圆规铅笔脚的位置
+        const pencilX = centerX + radius * Math.cos(angle);
+        const pencilY = centerY + radius * Math.sin(angle);
+        
+        // 绘制圆规的两只脚
+        ctx.strokeStyle = '#34495e';
+        ctx.lineWidth = 2;
+        
+        // 圆规的固定脚（针尖）在圆心
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(centerX - 3, centerY - 10);
+        ctx.stroke();
+        
+        // 圆规的铅笔脚
+        ctx.beginPath();
+        ctx.moveTo(pencilX, pencilY);
+        ctx.lineTo(pencilX - 3, pencilY - 10);
+        ctx.stroke();
+        
+        // 绘制圆规的连接部分
+        ctx.strokeStyle = '#7f8c8d';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 3, centerY - 10);
+        ctx.lineTo(pencilX - 3, pencilY - 10);
+        ctx.stroke();
+        
+        // 绘制圆规的针尖（固定脚）
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制圆规的铅笔脚
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.arc(pencilX, pencilY, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      },
+      
+      // 绘制步骤二：画内切圆（带圆规动画）
+      drawStep2(showCompass = false, compassAngle = 0) {
+        const canvas = document.getElementById('canvas-step2');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        ctx.save();
+        ctx.translate(0, height);
+        ctx.scale(1, -1);
+        
+        // 绘制三角形
+        ctx.beginPath();
+        ctx.moveTo(this.ax, this.ay);
+        ctx.lineTo(this.bx, this.by);
+        ctx.lineTo(this.cx, this.cy);
+        ctx.closePath();
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制顶点
+        this.drawPoint(ctx, this.ax, this.ay, 'A', '#e74c3c');
+        this.drawPoint(ctx, this.bx, this.by, 'B', '#3498db');
+        this.drawPoint(ctx, this.cx, this.cy, 'C', '#27ae60');
+        
+        // 绘制内心
+        this.drawPoint(ctx, this.incenterX, this.incenterY, 'I', '#e67e22', 8);
+        
+        // 绘制内切圆（如果动画中，只画到当前角度）
+        if(showCompass && compassAngle < Math.PI * 2) {
+          // 绘制已画出的圆弧
+          ctx.beginPath();
+          ctx.arc(this.incenterX, this.incenterY, this.inradius, 0, compassAngle);
+          ctx.strokeStyle = '#e67e22';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // 绘制圆规
+          this.drawCompass(ctx, this.incenterX, this.incenterY, this.inradius, compassAngle);
+        } else {
+          // 绘制完整的内切圆
+          ctx.beginPath();
+          ctx.arc(this.incenterX, this.incenterY, this.inradius, 0, Math.PI * 2);
+          ctx.strokeStyle = '#e67e22';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+        
+        // 绘制切点
+        const touchPoints = this.getTouchPoints();
+        touchPoints.forEach((point, index) => {
+          const labels = ['D', 'E', 'F'];
+          this.drawPoint(ctx, point.x, point.y, labels[index], '#ff9500', 6);
+        });
+        
+        ctx.restore();
+      },
+      
+      // 绘制圆规
+      drawCompass(ctx, centerX, centerY, radius, angle) {
+        // 计算圆规铅笔脚的位置
+        const pencilX = centerX + radius * Math.cos(angle);
+        const pencilY = centerY + radius * Math.sin(angle);
+        
+        // 绘制圆规的两只脚
+        ctx.strokeStyle = '#34495e';
+        ctx.lineWidth = 3;
+        
+        // 圆规的固定脚（针尖）在圆心
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(centerX - 5, centerY - 15);
+        ctx.stroke();
+        
+        // 圆规的铅笔脚
+        ctx.beginPath();
+        ctx.moveTo(pencilX, pencilY);
+        ctx.lineTo(pencilX - 5, pencilY - 15);
+        ctx.stroke();
+        
+        // 绘制圆规的连接部分
+        ctx.strokeStyle = '#7f8c8d';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 5, centerY - 15);
+        ctx.lineTo(pencilX - 5, pencilY - 15);
+        ctx.stroke();
+        
+        // 绘制圆规的针尖（固定脚）
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制圆规的铅笔脚（画圆的那只脚）
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.arc(pencilX, pencilY, 2, 0, Math.PI * 2);
+        ctx.fill();
+      },
+      
+      // 绘制步骤三：计算半径
+      drawStep3() {
+        const canvas = document.getElementById('canvas-step3');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        ctx.save();
+        ctx.translate(0, height);
+        ctx.scale(1, -1);
+        
+        // 绘制三角形
+        ctx.beginPath();
+        ctx.moveTo(this.ax, this.ay);
+        ctx.lineTo(this.bx, this.by);
+        ctx.lineTo(this.cx, this.cy);
+        ctx.closePath();
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制顶点
+        this.drawPoint(ctx, this.ax, this.ay, 'A', '#e74c3c');
+        this.drawPoint(ctx, this.bx, this.by, 'B', '#3498db');
+        this.drawPoint(ctx, this.cx, this.cy, 'C', '#27ae60');
+        
+        // 绘制角平分线
+        this.drawAngleBisector(ctx, this.ax, this.ay, this.bx, this.by, this.cx, this.cy, '#9b59b6');
+        this.drawAngleBisector(ctx, this.bx, this.by, this.cx, this.cy, this.ax, this.ay, '#9b59b6');
+        this.drawAngleBisector(ctx, this.cx, this.cy, this.ax, this.ay, this.bx, this.by, '#9b59b6');
+        
+        // 绘制内心
+        this.drawPoint(ctx, this.incenterX, this.incenterY, 'I', '#e67e22', 8);
+        
+        // 绘制内切圆
+        ctx.beginPath();
+        ctx.arc(this.incenterX, this.incenterY, this.inradius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制从内心到三边的垂线（显示半径）
+        const touchPoints = this.getTouchPoints();
+        touchPoints.forEach((point, index) => {
+          // 绘制垂线
+          ctx.beginPath();
+          ctx.moveTo(this.incenterX, this.incenterY);
+          ctx.lineTo(point.x, point.y);
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([3, 3]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 绘制切点
+          const labels = ['D', 'E', 'F'];
+          this.drawPoint(ctx, point.x, point.y, labels[index], '#ff9500', 6);
+        });
+        
+        ctx.restore();
+      },
+      
+      // 绘制步骤四：证明相切
+      drawStep4() {
+        const canvas = document.getElementById('canvas-step4');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        ctx.save();
+        ctx.translate(0, height);
+        ctx.scale(1, -1);
+        
+        // 绘制三角形
+        ctx.beginPath();
+        ctx.moveTo(this.ax, this.ay);
+        ctx.lineTo(this.bx, this.by);
+        ctx.lineTo(this.cx, this.cy);
+        ctx.closePath();
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制顶点
+        this.drawPoint(ctx, this.ax, this.ay, 'A', '#e74c3c');
+        this.drawPoint(ctx, this.bx, this.by, 'B', '#3498db');
+        this.drawPoint(ctx, this.cx, this.cy, 'C', '#27ae60');
+        
+        // 绘制内心
+        this.drawPoint(ctx, this.incenterX, this.incenterY, 'I', '#e67e22', 8);
+        
+        // 绘制内切圆
+        ctx.beginPath();
+        ctx.arc(this.incenterX, this.incenterY, this.inradius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制从内心到三边的垂线（证明距离相等）
+        const touchPoints = this.getTouchPoints();
+        ctx.strokeStyle = '#95a5a6';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        
+        // 到AB的垂线
+        ctx.beginPath();
+        ctx.moveTo(this.incenterX, this.incenterY);
+        ctx.lineTo(touchPoints[0].x, touchPoints[0].y);
+        ctx.stroke();
+        
+        // 到BC的垂线
+        ctx.beginPath();
+        ctx.moveTo(this.incenterX, this.incenterY);
+        ctx.lineTo(touchPoints[1].x, touchPoints[1].y);
+        ctx.stroke();
+        
+        // 到CA的垂线
+        ctx.beginPath();
+        ctx.moveTo(this.incenterX, this.incenterY);
+        ctx.lineTo(touchPoints[2].x, touchPoints[2].y);
+        ctx.stroke();
+        
+        ctx.setLineDash([]);
+        
+        // 绘制切点
+        touchPoints.forEach((point, index) => {
+          const labels = ['D', 'E', 'F'];
+          this.drawPoint(ctx, point.x, point.y, labels[index], '#ff9500', 6);
+        });
+        
+        ctx.restore();
+      },
+      
+      // 绘制总结：完整动画（带圆规）
+      drawSummary() {
+        const canvas = document.getElementById('canvas-summary');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        ctx.save();
+        ctx.translate(0, height);
+        ctx.scale(1, -1);
+        
+        const progress = this.animationStep / 100;
+        
+        // 步骤1: 绘制三角形
+        if(progress >= 0.1) {
+          ctx.beginPath();
+          ctx.moveTo(this.ax, this.ay);
+          ctx.lineTo(this.bx, this.by);
+          ctx.lineTo(this.cx, this.cy);
+          ctx.closePath();
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          this.drawPoint(ctx, this.ax, this.ay, 'A', '#e74c3c');
+          this.drawPoint(ctx, this.bx, this.by, 'B', '#3498db');
+          this.drawPoint(ctx, this.cx, this.cy, 'C', '#27ae60');
+        }
+        
+        // 步骤2: 绘制角平分线
+        if(progress >= 0.2) {
+          const bisectorProgress = Math.min(1, (progress - 0.2) / 0.25);
+          this.drawAngleBisector(ctx, this.ax, this.ay, this.bx, this.by, this.cx, this.cy, '#9b59b6', bisectorProgress);
+          this.drawAngleBisector(ctx, this.bx, this.by, this.cx, this.cy, this.ax, this.ay, '#9b59b6', bisectorProgress);
+          this.drawAngleBisector(ctx, this.cx, this.cy, this.ax, this.ay, this.bx, this.by, '#9b59b6', bisectorProgress);
+        }
+        
+        // 步骤3: 显示内心
+        if(progress >= 0.45) {
+          const incenterProgress = Math.min(1, (progress - 0.45) / 0.15);
+          ctx.globalAlpha = incenterProgress;
+          this.drawPoint(ctx, this.incenterX, this.incenterY, 'I', '#e67e22', 8);
+          ctx.globalAlpha = 1;
+        }
+        
+        // 步骤4: 用圆规画内切圆（重点展示圆规）
+        if(progress >= 0.6) {
+          const circleProgress = Math.min(1, (progress - 0.6) / 0.4);
+          const angle = circleProgress * Math.PI * 2;
+          
+          // 绘制已画出的圆弧
+          ctx.beginPath();
+          ctx.arc(this.incenterX, this.incenterY, this.inradius, 0, angle);
+          ctx.strokeStyle = '#e67e22';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // 绘制圆规（在画圆的过程中显示）
+          if(circleProgress < 1) {
+            this.drawCompass(ctx, this.incenterX, this.incenterY, this.inradius, angle);
+          }
+          
+          // 如果圆画完了，显示切点
+          if(circleProgress >= 1) {
+            const touchPoints = this.getTouchPoints();
+            touchPoints.forEach((point, index) => {
+              const labels = ['D', 'E', 'F'];
+              this.drawPoint(ctx, point.x, point.y, labels[index], '#ff9500', 6);
+            });
+          }
+        }
+        
+        ctx.restore();
+      },
+      
+      // 绘制点
+      drawPoint(ctx, x, y, label, color, radius = 5) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制标签（需要翻转y坐标）
+        ctx.save();
+        ctx.scale(1, -1);
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, -y - radius - 15);
+        ctx.restore();
+      },
+      
+      // 绘制角平分线
+      drawAngleBisector(ctx, x1, y1, x2, y2, x3, y3, color, progress = 1) {
+        // 计算角平分线方向
+        const v1x = x2 - x1;
+        const v1y = y2 - y1;
+        const v2x = x3 - x1;
+        const v2y = y3 - y1;
+        
+        const len1 = Math.sqrt(v1x * v1x + v1y * v1y);
+        const len2 = Math.sqrt(v2x * v2x + v2y * v2y);
+        
+        const u1x = v1x / len1;
+        const u1y = v1y / len1;
+        const u2x = v2x / len2;
+        const u2y = v2y / len2;
+        
+        const bisectorX = u1x + u2x;
+        const bisectorY = u1y + u2y;
+        const bisectorLen = Math.sqrt(bisectorX * bisectorX + bisectorY * bisectorY);
+        
+        const dirX = bisectorX / bisectorLen;
+        const dirY = bisectorY / bisectorLen;
+        
+        // 延长到足够长
+        const maxLen = 1000;
+        const endX = x1 + dirX * maxLen * progress;
+        const endY = y1 + dirY * maxLen * progress;
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      },
+      
+      // 获取内切圆与三边的切点
+      getTouchPoints() {
+        const points = [];
+        
+        // 切点D在AB上
+        points.push(this.getTouchPointOnLine(this.ax, this.ay, this.bx, this.by));
+        
+        // 切点E在BC上
+        points.push(this.getTouchPointOnLine(this.bx, this.by, this.cx, this.cy));
+        
+        // 切点F在CA上
+        points.push(this.getTouchPointOnLine(this.cx, this.cy, this.ax, this.ay));
+        
+        return points;
+      },
+      
+      // 获取直线上的切点（内心到直线的垂足）
+      getTouchPointOnLine(x1, y1, x2, y2) {
+        // 直线方程: Ax + By + C = 0
+        const A = y2 - y1;
+        const B = x1 - x2;
+        const C = x2 * y1 - x1 * y2;
+        
+        const denom = A * A + B * B;
+        if(denom === 0) return {x: x1, y: y1};
+        
+        // 计算垂足坐标
+        const footX = (B * (B * this.incenterX - A * this.incenterY) - A * C) / denom;
+        const footY = (A * (-B * this.incenterX + A * this.incenterY) - B * C) / denom;
+        
+        // 检查垂足是否在线段上，如果不在，取最近的端点
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len2 = dx * dx + dy * dy;
+        
+        if(len2 > 0) {
+          const t = ((footX - x1) * dx + (footY - y1) * dy) / len2;
+          if(t < 0) {
+            return {x: x1, y: y1};
+          } else if(t > 1) {
+            return {x: x2, y: y2};
+          }
+        }
+        
+        return {x: footX, y: footY};
+      },
+      
+      // 动画：找内心
+      animateIncenter() {
+        this.animationStep = 0;
+        this.isAnimating = true;
+        this.animationStatus = '正在演示找内心...';
+        
+        const animate = () => {
+          if(!this.isAnimating) return;
+          
+          this.animationStep += 2;
+          if(this.animationStep > 100) {
+            this.animationStep = 100;
+            this.isAnimating = false;
+            this.animationStatus = '动画完成';
+            return;
+          }
+          
+          this.drawStep1Animated();
+          this.animationFrame = requestAnimationFrame(animate);
+        };
+        
+        animate();
+      },
+      
+      // 绘制步骤一动画
+      drawStep1Animated() {
+        const canvas = document.getElementById('canvas-step1');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        ctx.save();
+        ctx.translate(0, height);
+        ctx.scale(1, -1);
+        
+        const progress = this.animationStep / 100;
+        
+        // 绘制三角形
+        ctx.beginPath();
+        ctx.moveTo(this.ax, this.ay);
+        ctx.lineTo(this.bx, this.by);
+        ctx.lineTo(this.cx, this.cy);
+        ctx.closePath();
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        this.drawPoint(ctx, this.ax, this.ay, 'A', '#e74c3c');
+        this.drawPoint(ctx, this.bx, this.by, 'B', '#3498db');
+        this.drawPoint(ctx, this.cx, this.cy, 'C', '#27ae60');
+        
+        // 逐步绘制角平分线
+        if(progress >= 0.3) {
+          const bisectorProgress = Math.min(1, (progress - 0.3) / 0.5);
+          this.drawAngleBisector(ctx, this.ax, this.ay, this.bx, this.by, this.cx, this.cy, '#9b59b6', bisectorProgress);
+          this.drawAngleBisector(ctx, this.bx, this.by, this.cx, this.cy, this.ax, this.ay, '#9b59b6', bisectorProgress);
+          this.drawAngleBisector(ctx, this.cx, this.cy, this.ax, this.ay, this.bx, this.by, '#9b59b6', bisectorProgress);
+        }
+        
+        // 显示内心
+        if(progress >= 0.8) {
+          const incenterProgress = Math.min(1, (progress - 0.8) / 0.2);
+          ctx.globalAlpha = incenterProgress;
+          this.drawPoint(ctx, this.incenterX, this.incenterY, 'I', '#e67e22', 8);
+          ctx.globalAlpha = 1;
+        }
+        
+        ctx.restore();
+      },
+      
+      // 圆规画圆动画
+      animateCompassDrawing() {
+        this.compassAngle = 0;
+        this.showCompass = true;
+        this.isAnimating = true;
+        this.animationStatus = '🔄 圆规正在画圆...';
+        
+        const animate = () => {
+          if(!this.isAnimating) return;
+          
+          this.compassAngle += 0.05;
+          if(this.compassAngle >= Math.PI * 2) {
+            this.compassAngle = Math.PI * 2;
+            this.isAnimating = false;
+            this.showCompass = false;
+            this.animationStatus = '✅ 圆画完了！';
+            this.drawStep2(false, Math.PI * 2);
+            return;
+          }
+          
+          this.drawStep2(true, this.compassAngle);
+          this.animationFrame = requestAnimationFrame(animate);
+        };
+        
+        animate();
+      },
+      
+      // 重置圆规动画
+      resetCompassAnimation() {
+        this.isAnimating = false;
+        if(this.animationFrame) {
+          cancelAnimationFrame(this.animationFrame);
+        }
+        this.compassAngle = 0;
+        this.showCompass = false;
+        this.animationStatus = '点击"用圆规画圆"按钮查看演示';
+        this.drawStep2(false, 0);
+      },
+      
+      // 角平分线构造动画
+      animateBisectorConstruction() {
+        this.bisectorAnimationStep = 0;
+        this.isBisectorAnimating = true;
+        this.showBisectorCompass = true;
+        this.currentBisectorAngle = 'A';
+        this.animationStatus = '🔄 正在用圆规做角平分线...';
+        
+        const animate = () => {
+          if(!this.isBisectorAnimating) return;
+          
+          // 减慢动画速度：从1.2改为0.4
+          this.bisectorAnimationStep += 0.4;
+          
+          // 角A的构造（0-100）
+          if(this.bisectorAnimationStep <= 100 && this.currentBisectorAngle === 'A') {
+            this.drawStep1(true, this.bisectorAnimationStep, 'A');
+            if(this.bisectorAnimationStep >= 100) {
+              // 在角A完成后稍作停顿
+              setTimeout(() => {
+                this.bisectorAnimationStep = 0;
+                this.currentBisectorAngle = 'B';
+              }, 500);
+            }
+          }
+          // 角B的构造（0-100）
+          else if(this.bisectorAnimationStep <= 100 && this.currentBisectorAngle === 'B') {
+            this.drawStep1(true, this.bisectorAnimationStep, 'B');
+            if(this.bisectorAnimationStep >= 100) {
+              // 在角B完成后稍作停顿
+              setTimeout(() => {
+                this.bisectorAnimationStep = 0;
+                this.currentBisectorAngle = 'C';
+              }, 500);
+            }
+          }
+          // 角C的构造（0-100）
+          else if(this.bisectorAnimationStep <= 100 && this.currentBisectorAngle === 'C') {
+            this.drawStep1(true, this.bisectorAnimationStep, 'C');
+            if(this.bisectorAnimationStep >= 100) {
+              this.bisectorAnimationStep = 100;
+              this.currentBisectorAngle = 'done';
+              this.isBisectorAnimating = false;
+              this.showBisectorCompass = false;
+              this.animationStatus = '✅ 三条角平分线都画完了！找到了内心！';
+              this.drawStep1(false, 0, 'done');
+              return;
+            }
+          }
+          
+          this.animationFrame = requestAnimationFrame(animate);
+        };
+        
+        animate();
+      },
+      
+      // 重置角平分线构造动画
+      resetBisectorAnimation() {
+        this.isBisectorAnimating = false;
+        if(this.animationFrame) {
+          cancelAnimationFrame(this.animationFrame);
+        }
+        this.bisectorAnimationStep = 0;
+        this.showBisectorCompass = false;
+        this.currentBisectorAngle = 'A';
+        this.animationStatus = '点击"用圆规做角平分线"按钮查看演示';
+        this.drawStep1(false, 0, 'A');
+      },
+      
+      // 开始完整动画
+      startFullAnimation() {
+        this.animationStep = 0;
+        this.isAnimating = true;
+        this.animationStatus = '🎬 动画进行中...';
+        
+        const animate = () => {
+          if(!this.isAnimating) return;
+          
+          this.animationStep += 0.8;
+          if(this.animationStep > 100) {
+            this.animationStep = 100;
+            this.isAnimating = false;
+            this.animationStatus = '🎉 动画完成！';
+            return;
+          }
+          
+          this.drawSummary();
+          this.animationFrame = requestAnimationFrame(animate);
+        };
+        
+        animate();
+      },
+      
+      // 暂停动画
+      pauseAnimation() {
+        this.isAnimating = false;
+        if(this.animationFrame) {
+          cancelAnimationFrame(this.animationFrame);
+        }
+        this.animationStatus = '动画已暂停';
+      },
+      
+      // 重置动画
+      resetAnimation() {
+        this.isAnimating = false;
+        if(this.animationFrame) {
+          cancelAnimationFrame(this.animationFrame);
+        }
+        this.animationStep = 0;
+        this.compassAngle = 0;
+        this.showCompass = false;
+        this.animationStatus = '点击"开始完整动画"按钮查看演示';
+        this.setTab(this.activeTab);
+      },
+      
+      // 渲染数学公式
+      renderMathInApp() {
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {
+                  console.warn('Math rendering error:', e);
+                }
+              }
+            }
+          }, 50);
+        });
+      }
+    }
+  });
+  
+  const vm = app.mount('#app');
+  
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+      
+      setTimeout(function() {
+        if(vm && vm.updateTriangle) {
+          vm.updateTriangle();
+        }
+      }, 300);
+    }, 500);
+  });
+  </script>
+</body>
+</html>
+
