@@ -42,6 +42,8 @@ interface ContentCardProps {
   refreshLists: () => Promise<void>;
   // 可选的回调函数，用于刷新内容列表
   onContentUpdate?: () => void;
+  // 可选的链接路径前缀，默认为 '/content'
+  linkPathPrefix?: string;
 }
 
 export default function ContentCard({ 
@@ -50,7 +52,8 @@ export default function ContentCard({
   editMode, 
   lists, 
   refreshLists, 
-  onContentUpdate 
+  onContentUpdate,
+  linkPathPrefix = '/content'
 }: ContentCardProps) {
   const { t } = useTranslation(['content', 'common']);
   const [showDialog, setShowDialog] = useState(false);
@@ -198,8 +201,8 @@ export default function ContentCard({
 
 
 
-  // 使用short_id，如果没有则回退到id
-  const contentUrl = content.short_id ? `/content/${content.short_id}` : `/content/${content.id}`;
+  // 使用short_id，如果没有则回退到id，支持自定义路径前缀
+  const contentUrl = content.short_id ? `${linkPathPrefix}/${content.short_id}` : `${linkPathPrefix}/${content.id}`;
 
   // 如果内容正在生成中，显示对应的状态卡片
   if (generationStatus && generationStatus !== 'done') {

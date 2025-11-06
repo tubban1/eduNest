@@ -7,7 +7,6 @@ import Image from 'next/image';
 import ContentActionButtons from '@/components/ui/ContentActionButtons';
 import { api, Content } from '@/lib/api';
 import FullHTMLRenderer from '@/components/FullHTMLRenderer';
-import SandboxRenderer from '@/components/SandboxRenderer';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
@@ -37,6 +36,7 @@ export default function FullHTMLContentPage() {
     };
   }, []);
 
+  // 获取内容（只在 short_id 变化时执行）
   useEffect(() => {
     const fetchContent = async () => {
       try {
@@ -55,26 +55,6 @@ export default function FullHTMLContentPage() {
         // 设置计数（无论是否登录都显示）
         setLikeCount(response.likes_count || 0);
         setCollectionCount(response.collections_count || 0);
-        
-        // 只有在用户已登录时才获取点赞和收藏状态
-        if (response.id && user) {
-          try {
-            const [likedResponse, collectionsResponse] = await Promise.all([
-              api.getLikedContent(),
-              api.getCollectionsByContent(response.id)
-            ]);
-            
-            // 检查是否已点赞
-            const isUserLiked = likedResponse.some((item: any) => item.content_id === response.id);
-            setIsLiked(isUserLiked);
-            
-            // 检查是否已收藏
-            const isUserCollected = collectionsResponse.length > 0;
-            setIsCollected(isUserCollected);
-          } catch (err) {
-            // 静默处理错误
-          }
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载失败');
         document.title = '加载失败 - EduNest AI';
@@ -86,7 +66,37 @@ export default function FullHTMLContentPage() {
     if (params.short_id) {
       fetchContent();
     }
-  }, [params.short_id, user]);
+  }, [params.short_id]);
+
+  // 获取点赞和收藏状态（只在用户 ID 变化时执行，避免 user 对象引用变化导致刷新）
+  useEffect(() => {
+    const fetchUserStatus = async () => {
+      if (!content?.id || !user?.id) {
+        setIsLiked(false);
+        setIsCollected(false);
+        return;
+      }
+
+      try {
+        const [likedResponse, collectionsResponse] = await Promise.all([
+          api.getLikedContent(),
+          api.getCollectionsByContent(content.id)
+        ]);
+        
+        // 检查是否已点赞
+        const isUserLiked = likedResponse.some((item: any) => item.content_id === content.id);
+        setIsLiked(isUserLiked);
+        
+        // 检查是否已收藏
+        const isUserCollected = collectionsResponse.length > 0;
+        setIsCollected(isUserCollected);
+      } catch (err) {
+        // 静默处理错误
+      }
+    };
+
+    fetchUserStatus();
+  }, [content?.id, user?.id]);
 
   if (loading) {
     return (
@@ -116,8 +126,23 @@ export default function FullHTMLContentPage() {
     );
   }
 
-  // 判断使用哪个渲染器：如果有 full_html 字段，使用 FullHTMLRenderer
-  const hasFullHTML = content.full_html && content.full_html.trim().length > 0;
+  // c 页面只显示 full_html
+  if (!content.full_html || !content.full_html.trim()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">内容不存在</div>
+          <p className="text-gray-600 mb-4">该内容没有完整的 HTML 内容</p>
+          <button
+            onClick={handleSmartBack}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {t('back')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -237,60 +262,27 @@ export default function FullHTMLContentPage() {
         </div>
       </div>
 
-      {/* 内容区域 */}
+      {/* 内容区域：只显示 full_html */}
       <div className="w-full">
         <div className="w-full">
-          {hasFullHTML ? (
-            // 使用 FullHTMLRenderer 渲染完整 HTML
-            <FullHTMLRenderer
-              fullHTML={content.full_html!}
-              autoHeight={true}
-              enableHeightListener={true}
-              className="w-full"
-              style={{ 
-                width: '100%',
-                height: 'auto',
-                minHeight: 'calc(100vh - 160px)',
-                border: 'none',
-                margin: '0',
-                padding: '0'
-              }}
-              onError={(error) => {
-                console.error('FullHTMLRenderer error:', error);
-                setError(error);
-              }}
-              onLoad={() => {
-                console.log('FullHTMLRenderer loaded');
-              }}
-            />
-          ) : (
-            // 使用 SandboxRenderer 渲染分离的 HTML/CSS/JS
-            <SandboxRenderer
-              html={content.code_html || ''}
-              css={content.code_css || ''}
-              js={content.code_js || ''}
-              externalLinks={content.external_links || []}
-              enableLibrarySupport={true}
-              enablePerformance={true}
-              enableErrorBoundary={true}
-              className="w-full"
-              style={{ 
-                width: '100%',
-                height: 'auto',
-                minHeight: 'calc(100vh - 160px)',
-                border: 'none',
-                margin: '0',
-                padding: '0'
-              }}
-              onError={(error) => {
-                console.error('SandboxRenderer error:', error);
-                setError(error);
-              }}
-              onLoad={() => {
-                console.log('SandboxRenderer loaded');
-              }}
-            />
-          )}
+          <FullHTMLRenderer
+            fullHTML={content.full_html}
+            autoHeight={true}
+            enableHeightListener={true}
+            className="w-full"
+            style={{ 
+              width: '100%',
+              height: 'auto',
+              minHeight: 'calc(100vh - 160px)',
+              border: 'none',
+              margin: '0',
+              padding: '0'
+            }}
+            onError={(error) => {
+              console.error('FullHTMLRenderer error:', error);
+              setError(error);
+            }}
+          />
         </div>
       </div>
     </div>

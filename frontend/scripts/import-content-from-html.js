@@ -4,10 +4,11 @@
   Import HTML pages into `content` table and bind to a collection_list.
   Requirements:
   - content_type = 'vue'
-  - code_html = only the <body> innerHTML
-  - external_links = only script[src^http] and link[href^http]
-  - knowledge_points = []
+  - full_html = complete HTML file content
+  - title, description, tags extracted from HTML
+  - language_code = 'zh-CN'
   - created_by = fixed UUID
+  - knowledge_points = []
   - Dedup/update by short_id stored in HTML <meta name="author" content="short_id">
     * If meta author exists: update that content row, else insert new row and write back meta author with returned short_id
   - After all content stored, bind all to collection_list 16c34498-578c-455f-80f4-c7d28cdd0b62
@@ -28,6 +29,8 @@ const writeFile = promisify(fs.writeFile);
 
 const FIXED_CREATED_BY = '1145c642-0fc9-4c85-8f74-c3ef6f413242';
 const TARGET_COLLECTION_LIST_ID = '16c34498-578c-455f-80f4-c7d28cdd0b62';
+const FIXED_LANGUAGE_CODE = 'zh-CN';
+const FIXED_CONTENT_TYPE = 'vue';
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -54,10 +57,9 @@ async function extractFromHtml(filePath) {
   const raw = await readFile(filePath, 'utf-8');
   const $ = cheerio.load(raw, { decodeEntities: false });
 
-  // Basic fields
+  // Extract only title, description, tags
   const title = ($('title').first().text() || $('h1').first().text() || path.basename(filePath, path.extname(filePath))).trim();
   const description = ($('meta[name="description"]').attr('content') || '').trim();
-  const language_code = ($('html').attr('lang') || 'zh-CN').trim();
 
   const keywords = ($('meta[name="keywords"]').attr('content') || '')
     .split(',').map(s => s.trim()).filter(Boolean);
@@ -66,21 +68,8 @@ async function extractFromHtml(filePath) {
   // Knowledge points as empty per requirement
   const knowledge_points = [];
 
-  // External links: only script/link absolute http(s)
-  const scriptLinks = $('script[src^="http"],script[src^="https"]').map((_, el) => $(el).attr('src')).get();
-  const cssLinks = $('link[rel="stylesheet"][href^="http"],link[rel="stylesheet"][href^="https"]').map((_, el) => $(el).attr('href')).get();
-  const external_links = uniqArray([...scriptLinks, ...cssLinks]);
-
-  // code_html: body innerHTML only
-  const bodyInner = $('body').html() || '';
-  const code_html = bodyInner.trim();
-
-  // Merge <style> and inline <script> (no src) contents
-  const code_css = $('style').map((_, el) => $(el).html() || '').get().join('\n\n').trim();
-  const code_js = $('script:not([src])').map((_, el) => $(el).html() || '').get().join('\n\n').trim();
-
-  // content_type
-  const content_type = 'vue';
+  // Store complete HTML in full_html
+  const full_html = raw.trim();
 
   // meta author as short_id holder
   const metaAuthor = $('meta[name="author"]').attr('content');
@@ -90,14 +79,9 @@ async function extractFromHtml(filePath) {
     filePath,
     title,
     description,
-    language_code,
     tags,
     knowledge_points,
-    external_links,
-    code_html,
-    code_css,
-    code_js,
-    content_type,
+    full_html,
     currentShortId,
     rawHtml: raw,
     $
@@ -113,15 +97,12 @@ async function upsertContent(client, rec) {
       const row = sel.rows[0];
       await client.query(
         `UPDATE content
-         SET title = $2, description = $3, language_code = $4,
-             tags = $5, knowledge_points = $6, external_links = $7,
-             code_html = $8, code_css = $9, code_js = $10,
-             content_type = $11, updated_at = now()
+         SET title = $2, description = $3, tags = $4,
+             knowledge_points = $5, full_html = $6,
+             updated_at = now()
          WHERE id = $1`,
-        [row.id, rec.title, rec.description, rec.language_code,
-         rec.tags, rec.knowledge_points, rec.external_links,
-         rec.code_html, rec.code_css, rec.code_js,
-         rec.content_type]
+        [row.id, rec.title, rec.description, rec.tags,
+         rec.knowledge_points, rec.full_html]
       );
       return { id: row.id, short_id: row.short_id, mode: 'updated' };
     }
@@ -131,13 +112,12 @@ async function upsertContent(client, rec) {
   const ins = await client.query(
     `INSERT INTO content (
        title, description, language_code, tags, knowledge_points,
-       external_links, code_html, code_css, code_js, content_type,
-       created_by
+       full_html, content_type, created_by
      ) VALUES (
-       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
+       $1, $2, $3, $4, $5, $6, $7, $8
      ) RETURNING id, short_id`,
-    [rec.title, rec.description, rec.language_code, rec.tags, rec.knowledge_points,
-     rec.external_links, rec.code_html, rec.code_css, rec.code_js, rec.content_type,
+    [rec.title, rec.description, FIXED_LANGUAGE_CODE, rec.tags,
+     rec.knowledge_points, rec.full_html, FIXED_CONTENT_TYPE,
      FIXED_CREATED_BY]
   );
   return { id: ins.rows[0].id, short_id: ins.rows[0].short_id, mode: 'inserted' };
@@ -204,8 +184,8 @@ async function main() {
       try {
         const rec = await extractFromHtml(file);
 
-        if (!rec.title || !rec.code_html) {
-          console.warn(`[skip] ${file} — missing title/code_html`);
+        if (!rec.title || !rec.full_html) {
+          console.warn(`[skip] ${file} — missing title/full_html`);
           skipped++;
           continue;
         }
