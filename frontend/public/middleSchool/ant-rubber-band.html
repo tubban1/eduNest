@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="蚂蚁爬橡皮筋问题：弹性橡皮筋每天被拉长，蚂蚁每天爬1米，求解蚂蚁到达另一端所需天数。包含数学推导、可视化动画和图表分析。">
+  <meta name="keywords" content="蚂蚁爬橡皮筋,数学问题,微分方程,极限,无穷级数,初中数学,数学建模">
+  <title>蚂蚁爬橡皮筋问题 - 数学建模与求解</title>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+      text-align: center;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    h3 {
+      color: #555;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    .problem-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .problem-box p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      overflow-x: auto;
+    }
+    .step {
+      background: #fff;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .step-number {
+      display: inline-block;
+      background: #28a745;
+      color: white;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      border-radius: 50%;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    .answer-box {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .visualization {
+      margin: 30px 0;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    canvas {
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: block;
+      width: 100%;
+      max-width: 1000px;
+      background: #ffffff;
+    }
+    .controls {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .btn {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    .btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+    }
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .info-item {
+      background: #ecf0f1;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .info-item .label {
+      font-size: 14px;
+      color: #7f8c8d;
+      margin-bottom: 5px;
+    }
+    .info-item .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin: 20px 0;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    th {
+      background: #3498db;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .verification {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>🐜 蚂蚁爬橡皮筋问题</h1>
+      
+      <div class="problem-box">
+        <h2>📋 问题描述</h2>
+        <p><strong>初始条件：</strong>一根弹性均匀的橡皮筋长5米</p>
+        <p><strong>蚂蚁行为：</strong>小蚂蚁从一端爬向另一端，每天沿着橡皮筋爬1米</p>
+        <p><strong>橡皮筋变化：</strong>小蚂蚁每爬1米，橡皮筋就被瞬间拉长5米</p>
+        <p><strong>问题：</strong>问多少天小蚂蚁可以爬到橡皮筋的另一端？</p>
+        <p><strong>假设：</strong>理想条件下，小蚂蚁不会死，橡皮筋不会被拉断</p>
+      </div>
+
+      <h2>🧮 解题思路</h2>
+      
+      <div class="step">
+        <span class="step-number">1</span>
+        <strong>理解问题的关键点</strong>
+        <p style="margin-top: 10px;">当橡皮筋被拉长时，由于是均匀拉长，蚂蚁的相对位置保持不变。例如，如果蚂蚁在橡皮筋的20%位置，拉长后仍在20%位置。</p>
+      </div>
+
+      <div class="step">
+        <span class="step-number">2</span>
+        <strong>建立数学模型</strong>
+        <p style="margin-top: 10px;">设第n天结束时：</p>
+        <ul style="margin-left: 40px; margin-top: 10px;">
+          <li>橡皮筋长度：Lₙ = 5 + 5n（米）</li>
+          <li>蚂蚁的相对位置：rₙ（0 ≤ rₙ ≤ 1）</li>
+          <li>蚂蚁的绝对位置：xₙ = rₙ × Lₙ（米）</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <span class="step-number">3</span>
+        <strong>分析蚂蚁的移动</strong>
+        <p style="margin-top: 10px;">第n天开始时，橡皮筋长度为 Lₙ₋₁ = 5 + 5(n-1)</p>
+        <p>蚂蚁爬1米后，绝对位置增加1米：x'ₙ = xₙ₋₁ + 1</p>
+        <p>然后橡皮筋被拉长5米，新长度为 Lₙ = 5 + 5n</p>
+        <p>由于均匀拉长，蚂蚁的相对位置变为：rₙ = x'ₙ / Lₙ = (xₙ₋₁ + 1) / Lₙ</p>
+      </div>
+
+      <div class="step">
+        <span class="step-number">4</span>
+        <strong>推导递推公式</strong>
+        <div class="formula-box">
+          <p>已知：x₀ = 0, L₀ = 5</p>
+          <p>第n天：</p>
+          <p>  Lₙ = 5 + 5n</p>
+          <p>  x'ₙ = xₙ₋₁ + 1  （爬行后）</p>
+          <p>  xₙ = x'ₙ × (Lₙ / Lₙ₋₁) = (xₙ₋₁ + 1) × (Lₙ / Lₙ₋₁)</p>
+          <p>  rₙ = xₙ / Lₙ</p>
+        </div>
+        <p style="margin-top: 10px;">实际上，第n天开始时橡皮筋长度为 Lₙ₋₁ = 5 + 5(n-1) = 5n</p>
+        <p>蚂蚁爬1米后，相对位置增加：Δrₙ = 1 / Lₙ₋₁ = 1 / (5n)</p>
+        <p>然后橡皮筋被拉长，但由于是均匀拉长，相对位置保持不变</p>
+        <div class="formula-box">
+          <p>因此，第n天的相对位置增量：Δrₙ = 1 / (5n)</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-number">5</span>
+        <strong>计算总相对位置</strong>
+        <p style="margin-top: 10px;">蚂蚁到达另一端时，相对位置 r = 1</p>
+        <div class="formula-box">
+          <p>r = Σ(Δrₙ) = Σ(1 / (5n)) = (1/5) × Σ(1/n)</p>
+          <p>其中 n 从 1 到 N（N为所需天数）</p>
+          <p>Σ(1/n) 是调和级数，当 N → ∞ 时，Σ(1/n) → ∞</p>
+          <p>因此：1 = (1/5) × Σ(1/n)</p>
+          <p>Σ(1/n) = 5</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-number">6</span>
+        <strong>求解天数</strong>
+        <p style="margin-top: 10px;">调和级数 Hₙ = 1 + 1/2 + 1/3 + ... + 1/n</p>
+        <p>当 Hₙ ≈ 5 时，求解 n：</p>
+        <div class="formula-box">
+          <p>Hₙ ≈ ln(n) + γ（其中γ ≈ 0.5772是欧拉常数）</p>
+          <p>5 ≈ ln(n) + 0.5772</p>
+          <p>ln(n) ≈ 4.4228</p>
+          <p>n ≈ e^4.4228 ≈ 83.3</p>
+        </div>
+        <p style="margin-top: 10px;">更精确的计算：通过程序计算，当 Hₙ ≥ 5 时，n ≈ 83</p>
+      </div>
+
+      <div class="answer-box">
+        <div>🎯 答案：小蚂蚁需要 <span style="font-size: 36px;">{{ answerDay || '计算中...' }}</span> 天才能爬到橡皮筋的另一端</div>
+        <div style="font-size: 16px; margin-top: 10px; opacity: 0.9;" v-if="answerDay > 0">
+          （通过程序精确计算得出）
+        </div>
+      </div>
+
+      <h2>📊 数据计算与验证</h2>
+      
+      <div class="info-panel">
+        <div class="info-item">
+          <div class="label">当前天数</div>
+          <div class="value">{{ currentDay }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">橡皮筋长度 (米)</div>
+          <div class="value">{{ rubberBandLength.toFixed(2) }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">蚂蚁位置 (米)</div>
+          <div class="value">{{ antPosition.toFixed(2) }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">相对位置 (%)</div>
+          <div class="value">{{ (relativePosition * 100).toFixed(2) }}%</div>
+        </div>
+        <div class="info-item">
+          <div class="label">调和级数和</div>
+          <div class="value">{{ harmonicSum.toFixed(4) }}</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" @click="startAnimation" :disabled="isAnimating">▶️ 开始动画</button>
+        <button class="btn" @click="pauseAnimation" :disabled="!isAnimating">⏸️ 暂停</button>
+        <button class="btn" @click="resetAnimation">🔄 重置</button>
+        <button class="btn" @click="stepForward" :disabled="isAnimating">⏭️ 单步前进</button>
+      </div>
+
+      <div class="visualization">
+        <h3>📈 可视化动画</h3>
+        <canvas ref="canvas" width="1000" height="200"></canvas>
+        <p style="text-align: center; margin-top: 10px; color: #666;">
+          <span style="background: #ff6b6b; color: white; padding: 3px 8px; border-radius: 3px;">红色</span> 表示橡皮筋
+          <span style="background: #4ecdc4; color: white; padding: 3px 8px; border-radius: 3px; margin-left: 10px;">绿色</span> 表示蚂蚁已爬过的部分
+          <span style="background: #ffe66d; color: #333; padding: 3px 8px; border-radius: 3px; margin-left: 10px;">黄色点</span> 表示蚂蚁当前位置
+        </p>
+      </div>
+
+      <div class="chart-container">
+        <canvas ref="chartCanvas"></canvas>
+      </div>
+
+      <h2>📋 详细数据表</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>天数</th>
+              <th>橡皮筋长度 (米)</th>
+              <th>蚂蚁位置 (米)</th>
+              <th>相对位置 (%)</th>
+              <th>调和级数项</th>
+              <th>调和级数和</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, index) in dataTable" :key="index" 
+                :style="row.reached ? 'background: #c8e6c9; font-weight: bold;' : ''">
+              <td>{{ row.day }}</td>
+              <td>{{ row.length.toFixed(2) }}</td>
+              <td>{{ row.position.toFixed(2) }}</td>
+              <td>{{ (row.relative * 100).toFixed(2) }}%</td>
+              <td>{{ row.harmonicTerm.toFixed(4) }}</td>
+              <td>{{ row.harmonicSum.toFixed(4) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>✅ 结果验证</h2>
+      <div class="verification">
+        <h3>验证方法</h3>
+        <p><strong>1. 数学验证：</strong></p>
+        <p>通过计算调和级数 Hₙ = Σ(1/n)，当 Hₙ ≥ 5 时，对应的 n 值即为答案。</p>
+        <p>计算得：H₈₃ ≈ 5.002，H₈₂ ≈ 4.990</p>
+        <p>因此，<span class="highlight">第83天</span>时，蚂蚁的相对位置首次达到或超过100%。</p>
+        
+        <p style="margin-top: 15px;"><strong>2. 程序验证：</strong></p>
+        <p>通过模拟每天的过程，计算得出：</p>
+        <ul style="margin-left: 30px; margin-top: 10px;" v-if="answerDay > 0">
+          <li>第{{ answerDay - 1 }}天结束时，相对位置：{{ (calculateRelativePosition(answerDay - 1) * 100).toFixed(2) }}%</li>
+          <li>第{{ answerDay }}天结束时，相对位置：{{ (calculateRelativePosition(answerDay) * 100).toFixed(2) }}%</li>
+          <li>因此，<span class="highlight">第{{ answerDay }}天</span>时，蚂蚁的相对位置首次达到或超过100%</li>
+        </ul>
+        <p v-else>正在计算中...</p>
+        
+        <p style="margin-top: 15px;"><strong>3. 物理意义：</strong></p>
+        <p>虽然橡皮筋在不断拉长，但蚂蚁每天爬行的相对增量（1/当前长度）构成了一个调和级数。</p>
+        <p>调和级数是发散的，所以理论上蚂蚁最终一定能到达终点，只是需要的时间较长。</p>
+      </div>
+
+      <h2>💡 问题启示</h2>
+      <div class="card">
+        <p><strong>1. 相对运动的重要性：</strong>在这个问题中，关键是要理解蚂蚁的相对位置，而不是绝对位置。</p>
+        <p><strong>2. 调和级数的应用：</strong>这个问题展示了调和级数在现实问题中的应用，虽然每一项都很小，但累加起来可以达到任意大的值。</p>
+        <p><strong>3. 极限思维：</strong>即使目标在不断"远离"，只要持续努力，最终也能达到目标。</p>
+        <p><strong>4. 数学建模：</strong>将实际问题转化为数学模型，是解决复杂问题的关键步骤。</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const canvas = ref(null);
+        const chartCanvas = ref(null);
+        const currentDay = ref(0);
+        const rubberBandLength = ref(5);
+        const antPosition = ref(0);
+        const relativePosition = ref(0);
+        const harmonicSum = ref(0);
+        const isAnimating = ref(false);
+        const dataTable = ref([]);
+        const animationId = ref(null);
+        const chart = ref(null);
+        const answerDay = ref(0);
+
+        // 查找到达终点的天数
+        function findAnswerDay() {
+          for (let i = 1; i <= 200; i++) {
+            const data = calculateDayData(i);
+            if (data.reached) {
+              return i;
+            }
+          }
+          return 0;
+        }
+
+        // 计算第n天的相对位置（通过模拟每天的过程）
+        function calculateRelativePosition(n) {
+          if (n === 0) return 0;
+          
+          let position = 0; // 绝对位置（米）
+          let length = 5; // 橡皮筋长度（米）
+          
+          for (let i = 1; i <= n; i++) {
+            // 蚂蚁爬1米
+            position += 1;
+            // 橡皮筋拉长5米
+            length += 5;
+            // 由于均匀拉长，位置按比例拉伸
+            position = position * (length / (length - 5));
+          }
+          
+          return position / length;
+        }
+
+        // 计算第n天的数据
+        function calculateDayData(n) {
+          if (n === 0) {
+            return {
+              day: 0,
+              length: 5,
+              position: 0,
+              relative: 0,
+              harmonicTerm: 0,
+              harmonicSum: 0,
+              reached: false
+            };
+          }
+          
+          // 模拟过程计算
+          let position = 0;
+          let length = 5;
+          let harmonicSum = 0;
+          
+          for (let i = 1; i <= n; i++) {
+            const oldLength = length;
+            // 蚂蚁爬1米
+            position += 1;
+            // 橡皮筋拉长5米
+            length += 5;
+            // 均匀拉长，位置按比例拉伸
+            position = position * (length / oldLength);
+            // 计算调和级数项（相对位置增量）
+            harmonicSum += 1 / oldLength;
+          }
+          
+          const relative = position / length;
+          // 调和级数项：第n天的相对位置增量 = 1 / 第n天开始时的长度
+          const harmonicTerm = n > 0 ? 1 / (5 + 5 * (n - 1)) : 0;
+          
+          return {
+            day: n,
+            length: length,
+            position: position,
+            relative: Math.min(relative, 1), // 限制最大值为1
+            harmonicTerm: harmonicTerm,
+            harmonicSum: harmonicSum,
+            reached: relative >= 1
+          };
+        }
+
+        // 更新数据表
+        function updateDataTable() {
+          const table = [];
+          const daysToShow = new Set();
+          
+          // 如果答案天数已知，显示关键数据点
+          if (answerDay.value > 0) {
+            // 显示前10天
+            for (let i = 0; i <= Math.min(10, answerDay.value); i++) {
+              daysToShow.add(i);
+            }
+            
+            // 如果答案天数大于20，显示中间的关键点（每10天一个）
+            if (answerDay.value > 20) {
+              for (let i = 20; i < answerDay.value - 5; i += 10) {
+                daysToShow.add(i);
+              }
+            }
+            
+            // 显示答案天数前5天到答案天数
+            const startDay = Math.max(11, answerDay.value - 5);
+            for (let i = startDay; i <= answerDay.value; i++) {
+              daysToShow.add(i);
+            }
+          } else {
+            // 如果答案未知，显示前20天或当前天数+10
+            const maxDay = Math.min(Math.max(20, currentDay.value + 10), 100);
+            for (let i = 0; i <= maxDay; i++) {
+              daysToShow.add(i);
+            }
+          }
+          
+          // 转换为数组并排序
+          const sortedDays = Array.from(daysToShow).sort((a, b) => a - b);
+          for (const day of sortedDays) {
+            table.push(calculateDayData(day));
+          }
+          
+          dataTable.value = table;
+        }
+
+        // 绘制动画
+        function drawAnimation() {
+          if (!canvas.value) return;
+          const ctx = canvas.value.getContext('2d');
+          const width = canvas.value.width;
+          const height = canvas.value.height;
+
+          ctx.clearRect(0, 0, width, height);
+
+          // 绘制橡皮筋
+          const bandWidth = width * 0.9;
+          const bandHeight = 30;
+          const startX = width * 0.05;
+          const startY = height / 2 - bandHeight / 2;
+
+          // 未爬部分（灰色）
+          const unclimbedRatio = 1 - relativePosition.value;
+          const unclimbedWidth = bandWidth * unclimbedRatio;
+          ctx.fillStyle = '#ddd';
+          ctx.fillRect(startX + bandWidth * relativePosition.value, startY, unclimbedWidth, bandHeight);
+
+          // 已爬部分（绿色）
+          const climbedWidth = bandWidth * relativePosition.value;
+          ctx.fillStyle = '#4ecdc4';
+          ctx.fillRect(startX, startY, climbedWidth, bandHeight);
+
+          // 橡皮筋边框
+          ctx.strokeStyle = '#ff6b6b';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(startX, startY, bandWidth, bandHeight);
+
+          // 绘制蚂蚁
+          const antX = startX + bandWidth * relativePosition.value;
+          const antY = startY + bandHeight / 2;
+          ctx.fillStyle = '#ffe66d';
+          ctx.beginPath();
+          ctx.arc(antX, antY, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // 绘制起点和终点标记
+          ctx.fillStyle = '#333';
+          ctx.font = '14px Arial';
+          ctx.fillText('起点', startX - 30, startY + bandHeight / 2 + 5);
+          ctx.fillText('终点', startX + bandWidth + 10, startY + bandHeight / 2 + 5);
+
+          // 绘制信息
+          ctx.fillStyle = '#666';
+          ctx.font = '12px Arial';
+          ctx.fillText(`第 ${currentDay.value} 天`, startX, startY - 10);
+          ctx.fillText(`长度: ${rubberBandLength.value.toFixed(2)}m`, startX, startY + bandHeight + 20);
+          ctx.fillText(`位置: ${antPosition.value.toFixed(2)}m (${(relativePosition.value * 100).toFixed(2)}%)`, 
+                       startX, startY + bandHeight + 35);
+        }
+
+        // 更新图表
+        function updateChart() {
+          if (!chartCanvas.value) {
+            console.warn('Chart canvas not available');
+            return;
+          }
+
+          // 确保 Chart.js 已加载
+          if (typeof Chart === 'undefined') {
+            console.warn('Chart.js not loaded');
+            return;
+          }
+
+          const labels = [];
+          const relativeData = [];
+          const lengthData = [];
+          const positionData = [];
+
+          // 计算到当前天数或83天（答案）的数据
+          const maxDay = Math.min(Math.max(currentDay.value, 20), 100);
+          for (let i = 0; i <= maxDay; i++) {
+            labels.push(i);
+            const data = calculateDayData(i);
+            relativeData.push(data.relative * 100);
+            lengthData.push(data.length);
+            positionData.push(data.position);
+          }
+
+          if (chart.value) {
+            chart.value.destroy();
+          }
+
+          try {
+            chart.value = new Chart(chartCanvas.value, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: '相对位置 (%)',
+                  data: relativeData,
+                  borderColor: '#4ecdc4',
+                  backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                  tension: 0.4,
+                  yAxisID: 'y'
+                },
+                {
+                  label: '橡皮筋长度 (米)',
+                  data: lengthData,
+                  borderColor: '#ff6b6b',
+                  backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                  tension: 0.4,
+                  yAxisID: 'y1'
+                },
+                {
+                  label: '蚂蚁位置 (米)',
+                  data: positionData,
+                  borderColor: '#ffe66d',
+                  backgroundColor: 'rgba(255, 230, 109, 0.1)',
+                  tension: 0.4,
+                  yAxisID: 'y1'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                },
+                tooltip: {
+                  mode: 'index',
+                  intersect: false
+                }
+              },
+              scales: {
+                y: {
+                  type: 'linear',
+                  display: true,
+                  position: 'left',
+                  title: {
+                    display: true,
+                    text: '相对位置 (%)'
+                  },
+                  min: 0,
+                  max: 100
+                },
+                y1: {
+                  type: 'linear',
+                  display: true,
+                  position: 'right',
+                  title: {
+                    display: true,
+                    text: '长度/位置 (米)'
+                  },
+                  grid: {
+                    drawOnChartArea: false
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: '天数'
+                  }
+                }
+              }
+            }
+          });
+          } catch (error) {
+            console.error('Error creating chart:', error);
+          }
+        }
+
+        // 更新状态
+        function updateState(day) {
+          currentDay.value = day;
+          const data = calculateDayData(day);
+          rubberBandLength.value = data.length;
+          antPosition.value = data.position;
+          relativePosition.value = data.relative;
+          harmonicSum.value = data.harmonicSum;
+          updateDataTable();
+          drawAnimation();
+          updateChart();
+        }
+
+        // 开始动画
+        function startAnimation() {
+          if (isAnimating.value) return;
+          isAnimating.value = true;
+          
+          function animate() {
+            if (!isAnimating.value) return;
+            
+            if (currentDay.value < 100 && relativePosition.value < 1) {
+              updateState(currentDay.value + 1);
+              animationId.value = setTimeout(animate, 500); // 每0.5秒更新一次
+            } else {
+              isAnimating.value = false;
+            }
+          }
+          
+          animate();
+        }
+
+        // 暂停动画
+        function pauseAnimation() {
+          isAnimating.value = false;
+          if (animationId.value) {
+            clearTimeout(animationId.value);
+            animationId.value = null;
+          }
+        }
+
+        // 重置动画
+        function resetAnimation() {
+          pauseAnimation();
+          updateState(0);
+        }
+
+        // 单步前进
+        function stepForward() {
+          if (!isAnimating.value && currentDay.value < 100) {
+            updateState(currentDay.value + 1);
+          }
+        }
+
+        onMounted(() => {
+          // 计算答案天数
+          answerDay.value = findAnswerDay();
+          
+          // 初始化状态
+          updateState(0);
+          
+          // 如果 Chart.js 还没加载，等待一下再尝试更新图表
+          if (typeof Chart === 'undefined') {
+            const checkChart = setInterval(() => {
+              if (typeof Chart !== 'undefined') {
+                clearInterval(checkChart);
+                updateChart();
+              }
+            }, 100);
+            
+            // 5秒后停止检查
+            setTimeout(() => {
+              clearInterval(checkChart);
+            }, 5000);
+          }
+        });
+
+        return {
+          canvas,
+          chartCanvas,
+          currentDay,
+          rubberBandLength,
+          antPosition,
+          relativePosition,
+          harmonicSum,
+          isAnimating,
+          dataTable,
+          answerDay,
+          startAnimation,
+          pauseAnimation,
+          resetAnimation,
+          stepForward,
+          calculateRelativePosition
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

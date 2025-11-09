@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="详细解析一道关于物体在光滑水平杆上受变力作用的运动学问题。通过动能定理，结合几何分析，逐步推导并计算木块在不同位置的速度。包含问题分析、公式推导、解题步骤和结果验证。">
+  <meta name="keywords" content="物理, 运动学, 动能定理, 变力做功, 光滑杆, 绳索系统, 速度计算, 物理问题解析">
+  <title>变力做功问题解析 - 物理</title>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      color: #0056b3;
+      margin-bottom: 25px;
+      font-size: 2.2em;
+    }
+    h2 {
+      color: #0056b3;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 10px;
+      margin-top: 30px;
+      margin-bottom: 20px;
+      font-size: 1.6em;
+    }
+    h3 {
+      color: #0056b3;
+      margin-top: 20px;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+    p {
+      margin-bottom: 10px;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e0e0e0;
+      overflow-x: auto;
+    }
+    .tab-button {
+      flex-shrink: 0;
+      padding: 12px 20px;
+      cursor: pointer;
+      background: #f0f0f0;
+      border: none;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      margin-right: 5px;
+      font-size: 1.1em;
+      color: #555;
+      transition: background 0.3s, color 0.3s;
+    }
+    .tab-button:hover {
+      background: #e0e0e0;
+    }
+    .tab-button.active {
+      background: #0056b3;
+      color: #fff;
+      font-weight: bold;
+    }
+    .tab-content {
+      padding: 20px 0;
+      border-top: none;
+    }
+    .problem-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .problem-box p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .formula-box {
+      background: #e6f7ff;
+      border-left: 5px solid #91d5ff;
+      padding: 15px;
+      margin: 15px 0;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 1.1em;
+      color: #003a8c;
+      overflow-x: auto;
+    }
+    .formula-box p {
+      margin: 5px 0;
+    }
+    .highlight {
+      color: #e67e22;
+      font-weight: bold;
+    }
+    .diagram-container {
+      text-align: center;
+      margin: 20px 0;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    .diagram-container svg {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    .key-points {
+      background: #f0f7ff;
+      border-left: 4px solid #0056b3;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .key-points ul {
+      list-style-type: disc;
+      margin-left: 25px;
+      margin-bottom: 10px;
+    }
+    .key-points li {
+      margin-bottom: 8px;
+    }
+    .answer-box {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      border-radius: 5px;
+      padding: 20px;
+      text-align: center;
+      margin-top: 30px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .answer-box span {
+      color: #007bff;
+      font-size: 1.5em;
+    }
+    .step-box {
+      background: #fff;
+      border: 2px solid #0056b3;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .step-number {
+      display: inline-block;
+      background: #0056b3;
+      color: white;
+      width: 35px;
+      height: 35px;
+      line-height: 35px;
+      text-align: center;
+      border-radius: 50%;
+      margin-right: 10px;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    .note {
+      background-color: #fff3cd;
+      border-left: 5px solid #ffeeba;
+      padding: 10px 15px;
+      margin: 15px 0;
+      color: #856404;
+    }
+    .knowledge-graph {
+      margin: 20px 0;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      color: #e67e22;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>🔬 变力做功与动能定理</h1>
+      
+      <div class="problem-box">
+        <h2 style="color: white; border: none; margin: 0 0 15px 0;">📋 题目</h2>
+        <p><strong>如图所示，质量为</strong> <code style="background: rgba(255,255,255,0.3);">m = 0.5 kg</code> <strong>的木块可在水平光滑直杆上滑动。</strong></p>
+        <p><strong>木块与一不可伸长的轻绳相连，绳跨过一固定的光滑小环。</strong></p>
+        <p><strong>绳端作用着大小不变的力</strong> <code style="background: rgba(255,255,255,0.3);">F = 50 N</code><strong>。</strong></p>
+        <p><strong>木块在</strong> <code style="background: rgba(255,255,255,0.3);">A</code> <strong>点时具有向右的速率</strong> <code style="background: rgba(255,255,255,0.3);">v₀ = 6 m/s</code><strong>。</strong></p>
+        <p><strong>已知：小环固定在水平直杆上方</strong> <code style="background: rgba(255,255,255,0.3);">h = 3 m</code> <strong>处，</strong><code style="background: rgba(255,255,255,0.3);">A</code> <strong>点位于小环正下方水平距离</strong> <code style="background: rgba(255,255,255,0.3);">x_A = 4 m</code> <strong>处，</strong><code style="background: rgba(255,255,255,0.3);">B</code> <strong>点位于小环正下方</strong> <code style="background: rgba(255,255,255,0.3);">x_B = 0 m</code> <strong>处。</strong></p>
+        <p><strong>求：力</strong> <code style="background: rgba(255,255,255,0.3);">F</code> <strong>将木块自</strong> <code style="background: rgba(255,255,255,0.3);">A</code> <strong>拉至</strong> <code style="background: rgba(255,255,255,0.3);">B</code> <strong>点时的速度。</strong></p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-button" :class="{ active: activeTab === 'guidance' }" @click="activeTab = 'guidance'">💡 启发引导</button>
+        <button class="tab-button" :class="{ active: activeTab === 'step1' }" @click="activeTab = 'step1'">步骤1：受力分析</button>
+        <button class="tab-button" :class="{ active: activeTab === 'step2' }" @click="activeTab = 'step2'">步骤2：计算功</button>
+        <button class="tab-button" :class="{ active: activeTab === 'step3' }" @click="activeTab = 'step3'">步骤3：应用动能定理</button>
+        <button class="tab-button" :class="{ active: activeTab === 'summary' }" @click="activeTab = 'summary'">总结与验证</button>
+      </div>
+
+      <!-- 启发引导 -->
+      <div class="tab-content" v-show="activeTab === 'guidance'">
+        <h2>💡 启发引导</h2>
+        
+        <h3>🎯 问题情景再现</h3>
+        <p>想象一下，你手中拉着一根绳子，绳子绕过一个小环，另一端系着一个木块。当你用力拉绳子时，木块会如何运动？这就是我们要研究的问题！</p>
+        
+        <div class="diagram-container">
+          <div ref="problemDiagram"></div>
+        </div>
+
+        <h3>🔍 线索提炼</h3>
+        <div class="key-points">
+          <p><strong>从题目中我们能提取哪些关键信息？</strong></p>
+          <ul>
+            <li><strong>水平光滑直杆：</strong> 意味着没有摩擦力，只有水平方向的力会影响运动</li>
+            <li><strong>不可伸长的轻绳：</strong> 绳长不变，但方向会改变</li>
+            <li><strong>光滑小环：</strong> 绳子可以自由滑动，张力大小不变</li>
+            <li><strong>恒力 F：</strong> 作用在绳端，但作用在木块上的分力是变化的</li>
+            <li><strong>已知初速度：</strong> 要求末速度，这提示我们使用<strong class="highlight">动能定理</strong></li>
+            <li><strong>几何关系：</strong> 可以通过几何关系计算绳长的变化</li>
+          </ul>
+        </div>
+
+        <h3>📚 涉及的知识点</h3>
+        <p>让我们用知识图谱来可视化这些知识点之间的关系：</p>
+        <div class="knowledge-graph">
+          <div ref="knowledgeGraph"></div>
+        </div>
+
+        <h3>🎯 本题考点</h3>
+        <div class="card">
+          <ul>
+            <li><strong>动能定理的应用：</strong> W_net = ΔK = K_末 - K_初</li>
+            <li><strong>变力做功的计算：</strong> 通过几何关系（绳长变化）计算变力做功</li>
+            <li><strong>几何与三角函数的应用：</strong> 利用勾股定理计算绳长</li>
+            <li><strong>能量转化的理解：</strong> 外力做功转化为物体动能</li>
+          </ul>
+        </div>
+
+        <h3>⚠️ 易错点与难点</h3>
+        <div class="note">
+          <p><strong>1. 变力做功的计算：</strong></p>
+          <p>这是本题的核心难点。力F作用在绳端，但对木块做功的是绳子的张力。张力方向随木块位置变化，其在水平方向的分力是变力。不能简单地用 F × 位移 来计算。</p>
+          
+          <p><strong>2. 功的正负判断：</strong></p>
+          <p>绳子张力对木块做功的正负取决于张力与位移方向的夹角。在本例中，需要正确理解绳子拉长或缩短对做功的影响。</p>
+          
+          <p><strong>3. 几何关系的建立：</strong></p>
+          <p>正确建立坐标系统，利用勾股定理计算绳长，理解绳长变化与做功的关系。</p>
+          
+          <p><strong>4. 初始动能的处理：</strong></p>
+          <p>不要忘记题目给出了初速度，需要正确计算初始动能。</p>
+        </div>
+
+        <h3>📖 拿分策略</h3>
+        <div class="step-box">
+          <span class="step-number">1</span>
+          <strong>明确解题思路</strong>
+          <p style="margin-top: 10px;">识别出这是一个变力做功问题，动能定理是解决此类问题的最佳工具。</p>
+        </div>
+        <div class="step-box">
+          <span class="step-number">2</span>
+          <strong>建立几何模型</strong>
+          <p style="margin-top: 10px;">画出清晰的示意图，建立坐标系，标出关键点和几何量。</p>
+        </div>
+        <div class="step-box">
+          <span class="step-number">3</span>
+          <strong>计算变力做功</strong>
+          <p style="margin-top: 10px;">利用绳长变化法：W = F × (L_A - L_B)，这是关键步骤。</p>
+        </div>
+        <div class="step-box">
+          <span class="step-number">4</span>
+          <strong>应用动能定理</strong>
+          <p style="margin-top: 10px;">列出动能定理方程，代入已知量，求解未知量。</p>
+        </div>
+        <div class="step-box">
+          <span class="step-number">5</span>
+          <strong>验证结果</strong>
+          <p style="margin-top: 10px;">检查结果的量纲、数量级是否合理，速度是否增加（因为做正功）。</p>
+        </div>
+      </div>
+
+      <!-- 步骤1：受力分析 -->
+      <div class="tab-content" v-show="activeTab === 'step1'">
+        <h2>步骤1：受力分析与运动过程</h2>
+        
+        <h3>1.1 木块受力分析</h3>
+        <p>木块在水平光滑直杆上运动，受到以下力的作用：</p>
+        <ul>
+          <li><strong>重力 (mg)：</strong> 竖直向下，大小为 <code>mg = 0.5 × 9.8 = 4.9 N</code></li>
+          <li><strong>杆的弹力 (N)：</strong> 竖直向上，与重力平衡，大小为 <code>N = mg = 4.9 N</code></li>
+          <li><strong>绳子的张力 (T)：</strong> 沿绳子方向，指向光滑小环。由于绳端作用力为 <code>F = 50 N</code> 且绳子和环光滑，所以张力 <code>T = F = 50 N</code></li>
+        </ul>
+        <p>由于杆是光滑的，没有摩擦力。重力和杆的弹力在竖直方向，与木块的水平位移垂直，因此它们不做功。</p>
+        
+        <div class="diagram-container">
+          <div ref="forceDiagram"></div>
+        </div>
+
+        <h3>1.2 运动过程分析</h3>
+        <p>木块在水平方向上只受到绳子张力 <code>T</code> 的水平分量作用。由于张力方向随木块位置变化，其水平分量是一个变力。</p>
+        <p>题目要求计算速度，且涉及变力做功，因此最适合使用<strong class="highlight">动能定理</strong>来解决。</p>
+        <div class="formula-box">
+          <p>动能定理：<code>W_net = ΔK = K_B - K_A</code></p>
+          <p>其中，<code>K = (1/2)mv²</code> 是动能</p>
+        </div>
+        <p>本题中，合外力做的功 <code>W_net</code> 就是绳子张力 <code>F</code> 对木块做的功 <code>W_F</code>。</p>
+      </div>
+
+      <!-- 步骤2：计算功 -->
+      <div class="tab-content" v-show="activeTab === 'step2'">
+        <h2>步骤2：计算力F做的功</h2>
+        
+        <h3>2.1 变力做功的计算方法</h3>
+        <p>绳子张力 <code>F</code> 对木块做的功 <code>W_F</code> 可以通过两种方法计算：</p>
+        <ol>
+          <li><strong>积分法：</strong> <code>W_F = ∫ F_x dx</code>，其中 <code>F_x</code> 是张力在水平方向的分量。这种方法需要建立函数关系，计算较复杂。</li>
+          <li><strong>绳长变化法：</strong> 对于通过光滑定滑轮（或小环）的绳子，若绳端受恒力 <code>F</code> 作用，则该力对物体做的功等于 <code>F</code> 乘以绳子与物体连接部分的长度变化量。</li>
+        </ol>
+        <p>这里我们采用<strong class="highlight">绳长变化法</strong>，因为它更简洁直观。</p>
+        <div class="formula-box">
+          <p><code>W_F = F × (L_A - L_B)</code></p>
+          <p>其中 <code>L_A</code> 和 <code>L_B</code> 分别是绳子从木块到小环在 A 点和 B 点的长度</p>
+        </div>
+
+        <h3>2.2 几何关系与绳长计算</h3>
+        <p>根据题目条件：</p>
+        <ul>
+          <li>小环固定在 <code>(0, h)</code> 处，其中 <code>h = 3 m</code></li>
+          <li><code>A</code> 点位于 <code>(x_A, 0)</code> 处，其中 <code>x_A = 4 m</code></li>
+          <li><code>B</code> 点位于 <code>(x_B, 0)</code> 处，其中 <code>x_B = 0 m</code></li>
+        </ul>
+        <p>绳子从木块到小环的长度 <code>L</code> 可以用勾股定理计算：</p>
+        <div class="formula-box">
+          <p><code>L = √(x² + h²)</code></p>
+        </div>
+        
+        <p>在 <code>A</code> 点时，绳长 <code>L_A</code>：</p>
+        <div class="formula-box">
+          <p><code>L_A = √(x_A² + h²) = √(4² + 3²) = √(16 + 9) = √25 = 5 m</code></p>
+        </div>
+        
+        <p>在 <code>B</code> 点时，绳长 <code>L_B</code>：</p>
+        <div class="formula-box">
+          <p><code>L_B = √(x_B² + h²) = √(0² + 3²) = √9 = 3 m</code></p>
+        </div>
+
+        <div class="diagram-container">
+          <div ref="lengthDiagram"></div>
+        </div>
+
+        <h3>2.3 计算力F做的功</h3>
+        <p>力 <code>F</code> 对木块做的功 <code>W_F</code> 为：</p>
+        <div class="formula-box">
+          <p><code>W_F = F × (L_A - L_B)</code></p>
+          <p><code>W_F = 50 N × (5 m - 3 m) = 50 N × 2 m = 100 J</code></p>
+        </div>
+        <p>由于 <code>L_A > L_B</code>，绳子被拉短，张力对木块做正功，符合预期（木块速度应该增加）。</p>
+      </div>
+
+      <!-- 步骤3：应用动能定理 -->
+      <div class="tab-content" v-show="activeTab === 'step3'">
+        <h2>步骤3：应用动能定理求速度</h2>
+        
+        <h3>3.1 动能定理表达式</h3>
+        <p>根据动能定理，合外力对木块做的功等于木块动能的变化量：</p>
+        <div class="formula-box">
+          <p><code>W_net = K_B - K_A</code></p>
+          <p><code>W_F = (1/2)mv_B² - (1/2)mv_A²</code></p>
+        </div>
+
+        <h3>3.2 代入已知量</h3>
+        <p>已知条件：</p>
+        <ul>
+          <li>木块质量 <code>m = 0.5 kg</code></li>
+          <li><code>A</code> 点速度 <code>v_A = v₀ = 6 m/s</code></li>
+          <li>力 <code>F</code> 做的功 <code>W_F = 100 J</code> (从步骤2计算得出)</li>
+        </ul>
+
+        <h3>3.3 计算过程</h3>
+        <p>首先计算 <code>A</code> 点的动能：</p>
+        <div class="formula-box">
+          <p><code>K_A = (1/2)mv_A² = (1/2) × 0.5 × 6² = 0.25 × 36 = 9 J</code></p>
+        </div>
+        
+        <p>代入动能定理公式：</p>
+        <div class="formula-box">
+          <p><code>W_F = K_B - K_A</code></p>
+          <p><code>100 = K_B - 9</code></p>
+          <p><code>K_B = 100 + 9 = 109 J</code></p>
+        </div>
+        
+        <p>计算 <code>B</code> 点的速度：</p>
+        <div class="formula-box">
+          <p><code>K_B = (1/2)mv_B²</code></p>
+          <p><code>109 = (1/2) × 0.5 × v_B²</code></p>
+          <p><code>109 = 0.25 × v_B²</code></p>
+          <p><code>v_B² = 109 / 0.25 = 436</code></p>
+          <p><code>v_B = √436 ≈ 20.88 m/s</code></p>
+        </div>
+
+        <div class="diagram-container">
+          <div ref="energyChart"></div>
+        </div>
+
+        <div class="answer-box">
+          <div>🎯 答案：木块在B点时的速度约为 <span>20.88 m/s</span></div>
+        </div>
+      </div>
+
+      <!-- 总结与验证 -->
+      <div class="tab-content" v-show="activeTab === 'summary'">
+        <h2>总结与验证</h2>
+        
+        <h3>4.1 解题过程总结</h3>
+        <div class="step-box">
+          <span class="step-number">1</span>
+          <strong>受力分析</strong>
+          <p style="margin-top: 10px;">木块受到重力、弹力和绳子张力的作用。重力和弹力不做功，只有绳子张力做功。</p>
+        </div>
+        <div class="step-box">
+          <span class="step-number">2</span>
+          <strong>计算变力做功</strong>
+          <p style="margin-top: 10px;">利用绳长变化法：<code>W_F = F × (L_A - L_B) = 50 × (5 - 3) = 100 J</code></p>
+        </div>
+        <div class="step-box">
+          <span class="step-number">3</span>
+          <strong>应用动能定理</strong>
+          <p style="margin-top: 10px;"><code>W_F = K_B - K_A</code>，代入数据得到 <code>v_B ≈ 20.88 m/s</code></p>
+        </div>
+
+        <h3>4.2 结果验证</h3>
+        <div class="card">
+          <p><strong>1. 速度增加验证：</strong></p>
+          <p>木块从 <code>6 m/s</code> 增加到 <code>20.88 m/s</code>。由于力 <code>F</code> 对木块做了正功 (<code>100 J</code>)，木块的动能增加，速度增大是合理的。</p>
+          
+          <p><strong>2. 单位检查：</strong></p>
+          <p>功的单位是焦耳 (J)，动能的单位也是焦耳。速度的单位是米/秒 (m/s)。所有单位在计算过程中都是一致的。</p>
+          
+          <p><strong>3. 数量级检查：</strong></p>
+          <p><code>100 J</code> 的功使 <code>0.5 kg</code> 的物体速度从 <code>6 m/s</code> 增加到 <code>20.88 m/s</code>，这个数量级是符合物理直觉的。</p>
+          
+          <p><strong>4. 能量守恒验证：</strong></p>
+          <p>初动能：<code>K_A = 9 J</code></p>
+          <p>外力做功：<code>W_F = 100 J</code></p>
+          <p>末动能：<code>K_B = 109 J = 9 + 100</code> ✓</p>
+        </div>
+
+        <h3>4.3 方法总结</h3>
+        <div class="key-points">
+          <p><strong>本题的关键方法：</strong></p>
+          <ul>
+            <li><strong>动能定理：</strong> 解决变力做功问题的有力工具</li>
+            <li><strong>绳长变化法：</strong> 简化变力做功计算的巧妙方法</li>
+            <li><strong>几何分析：</strong> 利用勾股定理建立几何关系</li>
+            <li><strong>能量观点：</strong> 从能量转化的角度理解物理过程</li>
+          </ul>
+        </div>
+
+        <h3>4.4 拓展思考</h3>
+        <div class="note">
+          <p><strong>如果改变某些条件，结果会如何变化？</strong></p>
+          <ul>
+            <li>如果力F增大，木块在B点的速度会如何变化？</li>
+            <li>如果初始速度不同，对结果有什么影响？</li>
+            <li>如果小环的高度h改变，绳长变化会如何影响做功？</li>
+            <li>如果考虑摩擦力，问题会变得如何复杂？</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, nextTick, watch } = Vue;
+
+    createApp({
+      setup() {
+        const activeTab = ref('guidance');
+        const problemDiagram = ref(null);
+        const knowledgeGraph = ref(null);
+        const forceDiagram = ref(null);
+        const lengthDiagram = ref(null);
+        const energyChart = ref(null);
+
+        // 问题参数
+        const m = 0.5; // kg
+        const F = 50;  // N
+        const vA = 6;  // m/s
+        const h = 3;   // m
+        const xA = 4;  // m
+        const xB = 0;  // m
+
+        // 计算值
+        const LA = Math.sqrt(xA * xA + h * h); // 5 m
+        const LB = Math.sqrt(xB * xB + h * h); // 3 m
+        const WF = F * (LA - LB); // 100 J
+        const KA = 0.5 * m * vA * vA; // 9 J
+        const KB = KA + WF; // 109 J
+        const vB = Math.sqrt(2 * KB / m); // 20.88 m/s
+
+        // 绘制问题示意图
+        function drawProblemDiagram() {
+          if (!problemDiagram.value || typeof d3 === 'undefined') return;
+
+          const width = 700;
+          const height = 400;
+          const margin = { top: 20, right: 20, bottom: 60, left: 60 };
+
+          d3.select(problemDiagram.value).selectAll("*").remove();
+
+          const svg = d3.select(problemDiagram.value)
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+          const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+          const plotWidth = width - margin.left - margin.right;
+          const plotHeight = height - margin.top - margin.bottom;
+
+          // 坐标转换
+          const xScale = d3.scaleLinear()
+            .domain([-1, 6])
+            .range([0, plotWidth]);
+
+          const yScale = d3.scaleLinear()
+            .domain([-1, 5])
+            .range([plotHeight, 0]);
+
+          // 绘制水平杆
+          g.append("line")
+            .attr("x1", xScale(-1))
+            .attr("y1", yScale(0))
+            .attr("x2", xScale(6))
+            .attr("y2", yScale(0))
+            .attr("stroke", "#333")
+            .attr("stroke-width", 3);
+
+          // 绘制小环
+          g.append("circle")
+            .attr("cx", xScale(0))
+            .attr("cy", yScale(h))
+            .attr("r", 8)
+            .attr("fill", "#0056b3")
+            .attr("stroke", "#003a8c")
+            .attr("stroke-width", 2);
+
+          g.append("text")
+            .attr("x", xScale(0))
+            .attr("y", yScale(h) - 15)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "14px")
+            .attr("fill", "#0056b3")
+            .text("光滑小环");
+
+          // 绘制A点
+          g.append("circle")
+            .attr("cx", xScale(xA))
+            .attr("cy", yScale(0))
+            .attr("r", 6)
+            .attr("fill", "#e67e22");
+
+          g.append("text")
+            .attr("x", xScale(xA))
+            .attr("y", yScale(0) + 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "16px")
+            .attr("font-weight", "bold")
+            .text("A");
+
+          // 绘制B点
+          g.append("circle")
+            .attr("cx", xScale(xB))
+            .attr("cy", yScale(0))
+            .attr("r", 6)
+            .attr("fill", "#2ecc71");
+
+          g.append("text")
+            .attr("x", xScale(xB))
+            .attr("y", yScale(0) + 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "16px")
+            .attr("font-weight", "bold")
+            .text("B");
+
+          // 绘制木块在A点
+          g.append("rect")
+            .attr("x", xScale(xA) - 15)
+            .attr("y", yScale(0) - 10)
+            .attr("width", 30)
+            .attr("height", 20)
+            .attr("fill", "#e67e22")
+            .attr("stroke", "#d35400")
+            .attr("stroke-width", 2)
+            .attr("rx", 3);
+
+          // 绘制绳子从A到小环
+          g.append("line")
+            .attr("x1", xScale(xA))
+            .attr("y1", yScale(0))
+            .attr("x2", xScale(0))
+            .attr("y2", yScale(h))
+            .attr("stroke", "#3498db")
+            .attr("stroke-width", 2);
+
+          // 绘制力F
+          g.append("line")
+            .attr("x1", xScale(0))
+            .attr("y1", yScale(h))
+            .attr("x2", xScale(-0.5))
+            .attr("y2", yScale(h + 1))
+            .attr("stroke", "#e74c3c")
+            .attr("stroke-width", 3)
+            .attr("marker-end", "url(#arrowhead-red)");
+
+          g.append("text")
+            .attr("x", xScale(-0.8))
+            .attr("y", yScale(h + 1.2))
+            .attr("font-size", "14px")
+            .attr("fill", "#e74c3c")
+            .attr("font-weight", "bold")
+            .text("F=50N");
+
+          // 绘制尺寸标注
+          // 高度h
+          g.append("line")
+            .attr("x1", xScale(-0.3))
+            .attr("y1", yScale(0))
+            .attr("x2", xScale(-0.3))
+            .attr("y2", yScale(h))
+            .attr("stroke", "#7f8c8d")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "3,3");
+
+          g.append("text")
+            .attr("x", xScale(-0.6))
+            .attr("y", yScale(h / 2))
+            .attr("text-anchor", "middle")
+            .attr("font-size", "12px")
+            .attr("fill", "#7f8c8d")
+            .text("h=3m");
+
+          // 距离x_A
+          g.append("line")
+            .attr("x1", xScale(0))
+            .attr("y1", yScale(-0.3))
+            .attr("x2", xScale(xA))
+            .attr("y2", yScale(-0.3))
+            .attr("stroke", "#7f8c8d")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "3,3");
+
+          g.append("text")
+            .attr("x", xScale(xA / 2))
+            .attr("y", yScale(-0.5))
+            .attr("text-anchor", "middle")
+            .attr("font-size", "12px")
+            .attr("fill", "#7f8c8d")
+            .text("x_A=4m");
+
+          // 添加箭头标记
+          svg.append("defs").append("marker")
+            .attr("id", "arrowhead-red")
+            .attr("viewBox", "0 0 10 10")
+            .attr("refX", 5)
+            .attr("refY", 5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 L 10 5 L 0 10 z")
+            .attr("fill", "#e74c3c");
+        }
+
+        // 绘制知识图谱
+        function drawKnowledgeGraph() {
+          if (!knowledgeGraph.value || typeof d3 === 'undefined') return;
+
+          const width = 800;
+          const height = 500;
+          const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+
+          d3.select(knowledgeGraph.value).selectAll("*").remove();
+
+          const svg = d3.select(knowledgeGraph.value)
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+          // 定义节点和连接
+          const nodes = [
+            { id: "动能定理", group: 1, x: width / 2, y: 80 },
+            { id: "功", group: 2, x: width / 2 - 150, y: 200 },
+            { id: "动能", group: 2, x: width / 2 + 150, y: 200 },
+            { id: "变力做功", group: 3, x: width / 2 - 250, y: 320 },
+            { id: "绳长变化法", group: 3, x: width / 2 - 80, y: 320 },
+            { id: "几何关系", group: 3, x: width / 2 + 80, y: 320 },
+            { id: "勾股定理", group: 3, x: width / 2 + 250, y: 320 }
+          ];
+
+          const links = [
+            { source: nodes[0], target: nodes[1] },
+            { source: nodes[0], target: nodes[2] },
+            { source: nodes[1], target: nodes[3] },
+            { source: nodes[1], target: nodes[4] },
+            { source: nodes[4], target: nodes[5] },
+            { source: nodes[5], target: nodes[6] }
+          ];
+
+          // 绘制连接线
+          svg.selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y)
+            .attr("stroke", "#999")
+            .attr("stroke-opacity", 0.6)
+            .attr("stroke-width", 2);
+
+          // 绘制节点
+          svg.selectAll("circle")
+            .data(nodes)
+            .enter().append("circle")
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y)
+            .attr("r", 35)
+            .attr("fill", d => {
+              if (d.group === 1) return "#0056b3";
+              if (d.group === 2) return "#2ecc71";
+              return "#e67e22";
+            })
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 3);
+
+          // 绘制标签
+          svg.selectAll("text")
+            .data(nodes)
+            .enter().append("text")
+            .attr("x", d => d.x)
+            .attr("y", d => d.y)
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("font-size", "14px")
+            .attr("font-weight", "bold")
+            .attr("fill", "#fff")
+            .text(d => d.id);
+        }
+
+        // 绘制受力分析图
+        function drawForceDiagram() {
+          if (!forceDiagram.value || typeof d3 === 'undefined') return;
+
+          const width = 600;
+          const height = 400;
+
+          d3.select(forceDiagram.value).selectAll("*").remove();
+
+          const svg = d3.select(forceDiagram.value)
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+          const g = svg.append("g")
+            .attr("transform", "translate(50, 50)");
+
+          // 绘制水平杆
+          g.append("line")
+            .attr("x1", 100)
+            .attr("y1", 300)
+            .attr("x2", 500)
+            .attr("y2", 300)
+            .attr("stroke", "#333")
+            .attr("stroke-width", 3);
+
+          // 绘制小环
+          g.append("circle")
+            .attr("cx", 300)
+            .attr("cy", 100)
+            .attr("r", 8)
+            .attr("fill", "#0056b3");
+
+          // 绘制木块
+          g.append("rect")
+            .attr("x", 380)
+            .attr("y", 280)
+            .attr("width", 40)
+            .attr("height", 40)
+            .attr("fill", "#e67e22")
+            .attr("stroke", "#d35400")
+            .attr("stroke-width", 2)
+            .attr("rx", 3);
+
+          const blockX = 400;
+          const blockY = 300;
+
+          // 绘制重力
+          g.append("line")
+            .attr("x1", blockX)
+            .attr("y1", blockY)
+            .attr("x2", blockX)
+            .attr("y2", blockY + 30)
+            .attr("stroke", "#8e44ad")
+            .attr("stroke-width", 2)
+            .attr("marker-end", "url(#arrow-purple)");
+
+          g.append("text")
+            .attr("x", blockX + 10)
+            .attr("y", blockY + 20)
+            .attr("font-size", "14px")
+            .attr("fill", "#8e44ad")
+            .text("mg");
+
+          // 绘制弹力
+          g.append("line")
+            .attr("x1", blockX)
+            .attr("y1", blockY)
+            .attr("x2", blockX)
+            .attr("y2", blockY - 30)
+            .attr("stroke", "#27ae60")
+            .attr("stroke-width", 2)
+            .attr("marker-end", "url(#arrow-green)");
+
+          g.append("text")
+            .attr("x", blockX + 10)
+            .attr("y", blockY - 15)
+            .attr("font-size", "14px")
+            .attr("fill", "#27ae60")
+            .text("N");
+
+          // 绘制张力
+          g.append("line")
+            .attr("x1", blockX)
+            .attr("y1", blockY)
+            .attr("x2", 300)
+            .attr("y2", 100)
+            .attr("stroke", "#e74c3c")
+            .attr("stroke-width", 2)
+            .attr("marker-end", "url(#arrow-red)");
+
+          g.append("text")
+            .attr("x", 350)
+            .attr("y", 180)
+            .attr("font-size", "14px")
+            .attr("fill", "#e74c3c")
+            .text("T=F");
+
+          // 添加箭头
+          svg.append("defs").append("marker")
+            .attr("id", "arrow-purple")
+            .attr("viewBox", "0 0 10 10")
+            .attr("refX", 5)
+            .attr("refY", 5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 L 10 5 L 0 10 z")
+            .attr("fill", "#8e44ad");
+
+          svg.append("defs").append("marker")
+            .attr("id", "arrow-green")
+            .attr("viewBox", "0 0 10 10")
+            .attr("refX", 5)
+            .attr("refY", 5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 L 10 5 L 0 10 z")
+            .attr("fill", "#27ae60");
+
+          svg.append("defs").append("marker")
+            .attr("id", "arrow-red")
+            .attr("viewBox", "0 0 10 10")
+            .attr("refX", 5)
+            .attr("refY", 5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 L 10 5 L 0 10 z")
+            .attr("fill", "#e74c3c");
+        }
+
+        // 绘制绳长示意图
+        function drawLengthDiagram() {
+          if (!lengthDiagram.value || typeof d3 === 'undefined') return;
+
+          const width = 900;
+          const height = 350;
+
+          d3.select(lengthDiagram.value).selectAll("*").remove();
+
+          const svg = d3.select(lengthDiagram.value)
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+          const g = svg.append("g")
+            .attr("transform", "translate(50, 20)");
+
+          const scale = 60; // 缩放因子：1m = 60px
+          const originX = 100;
+          const rodY = 250;
+          const ringY = 80;
+
+          // 绘制A点情况（左侧）
+          // 水平杆
+          g.append("line")
+            .attr("x1", originX - 50)
+            .attr("y1", rodY)
+            .attr("x2", originX + 300)
+            .attr("y2", rodY)
+            .attr("stroke", "#333")
+            .attr("stroke-width", 3);
+
+          // 小环
+          g.append("circle")
+            .attr("cx", originX)
+            .attr("cy", ringY)
+            .attr("r", 8)
+            .attr("fill", "#0056b3")
+            .attr("stroke", "#003a8c")
+            .attr("stroke-width", 2);
+
+          // A点
+          g.append("circle")
+            .attr("cx", originX + xA * scale)
+            .attr("cy", rodY)
+            .attr("r", 8)
+            .attr("fill", "#e67e22");
+
+          // 绳子L_A
+          g.append("line")
+            .attr("x1", originX)
+            .attr("y1", ringY)
+            .attr("x2", originX + xA * scale)
+            .attr("y2", rodY)
+            .attr("stroke", "#3498db")
+            .attr("stroke-width", 3);
+
+          // 标注L_A
+          g.append("text")
+            .attr("x", originX + xA * scale / 2 + 15)
+            .attr("y", (ringY + rodY) / 2)
+            .attr("font-size", "16px")
+            .attr("fill", "#3498db")
+            .attr("font-weight", "bold")
+            .text(`L_A = ${LA} m`);
+
+          // 标注A点
+          g.append("text")
+            .attr("x", originX + xA * scale)
+            .attr("y", rodY + 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "16px")
+            .attr("font-weight", "bold")
+            .text("A (x_A = 4m)");
+
+          // 高度标注
+          g.append("line")
+            .attr("x1", originX - 25)
+            .attr("y1", ringY)
+            .attr("x2", originX - 25)
+            .attr("y2", rodY)
+            .attr("stroke", "#7f8c8d")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "5,5");
+
+          g.append("text")
+            .attr("x", originX - 35)
+            .attr("y", (ringY + rodY) / 2)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "14px")
+            .attr("fill", "#7f8c8d")
+            .text("h=3m");
+
+          // 绘制B点情况（右侧）
+          const offsetX = 450;
+          // 水平杆
+          g.append("line")
+            .attr("x1", originX + offsetX - 50)
+            .attr("y1", rodY)
+            .attr("x2", originX + offsetX + 300)
+            .attr("y2", rodY)
+            .attr("stroke", "#333")
+            .attr("stroke-width", 3);
+
+          // 小环
+          g.append("circle")
+            .attr("cx", originX + offsetX)
+            .attr("cy", ringY)
+            .attr("r", 8)
+            .attr("fill", "#0056b3")
+            .attr("stroke", "#003a8c")
+            .attr("stroke-width", 2);
+
+          // B点（在小环正下方）
+          g.append("circle")
+            .attr("cx", originX + offsetX + xB * scale)
+            .attr("cy", rodY)
+            .attr("r", 8)
+            .attr("fill", "#2ecc71");
+
+          // 绳子L_B
+          g.append("line")
+            .attr("x1", originX + offsetX)
+            .attr("y1", ringY)
+            .attr("x2", originX + offsetX + xB * scale)
+            .attr("y2", rodY)
+            .attr("stroke", "#2ecc71")
+            .attr("stroke-width", 3);
+
+          // 标注L_B
+          g.append("text")
+            .attr("x", originX + offsetX + 20)
+            .attr("y", (ringY + rodY) / 2)
+            .attr("font-size", "16px")
+            .attr("fill", "#2ecc71")
+            .attr("font-weight", "bold")
+            .text(`L_B = ${LB} m`);
+
+          // 标注B点
+          g.append("text")
+            .attr("x", originX + offsetX)
+            .attr("y", rodY + 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "16px")
+            .attr("font-weight", "bold")
+            .text("B (x_B = 0m)");
+
+          // 标题
+          g.append("text")
+            .attr("x", width / 2 - 50)
+            .attr("y", 30)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "18px")
+            .attr("font-weight", "bold")
+            .text("绳长变化示意图");
+        }
+
+        // 绘制能量图表
+        function drawEnergyChart() {
+          if (!energyChart.value || typeof d3 === 'undefined') return;
+
+          const width = 700;
+          const height = 400;
+          const margin = { top: 20, right: 30, bottom: 40, left: 60 };
+
+          d3.select(energyChart.value).selectAll("*").remove();
+
+          const svg = d3.select(energyChart.value)
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+          const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+          const plotWidth = width - margin.left - margin.right;
+          const plotHeight = height - margin.top - margin.bottom;
+
+          const data = [
+            { point: "A", energy: KA, velocity: vA },
+            { point: "B", energy: KB, velocity: vB }
+          ];
+
+          const xScale = d3.scaleBand()
+            .domain(["A", "B"])
+            .range([0, plotWidth])
+            .padding(0.3);
+
+          const yScale = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d.energy) * 1.2])
+            .range([plotHeight, 0]);
+
+          // 绘制柱状图
+          g.selectAll("rect")
+            .data(data)
+            .enter().append("rect")
+            .attr("x", d => xScale(d.point))
+            .attr("y", d => yScale(d.energy))
+            .attr("width", xScale.bandwidth())
+            .attr("height", d => plotHeight - yScale(d.energy))
+            .attr("fill", (d, i) => i === 0 ? "#e67e22" : "#2ecc71")
+            .attr("opacity", 0.7);
+
+          // 添加数值标签
+          g.selectAll("text.value")
+            .data(data)
+            .enter().append("text")
+            .attr("class", "value")
+            .attr("x", d => xScale(d.point) + xScale.bandwidth() / 2)
+            .attr("y", d => yScale(d.energy) - 5)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "14px")
+            .attr("font-weight", "bold")
+            .text(d => `${d.energy.toFixed(1)} J`);
+
+          // 添加速度标签
+          g.selectAll("text.velocity")
+            .data(data)
+            .enter().append("text")
+            .attr("class", "velocity")
+            .attr("x", d => xScale(d.point) + xScale.bandwidth() / 2)
+            .attr("y", plotHeight + 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "12px")
+            .text(d => `v = ${d.velocity.toFixed(2)} m/s`);
+
+          // 添加坐标轴
+          const xAxis = d3.axisBottom(xScale);
+          const yAxis = d3.axisLeft(yScale);
+
+          g.append("g")
+            .attr("transform", `translate(0,${plotHeight})`)
+            .call(xAxis)
+            .append("text")
+            .attr("x", plotWidth / 2)
+            .attr("y", 35)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "14px")
+            .text("位置");
+
+          g.append("g")
+            .call(yAxis)
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -40)
+            .attr("x", -plotHeight / 2)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "14px")
+            .text("动能 (J)");
+
+          // 添加标题
+          g.append("text")
+            .attr("x", plotWidth / 2)
+            .attr("y", -5)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "16px")
+            .attr("font-weight", "bold")
+            .text("动能变化图");
+        }
+
+        onMounted(() => {
+          nextTick(() => {
+            // 等待D3加载
+            const checkD3 = setInterval(() => {
+              if (typeof d3 !== 'undefined') {
+                clearInterval(checkD3);
+                drawProblemDiagram();
+                drawKnowledgeGraph();
+                drawForceDiagram();
+                drawLengthDiagram();
+                drawEnergyChart();
+              }
+            }, 100);
+
+            setTimeout(() => clearInterval(checkD3), 5000);
+          });
+        });
+
+        // 监听Tab切换，重新绘制图表
+        watch(activeTab, (newTab) => {
+          nextTick(() => {
+            if (typeof d3 !== 'undefined') {
+              if (newTab === 'guidance') {
+                drawProblemDiagram();
+                drawKnowledgeGraph();
+              } else if (newTab === 'step1') {
+                drawForceDiagram();
+              } else if (newTab === 'step2') {
+                drawLengthDiagram();
+              } else if (newTab === 'step3') {
+                drawEnergyChart();
+              }
+            }
+          });
+        });
+
+        return {
+          activeTab,
+          problemDiagram,
+          knowledgeGraph,
+          forceDiagram,
+          lengthDiagram,
+          energyChart
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
