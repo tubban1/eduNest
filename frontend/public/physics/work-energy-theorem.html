@@ -199,6 +199,37 @@
       padding: 20px;
       margin: 15px 0;
     }
+    .btn {
+      background: #0056b3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    .btn:hover:not(:disabled) {
+      background: #004494;
+    }
+    .btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .info-item {
+      background: #ecf0f1;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -233,6 +264,65 @@
         
         <div class="diagram-container">
           <div ref="problemDiagram"></div>
+        </div>
+
+        <h3>🎬 动画演示：从A到B的运动过程</h3>
+        <p>下面的动画展示了木块从 <code>A</code> 点移动到 <code>B</code> 点的过程，以及绳子长度和绳端位置的变化。通过动画，我们可以直观地理解绳端向下移动 <code>2 m</code> 是如何得来的：</p>
+        <p><strong>动画说明：</strong></p>
+        <ul>
+          <li>木块从A点（x=4m）移动到B点（x=0m）</li>
+          <li>绳子长度从5m减少到3m</li>
+          <li>绳端（自由端，受到力F作用）向下移动2m</li>
+          <li><strong>关键：</strong>绳端移动距离 = 绳长变化量 = 2m</li>
+        </ul>
+        
+        <div class="controls" style="text-align: center; margin: 20px 0;">
+          <button class="btn" @click="startAnimation" :disabled="isAnimating">▶️ 开始动画</button>
+          <button class="btn" @click="pauseAnimation" :disabled="!isAnimating">⏸️ 暂停</button>
+          <button class="btn" @click="resetAnimation">🔄 重置</button>
+          <button class="btn" @click="stepAnimation" :disabled="isAnimating">⏭️ 单步</button>
+          <button class="btn" @click="forceRedraw" style="background: #95a5a6;">🔧 强制重绘</button>
+        </div>
+
+        <div class="diagram-container" style="min-height: 500px;">
+          <div ref="animationDiagram" style="width: 100%; min-height: 500px;">
+            <!-- 动画图表将在这里绘制 -->
+          </div>
+          <p style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;" v-if="!hasAnimationContent">
+            如果动画未显示，请点击"强制重绘"按钮
+          </p>
+        </div>
+
+        <div class="info-panel" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+          <div class="info-item" style="background: #ecf0f1; padding: 15px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 14px; color: #7f8c8d; margin-bottom: 5px;">木块位置 x (m)</div>
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">{{ currentX.toFixed(2) }}</div>
+          </div>
+          <div class="info-item" style="background: #ecf0f1; padding: 15px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 14px; color: #7f8c8d; margin-bottom: 5px;">绳长 L (m)</div>
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">{{ currentLength.toFixed(2) }}</div>
+          </div>
+          <div class="info-item" style="background: #ecf0f1; padding: 15px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 14px; color: #7f8c8d; margin-bottom: 5px;">绳端下移距离 (m)</div>
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">{{ ropeHeadMovement.toFixed(2) }}</div>
+          </div>
+          <div class="info-item" style="background: #ecf0f1; padding: 15px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 14px; color: #7f8c8d; margin-bottom: 5px;">绳长变化 ΔL (m)</div>
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">{{ lengthChange.toFixed(2) }}</div>
+          </div>
+        </div>
+
+        <div class="formula-box" style="background: #fff3cd; border-left: 5px solid #ffc107;">
+          <p><strong>绳端移动距离的计算：</strong></p>
+          <p><code>绳端下移距离 = L_A - L_B = 5 m - 3 m = 2 m</code></p>
+          <p><strong>原理：</strong>由于绳子不可伸长，且小环固定，当从木块到小环的绳子长度减少时，绳子的自由端（受到力F作用的那一端）必须向下移动相同的距离。这个距离等于绳长的变化量。</p>
+          <p><strong>推导过程：</strong></p>
+          <ul style="margin-left: 20px; margin-top: 10px;">
+            <li>在A点：绳长 <code>L_A = √(x_A² + h²) = √(4² + 3²) = 5 m</code></li>
+            <li>在B点：绳长 <code>L_B = √(x_B² + h²) = √(0² + 3²) = 3 m</code></li>
+            <li>绳长变化：<code>ΔL = L_A - L_B = 5 - 3 = 2 m</code></li>
+            <li>由于绳子不可伸长，绳端移动距离 = 绳长变化 = <code>2 m</code></li>
+          </ul>
         </div>
 
         <h3>🔍 线索提炼</h3>
@@ -376,13 +466,33 @@
           <div ref="lengthDiagram"></div>
         </div>
 
-        <h3>2.3 计算力F做的功</h3>
+        <h3>2.3 绳长变化与绳端移动距离</h3>
+        <p>当木块从 <code>A</code> 点移动到 <code>B</code> 点时，绳子长度发生了变化：</p>
+        <div class="formula-box">
+          <p><code>ΔL = L_A - L_B = 5 m - 3 m = 2 m</code></p>
+        </div>
+        <p><strong>关键理解：</strong>这个 <code>2 m</code> 是绳子被拉短的长度。由于绳子不可伸长，且绳端（自由端，受到力F作用的那一端）受到恒力 <code>F</code> 的作用，绳子被拉短意味着绳端向下移动了 <code>2 m</code>。</p>
+        
+        <div class="note">
+          <p><strong>为什么绳端向下移动了2m？</strong></p>
+          <ul>
+            <li>在 <code>A</code> 点：从木块到小环的绳子长度为 <code>L_A = 5 m</code></li>
+            <li>在 <code>B</code> 点：从木块到小环的绳子长度为 <code>L_B = 3 m</code></li>
+            <li>绳子被拉短了 <code>ΔL = L_A - L_B = 2 m</code></li>
+            <li>由于绳子不可伸长，且小环固定，被拉短的 <code>2 m</code> 绳子来自绳子的自由端（受到力F作用的那一端）</li>
+            <li>因此，绳端（自由端）向下移动了 <code>2 m</code></li>
+            <li>这个移动距离等于绳长的变化量：<code>绳端移动距离 = ΔL = 2 m</code></li>
+          </ul>
+          <p style="margin-top: 10px;"><strong>提示：</strong>在"启发引导"tab中有动画演示，可以直观地看到这个过程！</p>
+        </div>
+
+        <h3>2.4 计算力F做的功</h3>
         <p>力 <code>F</code> 对木块做的功 <code>W_F</code> 为：</p>
         <div class="formula-box">
-          <p><code>W_F = F × (L_A - L_B)</code></p>
+          <p><code>W_F = F × (L_A - L_B) = F × 绳端移动距离</code></p>
           <p><code>W_F = 50 N × (5 m - 3 m) = 50 N × 2 m = 100 J</code></p>
         </div>
-        <p>由于 <code>L_A > L_B</code>，绳子被拉短，张力对木块做正功，符合预期（木块速度应该增加）。</p>
+        <p>由于 <code>L_A > L_B</code>，绳子被拉短，绳端向下移动了 <code>2 m</code>，力F做的功为 <code>100 J</code>，这个功转化为木块的动能，使木块速度增加。</p>
       </div>
 
       <!-- 步骤3：应用动能定理 -->
@@ -509,6 +619,17 @@
         const forceDiagram = ref(null);
         const lengthDiagram = ref(null);
         const energyChart = ref(null);
+        const animationDiagram = ref(null);
+        
+        // 动画相关状态
+        const isAnimating = ref(false);
+        const animationProgress = ref(0); // 0 到 1
+        const animationId = ref(null);
+        const currentX = ref(4);
+        const currentLength = ref(5);
+        const ropeHeadMovement = ref(0);
+        const lengthChange = ref(0);
+        const hasAnimationContent = ref(false);
 
         // 问题参数
         const m = 0.5; // kg
@@ -1070,6 +1191,420 @@
             .text("绳长变化示意图");
         }
 
+        // 绘制动画示意图
+        function drawAnimationDiagram() {
+          // 检查容器
+          if (!animationDiagram.value) {
+            return;
+          }
+          
+          // 检查D3
+          if (typeof d3 === 'undefined') {
+            return;
+          }
+
+          const containerEl = animationDiagram.value;
+          // 使用固定尺寸，确保SVG总是能被创建
+          const width = 900;
+          const height = 500;
+          const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+
+          // 清空容器（但保留文本节点）
+          const container = d3.select(containerEl);
+          container.selectAll("svg").remove();
+          
+          // 创建SVG元素
+          const svg = container
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", `0 0 ${width} ${height}`)
+            .attr("preserveAspectRatio", "xMidYMid meet")
+            .style("background", "#f9f9f9")
+            .style("border", "2px solid #ddd")
+            .style("display", "block")
+            .style("width", "100%")
+            .style("max-width", "900px")
+            .style("height", "500px");
+
+          // 添加背景矩形（确保SVG可见）
+          svg.append("rect")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("fill", "#f9f9f9")
+            .attr("stroke", "#ddd")
+            .attr("stroke-width", "2");
+
+          const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+          const plotWidth = width - margin.left - margin.right;
+          const plotHeight = height - margin.top - margin.bottom;
+
+          // 坐标转换
+          const xScale = d3.scaleLinear()
+            .domain([-0.5, 5])
+            .range([0, plotWidth]);
+
+          const yScale = d3.scaleLinear()
+            .domain([-0.5, 5])
+            .range([plotHeight, 0]);
+
+          // 绘制水平杆
+          g.append("line")
+            .attr("x1", xScale(-0.5))
+            .attr("y1", yScale(0))
+            .attr("x2", xScale(5))
+            .attr("y2", yScale(0))
+            .attr("stroke", "#333")
+            .attr("stroke-width", 4);
+
+          // 绘制小环（固定点）
+          const ringX = xScale(0);
+          const ringY = yScale(h);
+          g.append("circle")
+            .attr("cx", ringX)
+            .attr("cy", ringY)
+            .attr("r", 10)
+            .attr("fill", "#0056b3")
+            .attr("stroke", "#003a8c")
+            .attr("stroke-width", 2);
+
+          g.append("text")
+            .attr("x", ringX)
+            .attr("y", ringY - 20)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "14px")
+            .attr("fill", "#0056b3")
+            .attr("font-weight", "bold")
+            .text("光滑小环（固定）");
+
+          // 计算当前状态
+          const blockX = currentX.value;
+          const blockY = 0;
+          const length = Math.sqrt(blockX * blockX + h * h);
+          
+          // 绘制绳子的自由端（受到力F作用的那一端）
+          // 在动画中，我们通过显示绳端移动来体现绳子被拉短
+          const ropeEndStartY = ringY; // 初始位置（小环处）
+          const scaleFactor = plotHeight / h * 0.25; // 缩放因子，用于显示绳端移动
+          const ropeEndCurrentY = ringY + ropeHeadMovement.value * scaleFactor; // 当前位置（缩放显示）
+          
+          // 绘制绳端移动轨迹线（虚线）
+          g.append("line")
+            .attr("x1", ringX + 40)
+            .attr("y1", ropeEndStartY)
+            .attr("x2", ringX + 40)
+            .attr("y2", ropeEndStartY + (LA - LB) * scaleFactor)
+            .attr("stroke", "#95a5a6")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "3,3")
+            .attr("opacity", 0.5);
+          
+          // 绘制当前绳端位置
+          if (ropeHeadMovement.value > 0.01) {
+            g.append("circle")
+              .attr("cx", ringX + 40)
+              .attr("cy", ropeEndCurrentY)
+              .attr("r", 6)
+              .attr("fill", "#e74c3c")
+              .attr("stroke", "#c0392b")
+              .attr("stroke-width", 2);
+            
+            // 绘制力F箭头
+            g.append("line")
+              .attr("x1", ringX + 40)
+              .attr("y1", ropeEndCurrentY)
+              .attr("x2", ringX + 40)
+              .attr("y2", ropeEndCurrentY + 20)
+              .attr("stroke", "#e74c3c")
+              .attr("stroke-width", 3)
+              .attr("marker-end", "url(#arrow-red)");
+            
+            g.append("text")
+              .attr("x", ringX + 55)
+              .attr("y", ropeEndCurrentY + 15)
+              .attr("font-size", "14px")
+              .attr("fill", "#e74c3c")
+              .attr("font-weight", "bold")
+              .text("F=50N");
+          }
+          
+          // 绘制绳子
+          g.append("line")
+            .attr("x1", ringX)
+            .attr("y1", ringY)
+            .attr("x2", xScale(blockX))
+            .attr("y2", yScale(blockY))
+            .attr("stroke", "#3498db")
+            .attr("stroke-width", 3)
+            .attr("id", "rope-line");
+
+          // 绘制木块
+          g.append("rect")
+            .attr("x", xScale(blockX) - 20)
+            .attr("y", yScale(blockY) - 15)
+            .attr("width", 40)
+            .attr("height", 30)
+            .attr("fill", blockX > 2 ? "#e67e22" : "#2ecc71")
+            .attr("stroke", blockX > 2 ? "#d35400" : "#27ae60")
+            .attr("stroke-width", 2)
+            .attr("rx", 4)
+            .attr("id", "block");
+
+          // 标注A点和B点
+          g.append("circle")
+            .attr("cx", xScale(xA))
+            .attr("cy", yScale(0))
+            .attr("r", 5)
+            .attr("fill", "#e67e22")
+            .attr("opacity", 0.5);
+
+          g.append("text")
+            .attr("x", xScale(xA))
+            .attr("y", yScale(0) + 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "14px")
+            .attr("font-weight", "bold")
+            .text("A");
+
+          g.append("circle")
+            .attr("cx", xScale(xB))
+            .attr("cy", yScale(0))
+            .attr("r", 5)
+            .attr("fill", "#2ecc71")
+            .attr("opacity", 0.5);
+
+          g.append("text")
+            .attr("x", xScale(xB))
+            .attr("y", yScale(0) + 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "14px")
+            .attr("font-weight", "bold")
+            .text("B");
+
+          // 标注绳端移动距离（在右侧显示）
+          if (ropeHeadMovement.value > 0.1) {
+            const movementY = ropeHeadMovement.value * scaleFactor;
+            
+            // 绘制移动距离标注线
+            g.append("line")
+              .attr("x1", ringX + 60)
+              .attr("y1", ropeEndStartY)
+              .attr("x2", ringX + 60)
+              .attr("y2", ropeEndStartY + movementY)
+              .attr("stroke", "#e74c3c")
+              .attr("stroke-width", 2)
+              .attr("marker-end", "url(#arrow-red)");
+
+            // 标注移动距离数值
+            g.append("text")
+              .attr("x", ringX + 75)
+              .attr("y", ropeEndStartY + movementY / 2)
+              .attr("font-size", "13px")
+              .attr("fill", "#e74c3c")
+              .attr("font-weight", "bold")
+              .text(`下移: ${ropeHeadMovement.value.toFixed(2)} m`)
+              .attr("id", "rope-end-label");
+            
+            // 添加说明文字
+            g.append("text")
+              .attr("x", ringX + 40)
+              .attr("y", ropeEndStartY - 15)
+              .attr("font-size", "11px")
+              .attr("fill", "#7f8c8d")
+              .attr("text-anchor", "middle")
+              .text("绳端(受F作用)");
+          } else {
+            // 即使没有移动，也显示初始位置说明
+            g.append("text")
+              .attr("x", ringX + 40)
+              .attr("y", ropeEndStartY - 15)
+              .attr("font-size", "11px")
+              .attr("fill", "#7f8c8d")
+              .attr("text-anchor", "middle")
+              .text("绳端(受F作用)");
+          }
+
+          // 标注绳长
+          const midX = (ringX + xScale(blockX)) / 2;
+          const midY = (ringY + yScale(blockY)) / 2;
+          g.append("text")
+            .attr("x", midX + 10)
+            .attr("y", midY)
+            .attr("font-size", "14px")
+            .attr("fill", "#3498db")
+            .attr("font-weight", "bold")
+            .text(`L = ${length.toFixed(2)} m`)
+            .attr("id", "length-label");
+
+          // 标注当前位置
+          g.append("text")
+            .attr("x", xScale(blockX))
+            .attr("y", yScale(blockY) - 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "12px")
+            .attr("fill", "#7f8c8d")
+            .text(`x = ${blockX.toFixed(2)} m`)
+            .attr("id", "position-label");
+
+          // 添加箭头标记
+          svg.append("defs").append("marker")
+            .attr("id", "arrow-red")
+            .attr("viewBox", "0 0 10 10")
+            .attr("refX", 5)
+            .attr("refY", 5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 L 10 5 L 0 10 z")
+            .attr("fill", "#e74c3c");
+
+          // 标题
+          g.append("text")
+            .attr("x", plotWidth / 2)
+            .attr("y", -10)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "18px")
+            .attr("font-weight", "bold")
+            .text("木块从A点到B点的运动过程");
+
+          // 添加说明
+          g.append("text")
+            .attr("x", plotWidth / 2)
+            .attr("y", plotHeight + 35)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "12px")
+            .attr("fill", "#7f8c8d")
+            .text("注意：小环固定，绳端（自由端，受到力F作用）向下移动，移动距离 = 绳长变化量 = 2m");
+          
+          // 标记动画内容已绘制
+          hasAnimationContent.value = true;
+        }
+
+        // 动画控制函数
+        function startAnimation() {
+          if (isAnimating.value) return;
+          
+          // 确保图表已绘制
+          if (typeof d3 === 'undefined') {
+            console.warn('D3.js not loaded');
+            return;
+          }
+          
+          isAnimating.value = true;
+          
+          const startTime = Date.now();
+          const duration = 3000; // 3秒动画
+          
+          function animate() {
+            if (!isAnimating.value) {
+              if (animationId.value) {
+                cancelAnimationFrame(animationId.value);
+                animationId.value = null;
+              }
+              return;
+            }
+            
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // 使用缓动函数
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            animationProgress.value = easeProgress;
+            
+            // 更新位置
+            currentX.value = xA - (xA - xB) * easeProgress;
+            currentLength.value = Math.sqrt(currentX.value * currentX.value + h * h);
+            
+            // 计算绳端移动距离
+            ropeHeadMovement.value = (LA - currentLength.value);
+            lengthChange.value = LA - currentLength.value;
+            
+            // 重绘
+            drawAnimationDiagram();
+            
+            if (progress < 1) {
+              animationId.value = requestAnimationFrame(animate);
+            } else {
+              isAnimating.value = false;
+              animationId.value = null;
+            }
+          }
+          
+          animate();
+        }
+
+        function pauseAnimation() {
+          isAnimating.value = false;
+          if (animationId.value) {
+            cancelAnimationFrame(animationId.value);
+            animationId.value = null;
+          }
+        }
+
+        function resetAnimation() {
+          pauseAnimation();
+          animationProgress.value = 0;
+          currentX.value = xA;
+          currentLength.value = LA;
+          ropeHeadMovement.value = 0;
+          lengthChange.value = 0;
+          
+          // 确保D3和容器都准备好了
+          if (typeof d3 === 'undefined') {
+            console.warn('D3.js not loaded');
+            return;
+          }
+          
+          if (!animationDiagram.value) {
+            console.warn('Animation container not available');
+            return;
+          }
+          
+          // 绘制动画图表
+          try {
+            drawAnimationDiagram();
+          } catch (error) {
+            console.error('Error drawing animation:', error);
+          }
+        }
+
+        function stepAnimation() {
+          if (isAnimating.value) return;
+          if (typeof d3 === 'undefined') {
+            console.warn('D3.js not loaded');
+            return;
+          }
+          
+          const step = 0.05;
+          animationProgress.value = Math.min(animationProgress.value + step, 1);
+          
+          const easeProgress = animationProgress.value;
+          currentX.value = xA - (xA - xB) * easeProgress;
+          currentLength.value = Math.sqrt(currentX.value * currentX.value + h * h);
+          ropeHeadMovement.value = (LA - currentLength.value);
+          lengthChange.value = LA - currentLength.value;
+          
+          drawAnimationDiagram();
+        }
+
+        // 强制重绘函数（用于调试）
+        function forceRedraw() {
+          console.log('Force redraw called');
+          console.log('D3 loaded:', typeof d3 !== 'undefined');
+          console.log('Container exists:', !!animationDiagram.value);
+          console.log('Active tab:', activeTab.value);
+          
+          if (typeof d3 !== 'undefined' && animationDiagram.value) {
+            resetAnimation();
+          } else {
+            alert('D3或容器未准备好。请检查控制台。');
+          }
+        }
+
         // 绘制能量图表
         function drawEnergyChart() {
           if (!energyChart.value || typeof d3 === 'undefined') return;
@@ -1174,37 +1709,94 @@
         }
 
         onMounted(() => {
+          // 等待D3和DOM准备就绪
+          const checkAndInit = () => {
+            if (typeof d3 === 'undefined') {
+              setTimeout(checkAndInit, 50);
+              return;
+            }
+            
+            // 绘制静态图表
+            try {
+              drawProblemDiagram();
+              drawKnowledgeGraph();
+              drawForceDiagram();
+              drawLengthDiagram();
+              drawEnergyChart();
+            } catch (error) {
+              console.error('Error drawing diagrams:', error);
+            }
+            
+            // 初始化动画（如果当前在guidance tab）
+            if (activeTab.value === 'guidance') {
+              // 使用双重延迟确保容器已渲染
+              setTimeout(() => {
+                if (animationDiagram.value) {
+                  resetAnimation();
+                } else {
+                  // 如果容器还没准备好，再等一会
+                  setTimeout(() => {
+                    if (animationDiagram.value) {
+                      resetAnimation();
+                    }
+                  }, 300);
+                }
+              }, 200);
+            }
+          };
+          
+          // 使用nextTick确保Vue已完成渲染
           nextTick(() => {
-            // 等待D3加载
-            const checkD3 = setInterval(() => {
-              if (typeof d3 !== 'undefined') {
-                clearInterval(checkD3);
-                drawProblemDiagram();
-                drawKnowledgeGraph();
-                drawForceDiagram();
-                drawLengthDiagram();
-                drawEnergyChart();
-              }
-            }, 100);
-
-            setTimeout(() => clearInterval(checkD3), 5000);
+            nextTick(() => {
+              checkAndInit();
+            });
           });
         });
 
         // 监听Tab切换，重新绘制图表
         watch(activeTab, (newTab) => {
           nextTick(() => {
-            if (typeof d3 !== 'undefined') {
-              if (newTab === 'guidance') {
-                drawProblemDiagram();
-                drawKnowledgeGraph();
-              } else if (newTab === 'step1') {
-                drawForceDiagram();
-              } else if (newTab === 'step2') {
-                drawLengthDiagram();
-              } else if (newTab === 'step3') {
-                drawEnergyChart();
-              }
+            if (typeof d3 === 'undefined') return;
+            
+            if (newTab === 'guidance') {
+              drawProblemDiagram();
+              drawKnowledgeGraph();
+              // 等待v-show显示元素，使用多重延迟确保容器可见
+              setTimeout(() => {
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    if (animationDiagram.value) {
+                      resetAnimation();
+                    } else {
+                      // 如果容器还没准备好，继续尝试
+                      setTimeout(() => {
+                        if (animationDiagram.value) {
+                          resetAnimation();
+                        }
+                      }, 200);
+                    }
+                  });
+                });
+              }, 100);
+            } else if (newTab === 'step1') {
+              drawForceDiagram();
+            } else if (newTab === 'step2') {
+              drawLengthDiagram();
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  if (animationDiagram.value) {
+                    resetAnimation();
+                  } else {
+                    setTimeout(() => {
+                      if (animationDiagram.value) {
+                        resetAnimation();
+                      }
+                    }, 100);
+                  }
+                });
+              });
+            } else if (newTab === 'step3') {
+              drawEnergyChart();
             }
           });
         });
@@ -1215,7 +1807,19 @@
           knowledgeGraph,
           forceDiagram,
           lengthDiagram,
-          energyChart
+          energyChart,
+          animationDiagram,
+          isAnimating,
+          currentX,
+          currentLength,
+          ropeHeadMovement,
+          lengthChange,
+          hasAnimationContent,
+          startAnimation,
+          pauseAnimation,
+          resetAnimation,
+          stepAnimation,
+          forceRedraw
         };
       }
     }).mount('#app');
