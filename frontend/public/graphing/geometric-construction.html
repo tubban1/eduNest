@@ -1,0 +1,3275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="学习如何使用尺子、量角器、三角板、圆规等工具进行几何作图。包含从一点向直线作垂线、画平行线、画角、量角、画三角形、画长方形和正方形等基础几何作图方法的教学动画。">
+  <meta name="keywords" content="几何作图,尺子画图,量角器,三角板,圆规,作垂线,画平行线,画角,量角,画三角形,画长方形,画正方形,几何绘图,基础几何">
+  <title>几何作图教程 - 尺子、量角器、三角板、圆规的使用方法</title>
+  
+  <!-- Vue 3.5.20 -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  
+  <!-- GSAP for animations -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"></script>
+  
+  <!-- Konva for advanced graphics -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #2c3e50;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .header p {
+      font-size: 1.2em;
+      opacity: 0.95;
+    }
+    
+    .tabs {
+      display: flex;
+      background: #f8f9fa;
+      border-bottom: 2px solid #e9ecef;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    
+    .tabs::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .tabs::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 3px;
+    }
+    
+    .tab-button {
+      flex: 1;
+      min-width: 150px;
+      padding: 20px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    
+    .tab-button:hover {
+      background: #e9ecef;
+      color: #667eea;
+    }
+    
+    .tab-button.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+      background: white;
+    }
+    
+    .content-area {
+      display: flex;
+      min-height: 600px;
+    }
+    
+    .canvas-container {
+      flex: 1;
+      padding: 30px;
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .canvas-wrapper {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      flex: 1;
+      min-height: 500px;
+    }
+    
+    .instructions {
+      width: 400px;
+      padding: 30px;
+      background: white;
+      border-left: 1px solid #e0e0e0;
+      overflow-y: auto;
+      max-height: 700px;
+    }
+    
+    .instructions h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+    
+    .step {
+      margin-bottom: 25px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .step.active {
+      background: #e3f2fd;
+      border-left-color: #2196f3;
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+    }
+    
+    .step-number {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 28px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    
+    .step.active .step-number {
+      background: #2196f3;
+    }
+    
+    .step-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .step-content {
+      color: #666;
+      line-height: 1.8;
+      margin-left: 38px;
+    }
+    
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+    }
+    
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    @media (max-width: 1024px) {
+      .content-area {
+        flex-direction: column;
+      }
+      
+      .instructions {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid #e0e0e0;
+        max-height: 400px;
+      }
+      
+      .header h1 {
+        font-size: 2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="header">
+        <h1>几何作图教程</h1>
+        <p>学习使用尺子、量角器、三角板、圆规等工具进行精确几何作图</p>
+      </div>
+      
+      <div class="tabs">
+        <button 
+          v-for="(tab, index) in tabs" 
+          :key="index"
+          @click="switchTab(index)"
+          :class="['tab-button', { active: currentTab === index }]"
+        >
+          {{ tab.title }}
+        </button>
+      </div>
+      
+      <div class="content-area">
+        <div class="canvas-container">
+          <div class="canvas-wrapper">
+            <div :id="'canvas-' + currentTab" style="width: 100%; height: 500px;"></div>
+          </div>
+          
+          <div class="controls">
+            <button @click="resetAnimation" class="btn btn-secondary">重置</button>
+            <button @click="prevStep" class="btn" :disabled="currentStep === 0">上一步</button>
+            <button @click="nextStep" class="btn" :disabled="isLastStep">下一步</button>
+            <button @click="playAnimation" class="btn">播放动画</button>
+          </div>
+          
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+          </div>
+        </div>
+        
+        <div class="instructions">
+          <h2>{{ currentTabData.title }}</h2>
+          <div 
+            v-for="(step, index) in currentTabData.steps" 
+            :key="index"
+            :class="['step', { active: index === currentStep }]"
+          >
+            <span class="step-number">{{ index + 1 }}</span>
+            <div class="step-title">{{ step.title }}</div>
+            <div class="step-content">{{ step.description }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          currentTab: 0,
+          currentStep: 0,
+          stages: {},
+          animations: {},
+          tabs: [
+            {
+              title: '作垂线',
+              type: 'perpendicular',
+              steps: [
+                {
+                  title: '准备工具',
+                  description: '准备一把尺子、一个直角三角板（或量角器）和一支铅笔。确保工具干净，刻度清晰。'
+                },
+                {
+                  title: '确定点和直线',
+                  description: '在纸上画一条直线，并在直线外选择一个点P。这个点P就是要作垂线的起点。'
+                },
+                {
+                  title: '放置三角板',
+                  description: '将直角三角板的一条直角边紧贴直线，使直角边与直线完全重合。'
+                },
+                {
+                  title: '移动三角板',
+                  description: '沿着直线移动三角板，使另一条直角边经过点P。移动时要保持直角边与直线紧贴。'
+                },
+                {
+                  title: '画垂线',
+                  description: '沿着经过点P的直角边画一条直线，这条直线就是点P到原直线的垂线。'
+                },
+                {
+                  title: '标记垂足',
+                  description: '垂线与原直线的交点就是垂足，用字母O标记。此时PO就是点P到直线的距离。'
+                }
+              ]
+            },
+            {
+              title: '画平行线',
+              type: 'parallel',
+              steps: [
+                {
+                  title: '准备工具',
+                  description: '准备一把尺子、一个直角三角板和一支铅笔。确保三角板的直角边是直的。'
+                },
+                {
+                  title: '确定基准线',
+                  description: '在纸上画一条直线AB，这条直线将作为平行线的基准。'
+                },
+                {
+                  title: '放置三角板',
+                  description: '将三角板的一条直角边紧贴直线AB，确保完全重合。'
+                },
+                {
+                  title: '放置尺子',
+                  description: '将尺子紧贴三角板的另一条直角边，作为移动时的导向工具。'
+                },
+                {
+                  title: '移动三角板',
+                  description: '保持尺子不动，沿着尺子移动三角板到目标位置。移动过程中要保持三角板与尺子紧贴。'
+                },
+                {
+                  title: '画平行线',
+                  description: '沿着三角板的直角边画一条直线CD。由于移动过程中直角边始终保持平行，所以CD与AB平行。'
+                }
+              ]
+            },
+            {
+              title: '画相同角',
+              type: 'copy-angle',
+              steps: [
+                {
+                  title: '准备工具',
+                  description: '准备一把尺子、一个圆规和一支铅笔。圆规用于测量和标记距离。'
+                },
+                {
+                  title: '确定原角',
+                  description: '在纸上画一个角∠AOB，其中O是顶点，OA和OB是两条边。'
+                },
+                {
+                  title: '画新射线',
+                  description: '在另一个位置画一条射线O\'A\'，这将是新角的起始边。'
+                },
+                {
+                  title: '标记弧线',
+                  description: '以O为圆心，用圆规画一条弧线，与OA和OB分别交于点C和D。'
+                },
+                {
+                  title: '复制距离',
+                  description: '保持圆规张开的角度不变，以O\'为圆心画一条弧线，与O\'A\'交于点C\'。'
+                },
+                {
+                  title: '测量角度',
+                  description: '用圆规测量CD的距离，然后以C\'为圆心，以CD为半径画弧，与之前画的弧交于点D\'。'
+                },
+                {
+                  title: '完成画角',
+                  description: '连接O\'和D\'，得到射线O\'B\'。此时∠A\'O\'B\'与∠AOB大小相等。'
+                }
+              ]
+            },
+            {
+              title: '量角器用法',
+              type: 'protractor',
+              steps: [
+                {
+                  title: '认识量角器',
+                  description: '量角器是一个半圆形工具，上面有0°到180°的刻度。中心点位于底边的中点。'
+                },
+                {
+                  title: '放置量角器',
+                  description: '将量角器的中心点与角的顶点对齐，底边与角的一条边对齐。'
+                },
+                {
+                  title: '读取角度',
+                  description: '观察角的另一条边与量角器刻度线的交点，读取对应的角度值。注意内圈和外圈刻度。'
+                },
+                {
+                  title: '画指定角度',
+                  description: '先画一条射线作为起始边，将量角器中心与射线端点对齐，底边与射线对齐。'
+                },
+                {
+                  title: '标记角度',
+                  description: '在量角器上找到目标角度（如60°），在该刻度位置做一个标记点。'
+                },
+                {
+                  title: '完成画角',
+                  description: '移开量角器，从角的顶点向标记点画一条射线，就得到了指定角度的角。'
+                }
+              ]
+            },
+            {
+              title: '画三角形',
+              type: 'triangle',
+              steps: [
+                {
+                  title: '画任意三角形',
+                  description: '使用尺子画三条不在同一直线上的线段，首尾相连形成一个三角形。'
+                },
+                {
+                  title: '画等边三角形',
+                  description: '先画一条边AB，以A为圆心、AB为半径画弧，以B为圆心、AB为半径画弧，两弧交于点C，连接AC和BC。'
+                },
+                {
+                  title: '画等腰三角形',
+                  description: '画底边BC，以B和C为圆心，以相等的半径画弧，两弧在A点相交，连接AB和AC。'
+                },
+                {
+                  title: '画直角三角形',
+                  description: '使用直角三角板，先画两条互相垂直的线段，然后连接两端点形成直角三角形。'
+                },
+                {
+                  title: '验证三角形',
+                  description: '检查三条边是否满足三角形不等式：任意两边之和大于第三边。'
+                }
+              ]
+            },
+            {
+              title: '长方形和正方形',
+              type: 'rectangle',
+              steps: [
+                {
+                  title: '画长方形',
+                  description: '使用直角三角板，先画一条水平线段作为长边，然后画两条垂直于长边的线段作为宽边，最后连接另一端。'
+                },
+                {
+                  title: '验证直角',
+                  description: '用三角板的直角检查四个角是否都是90°。确保相邻边互相垂直。'
+                },
+                {
+                  title: '画正方形',
+                  description: '先画一条线段作为边长，用三角板画一条垂直于该边的线段，长度相等。重复画出另外两条边，确保四条边长度相等。'
+                },
+                {
+                  title: '验证边长',
+                  description: '用尺子测量四条边的长度，确保都相等。同时验证四个角都是90°。'
+                },
+                {
+                  title: '标记边长',
+                  description: '在图形上标注各边的长度，方便后续使用和验证。'
+                }
+              ]
+            }
+          ]
+        };
+      },
+      computed: {
+        currentTabData() {
+          return this.tabs[this.currentTab] || {};
+        },
+        progress() {
+          if (!this.currentTabData.steps) return 0;
+          return ((this.currentStep + 1) / this.currentTabData.steps.length) * 100;
+        },
+        isLastStep() {
+          if (!this.currentTabData.steps) return true;
+          return this.currentStep >= this.currentTabData.steps.length - 1;
+        }
+      },
+      mounted() {
+        this.$nextTick(() => {
+          this.initCanvas();
+        });
+      },
+      methods: {
+        switchTab(index) {
+          this.currentTab = index;
+          this.currentStep = 0;
+          this.$nextTick(() => {
+            this.initCanvas();
+          });
+        },
+        nextStep() {
+          if (this.currentStep < this.currentTabData.steps.length - 1) {
+            this.currentStep++;
+            this.drawStep();
+          }
+        },
+        prevStep() {
+          if (this.currentStep > 0) {
+            this.currentStep--;
+            this.drawStep();
+          }
+        },
+        initCanvas() {
+          const canvasId = 'canvas-' + this.currentTab;
+          const canvasElement = document.getElementById(canvasId);
+          if (!canvasElement) return;
+          
+          // 清除之前的内容
+          canvasElement.innerHTML = '';
+          
+          if (typeof Konva === 'undefined') {
+            canvasElement.innerHTML = '<div style="text-align: center; padding: 50px; color: #666;">Konva.js 未加载，请刷新页面重试</div>';
+            return;
+          }
+          
+          // 初始化 Konva 舞台
+          const stage = new Konva.Stage({
+            container: canvasId,
+            width: canvasElement.offsetWidth || 800,
+            height: 500
+          });
+          
+          const layer = new Konva.Layer();
+          stage.add(layer);
+          
+          this.stages[this.currentTab] = stage;
+          this.animations[this.currentTab] = {
+            stage: stage,
+            layer: layer,
+            playing: false,
+            timeline: null
+          };
+          
+          // 绘制背景网格
+          this.drawGrid(layer, stage.width(), stage.height());
+          
+          // 绘制当前步骤
+          this.drawStep();
+        },
+        drawGrid(layer, width, height) {
+          const gridGroup = new Konva.Group();
+          for (let i = 0; i <= width; i += 20) {
+            const line = new Konva.Line({
+              points: [i, 0, i, height],
+              stroke: '#e0e0e0',
+              strokeWidth: 1,
+              listening: false
+            });
+            gridGroup.add(line);
+          }
+          for (let i = 0; i <= height; i += 20) {
+            const line = new Konva.Line({
+              points: [0, i, width, i],
+              stroke: '#e0e0e0',
+              strokeWidth: 1,
+              listening: false
+            });
+            gridGroup.add(line);
+          }
+          layer.add(gridGroup);
+          layer.draw();
+        },
+        drawStep() {
+          if (!this.animations[this.currentTab]) return;
+          
+          const anim = this.animations[this.currentTab];
+          const layer = anim.layer;
+          const stage = anim.stage;
+          
+          // 清除除了网格之外的所有内容
+          const children = layer.getChildren();
+          children.forEach((child, index) => {
+            if (index > 0) { // 保留网格（第一个子元素）
+              child.destroy();
+            }
+          });
+          
+          const type = this.currentTabData.type;
+          const step = this.currentStep;
+          
+          switch(type) {
+            case 'perpendicular':
+              this.drawPerpendicularStep(layer, stage, step);
+              break;
+            case 'parallel':
+              this.drawParallelStep(layer, stage, step);
+              break;
+            case 'copy-angle':
+              this.drawCopyAngleStep(layer, stage, step);
+              break;
+            case 'protractor':
+              this.drawProtractorStep(layer, stage, step);
+              break;
+            case 'triangle':
+              this.drawTriangleStep(layer, stage, step);
+              break;
+            case 'rectangle':
+              this.drawRectangleStep(layer, stage, step);
+              break;
+          }
+          
+          layer.draw();
+        },
+        drawPerpendicularStep(layer, stage, step) {
+          const width = stage.width();
+          const height = stage.height();
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          if (step === 0) {
+            // 显示工具
+            const text = new Konva.Text({
+              x: centerX - 150,
+              y: centerY - 50,
+              text: '准备工具：尺子、直角三角板、铅笔',
+              fontSize: 20,
+              fontFamily: 'Arial',
+              fill: '#666'
+            });
+            layer.add(text);
+            return;
+          }
+          
+          // 基准直线
+          const baseLine = new Konva.Line({
+            points: [100, centerY, 700, centerY],
+            stroke: '#333',
+            strokeWidth: 3,
+            listening: false
+          });
+          layer.add(baseLine);
+          
+          // 点P
+          const pointP = new Konva.Circle({
+            x: centerX,
+            y: centerY - 150,
+            radius: 6,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(pointP);
+          
+          const labelP = new Konva.Text({
+            x: centerX + 15,
+            y: centerY - 160,
+            text: 'P',
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fill: '#333'
+          });
+          layer.add(labelP);
+          
+          if (step >= 2) {
+            // 三角板 - 初始位置（左侧）
+            const triangleSize = 80;
+            const initialX = 200;
+            const triangleGroup = new Konva.Group({
+              x: initialX,
+              y: centerY,
+              opacity: 0.8
+            });
+            
+            const triBase = new Konva.Line({
+              points: [0, 0, triangleSize, 0],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            const triVertical = new Konva.Line({
+              points: [triangleSize, 0, triangleSize, -triangleSize],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            const triHypotenuse = new Konva.Line({
+              points: [0, 0, triangleSize, -triangleSize],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            triangleGroup.add(triBase);
+            triangleGroup.add(triVertical);
+            triangleGroup.add(triHypotenuse);
+            layer.add(triangleGroup);
+            
+            // 对齐标记 - 显示三角板与直线对齐
+            const alignMark1 = new Konva.Circle({
+              x: initialX,
+              y: centerY,
+              radius: 4,
+              fill: '#27ae60',
+              listening: false
+            });
+            layer.add(alignMark1);
+            
+            const alignMark2 = new Konva.Circle({
+              x: initialX + triangleSize,
+              y: centerY,
+              radius: 4,
+              fill: '#27ae60',
+              listening: false
+            });
+            layer.add(alignMark2);
+            
+            // 对齐线
+            const alignLine = new Konva.Line({
+              points: [initialX, centerY, initialX + triangleSize, centerY],
+              stroke: '#27ae60',
+              strokeWidth: 1.5,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(alignLine);
+            
+            // 对齐提示文字
+            const alignText = new Konva.Text({
+              x: initialX + triangleSize / 2 - 20,
+              y: centerY - 30,
+              text: '对齐直线',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#27ae60',
+              fontStyle: 'bold',
+              listening: false
+            });
+            layer.add(alignText);
+            
+            if (step >= 3) {
+              // 移动后的三角板位置（经过点P）
+              const finalX = centerX - triangleSize / 2;
+              const triangleGroup2 = new Konva.Group({
+                x: finalX,
+                y: centerY,
+                opacity: 0.8
+              });
+              
+              triangleGroup2.add(triBase.clone());
+              triangleGroup2.add(triVertical.clone());
+              triangleGroup2.add(triHypotenuse.clone());
+              layer.add(triangleGroup2);
+              
+              // 移动箭头 - 更明显的动画标记
+              const arrowGroup = new Konva.Group({
+                x: initialX + triangleSize + 20,
+                y: centerY - 20
+              });
+              
+              const arrowLine = new Konva.Line({
+                points: [0, 0, finalX - initialX - triangleSize - 40, 0],
+                stroke: '#f39c12',
+                strokeWidth: 3,
+                listening: false
+              });
+              
+              const arrowHead = new Konva.Line({
+                points: [finalX - initialX - triangleSize - 40, 0, finalX - initialX - triangleSize - 50, -6],
+                stroke: '#f39c12',
+                strokeWidth: 3,
+                listening: false
+              });
+              
+              const arrowHead2 = new Konva.Line({
+                points: [finalX - initialX - triangleSize - 40, 0, finalX - initialX - triangleSize - 50, 6],
+                stroke: '#f39c12',
+                strokeWidth: 3,
+                listening: false
+              });
+              
+              arrowGroup.add(arrowLine);
+              arrowGroup.add(arrowHead);
+              arrowGroup.add(arrowHead2);
+              layer.add(arrowGroup);
+              
+              // 移动动画标记
+              const moveMark = new Konva.Group({
+                x: (initialX + finalX) / 2,
+                y: centerY - 50
+              });
+              
+              const moveCircle = new Konva.Circle({
+                x: 0,
+                y: 0,
+                radius: 10,
+                fill: '#f39c12',
+                opacity: 0.7,
+                listening: false
+              });
+              
+              const moveText = new Konva.Text({
+                x: -35,
+                y: -8,
+                text: '移动三角板',
+                fontSize: 14,
+                fontFamily: 'Arial',
+                fill: '#f39c12',
+                fontStyle: 'bold',
+                listening: false
+              });
+              
+              moveMark.add(moveCircle);
+              moveMark.add(moveText);
+              layer.add(moveMark);
+              
+              // 点P对齐标记
+              const pointAlignMark = new Konva.Circle({
+                x: finalX + triangleSize,
+                y: centerY - 150,
+                radius: 5,
+                fill: '#e74c3c',
+                listening: false
+              });
+              layer.add(pointAlignMark);
+              
+              // 对齐线
+              const pointAlignLine = new Konva.Line({
+                points: [finalX + triangleSize, centerY - 150, finalX + triangleSize, centerY],
+                stroke: '#e74c3c',
+                strokeWidth: 2,
+                dash: [4, 4],
+                listening: false
+              });
+              layer.add(pointAlignLine);
+              
+              // 对齐标记圆圈
+              const pointAlignCircle = new Konva.Circle({
+                x: finalX + triangleSize,
+                y: centerY,
+                radius: 8,
+                stroke: '#e74c3c',
+                strokeWidth: 2,
+                listening: false
+              });
+              layer.add(pointAlignCircle);
+              
+              const pointAlignText = new Konva.Text({
+                x: finalX + triangleSize + 15,
+                y: centerY - 80,
+                text: '经过点P',
+                fontSize: 14,
+                fontFamily: 'Arial',
+                fill: '#e74c3c',
+                fontStyle: 'bold',
+                listening: false
+              });
+              layer.add(pointAlignText);
+            }
+            
+            if (step >= 4) {
+              // 垂线 - 使用动画效果标记
+              const perpLine = new Konva.Line({
+                points: [centerX, centerY - 150, centerX, centerY],
+                stroke: '#27ae60',
+                strokeWidth: 3,
+                listening: false
+              });
+              layer.add(perpLine);
+              
+              // 画线动画标记
+              const drawMark = new Konva.Group({
+                x: centerX,
+                y: centerY - 75
+              });
+              
+              const drawCircle = new Konva.Circle({
+                x: 0,
+                y: 0,
+                radius: 8,
+                fill: '#27ae60',
+                opacity: 0.7,
+                listening: false
+              });
+              
+              const drawText = new Konva.Text({
+                x: -25,
+                y: -8,
+                text: '画垂线',
+                fontSize: 12,
+                fontFamily: 'Arial',
+                fill: '#27ae60',
+                fontStyle: 'bold',
+                listening: false
+              });
+              
+              drawMark.add(drawCircle);
+              drawMark.add(drawText);
+              layer.add(drawMark);
+              
+              if (step >= 5) {
+                // 垂足O
+                const pointO = new Konva.Circle({
+                  x: centerX,
+                  y: centerY,
+                  radius: 6,
+                  fill: '#e74c3c',
+                  listening: false
+                });
+                layer.add(pointO);
+                
+                const labelO = new Konva.Text({
+                  x: centerX + 15,
+                  y: centerY + 10,
+                  text: 'O (垂足)',
+                  fontSize: 16,
+                  fontFamily: 'Arial',
+                  fill: '#333',
+                  fontStyle: 'bold'
+                });
+                layer.add(labelO);
+                
+                // 直角标记
+                const rightAngle = new Konva.Group({
+                  x: centerX,
+                  y: centerY
+                });
+                
+                const mark1 = new Konva.Line({
+                  points: [-15, 0, -15, -15],
+                  stroke: '#27ae60',
+                  strokeWidth: 2,
+                  listening: false
+                });
+                
+                const mark2 = new Konva.Line({
+                  points: [-15, -15, 0, -15],
+                  stroke: '#27ae60',
+                  strokeWidth: 2,
+                  listening: false
+                });
+                
+                rightAngle.add(mark1);
+                rightAngle.add(mark2);
+                layer.add(rightAngle);
+                
+                // 直角标记文字
+                const rightAngleText = new Konva.Text({
+                  x: centerX - 40,
+                  y: centerY - 30,
+                  text: '90°',
+                  fontSize: 14,
+                  fontFamily: 'Arial',
+                  fill: '#27ae60',
+                  fontStyle: 'bold',
+                  listening: false
+                });
+                layer.add(rightAngleText);
+              }
+            }
+          }
+        },
+        drawParallelStep(layer, stage, step) {
+          const width = stage.width();
+          const height = stage.height();
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          if (step === 0) {
+            const text = new Konva.Text({
+              x: centerX - 150,
+              y: centerY - 50,
+              text: '准备工具：尺子、直角三角板、铅笔',
+              fontSize: 20,
+              fontFamily: 'Arial',
+              fill: '#666'
+            });
+            layer.add(text);
+            return;
+          }
+          
+          // 基准直线AB
+          const lineAB = new Konva.Line({
+            points: [150, centerY, 650, centerY],
+            stroke: '#333',
+            strokeWidth: 3,
+            listening: false
+          });
+          layer.add(lineAB);
+          
+          const labelA = new Konva.Text({
+            x: 140,
+            y: centerY + 20,
+            text: 'A',
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fill: '#333'
+          });
+          layer.add(labelA);
+          
+          const labelB = new Konva.Text({
+            x: 655,
+            y: centerY + 20,
+            text: 'B',
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fill: '#333'
+          });
+          layer.add(labelB);
+          
+          if (step >= 2) {
+            // 三角板 - 初始位置
+            const triangleSize = 80;
+            const initialX = 200;
+            const triangleGroup = new Konva.Group({
+              x: initialX,
+              y: centerY,
+              opacity: 0.8
+            });
+            
+            const triBase = new Konva.Line({
+              points: [0, 0, triangleSize, 0],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            const triVertical = new Konva.Line({
+              points: [triangleSize, 0, triangleSize, -triangleSize],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            const triHypotenuse = new Konva.Line({
+              points: [0, 0, triangleSize, -triangleSize],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            triangleGroup.add(triBase);
+            triangleGroup.add(triVertical);
+            triangleGroup.add(triHypotenuse);
+            layer.add(triangleGroup);
+            
+            // 对齐标记
+            const alignMark = new Konva.Circle({
+              x: initialX,
+              y: centerY,
+              radius: 3,
+              fill: '#27ae60',
+              listening: false
+            });
+            layer.add(alignMark);
+            
+            const alignText = new Konva.Text({
+              x: initialX + 10,
+              y: centerY - 20,
+              text: '对齐',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#27ae60',
+              fontStyle: 'bold',
+              listening: false
+            });
+            layer.add(alignText);
+            
+            if (step >= 3) {
+              // 尺子 - 紧贴三角板
+              const ruler = new Konva.Rect({
+                x: initialX + triangleSize - 5,
+                y: centerY - 20,
+                width: 10,
+                height: 40,
+                fill: '#9b59b6',
+                stroke: '#7d3c98',
+                strokeWidth: 2,
+                opacity: 0.8,
+                listening: false
+              });
+              layer.add(ruler);
+              
+              // 尺子标记
+              const rulerText = new Konva.Text({
+                x: initialX + triangleSize + 15,
+                y: centerY - 10,
+                text: '尺子',
+                fontSize: 12,
+                fontFamily: 'Arial',
+                fill: '#9b59b6',
+                fontStyle: 'bold',
+                listening: false
+              });
+              layer.add(rulerText);
+              
+              if (step >= 4) {
+                // 移动后的三角板位置
+                const finalX = 450;
+                const finalY = centerY + 100;
+                const triangleGroup2 = new Konva.Group({
+                  x: finalX,
+                  y: finalY,
+                  opacity: 0.8
+                });
+                
+                triangleGroup2.add(triBase.clone());
+                triangleGroup2.add(triVertical.clone());
+                triangleGroup2.add(triHypotenuse.clone());
+                layer.add(triangleGroup2);
+                
+                // 移动箭头
+                const arrowGroup = new Konva.Group({
+                  x: initialX + triangleSize + 20,
+                  y: centerY + 20
+                });
+                
+                const arrowLine = new Konva.Line({
+                  points: [0, 0, finalX - initialX - triangleSize - 40, finalY - centerY],
+                  stroke: '#f39c12',
+                  strokeWidth: 2,
+                  listening: false
+                });
+                
+                const arrowHead = new Konva.Line({
+                  points: [finalX - initialX - triangleSize - 40, finalY - centerY, finalX - initialX - triangleSize - 50, finalY - centerY - 5],
+                  stroke: '#f39c12',
+                  strokeWidth: 2,
+                  listening: false
+                });
+                
+                const arrowHead2 = new Konva.Line({
+                  points: [finalX - initialX - triangleSize - 40, finalY - centerY, finalX - initialX - triangleSize - 50, finalY - centerY + 5],
+                  stroke: '#f39c12',
+                  strokeWidth: 2,
+                  listening: false
+                });
+                
+                arrowGroup.add(arrowLine);
+                arrowGroup.add(arrowHead);
+                arrowGroup.add(arrowHead2);
+                layer.add(arrowGroup);
+                
+                // 移动提示
+                const moveText = new Konva.Text({
+                  x: (initialX + finalX) / 2 - 40,
+                  y: centerY + 50,
+                  text: '平移三角板',
+                  fontSize: 14,
+                  fontFamily: 'Arial',
+                  fill: '#f39c12',
+                  fontStyle: 'bold',
+                  listening: false
+                });
+                layer.add(moveText);
+                
+                // 保持平行标记
+                const parallelMark1 = new Konva.Line({
+                  points: [initialX, centerY, initialX, finalY],
+                  stroke: '#27ae60',
+                  strokeWidth: 1.5,
+                  dash: [3, 3],
+                  listening: false
+                });
+                layer.add(parallelMark1);
+                
+                const parallelMark2 = new Konva.Line({
+                  points: [initialX + triangleSize, centerY, finalX + triangleSize, finalY],
+                  stroke: '#27ae60',
+                  strokeWidth: 1.5,
+                  dash: [3, 3],
+                  listening: false
+                });
+                layer.add(parallelMark2);
+                
+                const parallelText = new Konva.Text({
+                  x: initialX - 50,
+                  y: (centerY + finalY) / 2 - 8,
+                  text: '保持平行',
+                  fontSize: 12,
+                  fontFamily: 'Arial',
+                  fill: '#27ae60',
+                  fontStyle: 'bold',
+                  listening: false
+                });
+                layer.add(parallelText);
+                
+                if (step >= 5) {
+                  // 平行线CD
+                  const lineCD = new Konva.Line({
+                    points: [150, finalY, 650, finalY],
+                    stroke: '#27ae60',
+                    strokeWidth: 3,
+                    listening: false
+                  });
+                  layer.add(lineCD);
+                  
+                  // 画线标记
+                  const drawMark = new Konva.Group({
+                    x: 400,
+                    y: finalY
+                  });
+                  
+                  const drawCircle = new Konva.Circle({
+                    x: 0,
+                    y: 0,
+                    radius: 8,
+                    fill: '#27ae60',
+                    opacity: 0.7,
+                    listening: false
+                  });
+                  
+                  const drawText = new Konva.Text({
+                    x: -30,
+                    y: -8,
+                    text: '画平行线',
+                    fontSize: 12,
+                    fontFamily: 'Arial',
+                    fill: '#27ae60',
+                    fontStyle: 'bold',
+                    listening: false
+                  });
+                  
+                  drawMark.add(drawCircle);
+                  drawMark.add(drawText);
+                  layer.add(drawMark);
+                  
+                  const labelC = new Konva.Text({
+                    x: 140,
+                    y: finalY + 20,
+                    text: 'C',
+                    fontSize: 16,
+                    fontFamily: 'Arial',
+                    fill: '#333'
+                  });
+                  layer.add(labelC);
+                  
+                  const labelD = new Konva.Text({
+                    x: 655,
+                    y: finalY + 20,
+                    text: 'D',
+                    fontSize: 16,
+                    fontFamily: 'Arial',
+                    fill: '#333'
+                  });
+                  layer.add(labelD);
+                  
+                  // 平行标记
+                  const parallelSymbol1 = new Konva.Text({
+                    x: 100,
+                    y: centerY - 8,
+                    text: '∥',
+                    fontSize: 20,
+                    fontFamily: 'Arial',
+                    fill: '#27ae60',
+                    listening: false
+                  });
+                  layer.add(parallelSymbol1);
+                  
+                  const parallelSymbol2 = new Konva.Text({
+                    x: 100,
+                    y: finalY - 8,
+                    text: '∥',
+                    fontSize: 20,
+                    fontFamily: 'Arial',
+                    fill: '#27ae60',
+                    listening: false
+                  });
+                  layer.add(parallelSymbol2);
+                }
+              }
+            }
+          }
+        },
+        drawCopyAngleStep(layer, stage, step) {
+          const width = stage.width();
+          const height = stage.height();
+          const centerY = height / 2;
+          
+          if (step === 0) {
+            const text = new Konva.Text({
+              x: width / 2 - 120,
+              y: centerY - 50,
+              text: '准备工具：尺子、圆规、铅笔',
+              fontSize: 20,
+              fontFamily: 'Arial',
+              fill: '#666'
+            });
+            layer.add(text);
+            return;
+          }
+          
+          // 原角AOB - 延长射线
+          const O = { x: 200, y: centerY };
+          const OA_length = 180; // 延长
+          const OB_length = 180; // 延长
+          const angle = Math.PI / 3; // 60度
+          
+          // 射线OA - 延长
+          const rayOA = new Konva.Arrow({
+            points: [O.x, O.y, O.x + OA_length, O.y],
+            stroke: '#333',
+            strokeWidth: 2,
+            fill: '#333',
+            pointerLength: 8,
+            pointerWidth: 6,
+            listening: false
+          });
+          layer.add(rayOA);
+          
+          // 射线OB - 延长
+          const rayOB = new Konva.Arrow({
+            points: [
+              O.x,
+              O.y,
+              O.x + OB_length * Math.cos(angle),
+              O.y - OB_length * Math.sin(angle)
+            ],
+            stroke: '#333',
+            strokeWidth: 2,
+            fill: '#333',
+            pointerLength: 8,
+            pointerWidth: 6,
+            listening: false
+          });
+          layer.add(rayOB);
+          
+          // 顶点O
+          const pointO = new Konva.Circle({
+            x: O.x,
+            y: O.y,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(pointO);
+          
+          // 标签
+          const labelO = new Konva.Text({
+            x: O.x - 20,
+            y: O.y + 15,
+            text: 'O',
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fill: '#333',
+            fontStyle: 'bold'
+          });
+          layer.add(labelO);
+          
+          const labelA = new Konva.Text({
+            x: O.x + OA_length + 10,
+            y: O.y - 8,
+            text: 'A',
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fill: '#333',
+            fontStyle: 'bold'
+          });
+          layer.add(labelA);
+          
+          const labelB = new Konva.Text({
+            x: O.x + OB_length * Math.cos(angle) + 10,
+            y: O.y - OB_length * Math.sin(angle) - 10,
+            text: 'B',
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fill: '#333',
+            fontStyle: 'bold'
+          });
+          layer.add(labelB);
+          
+          if (step >= 2) {
+            // 新角O'A'B' - 延长射线
+            const O_prime = { x: 550, y: centerY };
+            const O_primeA_prime_length = 180; // 延长
+            
+            // 射线O'A' - 延长
+            const rayOPrimeAPrime = new Konva.Arrow({
+              points: [O_prime.x, O_prime.y, O_prime.x + O_primeA_prime_length, O_prime.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              fill: '#333',
+              pointerLength: 8,
+              pointerWidth: 6,
+              listening: false
+            });
+            layer.add(rayOPrimeAPrime);
+            
+            const pointOPrime = new Konva.Circle({
+              x: O_prime.x,
+              y: O_prime.y,
+              radius: 5,
+              fill: '#e74c3c',
+              listening: false
+            });
+            layer.add(pointOPrime);
+            
+            const labelOPrime = new Konva.Text({
+              x: O_prime.x - 25,
+              y: O_prime.y + 15,
+              text: 'O\'',
+              fontSize: 16,
+              fontFamily: 'Arial',
+              fill: '#333',
+              fontStyle: 'bold'
+            });
+            layer.add(labelOPrime);
+            
+            const labelAPrime = new Konva.Text({
+              x: O_prime.x + O_primeA_prime_length + 10,
+              y: O_prime.y - 8,
+              text: 'A\'',
+              fontSize: 16,
+              fontFamily: 'Arial',
+              fill: '#333',
+              fontStyle: 'bold'
+            });
+            layer.add(labelAPrime);
+          }
+          
+          if (step >= 3) {
+            // 弧线标记 - 使用圆规动画标记
+            const arcRadius = 80; // 增大半径，避免太近
+            const arc = new Konva.Arc({
+              x: O.x,
+              y: O.y,
+              innerRadius: arcRadius,
+              outerRadius: arcRadius,
+              angle: 60,
+              rotation: -90,
+              stroke: '#3498db',
+              strokeWidth: 2.5,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(arc);
+            
+            // 圆规标记
+            const compassMark = new Konva.Group({
+              x: O.x + arcRadius / 2,
+              y: O.y - arcRadius / 2
+            });
+            
+            const compassCircle = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 10,
+              fill: '#3498db',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const compassText = new Konva.Text({
+              x: -25,
+              y: -8,
+              text: '圆规画弧',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#3498db',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            compassMark.add(compassCircle);
+            compassMark.add(compassText);
+            layer.add(compassMark);
+            
+            // 交点C和D
+            const C = { x: O.x + arcRadius, y: O.y };
+            const D = {
+              x: O.x + arcRadius * Math.cos(angle),
+              y: O.y - arcRadius * Math.sin(angle)
+            };
+            
+            const pointC = new Konva.Circle({
+              x: C.x,
+              y: C.y,
+              radius: 5,
+              fill: '#e74c3c',
+              listening: false
+            });
+            layer.add(pointC);
+            
+            const pointD = new Konva.Circle({
+              x: D.x,
+              y: D.y,
+              radius: 5,
+              fill: '#e74c3c',
+              listening: false
+            });
+            layer.add(pointD);
+            
+            // 相交标记
+            const intersectMark1 = new Konva.Circle({
+              x: C.x,
+              y: C.y,
+              radius: 8,
+              stroke: '#e74c3c',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(intersectMark1);
+            
+            const intersectMark2 = new Konva.Circle({
+              x: D.x,
+              y: D.y,
+              radius: 8,
+              stroke: '#e74c3c',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(intersectMark2);
+            
+            const labelC = new Konva.Text({
+              x: C.x + 12,
+              y: C.y - 8,
+              text: 'C (交点)',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              fontStyle: 'bold'
+            });
+            layer.add(labelC);
+            
+            const labelDText = new Konva.Text({
+              x: D.x + 12,
+              y: D.y - 20,
+              text: 'D (交点)',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              fontStyle: 'bold'
+            });
+            layer.add(labelDText);
+          }
+          
+          if (step >= 4) {
+            const O_prime = { x: 550, y: centerY };
+            const arcRadius = 80; // 增大半径
+            
+            // 新弧线 - 使用圆规标记
+            const arc2 = new Konva.Arc({
+              x: O_prime.x,
+              y: O_prime.y,
+              innerRadius: arcRadius,
+              outerRadius: arcRadius,
+              angle: 180,
+              rotation: -90,
+              stroke: '#3498db',
+              strokeWidth: 2.5,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(arc2);
+            
+            // 圆规标记
+            const compassMark2 = new Konva.Group({
+              x: O_prime.x + arcRadius / 2,
+              y: O_prime.y - arcRadius / 2
+            });
+            
+            const compassCircle2 = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 10,
+              fill: '#3498db',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const compassText2 = new Konva.Text({
+              x: -30,
+              y: -8,
+              text: '复制半径',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#3498db',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            compassMark2.add(compassCircle2);
+            compassMark2.add(compassText2);
+            layer.add(compassMark2);
+            
+            const C_prime = { x: O_prime.x + arcRadius, y: O_prime.y };
+            const pointCPrime = new Konva.Circle({
+              x: C_prime.x,
+              y: C_prime.y,
+              radius: 5,
+              fill: '#e74c3c',
+              listening: false
+            });
+            layer.add(pointCPrime);
+            
+            const intersectMark3 = new Konva.Circle({
+              x: C_prime.x,
+              y: C_prime.y,
+              radius: 8,
+              stroke: '#e74c3c',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(intersectMark3);
+            
+            const labelCPrime = new Konva.Text({
+              x: C_prime.x + 12,
+              y: C_prime.y - 8,
+              text: 'C\' (交点)',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              fontStyle: 'bold'
+            });
+            layer.add(labelCPrime);
+          }
+          
+          if (step >= 5) {
+            const O = { x: 200, y: centerY };
+            const O_prime = { x: 550, y: centerY };
+            const arcRadius = 80;
+            const angle = Math.PI / 3;
+            
+            const C = { x: O.x + arcRadius, y: O.y };
+            const D = {
+              x: O.x + arcRadius * Math.cos(angle),
+              y: O.y - arcRadius * Math.sin(angle)
+            };
+            const C_prime = { x: O_prime.x + arcRadius, y: O_prime.y };
+            
+            // 测量CD距离
+            const CD_distance = Math.sqrt(Math.pow(D.x - C.x, 2) + Math.pow(D.y - C.y, 2));
+            
+            // 以C'为圆心的弧 - 使用圆规标记
+            const arc3 = new Konva.Arc({
+              x: C_prime.x,
+              y: C_prime.y,
+              innerRadius: CD_distance,
+              outerRadius: CD_distance,
+              angle: 180,
+              rotation: -90,
+              stroke: '#9b59b6',
+              strokeWidth: 2.5,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(arc3);
+            
+            // 圆规标记
+            const compassMark3 = new Konva.Group({
+              x: C_prime.x + CD_distance / 2,
+              y: C_prime.y - CD_distance / 2
+            });
+            
+            const compassCircle3 = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 10,
+              fill: '#9b59b6',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const compassText3 = new Konva.Text({
+              x: -30,
+              y: -8,
+              text: '测量CD',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#9b59b6',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            compassMark3.add(compassCircle3);
+            compassMark3.add(compassText3);
+            layer.add(compassMark3);
+            
+            const D_prime = {
+              x: O_prime.x + arcRadius * Math.cos(angle),
+              y: O_prime.y - arcRadius * Math.sin(angle)
+            };
+            
+            const pointDPrime = new Konva.Circle({
+              x: D_prime.x,
+              y: D_prime.y,
+              radius: 5,
+              fill: '#e74c3c',
+              listening: false
+            });
+            layer.add(pointDPrime);
+            
+            // 相交标记 - 两个弧的交点
+            const intersectMark4 = new Konva.Circle({
+              x: D_prime.x,
+              y: D_prime.y,
+              radius: 10,
+              stroke: '#e74c3c',
+              strokeWidth: 3,
+              listening: false
+            });
+            layer.add(intersectMark4);
+            
+            const intersectMark5 = new Konva.Circle({
+              x: D_prime.x,
+              y: D_prime.y,
+              radius: 15,
+              stroke: '#e74c3c',
+              strokeWidth: 2,
+              dash: [2, 2],
+              listening: false
+            });
+            layer.add(intersectMark5);
+            
+            const labelDPrime = new Konva.Text({
+              x: D_prime.x + 18,
+              y: D_prime.y - 20,
+              text: 'D\' (准确相交)',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              fontStyle: 'bold'
+            });
+            layer.add(labelDPrime);
+          }
+          
+          if (step >= 6) {
+            const O_prime = { x: 550, y: centerY };
+            const arcRadius = 80;
+            const angle = Math.PI / 3;
+            
+            const D_prime = {
+              x: O_prime.x + arcRadius * Math.cos(angle),
+              y: O_prime.y - arcRadius * Math.sin(angle)
+            };
+            
+            // 完成新角 - 延长射线
+            const rayOPrimeBPrime = new Konva.Arrow({
+              points: [O_prime.x, O_prime.y, D_prime.x + 100 * Math.cos(angle), D_prime.y - 100 * Math.sin(angle)],
+              stroke: '#27ae60',
+              strokeWidth: 3,
+              fill: '#27ae60',
+              pointerLength: 10,
+              pointerWidth: 8,
+              listening: false
+            });
+            layer.add(rayOPrimeBPrime);
+            
+            // 画线标记
+            const drawMark = new Konva.Group({
+              x: (O_prime.x + D_prime.x) / 2,
+              y: (O_prime.y + D_prime.y) / 2
+            });
+            
+            const drawCircle = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 8,
+              fill: '#27ae60',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const drawText = new Konva.Text({
+              x: -30,
+              y: -8,
+              text: '连接完成',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#27ae60',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            drawMark.add(drawCircle);
+            drawMark.add(drawText);
+            layer.add(drawMark);
+            
+            const labelBPrime = new Konva.Text({
+              x: D_prime.x + 100 * Math.cos(angle) + 10,
+              y: D_prime.y - 100 * Math.sin(angle) - 10,
+              text: 'B\'',
+              fontSize: 16,
+              fontFamily: 'Arial',
+              fill: '#333',
+              fontStyle: 'bold'
+            });
+            layer.add(labelBPrime);
+            
+            // 角度相等标记
+            const angleEqualMark = new Konva.Text({
+              x: (O.x + O_prime.x) / 2 - 40,
+              y: centerY - 80,
+              text: '∠AOB = ∠A\'O\'B\'',
+              fontSize: 16,
+              fontFamily: 'Arial',
+              fill: '#27ae60',
+              fontStyle: 'bold',
+              listening: false
+            });
+            layer.add(angleEqualMark);
+          }
+        },
+        drawProtractorStep(layer, stage, step) {
+          const width = stage.width();
+          const height = stage.height();
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          if (step === 0) {
+            // 显示量角器
+            const radius = 100;
+            const protractor = new Konva.Group({
+              x: centerX,
+              y: centerY
+            });
+            
+            // 半圆
+            const semicircle = new Konva.Arc({
+              x: 0,
+              y: 0,
+              innerRadius: 0,
+              outerRadius: radius,
+              angle: 180,
+              rotation: 180,
+              fill: 'rgba(52, 152, 219, 0.15)',
+              stroke: '#3498db',
+              strokeWidth: 3,
+              listening: false
+            });
+            protractor.add(semicircle);
+            
+            // 中心点
+            const centerPoint = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 4,
+              fill: '#e74c3c',
+              listening: false
+            });
+            protractor.add(centerPoint);
+            
+            // 刻度
+            for (let i = 0; i <= 180; i += 10) {
+              const angleRad = (Math.PI * i) / 180;
+              const startRadius = i % 30 === 0 ? radius - 12 : radius - 6;
+              
+              const mark = new Konva.Line({
+                points: [
+                  startRadius * Math.cos(Math.PI - angleRad),
+                  startRadius * Math.sin(Math.PI - angleRad),
+                  radius * Math.cos(Math.PI - angleRad),
+                  radius * Math.sin(Math.PI - angleRad)
+                ],
+                stroke: '#666',
+                strokeWidth: 1.5,
+                listening: false
+              });
+              protractor.add(mark);
+              
+              if (i % 30 === 0 && i > 0 && i < 180) {
+                const text = new Konva.Text({
+                  x: (radius - 20) * Math.cos(Math.PI - angleRad) - 8,
+                  y: (radius - 20) * Math.sin(Math.PI - angleRad) - 8,
+                  text: i.toString(),
+                  fontSize: 14,
+                  fontFamily: 'Arial',
+                  fill: '#333',
+                  listening: false
+                });
+                protractor.add(text);
+              }
+            }
+            
+            layer.add(protractor);
+            
+            const label = new Konva.Text({
+              x: centerX,
+              y: centerY + 130,
+              text: '量角器：0° - 180°',
+              fontSize: 18,
+              fontFamily: 'Arial',
+              fill: '#333',
+              align: 'center',
+              listening: false
+            });
+            label.offsetX(label.width() / 2);
+            layer.add(label);
+            return;
+          }
+          
+          if (step >= 1) {
+            // 量角
+            const vertex = { x: centerX - 150, y: centerY + 80 };
+            const measuredAngle = 45;
+            const angleRad = (Math.PI * measuredAngle) / 180;
+            const rayLength = 140;
+            
+            // 起始边
+            const startRay = new Konva.Line({
+              points: [vertex.x, vertex.y, vertex.x + rayLength, vertex.y],
+              stroke: '#333',
+              strokeWidth: 2.5,
+              listening: false
+            });
+            layer.add(startRay);
+            
+            // 另一条边
+            const endRay = new Konva.Line({
+              points: [
+                vertex.x,
+                vertex.y,
+                vertex.x + rayLength * Math.cos(angleRad),
+                vertex.y - rayLength * Math.sin(angleRad)
+              ],
+              stroke: '#333',
+              strokeWidth: 2.5,
+              listening: false
+            });
+            layer.add(endRay);
+            
+            // 顶点
+            const vertexPoint = new Konva.Circle({
+              x: vertex.x,
+              y: vertex.y,
+              radius: 5,
+              fill: '#e74c3c',
+              listening: false
+            });
+            layer.add(vertexPoint);
+            
+            // 量角器
+            const protractorRadius = 110;
+            const protractorGroup = new Konva.Group({
+              x: vertex.x,
+              y: vertex.y
+            });
+            
+            const protractorArc = new Konva.Arc({
+              x: 0,
+              y: 0,
+              innerRadius: 0,
+              outerRadius: protractorRadius,
+              angle: 180,
+              rotation: 180,
+              fill: 'rgba(52, 152, 219, 0.12)',
+              stroke: '#3498db',
+              strokeWidth: 2.5,
+              listening: false
+            });
+            protractorGroup.add(protractorArc);
+            
+            // 刻度
+            for (let i = 0; i <= 180; i += 5) {
+              const scaleAngleRad = (Math.PI * i) / 180;
+              const startRadius = i % 10 === 0
+                ? (i % 30 === 0 ? protractorRadius - 10 : protractorRadius - 6)
+                : protractorRadius - 3;
+              
+              const mark = new Konva.Line({
+                points: [
+                  startRadius * Math.cos(Math.PI - scaleAngleRad),
+                  startRadius * Math.sin(Math.PI - scaleAngleRad),
+                  protractorRadius * Math.cos(Math.PI - scaleAngleRad),
+                  protractorRadius * Math.sin(Math.PI - scaleAngleRad)
+                ],
+                stroke: '#666',
+                strokeWidth: 1,
+                listening: false
+              });
+              protractorGroup.add(mark);
+            }
+            
+            layer.add(protractorGroup);
+            
+            // 放置量角器标记
+            const placeMark = new Konva.Group({
+              x: vertex.x,
+              y: vertex.y - 30
+            });
+            
+            const placeCircle = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 10,
+              fill: '#3498db',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const placeText = new Konva.Text({
+              x: -35,
+              y: -8,
+              text: '放置量角器',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#3498db',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            placeMark.add(placeCircle);
+            placeMark.add(placeText);
+            layer.add(placeMark);
+            
+            // 对齐标记
+            const alignMark = new Konva.Circle({
+              x: vertex.x,
+              y: vertex.y,
+              radius: 4,
+              fill: '#27ae60',
+              listening: false
+            });
+            layer.add(alignMark);
+            
+            const alignText = new Konva.Text({
+              x: vertex.x + 10,
+              y: vertex.y - 15,
+              text: '中心对齐',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#27ae60',
+              fontStyle: 'bold',
+              listening: false
+            });
+            layer.add(alignText);
+            
+            if (step >= 2) {
+              // 标记角度
+              const angleMark = new Konva.Line({
+                points: [
+                  vertex.x,
+                  vertex.y,
+                  vertex.x + protractorRadius * Math.cos(Math.PI - angleRad),
+                  vertex.y + protractorRadius * Math.sin(Math.PI - angleRad)
+                ],
+                stroke: '#e74c3c',
+                strokeWidth: 2.5,
+                listening: false
+              });
+              layer.add(angleMark);
+              
+              // 读取角度标记
+              const readMark = new Konva.Group({
+                x: vertex.x + protractorRadius * Math.cos(Math.PI - angleRad),
+                y: vertex.y + protractorRadius * Math.sin(Math.PI - angleRad)
+              });
+              
+              const readCircle = new Konva.Circle({
+                x: 0,
+                y: 0,
+                radius: 8,
+                fill: '#e74c3c',
+                opacity: 0.7,
+                listening: false
+              });
+              
+              const readText = new Konva.Text({
+                x: -25,
+                y: -8,
+                text: '读取',
+                fontSize: 12,
+                fontFamily: 'Arial',
+                fill: '#e74c3c',
+                fontStyle: 'bold',
+                listening: false
+              });
+              
+              readMark.add(readCircle);
+              readMark.add(readText);
+              layer.add(readMark);
+              
+              const angleLabel = new Konva.Text({
+                x: vertex.x + 160,
+                y: vertex.y - 60,
+                text: `角度: ${measuredAngle}°`,
+                fontSize: 18,
+                fontFamily: 'Arial',
+                fontWeight: 'bold',
+                fill: '#e74c3c',
+                listening: false
+              });
+              layer.add(angleLabel);
+            }
+          }
+          
+          if (step >= 3) {
+            // 画指定角度
+            const targetVertex = { x: centerX + 180, y: centerY + 80 };
+            const targetAngleDeg = 60;
+            const targetAngleRad = (Math.PI * targetAngleDeg) / 180;
+            const rayLength = 140;
+            
+            // 起始边
+            const targetStartRay = new Konva.Line({
+              points: [targetVertex.x, targetVertex.y, targetVertex.x + rayLength, targetVertex.y],
+              stroke: '#333',
+              strokeWidth: 2.5,
+              listening: false
+            });
+            layer.add(targetStartRay);
+            
+            // 量角器
+            const targetProtractorRadius = 110;
+            const targetProtractorGroup = new Konva.Group({
+              x: targetVertex.x,
+              y: targetVertex.y
+            });
+            
+            const targetProtractorArc = new Konva.Arc({
+              x: 0,
+              y: 0,
+              innerRadius: 0,
+              outerRadius: targetProtractorRadius,
+              angle: 180,
+              rotation: 180,
+              fill: 'rgba(52, 152, 219, 0.12)',
+              stroke: '#3498db',
+              strokeWidth: 2.5,
+              listening: false
+            });
+            targetProtractorGroup.add(targetProtractorArc);
+            layer.add(targetProtractorGroup);
+            
+            // 放置量角器标记
+            const placeMark2 = new Konva.Group({
+              x: targetVertex.x,
+              y: targetVertex.y - 30
+            });
+            
+            const placeCircle2 = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 10,
+              fill: '#3498db',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const placeText2 = new Konva.Text({
+              x: -35,
+              y: -8,
+              text: '放置量角器',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#3498db',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            placeMark2.add(placeCircle2);
+            placeMark2.add(placeText2);
+            layer.add(placeMark2);
+            
+            // 对齐标记
+            const alignMark2 = new Konva.Circle({
+              x: targetVertex.x,
+              y: targetVertex.y,
+              radius: 4,
+              fill: '#27ae60',
+              listening: false
+            });
+            layer.add(alignMark2);
+            
+            const alignText2 = new Konva.Text({
+              x: targetVertex.x + 10,
+              y: targetVertex.y - 15,
+              text: '中心对齐',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#27ae60',
+              fontStyle: 'bold',
+              listening: false
+            });
+            layer.add(alignText2);
+            
+            if (step >= 4) {
+              // 标记目标角度
+              const targetAngleMark = new Konva.Line({
+                points: [
+                  targetVertex.x,
+                  targetVertex.y,
+                  targetVertex.x + targetProtractorRadius * Math.cos(Math.PI - targetAngleRad),
+                  targetVertex.y + targetProtractorRadius * Math.sin(Math.PI - targetAngleRad)
+                ],
+                stroke: '#e74c3c',
+                strokeWidth: 2.5,
+                listening: false
+              });
+              layer.add(targetAngleMark);
+              
+              const markPoint = new Konva.Circle({
+                x: targetVertex.x + targetProtractorRadius * Math.cos(Math.PI - targetAngleRad),
+                y: targetVertex.y + targetProtractorRadius * Math.sin(Math.PI - targetAngleRad),
+                radius: 5,
+                fill: '#e74c3c',
+                listening: false
+              });
+              layer.add(markPoint);
+              
+              // 标记点提示
+              const markPointText = new Konva.Text({
+                x: targetVertex.x + targetProtractorRadius * Math.cos(Math.PI - targetAngleRad) + 10,
+                y: targetVertex.y + targetProtractorRadius * Math.sin(Math.PI - targetAngleRad) - 8,
+                text: `标记${targetAngleDeg}°`,
+                fontSize: 12,
+                fontFamily: 'Arial',
+                fill: '#e74c3c',
+                fontStyle: 'bold',
+                listening: false
+              });
+              layer.add(markPointText);
+            }
+            
+            if (step >= 5) {
+              // 完成画角
+              const targetEndRay = new Konva.Arrow({
+                points: [
+                  targetVertex.x,
+                  targetVertex.y,
+                  targetVertex.x + rayLength * Math.cos(targetAngleRad),
+                  targetVertex.y - rayLength * Math.sin(targetAngleRad)
+                ],
+                stroke: '#27ae60',
+                strokeWidth: 3,
+                fill: '#27ae60',
+                pointerLength: 10,
+                pointerWidth: 8,
+                listening: false
+              });
+              layer.add(targetEndRay);
+              
+              // 画线标记
+              const drawMark = new Konva.Group({
+                x: targetVertex.x + rayLength * Math.cos(targetAngleRad) / 2,
+                y: targetVertex.y - rayLength * Math.sin(targetAngleRad) / 2
+              });
+              
+              const drawCircle = new Konva.Circle({
+                x: 0,
+                y: 0,
+                radius: 8,
+                fill: '#27ae60',
+                opacity: 0.7,
+                listening: false
+              });
+              
+              const drawText = new Konva.Text({
+                x: -30,
+                y: -8,
+                text: '画射线',
+                fontSize: 12,
+                fontFamily: 'Arial',
+                fill: '#27ae60',
+                fontStyle: 'bold',
+                listening: false
+              });
+              
+              drawMark.add(drawCircle);
+              drawMark.add(drawText);
+              layer.add(drawMark);
+              
+              const completeLabel = new Konva.Text({
+                x: targetVertex.x + 50,
+                y: targetVertex.y - 80,
+                text: '完成！',
+                fontSize: 16,
+                fontFamily: 'Arial',
+                fontWeight: 'bold',
+                fill: '#27ae60',
+                listening: false
+              });
+              layer.add(completeLabel);
+            }
+          }
+        },
+        drawTriangleStep(layer, stage, step) {
+          const width = stage.width();
+          const height = stage.height();
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          if (step === 0) {
+            // 任意三角形 - 显示画线过程
+            const v1 = { x: centerX - 100, y: centerY + 80 };
+            const v2 = { x: centerX + 100, y: centerY + 80 };
+            const v3 = { x: centerX, y: centerY - 80 };
+            
+            // 第一条边
+            const side1 = new Konva.Line({
+              points: [v1.x, v1.y, v2.x, v2.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(side1);
+            
+            // 画线标记
+            const drawMark1 = new Konva.Group({
+              x: (v1.x + v2.x) / 2,
+              y: v1.y - 20
+            });
+            
+            const drawCircle1 = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 8,
+              fill: '#667eea',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const drawText1 = new Konva.Text({
+              x: -25,
+              y: -8,
+              text: '画边1',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#667eea',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            drawMark1.add(drawCircle1);
+            drawMark1.add(drawText1);
+            layer.add(drawMark1);
+            
+            // 第二条边
+            const side2 = new Konva.Line({
+              points: [v2.x, v2.y, v3.x, v3.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(side2);
+            
+            // 第三条边
+            const side3 = new Konva.Line({
+              points: [v3.x, v3.y, v1.x, v1.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(side3);
+            
+            const label = new Konva.Text({
+              x: centerX - 50,
+              y: centerY + 120,
+              text: '任意三角形',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          } else if (step === 1) {
+            // 等边三角形 - 使用圆规画弧
+            const sideLength = 120;
+            const height_tri = sideLength * Math.sqrt(3) / 2;
+            const A = { x: centerX, y: centerY + height_tri / 2 };
+            const B = { x: centerX - sideLength / 2, y: centerY - height_tri / 2 };
+            const C = { x: centerX + sideLength / 2, y: centerY - height_tri / 2 };
+            
+            // 先画底边
+            const base = new Konva.Line({
+              points: [B.x, B.y, C.x, C.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(base);
+            
+            // 圆规画弧标记
+            const arc1 = new Konva.Arc({
+              x: B.x,
+              y: B.y,
+              innerRadius: sideLength,
+              outerRadius: sideLength,
+              angle: 60,
+              rotation: 0,
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(arc1);
+            
+            const arc2 = new Konva.Arc({
+              x: C.x,
+              y: C.y,
+              innerRadius: sideLength,
+              outerRadius: sideLength,
+              angle: 60,
+              rotation: 120,
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(arc2);
+            
+            // 圆规标记
+            const compassMark1 = new Konva.Group({
+              x: B.x + sideLength / 2,
+              y: B.y - 30
+            });
+            
+            const compassCircle1 = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 10,
+              fill: '#3498db',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const compassText1 = new Konva.Text({
+              x: -25,
+              y: -8,
+              text: '圆规画弧',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#3498db',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            compassMark1.add(compassCircle1);
+            compassMark1.add(compassText1);
+            layer.add(compassMark1);
+            
+            // 交点标记
+            const intersectMark = new Konva.Circle({
+              x: A.x,
+              y: A.y,
+              radius: 10,
+              stroke: '#e74c3c',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(intersectMark);
+            
+            const triangle = new Konva.Line({
+              points: [A.x, A.y, B.x, B.y, C.x, C.y],
+              closed: true,
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(triangle);
+            
+            // 标记相等边
+            this.drawEqualMark(layer, A, B, -15);
+            this.drawEqualMark(layer, B, C, -15);
+            this.drawEqualMark(layer, C, A, -15);
+            
+            const label = new Konva.Text({
+              x: centerX - 50,
+              y: centerY + height_tri / 2 + 30,
+              text: '等边三角形',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          } else if (step === 2) {
+            // 等腰三角形 - 使用圆规画弧
+            const baseLength = 150;
+            const equalSideLength = 100;
+            const height_tri = Math.sqrt(equalSideLength * equalSideLength - (baseLength / 2) * (baseLength / 2));
+            const A = { x: centerX, y: centerY + height_tri / 2 };
+            const B = { x: centerX - baseLength / 2, y: centerY - height_tri / 2 };
+            const C = { x: centerX + baseLength / 2, y: centerY - height_tri / 2 };
+            
+            // 先画底边
+            const base = new Konva.Line({
+              points: [B.x, B.y, C.x, C.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(base);
+            
+            // 圆规画弧
+            const arc1 = new Konva.Arc({
+              x: B.x,
+              y: B.y,
+              innerRadius: equalSideLength,
+              outerRadius: equalSideLength,
+              angle: 60,
+              rotation: 0,
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(arc1);
+            
+            const arc2 = new Konva.Arc({
+              x: C.x,
+              y: C.y,
+              innerRadius: equalSideLength,
+              outerRadius: equalSideLength,
+              angle: 60,
+              rotation: 120,
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(arc2);
+            
+            // 圆规标记
+            const compassMark = new Konva.Group({
+              x: centerX,
+              y: centerY - 50
+            });
+            
+            const compassCircle = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 10,
+              fill: '#3498db',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const compassText = new Konva.Text({
+              x: -30,
+              y: -8,
+              text: '圆规画弧',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#3498db',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            compassMark.add(compassCircle);
+            compassMark.add(compassText);
+            layer.add(compassMark);
+            
+            // 交点标记
+            const intersectMark = new Konva.Circle({
+              x: A.x,
+              y: A.y,
+              radius: 10,
+              stroke: '#e74c3c',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(intersectMark);
+            
+            const triangle = new Konva.Line({
+              points: [A.x, A.y, B.x, B.y, C.x, C.y],
+              closed: true,
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(triangle);
+            
+            // 标记相等边
+            this.drawEqualMark(layer, A, B, -15);
+            this.drawEqualMark(layer, A, C, -15);
+            
+            const label = new Konva.Text({
+              x: centerX - 50,
+              y: centerY + height_tri / 2 + 30,
+              text: '等腰三角形',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          } else if (step === 3) {
+            // 直角三角形 - 使用三角板
+            const leg1 = 120;
+            const leg2 = 90;
+            const A = { x: centerX - 60, y: centerY + 45 };
+            const B = { x: centerX - 60, y: centerY - 45 };
+            const C = { x: centerX + 60, y: centerY + 45 };
+            
+            // 第一条直角边
+            const leg1Line = new Konva.Line({
+              points: [A.x, A.y, B.x, B.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(leg1Line);
+            
+            // 三角板标记
+            const triangleMark = new Konva.Group({
+              x: A.x,
+              y: A.y,
+              opacity: 0.7
+            });
+            
+            const triSize = 30;
+            const triBase = new Konva.Line({
+              points: [0, 0, triSize, 0],
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            
+            const triVertical = new Konva.Line({
+              points: [triSize, 0, triSize, -triSize],
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            
+            const triHypotenuse = new Konva.Line({
+              points: [0, 0, triSize, -triSize],
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            
+            triangleMark.add(triBase);
+            triangleMark.add(triVertical);
+            triangleMark.add(triHypotenuse);
+            layer.add(triangleMark);
+            
+            // 三角板标记文字
+            const triangleText = new Konva.Text({
+              x: A.x + 40,
+              y: A.y - 20,
+              text: '使用三角板',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#3498db',
+              fontStyle: 'bold',
+              listening: false
+            });
+            layer.add(triangleText);
+            
+            // 第二条直角边
+            const leg2Line = new Konva.Line({
+              points: [A.x, A.y, C.x, C.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(leg2Line);
+            
+            // 斜边
+            const hypotenuse = new Konva.Line({
+              points: [B.x, B.y, C.x, C.y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(hypotenuse);
+            
+            const triangle = new Konva.Line({
+              points: [A.x, A.y, B.x, B.y, C.x, C.y],
+              closed: true,
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(triangle);
+            
+            // 直角标记
+            const rightAngle = new Konva.Group({
+              x: A.x,
+              y: A.y
+            });
+            
+            const mark1 = new Konva.Line({
+              points: [15, 0, 15, -15],
+              stroke: '#27ae60',
+              strokeWidth: 2,
+              listening: false
+            });
+            
+            const mark2 = new Konva.Line({
+              points: [15, -15, 0, -15],
+              stroke: '#27ae60',
+              strokeWidth: 2,
+              listening: false
+            });
+            
+            rightAngle.add(mark1);
+            rightAngle.add(mark2);
+            layer.add(rightAngle);
+            
+            // 直角标记文字
+            const rightAngleText = new Konva.Text({
+              x: A.x + 20,
+              y: A.y - 30,
+              text: '90°',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#27ae60',
+              fontStyle: 'bold',
+              listening: false
+            });
+            layer.add(rightAngleText);
+            
+            const label = new Konva.Text({
+              x: centerX - 50,
+              y: centerY + 80,
+              text: '直角三角形',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          } else if (step === 4) {
+            // 展示所有类型
+            const types = [
+              { name: '任意三角形', vertices: [
+                { x: 150, y: 150 },
+                { x: 250, y: 150 },
+                { x: 200, y: 80 }
+              ]},
+              { name: '等边三角形', vertices: [
+                { x: 400, y: 150 },
+                { x: 350, y: 80 },
+                { x: 450, y: 80 }
+              ]},
+              { name: '等腰三角形', vertices: [
+                { x: 600, y: 150 },
+                { x: 550, y: 80 },
+                { x: 650, y: 80 }
+              ]},
+              { name: '直角三角形', vertices: [
+                { x: 200, y: 300 },
+                { x: 200, y: 400 },
+                { x: 300, y: 400 }
+              ]}
+            ];
+            
+            types.forEach((type) => {
+              const triangle = new Konva.Line({
+                points: type.vertices.flatMap(v => [v.x, v.y]),
+                closed: true,
+                stroke: '#333',
+                strokeWidth: 2,
+                listening: false
+              });
+              layer.add(triangle);
+              
+              const label = new Konva.Text({
+                x: type.vertices[0].x - 30,
+                y: type.vertices[0].y + 50,
+                text: type.name,
+                fontSize: 12,
+                fontFamily: 'Arial',
+                fill: '#666',
+                listening: false
+              });
+              layer.add(label);
+            });
+          }
+        },
+        drawRectangleStep(layer, stage, step) {
+          const width = stage.width();
+          const height = stage.height();
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          if (step === 0) {
+            // 画长方形 - 显示画线过程
+            const rectWidth = 200;
+            const rectHeight = 120;
+            const x = centerX - rectWidth / 2;
+            const y = centerY - rectHeight / 2;
+            
+            // 第一条边（底边）
+            const bottom = new Konva.Line({
+              points: [x, y + rectHeight, x + rectWidth, y + rectHeight],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(bottom);
+            
+            // 画线标记
+            const drawMark1 = new Konva.Group({
+              x: centerX,
+              y: y + rectHeight + 20
+            });
+            
+            const drawCircle1 = new Konva.Circle({
+              x: 0,
+              y: 0,
+              radius: 8,
+              fill: '#667eea',
+              opacity: 0.7,
+              listening: false
+            });
+            
+            const drawText1 = new Konva.Text({
+              x: -25,
+              y: -8,
+              text: '画底边',
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#667eea',
+              fontStyle: 'bold',
+              listening: false
+            });
+            
+            drawMark1.add(drawCircle1);
+            drawMark1.add(drawText1);
+            layer.add(drawMark1);
+            
+            // 第二条边（右侧）
+            const right = new Konva.Line({
+              points: [x + rectWidth, y + rectHeight, x + rectWidth, y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(right);
+            
+            // 三角板标记
+            const triangleMark = new Konva.Group({
+              x: x + rectWidth,
+              y: y + rectHeight,
+              opacity: 0.7
+            });
+            
+            const triSize = 30;
+            const triBase = new Konva.Line({
+              points: [0, 0, -triSize, 0],
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            
+            const triVertical = new Konva.Line({
+              points: [0, 0, 0, -triSize],
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            
+            const triHypotenuse = new Konva.Line({
+              points: [-triSize, 0, 0, -triSize],
+              stroke: '#3498db',
+              strokeWidth: 2,
+              dash: [3, 3],
+              listening: false
+            });
+            
+            triangleMark.add(triBase);
+            triangleMark.add(triVertical);
+            triangleMark.add(triHypotenuse);
+            layer.add(triangleMark);
+            
+            // 第三条边（顶边）
+            const top = new Konva.Line({
+              points: [x + rectWidth, y, x, y],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(top);
+            
+            // 第四条边（左侧）
+            const left = new Konva.Line({
+              points: [x, y, x, y + rectHeight],
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(left);
+            
+            const rectangle = new Konva.Rect({
+              x: x,
+              y: y,
+              width: rectWidth,
+              height: rectHeight,
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(rectangle);
+            
+            // 标记直角
+            this.drawRightAngleMark(layer, x, y, 12);
+            this.drawRightAngleMark(layer, x + rectWidth, y, 12);
+            this.drawRightAngleMark(layer, x + rectWidth, y + rectHeight, 12);
+            this.drawRightAngleMark(layer, x, y + rectHeight, 12);
+            
+            const label = new Konva.Text({
+              x: centerX - 30,
+              y: centerY + rectHeight / 2 + 30,
+              text: '长方形',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          } else if (step === 1) {
+            // 验证直角
+            const rectWidth = 200;
+            const rectHeight = 120;
+            const x = centerX - rectWidth / 2;
+            const y = centerY - rectHeight / 2;
+            
+            const rectangle = new Konva.Rect({
+              x: x,
+              y: y,
+              width: rectWidth,
+              height: rectHeight,
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(rectangle);
+            
+            // 三角板验证
+            const triangleGroup = new Konva.Group({
+              x: x,
+              y: y,
+              opacity: 0.7
+            });
+            
+            const triSize = 40;
+            const triBase = new Konva.Line({
+              points: [0, 0, triSize, 0],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            const triVertical = new Konva.Line({
+              points: [triSize, 0, triSize, triSize],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            const triHypotenuse = new Konva.Line({
+              points: [0, 0, triSize, triSize],
+              stroke: '#3498db',
+              strokeWidth: 3,
+              dash: [5, 5],
+              listening: false
+            });
+            
+            triangleGroup.add(triBase);
+            triangleGroup.add(triVertical);
+            triangleGroup.add(triHypotenuse);
+            layer.add(triangleGroup);
+            
+            // 直角标记
+            this.drawRightAngleMark(layer, x, y, 12);
+            
+            const label = new Konva.Text({
+              x: centerX - 50,
+              y: centerY + rectHeight / 2 + 30,
+              text: '验证直角',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          } else if (step === 2) {
+            // 画正方形
+            const sideLength = 150;
+            const x = centerX - sideLength / 2;
+            const y = centerY - sideLength / 2;
+            
+            const square = new Konva.Rect({
+              x: x,
+              y: y,
+              width: sideLength,
+              height: sideLength,
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(square);
+            
+            // 标记相等边
+            const markOffset = 15;
+            this.drawEqualMark(layer, { x: x, y: y }, { x: x + sideLength, y: y }, -markOffset);
+            this.drawEqualMark(layer, { x: x + sideLength, y: y }, { x: x + sideLength, y: y + sideLength }, markOffset);
+            this.drawEqualMark(layer, { x: x + sideLength, y: y + sideLength }, { x: x, y: y + sideLength }, -markOffset);
+            this.drawEqualMark(layer, { x: x, y: y + sideLength }, { x: x, y: y }, markOffset);
+            
+            // 直角标记
+            this.drawRightAngleMark(layer, x, y, 12);
+            
+            const label = new Konva.Text({
+              x: centerX - 30,
+              y: centerY + sideLength / 2 + 30,
+              text: '正方形',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          } else if (step === 3) {
+            // 验证边长
+            const sideLength = 150;
+            const x = centerX - sideLength / 2;
+            const y = centerY - sideLength / 2;
+            
+            const square = new Konva.Rect({
+              x: x,
+              y: y,
+              width: sideLength,
+              height: sideLength,
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(square);
+            
+            // 标记边长
+            const lengthLabel = new Konva.Text({
+              x: centerX - 25,
+              y: y - 25,
+              text: `${sideLength}mm`,
+              fontSize: 12,
+              fontFamily: 'Arial',
+              fill: '#9b59b6',
+              listening: false
+            });
+            layer.add(lengthLabel);
+            
+            // 长度标记线
+            const lengthMark = new Konva.Line({
+              points: [x, y - 20, x + sideLength, y - 20],
+              stroke: '#9b59b6',
+              strokeWidth: 1,
+              dash: [3, 3],
+              listening: false
+            });
+            layer.add(lengthMark);
+            
+            // 直角标记
+            this.drawRightAngleMark(layer, x, y, 12);
+            
+            const label = new Konva.Text({
+              x: centerX - 50,
+              y: centerY + sideLength / 2 + 30,
+              text: '验证边长和直角',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          } else if (step === 4) {
+            // 标记边长
+            const sideLength = 150;
+            const x = centerX - sideLength / 2;
+            const y = centerY - sideLength / 2;
+            
+            const square = new Konva.Rect({
+              x: x,
+              y: y,
+              width: sideLength,
+              height: sideLength,
+              stroke: '#333',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(square);
+            
+            // 标记所有边长
+            const labelOffset = 25;
+            const lengthLabels = [
+              { x: centerX - 25, y: y - labelOffset, text: `${sideLength}mm` },
+              { x: x + sideLength + labelOffset, y: centerY - 8, text: `${sideLength}mm`, rotation: 90 },
+              { x: centerX - 25, y: y + sideLength + labelOffset, text: `${sideLength}mm` },
+              { x: x - labelOffset, y: centerY - 8, text: `${sideLength}mm`, rotation: 90 }
+            ];
+            
+            lengthLabels.forEach((label) => {
+              const text = new Konva.Text({
+                x: label.x,
+                y: label.y,
+                text: label.text,
+                fontSize: 12,
+                fontFamily: 'Arial',
+                fill: '#9b59b6',
+                listening: false,
+                rotation: label.rotation || 0
+              });
+              if (label.rotation) {
+                text.offsetX(text.width() / 2);
+                text.offsetY(text.height() / 2);
+              } else {
+                text.offsetX(text.width() / 2);
+              }
+              layer.add(text);
+            });
+            
+            // 直角标记
+            this.drawRightAngleMark(layer, x, y, 12);
+            this.drawRightAngleMark(layer, x + sideLength, y, 12);
+            this.drawRightAngleMark(layer, x + sideLength, y + sideLength, 12);
+            this.drawRightAngleMark(layer, x, y + sideLength, 12);
+            
+            const label = new Konva.Text({
+              x: centerX - 30,
+              y: centerY + sideLength / 2 + 50,
+              text: '标注边长',
+              fontSize: 14,
+              fontFamily: 'Arial',
+              fill: '#333',
+              listening: false
+            });
+            layer.add(label);
+          }
+        },
+        drawEqualMark(layer, p1, p2, offset) {
+          const midX = (p1.x + p2.x) / 2;
+          const midY = (p1.y + p2.y) / 2;
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(dy, dx);
+          const perpAngle = angle + Math.PI / 2;
+          
+          const markLength = 8;
+          const markX1 = midX + Math.cos(perpAngle) * offset - Math.cos(angle) * markLength / 2;
+          const markY1 = midY + Math.sin(perpAngle) * offset - Math.sin(angle) * markLength / 2;
+          const markX2 = midX + Math.cos(perpAngle) * offset + Math.cos(angle) * markLength / 2;
+          const markY2 = midY + Math.sin(perpAngle) * offset + Math.sin(angle) * markLength / 2;
+          
+          const mark = new Konva.Line({
+            points: [markX1, markY1, markX2, markY2],
+            stroke: '#e74c3c',
+            strokeWidth: 1.5,
+            listening: false
+          });
+          layer.add(mark);
+        },
+        drawRightAngleMark(layer, x, y, size) {
+          const mark = new Konva.Group({
+            x: x,
+            y: y
+          });
+          
+          const line1 = new Konva.Line({
+            points: [0, 0, size, 0],
+            stroke: '#27ae60',
+            strokeWidth: 1.5,
+            listening: false
+          });
+          
+          const line2 = new Konva.Line({
+            points: [size, 0, size, size],
+            stroke: '#27ae60',
+            strokeWidth: 1.5,
+            listening: false
+          });
+          
+          mark.add(line1);
+          mark.add(line2);
+          layer.add(mark);
+        },
+        playAnimation() {
+          if (!this.animations[this.currentTab]) return;
+          
+          const anim = this.animations[this.currentTab];
+          if (anim.playing) return;
+          
+          anim.playing = true;
+          const layer = anim.layer;
+          const stage = anim.stage;
+          
+          // 清除之前的绘制结果
+          const children = layer.getChildren();
+          children.forEach((child, index) => {
+            if (index > 0) {
+              child.destroy();
+            }
+          });
+          
+          if (typeof gsap === 'undefined') {
+            alert('GSAP 未加载，无法播放动画');
+            anim.playing = false;
+            return;
+          }
+          
+          const timeline = gsap.timeline({
+            onComplete: () => {
+              anim.playing = false;
+            }
+          });
+          
+          anim.timeline = timeline;
+          
+          const steps = this.currentTabData.steps;
+          steps.forEach((step, index) => {
+            timeline.call(() => {
+              this.currentStep = index;
+              this.drawStep();
+            });
+            timeline.to({}, { duration: 2.5 });
+          });
+        },
+        resetAnimation() {
+          this.currentStep = 0;
+          if (this.animations[this.currentTab]) {
+            const anim = this.animations[this.currentTab];
+            if (anim.timeline) {
+              anim.timeline.kill();
+            }
+            anim.playing = false;
+            this.initCanvas();
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

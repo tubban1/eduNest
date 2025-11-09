@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="初中几何最值问题：在直角三角形中，圆上动点到两定点距离和的最小值求解。详细讲解胡不归模型、阿波罗尼斯圆、相似三角形等解题方法，包含完整推导过程和动态可视化图形。">
+  <meta name="keywords" content="几何最值,动点问题,胡不归模型,阿波罗尼斯圆,相似三角形,圆的性质,直角三角形,距离和最小值,初中数学,中考压轴题">
+  <title>【例1】圆上动点到两定点距离和的最小值 - 几何最值问题详解</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .problem-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .problem-number {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px 0 0 20px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .problem-info {
+      background: #ecf0f1;
+      padding: 8px 15px;
+      border-radius: 0 20px 20px 0;
+      font-size: 14px;
+      color: #7f8c8d;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: block;
+      width: 100%;
+      max-width: 800px;
+      background: #ffffff;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #ecf0f1;
+      color: #34495e;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 14px;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #e8eef3;
+    }
+    .tab-header.active {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: #fff;
+      border-color: #2980b9;
+      box-shadow: 0 2px 6px rgba(52,152,219,0.25);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .option-item {
+      margin: 10px 0;
+      padding: 12px;
+      background: #ffffff;
+      border-left: 4px solid #9b59b6;
+      border-radius: 4px;
+    }
+    .option-item strong {
+      color: #9b59b6;
+      margin-right: 10px;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 8px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 6px;
+      }
+      .problem-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .problem-number {
+        border-radius: 20px;
+        margin-bottom: 10px;
+      }
+      .problem-info {
+        border-radius: 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css">
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>【例1】(2021·全国·九年级专题练习) - 圆上动点到两定点距离和的最小值</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre>
+      <h2>题目</h2>
+      <div class="problem-header">
+        <div class="problem-number">【例1】</div>
+        <div class="problem-info">2021·全国·九年级专题练习</div>
+      </div>
+      <div class="k">
+        <p>如图1，在RT△ABC中，∠ACB=90°，CB=4，CA=6，圆C的半径为2，点P为圆上一动点，连接AP，BP，求：</p>
+        <div class="option-item">
+          <strong>①</strong> \(AP + \frac{1}{2}BP\) 的最小值
+        </div>
+        <div class="option-item">
+          <strong>②</strong> \(2AP + BP\) 的最小值
+        </div>
+        <div class="option-item">
+          <strong>③</strong> \(\frac{1}{3}AP + BP\) 的最小值
+        </div>
+        <div class="option-item">
+          <strong>④</strong> \(AP + 3BP\) 的最小值
+        </div>
+      </div>
+      <div style="margin: 20px 0;">
+        <canvas id="problem-canvas" width="800" height="500"></canvas>
+      </div>
+    </div>
+    
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">① AP + ½BP</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">② 2AP + BP</div>
+            <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">③ ⅓AP + BP</div>
+            <div class="tab-header" :class="{active: activeTab==='q4'}" @click="setTab('q4')">④ AP + 3BP</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k">
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>这是一类经典的<span class="highlight">几何最值问题</span>。点P在圆C上运动，我们需要找到使某个表达式取最小值的点P的位置。</p>
+              <p>关键思路：当表达式中含有系数（如 <span v-pre>\(\frac{1}{2}AP\)</span>、<span v-pre>\(2BP\)</span>）时，我们需要通过<span class="highlight">相似变换</span>或<span class="highlight">胡不归模型</span>将问题转化为"两点之间线段最短"的问题。</p>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">已知条件</div>
+                <ul style="margin-left:20px;">
+                  <li>RT△ABC：∠ACB=90°（C为直角顶点）</li>
+                  <li>CB = 4，CA = 6</li>
+                  <li>圆C：圆心为C，半径r = 2</li>
+                  <li>点P：在圆C上运动</li>
+                  <li>目标：求 <span v-pre>\(AP + k \cdot BP\)</span> 型表达式的最小值（k为系数）</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点</h3>
+              <div class="step">
+                <ul style="margin-left:12px; list-style: none;">
+                  <li><strong>胡不归模型</strong>
+                    <ul style="margin-left:18px;">
+                      <li>当系数 k < 1 时，使用胡不归模型</li>
+                      <li>构造相似三角形，将带系数的线段转化为直线距离</li>
+                      <li>关键：找到合适的相似比和旋转角度</li>
+                    </ul>
+                  </li>
+                  <li><strong>阿波罗尼斯圆</strong>
+                    <ul style="margin-left:18px;">
+                      <li>当系数 k > 1 时，可能需要用到阿波罗尼斯圆</li>
+                      <li>或者通过构造相似三角形处理</li>
+                    </ul>
+                  </li>
+                  <li><strong>圆的性质</strong>
+                    <ul style="margin-left:18px;">
+                      <li>圆上一点到圆内（外）一点的距离最值</li>
+                      <li>切线性质、弦的性质</li>
+                    </ul>
+                  </li>
+                  <li><strong>相似三角形</strong>
+                    <ul style="margin-left:18px;">
+                      <li>通过构造相似三角形实现系数变换</li>
+                      <li>利用相似比将问题转化为标准形式</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div style="margin-top:12px; margin-left:0; margin-right:0;">
+                <div id="knowledge-d3" style="width:100%;height:420px;border:1px solid #e0e0e0;border-radius:6px;background:#ffffff;overflow:hidden;position:relative;"></div>
+              </div>
+              <noscript>
+                <ul style="margin-left:12px;">
+                  <li>胡不归模型：系数 k < 1，构造相似三角形</li>
+                  <li>阿波罗尼斯圆：系数 k > 1，相似三角形处理</li>
+                  <li>圆的性质：距离最值、切线、弦</li>
+                  <li>相似三角形：系数变换、相似比</li>
+                </ul>
+              </noscript>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拔高与拓展</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>加权距离问题</strong>：当表达式为 <span v-pre>\(AP + k \cdot BP\)</span> 时，系数k的不同取值决定了不同的解题方法
+                    <ul style="margin-left:18px; margin-top:5px;">
+                      <li>k < 1：使用胡不归模型，通过构造特殊角（如30°、45°）将问题转化为直线距离</li>
+                      <li>k > 1：通过构造相似三角形或阿波罗尼斯圆，将问题转化为标准形式</li>
+                      <li>k = 1：直接使用"两点之间线段最短"原理</li>
+                    </ul>
+                  </li>
+                  <li><strong>多动点问题</strong>：当存在多个动点（如P、Q都在圆上）时，可以分别处理或使用对称性</li>
+                  <li><strong>加权和的最大值</strong>：类似的方法可以用于求最大值，通常需要分析边界情况</li>
+                  <li><strong>与坐标系结合</strong>：将几何问题转化为坐标几何，使用函数求导或数值方法求解</li>
+                  <li><strong>实际应用</strong>：这类问题在路径优化、资源分配等领域有广泛应用</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">解题策略</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>① <span v-pre>\(AP + \frac{1}{2}BP\)</span></strong>：系数 <span v-pre>\(\frac{1}{2} < 1\)</span>，使用胡不归模型，构造30°角（因为 <span v-pre>\(\sin 30° = \frac{1}{2}\)</span>）</li>
+                  <li><strong>② <span v-pre>\(2AP + BP\)</span></strong>：系数 2 > 1，可以转化为 <span v-pre>\(AP + \frac{1}{2}BP'\)</span> 的形式，或者直接构造相似</li>
+                  <li><strong>③ <span v-pre>\(\frac{1}{3}AP + BP\)</span></strong>：系数 <span v-pre>\(\frac{1}{3} < 1\)</span>，使用胡不归模型，构造特殊角</li>
+                  <li><strong>④ <span v-pre>\(AP + 3BP\)</span></strong>：系数 3 > 1，需要构造相似三角形处理</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本题考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：几何最值问题、胡不归模型、相似三角形、圆的性质</li>
+                  <li><strong>易错点</strong>：相似比的确定、旋转角度的选择、最值点的位置判断</li>
+                  <li><strong>难点</strong>：如何将带系数的线段和转化为直线距离，如何确定P点的最优位置</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略（知识不全也能拿分）</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>只会基本方法</strong>：对于问题①，如果知道 <span v-pre>\(\sin 30° = \frac{1}{2}\)</span>，可以尝试构造30°角，写出构造步骤可得部分分数</li>
+                  <li><strong>不会几何构造</strong>：可以使用坐标法，设P点坐标为 <span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，列出表达式，通过求导或数值方法找到最小值，可得计算分数</li>
+                  <li><strong>记不清公式</strong>：先写出"当A、P、D'（辅助点）三点共线时取得最小值"，然后写出相似三角形的构造方法，即使计算有误也能得步骤分</li>
+                  <li><strong>时间紧迫</strong>：至少写出问题的转化思路（如"将 <span v-pre>\(\frac{1}{2}BP\)</span> 转化为某条直线距离"），列出关键步骤，可以拿到基础分数</li>
+                  <li><strong>验证答案</strong>：如果时间允许，可以代入几个特殊角度（如0°、90°、180°）验证答案的合理性</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- ① AP + ½BP -->
+          <div class="tab-panel" v-show="activeTab==='q1'">
+            <div class="k">
+              <p><strong>① 求 <span v-pre>\(AP + \frac{1}{2}BP\)</span> 的最小值</strong></p>
+              <div class="step">
+                <div class="step-title">解题思路：胡不归模型</div>
+                <p>由于系数是 <span v-pre>\(\frac{1}{2} < 1\)</span>，我们使用<span class="highlight">胡不归模型</span>。</p>
+                <p>关键：<span v-pre>\(\sin 30° = \frac{1}{2}\)</span>，我们可以构造一个30°角，将 <span v-pre>\(\frac{1}{2}BP\)</span> 转化为某条直线距离。</p>
+              </div>
+              
+              <div class="step">
+                <div class="step-title">步骤一：建立坐标系</div>
+                <p>以C为原点建立坐标系：C(0, 0)，B(4, 0)，A(0, 6)</p>
+                <p>圆C的方程：<span v-pre>\(x^2 + y^2 = 4\)</span></p>
+                <p>设P点坐标为 <span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，其中 <span v-pre>\(\theta\)</span> 为参数</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤二：构造相似三角形</div>
+                <p>在射线CB上取点D，使得 <span v-pre>\(CD = \frac{CB}{2} = 2\)</span>，即 D(2, 0)</p>
+                <p>过P作PD的垂线，构造30°角。实际上，我们可以这样思考：</p>
+                <p>由于 <span v-pre>\(BP = \sqrt{(x_P - 4)^2 + y_P^2}\)</span>，我们需要将 <span v-pre>\(\frac{1}{2}BP\)</span> 转化为某条直线距离。</p>
+                <p>考虑：在直线BC上找一点D，使得当P在某个位置时，PD的长度与BP有特殊关系。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤三：胡不归模型的应用</div>
+                <p>更直接的方法：利用<span class="highlight">正弦定理</span>或<span class="highlight">相似三角形</span>。</p>
+                <p>在射线CB上取点D，使得 <span v-pre>\(\frac{CD}{CB} = \frac{1}{2}\)</span>，即 D(2, 0)</p>
+                <p>过P作直线，使得该直线与BC的夹角为30°（因为 <span v-pre>\(\sin 30° = \frac{1}{2}\)</span>）</p>
+                <p>通过几何构造，可以将 <span v-pre>\(AP + \frac{1}{2}BP\)</span> 转化为 <span v-pre>\(AP + PD'\)</span> 的形式，其中P'是P经过某种变换后的点。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤四：利用圆的性质</div>
+                <p>实际上，对于这类问题，更实用的方法是：</p>
+                <p>1. 将表达式 <span v-pre>\(AP + \frac{1}{2}BP\)</span> 中的 <span v-pre>\(\frac{1}{2}BP\)</span> 通过相似变换转化为某条线段</p>
+                <p>2. 在CB上找点D，使 <span v-pre>\(CD : CB = 1 : 2\)</span>，即 D(2, 0)</p>
+                <p>3. 构造相似三角形，使得 <span v-pre>\(PD = \frac{1}{2}BP\)</span>（在某种意义下）</p>
+                <p>4. 问题转化为求 <span v-pre>\(AP + PD\)</span> 的最小值</p>
+                <p>5. 当A、P、D'三点共线时取得最小值（其中D'是D经过适当变换后的点）</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤五：坐标计算法</div>
+                <p><strong>建立坐标系：</strong>以C为原点，CB为x轴正方向，CA为y轴正方向</p>
+                <p>C(0, 0)，B(4, 0)，A(0, 6)，圆C：<span v-pre>\(x^2 + y^2 = 4\)</span></p>
+                <p>设P点坐标为 <span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，其中 <span v-pre>\(\theta \in [0, 2\pi)\)</span></p>
+                <br>
+                <p><strong>计算AP：</strong></p>
+                <p><span v-pre>\(AP = \sqrt{(2\cos\theta - 0)^2 + (2\sin\theta - 6)^2}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4\cos^2\theta + 4\sin^2\theta - 24\sin\theta + 36}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4(\cos^2\theta + \sin^2\theta) - 24\sin\theta + 36}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4 - 24\sin\theta + 36} = \sqrt{40 - 24\sin\theta}\)</span></p>
+                <br>
+                <p><strong>计算BP：</strong></p>
+                <p><span v-pre>\(BP = \sqrt{(2\cos\theta - 4)^2 + (2\sin\theta - 0)^2}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4\cos^2\theta - 16\cos\theta + 16 + 4\sin^2\theta}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4(\cos^2\theta + \sin^2\theta) - 16\cos\theta + 16}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4 - 16\cos\theta + 16} = \sqrt{20 - 16\cos\theta}\)</span></p>
+                <br>
+                <p><strong>目标函数：</strong></p>
+                <p><span v-pre>\(f(\theta) = AP + \frac{1}{2}BP = \sqrt{40 - 24\sin\theta} + \frac{1}{2}\sqrt{20 - 16\cos\theta}\)</span></p>
+                <br>
+                <p><strong>求最小值：</strong>对 <span v-pre>\(f(\theta)\)</span> 求导，或通过数值方法搜索，可得最小值点。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤六：几何解法（胡不归模型）</div>
+                <p>这是经典的<span class="highlight">胡不归问题</span>，核心思想是通过相似变换将带系数的线段转化为直线距离。</p>
+                <p><strong>构造方法：</strong></p>
+                <ol style="margin-left:20px;">
+                  <li>在射线CB上取点D，使得 <span v-pre>\(CD = \frac{CB}{2} = 2\)</span>，即 D(2, 0)</li>
+                  <li>过点B作BD的垂线，在垂线上取点E，使得 <span v-pre>\(\angle EBD = 30°\)</span></li>
+                  <li>当点P在圆上运动时，通过相似关系，<span v-pre>\(\frac{1}{2}BP = PD'\)</span>（其中D'是D经过变换后的点）</li>
+                  <li>问题转化为求 <span v-pre>\(AP + PD'\)</span> 的最小值</li>
+                  <li>当A、P、D'三点共线时取得最小值</li>
+                </ol>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤七：具体计算</div>
+                <p>设P点坐标为 <span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，其中 <span v-pre>\(\theta \in [0, 2\pi)\)</span></p>
+                <p><span v-pre>\(AP = \sqrt{(2\cos\theta)^2 + (2\sin\theta - 6)^2} = \sqrt{4 - 24\sin\theta + 36} = \sqrt{40 - 24\sin\theta}\)</span></p>
+                <p><span v-pre>\(BP = \sqrt{(2\cos\theta - 4)^2 + (2\sin\theta)^2} = \sqrt{4\cos^2\theta - 16\cos\theta + 16 + 4\sin^2\theta} = \sqrt{20 - 16\cos\theta}\)</span></p>
+                <p><span v-pre>\(f(\theta) = AP + \frac{1}{2}BP = \sqrt{40 - 24\sin\theta} + \frac{1}{2}\sqrt{20 - 16\cos\theta}\)</span></p>
+                <p>通过求导或数值方法可以找到最小值。</p>
+              </div>
+
+              <div class="formula-box">
+                <p><strong>关键转化：</strong>通过构造30°角（因为 <span v-pre>\(\sin 30° = \frac{1}{2}\)</span>），将 <span v-pre>\(\frac{1}{2}BP\)</span> 转化为某条直线距离，然后利用"两点之间线段最短"求解。</p>
+                <p><strong>最小值点：</strong>当A、P、D'（辅助点）三点共线时，表达式取得最小值。</p>
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-q1" width="800" height="500"></canvas>
+              <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: #666;">拖动滑块观察P点位置变化对表达式值的影响</p>
+            </div>
+            <div class="ans">
+              <strong>答：</strong> <span v-pre>\(AP + \frac{1}{2}BP\)</span> 的最小值约为 <strong id="min-result-1">计算中...</strong>，当点P位于圆C上特定位置时取得。
+            </div>
+          </div>
+
+          <!-- ② 2AP + BP -->
+          <div class="tab-panel" v-show="activeTab==='q2'">
+            <div class="k">
+              <p><strong>② 求 <span v-pre>\(2AP + BP\)</span> 的最小值</strong></p>
+              <div class="step">
+                <div class="step-title">解题思路：系数转换</div>
+                <p>由于系数是 2 > 1，我们可以将问题转化为：</p>
+                <p><span v-pre>\(2AP + BP = 2(AP + \frac{1}{2}BP)\)</span></p>
+                <p>因此，求 <span v-pre>\(2AP + BP\)</span> 的最小值等价于求 <span v-pre>\(AP + \frac{1}{2}BP\)</span> 的最小值，然后乘以2。</p>
+                <p>所以问题②与问题①本质相同，只是结果需要乘以2。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤一：建立坐标系</div>
+                <p>以C为原点建立坐标系：C(0, 0)，B(4, 0)，A(0, 6)</p>
+                <p>圆C的方程：<span v-pre>\(x^2 + y^2 = 4\)</span></p>
+                <p>设P点坐标为 <span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，其中 <span v-pre>\(\theta \in [0, 2\pi)\)</span></p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤二：方法一（系数转换）</div>
+                <p>将表达式变形：</p>
+                <p><span v-pre>\(2AP + BP = 2(AP + \frac{1}{2}BP)\)</span></p>
+                <p>因此，求 <span v-pre>\(2AP + BP\)</span> 的最小值等价于求 <span v-pre>\(AP + \frac{1}{2}BP\)</span> 的最小值，然后乘以2。</p>
+                <p><strong>结论：</strong>问题②的最小值 = 2 × 问题①的最小值</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤三：方法二（直接构造相似）</div>
+                <p>在CA上取点F，使得 <span v-pre>\(CF = \frac{CA}{2} = 3\)</span>，即 F(0, 3)</p>
+                <p>通过构造相似三角形（相似比为2：1），可以将 <span v-pre>\(2AP\)</span> 转化为某条线段。</p>
+                <p>具体构造：过P作直线，使其满足相似比关系，从而将 <span v-pre>\(2AP\)</span> 转化为从F到某点的距离。</p>
+                <p>问题转化为求 <span v-pre>\(FP' + BP\)</span> 的最小值（其中P'是P经过变换后的点）。</p>
+                <p>当F、P'、B三点共线时取得最小值。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤四：坐标计算法</div>
+                <p><strong>计算AP和BP：</strong></p>
+                <p>由问题①可知：</p>
+                <p><span v-pre>\(AP = \sqrt{40 - 24\sin\theta}\)</span></p>
+                <p><span v-pre>\(BP = \sqrt{20 - 16\cos\theta}\)</span></p>
+                <br>
+                <p><strong>目标函数：</strong></p>
+                <p><span v-pre>\(f(\theta) = 2AP + BP = 2\sqrt{40 - 24\sin\theta} + \sqrt{20 - 16\cos\theta}\)</span></p>
+                <br>
+                <p><strong>求最小值：</strong></p>
+                <p>对 <span v-pre>\(f(\theta)\)</span> 求导，或通过数值方法搜索，可得最小值点。</p>
+                <p>也可以通过方法一：先求问题①的最小值，然后乘以2得到问题②的最小值。</p>
+              </div>
+
+              <div class="ans">
+                <strong>答：</strong> <span v-pre>\(2AP + BP\)</span> 的最小值约为 <strong id="min-result-2">计算中...</strong>，当点P位于圆C上特定位置时取得。
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-q2" width="800" height="500"></canvas>
+            </div>
+          </div>
+
+          <!-- ③ ⅓AP + BP -->
+          <div class="tab-panel" v-show="activeTab==='q3'">
+            <div class="k">
+              <p><strong>③ 求 <span v-pre>\(\frac{1}{3}AP + BP\)</span> 的最小值</strong></p>
+              <div class="step">
+                <div class="step-title">解题思路：胡不归模型</div>
+                <p>由于系数是 <span v-pre>\(\frac{1}{3} < 1\)</span>，使用<span class="highlight">胡不归模型</span>。</p>
+                <p>关键：需要找到一个角度 <span v-pre>\(\alpha\)</span>，使得 <span v-pre>\(\sin\alpha = \frac{1}{3}\)</span>，但这不是特殊角。</p>
+                <p>我们可以通过构造相似三角形来实现系数变换。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤一：建立坐标系</div>
+                <p>以C为原点建立坐标系：C(0, 0)，B(4, 0)，A(0, 6)</p>
+                <p>圆C的方程：<span v-pre>\(x^2 + y^2 = 4\)</span></p>
+                <p>设P点坐标为 <span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，其中 <span v-pre>\(\theta \in [0, 2\pi)\)</span></p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤二：胡不归模型构造</div>
+                <p>由于系数是 <span v-pre>\(\frac{1}{3} < 1\)</span>，我们使用<span class="highlight">胡不归模型</span>。</p>
+                <p>关键思路：需要通过构造相似三角形将 <span v-pre>\(\frac{1}{3}AP\)</span> 转化为某条直线距离。</p>
+                <br>
+                <p><strong>方法：在CA上取点G，使得 <span v-pre>\(CG = \frac{CA}{3} = 2\)</span>，即 G(0, 2)</strong></p>
+                <p>通过构造相似三角形（相似比为3：1），可以将 <span v-pre>\(\frac{1}{3}AP\)</span> 转化为GP'的长度（其中P'是P经过相似变换后的点）。</p>
+                <p>具体构造：过P作直线，使其与CA的夹角满足相似比关系，从而将 <span v-pre>\(\frac{1}{3}AP\)</span> 转化为从G到某点的距离。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤三：坐标计算法（详细步骤）</div>
+                <p><strong>计算AP：</strong></p>
+                <p>P点坐标：<span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，A点坐标：(0, 6)</p>
+                <p><span v-pre>\(AP = \sqrt{(2\cos\theta - 0)^2 + (2\sin\theta - 6)^2}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4\cos^2\theta + (2\sin\theta - 6)^2}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4\cos^2\theta + 4\sin^2\theta - 24\sin\theta + 36}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4(\cos^2\theta + \sin^2\theta) - 24\sin\theta + 36}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4 - 24\sin\theta + 36}\)</span></p>
+                <p><span v-pre>\(AP = \sqrt{40 - 24\sin\theta}\)</span></p>
+                <br>
+                <p><strong>计算BP：</strong></p>
+                <p>P点坐标：<span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，B点坐标：(4, 0)</p>
+                <p><span v-pre>\(BP = \sqrt{(2\cos\theta - 4)^2 + (2\sin\theta - 0)^2}\)</span></p>
+                <p><span v-pre>\(= \sqrt{(2\cos\theta - 4)^2 + 4\sin^2\theta}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4\cos^2\theta - 16\cos\theta + 16 + 4\sin^2\theta}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4(\cos^2\theta + \sin^2\theta) - 16\cos\theta + 16}\)</span></p>
+                <p><span v-pre>\(= \sqrt{4 - 16\cos\theta + 16}\)</span></p>
+                <p><span v-pre>\(BP = \sqrt{20 - 16\cos\theta}\)</span></p>
+                <br>
+                <p><strong>目标函数：</strong></p>
+                <p><span v-pre>\(f(\theta) = \frac{1}{3}AP + BP = \frac{1}{3}\sqrt{40 - 24\sin\theta} + \sqrt{20 - 16\cos\theta}\)</span></p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤四：求最小值</div>
+                <p><strong>方法一：求导法</strong></p>
+                <p>对 <span v-pre>\(f(\theta)\)</span> 求导：</p>
+                <p><span v-pre>\(f'(\theta) = \frac{1}{3} \cdot \frac{-24\cos\theta}{2\sqrt{40 - 24\sin\theta}} + \frac{16\sin\theta}{2\sqrt{20 - 16\cos\theta}}\)</span></p>
+                <p><span v-pre>\(= \frac{-4\cos\theta}{\sqrt{40 - 24\sin\theta}} + \frac{8\sin\theta}{\sqrt{20 - 16\cos\theta}}\)</span></p>
+                <p>令 <span v-pre>\(f'(\theta) = 0\)</span>，求解得到最小值点。</p>
+                <br>
+                <p><strong>方法二：数值搜索法</strong></p>
+                <p>由于解析解较复杂，我们可以通过数值方法搜索最小值：</p>
+                <p>对 <span v-pre>\(\theta \in [0, 2\pi)\)</span> 进行遍历，找到使 <span v-pre>\(f(\theta)\)</span> 最小的角度。</p>
+                <p>通过计算可得，当P点位于圆上特定位置时，<span v-pre>\(\frac{1}{3}AP + BP\)</span> 取得最小值。</p>
+              </div>
+
+              <div class="formula-box">
+                <p><strong>关键转化：</strong>通过构造相似三角形（相似比3：1），将 <span v-pre>\(\frac{1}{3}AP\)</span> 转化为从辅助点G到某点的距离，然后利用"两点之间线段最短"求解。</p>
+                <p><strong>最小值点：</strong>当G、P'（变换后的点）、B三点共线时，表达式取得最小值。</p>
+              </div>
+
+              <div class="ans">
+                <strong>答：</strong> <span v-pre>\(\frac{1}{3}AP + BP\)</span> 的最小值约为 <strong id="min-result-3">计算中...</strong>，当点P位于圆C上特定位置时取得。
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-q3" width="800" height="500"></canvas>
+            </div>
+          </div>
+
+          <!-- ④ AP + 3BP -->
+          <div class="tab-panel" v-show="activeTab==='q4'">
+            <div class="k">
+              <p><strong>④ 求 <span v-pre>\(AP + 3BP\)</span> 的最小值</strong></p>
+              <div class="step">
+                <div class="step-title">解题思路：系数转换与相似构造</div>
+                <p>由于系数是 3 > 1，我们需要通过构造相似三角形来处理。</p>
+                <p>关键：将 <span v-pre>\(3BP\)</span> 转化为某条直线距离。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤一：建立坐标系</div>
+                <p>以C为原点建立坐标系：C(0, 0)，B(4, 0)，A(0, 6)</p>
+                <p>圆C的方程：<span v-pre>\(x^2 + y^2 = 4\)</span></p>
+                <p>设P点坐标为 <span v-pre>\((2\cos\theta, 2\sin\theta)\)</span>，其中 <span v-pre>\(\theta \in [0, 2\pi)\)</span></p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤二：构造相似三角形</div>
+                <p>由于系数是 3 > 1，我们需要通过构造相似三角形来处理。</p>
+                <p>关键：将 <span v-pre>\(3BP\)</span> 转化为某条直线距离。</p>
+                <br>
+                <p><strong>方法：在CB延长线上取点H，使得 <span v-pre>\(CH = 3 \cdot CB = 12\)</span>，即 H(12, 0)</strong></p>
+                <p>通过构造相似三角形（相似比为3：1），可以将 <span v-pre>\(3BP\)</span> 转化为PH'的长度（其中H'是H经过相似变换后的点，或P经过变换后的点）。</p>
+                <p>具体构造：过P作直线，使其满足相似比关系，从而将 <span v-pre>\(3BP\)</span> 转化为从P到某点的距离。</p>
+                <p>问题转化为求 <span v-pre>\(AP + PH'\)</span> 的最小值。</p>
+                <p>当A、P、H'三点共线时取得最小值。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤三：坐标计算法</div>
+                <p><strong>计算AP和BP：</strong></p>
+                <p>由问题①可知：</p>
+                <p><span v-pre>\(AP = \sqrt{40 - 24\sin\theta}\)</span></p>
+                <p><span v-pre>\(BP = \sqrt{20 - 16\cos\theta}\)</span></p>
+                <br>
+                <p><strong>目标函数：</strong></p>
+                <p><span v-pre>\(f(\theta) = AP + 3BP = \sqrt{40 - 24\sin\theta} + 3\sqrt{20 - 16\cos\theta}\)</span></p>
+                <br>
+                <p><strong>求最小值：</strong></p>
+                <p>对 <span v-pre>\(f(\theta)\)</span> 求导：</p>
+                <p><span v-pre>\(f'(\theta) = \frac{-24\cos\theta}{2\sqrt{40 - 24\sin\theta}} + 3 \cdot \frac{16\sin\theta}{2\sqrt{20 - 16\cos\theta}}\)</span></p>
+                <p><span v-pre>\(= \frac{-12\cos\theta}{\sqrt{40 - 24\sin\theta}} + \frac{24\sin\theta}{\sqrt{20 - 16\cos\theta}}\)</span></p>
+                <p>令 <span v-pre>\(f'(\theta) = 0\)</span>，求解得到最小值点。</p>
+                <p>或通过数值方法搜索 <span v-pre>\(\theta \in [0, 2\pi)\)</span>，找到使 <span v-pre>\(f(\theta)\)</span> 最小的角度。</p>
+              </div>
+
+              <div class="formula-box">
+                <p><strong>关键转化：</strong>通过构造相似三角形（相似比3：1），将 <span v-pre>\(3BP\)</span> 转化为从辅助点H到某点的距离，然后利用"两点之间线段最短"求解。</p>
+                <p><strong>最小值点：</strong>当A、P、H'（变换后的点）三点共线时，表达式取得最小值。</p>
+              </div>
+
+              <div class="ans">
+                <strong>答：</strong> <span v-pre>\(AP + 3BP\)</span> 的最小值约为 <strong id="min-result-4">计算中...</strong>，当点P位于圆C上特定位置时取得。
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-q4" width="800" height="500"></canvas>
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k">
+              <h3 style="color:#34495e; margin:10px 0 8px;">解题方法总结</h3>
+              <div class="step">
+                <div class="step-title">核心思想</div>
+                <p>对于 <span v-pre>\(AP + k \cdot BP\)</span> 型表达式的最小值问题：</p>
+                <ul style="margin-left:20px;">
+                  <li>当 <span v-pre>\(k < 1\)</span> 时，使用<span class="highlight">胡不归模型</span>，通过构造特殊角或相似三角形，将带系数的线段转化为直线距离</li>
+                  <li>当 <span v-pre>\(k > 1\)</span> 时，通过构造相似三角形，将问题转化为标准形式</li>
+                  <li>最终都转化为"两点之间线段最短"的问题</li>
+                </ul>
+              </div>
+
+              <div class="step">
+                <div class="step-title">解题步骤</div>
+                <ol style="margin-left:20px;">
+                  <li>建立坐标系，确定各点坐标</li>
+                  <li>根据系数k，确定构造策略（胡不归模型或相似三角形）</li>
+                  <li>在适当位置取辅助点</li>
+                  <li>构造相似三角形或特殊角</li>
+                  <li>将表达式转化为直线距离和</li>
+                  <li>利用"两点之间线段最短"确定最值点</li>
+                  <li>计算最小值</li>
+                </ol>
+              </div>
+
+              <h3 style="color:#34495e; margin:10px 0 8px;">数值验证</h3>
+              <p>可以通过动态演示验证各表达式的最小值：</p>
+              <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <label style="font-weight: bold; color: #2c3e50; display: block; margin-bottom: 8px;">点P的角度（度）：</label>
+                <input type="range" v-model.number="angleP" min="0" max="360" step="0.5" style="width:100%; max-width:500px; margin: 0 10px;">
+                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                  <span style="font-size: 0.9em; color: #666;">0°</span>
+                  <span style="font-weight: bold; color: #3498db;">{{ angleP.toFixed(1) }}°</span>
+                  <span style="font-size: 0.9em; color: #666;">360°</span>
+                </div>
+              </div>
+              <div style="margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="tab-header" @click="findMinimum()" style="cursor: pointer;">🔍 自动寻找最小值</button>
+                <button class="tab-header" @click="resetView()" style="cursor: pointer;">🔄 重置视图</button>
+                <button class="tab-header" @click="animateP()" style="cursor: pointer;">▶️ 动画演示</button>
+              </div>
+              <div style="margin-top: 15px;">
+                <ul style="margin-left: 20px;">
+                  <li>① <span v-pre>\(AP + \frac{1}{2}BP = \)</span> <span id="result1">{{ result1.toFixed(4) }}</span></li>
+                  <li>② <span v-pre>\(2AP + BP = \)</span> <span id="result2">{{ result2.toFixed(4) }}</span></li>
+                  <li>③ <span v-pre>\(\frac{1}{3}AP + BP = \)</span> <span id="result3">{{ result3.toFixed(4) }}</span></li>
+                  <li>④ <span v-pre>\(AP + 3BP = \)</span> <span id="result4">{{ result4.toFixed(4) }}</span></li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-summary" width="800" height="500"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js"></script>
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+    });
+
+    // 绘制问题的基本图形
+    function drawProblemCanvas() {
+      const canvas = document.getElementById('problem-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      // 清空画布
+      ctx.clearRect(0, 0, width, height);
+      
+      // 设置坐标系：原点在左下角，y轴向上
+      const originX = 220; // 向右移动，使图形更居中
+      const originY = height - 80; // 向上移动，使图形更居中
+      const scale = 60; // 缩放因子
+      
+      // 绘制坐标轴
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX + 8 * scale, originY);
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX, originY - 8 * scale);
+      ctx.stroke();
+      
+      // 绘制点
+      const C = {x: 0, y: 0};
+      const B = {x: 4, y: 0};
+      const A = {x: 0, y: 6};
+      
+      // 绘制直角三角形ABC
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(originX + C.x * scale, originY - C.y * scale);
+      ctx.lineTo(originX + A.x * scale, originY - A.y * scale);
+      ctx.lineTo(originX + B.x * scale, originY - B.y * scale);
+      ctx.closePath();
+      ctx.stroke();
+      
+      // 标记直角
+      const rightAngleSize = 15;
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(originX + C.x * scale + rightAngleSize, originY - C.y * scale);
+      ctx.lineTo(originX + C.x * scale + rightAngleSize, originY - C.y * scale - rightAngleSize);
+      ctx.lineTo(originX + C.x * scale, originY - C.y * scale - rightAngleSize);
+      ctx.stroke();
+      
+      // 绘制圆C
+      ctx.strokeStyle = '#3498db';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(originX + C.x * scale, originY - C.y * scale, 2 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // 绘制点P（示例位置）
+      const theta = Math.PI / 4;
+      const P = {
+        x: 2 * Math.cos(theta),
+        y: 2 * Math.sin(theta)
+      };
+      
+      // 绘制AP和BP
+      ctx.strokeStyle = '#9b59b6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(originX + A.x * scale, originY - A.y * scale);
+      ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(originX + B.x * scale, originY - B.y * scale);
+      ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 绘制点
+      function drawPoint(x, y, label, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(originX + x * scale, originY - y * scale, 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#000';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, originX + x * scale, originY - y * scale - 15);
+      }
+      
+      drawPoint(C.x, C.y, 'C', '#e74c3c');
+      drawPoint(A.x, A.y, 'A', '#3498db');
+      drawPoint(B.x, B.y, 'B', '#2ecc71');
+      drawPoint(P.x, P.y, 'P', '#9b59b6');
+      
+      // 添加标签
+      ctx.fillStyle = '#666';
+      ctx.font = '12px Arial';
+      ctx.fillText('CB=4', originX + 2 * scale, originY + 20);
+      ctx.fillText('CA=6', originX - 30, originY - 3 * scale);
+      ctx.fillText('r=2', originX + 2.5 * scale, originY - 2.5 * scale);
+    }
+
+    // 绘制各问题的图形（带动态P点）
+    function drawSolutionCanvas(canvasId, problemType, angleP = 45) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      ctx.clearRect(0, 0, width, height);
+      
+      const originX = 220; // 向右移动，使图形更居中
+      const originY = height - 80; // 向上移动，使图形更居中
+      const scale = 60;
+      
+      // 基本图形
+      const C = {x: 0, y: 0};
+      const B = {x: 4, y: 0};
+      const A = {x: 0, y: 6};
+      
+      // 绘制坐标轴
+      ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(originX - 20, originY);
+      ctx.lineTo(originX + 8 * scale, originY);
+      ctx.moveTo(originX, originY + 20);
+      ctx.lineTo(originX, originY - 8 * scale);
+      ctx.stroke();
+      
+      // 绘制三角形
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(originX + C.x * scale, originY - C.y * scale);
+      ctx.lineTo(originX + A.x * scale, originY - A.y * scale);
+      ctx.lineTo(originX + B.x * scale, originY - B.y * scale);
+      ctx.closePath();
+      ctx.stroke();
+      
+      // 标记直角
+      const rightAngleSize = 12;
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(originX + C.x * scale + rightAngleSize, originY - C.y * scale);
+      ctx.lineTo(originX + C.x * scale + rightAngleSize, originY - C.y * scale - rightAngleSize);
+      ctx.lineTo(originX + C.x * scale, originY - C.y * scale - rightAngleSize);
+      ctx.stroke();
+      
+      // 绘制圆
+      ctx.strokeStyle = '#3498db';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(originX + C.x * scale, originY - C.y * scale, 2 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // 根据角度计算P点位置
+      const theta = angleP * Math.PI / 180;
+      const P = {
+        x: 2 * Math.cos(theta),
+        y: 2 * Math.sin(theta)
+      };
+      
+      // 绘制辅助点和线
+      if (problemType === 'q1') {
+        // ① AP + ½BP：在CB上取点D(2, 0)
+        const D = {x: 2, y: 0};
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.moveTo(originX + A.x * scale, originY - A.y * scale);
+        ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+        ctx.lineTo(originX + D.x * scale, originY - D.y * scale);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // 绘制辅助点D
+        ctx.fillStyle = '#e67e22';
+        ctx.beginPath();
+        ctx.arc(originX + D.x * scale, originY - D.y * scale, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('D', originX + D.x * scale, originY - D.y * scale - 18);
+        
+        // 标注
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.fillText('CD = 2', originX + D.x * scale + 25, originY - D.y * scale + 5);
+      } else if (problemType === 'q2') {
+        // ② 2AP + BP：在CA上取点F(0, 3)
+        const F = {x: 0, y: 3};
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.moveTo(originX + F.x * scale, originY - F.y * scale);
+        ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+        ctx.lineTo(originX + B.x * scale, originY - B.y * scale);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        ctx.fillStyle = '#e67e22';
+        ctx.beginPath();
+        ctx.arc(originX + F.x * scale, originY - F.y * scale, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('F', originX + F.x * scale - 18, originY - F.y * scale);
+        
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.fillText('CF = 3', originX + F.x * scale - 35, originY - F.y * scale + 15);
+      } else if (problemType === 'q3') {
+        // ③ ⅓AP + BP：在CA上取点G(0, 2)
+        const G = {x: 0, y: 2};
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.moveTo(originX + G.x * scale, originY - G.y * scale);
+        ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+        ctx.lineTo(originX + B.x * scale, originY - B.y * scale);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        ctx.fillStyle = '#e67e22';
+        ctx.beginPath();
+        ctx.arc(originX + G.x * scale, originY - G.y * scale, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('G', originX + G.x * scale - 18, originY - G.y * scale);
+        
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.fillText('CG = 2', originX + G.x * scale - 35, originY - G.y * scale + 15);
+      } else if (problemType === 'q4') {
+        // ④ AP + 3BP：在CB延长线上取点H(12, 0)
+        const H = {x: 12, y: 0};
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.moveTo(originX + A.x * scale, originY - A.y * scale);
+        ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+        ctx.lineTo(originX + H.x * scale, originY - H.y * scale);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        ctx.fillStyle = '#e67e22';
+        ctx.beginPath();
+        ctx.arc(originX + H.x * scale, originY - H.y * scale, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('H', originX + H.x * scale, originY - H.y * scale - 18);
+        
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.fillText('CH = 12', originX + H.x * scale, originY - H.y * scale + 20);
+      }
+      
+      // 绘制AP和BP
+      ctx.strokeStyle = '#9b59b6';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(originX + A.x * scale, originY - A.y * scale);
+      ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+      ctx.stroke();
+      
+      ctx.strokeStyle = '#e74c3c';
+      ctx.beginPath();
+      ctx.moveTo(originX + B.x * scale, originY - B.y * scale);
+      ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 绘制点（带标签）
+      function drawPoint(x, y, label, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(originX + x * scale, originY - y * scale, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, originX + x * scale, originY - y * scale - 18);
+      }
+      
+      drawPoint(C.x, C.y, 'C', '#e74c3c');
+      drawPoint(A.x, A.y, 'A', '#3498db');
+      drawPoint(B.x, B.y, 'B', '#2ecc71');
+      drawPoint(P.x, P.y, 'P', '#9b59b6');
+      
+      // 添加长度标注
+      ctx.fillStyle = '#666';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('CB=4', originX + 2 * scale, originY + 20);
+      ctx.textAlign = 'left';
+      ctx.fillText('CA=6', originX - 35, originY - 3 * scale);
+      ctx.fillText('r=2', originX + 2.5 * scale, originY - 2.5 * scale);
+      
+      // 显示当前表达式值
+      const AP = Math.sqrt(Math.pow(P.x - A.x, 2) + Math.pow(P.y - A.y, 2));
+      const BP = Math.sqrt(Math.pow(P.x - B.x, 2) + Math.pow(P.y - B.y, 2));
+      let value = 0;
+      let expression = '';
+      if (problemType === 'q1') {
+        value = AP + 0.5 * BP;
+        expression = 'AP + ½BP';
+      } else if (problemType === 'q2') {
+        value = 2 * AP + BP;
+        expression = '2AP + BP';
+      } else if (problemType === 'q3') {
+        // ③ ⅓AP + BP：注意系数是 1/3，即 (1/3) * AP + BP
+        value = (1/3) * AP + BP;
+        expression = '⅓AP + BP';
+      } else if (problemType === 'q4') {
+        value = AP + 3 * BP;
+        expression = 'AP + 3BP';
+      }
+      
+      ctx.fillStyle = '#2c3e50';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${expression} = ${value.toFixed(4)}`, 20, 30);
+    }
+
+    // 计算表达式值
+    function calculateExpression(P, type) {
+      const A = {x: 0, y: 6};
+      const B = {x: 4, y: 0};
+      
+      const AP = Math.sqrt(Math.pow(P.x - A.x, 2) + Math.pow(P.y - A.y, 2));
+      const BP = Math.sqrt(Math.pow(P.x - B.x, 2) + Math.pow(P.y - B.y, 2));
+      
+      switch(type) {
+        case 1: return AP + 0.5 * BP;
+        case 2: return 2 * AP + BP;
+        case 3: return (1/3) * AP + BP;
+        case 4: return AP + 3 * BP;
+        default: return 0;
+      }
+    }
+
+    const {createApp} = Vue;
+
+    const app = createApp({
+      data() {
+        return {
+          activeTab: 'intro',
+          angleP: 45,
+          result1: 0,
+          result2: 0,
+          result3: 0,
+          result4: 0
+        };
+      },
+      mounted() {
+        this.$nextTick(() => {
+          setTimeout(() => {
+            // 渲染KaTeX
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {
+                  console.warn('Math rendering error:', e);
+                }
+              }
+            }
+            
+            // 绘制问题图
+            drawProblemCanvas();
+            
+            // 更新计算结果
+            this.updateResults();
+            
+            // 自动计算最小值
+            setTimeout(() => {
+              this.findMinimum();
+            }, 500);
+            
+            // 渲染知识图谱
+            setTimeout(() => {
+              this.renderD3Knowledge();
+            }, 200);
+          }, 100);
+        });
+      },
+      watch: {
+        activeTab(newTab) {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              // 重新渲染KaTeX
+              if(typeof renderMathInElement !== 'undefined') {
+                const appEl = document.getElementById('app');
+                if(appEl) {
+                  try {
+                    renderMathInElement(appEl, {
+                      delimiters: [
+                        {left: '\\[', right: '\\]', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                      ],
+                      throwOnError: false
+                    });
+                  } catch(e) {
+                    console.warn('Math rendering error:', e);
+                  }
+                }
+              }
+              
+              // 绘制对应的canvas
+              if (newTab === 'q1') {
+                drawSolutionCanvas('canvas-q1', 'q1', this.angleP);
+              } else if (newTab === 'q2') {
+                drawSolutionCanvas('canvas-q2', 'q2', this.angleP);
+              } else if (newTab === 'q3') {
+                drawSolutionCanvas('canvas-q3', 'q3', this.angleP);
+              } else if (newTab === 'q4') {
+                drawSolutionCanvas('canvas-q4', 'q4', this.angleP);
+              } else if (newTab === 'summary') {
+                this.drawSummaryCanvas();
+              }
+              
+              // 如果是启发引导tab，渲染知识图谱
+              if (newTab === 'intro') {
+                setTimeout(() => {
+                  this.renderD3Knowledge();
+                }, 100);
+              }
+            }, 50);
+          });
+        },
+        angleP() {
+          this.updateResults();
+          if (this.activeTab === 'summary') {
+            this.drawSummaryCanvas();
+          } else {
+            // 更新当前tab的canvas
+            setTimeout(() => {
+              if (this.activeTab === 'q1') {
+                drawSolutionCanvas('canvas-q1', 'q1', this.angleP);
+              } else if (this.activeTab === 'q2') {
+                drawSolutionCanvas('canvas-q2', 'q2', this.angleP);
+              } else if (this.activeTab === 'q3') {
+                drawSolutionCanvas('canvas-q3', 'q3', this.angleP);
+              } else if (this.activeTab === 'q4') {
+                drawSolutionCanvas('canvas-q4', 'q4', this.angleP);
+              }
+            }, 10);
+          }
+        }
+      },
+      methods: {
+        setTab(name) {
+          this.activeTab = name;
+        },
+        updateResults() {
+          const theta = this.angleP * Math.PI / 180;
+          const P = {
+            x: 2 * Math.cos(theta),
+            y: 2 * Math.sin(theta)
+          };
+          
+          this.result1 = calculateExpression(P, 1);
+          this.result2 = calculateExpression(P, 2);
+          this.result3 = calculateExpression(P, 3);
+          this.result4 = calculateExpression(P, 4);
+        },
+        drawSummaryCanvas() {
+          const canvas = document.getElementById('canvas-summary');
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          const originX = 220; // 向右移动，使图形更居中
+          const originY = height - 80; // 向上移动，使图形更居中
+          const scale = 60;
+          
+          const C = {x: 0, y: 0};
+          const B = {x: 4, y: 0};
+          const A = {x: 0, y: 6};
+          
+          // 绘制基本图形
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(originX + C.x * scale, originY - C.y * scale);
+          ctx.lineTo(originX + A.x * scale, originY - A.y * scale);
+          ctx.lineTo(originX + B.x * scale, originY - B.y * scale);
+          ctx.closePath();
+          ctx.stroke();
+          
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(originX + C.x * scale, originY - C.y * scale, 2 * scale, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // 绘制当前P点
+          const theta = this.angleP * Math.PI / 180;
+          const P = {
+            x: 2 * Math.cos(theta),
+            y: 2 * Math.sin(theta)
+          };
+          
+          ctx.strokeStyle = '#9b59b6';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(originX + A.x * scale, originY - A.y * scale);
+          ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.moveTo(originX + B.x * scale, originY - B.y * scale);
+          ctx.lineTo(originX + P.x * scale, originY - P.y * scale);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 绘制点
+          function drawPoint(x, y, label, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(originX + x * scale, originY - y * scale, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#000';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, originX + x * scale, originY - y * scale - 15);
+          }
+          
+          drawPoint(C.x, C.y, 'C', '#e74c3c');
+          drawPoint(A.x, A.y, 'A', '#3498db');
+          drawPoint(B.x, B.y, 'B', '#2ecc71');
+          drawPoint(P.x, P.y, 'P', '#9b59b6');
+          
+          // 显示当前值（放在图形右侧安全位置，确保不超出边界）
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = 'bold 13px Arial';
+          ctx.textAlign = 'left';
+          // 图形范围：
+          // - x方向：从originX (220) 到约 originX + 4*scale + 圆半径 = 220 + 240 + 120 = 580
+          // - y方向：从 originY - 6*scale (420 - 360 = 60) 到 originY (420)
+          // 将文本放在图形右侧空白区域，但要确保不超出画布
+          const textStartX = originX + 4.5 * scale; // 图形右侧，稍微偏移
+          const textY = originY - 5.5 * scale; // 在图形上方区域，确保可见
+          const lineHeight = 22;
+          const maxTextWidth = 280; // 估算最大文本宽度
+          
+          // 检查文本位置是否超出画布
+          let finalTextX = textStartX;
+          if (textStartX + maxTextWidth > width - 15) {
+            // 如果右侧空间不足，放在图形左侧
+            finalTextX = Math.max(15, originX - maxTextWidth - 20);
+          }
+          
+          // 确保文本Y坐标在画布内
+          const finalTextY = Math.max(35, Math.min(textY, height - lineHeight * 4 - 15));
+          
+          // 绘制半透明背景，提高可读性
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+          ctx.fillRect(finalTextX - 8, finalTextY - 18, maxTextWidth + 16, lineHeight * 4 + 12);
+          ctx.strokeStyle = '#ccc';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(finalTextX - 8, finalTextY - 18, maxTextWidth + 16, lineHeight * 4 + 12);
+          
+          // 绘制文本
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = 'bold 13px Arial';
+          ctx.fillText(`① AP + ½BP = ${this.result1.toFixed(4)}`, finalTextX, finalTextY);
+          ctx.fillText(`② 2AP + BP = ${this.result2.toFixed(4)}`, finalTextX, finalTextY + lineHeight);
+          ctx.fillText(`③ ⅓AP + BP = ${this.result3.toFixed(4)}`, finalTextX, finalTextY + lineHeight * 2);
+          ctx.fillText(`④ AP + 3BP = ${this.result4.toFixed(4)}`, finalTextX, finalTextY + lineHeight * 3);
+        },
+        findMinimum() {
+          // 精确搜索最小值（使用更小的步长）
+          let min1 = Infinity, min2 = Infinity, min3 = Infinity, min4 = Infinity;
+          let angle1 = 0, angle2 = 0, angle3 = 0, angle4 = 0;
+          
+          for (let angle = 0; angle <= 360; angle += 0.5) {
+            const theta = angle * Math.PI / 180;
+            const P = {
+              x: 2 * Math.cos(theta),
+              y: 2 * Math.sin(theta)
+            };
+            
+            const val1 = calculateExpression(P, 1);
+            const val2 = calculateExpression(P, 2);
+            const val3 = calculateExpression(P, 3);
+            const val4 = calculateExpression(P, 4);
+            
+            if (val1 < min1) { min1 = val1; angle1 = angle; }
+            if (val2 < min2) { min2 = val2; angle2 = angle; }
+            if (val3 < min3) { min3 = val3; angle3 = angle; }
+            if (val4 < min4) { min4 = val4; angle4 = angle; }
+          }
+          
+          // 更新结果显示
+          const minResult1 = document.getElementById('min-result-1');
+          const minResult2 = document.getElementById('min-result-2');
+          const minResult3 = document.getElementById('min-result-3');
+          const minResult4 = document.getElementById('min-result-4');
+          
+          if (minResult1) minResult1.textContent = min1.toFixed(4);
+          if (minResult2) minResult2.textContent = min2.toFixed(4);
+          if (minResult3) minResult3.textContent = min3.toFixed(4);
+          if (minResult4) minResult4.textContent = min4.toFixed(4);
+          
+          // 设置最优角度为第一个问题的角度
+          this.angleP = angle1;
+          
+          // 在控制台显示所有结果（不显示弹窗）
+          console.log(`已找到最小值：\n① AP + ½BP: ${min1.toFixed(4)} (角度: ${angle1.toFixed(1)}°)\n② 2AP + BP: ${min2.toFixed(4)} (角度: ${angle2.toFixed(1)}°)\n③ ⅓AP + BP: ${min3.toFixed(4)} (角度: ${angle3.toFixed(1)}°)\n④ AP + 3BP: ${min4.toFixed(4)} (角度: ${angle4.toFixed(1)}°)\n视图已更新到①的最优角度。`);
+        },
+        resetView() {
+          this.angleP = 45;
+        },
+        animateP() {
+          // 动画演示P点在圆上运动
+          if (this._animating) {
+            this._animating = false;
+            if (this._animationFrame) {
+              cancelAnimationFrame(this._animationFrame);
+            }
+            return;
+          }
+          this._animating = true;
+          const startTime = Date.now();
+          const duration = 10000; // 10秒完成一圈
+          
+          const animate = () => {
+            if (!this._animating) return;
+            const elapsed = Date.now() - startTime;
+            const progress = (elapsed % duration) / duration;
+            this.angleP = (progress * 360) % 360;
+            this._animationFrame = requestAnimationFrame(animate);
+          };
+          this._animationFrame = requestAnimationFrame(animate);
+        },
+        getKnowledgeGraph() {
+          // 节点与关系
+          const nodes = [
+            { id: 'minValue', name: '几何最值问题' },
+            { id: 'huguibui', name: '胡不归模型' },
+            { id: 'apollonius', name: '阿波罗尼斯圆' },
+            { id: 'similar', name: '相似三角形' },
+            { id: 'circle', name: '圆的性质' },
+            { id: 'kLess1', name: '系数 k < 1' },
+            { id: 'kGreater1', name: '系数 k > 1' },
+            { id: 'transform', name: '系数变换' },
+            { id: 'distance', name: '距离最值' },
+            { id: 'ratio', name: '相似比' }
+          ];
+          const links = [
+            { source: 'minValue', target: 'huguibui' },
+            { source: 'minValue', target: 'apollonius' },
+            { source: 'minValue', target: 'similar' },
+            { source: 'minValue', target: 'circle' },
+            { source: 'huguibui', target: 'kLess1' },
+            { source: 'huguibui', target: 'transform' },
+            { source: 'huguibui', target: 'similar' },
+            { source: 'apollonius', target: 'kGreater1' },
+            { source: 'apollonius', target: 'similar' },
+            { source: 'similar', target: 'ratio' },
+            { source: 'similar', target: 'transform' },
+            { source: 'circle', target: 'distance' },
+            { source: 'transform', target: 'ratio' }
+          ];
+          return { nodes, links };
+        },
+        renderD3Knowledge() {
+          try {
+            if(typeof d3 === 'undefined') return;
+            const el = document.getElementById('knowledge-d3');
+            if(!el) return;
+            // 确保元素可见
+            const rect = el.getBoundingClientRect();
+            if(rect.width === 0 || rect.height === 0) {
+              const self = this;
+              setTimeout(() => {
+                self.renderD3Knowledge();
+              }, 100);
+              return;
+            }
+            // 清空
+            el.innerHTML = '';
+            const width = el.clientWidth || 800;
+            const height = el.clientHeight || 420;
+            
+            const svg = d3.select(el).append('svg')
+              .attr('width', width)
+              .attr('height', height)
+              .style('overflow', 'hidden');
+            
+            const { nodes, links } = this.getKnowledgeGraph();
+            const color = d3.scaleOrdinal(['#2c3e50','#3498db','#9b59b6','#e67e22','#27ae60','#e74c3c','#16a085','#7f8c8d','#f39c12','#1abc9c']);
+            const sim = d3.forceSimulation(nodes)
+              .force('link', d3.forceLink(links).id(d=>d.id).distance(100).strength(0.5))
+              .force('charge', d3.forceManyBody().strength(-300))
+              .force('center', d3.forceCenter(width/2, height/2))
+              .force('collision', d3.forceCollide().radius(50))
+              .force('x', d3.forceX(width/2).strength(0.1))
+              .force('y', d3.forceY(height/2).strength(0.1));
+            
+            const link = svg.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
+              .selectAll('line').data(links).enter().append('line').attr('stroke-opacity',0.8);
+            
+            const node = svg.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
+              .on('start', (e,d)=>{ 
+                if(!e.active) sim.alphaTarget(0.3).restart(); 
+                d.fx=d.x; 
+                d.fy=d.y; 
+              })
+              .on('drag', (e,d)=>{ 
+                const radius = 50;
+                d.fx = Math.max(radius, Math.min(width - radius, e.x));
+                d.fy = Math.max(radius, Math.min(height - radius, e.y));
+              })
+              .on('end',  (e,d)=>{ 
+                if(!e.active) sim.alphaTarget(0); 
+                if(d.fx !== null && d.fy !== null) {
+                  const radius = 50;
+                  d.fx = Math.max(radius, Math.min(width - radius, d.fx));
+                  d.fy = Math.max(radius, Math.min(height - radius, d.fy));
+                } else {
+                  d.fx=null; 
+                  d.fy=null; 
+                }
+              }));
+            
+            node.append('circle').attr('r', 20).attr('fill',(d,i)=>color(i)).attr('stroke','#fff').attr('stroke-width',1.5);
+            node.append('text').text(d=>d.name).attr('x', 26).attr('y', 5).attr('font-size','12px').attr('fill','#1f2937');
+            
+            sim.on('tick', ()=>{
+              const radius = 50;
+              nodes.forEach(d => {
+                if(d.fx === null && d.fy === null) {
+                  d.x = Math.max(radius, Math.min(width - radius, d.x));
+                  d.y = Math.max(radius, Math.min(height - radius, d.y));
+                }
+              });
+              
+              link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+                  .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+              node.attr('transform', d=>`translate(${d.x},${d.y})`);
+            });
+          } catch(e) { 
+            console.error('D3 knowledge graph rendering error:', e);
+          }
+        }
+      }
+    });
+    
+    const vm = app.mount('#app');
+    
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        const staticEl = document.getElementById('static-math');
+        if(staticEl && typeof renderMathInElement !== 'undefined') {
+          try {
+            renderMathInElement(staticEl, {
+              delimiters: [
+                {left: '\\[', right: '\\]', display: true},
+                {left: '\\(', right: '\\)', display: false}
+              ],
+              throwOnError: false
+            });
+          } catch(e) {}
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>
