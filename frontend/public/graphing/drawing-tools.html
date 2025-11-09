@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="学习如何使用尺子画直线、线段、长方形、正方形，以及如何使用圆规和圆模板画圆。通过清晰的动画演示和详细步骤说明，掌握基本绘图技巧。">
+  <meta name="keywords" content="尺子画图,画直线,画线段,画长方形,画正方形,圆规画圆,圆模板,绘图技巧,几何绘图,基础绘图">
+  <title>绘图工具使用教程 - 尺子、圆规和圆模板的用法</title>
+  
+  <!-- Vue 3.5.20 -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  
+  <!-- GSAP for animations -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"></script>
+  
+  <!-- Konva for advanced graphics -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #2c3e50;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .header p {
+      font-size: 1.2em;
+      opacity: 0.95;
+    }
+    
+    .tabs {
+      display: flex;
+      background: #f8f9fa;
+      border-bottom: 2px solid #e9ecef;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    
+    .tabs::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .tabs::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 3px;
+    }
+    
+    .tab {
+      padding: 20px 30px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-size: 1.1em;
+      font-weight: 500;
+      color: #6c757d;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      position: relative;
+      border-bottom: 3px solid transparent;
+    }
+    
+    .tab:hover {
+      background: rgba(102, 126, 234, 0.1);
+      color: #667eea;
+    }
+    
+    .tab.active {
+      color: #667eea;
+      background: #ffffff;
+      border-bottom-color: #667eea;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 40px;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .demo-section {
+      margin-bottom: 40px;
+    }
+    
+    .demo-title {
+      font-size: 1.8em;
+      color: #2c3e50;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 3px solid #667eea;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .demo-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 30px;
+    }
+    
+    @media (max-width: 968px) {
+      .demo-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .canvas-wrapper {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    
+    .canvas-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .steps-section {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 30px;
+    }
+    
+    .steps-title {
+      font-size: 1.5em;
+      color: #2c3e50;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .step {
+      margin-bottom: 25px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .step:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    
+    .step-number {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 32px;
+      font-weight: bold;
+      margin-right: 15px;
+      vertical-align: middle;
+    }
+    
+    .step-content {
+      display: inline-block;
+      vertical-align: middle;
+      width: calc(100% - 50px);
+    }
+    
+    .step-title {
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-size: 1.1em;
+    }
+    
+    .step-description {
+      color: #6c757d;
+      line-height: 1.6;
+    }
+    
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+    
+    .btn-secondary:hover {
+      box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+    }
+    
+    .tips-box {
+      background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+      border-left: 4px solid #fdcb6e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    
+    .tips-title {
+      font-weight: bold;
+      color: #d63031;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .tips-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    
+    .tips-list li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+      color: #2d3436;
+    }
+    
+    .tips-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #d63031;
+      font-weight: bold;
+    }
+    
+    .ruler {
+      position: absolute;
+      background: #e0e0e0;
+      border: 2px solid #bdbdbd;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .ruler-horizontal {
+      height: 30px;
+    }
+    
+    .ruler-vertical {
+      width: 30px;
+    }
+    
+    .ruler-mark {
+      position: absolute;
+      background: #666;
+    }
+    
+    .compass {
+      position: absolute;
+      transform-origin: center bottom;
+    }
+    
+    .circle-template {
+      position: absolute;
+      border: 3px solid #667eea;
+      border-radius: 50%;
+      background: transparent;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+      
+      .tab {
+        padding: 15px 20px;
+        font-size: 0.95em;
+      }
+      
+      .tab-content {
+        padding: 20px;
+      }
+      
+      .demo-title {
+        font-size: 1.4em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="header">
+        <h1>📐 绘图工具使用教程</h1>
+        <p>学习如何使用尺子、圆规和圆模板进行精确绘图</p>
+      </div>
+      
+      <div class="tabs">
+        <button 
+          v-for="(tab, index) in tabs" 
+          :key="index"
+          class="tab"
+          :class="{ active: activeTab === index }"
+          @click="switchTab(index)"
+        >
+          {{ tab.title }}
+        </button>
+      </div>
+      
+      <div 
+        v-for="(tab, index) in tabs" 
+        :key="index"
+        class="tab-content"
+        :class="{ active: activeTab === index }"
+      >
+        <div class="demo-section">
+          <h2 class="demo-title">{{ tab.title }}</h2>
+          
+          <div class="demo-container">
+            <div class="canvas-wrapper">
+              <div class="canvas-container">
+                <div :ref="'canvas-' + index" :id="'canvas-' + index" style="width: 100%; height: 500px;"></div>
+              </div>
+              <div class="controls">
+                <button class="btn" @click="playAnimation(index)">▶ 播放动画</button>
+                <button class="btn btn-secondary" @click="resetAnimation(index)">🔄 重置</button>
+                <button class="btn btn-secondary" @click="pauseAnimation(index)" v-if="animations[index]?.playing">⏸ 暂停</button>
+              </div>
+            </div>
+            
+            <div class="steps-section">
+              <h3 class="steps-title">📋 步骤说明</h3>
+              <div 
+                v-for="(step, stepIndex) in tab.steps" 
+                :key="stepIndex"
+                class="step"
+              >
+                <span class="step-number">{{ stepIndex + 1 }}</span>
+                <div class="step-content">
+                  <div class="step-title">{{ step.title }}</div>
+                  <div class="step-description">{{ step.description }}</div>
+                </div>
+              </div>
+              
+              <div class="tips-box" v-if="tab.tips && tab.tips.length > 0">
+                <div class="tips-title">💡 实用技巧</div>
+                <ul class="tips-list">
+                  <li v-for="(tip, tipIndex) in tab.tips" :key="tipIndex">{{ tip }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          activeTab: 0,
+          animations: [],
+          stages: [],
+          tabs: [
+            {
+              title: '尺子画直线',
+              steps: [
+                {
+                  title: '准备工作',
+                  description: '准备一张干净的纸张和一把直尺。将纸张平铺在桌面上，确保没有皱褶。'
+                },
+                {
+                  title: '放置尺子',
+                  description: '将直尺放在纸上，让尺子的边缘对齐你想要画直线的位置。确保尺子完全贴合纸面，不会移动。'
+                },
+                {
+                  title: '标记起点',
+                  description: '用铅笔在尺子边缘的起点位置做一个轻点标记，这是直线的起始点。'
+                },
+                {
+                  title: '画直线',
+                  description: '将铅笔紧贴尺子边缘，从起点平滑地向终点移动。保持铅笔与尺子的紧密接触，用力均匀，画出清晰笔直的线条。'
+                },
+                {
+                  title: '检查线条',
+                  description: '画完后，检查线条是否笔直，是否有断点。如有需要，可以沿着尺子再次描画，使线条更加清晰。'
+                }
+              ],
+              tips: [
+                '保持尺子稳定，可以用另一只手轻轻按住尺子',
+                '使用HB或2B铅笔，线条更容易擦除',
+                '画线时用力要均匀，避免线条粗细不一',
+                '如果画长直线，可以分段画，但要保证连接处平滑'
+              ]
+            },
+            {
+              title: '尺子画线段',
+              steps: [
+                {
+                  title: '确定线段长度',
+                  description: '首先确定你要画的线段长度。可以用尺子量出具体的长度，比如5厘米、10厘米等。'
+                },
+                {
+                  title: '标记起点',
+                  description: '在纸上用铅笔轻轻标记线段的起点位置，可以用一个小点或者小十字。'
+                },
+                {
+                  title: '放置尺子',
+                  description: '将尺子的0刻度对齐起点，确保尺子的方向是你想要线段延伸的方向。'
+                },
+                {
+                  title: '标记终点',
+                  description: '在尺子上找到对应的长度刻度，在纸上标记终点位置。'
+                },
+                {
+                  title: '连接两点',
+                  description: '将尺子放在起点和终点之间，用铅笔紧贴尺子边缘，从起点画到终点，形成一条精确长度的线段。'
+                },
+                {
+                  title: '标注长度',
+                  description: '可以在线段上方或下方标注线段的长度，方便后续使用。'
+                }
+              ],
+              tips: [
+                '起点和终点要精确对齐尺子的刻度',
+                '可以用细针或者尖锐的物体做更精确的标记',
+                '画线段时，确保尺子不会移动',
+                '如果需要画多条等长线段，可以用尺子上的刻度作为参考'
+              ]
+            },
+            {
+              title: '尺子画长方形',
+              steps: [
+                {
+                  title: '确定尺寸',
+                  description: '确定长方形的长和宽。例如，长6厘米，宽4厘米。'
+                },
+                {
+                  title: '画第一条边',
+                  description: '将尺子放在纸上，用铅笔沿着尺子画一条长度为6厘米的线段，这是长方形的一条长边。'
+                },
+                {
+                  title: '画相邻边',
+                  description: '在长边的一个端点，将尺子旋转90度，画一条长度为4厘米的线段，这是长方形的一条宽边。'
+                },
+                {
+                  title: '画对边',
+                  description: '从第一条边的另一个端点，画一条与第二条边平行且等长的线段。'
+                },
+                {
+                  title: '完成图形',
+                  description: '连接剩下的两个端点，画最后一条边，完成长方形。检查四条边是否都是直线，四个角是否都是直角。'
+                },
+                {
+                  title: '验证',
+                  description: '用尺子测量对边是否相等，用三角板检查四个角是否都是90度。'
+                }
+              ],
+              tips: [
+                '使用三角板可以更准确地画出直角',
+                '确保对边长度相等，这是长方形的关键特征',
+                '画图时可以用尺子反复检查长度',
+                '如果长方形较大，可以先用轻线条画，确认无误后再加深'
+              ]
+            },
+            {
+              title: '尺子画正方形',
+              steps: [
+                {
+                  title: '确定边长',
+                  description: '确定正方形的边长，例如5厘米。正方形的四条边长度必须完全相等。'
+                },
+                {
+                  title: '画第一条边',
+                  description: '将尺子放在纸上，用铅笔沿着尺子画一条长度为5厘米的线段，这是正方形的第一条边。'
+                },
+                {
+                  title: '画第二条边',
+                  description: '在第一条边的一个端点，将尺子旋转90度（使用三角板确保是直角），画一条同样长度为5厘米的线段。'
+                },
+                {
+                  title: '画第三条边',
+                  description: '从第二条边的端点，继续旋转90度，画第三条边，长度同样是5厘米。'
+                },
+                {
+                  title: '完成正方形',
+                  description: '从第三条边的端点，画最后一条边，连接回起点，完成正方形。确保四条边长度完全相等。'
+                },
+                {
+                  title: '检查',
+                  description: '用尺子测量四条边是否都等于5厘米，用三角板检查四个角是否都是90度。'
+                }
+              ],
+              tips: [
+                '正方形的关键是四条边相等且四个角都是直角',
+                '使用三角板可以确保角度精确',
+                '画图时要特别注意边长的一致性',
+                '可以先用轻线条画，确认无误后再加深',
+                '如果正方形较大，可以分段画每条边'
+              ]
+            },
+            {
+              title: '圆规画圆',
+              steps: [
+                {
+                  title: '准备圆规',
+                  description: '检查圆规是否完好，确保两脚可以灵活转动，铅笔芯或针尖要尖锐。'
+                },
+                {
+                  title: '确定圆心',
+                  description: '在纸上用铅笔轻轻标记圆心的位置，可以用一个小点表示。'
+                },
+                {
+                  title: '确定半径',
+                  description: '确定圆的半径长度，例如3厘米。用尺子调整圆规两脚之间的距离，使其等于半径长度。'
+                },
+                {
+                  title: '固定圆心',
+                  description: '将圆规的针脚（金属尖）轻轻扎在圆心上，确保针脚稳定，不会移动。'
+                },
+                {
+                  title: '画圆',
+                  description: '保持圆规的针脚在圆心不动，轻轻旋转圆规的手柄，让铅笔脚在纸上画出圆弧。保持旋转速度均匀，画出一个完整的圆形。'
+                },
+                {
+                  title: '检查',
+                  description: '画完后，检查圆形是否闭合，圆周是否平滑。如有需要，可以再次旋转圆规，加深线条。'
+                }
+              ],
+              tips: [
+                '圆心要固定，画圆时不要移动针脚',
+                '旋转圆规时保持速度均匀，避免线条粗细不一',
+                '如果圆较大，可以分段画，但要保证连接处平滑',
+                '圆规两脚之间的距离要精确等于半径',
+                '画圆前可以先用轻力试画，确认位置和大小'
+              ]
+            },
+            {
+              title: '圆模板画圆',
+              steps: [
+                {
+                  title: '选择圆模板',
+                  description: '选择合适的圆模板。圆模板通常是一个透明的塑料板，上面有多个不同大小的圆形孔洞。'
+                },
+                {
+                  title: '确定圆心位置',
+                  description: '在纸上用铅笔轻轻标记圆心的位置。确保这个位置对应圆模板上圆形孔洞的中心。'
+                },
+                {
+                  title: '选择合适大小的圆',
+                  description: '根据你需要画的圆的大小，在圆模板上找到对应的圆形孔洞。'
+                },
+                {
+                  title: '对齐圆心',
+                  description: '将圆模板放在纸上，使圆形孔洞的中心对准你标记的圆心位置。可以用手指轻轻按住模板，防止移动。'
+                },
+                {
+                  title: '画圆',
+                  description: '用铅笔沿着圆模板的圆形孔洞边缘画一圈。保持铅笔紧贴模板边缘，用力均匀，画出一个完整的圆形。'
+                },
+                {
+                  title: '完成',
+                  description: '画完后，轻轻移开圆模板，检查圆形是否完整、清晰。如有需要，可以沿着边缘再次描画。'
+                }
+              ],
+              tips: [
+                '圆模板要稳定，画圆时不要移动',
+                '铅笔要紧贴模板边缘，确保圆形精确',
+                '如果圆较大，可以分段画，但要保证连接处平滑',
+                '圆模板适合画标准的圆形，速度快且精确',
+                '使用后要清洁模板，保持其透明度'
+              ]
+            }
+          ]
+        };
+      },
+      mounted() {
+        this.$nextTick(() => {
+          this.initCanvas();
+        });
+      },
+      methods: {
+        switchTab(index) {
+          this.activeTab = index;
+          this.$nextTick(() => {
+            this.initCanvasForTab(index);
+          });
+        },
+        initCanvas() {
+          this.tabs.forEach((tab, index) => {
+            this.initCanvasForTab(index);
+          });
+        },
+        initCanvasForTab(index) {
+          const canvasId = 'canvas-' + index;
+          const canvasElement = document.getElementById(canvasId);
+          if (!canvasElement) return;
+          
+          // 清除之前的内容
+          canvasElement.innerHTML = '';
+          
+          // 初始化 Konva 舞台
+          if (typeof Konva !== 'undefined') {
+            const stage = new Konva.Stage({
+              container: canvasId,
+              width: canvasElement.offsetWidth,
+              height: 500
+            });
+            
+            const layer = new Konva.Layer();
+            stage.add(layer);
+            
+            this.stages[index] = stage;
+            this.animations[index] = {
+              stage: stage,
+              layer: layer,
+              playing: false,
+              timeline: null
+            };
+            
+            // 根据不同的 tab 绘制初始状态
+            this.drawInitialState(index, layer, stage);
+          } else {
+            // 如果 Konva 不可用，使用 Canvas API
+            this.initCanvasFallback(index, canvasElement);
+          }
+        },
+        drawInitialState(index, layer, stage) {
+          const width = stage.width();
+          const height = stage.height();
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          // 绘制背景网格
+          const gridGroup = new Konva.Group();
+          for (let i = 0; i <= width; i += 20) {
+            const line = new Konva.Line({
+              points: [i, 0, i, height],
+              stroke: '#e0e0e0',
+              strokeWidth: 1,
+              listening: false
+            });
+            gridGroup.add(line);
+          }
+          for (let i = 0; i <= height; i += 20) {
+            const line = new Konva.Line({
+              points: [0, i, width, i],
+              stroke: '#e0e0e0',
+              strokeWidth: 1,
+              listening: false
+            });
+            gridGroup.add(line);
+          }
+          layer.add(gridGroup);
+          
+          // 根据不同的 tab 类型绘制不同的初始内容
+          switch(index) {
+            case 0: // 尺子画直线
+              this.drawRulerLineInitial(layer, width, height);
+              break;
+            case 1: // 尺子画线段
+              this.drawRulerSegmentInitial(layer, width, height);
+              break;
+            case 2: // 尺子画长方形
+              this.drawRectangleInitial(layer, width, height);
+              break;
+            case 3: // 尺子画正方形
+              this.drawSquareInitial(layer, width, height);
+              break;
+            case 4: // 圆规画圆
+              this.drawCompassCircleInitial(layer, width, height);
+              break;
+            case 5: // 圆模板画圆
+              this.drawTemplateCircleInitial(layer, width, height);
+              break;
+          }
+          
+          layer.draw();
+        },
+        drawRulerLineInitial(layer, width, height) {
+          const centerY = height / 2;
+          const startX = width * 0.2;
+          const endX = width * 0.8;
+          
+          // 绘制尺子
+          const ruler = new Konva.Rect({
+            x: startX - 10,
+            y: centerY - 15,
+            width: endX - startX + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(ruler);
+          
+          // 绘制尺子刻度
+          for (let i = 0; i <= (endX - startX) / 20; i++) {
+            const x = startX + i * 20;
+            const mark = new Konva.Line({
+              points: [x, centerY - 15, x, centerY - 5],
+              stroke: '#666',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(mark);
+          }
+        },
+        drawRulerSegmentInitial(layer, width, height) {
+          const centerY = height / 2;
+          const startX = width * 0.3;
+          const segmentLength = 200;
+          
+          // 绘制起点标记
+          const startPoint = new Konva.Circle({
+            x: startX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(startPoint);
+          
+          // 绘制尺子
+          const ruler = new Konva.Rect({
+            x: startX - 10,
+            y: centerY - 15,
+            width: segmentLength + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(ruler);
+          
+          // 绘制尺子刻度
+          for (let i = 0; i <= segmentLength / 20; i++) {
+            const x = startX + i * 20;
+            const mark = new Konva.Line({
+              points: [x, centerY - 15, x, centerY - 5],
+              stroke: '#666',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(mark);
+          }
+        },
+        drawRectangleInitial(layer, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const rectWidth = 250;
+          const rectHeight = 150;
+          const startX = centerX - rectWidth / 2;
+          const startY = centerY - rectHeight / 2;
+          
+          // 绘制第一条边（上方）
+          const topRuler = new Konva.Rect({
+            x: startX - 10,
+            y: startY - 15,
+            width: rectWidth + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(topRuler);
+        },
+        drawSquareInitial(layer, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const sideLength = 200;
+          const startX = centerX - sideLength / 2;
+          const startY = centerY - sideLength / 2;
+          
+          // 绘制第一条边（上方）
+          const topRuler = new Konva.Rect({
+            x: startX - 10,
+            y: startY - 15,
+            width: sideLength + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(topRuler);
+        },
+        drawCompassCircleInitial(layer, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          // 绘制圆心
+          const centerPoint = new Konva.Circle({
+            x: centerX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(centerPoint);
+          
+          // 绘制圆规（初始状态，未展开）
+          const compassRadius = 30;
+          const compassLeg1 = new Konva.Line({
+            points: [centerX, centerY, centerX, centerY - compassRadius],
+            stroke: '#34495e',
+            strokeWidth: 3,
+            lineCap: 'round',
+            lineJoin: 'round'
+          });
+          layer.add(compassLeg1);
+          
+          const compassLeg2 = new Konva.Line({
+            points: [centerX, centerY, centerX + 5, centerY - compassRadius + 5],
+            stroke: '#34495e',
+            strokeWidth: 3,
+            lineCap: 'round',
+            lineJoin: 'round'
+          });
+          layer.add(compassLeg2);
+          
+          const compassJoint = new Konva.Circle({
+            x: centerX,
+            y: centerY,
+            radius: 8,
+            fill: '#7f8c8d',
+            stroke: '#2c3e50',
+            strokeWidth: 2
+          });
+          layer.add(compassJoint);
+        },
+        drawTemplateCircleInitial(layer, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const templateRadius = 120;
+          
+          // 绘制圆心
+          const centerPoint = new Konva.Circle({
+            x: centerX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(centerPoint);
+          
+          // 绘制圆模板（圆形孔洞边缘）
+          const template = new Konva.Circle({
+            x: centerX,
+            y: centerY,
+            radius: templateRadius,
+            stroke: '#667eea',
+            strokeWidth: 4,
+            dash: [10, 5],
+            listening: false
+          });
+          layer.add(template);
+        },
+        playAnimation(index) {
+          if (!this.animations[index]) return;
+          
+          const anim = this.animations[index];
+          if (anim.playing) return;
+          
+          anim.playing = true;
+          const layer = anim.layer;
+          const stage = anim.stage;
+          const width = stage.width();
+          const height = stage.height();
+          
+          // 清除之前的绘制结果
+          layer.destroyChildren();
+          this.drawInitialState(index, layer, stage);
+          
+          if (typeof gsap !== 'undefined') {
+            const timeline = gsap.timeline({
+              onComplete: () => {
+                anim.playing = false;
+              }
+            });
+            anim.timeline = timeline;
+            
+            switch(index) {
+              case 0:
+                this.animateRulerLine(layer, timeline, width, height);
+                break;
+              case 1:
+                this.animateRulerSegment(layer, timeline, width, height);
+                break;
+              case 2:
+                this.animateRectangle(layer, timeline, width, height);
+                break;
+              case 3:
+                this.animateSquare(layer, timeline, width, height);
+                break;
+              case 4:
+                this.animateCompassCircle(layer, timeline, width, height);
+                break;
+              case 5:
+                this.animateTemplateCircle(layer, timeline, width, height);
+                break;
+            }
+          } else {
+            // 如果没有 GSAP，使用简单的 setTimeout 动画
+            this.simpleAnimation(index, layer, width, height);
+          }
+        },
+        animateRulerLine(layer, timeline, width, height) {
+          const centerY = height / 2;
+          const startX = width * 0.2;
+          const endX = width * 0.8;
+          
+          // 绘制尺子
+          const ruler = new Konva.Rect({
+            x: startX - 10,
+            y: centerY - 15,
+            width: endX - startX + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(ruler);
+          
+          // 绘制尺子刻度
+          for (let i = 0; i <= (endX - startX) / 20; i++) {
+            const x = startX + i * 20;
+            const mark = new Konva.Line({
+              points: [x, centerY - 15, x, centerY - 5],
+              stroke: '#666',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(mark);
+          }
+          
+          // 动画：绘制直线
+          const line = new Konva.Line({
+            points: [startX, centerY, startX, centerY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(line);
+          
+          const animObj = { progress: 0 };
+          timeline.to(animObj, {
+            duration: 2,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + (endX - startX) * animObj.progress;
+              line.points([startX, centerY, currentX, centerY]);
+              layer.draw();
+            }
+          });
+        },
+        animateRulerSegment(layer, timeline, width, height) {
+          const centerY = height / 2;
+          const startX = width * 0.3;
+          const segmentLength = 200;
+          const endX = startX + segmentLength;
+          
+          // 绘制起点
+          const startPoint = new Konva.Circle({
+            x: startX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(startPoint);
+          
+          // 绘制尺子
+          const ruler = new Konva.Rect({
+            x: startX - 10,
+            y: centerY - 15,
+            width: segmentLength + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(ruler);
+          
+          // 绘制尺子刻度
+          for (let i = 0; i <= segmentLength / 20; i++) {
+            const x = startX + i * 20;
+            const mark = new Konva.Line({
+              points: [x, centerY - 15, x, centerY - 5],
+              stroke: '#666',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(mark);
+          }
+          
+          // 动画：标记终点
+          timeline.to({}, { duration: 0.5 });
+          const endPoint = new Konva.Circle({
+            x: endX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false,
+            opacity: 0
+          });
+          layer.add(endPoint);
+          timeline.to(endPoint, { duration: 0.5, opacity: 1 });
+          
+          // 动画：绘制线段
+          timeline.to({}, { duration: 0.5 });
+          const line = new Konva.Line({
+            points: [startX, centerY, startX, centerY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(line);
+          
+          const animObj = { progress: 0 };
+          timeline.to(animObj, {
+            duration: 2,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + (endX - startX) * animObj.progress;
+              line.points([startX, centerY, currentX, centerY]);
+              layer.draw();
+            }
+          });
+          
+          // 添加长度标注
+          timeline.to({}, { duration: 0.5 });
+          const label = new Konva.Text({
+            x: (startX + endX) / 2,
+            y: centerY - 30,
+            text: '200mm',
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fill: '#667eea',
+            listening: false,
+            opacity: 0
+          });
+          layer.add(label);
+          timeline.to(label, { duration: 0.5, opacity: 1 });
+        },
+        animateRectangle(layer, timeline, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const rectWidth = 250;
+          const rectHeight = 150;
+          const startX = centerX - rectWidth / 2;
+          const startY = centerY - rectHeight / 2;
+          
+          const lines = [];
+          const rulers = [];
+          
+          // 第一步：画第一条边（上边）
+          const topRuler = new Konva.Rect({
+            x: startX - 10,
+            y: startY - 15,
+            width: rectWidth + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(topRuler);
+          rulers.push(topRuler);
+          
+          const topLine = new Konva.Line({
+            points: [startX, startY, startX, startY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(topLine);
+          lines.push(topLine);
+          
+          const topAnim = { progress: 0 };
+          timeline.to(topAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + rectWidth * topAnim.progress;
+              topLine.points([startX, startY, currentX, startY]);
+              layer.draw();
+            }
+          });
+          
+          // 第二步：画第二条边（右边）
+          timeline.to({}, { duration: 0.3 });
+          const rightRuler = new Konva.Rect({
+            x: startX + rectWidth - 15,
+            y: startY - 10,
+            width: 30,
+            height: rectHeight + 20,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(rightRuler);
+          rulers.push(rightRuler);
+          
+          const rightLine = new Konva.Line({
+            points: [startX + rectWidth, startY, startX + rectWidth, startY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(rightLine);
+          lines.push(rightLine);
+          
+          const rightAnim = { progress: 0 };
+          timeline.to(rightAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = startY + rectHeight * rightAnim.progress;
+              rightLine.points([startX + rectWidth, startY, startX + rectWidth, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 第三步：画第三条边（下边）
+          timeline.to({}, { duration: 0.3 });
+          const bottomRuler = new Konva.Rect({
+            x: startX - 10,
+            y: startY + rectHeight - 15,
+            width: rectWidth + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(bottomRuler);
+          rulers.push(bottomRuler);
+          
+          const bottomLine = new Konva.Line({
+            points: [startX + rectWidth, startY + rectHeight, startX + rectWidth, startY + rectHeight],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(bottomLine);
+          lines.push(bottomLine);
+          
+          const bottomAnim = { progress: 0 };
+          timeline.to(bottomAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + rectWidth - rectWidth * bottomAnim.progress;
+              bottomLine.points([startX + rectWidth, startY + rectHeight, currentX, startY + rectHeight]);
+              layer.draw();
+            }
+          });
+          
+          // 第四步：画第四条边（左边）
+          timeline.to({}, { duration: 0.3 });
+          const leftLine = new Konva.Line({
+            points: [startX, startY + rectHeight, startX, startY + rectHeight],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(leftLine);
+          lines.push(leftLine);
+          
+          const leftAnim = { progress: 0 };
+          timeline.to(leftAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = startY + rectHeight - rectHeight * leftAnim.progress;
+              leftLine.points([startX, startY + rectHeight, startX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 隐藏尺子
+          timeline.to({}, { duration: 0.5 });
+          timeline.to(rulers, { duration: 0.5, opacity: 0 }, '<');
+        },
+        animateSquare(layer, timeline, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const sideLength = 200;
+          const startX = centerX - sideLength / 2;
+          const startY = centerY - sideLength / 2;
+          
+          const lines = [];
+          const rulers = [];
+          
+          // 第一步：画第一条边（上边）
+          const topRuler = new Konva.Rect({
+            x: startX - 10,
+            y: startY - 15,
+            width: sideLength + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(topRuler);
+          rulers.push(topRuler);
+          
+          const topLine = new Konva.Line({
+            points: [startX, startY, startX, startY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(topLine);
+          lines.push(topLine);
+          
+          const topAnim = { progress: 0 };
+          timeline.to(topAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + sideLength * topAnim.progress;
+              topLine.points([startX, startY, currentX, startY]);
+              layer.draw();
+            }
+          });
+          
+          // 第二步：画第二条边（右边）
+          timeline.to({}, { duration: 0.3 });
+          const rightRuler = new Konva.Rect({
+            x: startX + sideLength - 15,
+            y: startY - 10,
+            width: 30,
+            height: sideLength + 20,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(rightRuler);
+          rulers.push(rightRuler);
+          
+          const rightLine = new Konva.Line({
+            points: [startX + sideLength, startY, startX + sideLength, startY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(rightLine);
+          lines.push(rightLine);
+          
+          const rightAnim = { progress: 0 };
+          timeline.to(rightAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = startY + sideLength * rightAnim.progress;
+              rightLine.points([startX + sideLength, startY, startX + sideLength, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 第三步：画第三条边（下边）
+          timeline.to({}, { duration: 0.3 });
+          const bottomRuler = new Konva.Rect({
+            x: startX - 10,
+            y: startY + sideLength - 15,
+            width: sideLength + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(bottomRuler);
+          rulers.push(bottomRuler);
+          
+          const bottomLine = new Konva.Line({
+            points: [startX + sideLength, startY + sideLength, startX + sideLength, startY + sideLength],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(bottomLine);
+          lines.push(bottomLine);
+          
+          const bottomAnim = { progress: 0 };
+          timeline.to(bottomAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + sideLength - sideLength * bottomAnim.progress;
+              bottomLine.points([startX + sideLength, startY + sideLength, currentX, startY + sideLength]);
+              layer.draw();
+            }
+          });
+          
+          // 第四步：画第四条边（左边）
+          timeline.to({}, { duration: 0.3 });
+          const leftLine = new Konva.Line({
+            points: [startX, startY + sideLength, startX, startY + sideLength],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(leftLine);
+          lines.push(leftLine);
+          
+          const leftAnim = { progress: 0 };
+          timeline.to(leftAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = startY + sideLength - sideLength * leftAnim.progress;
+              leftLine.points([startX, startY + sideLength, startX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 隐藏尺子
+          timeline.to({}, { duration: 0.5 });
+          timeline.to(rulers, { duration: 0.5, opacity: 0 }, '<');
+        },
+        animateCompassCircle(layer, timeline, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const radius = 120;
+          
+          // 绘制圆心
+          const centerPoint = new Konva.Circle({
+            x: centerX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(centerPoint);
+          
+          // 绘制圆规
+          const compassGroup = new Konva.Group();
+          
+          const compassLeg1 = new Konva.Line({
+            points: [centerX, centerY, centerX, centerY - 30],
+            stroke: '#34495e',
+            strokeWidth: 3,
+            lineCap: 'round',
+            lineJoin: 'round'
+          });
+          compassGroup.add(compassLeg1);
+          
+          const compassLeg2 = new Konva.Line({
+            points: [centerX, centerY, centerX + 5, centerY - 30 + 5],
+            stroke: '#34495e',
+            strokeWidth: 3,
+            lineCap: 'round',
+            lineJoin: 'round'
+          });
+          compassGroup.add(compassLeg2);
+          
+          const compassJoint = new Konva.Circle({
+            x: centerX,
+            y: centerY,
+            radius: 8,
+            fill: '#7f8c8d',
+            stroke: '#2c3e50',
+            strokeWidth: 2
+          });
+          compassGroup.add(compassJoint);
+          
+          layer.add(compassGroup);
+          
+          // 动画：展开圆规
+          timeline.to(compassLeg2, {
+            duration: 1,
+            points: [centerX, centerY, centerX + radius, centerY],
+            ease: 'power2.out',
+            onUpdate: () => {
+              compassLeg2.points(compassLeg2.points());
+              layer.draw();
+            }
+          });
+          
+          // 动画：旋转圆规画圆
+          timeline.to({}, { duration: 0.5 });
+          
+          // 使用路径动画绘制圆
+          const segments = 120;
+          const circlePath = new Konva.Line({
+            points: [],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(circlePath);
+          
+          const circleAnim = { progress: 0 };
+          timeline.to(circleAnim, {
+            duration: 3,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentSegment = Math.floor(circleAnim.progress * segments);
+              const currentPoints = [];
+              
+              // 从起点开始，逐步添加点
+              for (let i = 0; i <= currentSegment; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                currentPoints.push(x, y);
+              }
+              
+              circlePath.points(currentPoints);
+              
+              // 旋转圆规
+              const angle = circleAnim.progress * Math.PI * 2;
+              compassLeg2.points([
+                centerX, centerY,
+                centerX + radius * Math.cos(angle),
+                centerY + radius * Math.sin(angle)
+              ]);
+              
+              layer.draw();
+            }
+          });
+        },
+        animateTemplateCircle(layer, timeline, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const templateRadius = 120;
+          
+          // 绘制圆心
+          const centerPoint = new Konva.Circle({
+            x: centerX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(centerPoint);
+          
+          // 绘制圆模板
+          const template = new Konva.Circle({
+            x: centerX,
+            y: centerY,
+            radius: templateRadius,
+            stroke: '#667eea',
+            strokeWidth: 4,
+            dash: [10, 5],
+            listening: false,
+            opacity: 0
+          });
+          layer.add(template);
+          
+          // 动画：显示模板
+          timeline.to(template, {
+            duration: 0.5,
+            opacity: 1,
+            ease: 'power2.out'
+          });
+          
+          // 动画：沿着模板边缘画圆
+          timeline.to({}, { duration: 0.5 });
+          
+          const segments = 120;
+          const circlePath = new Konva.Line({
+            points: [],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(circlePath);
+          
+          const circleAnim = { progress: 0 };
+          timeline.to(circleAnim, {
+            duration: 3,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentSegment = Math.floor(circleAnim.progress * segments);
+              const currentPoints = [];
+              
+              // 从起点开始，逐步添加点
+              for (let i = 0; i <= currentSegment; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const x = centerX + templateRadius * Math.cos(angle);
+                const y = centerY + templateRadius * Math.sin(angle);
+                currentPoints.push(x, y);
+              }
+              
+              circlePath.points(currentPoints);
+              layer.draw();
+            }
+          });
+          
+          // 隐藏模板
+          timeline.to({}, { duration: 0.5 });
+          timeline.to(template, {
+            duration: 0.5,
+            opacity: 0,
+            ease: 'power2.in'
+          });
+        },
+        resetAnimation(index) {
+          if (this.animations[index]) {
+            if (this.animations[index].timeline) {
+              this.animations[index].timeline.kill();
+            }
+            this.animations[index].playing = false;
+            this.initCanvasForTab(index);
+          }
+        },
+        pauseAnimation(index) {
+          if (this.animations[index] && this.animations[index].timeline) {
+            this.animations[index].timeline.pause();
+            this.animations[index].playing = false;
+          }
+        },
+        simpleAnimation(index, layer, width, height) {
+          // 简单的动画实现（当 GSAP 不可用时）
+          this.animations[index].playing = false;
+        },
+        initCanvasFallback(index, element) {
+          // 如果 Konva 不可用，使用 Canvas API 作为后备方案
+          const canvas = document.createElement('canvas');
+          canvas.width = element.offsetWidth;
+          canvas.height = 500;
+          element.appendChild(canvas);
+          
+          const ctx = canvas.getContext('2d');
+          
+          // 绘制背景
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // 绘制网格
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= canvas.width; i += 20) {
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, canvas.height);
+            ctx.stroke();
+          }
+          for (let i = 0; i <= canvas.height; i += 20) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(canvas.width, i);
+            ctx.stroke();
+          }
+          
+          // 显示提示信息
+          ctx.fillStyle = '#667eea';
+          ctx.font = 'bold 20px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('请点击"播放动画"按钮查看演示', canvas.width / 2, canvas.height / 2);
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+

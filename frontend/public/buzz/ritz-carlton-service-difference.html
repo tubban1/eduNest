@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="探索利兹卡尔顿酒店品牌的服务化差异，了解其在个性化服务、员工授权、记忆服务、管家服务等方面的独特优势，体验奢华酒店服务的卓越标准。">
+  <meta name="keywords" content="利兹卡尔顿,酒店服务,个性化服务,奢华酒店,管家服务,客户体验,服务标准,酒店管理,服务差异化,品牌服务">
+  <title>利兹卡尔顿品牌服务化差异 - 奢华服务的卓越标准</title>
+  
+  <!-- Vue 3.5.20 -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  
+  <!-- Chart.js for data visualization - 使用官方 CDN 作为备选 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/chart.umd.min.js'"></script>
+  
+  <!-- GSAP for animations -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"></script>
+  
+  <!-- ECharts as alternative charting library -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/echarts.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.8;
+      color: #2c3e50;
+      background: #f5f7fa;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      color: #1a1a1a;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 1.2em;
+      margin-bottom: 40px;
+    }
+    
+    .section {
+      margin: 50px 0;
+      padding: 30px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 5px solid #667eea;
+    }
+    
+    .section h2 {
+      color: #2c3e50;
+      font-size: 1.8em;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .section h2::before {
+      content: "✨";
+      font-size: 1.2em;
+    }
+    
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .comparison-card {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    
+    .comparison-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    }
+    
+    .comparison-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .comparison-card:hover::before {
+      left: 100%;
+    }
+    
+    .card-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(102, 126, 234, 0.9);
+      color: white;
+      padding: 10px;
+      text-align: center;
+      font-size: 0.9em;
+      animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .comparison-card.ritz {
+      border-top: 4px solid #d4af37;
+      background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+    }
+    
+    .comparison-card.standard {
+      border-top: 4px solid #95a5a6;
+    }
+    
+    .comparison-card h3 {
+      color: #2c3e50;
+      font-size: 1.3em;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .comparison-card.ritz h3::before {
+      content: "👑";
+    }
+    
+    .comparison-card.standard h3::before {
+      content: "🏨";
+    }
+    
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .feature-list li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+    }
+    
+    .comparison-card.ritz .feature-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #d4af37;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    
+    .comparison-card.standard .feature-list li::before {
+      content: "○";
+      position: absolute;
+      left: 0;
+      color: #95a5a6;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin: 30px 0;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+    
+    .stat-card:hover {
+      transform: scale(1.08) rotate(2deg);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .stat-card:hover::after {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .stat-card.hovered {
+      z-index: 10;
+    }
+    
+    .stat-hover-hint {
+      margin-top: 10px;
+      font-size: 0.85em;
+      opacity: 0.9;
+      animation: pulse 1.5s ease infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 0.6; }
+    }
+    
+    .stat-card .number {
+      font-size: 3em;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .stat-card .label {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+    
+    .service-journey {
+      margin: 40px 0;
+    }
+    
+    .journey-step {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .journey-step:hover {
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .journey-step.active {
+      background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+      border-left: 5px solid #d4af37;
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+    }
+    
+    .step-details {
+      margin-top: 15px;
+      padding: 15px;
+      background: rgba(212, 175, 55, 0.1);
+      border-radius: 5px;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .detail-text {
+      color: #8b6914;
+      font-size: 0.95em;
+      line-height: 1.6;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .journey-step .step-number {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+    
+    .journey-step .step-content {
+      flex: 1;
+    }
+    
+    .journey-step h4 {
+      color: #2c3e50;
+      font-size: 1.3em;
+      margin-bottom: 8px;
+    }
+    
+    .canvas-container {
+      margin: 30px 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+    
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 100%;
+      height: auto;
+    }
+    
+    @media (max-width: 1200px) {
+      canvas {
+        width: 100% !important;
+        height: auto !important;
+      }
+    }
+    
+    .highlight-box {
+      background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+      border-left: 5px solid #d4af37;
+      padding: 20px;
+      margin: 30px 0;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .highlight-box:hover {
+      transform: translateX(5px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+    }
+    
+    .highlight-box.expanded {
+      background: linear-gradient(135deg, #ffeaa7 0%, #fff9e6 100%);
+      box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+    }
+    
+    .advantage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .highlight-box h3 {
+      color: #8b6914;
+      margin-bottom: 0;
+      flex: 1;
+    }
+    
+    .expand-icon {
+      font-size: 1.5em;
+      color: #d4af37;
+      font-weight: bold;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(212, 175, 55, 0.2);
+      transition: transform 0.3s ease;
+    }
+    
+    .highlight-box.expanded .expand-icon {
+      transform: rotate(45deg);
+    }
+    
+    .advantage-details {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 2px solid rgba(212, 175, 55, 0.3);
+      animation: slideDown 0.3s ease;
+    }
+    
+    .detail-item {
+      margin: 10px 0;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 5px;
+    }
+    
+    .detail-item strong {
+      color: #8b6914;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        max-height: 0;
+      }
+      to {
+        opacity: 1;
+        max-height: 500px;
+      }
+    }
+    
+    .feature-list li {
+      animation: fadeInLeft 0.5s ease forwards;
+      opacity: 0;
+    }
+    
+    @keyframes fadeInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .fade-in {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+      visibility: visible !important;
+      display: block !important;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    
+    .fade-in.visible {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+      visibility: visible !important;
+    }
+    
+    /* 初始状态：如果 Vue 还没加载，显示加载提示 */
+    #app:empty::before {
+      content: '正在加载...';
+      display: block;
+      text-align: center;
+      padding: 50px;
+      color: #7f8c8d;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>{{ title }}</h1>
+      <p class="subtitle">{{ subtitle }}</p>
+      
+      <!-- 核心差异概览 -->
+      <section class="section fade-in" :class="{ visible: sectionsVisible.overview }">
+        <h2>核心服务差异</h2>
+        <div class="comparison-grid">
+          <div class="comparison-card ritz">
+            <h3>利兹卡尔顿</h3>
+            <ul class="feature-list">
+              <li v-for="feature in ritzFeatures" :key="feature">{{ feature }}</li>
+            </ul>
+          </div>
+          <div class="comparison-card standard">
+            <h3>标准酒店</h3>
+            <ul class="feature-list">
+              <li v-for="feature in standardFeatures" :key="feature">{{ feature }}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 数据对比图表 -->
+      <section class="section fade-in">
+        <h2>服务指标对比</h2>
+        <div class="chart-container">
+          <canvas ref="comparisonChart"></canvas>
+        </div>
+      </section>
+      
+      <!-- 服务维度雷达图 -->
+      <section class="section fade-in">
+        <h2>服务维度全面对比</h2>
+        <div class="chart-container">
+          <canvas ref="radarChart"></canvas>
+        </div>
+      </section>
+      
+      <!-- 关键统计数据 -->
+      <section class="section fade-in">
+        <h2>关键服务数据</h2>
+        <div class="stats-grid">
+          <div 
+            class="stat-card" 
+            v-for="(stat, index) in keyStats" 
+            :key="stat.label"
+            :class="{ 'hovered': hoveredStat === index }"
+            @mouseenter="onStatHover(index)"
+            @mouseleave="onStatLeave"
+            @click="scrollToSection('advantages-section')"
+          >
+            <div class="number">{{ stat.value }}</div>
+            <div class="label">{{ stat.label }}</div>
+            <div class="stat-hover-hint" v-if="hoveredStat === index">
+              点击查看详情
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 服务流程可视化 -->
+      <section class="section fade-in">
+        <h2>个性化服务流程闭环</h2>
+        <div class="canvas-container">
+          <canvas ref="processCanvas" width="1200" height="500"></canvas>
+        </div>
+      </section>
+      
+      <!-- 服务差异化对比图 -->
+      <section class="section fade-in">
+        <h2>服务差异化可视化</h2>
+        <div class="canvas-container">
+          <canvas ref="differenceCanvas" width="1200" height="400"></canvas>
+        </div>
+      </section>
+      
+      <!-- 服务旅程 -->
+      <section class="section fade-in">
+        <h2>客户服务旅程</h2>
+        <div class="service-journey">
+          <div 
+            class="journey-step" 
+            v-for="(step, index) in serviceJourney" 
+            :key="index"
+            :class="{ 'active': activeJourneyStep === index }"
+            @click="activeJourneyStep = activeJourneyStep === index ? null : index"
+          >
+            <div class="step-number">{{ index + 1 }}</div>
+            <div class="step-content">
+              <h4>{{ step.title }}</h4>
+              <p>{{ step.description }}</p>
+              <div class="step-details" v-if="activeJourneyStep === index">
+                <p class="detail-text">这是服务流程中的关键步骤，确保客户在每个阶段都获得卓越体验。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 差异化优势 -->
+      <section class="section fade-in" id="advantages-section">
+        <h2>核心差异化优势</h2>
+        <div 
+          v-for="(advantage, index) in advantages" 
+          :key="advantage.title" 
+          class="highlight-box"
+          :class="{ 'expanded': expandedAdvantage === index }"
+          @click="toggleAdvantage(index)"
+        >
+          <div class="advantage-header">
+            <h3>{{ advantage.title }}</h3>
+            <span class="expand-icon">{{ expandedAdvantage === index ? '−' : '+' }}</span>
+          </div>
+          <p>{{ advantage.description }}</p>
+          <div class="advantage-details" v-if="expandedAdvantage === index">
+            <div class="detail-item">
+              <strong>实施方式：</strong>通过系统化培训和实践，确保每位员工都能理解和执行这一优势。
+            </div>
+            <div class="detail-item">
+              <strong>客户影响：</strong>直接提升客户满意度和忠诚度，建立长期合作关系。
+            </div>
+            <div class="detail-item">
+              <strong>行业领先：</strong>这一优势使利兹卡尔顿在服务领域保持领先地位。
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // 确保 Vue 已加载
+    if (typeof Vue === 'undefined') {
+      document.body.innerHTML = '<div style="text-align:center;padding:50px;"><h1>加载错误</h1><p>Vue 库未能正确加载，请检查网络连接。</p></div>';
+    } else {
+      const { createApp } = Vue;
+
+      const app = createApp({
+      data() {
+        return {
+          title: '利兹卡尔顿品牌服务化差异',
+          subtitle: '探索奢华酒店服务的卓越标准与独特价值',
+          sectionsVisible: {
+            overview: true,
+            charts: true,
+            radar: true,
+            stats: true,
+            process: true,
+            difference: true,
+            journey: true,
+            advantages: true
+          },
+          ritzFeatures: [
+            '员工授权（每位员工最多可花费2000美元解决客户问题）',
+            '记忆服务（记录客户偏好，提供个性化体验）',
+            '24小时管家服务',
+            '黄金标准服务理念',
+            '客户体验团队专门服务',
+            '品牌承诺保证',
+            '持续服务改进机制',
+            '员工服务文化培训'
+          ],
+          standardFeatures: [
+            '标准化服务流程',
+            '基础客户服务',
+            '工作时间内的服务',
+            '通用服务标准',
+            '前台统一服务',
+            '基本服务保障',
+            '定期服务评估',
+            '常规员工培训'
+          ],
+          keyStats: [
+            { value: '2000', label: '员工授权金额（美元）' },
+            { value: '95%', label: '客户满意度' },
+            { value: '24/7', label: '管家服务时间' },
+            { value: '100+', label: '服务细节标准' },
+            { value: '48', label: '小时响应时间' },
+            { value: '5★', label: '服务质量评级' }
+          ],
+          serviceJourney: [
+            {
+              title: '预订阶段',
+              description: '提前了解客户需求，记录特殊要求，准备个性化欢迎服务'
+            },
+            {
+              title: '抵达阶段',
+              description: '个性化欢迎，快速办理入住，提供记忆服务中的偏好信息'
+            },
+            {
+              title: '住宿阶段',
+              description: '24小时管家服务，主动满足需求，员工授权快速解决问题'
+            },
+            {
+              title: '离店阶段',
+              description: '收集反馈，更新客户档案，建立长期服务关系'
+            },
+            {
+              title: '后续服务',
+              description: '持续关注客户体验，提供后续支持和个性化服务'
+            }
+          ],
+          advantages: [
+            {
+              title: '员工授权机制',
+              description: '利兹卡尔顿赋予每位员工最高2000美元的授权额度，可以在第一时间解决客户问题，无需层层审批，确保服务响应速度和质量。'
+            },
+            {
+              title: '记忆服务系统',
+              description: '通过详细的客户档案系统，记录客户的偏好、习惯和特殊需求，每次入住都能提供高度个性化的服务体验。'
+            },
+            {
+              title: '黄金标准',
+              description: '"我们是绅士和淑女，为绅士和淑女服务"的服务理念，确保每一位员工都以最高标准对待客户，营造尊贵体验。'
+            },
+            {
+              title: '持续改进',
+              description: '通过客户反馈、员工建议和服务数据分析，不断优化服务流程，确保服务质量的持续提升。'
+            },
+            {
+              title: '品牌承诺',
+              description: '对服务质量的绝对承诺，如果客户对服务不满意，酒店会立即采取行动解决问题，甚至提供补偿。'
+            }
+          ],
+          comparisonChart: null,
+          radarChart: null,
+          // 交互状态
+          expandedAdvantage: null,
+          hoveredStat: null,
+          activeJourneyStep: null,
+          showComparisonDetails: false,
+          selectedDimension: null
+        };
+      },
+      mounted() {
+        // 确保所有库都已加载
+        this.waitForLibraries().then(() => {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.initCharts();
+              this.initProcessCanvas();
+              this.animateSections();
+              this.initInteractions();
+            }, 100);
+          });
+        });
+      },
+      
+      methods: {
+        // 等待所有必需的库加载完成
+        waitForLibraries() {
+          return new Promise((resolve) => {
+            let attempts = 0;
+            const maxAttempts = 50; // 最多等待 5 秒
+            
+            const checkLibraries = () => {
+              attempts++;
+              
+              // 检查 Vue
+              if (typeof Vue === 'undefined') {
+                if (attempts < maxAttempts) {
+                  setTimeout(checkLibraries, 100);
+                  return;
+                } else {
+                  resolve(); // 继续执行，让 Vue 错误处理来处理
+                  return;
+                }
+              }
+              
+              // 检查 Chart.js 或 ECharts（至少有一个可用）
+              const hasChart = typeof Chart !== 'undefined';
+              const hasECharts = typeof echarts !== 'undefined';
+              
+              if (!hasChart && !hasECharts) {
+                if (attempts < maxAttempts) {
+                  setTimeout(checkLibraries, 100);
+                  return;
+                } else {
+                  resolve();
+                  return;
+                }
+              }
+              
+              // 所有库都已加载
+              resolve();
+            };
+            
+            checkLibraries();
+          });
+        },
+        
+        initCharts() {
+          // 检查 refs 是否存在
+          if (!this.$refs.comparisonChart || !this.$refs.radarChart) {
+            setTimeout(() => this.initCharts(), 200);
+            return;
+          }
+          
+          // 优先使用 Chart.js，如果不可用则使用 ECharts，最后使用 Canvas 手动绘制
+          if (typeof Chart !== 'undefined') {
+            this.initChartJS();
+          } else if (typeof echarts !== 'undefined') {
+            this.initECharts();
+          } else {
+            this.initCanvasCharts();
+          }
+        },
+        
+        initChartJS() {
+          // 服务指标对比柱状图
+          const comparisonCtx = this.$refs.comparisonChart.getContext('2d');
+          if (!comparisonCtx) {
+            return;
+          }
+          
+          try {
+            this.comparisonChart = new Chart(comparisonCtx, {
+            type: 'bar',
+            data: {
+              labels: ['个性化服务', '响应速度', '服务授权', '记忆服务', '员工培训', '客户满意度'],
+              datasets: [
+                {
+                  label: '利兹卡尔顿',
+                  data: [95, 98, 100, 95, 98, 96],
+                  backgroundColor: 'rgba(212, 175, 55, 0.8)',
+                  borderColor: 'rgba(212, 175, 55, 1)',
+                  borderWidth: 2
+                },
+                {
+                  label: '标准酒店',
+                  data: [60, 70, 30, 40, 65, 72],
+                  backgroundColor: 'rgba(149, 165, 166, 0.8)',
+                  borderColor: 'rgba(149, 165, 166, 1)',
+                  borderWidth: 2
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              backgroundColor: 'transparent',
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: {
+                    callback: function(value) {
+                      return value + '%';
+                    }
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: '服务指标对比（百分比）',
+                  font: {
+                    size: 16
+                  }
+                }
+              }
+            }
+            });
+            
+          } catch (error) {
+            this.initCanvasCharts();
+            return;
+          }
+          
+          // 服务维度雷达图
+          const radarCtx = this.$refs.radarChart.getContext('2d');
+          if (!radarCtx) {
+            return;
+          }
+          
+          try {
+            this.radarChart = new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+              labels: ['个性化', '响应性', '专业性', '创新性', '可靠性', '情感连接'],
+              datasets: [
+                {
+                  label: '利兹卡尔顿',
+                  data: [95, 98, 97, 92, 96, 94],
+                  backgroundColor: 'rgba(212, 175, 55, 0.3)',
+                  borderColor: 'rgba(212, 175, 55, 1)',
+                  borderWidth: 2,
+                  pointBackgroundColor: 'rgba(212, 175, 55, 1)',
+                  pointBorderColor: '#fff',
+                  pointHoverBackgroundColor: '#fff',
+                  pointHoverBorderColor: 'rgba(212, 175, 55, 1)'
+                },
+                {
+                  label: '标准酒店',
+                  data: [60, 70, 75, 55, 72, 58],
+                  backgroundColor: 'rgba(149, 165, 166, 0.3)',
+                  borderColor: 'rgba(149, 165, 166, 1)',
+                  borderWidth: 2,
+                  pointBackgroundColor: 'rgba(149, 165, 166, 1)',
+                  pointBorderColor: '#fff',
+                  pointHoverBackgroundColor: '#fff',
+                  pointHoverBorderColor: 'rgba(149, 165, 166, 1)'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              backgroundColor: 'transparent',
+              scales: {
+                r: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: {
+                    stepSize: 20
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: '服务维度全面对比',
+                  font: {
+                    size: 16
+                  }
+                }
+              }
+            }
+            });
+            
+          } catch (error) {
+            // 如果雷达图失败，使用 Canvas 绘制
+            this.drawRadarChartCanvas(radarCtx, this.$refs.radarChart.width, this.$refs.radarChart.height);
+          }
+        },
+        
+        initECharts() {
+          // 使用 ECharts 初始化图表
+          
+          // ECharts 需要容器 div，不能直接用 canvas
+          // 创建一个包装 div 或者直接使用 Canvas fallback
+          // 为了简单，这里使用 Canvas fallback
+          this.initCanvasCharts();
+          return;
+          
+          // 如果未来要使用 ECharts，需要修改 HTML 结构：
+          // <div ref="comparisonChart" style="width: 800px; height: 400px;"></div>
+          // const comparisonChart = echarts.init(this.$refs.comparisonChart);
+          const comparisonOption = {
+            title: {
+              text: '服务指标对比（百分比）',
+              left: 'center'
+            },
+            tooltip: {
+              trigger: 'axis',
+              axisPointer: { type: 'shadow' }
+            },
+            legend: {
+              data: ['利兹卡尔顿', '标准酒店'],
+              top: 40
+            },
+            grid: {
+              left: '3%',
+              right: '4%',
+              bottom: '3%',
+              containLabel: true
+            },
+            xAxis: {
+              type: 'category',
+              data: ['个性化服务', '响应速度', '服务授权', '记忆服务', '员工培训', '客户满意度']
+            },
+            yAxis: {
+              type: 'value',
+              max: 100,
+              axisLabel: {
+                formatter: '{value}%'
+              }
+            },
+            series: [
+              {
+                name: '利兹卡尔顿',
+                type: 'bar',
+                data: [95, 98, 100, 95, 98, 96],
+                itemStyle: { color: '#d4af37' }
+              },
+              {
+                name: '标准酒店',
+                type: 'bar',
+                data: [60, 70, 30, 40, 65, 72],
+                itemStyle: { color: '#95a5a6' }
+              }
+            ]
+          };
+          comparisonChart.setOption(comparisonOption);
+          this.comparisonChart = comparisonChart;
+          
+          // 雷达图
+          const radarChart = echarts.init(this.$refs.radarChart);
+          const radarOption = {
+            title: {
+              text: '服务维度全面对比',
+              left: 'center'
+            },
+            tooltip: {},
+            legend: {
+              data: ['利兹卡尔顿', '标准酒店'],
+              top: 40
+            },
+            radar: {
+              indicator: [
+                { name: '个性化', max: 100 },
+                { name: '响应性', max: 100 },
+                { name: '专业性', max: 100 },
+                { name: '创新性', max: 100 },
+                { name: '可靠性', max: 100 },
+                { name: '情感连接', max: 100 }
+              ]
+            },
+            series: [
+              {
+                name: '服务维度对比',
+                type: 'radar',
+                data: [
+                  {
+                    value: [95, 98, 97, 92, 96, 94],
+                    name: '利兹卡尔顿',
+                    itemStyle: { color: '#d4af37' },
+                    areaStyle: { opacity: 0.3 }
+                  },
+                  {
+                    value: [60, 70, 75, 55, 72, 58],
+                    name: '标准酒店',
+                    itemStyle: { color: '#95a5a6' },
+                    areaStyle: { opacity: 0.3 }
+                  }
+                ]
+              }
+            ]
+          };
+          radarChart.setOption(radarOption);
+          this.radarChart = radarChart;
+          
+          // 响应式调整
+          window.addEventListener('resize', () => {
+            comparisonChart.resize();
+            radarChart.resize();
+          });
+        },
+        
+        initCanvasCharts() {
+          // 使用 Canvas 手动绘制图表作为后备方案
+          
+          const comparisonCtx = this.$refs.comparisonChart.getContext('2d');
+          const radarCtx = this.$refs.radarChart.getContext('2d');
+          
+          this.drawBarChartCanvas(comparisonCtx, this.$refs.comparisonChart.width, this.$refs.comparisonChart.height);
+          this.drawRadarChartCanvas(radarCtx, this.$refs.radarChart.width, this.$refs.radarChart.height);
+        },
+        
+        drawBarChartCanvas(ctx, width, height) {
+          // 清除画布
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制白色背景，确保内容清晰可见
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          
+          const padding = 60;
+          const chartWidth = width - padding * 2;
+          const chartHeight = height - padding * 2 - 60;
+          const barWidth = chartWidth / 12;
+          const maxValue = 100;
+          const categories = ['个性化服务', '响应速度', '服务授权', '记忆服务', '员工培训', '客户满意度'];
+          const ritzData = [95, 98, 100, 95, 98, 96];
+          const standardData = [60, 70, 30, 40, 65, 72];
+          
+          // 绘制标题
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = 'bold 18px Microsoft YaHei';
+          ctx.textAlign = 'center';
+          ctx.fillText('服务指标对比（百分比）', width / 2, 30);
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(padding, padding + 20);
+          ctx.lineTo(padding, padding + 20 + chartHeight);
+          ctx.lineTo(padding + chartWidth, padding + 20 + chartHeight);
+          ctx.stroke();
+          
+          // 绘制 Y 轴刻度
+          ctx.fillStyle = '#7f8c8d';
+          ctx.font = '12px Microsoft YaHei';
+          ctx.textAlign = 'right';
+          for (let i = 0; i <= 5; i++) {
+            const value = i * 20;
+            const y = padding + 20 + chartHeight - (value / maxValue) * chartHeight;
+            ctx.fillText(value + '%', padding - 10, y + 4);
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(padding + chartWidth, y);
+            ctx.stroke();
+          }
+          
+          // 绘制柱状图
+          categories.forEach((category, index) => {
+            const x = padding + (index * chartWidth / categories.length) + chartWidth / (categories.length * 2) - barWidth;
+            
+            // 标准酒店
+            const standardHeight = (standardData[index] / maxValue) * chartHeight;
+            ctx.fillStyle = '#95a5a6';
+            ctx.fillRect(x, padding + 20 + chartHeight - standardHeight, barWidth, standardHeight);
+            
+            // 利兹卡尔顿
+            const ritzHeight = (ritzData[index] / maxValue) * chartHeight;
+            ctx.fillStyle = '#d4af37';
+            ctx.fillRect(x + barWidth + 5, padding + 20 + chartHeight - ritzHeight, barWidth, ritzHeight);
+            
+            // 标签
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = '11px Microsoft YaHei';
+            ctx.textAlign = 'center';
+            ctx.save();
+            ctx.translate(x + barWidth, padding + 20 + chartHeight + 15);
+            ctx.rotate(-Math.PI / 4);
+            ctx.fillText(category, 0, 0);
+            ctx.restore();
+          });
+          
+          // 图例
+          const legendY = padding + 20 + chartHeight + 50;
+          ctx.fillStyle = '#d4af37';
+          ctx.fillRect(padding, legendY, 20, 15);
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = '12px Microsoft YaHei';
+          ctx.textAlign = 'left';
+          ctx.fillText('利兹卡尔顿', padding + 25, legendY + 12);
+          
+          ctx.fillStyle = '#95a5a6';
+          ctx.fillRect(padding + 120, legendY, 20, 15);
+          ctx.fillText('标准酒店', padding + 145, legendY + 12);
+        },
+        
+        drawRadarChartCanvas(ctx, width, height) {
+          // 清除画布
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制白色背景，确保内容清晰可见
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const radius = Math.min(width, height) / 2 - 80;
+          const indicators = ['个性化', '响应性', '专业性', '创新性', '可靠性', '情感连接'];
+          const ritzData = [95, 98, 97, 92, 96, 94];
+          const standardData = [60, 70, 75, 55, 72, 58];
+          
+          // 绘制标题
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = 'bold 18px Microsoft YaHei';
+          ctx.textAlign = 'center';
+          ctx.fillText('服务维度全面对比', centerX, 30);
+          
+          // 绘制雷达网格
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for (let level = 1; level <= 5; level++) {
+            ctx.beginPath();
+            const levelRadius = (radius * level) / 5;
+            for (let i = 0; i < indicators.length; i++) {
+              const angle = (Math.PI * 2 * i) / indicators.length - Math.PI / 2;
+              const x = centerX + levelRadius * Math.cos(angle);
+              const y = centerY + levelRadius * Math.sin(angle);
+              if (i === 0) {
+                ctx.moveTo(x, y);
+              } else {
+                ctx.lineTo(x, y);
+              }
+            }
+            ctx.closePath();
+            ctx.stroke();
+          }
+          
+          // 绘制轴线和标签
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 1;
+          ctx.font = '12px Microsoft YaHei';
+          ctx.textAlign = 'center';
+          indicators.forEach((indicator, i) => {
+            const angle = (Math.PI * 2 * i) / indicators.length - Math.PI / 2;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            // 标签
+            const labelX = centerX + (radius + 30) * Math.cos(angle);
+            const labelY = centerY + (radius + 30) * Math.sin(angle);
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillText(indicator, labelX, labelY + 4);
+          });
+          
+          // 绘制利兹卡尔顿数据区域
+          ctx.fillStyle = 'rgba(212, 175, 55, 0.3)';
+          ctx.strokeStyle = '#d4af37';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ritzData.forEach((value, i) => {
+            const angle = (Math.PI * 2 * i) / indicators.length - Math.PI / 2;
+            const r = (radius * value) / 100;
+            const x = centerX + r * Math.cos(angle);
+            const y = centerY + r * Math.sin(angle);
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          });
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          
+          // 绘制标准酒店数据区域
+          ctx.fillStyle = 'rgba(149, 165, 166, 0.3)';
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          standardData.forEach((value, i) => {
+            const angle = (Math.PI * 2 * i) / indicators.length - Math.PI / 2;
+            const r = (radius * value) / 100;
+            const x = centerX + r * Math.cos(angle);
+            const y = centerY + r * Math.sin(angle);
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          });
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          
+          // 图例
+          const legendY = height - 30;
+          ctx.fillStyle = '#d4af37';
+          ctx.fillRect(centerX - 100, legendY - 10, 20, 15);
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = '12px Microsoft YaHei';
+          ctx.textAlign = 'left';
+          ctx.fillText('利兹卡尔顿', centerX - 75, legendY + 2);
+          
+          ctx.fillStyle = '#95a5a6';
+          ctx.fillRect(centerX + 20, legendY - 10, 20, 15);
+          ctx.fillText('标准酒店', centerX + 45, legendY + 2);
+        },
+        
+        initProcessCanvas() {
+          // 等待 DOM 更新
+          this.$nextTick(() => {
+            const canvas = this.$refs.processCanvas;
+            if (!canvas) {
+              setTimeout(() => this.initProcessCanvas(), 100);
+              return;
+            }
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              this.drawServiceProcess(ctx, canvas.width, canvas.height);
+            } else {
+            }
+          });
+          
+          // 初始化差异化对比图
+          this.initDifferenceCanvas();
+        },
+        
+        initDifferenceCanvas() {
+          this.$nextTick(() => {
+            const canvas = this.$refs.differenceCanvas;
+            if (!canvas) {
+              setTimeout(() => this.initDifferenceCanvas(), 100);
+              return;
+            }
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              this.drawDifferenceVisualization(ctx, canvas.width, canvas.height);
+            } else {
+            }
+          });
+        },
+        
+        drawDifferenceVisualization(ctx, width, height) {
+          // 清除画布
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制白色背景，确保内容清晰可见
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          
+          // 绘制对比维度
+          const dimensions = [
+            { name: '员工授权', ritz: 100, standard: 30 },
+            { name: '个性化程度', ritz: 95, standard: 60 },
+            { name: '响应速度', ritz: 98, standard: 70 },
+            { name: '服务深度', ritz: 96, standard: 65 },
+            { name: '客户记忆', ritz: 95, standard: 40 }
+          ];
+          
+          const barWidth = Math.min(400, width * 0.4);
+          const barHeight = 35;
+          const spacing = (height - 100) / dimensions.length;
+          const startX = width / 2 - barWidth / 2;
+          const startY = 80;
+          
+          // 绘制图例（在右上角）
+          const legendX = width - 200;
+          const legendY = 40;
+          ctx.fillStyle = '#95a5a6';
+          ctx.fillRect(legendX, legendY, 20, barHeight);
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = '14px Microsoft YaHei';
+          ctx.textAlign = 'left';
+          ctx.fillText('标准酒店', legendX + 30, legendY + 23);
+          
+          ctx.fillStyle = '#d4af37';
+          ctx.fillRect(legendX, legendY + barHeight + 10, 20, barHeight);
+          ctx.fillStyle = '#2c3e50';
+          ctx.fillText('利兹卡尔顿', legendX + 30, legendY + barHeight + 33);
+          
+          dimensions.forEach((dim, index) => {
+            const y = startY + index * spacing;
+            
+            // 绘制维度标签
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 16px Microsoft YaHei';
+            ctx.textAlign = 'left';
+            ctx.fillText(dim.name, 80, y + 22);
+            
+            // 绘制标准酒店条形图（带圆角效果）
+            ctx.fillStyle = '#95a5a6';
+            const standardWidth = (dim.standard / 100) * barWidth;
+            this.drawRoundedRect(ctx, startX, y, standardWidth, barHeight, 5);
+            ctx.fill();
+            
+            // 绘制利兹卡尔顿条形图
+            ctx.fillStyle = '#d4af37';
+            const ritzWidth = (dim.ritz / 100) * barWidth;
+            this.drawRoundedRect(ctx, startX, y + barHeight + 8, ritzWidth, barHeight, 5);
+            ctx.fill();
+            
+            // 绘制数值标签
+            if (standardWidth > 30) {
+              ctx.fillStyle = '#fff';
+              ctx.font = 'bold 13px Microsoft YaHei';
+              ctx.textAlign = 'center';
+              ctx.fillText(dim.standard + '%', startX + standardWidth / 2, y + 22);
+            }
+            
+            if (ritzWidth > 30) {
+              ctx.fillStyle = '#fff';
+              ctx.fillText(dim.ritz + '%', startX + ritzWidth / 2, y + barHeight + 30);
+            } else {
+              // 如果条形太窄，在外部显示
+              ctx.fillStyle = '#2c3e50';
+              ctx.textAlign = 'left';
+              ctx.fillText(dim.ritz + '%', startX + ritzWidth + 10, y + barHeight + 30);
+            }
+          });
+          
+          // 绘制标题
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = 'bold 22px Microsoft YaHei';
+          ctx.textAlign = 'center';
+          ctx.fillText('服务差异化对比分析', width / 2, 35);
+        },
+        
+        drawRoundedRect(ctx, x, y, width, height, radius) {
+          ctx.beginPath();
+          ctx.moveTo(x + radius, y);
+          ctx.lineTo(x + width - radius, y);
+          ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+          ctx.lineTo(x + width, y + height - radius);
+          ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+          ctx.lineTo(x + radius, y + height);
+          ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+          ctx.lineTo(x, y + radius);
+          ctx.quadraticCurveTo(x, y, x + radius, y);
+          ctx.closePath();
+        },
+        
+        drawServiceProcess(ctx, width, height) {
+          // 清除画布
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制白色背景，确保内容清晰可见
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          
+          // 定义流程步骤
+          const steps = [
+            { x: 150, y: 150, label: '客户预订', color: '#667eea', icon: '📞' },
+            { x: 350, y: 150, label: '需求记录', color: '#764ba2', icon: '📝' },
+            { x: 550, y: 150, label: '个性化准备', color: '#d4af37', icon: '🎁' },
+            { x: 750, y: 150, label: '抵达服务', color: '#667eea', icon: '🚪' },
+            { x: 950, y: 150, label: '住宿服务', color: '#764ba2', icon: '🏨' },
+            { x: 950, y: 350, label: '问题解决', color: '#d4af37', icon: '⚡' },
+            { x: 750, y: 350, label: '持续改进', color: '#667eea', icon: '📈' },
+            { x: 550, y: 350, label: '反馈收集', color: '#764ba2', icon: '💬' },
+            { x: 350, y: 350, label: '关系维护', color: '#d4af37', icon: '🤝' },
+            { x: 150, y: 350, label: '长期服务', color: '#667eea', icon: '⭐' }
+          ];
+          
+          // 绘制连接线（带箭头）
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([8, 4]);
+          
+          // 上排连接
+          for (let i = 0; i < 4; i++) {
+            this.drawArrow(ctx, steps[i].x + 70, steps[i].y, steps[i + 1].x - 70, steps[i + 1].y);
+          }
+          
+          // 右侧垂直连接
+          this.drawArrow(ctx, 950, 210, 950, 290);
+          
+          // 下排连接（反向）
+          for (let i = 5; i < 9; i++) {
+            this.drawArrow(ctx, steps[i].x - 70, steps[i].y, steps[i + 1].x + 70, steps[i + 1].y);
+          }
+          
+          // 左侧垂直连接（形成闭环）
+          this.drawArrow(ctx, 150, 290, 150, 210);
+          
+          ctx.setLineDash([]);
+          
+          // 绘制步骤节点
+          steps.forEach((step, index) => {
+            // 绘制阴影
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            
+            // 绘制圆形节点
+            ctx.beginPath();
+            ctx.arc(step.x, step.y, 60, 0, Math.PI * 2);
+            
+            // 渐变填充
+            const nodeGradient = ctx.createRadialGradient(step.x - 20, step.y - 20, 0, step.x, step.y, 60);
+            nodeGradient.addColorStop(0, this.lightenColor(step.color, 20));
+            nodeGradient.addColorStop(1, step.color);
+            ctx.fillStyle = nodeGradient;
+            ctx.fill();
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // 重置阴影
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // 绘制图标
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 28px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(step.icon, step.x, step.y - 8);
+            
+            // 绘制步骤编号
+            ctx.font = 'bold 14px Microsoft YaHei';
+            ctx.fillText((index + 1).toString(), step.x, step.y + 15);
+            
+            // 绘制步骤标签
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 16px Microsoft YaHei';
+            ctx.fillText(step.label, step.x, step.y + 95);
+          });
+          
+          // 绘制标题
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = 'bold 24px Microsoft YaHei';
+          ctx.textAlign = 'center';
+          ctx.fillText('利兹卡尔顿服务流程闭环', width / 2, 50);
+          
+          // 绘制说明
+          ctx.fillStyle = '#7f8c8d';
+          ctx.font = '14px Microsoft YaHei';
+          ctx.fillText('从预订到长期服务的完整闭环，确保每个环节都提供卓越体验', width / 2, height - 30);
+        },
+        
+        drawArrow(ctx, fromX, fromY, toX, toY) {
+          ctx.beginPath();
+          ctx.moveTo(fromX, fromY);
+          ctx.lineTo(toX, toY);
+          ctx.stroke();
+          
+          // 绘制箭头
+          const angle = Math.atan2(toY - fromY, toX - fromX);
+          const arrowLength = 15;
+          const arrowAngle = Math.PI / 6;
+          
+          ctx.beginPath();
+          ctx.moveTo(toX, toY);
+          ctx.lineTo(
+            toX - arrowLength * Math.cos(angle - arrowAngle),
+            toY - arrowLength * Math.sin(angle - arrowAngle)
+          );
+          ctx.moveTo(toX, toY);
+          ctx.lineTo(
+            toX - arrowLength * Math.cos(angle + arrowAngle),
+            toY - arrowLength * Math.sin(angle + arrowAngle)
+          );
+          ctx.stroke();
+        },
+        
+        lightenColor(color, percent) {
+          // 简单的颜色变亮函数
+          try {
+            const num = parseInt(color.replace('#', ''), 16);
+            const r = Math.min(255, Math.max(0, (num >> 16) + percent));
+            const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + percent));
+            const b = Math.min(255, Math.max(0, (num & 0x0000FF) + percent));
+            const result = ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+            return '#' + result;
+          } catch (e) {
+            return color; // 如果转换失败，返回原颜色
+          }
+        },
+        
+        animateSections() {
+          
+          // 内容已经默认可见，这里只添加动画效果
+          this.$nextTick(() => {
+            const sections = document.querySelectorAll('.section.fade-in');
+            
+            // 详细检查每个 section 的状态
+            Array.from(sections).forEach((s, i) => {
+              const computedStyle = window.getComputedStyle(s);
+              const details = {
+                index: i,
+                text: s.querySelector('h2')?.textContent,
+                display: computedStyle.display,
+                opacity: computedStyle.opacity,
+                visibility: computedStyle.visibility,
+                height: s.offsetHeight,
+                clientHeight: s.clientHeight,
+                scrollHeight: s.scrollHeight,
+                transform: computedStyle.transform,
+                position: computedStyle.position,
+                zIndex: computedStyle.zIndex
+              };
+            });
+            
+            // 确保所有 sections 初始可见
+            sections.forEach(s => {
+              s.style.opacity = '1';
+              s.style.visibility = 'visible';
+              s.style.display = 'block';
+            });
+            
+            // 为各个区域添加渐入动画（使用 to 而不是 from，避免初始隐藏）
+            if (typeof gsap !== 'undefined') {
+              
+              // 先设置初始状态
+              gsap.set('.section.fade-in', { opacity: 1, y: 0 });
+              
+              // 然后添加入场动画效果（从稍微下方淡入）
+              gsap.fromTo('.section.fade-in', 
+                { opacity: 0.3, y: 20 },
+                {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.8,
+                  stagger: 0.15,
+                  ease: 'power2.out',
+                  delay: 0.2,
+                  onComplete: () => {
+                    // 确保动画完成后完全可见
+                    sections.forEach(s => {
+                      s.style.opacity = '1';
+                      s.style.transform = 'none';
+                    });
+                  }
+                }
+              );
+              
+              // 为统计卡片添加动画
+              setTimeout(() => {
+                const statCards = document.querySelectorAll('.stat-card');
+                if (statCards.length > 0) {
+                  gsap.fromTo('.stat-card',
+                    { scale: 0.8, opacity: 0 },
+                    {
+                      scale: 1,
+                      opacity: 1,
+                      duration: 0.5,
+                      stagger: 0.1,
+                      ease: 'back.out(1.7)',
+                      onComplete: () => {
+                      }
+                    }
+                  );
+                }
+              }, 1000);
+            } else {
+              // 如果没有 GSAP，确保所有内容可见
+              sections.forEach(s => {
+                s.style.opacity = '1';
+                s.style.visibility = 'visible';
+              });
+            }
+          });
+        },
+        
+        // 初始化交互功能
+        initInteractions() {
+          this.$nextTick(() => {
+            // 为统计卡片添加数字动画
+            this.animateStatNumbers();
+            
+            // 为服务旅程步骤添加点击交互
+            this.initJourneyInteractions();
+            
+            // 为图表添加悬停效果
+            this.initChartInteractions();
+          });
+        },
+        
+        // 统计数字动画
+        animateStatNumbers() {
+          if (typeof gsap !== 'undefined') {
+            const statCards = document.querySelectorAll('.stat-card .number');
+            statCards.forEach((card, index) => {
+              const targetValue = card.textContent;
+              if (targetValue && /^\d+/.test(targetValue)) {
+                const numValue = parseInt(targetValue);
+                let currentValue = 0;
+                const increment = numValue / 30;
+                const timer = setInterval(() => {
+                  currentValue += increment;
+                  if (currentValue >= numValue) {
+                    currentValue = numValue;
+                    clearInterval(timer);
+                  }
+                  card.textContent = Math.floor(currentValue) + targetValue.replace(/^\d+/, '');
+                }, 30);
+              }
+            });
+          }
+        },
+        
+        // 服务旅程交互
+        initJourneyInteractions() {
+          const journeySteps = document.querySelectorAll('.journey-step');
+          journeySteps.forEach((step, index) => {
+            step.addEventListener('mouseenter', () => {
+              if (this.activeJourneyStep !== index) {
+                step.style.transform = 'translateX(10px)';
+                step.style.transition = 'transform 0.3s ease';
+              }
+            });
+            
+            step.addEventListener('mouseleave', () => {
+              if (this.activeJourneyStep !== index) {
+                step.style.transform = 'translateX(0)';
+              }
+            });
+          });
+        },
+        
+        // 图表交互
+        initChartInteractions() {
+          // 为图表容器添加悬停时的提示
+          const chartContainers = document.querySelectorAll('.chart-container');
+          chartContainers.forEach(container => {
+            container.addEventListener('mouseenter', () => {
+              container.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.2)';
+              container.style.transition = 'box-shadow 0.3s ease';
+            });
+            
+            container.addEventListener('mouseleave', () => {
+              container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            });
+          });
+        },
+        
+        // 切换优势详情
+        toggleAdvantage(index) {
+          this.expandedAdvantage = this.expandedAdvantage === index ? null : index;
+        },
+        
+        // 悬停统计卡片
+        onStatHover(index) {
+          this.hoveredStat = index;
+        },
+        
+        onStatLeave() {
+          this.hoveredStat = null;
+        },
+        
+        // 平滑滚动到指定区域
+        scrollToSection(sectionId) {
+          const element = document.getElementById(sectionId);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }
+    });
+    
+    app.mount('#app');
+    }
+  </script>
+</body>
+</html>
+

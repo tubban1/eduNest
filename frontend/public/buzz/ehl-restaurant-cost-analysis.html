@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="EHL酒店管理学院餐厅经营成本结构与盈亏分析工具，通过交互式图表和可调节参数，帮助学生深入理解餐厅运营成本构成、盈亏平衡点分析和经营决策。">
+  <meta name="keywords" content="EHL,酒店管理,餐厅经营,成本分析,盈亏分析,成本结构,经营决策,财务管理,酒店运营,餐饮管理">
+  <title>EHL餐厅经营成本结构与盈亏分析 - 交互式学习工具</title>
+  
+  <!-- Vue 3.5.20 -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/chart.umd.min.js'"></script>
+  
+  <!-- GSAP for animations -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"></script>
+  
+  <!-- D3.js for advanced visualizations -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.8;
+      color: #2c3e50;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    h1 {
+      color: #1a1a1a;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 1.2em;
+      margin-bottom: 40px;
+    }
+    
+    .section {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 5px solid #667eea;
+    }
+    
+    .section h2 {
+      color: #2c3e50;
+      font-size: 1.8em;
+      margin-bottom: 8px;
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .section h2::before {
+      content: "📊";
+      font-size: 1.2em;
+    }
+    
+    .control-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+      padding: 25px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .control-item label {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 0.95em;
+    }
+    
+    .control-item input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 5px;
+      background: #ddd;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    .control-item input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+    }
+    
+    .control-item input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .control-item .value-display {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .control-item .value-input {
+      width: 100px;
+      padding: 8px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-size: 1em;
+      text-align: center;
+    }
+    
+    .control-item .value-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 10px 0;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .stat-card.positive {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    
+    .stat-card.negative {
+      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    }
+    
+    .stat-card.warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .stat-card .label {
+      font-size: 0.9em;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    
+    .stat-card .value {
+      font-size: 2em;
+      font-weight: bold;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 320px;
+      margin: 10px 0;
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .chart-container.large {
+      height: 450px;
+    }
+    
+    .canvas-container {
+      margin: 30px 0;
+      text-align: center;
+      overflow-x: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 100%;
+      height: auto;
+    }
+    
+    .info-box {
+      background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+      border-left: 5px solid #f39c12;
+      padding: 20px;
+      margin: 30px 0;
+      border-radius: 8px;
+    }
+    
+    .info-box h3 {
+      color: #8b6914;
+      margin-bottom: 10px;
+    }
+    
+    .break-even-point {
+      background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+      border-left: 5px solid #00bcd4;
+      padding: 20px;
+      margin: 30px 0;
+      border-radius: 8px;
+    }
+    
+    .break-even-point h3 {
+      color: #006064;
+      margin-bottom: 10px;
+    }
+    
+    .formula-box {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95em;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .control-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .chart-container {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>{{ title }}</h1>
+      <p class="subtitle">{{ subtitle }}</p>
+      
+      <!-- 参数控制面板 -->
+      <section class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0;">经营参数调节</h2>
+          <button 
+            @click="refreshAllCharts" 
+            style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background 0.3s;"
+            onmouseover="this.style.background='#5568d3'"
+            onmouseout="this.style.background='#667eea'"
+          >
+            🔄 刷新图表
+          </button>
+        </div>
+        <div class="control-panel">
+          <div class="control-item">
+            <label>每日客流量（人）</label>
+            <input type="range" v-model.number="params.dailyCustomers" :min="50" :max="500" step="5" @input="updateCalculations">
+            <div class="value-display">
+              <span>50</span>
+              <input type="number" class="value-input" v-model.number="params.dailyCustomers" :min="50" :max="500" @input="updateCalculations">
+              <span>500</span>
+            </div>
+          </div>
+          
+          <div class="control-item">
+            <label>平均客单价（元）</label>
+            <input type="range" v-model.number="params.avgPricePerCustomer" :min="50" :max="500" step="10" @input="updateCalculations">
+            <div class="value-display">
+              <span>50</span>
+              <input type="number" class="value-input" v-model.number="params.avgPricePerCustomer" :min="50" :max="500" @input="updateCalculations">
+              <span>500</span>
+            </div>
+          </div>
+          
+          <div class="control-item">
+            <label>固定成本（元/月）</label>
+            <input type="range" v-model.number="params.fixedCosts" :min="50000" :max="500000" step="5000" @input="updateCalculations">
+            <div class="value-display">
+              <span>50,000</span>
+              <input type="number" class="value-input" v-model.number="params.fixedCosts" :min="50000" :max="500000" @input="updateCalculations">
+              <span>500,000</span>
+            </div>
+          </div>
+          
+          <div class="control-item">
+            <label>变动成本率（%）</label>
+            <input type="range" v-model.number="params.variableCostRate" :min="20" :max="80" step="1" @input="updateCalculations">
+            <div class="value-display">
+              <span>20%</span>
+              <input type="number" class="value-input" v-model.number="params.variableCostRate" :min="20" :max="80" @input="updateCalculations">
+              <span>80%</span>
+            </div>
+          </div>
+          
+          <div class="control-item">
+            <label>食材成本率（%）</label>
+            <input type="range" v-model.number="params.foodCostRate" :min="25" :max="45" step="1" @input="updateCalculations">
+            <div class="value-display">
+              <span>25%</span>
+              <input type="number" class="value-input" v-model.number="params.foodCostRate" :min="25" :max="45" @input="updateCalculations">
+              <span>45%</span>
+            </div>
+          </div>
+          
+          <div class="control-item">
+            <label>人工成本率（%）</label>
+            <input type="range" v-model.number="params.laborCostRate" :min="20" :max="40" step="1" @input="updateCalculations">
+            <div class="value-display">
+              <span>20%</span>
+              <input type="number" class="value-input" v-model.number="params.laborCostRate" :min="20" :max="40" @input="updateCalculations">
+              <span>40%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 关键指标 -->
+      <section class="section">
+        <h2>关键经营指标</h2>
+        <div class="stats-grid">
+          <div class="stat-card" :class="monthlyRevenue > 0 ? 'positive' : 'negative'">
+            <div class="label">月营业收入</div>
+            <div class="value">{{ formatCurrency(monthlyRevenue) }}</div>
+          </div>
+          
+          <div class="stat-card" :class="monthlyCosts > 0 ? 'warning' : ''">
+            <div class="label">月总成本</div>
+            <div class="value">{{ formatCurrency(monthlyCosts) }}</div>
+          </div>
+          
+          <div class="stat-card" :class="monthlyProfit > 0 ? 'positive' : 'negative'">
+            <div class="label">月净利润</div>
+            <div class="value">{{ formatCurrency(monthlyProfit) }}</div>
+          </div>
+          
+          <div class="stat-card" :class="profitMargin > 0 ? 'positive' : 'negative'">
+            <div class="label">利润率</div>
+            <div class="value">{{ profitMargin.toFixed(2) }}%</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="label">盈亏平衡点（人/月）</div>
+            <div class="value">{{ breakEvenCustomers.toFixed(0) }}</div>
+          </div>
+          
+          <div class="stat-card" :class="currentCustomersVsBreakEven > 0 ? 'positive' : 'warning'">
+            <div class="label">当前客流量 vs 盈亏平衡点</div>
+            <div class="value">{{ currentCustomersVsBreakEven > 0 ? '+' : '' }}{{ currentCustomersVsBreakEven.toFixed(0) }}</div>
+          </div>
+        </div>
+        
+        <!-- 关键指标可视化图表 -->
+        <div class="chart-container" style="margin-top: 5px; margin-bottom: 5px; background: #fff; border: 2px solid #ddd;">
+          <canvas ref="keyMetricsChart" id="keyMetricsChartCanvas" style="display: block; width: 100%; height: 100%;"></canvas>
+        </div>
+      </section>
+      
+      <!-- 成本结构分析 -->
+      <section class="section">
+        <h2>成本结构分析</h2>
+        <div class="chart-container">
+          <canvas ref="costStructureChart"></canvas>
+        </div>
+        
+        <div class="info-box">
+          <h3>成本结构说明</h3>
+          <p><strong>固定成本：</strong>不随业务量变化的成本，包括租金、管理人员工资、设备折旧等。</p>
+          <p><strong>变动成本：</strong>随业务量变化的成本，包括食材成本、人工成本（服务人员）、水电费等。</p>
+          <p><strong>食材成本：</strong>通常占营业收入的25%-45%，是最大的变动成本项。</p>
+          <p><strong>人工成本：</strong>包括员工工资、福利等，通常占营业收入的20%-40%。</p>
+        </div>
+      </section>
+      
+      <!-- 盈亏分析图 -->
+      <section class="section">
+        <h2>盈亏分析图</h2>
+        <div class="chart-container large">
+          <canvas ref="profitLossChart"></canvas>
+        </div>
+        
+        <div class="break-even-point">
+          <h3>盈亏平衡点分析</h3>
+          <div class="formula-box">
+            盈亏平衡点（客流量）= 固定成本 ÷ (平均客单价 - 单位变动成本)
+            <br>
+            当前计算：{{ params.fixedCosts.toLocaleString() }} ÷ ({{ params.avgPricePerCustomer }} - {{ unitVariableCost.toFixed(2) }}) = {{ breakEvenCustomers.toFixed(0) }} 人/月
+          </div>
+          <p v-if="currentCustomersVsBreakEven > 0" style="color: #006064; font-weight: bold;">
+            ✅ 当前月客流量（{{ monthlyCustomers }}人）超过盈亏平衡点，餐厅处于盈利状态。
+          </p>
+          <p v-else-if="currentCustomersVsBreakEven < 0" style="color: #d32f2f; font-weight: bold;">
+            ⚠️ 当前月客流量（{{ monthlyCustomers }}人）低于盈亏平衡点，餐厅处于亏损状态。需要增加 {{ Math.abs(currentCustomersVsBreakEven).toFixed(0) }} 人/月才能达到盈亏平衡。
+          </p>
+          <p v-else style="color: #f57c00; font-weight: bold;">
+            ⚖️ 当前月客流量刚好达到盈亏平衡点，餐厅不盈不亏。
+          </p>
+        </div>
+      </section>
+      
+      <!-- 成本构成明细 -->
+      <section class="section">
+        <h2>成本构成明细</h2>
+        <div class="chart-container">
+          <canvas ref="costBreakdownChart"></canvas>
+        </div>
+      </section>
+      
+      <!-- 敏感性分析 -->
+      <section class="section">
+        <h2>敏感性分析</h2>
+        <div class="canvas-container">
+          <canvas ref="sensitivityCanvas" width="1200" height="600"></canvas>
+        </div>
+        
+        <div class="info-box">
+          <h3>敏感性分析说明</h3>
+          <p>敏感性分析展示了不同参数变化对利润的影响程度。图表显示了当客流量、客单价、固定成本和变动成本率分别变化时，月净利润的变化趋势。</p>
+          <p><strong>红色区域：</strong>亏损区域</p>
+          <p><strong>绿色区域：</strong>盈利区域</p>
+          <p><strong>蓝色线：</strong>盈亏平衡线</p>
+        </div>
+      </section>
+      
+      <!-- 成本趋势分析 -->
+      <section class="section">
+        <h2>成本与收入趋势分析</h2>
+        <div class="chart-container large">
+          <canvas ref="trendChart"></canvas>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          title: 'EHL餐厅经营成本结构与盈亏分析',
+          subtitle: '交互式学习工具 - 通过调节参数理解餐厅运营成本与盈利模式',
+          params: {
+            dailyCustomers: 150,
+            avgPricePerCustomer: 120,
+            fixedCosts: 150000,
+            variableCostRate: 35,
+            foodCostRate: 30,
+            laborCostRate: 25
+          },
+          costStructureChart: null,
+          profitLossChart: null,
+          costBreakdownChart: null,
+          trendChart: null,
+          keyMetricsChart: null,
+          _recreatingProfitLossChart: false,
+          _recreatingKeyMetricsChart: false,
+          _recreatingCostStructureChart: false,
+          _recreatingCostBreakdownChart: false
+        };
+      },
+      computed: {
+        monthlyCustomers() {
+          return this.params.dailyCustomers * 30;
+        },
+        monthlyRevenue() {
+          return this.monthlyCustomers * this.params.avgPricePerCustomer;
+        },
+        fixedCostsMonthly() {
+          return this.params.fixedCosts;
+        },
+        variableCostsMonthly() {
+          return this.monthlyRevenue * (this.params.variableCostRate / 100);
+        },
+        foodCostsMonthly() {
+          return this.monthlyRevenue * (this.params.foodCostRate / 100);
+        },
+        laborCostsMonthly() {
+          return this.monthlyRevenue * (this.params.laborCostRate / 100);
+        },
+        otherVariableCosts() {
+          const total = this.variableCostsMonthly - this.foodCostsMonthly - this.laborCostsMonthly;
+          return Math.max(0, total);
+        },
+        monthlyCosts() {
+          return this.fixedCostsMonthly + this.variableCostsMonthly;
+        },
+        monthlyProfit() {
+          return this.monthlyRevenue - this.monthlyCosts;
+        },
+        profitMargin() {
+          return this.monthlyRevenue > 0 ? (this.monthlyProfit / this.monthlyRevenue) * 100 : 0;
+        },
+        unitVariableCost() {
+          return this.params.avgPricePerCustomer * (this.params.variableCostRate / 100);
+        },
+        contributionMargin() {
+          return this.params.avgPricePerCustomer - this.unitVariableCost;
+        },
+        breakEvenCustomers() {
+          return this.contributionMargin > 0 ? this.fixedCostsMonthly / this.contributionMargin : 0;
+        },
+        currentCustomersVsBreakEven() {
+          return this.monthlyCustomers - this.breakEvenCustomers;
+        }
+      },
+      // 移除对计算属性的 watch，避免递归调用
+      // 图表更新将通过 @input 事件和 updateCalculations 方法触发
+      watch: {},
+      mounted() {
+        // 等待库加载完成
+        this.waitForLibraries().then(() => {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              const keyMetricsCanvas = document.querySelector('#keyMetricsChartCanvas');
+              if (keyMetricsCanvas) {
+              }
+              
+              this.initCharts();
+              this.initSensitivityCanvas();
+              this.animateElements();
+            }, 500); // 增加延迟到500ms，确保DOM完全渲染
+          });
+        }).catch((error) => {
+          // 即使库加载失败，也尝试初始化（可能有fallback）
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.initCharts();
+              this.initSensitivityCanvas();
+              this.animateElements();
+            }, 500);
+          });
+        });
+      },
+      methods: {
+        waitForLibraries() {
+          return new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 50;
+            const checkInterval = 100;
+            
+            const checkLibraries = () => {
+              attempts++;
+              
+              const vueLoaded = typeof Vue !== 'undefined';
+              const chartLoaded = typeof Chart !== 'undefined';
+              
+              if (vueLoaded && chartLoaded) {
+                resolve();
+                return;
+              }
+              
+              if (attempts >= maxAttempts) {
+                resolve(); // 即使超时也继续，可能有fallback
+                return;
+              }
+              
+              setTimeout(checkLibraries, checkInterval);
+            };
+            
+            checkLibraries();
+          });
+        },
+        
+        formatCurrency(value) {
+          if (value === null || value === undefined || isNaN(value)) {
+            return '¥0.00';
+          }
+          return '¥' + value.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+        
+        updateCalculations() {
+          
+          // 确保参数在有效范围内
+          this.params.dailyCustomers = Math.max(50, Math.min(500, this.params.dailyCustomers));
+          this.params.avgPricePerCustomer = Math.max(50, Math.min(500, this.params.avgPricePerCustomer));
+          this.params.fixedCosts = Math.max(50000, Math.min(500000, this.params.fixedCosts));
+          this.params.variableCostRate = Math.max(20, Math.min(80, this.params.variableCostRate));
+          this.params.foodCostRate = Math.max(25, Math.min(45, this.params.foodCostRate));
+          this.params.laborCostRate = Math.max(20, Math.min(40, this.params.laborCostRate));
+          
+          
+          // 强制Vue更新
+          this.$forceUpdate();
+          
+          // 使用nextTick确保DOM更新后再更新图表
+          this.$nextTick(() => {
+            this.updateCharts();
+            this.updateSensitivityCanvas();
+          });
+        },
+        
+        initCharts() {
+          const appElement = document.getElementById('app');
+          if (appElement) {
+            const keyMetricsSection = appElement.querySelector('.section h2');
+          }
+          
+          this.initKeyMetricsChart();
+          
+          this.initCostStructureChart();
+          
+          this.initProfitLossChart();
+          
+          this.initCostBreakdownChart();
+          
+          this.initTrendChart();
+          
+        },
+        
+        initKeyMetricsChart() {
+          
+          let ctx = this.$refs.keyMetricsChart;
+          
+          // 如果ref找不到，尝试通过ID查找
+          if (!ctx) {
+            
+            // 尝试通过ID查找
+            const canvasById = document.getElementById('keyMetricsChartCanvas');
+            if (canvasById) {
+              ctx = canvasById;
+            } else {
+              
+              // 延迟重试
+              setTimeout(() => {
+                this.initKeyMetricsChart();
+              }, 500);
+              return;
+            }
+          }
+          
+          
+          
+          if (typeof Chart === 'undefined') {
+            return;
+          }
+          
+          
+          let chartCtx;
+          try {
+            chartCtx = ctx.getContext('2d');
+            if (!chartCtx) {
+              return;
+            }
+          } catch (error) {
+            return;
+          }
+          
+          
+          const chartData = {
+            monthlyRevenue: this.monthlyRevenue,
+            monthlyCosts: this.monthlyCosts,
+            monthlyProfit: this.monthlyProfit
+          };
+          
+          
+          try {
+            this.keyMetricsChart = new Chart(chartCtx, {
+            type: 'bar',
+            data: {
+              labels: ['月营业收入', '月总成本', '月净利润'],
+              datasets: [{
+                label: '金额（元）',
+                data: [
+                  this.monthlyRevenue,
+                  this.monthlyCosts,
+                  this.monthlyProfit
+                ],
+                backgroundColor: [
+                  'rgba(46, 204, 113, 0.8)',
+                  'rgba(231, 76, 60, 0.8)',
+                  this.monthlyProfit > 0 ? 'rgba(102, 126, 234, 0.8)' : 'rgba(192, 57, 43, 0.8)'
+                ],
+                borderColor: [
+                  'rgba(46, 204, 113, 1)',
+                  'rgba(231, 76, 60, 1)',
+                  this.monthlyProfit > 0 ? 'rgba(102, 126, 234, 1)' : 'rgba(192, 57, 43, 1)'
+                ],
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                duration: 0
+              },
+              plugins: {
+                legend: {
+                  display: false
+                },
+                title: {
+                  display: true,
+                  text: '关键经营指标对比',
+                  font: {
+                    size: 18
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      return `${context.label}: ${this.formatCurrency(context.parsed.y)}`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: '金额（元）'
+                  },
+                  ticks: {
+                    callback: (value) => {
+                      return this.formatCurrency(value);
+                    }
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  }
+                }
+              }
+            }
+          });
+          
+          } catch (error) {
+          }
+        },
+        
+        initCostStructureChart() {
+          const ctx = this.$refs.costStructureChart;
+          if (!ctx) return;
+          
+          this.costStructureChart = new Chart(ctx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+              labels: ['固定成本', '食材成本', '人工成本', '其他变动成本'],
+              datasets: [{
+                data: [
+                  this.fixedCostsMonthly,
+                  this.foodCostsMonthly,
+                  this.laborCostsMonthly,
+                  this.otherVariableCosts
+                ],
+                backgroundColor: [
+                  'rgba(102, 126, 234, 0.8)',
+                  'rgba(241, 196, 15, 0.8)',
+                  'rgba(231, 76, 60, 0.8)',
+                  'rgba(46, 204, 113, 0.8)'
+                ],
+                borderColor: [
+                  'rgba(102, 126, 234, 1)',
+                  'rgba(241, 196, 15, 1)',
+                  'rgba(231, 76, 60, 1)',
+                  'rgba(46, 204, 113, 1)'
+                ],
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                duration: 0
+              },
+              plugins: {
+                legend: {
+                  position: 'right'
+                },
+                title: {
+                  display: true,
+                  text: '成本结构分布',
+                  font: {
+                    size: 18
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      const label = context.label || '';
+                      const value = context.parsed || 0;
+                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                      const percentage = ((value / total) * 100).toFixed(2);
+                      return `${label}: ${this.formatCurrency(value)} (${percentage}%)`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        },
+        
+        initProfitLossChart() {
+          const ctx = this.$refs.profitLossChart;
+          if (!ctx) return;
+          
+          // 生成盈亏分析数据
+          const dataPoints = [];
+          const maxCustomers = Math.max(this.monthlyCustomers * 1.5, this.breakEvenCustomers * 2, 1000);
+          
+          for (let customers = 0; customers <= maxCustomers; customers += maxCustomers / 50) {
+            const revenue = customers * this.params.avgPricePerCustomer;
+            const variableCost = revenue * (this.params.variableCostRate / 100);
+            const totalCost = this.fixedCostsMonthly + variableCost;
+            const profit = revenue - totalCost;
+            
+            dataPoints.push({
+              customers: customers,
+              revenue: revenue,
+              totalCost: totalCost,
+              profit: profit
+            });
+          }
+          
+          // 找到盈亏平衡点和当前运营点的索引
+          const breakEvenIndex = dataPoints.findIndex(d => d.profit >= 0);
+          const currentIndex = dataPoints.findIndex(d => Math.abs(d.customers - this.monthlyCustomers) < (maxCustomers / 50));
+          
+          const chartData = {
+            labels: dataPoints.map(d => Math.round(d.customers)),
+            datasets: [
+              {
+                label: '营业收入',
+                data: dataPoints.map(d => d.revenue),
+                borderColor: 'rgba(46, 204, 113, 1)',
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                fill: false,
+                tension: 0.4,
+                borderWidth: 3
+              },
+              {
+                label: '总成本',
+                data: dataPoints.map(d => d.totalCost),
+                borderColor: 'rgba(231, 76, 60, 1)',
+                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                fill: false,
+                tension: 0.4,
+                borderWidth: 3
+              },
+              {
+                label: '净利润',
+                data: dataPoints.map(d => d.profit),
+                borderColor: 'rgba(102, 126, 234, 1)',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3
+              }
+            ]
+          };
+          
+          // 添加盈亏平衡点标记
+          if (breakEvenIndex >= 0) {
+            const breakEvenPoint = dataPoints[breakEvenIndex];
+            chartData.datasets.push({
+              label: '盈亏平衡点',
+              data: dataPoints.map((d, i) => i === breakEvenIndex ? breakEvenPoint.revenue : null),
+              borderColor: 'rgba(255, 99, 132, 1)',
+              backgroundColor: 'rgba(255, 99, 132, 1)',
+              pointRadius: 8,
+              pointHoverRadius: 10,
+              showLine: false,
+              pointStyle: 'star'
+            });
+          }
+          
+          // 添加当前运营点标记
+          if (currentIndex >= 0) {
+            const currentPoint = dataPoints[currentIndex];
+            chartData.datasets.push({
+              label: '当前运营点',
+              data: dataPoints.map((d, i) => i === currentIndex ? currentPoint.revenue : null),
+              borderColor: 'rgba(52, 152, 219, 1)',
+              backgroundColor: 'rgba(52, 152, 219, 1)',
+              pointRadius: 10,
+              pointHoverRadius: 12,
+              showLine: false,
+              pointStyle: 'circle'
+            });
+          }
+          
+          this.profitLossChart = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: chartData,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                duration: 0
+              },
+              interaction: {
+                mode: 'index',
+                intersect: false
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: '盈亏分析图 - 收入、成本与利润关系',
+                  font: {
+                    size: 18
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      return `${context.dataset.label}: ${this.formatCurrency(context.parsed.y)}`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  title: {
+                    display: true,
+                    text: '月客流量（人）'
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  }
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: '金额（元）'
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  },
+                  ticks: {
+                    callback: (value) => {
+                      return this.formatCurrency(value);
+                    }
+                  }
+                }
+              }
+            }
+          });
+        },
+        
+        initCostBreakdownChart() {
+          const ctx = this.$refs.costBreakdownChart;
+          if (!ctx) return;
+          
+          this.costBreakdownChart = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: ['固定成本', '食材成本', '人工成本', '其他变动成本'],
+              datasets: [{
+                label: '成本金额（元）',
+                data: [
+                  this.fixedCostsMonthly,
+                  this.foodCostsMonthly,
+                  this.laborCostsMonthly,
+                  this.otherVariableCosts
+                ],
+                backgroundColor: [
+                  'rgba(102, 126, 234, 0.8)',
+                  'rgba(241, 196, 15, 0.8)',
+                  'rgba(231, 76, 60, 0.8)',
+                  'rgba(46, 204, 113, 0.8)'
+                ],
+                borderColor: [
+                  'rgba(102, 126, 234, 1)',
+                  'rgba(241, 196, 15, 1)',
+                  'rgba(231, 76, 60, 1)',
+                  'rgba(46, 204, 113, 1)'
+                ],
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                duration: 0
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: '成本金额（元）'
+                  },
+                  ticks: {
+                    callback: (value) => {
+                      return this.formatCurrency(value);
+                    }
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: false
+                },
+                title: {
+                  display: true,
+                  text: '成本构成明细',
+                  font: {
+                    size: 18
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      return `${context.label}: ${this.formatCurrency(context.parsed.y)}`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        },
+        
+        initTrendChart() {
+          const ctx = this.$refs.trendChart;
+          if (!ctx) return;
+          
+          // 生成12个月的趋势数据
+          const months = [];
+          const revenueData = [];
+          const costData = [];
+          const profitData = [];
+          
+          for (let i = 0; i < 12; i++) {
+            months.push(`${i + 1}月`);
+            // 模拟一些波动
+            const variation = 1 + (Math.random() - 0.5) * 0.2;
+            revenueData.push(this.monthlyRevenue * variation);
+            costData.push(this.monthlyCosts * variation);
+            profitData.push((this.monthlyRevenue - this.monthlyCosts) * variation);
+          }
+          
+          this.trendChart = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: months,
+              datasets: [
+                {
+                  label: '营业收入',
+                  data: revenueData,
+                  borderColor: 'rgba(46, 204, 113, 1)',
+                  backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                  fill: false,
+                  tension: 0.4,
+                  borderWidth: 3
+                },
+                {
+                  label: '总成本',
+                  data: costData,
+                  borderColor: 'rgba(231, 76, 60, 1)',
+                  backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                  fill: false,
+                  tension: 0.4,
+                  borderWidth: 3
+                },
+                {
+                  label: '净利润',
+                  data: profitData,
+                  borderColor: 'rgba(102, 126, 234, 1)',
+                  backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                  fill: true,
+                  tension: 0.4,
+                  borderWidth: 3
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: {
+                duration: 0
+              },
+              interaction: {
+                mode: 'index',
+                intersect: false
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: '成本与收入趋势分析（12个月模拟）',
+                  font: {
+                    size: 18
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      return `${context.dataset.label}: ${this.formatCurrency(context.parsed.y)}`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  title: {
+                    display: true,
+                    text: '月份'
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  }
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: '金额（元）'
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  },
+                  ticks: {
+                    callback: (value) => {
+                      return this.formatCurrency(value);
+                    }
+                  }
+                }
+              }
+            }
+          });
+        },
+        
+        initSensitivityCanvas() {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.updateSensitivityCanvas();
+            }, 200);
+          });
+        },
+        
+        updateSensitivityCanvas() {
+          const canvas = this.$refs.sensitivityCanvas;
+          if (!canvas) return;
+          
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          
+          // 清除画布
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制背景
+          ctx.fillStyle = '#f8f9fa';
+          ctx.fillRect(0, 0, width, height);
+          
+          const padding = 80;
+          const chartWidth = width - padding * 2;
+          const chartHeight = height - padding * 2;
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(padding, padding);
+          ctx.lineTo(padding, padding + chartHeight);
+          ctx.lineTo(padding + chartWidth, padding + chartHeight);
+          ctx.stroke();
+          
+          // Y轴标签
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = '14px Microsoft YaHei';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          const maxProfit = this.monthlyRevenue * 0.5;
+          const minProfit = -this.fixedCostsMonthly * 1.5;
+          const profitRange = maxProfit - minProfit;
+          
+          for (let i = 0; i <= 10; i++) {
+            const value = minProfit + (profitRange * i / 10);
+            const y = padding + chartHeight - (chartHeight * i / 10);
+            ctx.fillText(this.formatCurrency(value), padding - 10, y);
+            
+            // 绘制网格线
+            if (i > 0 && i < 10) {
+              ctx.strokeStyle = '#e0e0e0';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(padding, y);
+              ctx.lineTo(padding + chartWidth, y);
+              ctx.stroke();
+            }
+          }
+          
+          // X轴标签 - 客流量变化
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          const minCustomers = this.monthlyCustomers * 0.5;
+          const maxCustomers = this.monthlyCustomers * 2;
+          const customerRange = maxCustomers - minCustomers;
+          
+          for (let i = 0; i <= 8; i++) {
+            const value = minCustomers + (customerRange * i / 8);
+            const x = padding + (chartWidth * i / 8);
+            ctx.fillText(Math.round(value).toString(), x, padding + chartHeight + 10);
+            
+            // 绘制网格线
+            if (i > 0 && i < 8) {
+              ctx.strokeStyle = '#e0e0e0';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(x, padding);
+              ctx.lineTo(x, padding + chartHeight);
+              ctx.stroke();
+            }
+          }
+          
+          // 绘制盈亏平衡线
+          ctx.strokeStyle = '#667eea';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          const breakEvenX = padding + ((this.breakEvenCustomers - minCustomers) / customerRange) * chartWidth;
+          ctx.beginPath();
+          ctx.moveTo(breakEvenX, padding);
+          ctx.lineTo(breakEvenX, padding + chartHeight);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 标注盈亏平衡点
+          ctx.fillStyle = '#667eea';
+          ctx.font = 'bold 14px Microsoft YaHei';
+          ctx.textAlign = 'center';
+          ctx.fillText('盈亏平衡线', breakEvenX, padding - 25);
+          
+          // 绘制利润曲线
+          ctx.strokeStyle = '#2ecc71';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          
+          for (let i = 0; i <= 100; i++) {
+            const customers = minCustomers + (customerRange * i / 100);
+            const revenue = customers * this.params.avgPricePerCustomer;
+            const variableCost = revenue * (this.params.variableCostRate / 100);
+            const totalCost = this.fixedCostsMonthly + variableCost;
+            const profit = revenue - totalCost;
+            
+            const x = padding + (chartWidth * i / 100);
+            const y = padding + chartHeight - ((profit - minProfit) / profitRange) * chartHeight;
+            
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+          
+          // 填充盈利区域（绿色）
+          ctx.lineTo(padding + chartWidth, padding + chartHeight);
+          ctx.lineTo(breakEvenX, padding + chartHeight);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(46, 204, 113, 0.2)';
+          ctx.fill();
+          
+          // 重新绘制利润曲线
+          ctx.beginPath();
+          for (let i = 0; i <= 100; i++) {
+            const customers = minCustomers + (customerRange * i / 100);
+            const revenue = customers * this.params.avgPricePerCustomer;
+            const variableCost = revenue * (this.params.variableCostRate / 100);
+            const totalCost = this.fixedCostsMonthly + variableCost;
+            const profit = revenue - totalCost;
+            
+            const x = padding + (chartWidth * i / 100);
+            const y = padding + chartHeight - ((profit - minProfit) / profitRange) * chartHeight;
+            
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+          
+          // 填充亏损区域（红色）
+          const breakEvenIndex = ((this.breakEvenCustomers - minCustomers) / customerRange) * 100;
+          ctx.beginPath();
+          for (let i = 0; i <= breakEvenIndex; i++) {
+            const customers = minCustomers + (customerRange * i / 100);
+            const revenue = customers * this.params.avgPricePerCustomer;
+            const variableCost = revenue * (this.params.variableCostRate / 100);
+            const totalCost = this.fixedCostsMonthly + variableCost;
+            const profit = revenue - totalCost;
+            
+            const x = padding + (chartWidth * i / 100);
+            const y = padding + chartHeight - ((profit - minProfit) / profitRange) * chartHeight;
+            
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.lineTo(padding + (chartWidth * breakEvenIndex / 100), padding + chartHeight);
+          ctx.lineTo(padding, padding + chartHeight);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+          ctx.fill();
+          
+          // 标记当前运营点
+          const currentX = padding + ((this.monthlyCustomers - minCustomers) / customerRange) * chartWidth;
+          const currentProfit = this.monthlyProfit;
+          const currentY = padding + chartHeight - ((currentProfit - minProfit) / profitRange) * chartHeight;
+          
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(currentX, currentY, 8, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(currentX, currentY, 8, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // 标注当前点
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = 'bold 12px Microsoft YaHei';
+          ctx.textAlign = 'left';
+          ctx.fillText('当前运营点', currentX + 15, currentY - 5);
+          ctx.font = '11px Microsoft YaHei';
+          ctx.fillText(`客流量: ${Math.round(this.monthlyCustomers)}人`, currentX + 15, currentY + 10);
+          ctx.fillText(`利润: ${this.formatCurrency(currentProfit)}`, currentX + 15, currentY + 25);
+          
+          // 绘制标题
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = 'bold 20px Microsoft YaHei';
+          ctx.textAlign = 'center';
+          ctx.fillText('敏感性分析 - 客流量对利润的影响', width / 2, 30);
+          
+          // 绘制轴标题
+          ctx.font = '14px Microsoft YaHei';
+          ctx.fillText('月客流量（人）', width / 2, height - 20);
+          
+          ctx.save();
+          ctx.translate(30, height / 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText('月净利润（元）', 0, 0);
+          ctx.restore();
+          
+          // 绘制图例
+          const legendY = 60;
+          const legendX = width - 200;
+          
+          // 盈利区域
+          ctx.fillStyle = 'rgba(46, 204, 113, 0.3)';
+          ctx.fillRect(legendX, legendY, 20, 15);
+          ctx.fillStyle = '#2c3e50';
+          ctx.font = '12px Microsoft YaHei';
+          ctx.textAlign = 'left';
+          ctx.fillText('盈利区域', legendX + 25, legendY + 12);
+          
+          // 亏损区域
+          ctx.fillStyle = 'rgba(231, 76, 60, 0.3)';
+          ctx.fillRect(legendX, legendY + 25, 20, 15);
+          ctx.fillText('亏损区域', legendX + 25, legendY + 37);
+          
+          // 盈亏平衡线
+          ctx.strokeStyle = '#667eea';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(legendX, legendY + 50);
+          ctx.lineTo(legendX + 20, legendY + 50);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillText('盈亏平衡线', legendX + 25, legendY + 48);
+        },
+        
+        updateCharts() {
+          
+          
+          // 更新关键指标图表
+          if (this.keyMetricsChart) {
+            const newData = [
+              this.monthlyRevenue,
+              this.monthlyCosts,
+              this.monthlyProfit
+            ];
+            
+            // 使用原始值，避免 Vue 响应式代理导致递归
+            const dataset = this.keyMetricsChart.data.datasets[0];
+            const revenue = Number(this.monthlyRevenue) || 0;
+            const costs = Number(this.monthlyCosts) || 0;
+            const profit = Number(this.monthlyProfit) || 0;
+            dataset.data = [revenue, costs, profit];
+            // 更新净利润的颜色（使用原始值）
+            dataset.backgroundColor[2] = profit > 0 
+              ? 'rgba(102, 126, 234, 0.8)' 
+              : 'rgba(192, 57, 43, 0.8)';
+            dataset.borderColor[2] = profit > 0 
+              ? 'rgba(102, 126, 234, 1)' 
+              : 'rgba(192, 57, 43, 1)';
+            
+            try {
+              // 检查图表是否有效
+              if (this.keyMetricsChart && this.keyMetricsChart.canvas && !this.keyMetricsChart._destroyed) {
+                // 使用 'none' 模式更新，完全跳过动画
+                this.keyMetricsChart.update('none');
+              } else {
+                throw new Error('Chart not available or destroyed');
+              }
+            } catch (error) {
+              // 如果更新失败，延迟重新创建图表（避免递归）
+              if (!this._recreatingKeyMetricsChart) {
+                setTimeout(() => this.recreateKeyMetricsChart(), 300);
+              }
+            }
+          } else {
+            setTimeout(() => {
+              this.initKeyMetricsChart();
+            }, 100);
+          }
+          
+          // 更新成本结构图表
+          if (this.costStructureChart && this.costStructureChart.canvas) {
+            // 使用原始值，避免 Vue 响应式代理
+            const costData = [
+              Number(this.fixedCostsMonthly) || 0,
+              Number(this.foodCostsMonthly) || 0,
+              Number(this.laborCostsMonthly) || 0,
+              Math.max(0, Number(this.otherVariableCosts) || 0)
+            ];
+            
+            // 直接更新数据，不触发响应式
+            if (this.costStructureChart.data && this.costStructureChart.data.datasets && this.costStructureChart.data.datasets[0]) {
+              const dataset = this.costStructureChart.data.datasets[0];
+              dataset.data = costData;
+              
+              try {
+                // 检查图表是否有效
+                if (this.costStructureChart && this.costStructureChart.canvas && !this.costStructureChart._destroyed) {
+                  // 使用 'none' 模式更新
+                  this.costStructureChart.update('none');
+                } else {
+                  throw new Error('Chart not available or destroyed');
+                }
+              } catch (error) {
+                if (!this._recreatingCostStructureChart) {
+                  setTimeout(() => this.recreateCostStructureChart(), 300);
+                }
+              }
+            }
+          } else {
+          }
+          
+          if (this.profitLossChart && this.profitLossChart.canvas) {
+            // 使用原始值，避免 Vue 响应式代理
+            const monthlyCustomers = Number(this.monthlyCustomers) || 0;
+            const breakEvenCustomers = Number(this.breakEvenCustomers) || 0;
+            const avgPrice = Number(this.params.avgPricePerCustomer) || 0;
+            const variableRate = Number(this.params.variableCostRate) || 0;
+            const fixedCosts = Number(this.fixedCostsMonthly) || 0;
+            
+            // 重新生成盈亏分析数据
+            const dataPoints = [];
+            const maxCustomers = Math.max(monthlyCustomers * 1.5, breakEvenCustomers * 2, 1000);
+            
+            for (let customers = 0; customers <= maxCustomers; customers += maxCustomers / 50) {
+              const revenue = customers * avgPrice;
+              const variableCost = revenue * (variableRate / 100);
+              const totalCost = fixedCosts + variableCost;
+              const profit = revenue - totalCost;
+              
+              dataPoints.push({
+                customers: customers,
+                revenue: revenue,
+                totalCost: totalCost,
+                profit: profit
+              });
+            }
+            
+            // 找到盈亏平衡点和当前运营点的索引
+            const breakEvenIndex = dataPoints.findIndex(d => d.profit >= 0);
+            const currentIndex = dataPoints.findIndex(d => Math.abs(d.customers - monthlyCustomers) < (maxCustomers / 50));
+            
+            // 使用原始数组，避免 Vue 响应式代理
+            if (this.profitLossChart.data && this.profitLossChart.data.datasets && this.profitLossChart.data.datasets.length >= 3) {
+              this.profitLossChart.data.labels = dataPoints.map(d => Math.round(d.customers));
+              this.profitLossChart.data.datasets[0].data = dataPoints.map(d => Number(d.revenue) || 0);
+              this.profitLossChart.data.datasets[1].data = dataPoints.map(d => Number(d.totalCost) || 0);
+              this.profitLossChart.data.datasets[2].data = dataPoints.map(d => Number(d.profit) || 0);
+            
+              // 更新盈亏平衡点标记（如果存在）
+              if (this.profitLossChart.data.datasets.length > 3 && breakEvenIndex >= 0) {
+                const breakEvenPoint = dataPoints[breakEvenIndex];
+                this.profitLossChart.data.datasets[3].data = dataPoints.map((d, i) => i === breakEvenIndex ? (Number(breakEvenPoint.revenue) || 0) : null);
+              }
+              
+              // 更新当前运营点标记（如果存在）
+              if (this.profitLossChart.data.datasets.length > 4 && currentIndex >= 0) {
+                const currentPoint = dataPoints[currentIndex];
+                this.profitLossChart.data.datasets[4].data = dataPoints.map((d, i) => i === currentIndex ? (Number(currentPoint.revenue) || 0) : null);
+              }
+            
+              try {
+                // 检查图表是否有效
+                if (this.profitLossChart && this.profitLossChart.canvas && !this.profitLossChart._destroyed) {
+                  // 使用 'none' 模式更新，完全跳过动画
+                  this.profitLossChart.update('none');
+                } else {
+                  throw new Error('Chart not available or destroyed');
+                }
+              } catch (error) {
+                if (!this._recreatingProfitLossChart) {
+                  setTimeout(() => this.recreateProfitLossChart(), 300);
+                }
+              }
+            }
+          }
+          
+          // 更新成本构成明细图表
+          if (this.costBreakdownChart && this.costBreakdownChart.canvas) {
+            // 使用原始值，避免 Vue 响应式代理
+            const breakdownData = [
+              Number(this.fixedCostsMonthly) || 0,
+              Number(this.foodCostsMonthly) || 0,
+              Number(this.laborCostsMonthly) || 0,
+              Math.max(0, Number(this.otherVariableCosts) || 0)
+            ];
+            
+            if (this.costBreakdownChart.data && this.costBreakdownChart.data.datasets && this.costBreakdownChart.data.datasets[0]) {
+              const dataset = this.costBreakdownChart.data.datasets[0];
+              dataset.data = breakdownData;
+              
+              try {
+                // 检查图表是否有效
+                if (this.costBreakdownChart && this.costBreakdownChart.canvas && !this.costBreakdownChart._destroyed) {
+                  // 使用 'none' 模式更新
+                  this.costBreakdownChart.update('none');
+                } else {
+                  throw new Error('Chart not available or destroyed');
+                }
+              } catch (error) {
+                if (!this._recreatingCostBreakdownChart) {
+                  setTimeout(() => this.recreateCostBreakdownChart(), 300);
+                }
+              }
+            }
+          } else {
+          }
+          
+          // 盈亏分析图表已经在上面更新了，这里不需要重复
+          
+        },
+        
+        // 手动刷新所有图表（作为备选方案）
+        refreshAllCharts() {
+          this.updateCalculations();
+        },
+        
+        // 重新创建图表的方法（避免在更新时直接调用，造成递归）
+        recreateKeyMetricsChart() {
+          if (this._recreatingKeyMetricsChart) {
+            return;
+          }
+          
+          this._recreatingKeyMetricsChart = true;
+          
+          if (this.keyMetricsChart) {
+            try {
+              this.keyMetricsChart.destroy();
+            } catch (e) {
+            }
+            this.keyMetricsChart = null;
+          }
+          
+          setTimeout(() => {
+            this.initKeyMetricsChart();
+            setTimeout(() => {
+              this._recreatingKeyMetricsChart = false;
+            }, 500);
+          }, 200);
+        },
+        
+        recreateCostStructureChart() {
+          if (this._recreatingCostStructureChart) {
+            return;
+          }
+          
+          this._recreatingCostStructureChart = true;
+          
+          if (this.costStructureChart) {
+            try {
+              this.costStructureChart.destroy();
+            } catch (e) {
+            }
+            this.costStructureChart = null;
+          }
+          
+          setTimeout(() => {
+            this.initCostStructureChart();
+            setTimeout(() => {
+              this._recreatingCostStructureChart = false;
+            }, 500);
+          }, 200);
+        },
+        
+        recreateCostBreakdownChart() {
+          if (this._recreatingCostBreakdownChart) {
+            return;
+          }
+          
+          this._recreatingCostBreakdownChart = true;
+          
+          if (this.costBreakdownChart) {
+            try {
+              this.costBreakdownChart.destroy();
+            } catch (e) {
+            }
+            this.costBreakdownChart = null;
+          }
+          
+          setTimeout(() => {
+            this.initCostBreakdownChart();
+            setTimeout(() => {
+              this._recreatingCostBreakdownChart = false;
+            }, 500);
+          }, 200);
+        },
+        
+        recreateProfitLossChart() {
+          if (this._recreatingProfitLossChart) {
+            return;
+          }
+          
+          this._recreatingProfitLossChart = true;
+          
+          if (this.profitLossChart) {
+            try {
+              this.profitLossChart.destroy();
+            } catch (e) {
+            }
+            this.profitLossChart = null;
+          }
+          
+          setTimeout(() => {
+            this.initProfitLossChart();
+            setTimeout(() => {
+              this._recreatingProfitLossChart = false;
+            }, 500);
+          }, 200);
+        },
+        
+        animateElements() {
+          if (typeof gsap !== 'undefined') {
+            gsap.from('.section', {
+              opacity: 0,
+              y: 30,
+              duration: 0.8,
+              stagger: 0.2,
+              ease: 'power2.out',
+              delay: 0.3
+            });
+            
+            gsap.from('.stat-card', {
+              scale: 0,
+              duration: 0.5,
+              stagger: 0.1,
+              ease: 'back.out(1.7)',
+              delay: 1
+            });
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+

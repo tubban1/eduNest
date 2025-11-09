@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="通过3D互动体验学习酒店运营流程，从预订、入住、住宿服务到退房的完整服务动线，了解酒店服务标准和客户体验管理。">
+  <meta name="keywords" content="酒店运营,服务流程,客户体验,酒店管理,服务动线,入住流程,退房流程,酒店服务标准,客户服务,酒店培训">
+  <title>酒店运营流程3D互动学习 - 从入住到退房的服务动线</title>
+  
+  <!-- Vue 3.5.20 -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  
+  <!-- Three.js -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"></script>
+  
+  <!-- OrbitControls for camera interaction - 使用UMD版本 -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- GSAP for animations -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"></script>
+  
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/chart.umd.min.js'"></script>
+  
+  <!-- ECharts as alternative -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/echarts.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.8;
+      color: #2c3e50;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1 {
+      color: #ffffff;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      padding: 20px 0;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+    
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    @media (max-width: 1200px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .canvas-wrapper {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 20px;
+      position: relative;
+      min-height: 600px;
+    }
+    
+    #threejs-canvas {
+      width: 100% !important;
+      height: 600px !important;
+      min-height: 600px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+      display: block;
+      cursor: grab;
+      touch-action: none;
+    }
+    
+    #threejs-canvas:active {
+      cursor: grabbing;
+    }
+    
+    .canvas-hint {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      z-index: 10;
+      pointer-events: none;
+      animation: fadeInOut 5s ease-in-out infinite;
+    }
+    
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    
+    .control-panel {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 25px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .stage-selector {
+      margin-bottom: 25px;
+    }
+    
+    .stage-selector h3 {
+      color: #2c3e50;
+      font-size: 1.3em;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .stage-selector h3::before {
+      content: "📍";
+      font-size: 1.2em;
+    }
+    
+    .stage-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .stage-btn {
+      padding: 15px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stage-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .stage-btn:hover::before {
+      left: 100%;
+    }
+    
+    .stage-btn:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .stage-btn.active {
+      background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+      font-weight: bold;
+    }
+    
+    .stage-info {
+      margin-top: 25px;
+      padding: 20px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+      border-left: 5px solid #667eea;
+    }
+    
+    .stage-info h4 {
+      color: #2c3e50;
+      font-size: 1.2em;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .stage-info h4::before {
+      content: "✨";
+      font-size: 1.1em;
+    }
+    
+    .stage-info ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 15px;
+    }
+    
+    .stage-info li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+      color: #495057;
+    }
+    
+    .stage-info li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #667eea;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    
+    .stats-section {
+      margin-top: 25px;
+      padding: 20px;
+      background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+      border-radius: 8px;
+      border-left: 5px solid #d4af37;
+    }
+    
+    .stats-section h4 {
+      color: #8b6914;
+      font-size: 1.1em;
+      margin-bottom: 15px;
+    }
+    
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+    }
+    
+    .stat-item:last-child {
+      border-bottom: none;
+    }
+    
+    .stat-label {
+      color: #8b6914;
+      font-weight: 500;
+    }
+    
+    .stat-value {
+      color: #d4af37;
+      font-weight: bold;
+    }
+    
+    .chart-section {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 25px;
+      margin-top: 20px;
+    }
+    
+    .chart-section h3 {
+      color: #2c3e50;
+      font-size: 1.3em;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin: 20px 0;
+    }
+    
+    .timeline-section {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 25px;
+      margin-top: 20px;
+    }
+    
+    .timeline-section h3 {
+      color: #2c3e50;
+      font-size: 1.3em;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+    
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      padding: 15px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .timeline-item:hover {
+      transform: translateX(10px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .timeline-item.active {
+      background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+      border-left-color: #d4af37;
+    }
+    
+    .timeline-number {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+    
+    .timeline-item.active .timeline-number {
+      background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    }
+    
+    .timeline-content {
+      flex: 1;
+    }
+    
+    .timeline-content h4 {
+      color: #2c3e50;
+      font-size: 1.1em;
+      margin-bottom: 5px;
+    }
+    
+    .timeline-content p {
+      color: #6c757d;
+      font-size: 0.9em;
+    }
+    
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      z-index: 1000;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .info-panel {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 25px;
+      margin-top: 20px;
+    }
+    
+    .info-panel h3 {
+      color: #2c3e50;
+      font-size: 1.3em;
+      margin-bottom: 15px;
+    }
+    
+    .info-card {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .info-card h4 {
+      color: #2c3e50;
+      font-size: 1em;
+      margin-bottom: 8px;
+    }
+    
+    .info-card p {
+      color: #6c757d;
+      font-size: 0.9em;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>{{ title }}</h1>
+      <p class="subtitle">{{ subtitle }}</p>
+      
+      <div class="main-content">
+        <!-- 3D Canvas Area -->
+        <div class="canvas-wrapper">
+          <div v-if="loading" class="loading-overlay">
+            <div class="loading-spinner"></div>
+          </div>
+          <div style="position: relative;">
+            <canvas id="threejs-canvas"></canvas>
+            <div class="canvas-hint">
+              🖱️ 鼠标拖动旋转视角 | 🔍 滚轮缩放 | 📱 触摸拖动
+            </div>
+          </div>
+          <div style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 8px;">
+            <h4 style="color: #2c3e50; margin-bottom: 10px; font-size: 1.1em;">📖 3D场景说明</h4>
+            <p style="color: #6c757d; font-size: 0.95em; line-height: 1.6;">
+              这个3D场景展示了酒店服务流程的各个阶段。每个阶段都有不同的3D模型，代表该阶段的关键服务元素。
+              您可以通过鼠标拖动来旋转视角，滚轮缩放，从不同角度观察服务场景。
+              点击右侧的阶段按钮可以切换到不同的服务阶段，查看对应的3D场景和数据分析。
+            </p>
+          </div>
+        </div>
+        
+        <!-- Control Panel -->
+        <div class="control-panel">
+          <div class="stage-selector">
+            <h3>服务阶段</h3>
+            <div class="stage-buttons">
+              <button 
+                v-for="(stage, index) in stages" 
+                :key="index"
+                class="stage-btn"
+                :class="{ active: currentStage === index }"
+                @click="switchStage(index)"
+              >
+                {{ stage.name }}
+              </button>
+            </div>
+          </div>
+          
+          <div class="stage-info">
+            <h4>{{ currentStageData.name }}</h4>
+            <p>{{ currentStageData.description }}</p>
+            <ul>
+              <li v-for="(step, index) in currentStageData.steps" :key="index">{{ step }}</li>
+            </ul>
+          </div>
+          
+          <div class="stats-section">
+            <h4>关键指标</h4>
+            <div class="stat-item">
+              <span class="stat-label">平均处理时间</span>
+              <span class="stat-value">{{ currentStageData.stats.time }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">客户满意度</span>
+              <span class="stat-value">{{ currentStageData.stats.satisfaction }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">服务标准</span>
+              <span class="stat-value">{{ currentStageData.stats.standard }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Chart Section -->
+      <div class="chart-section">
+        <h3>服务流程效率分析</h3>
+        <div class="chart-container">
+          <canvas ref="efficiencyChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Timeline Section -->
+      <div class="timeline-section">
+        <h3>完整服务时间线</h3>
+        <div class="timeline">
+          <div 
+            v-for="(stage, index) in stages" 
+            :key="index"
+            class="timeline-item"
+            :class="{ active: currentStage === index }"
+            @click="switchStage(index)"
+          >
+            <div class="timeline-number">{{ index + 1 }}</div>
+            <div class="timeline-content">
+              <h4>{{ stage.name }}</h4>
+              <p>{{ stage.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Info Panel -->
+      <div class="info-panel">
+        <h3>服务要点</h3>
+        <div class="info-card" v-for="(tip, index) in currentStageData.tips" :key="index">
+          <h4>{{ tip.title }}</h4>
+          <p>{{ tip.content }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (typeof Vue === 'undefined') {
+      document.body.innerHTML = '<div style="text-align:center;padding:50px;"><h1>加载错误</h1><p>Vue 库未能正确加载，请检查网络连接。</p></div>';
+    } else {
+      const { createApp } = Vue;
+
+      const app = createApp({
+        data() {
+          return {
+            title: '酒店运营流程3D互动学习',
+            subtitle: '从入住到退房的完整服务动线体验',
+            loading: true,
+            currentStage: 0,
+            stages: [
+              {
+                name: '预订阶段',
+                description: '客户预订酒店，系统记录需求',
+                steps: [
+                  '接收预订请求',
+                  '确认房间可用性',
+                  '记录客户特殊需求',
+                  '发送确认信息',
+                  '准备个性化服务'
+                ],
+                stats: {
+                  time: '2-5分钟',
+                  satisfaction: '98%',
+                  standard: '5分钟响应'
+                },
+                tips: [
+                  {
+                    title: '快速响应',
+                    content: '确保在5分钟内响应客户预订请求，提供即时确认'
+                  },
+                  {
+                    title: '需求记录',
+                    content: '详细记录客户的特殊需求，如楼层偏好、床型要求等'
+                  },
+                  {
+                    title: '个性化准备',
+                    content: '根据客户历史记录，提前准备个性化欢迎服务'
+                  }
+                ],
+                cameraPosition: { x: 0, y: 5, z: 15 },
+                sceneObjects: ['reception', 'computer', 'phone']
+              },
+              {
+                name: '抵达阶段',
+                description: '客户到达酒店，办理入住手续',
+                steps: [
+                  '热情欢迎客户',
+                  '快速办理入住',
+                  '介绍酒店设施',
+                  '提供房间钥匙',
+                  '协助行李搬运'
+                ],
+                stats: {
+                  time: '3-8分钟',
+                  satisfaction: '96%',
+                  standard: '10分钟完成'
+                },
+                tips: [
+                  {
+                    title: '第一印象',
+                    content: '客户抵达时的第一印象至关重要，要展现专业和热情'
+                  },
+                  {
+                    title: '效率优先',
+                    content: '优化入住流程，确保在10分钟内完成所有手续'
+                  },
+                  {
+                    title: '信息传达',
+                    content: '清晰介绍酒店设施、服务时间和重要信息'
+                  }
+                ],
+                cameraPosition: { x: 5, y: 3, z: 12 },
+                sceneObjects: ['lobby', 'frontDesk', 'luggage']
+              },
+              {
+                name: '住宿服务',
+                description: '客户住宿期间的各种服务',
+                steps: [
+                  '客房服务',
+                  '餐饮服务',
+                  '设施使用指导',
+                  '问题快速响应',
+                  '持续关注需求'
+                ],
+                stats: {
+                  time: '24小时',
+                  satisfaction: '94%',
+                  standard: '即时响应'
+                },
+                tips: [
+                  {
+                    title: '主动服务',
+                    content: '主动关注客户需求，提供超出期望的服务'
+                  },
+                  {
+                    title: '快速响应',
+                    content: '对客户请求做到即时响应，确保问题快速解决'
+                  },
+                  {
+                    title: '个性化关怀',
+                    content: '根据客户偏好提供个性化服务，增强体验'
+                  }
+                ],
+                cameraPosition: { x: -5, y: 4, z: 10 },
+                sceneObjects: ['room', 'service', 'amenities']
+              },
+              {
+                name: '退房阶段',
+                description: '客户办理退房手续',
+                steps: [
+                  '确认退房时间',
+                  '检查房间状态',
+                  '处理账单',
+                  '收集反馈',
+                  '送别客户'
+                ],
+                stats: {
+                  time: '5-10分钟',
+                  satisfaction: '95%',
+                  standard: '10分钟完成'
+                },
+                tips: [
+                  {
+                    title: '快速结算',
+                    content: '优化退房流程，确保快速准确完成账单结算'
+                  },
+                  {
+                    title: '反馈收集',
+                    content: '主动收集客户反馈，用于持续改进服务'
+                  },
+                  {
+                    title: '完美收尾',
+                    content: '以热情的态度送别客户，留下良好印象'
+                  }
+                ],
+                cameraPosition: { x: 0, y: 3, z: 12 },
+                sceneObjects: ['checkout', 'payment', 'feedback']
+              },
+              {
+                name: '后续服务',
+                description: '退房后的客户关系维护',
+                steps: [
+                  '发送感谢信息',
+                  '更新客户档案',
+                  '处理后续问题',
+                  '邀请再次入住',
+                  '持续关系维护'
+                ],
+                stats: {
+                  time: '持续',
+                  satisfaction: '92%',
+                  standard: '24小时响应'
+                },
+                tips: [
+                  {
+                    title: '关系维护',
+                    content: '通过后续沟通维护客户关系，提高复购率'
+                  },
+                  {
+                    title: '档案更新',
+                    content: '及时更新客户档案，记录偏好和反馈'
+                  },
+                  {
+                    title: '持续改进',
+                    content: '根据客户反馈持续改进服务流程'
+                  }
+                ],
+                cameraPosition: { x: 0, y: 5, z: 15 },
+                sceneObjects: ['followup', 'database', 'communication']
+              }
+            ],
+            efficiencyChart: null,
+            threeScene: null,
+            threeCamera: null,
+            threeRenderer: null,
+            threeControls: null,
+            animationId: null
+          };
+        },
+        computed: {
+          currentStageData() {
+            return this.stages[this.currentStage];
+          }
+        },
+        mounted() {
+          this.initThreeJS();
+          this.initChart();
+          this.waitForLibraries().then(() => {
+            setTimeout(() => {
+              this.loading = false;
+            }, 1000);
+          });
+        },
+        beforeUnmount() {
+          if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+          }
+          if (this.threeRenderer) {
+            this.threeRenderer.dispose();
+          }
+        },
+        methods: {
+          waitForLibraries() {
+            return new Promise((resolve) => {
+              let attempts = 0;
+              const maxAttempts = 50;
+              
+              const checkLibraries = () => {
+                attempts++;
+                
+                if (typeof Vue === 'undefined' || typeof THREE === 'undefined') {
+                  if (attempts < maxAttempts) {
+                    setTimeout(checkLibraries, 100);
+                    return;
+                  } else {
+                    resolve();
+                    return;
+                  }
+                }
+                
+                resolve();
+              };
+              
+              checkLibraries();
+            });
+          },
+          
+          initThreeJS() {
+            this.$nextTick(() => {
+              const canvas = document.getElementById('threejs-canvas');
+              if (!canvas) {
+                setTimeout(() => this.initThreeJS(), 100);
+                return;
+              }
+              
+              // 等待Three.js加载
+              if (typeof THREE === 'undefined') {
+                setTimeout(() => this.initThreeJS(), 100);
+                return;
+              }
+              
+              // 创建场景 - 使用原始对象，避免Vue代理
+              const scene = new THREE.Scene();
+              scene.background = new THREE.Color(0xf0f4ff);
+              scene.fog = null;
+              
+              // 使用 Object.defineProperty 将场景存储为原始对象，避免Vue响应式代理
+              Object.defineProperty(this, 'threeScene', {
+                value: scene,
+                writable: true,
+                configurable: true,
+                enumerable: false
+              });
+              
+              // 创建相机
+              const width = Math.max(canvas.clientWidth || 800, 400);
+              const height = Math.max(canvas.clientHeight || 600, 400);
+              
+              if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) {
+                setTimeout(() => this.initThreeJS(), 100);
+                return;
+              }
+              
+              const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+              camera.position.set(0, 5, 15);
+              camera.lookAt(new THREE.Vector3(0, 0, 0));
+              camera.updateProjectionMatrix();
+              
+              // 使用 Object.defineProperty 将相机存储为原始对象
+              Object.defineProperty(this, 'threeCamera', {
+                value: camera,
+                writable: true,
+                configurable: true,
+                enumerable: false
+              });
+              
+              // 创建渲染器
+              const renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas, 
+                antialias: true,
+                alpha: false,
+                powerPreference: "high-performance"
+              });
+              renderer.setSize(width, height, false);
+              renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+              renderer.shadowMap.enabled = true;
+              renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+              
+              // 设置颜色空间（如果支持）
+              if (renderer.outputEncoding !== undefined) {
+                renderer.outputEncoding = THREE.sRGBEncoding;
+              }
+              if (renderer.toneMapping !== undefined) {
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.0;
+              }
+              
+              // 使用 Object.defineProperty 将渲染器存储为原始对象
+              Object.defineProperty(this, 'threeRenderer', {
+                value: renderer,
+                writable: true,
+                configurable: true,
+                enumerable: false
+              });
+              
+              // 添加轨道控制器（鼠标交互）
+              // 延迟初始化，确保OrbitControls已加载，并使用原始对象避免Vue代理
+              const initControlsDelayed = () => {
+                try {
+                  // 检查OrbitControls是否可用
+                  const OrbitControlsClass = THREE.OrbitControls || window.OrbitControls;
+                  
+                  if (typeof OrbitControlsClass === 'undefined') {
+                    return false;
+                  }
+                  
+                  // 获取原始对象（不是Vue代理）
+                  // 由于我们已经用Object.defineProperty存储，这些应该是原始对象
+                  const rawCamera = camera;
+                  const rawCanvas = renderer.domElement;
+                  
+                  if (!rawCamera || !rawCanvas) {
+                    return false;
+                  }
+                  
+                  // 创建控制器实例
+                  const controls = new OrbitControlsClass(rawCamera, rawCanvas);
+                  
+                  // 配置控制器
+                  controls.enableDamping = true;
+                  controls.dampingFactor = 0.05;
+                  controls.enableZoom = true;
+                  controls.enablePan = true;
+                  controls.enableRotate = true;
+                  controls.minDistance = 5;
+                  controls.maxDistance = 50;
+                  controls.maxPolarAngle = Math.PI / 2;
+                  controls.autoRotate = false;
+                  controls.autoRotateSpeed = 0.5;
+                  controls.target.set(0, 0, 0);
+                  
+                  // 存储控制器（非响应式，避免Vue代理）
+                  Object.defineProperty(this, 'threeControls', {
+                    value: controls,
+                    writable: true,
+                    configurable: true,
+                    enumerable: false
+                  });
+                  
+                  return true;
+                } catch (error) {
+                  console.warn('OrbitControls初始化失败:', error);
+                  return false;
+                }
+              };
+              
+              // 延迟初始化控制器，确保库已加载
+              setTimeout(() => {
+                if (!initControlsDelayed()) {
+                  // 如果第一次失败，重试几次
+                  let attempts = 0;
+                  const maxAttempts = 20;
+                  const retryInterval = setInterval(() => {
+                    attempts++;
+                    if (initControlsDelayed() || attempts >= maxAttempts) {
+                      clearInterval(retryInterval);
+                    }
+                  }, 100);
+                }
+              }, 300);
+              
+              // 添加环境光（更亮）
+              const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+              scene.add(ambientLight);
+              
+              // 添加主光源
+              const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+              directionalLight.position.set(10, 10, 5);
+              directionalLight.castShadow = true;
+              directionalLight.shadow.mapSize.width = 2048;
+              directionalLight.shadow.mapSize.height = 2048;
+              scene.add(directionalLight);
+              
+              // 添加辅助光源
+              const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+              directionalLight2.position.set(-10, 5, -5);
+              scene.add(directionalLight2);
+              
+              // 添加点光源
+              const pointLight = new THREE.PointLight(0xffffff, 0.8);
+              pointLight.position.set(0, 8, 0);
+              scene.add(pointLight);
+              
+              // 添加网格地面
+              const gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0xcccccc);
+              scene.add(gridHelper);
+              
+              // 添加说明文字（3D文本提示）
+              const canvas2D = document.createElement('canvas');
+              canvas2D.width = 512;
+              canvas2D.height = 128;
+              const context2D = canvas2D.getContext('2d');
+              context2D.fillStyle = 'rgba(255, 255, 255, 0.9)';
+              context2D.fillRect(0, 0, canvas2D.width, canvas2D.height);
+              context2D.fillStyle = '#2c3e50';
+              context2D.font = 'bold 32px Microsoft YaHei';
+              context2D.textAlign = 'center';
+              context2D.textBaseline = 'middle';
+              context2D.fillText('酒店服务流程', canvas2D.width / 2, canvas2D.height / 2 - 20);
+              context2D.font = '20px Microsoft YaHei';
+              context2D.fillText('鼠标拖动旋转 | 滚轮缩放', canvas2D.width / 2, canvas2D.height / 2 + 20);
+              
+              const texture = new THREE.CanvasTexture(canvas2D);
+              const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+              const sprite = new THREE.Sprite(spriteMaterial);
+              sprite.position.set(0, 8, 0);
+              sprite.scale.set(4, 1, 1);
+              sprite.userData = { isStageObject: false };
+              scene.add(sprite);
+              
+              // 立即渲染一次，确保场景可见
+              try {
+                renderer.render(scene, camera);
+              } catch (error) {
+                // 如果渲染失败，稍后重试
+              }
+              
+              // 创建初始场景
+              setTimeout(() => {
+                this.createStageScene(this.currentStage);
+                // 再次渲染确保显示
+                if (renderer && scene && camera) {
+                  renderer.render(scene, camera);
+                }
+              }, 300);
+              
+              // 动画循环 - 使用局部变量避免Vue代理
+              const animate = () => {
+                this.animationId = requestAnimationFrame(animate);
+                
+                try {
+                  // 使用局部变量访问，避免Vue代理
+                  const scene = this.threeScene;
+                  const camera = this.threeCamera;
+                  const renderer = this.threeRenderer;
+                  const controls = this.threeControls;
+                  
+                  // 更新控制器（如果存在）
+                  if (controls) {
+                    controls.update();
+                  }
+                  
+                  // 旋转场景中的对象
+                  if (scene && scene.children) {
+                    scene.children.forEach(child => {
+                      if (child.userData && child.userData.rotatable) {
+                        child.rotation.y += 0.01;
+                      }
+                    });
+                  }
+                  
+                  // 渲染场景
+                  if (renderer && scene && camera) {
+                    renderer.render(scene, camera);
+                  }
+                } catch (error) {
+                  // 忽略渲染错误，避免中断动画循环
+                }
+              };
+              
+              animate();
+              
+              // 响应窗口大小变化
+              const handleResize = () => {
+                const scene = this.threeScene;
+                const camera = this.threeCamera;
+                const renderer = this.threeRenderer;
+                if (!canvas || !camera || !renderer) return;
+                const width = Math.max(canvas.clientWidth || 800, 400);
+                const height = Math.max(canvas.clientHeight || 600, 400);
+                if (width > 0 && height > 0) {
+                  camera.aspect = width / height;
+                  camera.updateProjectionMatrix();
+                  renderer.setSize(width, height, false);
+                }
+              };
+              
+              window.addEventListener('resize', handleResize);
+              
+              // 确保初始渲染
+              setTimeout(() => {
+                const scene = this.threeScene;
+                const camera = this.threeCamera;
+                const renderer = this.threeRenderer;
+                if (renderer && scene && camera) {
+                  renderer.render(scene, camera);
+                }
+              }, 200);
+            });
+          },
+          
+          createStageScene(stageIndex) {
+            // 使用局部变量访问，避免Vue代理
+            const scene = this.threeScene;
+            const camera = this.threeCamera;
+            const renderer = this.threeRenderer;
+            
+            if (!scene || !camera) return;
+            
+            // 清除现有对象（保留灯光和网格）
+            const objectsToRemove = [];
+            scene.children.forEach(child => {
+              if (child.userData && child.userData.isStageObject) {
+                objectsToRemove.push(child);
+              }
+            });
+            
+            // 清理几何体和材质，避免内存泄漏
+            objectsToRemove.forEach(obj => {
+              if (obj.geometry) obj.geometry.dispose();
+              if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                  obj.material.forEach(mat => mat.dispose());
+                } else {
+                  obj.material.dispose();
+                }
+              }
+              scene.remove(obj);
+            });
+            
+            const stage = this.stages[stageIndex];
+            
+            // 根据阶段创建不同的3D场景
+            try {
+              switch(stageIndex) {
+                case 0: // 预订阶段
+                  this.createReceptionScene();
+                  break;
+                case 1: // 抵达阶段
+                  this.createLobbyScene();
+                  break;
+                case 2: // 住宿服务
+                  this.createRoomScene();
+                  break;
+                case 3: // 退房阶段
+                  this.createCheckoutScene();
+                  break;
+                case 4: // 后续服务
+                  this.createFollowupScene();
+                  break;
+              }
+            } catch (error) {
+              // 静默处理错误
+            }
+            
+            // 平滑移动相机 - 使用局部变量，直接操作原始对象
+            const controls = this.threeControls;
+            
+            if (typeof gsap !== 'undefined' && camera) {
+              // 如果有控制器，先禁用自动旋转
+              if (controls) {
+                controls.autoRotate = false;
+              }
+              
+              // 直接操作相机的position属性（原始对象）
+              const cameraPos = camera.position;
+              gsap.to(cameraPos, {
+                x: stage.cameraPosition.x,
+                y: stage.cameraPosition.y,
+                z: stage.cameraPosition.z,
+                duration: 1.5,
+                ease: 'power2.out',
+                onUpdate: () => {
+                  if (camera) {
+                    camera.lookAt(new THREE.Vector3(0, 0, 0));
+                  }
+                  // 更新控制器目标
+                  if (controls) {
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+                  }
+                },
+                onComplete: () => {
+                  if (camera) {
+                    camera.lookAt(new THREE.Vector3(0, 0, 0));
+                    camera.updateProjectionMatrix();
+                  }
+                  // 更新控制器目标
+                  if (controls) {
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+                  }
+                  // 确保场景渲染
+                  if (renderer && scene && camera) {
+                    renderer.render(scene, camera);
+                  }
+                }
+              });
+            } else if (camera) {
+              camera.position.set(
+                stage.cameraPosition.x,
+                stage.cameraPosition.y,
+                stage.cameraPosition.z
+              );
+              camera.lookAt(new THREE.Vector3(0, 0, 0));
+              camera.updateProjectionMatrix();
+              // 更新控制器目标
+              if (controls) {
+                try {
+                  controls.target.set(0, 0, 0);
+                  controls.update();
+                } catch (e) {
+                  // 忽略控制器更新错误
+                }
+              }
+              // 确保场景渲染
+              if (renderer && scene) {
+                renderer.render(scene, camera);
+              }
+            }
+          },
+          
+          createReceptionScene() {
+            const scene = this.threeScene;
+            if (!scene) return;
+            
+            // 创建前台桌子
+            const deskGeometry = new THREE.BoxGeometry(4, 0.5, 2);
+            const deskMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x8b4513,
+              metalness: 0.3,
+              roughness: 0.7
+            });
+            const desk = new THREE.Mesh(deskGeometry, deskMaterial);
+            desk.position.set(0, 0.25, 0);
+            desk.castShadow = true;
+            desk.receiveShadow = true;
+            desk.userData = { isStageObject: true, rotatable: false };
+            scene.add(desk);
+            
+            // 创建电脑
+            const computerGeometry = new THREE.BoxGeometry(0.8, 0.6, 0.1);
+            const computerMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x333333,
+              metalness: 0.8,
+              roughness: 0.2
+            });
+            const computer = new THREE.Mesh(computerGeometry, computerMaterial);
+            computer.position.set(0, 1, 0);
+            computer.userData = { isStageObject: true, rotatable: false };
+            scene.add(computer);
+            
+            // 创建电脑屏幕
+            const screenGeometry = new THREE.BoxGeometry(0.75, 0.5, 0.05);
+            const screenMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x1a1a1a,
+              emissive: 0x001122,
+              emissiveIntensity: 0.3
+            });
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 1.4, -0.02);
+            screen.userData = { isStageObject: true, rotatable: false };
+            scene.add(screen);
+            
+            // 创建电话
+            const phoneGeometry = new THREE.BoxGeometry(0.3, 0.2, 0.3);
+            const phoneMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x4a90e2,
+              metalness: 0.5,
+              roughness: 0.5
+            });
+            const phone = new THREE.Mesh(phoneGeometry, phoneMaterial);
+            phone.position.set(-1, 0.8, 0);
+            phone.userData = { isStageObject: true, rotatable: false };
+            scene.add(phone);
+          },
+          
+          createLobbyScene() {
+            const scene = this.threeScene;
+            if (!scene) return;
+            
+            // 创建大厅地面
+            const floorGeometry = new THREE.PlaneGeometry(10, 10);
+            const floorMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0xdddddd,
+              metalness: 0.1,
+              roughness: 0.8
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = 0;
+            floor.receiveShadow = true;
+            floor.userData = { isStageObject: true, rotatable: false };
+            scene.add(floor);
+            
+            // 创建前台
+            const frontDeskGeometry = new THREE.BoxGeometry(3, 1, 1);
+            const frontDeskMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0xd4af37,
+              metalness: 0.4,
+              roughness: 0.6
+            });
+            const frontDesk = new THREE.Mesh(frontDeskGeometry, frontDeskMaterial);
+            frontDesk.position.set(0, 0.5, -2);
+            frontDesk.castShadow = true;
+            frontDesk.receiveShadow = true;
+            frontDesk.userData = { isStageObject: true, rotatable: false };
+            scene.add(frontDesk);
+            
+            // 创建行李
+            const luggageGeometry = new THREE.BoxGeometry(0.8, 0.6, 0.4);
+            const luggageMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x8b4513,
+              metalness: 0.2,
+              roughness: 0.8
+            });
+            const luggage = new THREE.Mesh(luggageGeometry, luggageMaterial);
+            luggage.position.set(2, 0.3, 0);
+            luggage.castShadow = true;
+            luggage.receiveShadow = true;
+            luggage.userData = { isStageObject: true, rotatable: true };
+            scene.add(luggage);
+            
+            // 创建第二个行李
+            const luggage2 = new THREE.Mesh(luggageGeometry, luggageMaterial.clone());
+            luggage2.position.set(2.8, 0.3, 0.5);
+            luggage2.rotation.y = Math.PI / 6;
+            luggage2.castShadow = true;
+            luggage2.receiveShadow = true;
+            luggage2.userData = { isStageObject: true, rotatable: false };
+            scene.add(luggage2);
+          },
+          
+          createRoomScene() {
+            const scene = this.threeScene;
+            if (!scene) return;
+            
+            // 创建房间墙壁（只创建部分，避免遮挡）
+            // 后墙
+            const backWallGeometry = new THREE.PlaneGeometry(6, 4);
+            const wallMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0xf5f5f5,
+              side: THREE.DoubleSide
+            });
+            const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
+            backWall.position.set(0, 2, -3);
+            backWall.receiveShadow = true;
+            backWall.userData = { isStageObject: true, rotatable: false };
+            scene.add(backWall);
+            
+            // 左墙
+            const leftWall = new THREE.Mesh(backWallGeometry, wallMaterial.clone());
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.position.set(-3, 2, 0);
+            leftWall.receiveShadow = true;
+            leftWall.userData = { isStageObject: true, rotatable: false };
+            scene.add(leftWall);
+            
+            // 地面
+            const roomFloorGeometry = new THREE.PlaneGeometry(6, 6);
+            const roomFloorMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0xe8e8e8,
+              metalness: 0.1,
+              roughness: 0.9
+            });
+            const roomFloor = new THREE.Mesh(roomFloorGeometry, roomFloorMaterial);
+            roomFloor.rotation.x = -Math.PI / 2;
+            roomFloor.position.y = 0;
+            roomFloor.receiveShadow = true;
+            roomFloor.userData = { isStageObject: true, rotatable: false };
+            scene.add(roomFloor);
+            
+            // 创建床
+            const bedGeometry = new THREE.BoxGeometry(2, 0.5, 1.5);
+            const bedMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0xffffff,
+              metalness: 0.1,
+              roughness: 0.9
+            });
+            const bed = new THREE.Mesh(bedGeometry, bedMaterial);
+            bed.position.set(-1.5, 0.25, 0);
+            bed.castShadow = true;
+            bed.receiveShadow = true;
+            bed.userData = { isStageObject: true, rotatable: false };
+            scene.add(bed);
+            
+            // 创建服务车
+            const serviceCartGeometry = new THREE.BoxGeometry(0.8, 1, 0.6);
+            const serviceCartMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x4a90e2,
+              metalness: 0.6,
+              roughness: 0.4
+            });
+            const serviceCart = new THREE.Mesh(serviceCartGeometry, serviceCartMaterial);
+            serviceCart.position.set(2, 0.5, 0);
+            serviceCart.castShadow = true;
+            serviceCart.receiveShadow = true;
+            serviceCart.userData = { isStageObject: true, rotatable: true };
+            scene.add(serviceCart);
+          },
+          
+          createCheckoutScene() {
+            const scene = this.threeScene;
+            if (!scene) return;
+            
+            // 创建退房台
+            const checkoutDeskGeometry = new THREE.BoxGeometry(3, 1, 1);
+            const checkoutDeskMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x2c3e50,
+              metalness: 0.3,
+              roughness: 0.7
+            });
+            const checkoutDesk = new THREE.Mesh(checkoutDeskGeometry, checkoutDeskMaterial);
+            checkoutDesk.position.set(0, 0.5, 0);
+            checkoutDesk.castShadow = true;
+            checkoutDesk.receiveShadow = true;
+            checkoutDesk.userData = { isStageObject: true, rotatable: false };
+            scene.add(checkoutDesk);
+            
+            // 创建支付设备
+            const paymentDeviceGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.2);
+            const paymentDeviceMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x27ae60,
+              metalness: 0.7,
+              roughness: 0.3
+            });
+            const paymentDevice = new THREE.Mesh(paymentDeviceGeometry, paymentDeviceMaterial);
+            paymentDevice.position.set(0.5, 1, 0);
+            paymentDevice.castShadow = true;
+            paymentDevice.userData = { isStageObject: true, rotatable: false };
+            scene.add(paymentDevice);
+            
+            // 创建反馈表单
+            const feedbackGeometry = new THREE.BoxGeometry(0.3, 0.4, 0.05);
+            const feedbackMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0xffd700,
+              metalness: 0.2,
+              roughness: 0.8
+            });
+            const feedback = new THREE.Mesh(feedbackGeometry, feedbackMaterial);
+            feedback.position.set(-0.5, 1, 0);
+            feedback.castShadow = true;
+            feedback.userData = { isStageObject: true, rotatable: true };
+            scene.add(feedback);
+          },
+          
+          createFollowupScene() {
+            const scene = this.threeScene;
+            if (!scene) return;
+            
+            // 创建数据中心
+            const databaseGeometry = new THREE.BoxGeometry(2, 2, 2);
+            const databaseMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x667eea,
+              metalness: 0.8,
+              roughness: 0.2,
+              emissive: 0x001144,
+              emissiveIntensity: 0.2
+            });
+            const database = new THREE.Mesh(databaseGeometry, databaseMaterial);
+            database.position.set(0, 1, 0);
+            database.castShadow = true;
+            database.receiveShadow = true;
+            database.userData = { isStageObject: true, rotatable: true };
+            scene.add(database);
+            
+            // 创建通信设备
+            const commGeometry = new THREE.BoxGeometry(1, 0.5, 0.3);
+            const commMaterial = new THREE.MeshStandardMaterial({ 
+              color: 0x4a90e2,
+              metalness: 0.6,
+              roughness: 0.4
+            });
+            const comm = new THREE.Mesh(commGeometry, commMaterial);
+            comm.position.set(2, 1, 0);
+            comm.castShadow = true;
+            comm.userData = { isStageObject: true, rotatable: false };
+            scene.add(comm);
+            
+            // 创建第二个通信设备
+            const comm2 = new THREE.Mesh(commGeometry, commMaterial.clone());
+            comm2.position.set(-2, 1, 0);
+            comm2.castShadow = true;
+            comm2.userData = { isStageObject: true, rotatable: false };
+            scene.add(comm2);
+          },
+          
+          switchStage(index) {
+            this.currentStage = index;
+            
+            // 延迟更新3D场景，避免与Chart.js冲突
+            this.$nextTick(() => {
+              setTimeout(() => {
+                this.createStageScene(index);
+              }, 100);
+            });
+            
+            // 更新图表
+            if (this.efficiencyChart) {
+              this.$nextTick(() => {
+                setTimeout(() => {
+                  this.updateChart();
+                }, 200);
+              });
+            }
+          },
+          
+          initChart() {
+            this.$nextTick(() => {
+              if (!this.$refs.efficiencyChart) {
+                setTimeout(() => this.initChart(), 200);
+                return;
+              }
+              
+              // 如果图表已存在，先销毁
+              if (this.efficiencyChart) {
+                try {
+                  this.efficiencyChart.destroy();
+                } catch (e) {
+                  // 忽略销毁错误
+                }
+                this.efficiencyChart = null;
+              }
+              
+              if (typeof Chart !== 'undefined') {
+                const ctx = this.$refs.efficiencyChart.getContext('2d');
+                if (ctx) {
+                  // 创建初始背景色数组（使用原始数组，避免Vue响应式）
+                  const timeColors = this.stages.map((s, i) => 
+                    i === this.currentStage ? 'rgba(212, 175, 55, 0.8)' : 'rgba(102, 126, 234, 0.8)'
+                  );
+                  const satisfactionColors = this.stages.map((s, i) => 
+                    i === this.currentStage ? 'rgba(212, 175, 55, 0.8)' : 'rgba(212, 175, 55, 0.8)'
+                  );
+                  
+                  this.efficiencyChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                      labels: this.stages.map(s => s.name),
+                      datasets: [{
+                        label: '平均处理时间（分钟）',
+                        data: [3, 5, 1440, 7, 0],
+                        backgroundColor: timeColors,
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2
+                      }, {
+                        label: '客户满意度（%）',
+                        data: [98, 96, 94, 95, 92],
+                        backgroundColor: satisfactionColors,
+                        borderColor: 'rgba(212, 175, 55, 1)',
+                        borderWidth: 2
+                      }]
+                    },
+                    options: {
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      animation: {
+                        duration: 0
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          max: 100
+                        }
+                      },
+                      plugins: {
+                        legend: {
+                          display: true,
+                          position: 'top'
+                        },
+                        title: {
+                          display: true,
+                          text: '各阶段服务效率对比'
+                        }
+                      }
+                    }
+                  });
+                }
+              }
+            });
+          },
+          
+          updateChart() {
+            if (!this.efficiencyChart) return;
+            
+            try {
+              // 使用原始值更新，避免Vue响应式代理冲突
+              const datasets = this.efficiencyChart.data.datasets;
+              
+              // 为每个数据集创建新的背景色数组（使用原始值，避免Vue代理）
+              datasets.forEach((dataset, datasetIndex) => {
+                const newBackgroundColors = [];
+                for (let i = 0; i < this.stages.length; i++) {
+                  if (i === this.currentStage) {
+                    newBackgroundColors.push('rgba(212, 175, 55, 0.8)');
+                  } else {
+                    newBackgroundColors.push(
+                      datasetIndex === 0 
+                        ? 'rgba(102, 126, 234, 0.8)' 
+                        : 'rgba(212, 175, 55, 0.8)'
+                    );
+                  }
+                }
+                
+                // 直接设置数组，避免响应式问题
+                dataset.backgroundColor = newBackgroundColors;
+              });
+              
+              // 使用 'none' 模式更新，避免动画冲突和内部错误
+              this.efficiencyChart.update('none');
+            } catch (error) {
+              // 如果更新失败，尝试重新创建图表
+              setTimeout(() => {
+                this.initChart();
+              }, 500);
+            }
+          }
+        }
+      });
+      
+      app.mount('#app');
+    }
+  </script>
+</body>
+</html>
+

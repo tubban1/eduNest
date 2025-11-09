@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="学习如何使用尺子和直角三角板绘制指定长度线段、平行线、垂线、三角形以及组合图形如房子、旗子等。通过清晰的动画演示和详细步骤说明，掌握几何绘图的基本技巧。">
+  <meta name="keywords" content="尺子画图,直角三角板,画线段,画平行线,画垂线,画三角形,组合图形,几何绘图,房子图形,旗子图形,绘图技巧,基础绘图">
+  <title>尺子和直角三角板绘图教程 - 几何图形绘制技巧</title>
+  
+  <!-- Vue 3.5.20 -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"></script>
+  
+  <!-- GSAP for animations -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"></script>
+  
+  <!-- Konva for advanced graphics -->
+  <script src="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #2c3e50;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .header p {
+      font-size: 1.2em;
+      opacity: 0.95;
+    }
+    
+    .tabs {
+      display: flex;
+      background: #f8f9fa;
+      border-bottom: 2px solid #e9ecef;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    
+    .tabs::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .tabs::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 3px;
+    }
+    
+    .tab {
+      padding: 20px 30px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-size: 1.1em;
+      font-weight: 500;
+      color: #6c757d;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      position: relative;
+      border-bottom: 3px solid transparent;
+    }
+    
+    .tab:hover {
+      background: rgba(102, 126, 234, 0.1);
+      color: #667eea;
+    }
+    
+    .tab.active {
+      color: #667eea;
+      background: #ffffff;
+      border-bottom-color: #667eea;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 40px;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .demo-section {
+      margin-bottom: 40px;
+    }
+    
+    .demo-title {
+      font-size: 1.8em;
+      color: #2c3e50;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 3px solid #667eea;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .demo-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 30px;
+    }
+    
+    @media (max-width: 968px) {
+      .demo-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .canvas-wrapper {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    
+    .canvas-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .steps-section {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 30px;
+    }
+    
+    .steps-title {
+      font-size: 1.5em;
+      color: #2c3e50;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .step {
+      margin-bottom: 25px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .step:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    
+    .step-number {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 32px;
+      font-weight: bold;
+      margin-right: 15px;
+      vertical-align: middle;
+    }
+    
+    .step-content {
+      display: inline-block;
+      vertical-align: middle;
+      width: calc(100% - 50px);
+    }
+    
+    .step-title {
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-size: 1.1em;
+    }
+    
+    .step-description {
+      color: #6c757d;
+      line-height: 1.6;
+    }
+    
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+    
+    .btn-secondary:hover {
+      box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+    }
+    
+    .tips-box {
+      background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+      border-left: 4px solid #fdcb6e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    
+    .tips-title {
+      font-weight: bold;
+      color: #d63031;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .tips-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    
+    .tips-list li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+      color: #2d3436;
+    }
+    
+    .tips-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #d63031;
+      font-weight: bold;
+    }
+    
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+      
+      .tab {
+        padding: 15px 20px;
+        font-size: 0.95em;
+      }
+      
+      .tab-content {
+        padding: 20px;
+      }
+      
+      .demo-title {
+        font-size: 1.4em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="header">
+        <h1>📐 尺子和直角三角板绘图教程</h1>
+        <p>学习如何使用尺子和直角三角板绘制各种几何图形</p>
+      </div>
+      
+      <div class="tabs">
+        <button 
+          v-for="(tab, index) in tabs" 
+          :key="index"
+          class="tab"
+          :class="{ active: activeTab === index }"
+          @click="switchTab(index)"
+        >
+          {{ tab.title }}
+        </button>
+      </div>
+      
+      <div 
+        v-for="(tab, index) in tabs" 
+        :key="index"
+        class="tab-content"
+        :class="{ active: activeTab === index }"
+      >
+        <div class="demo-section">
+          <h2 class="demo-title">{{ tab.title }}</h2>
+          
+          <div class="demo-container">
+            <div class="canvas-wrapper">
+              <div class="canvas-container">
+                <div :ref="'canvas-' + index" :id="'canvas-' + index" style="width: 100%; height: 500px;"></div>
+              </div>
+              <div class="controls">
+                <button class="btn" @click="playAnimation(index)">▶ 播放动画</button>
+                <button class="btn btn-secondary" @click="resetAnimation(index)">🔄 重置</button>
+                <button class="btn btn-secondary" @click="pauseAnimation(index)" v-if="animations[index]?.playing">⏸ 暂停</button>
+              </div>
+            </div>
+            
+            <div class="steps-section">
+              <h3 class="steps-title">📋 步骤说明</h3>
+              <div 
+                v-for="(step, stepIndex) in tab.steps" 
+                :key="stepIndex"
+                class="step"
+              >
+                <span class="step-number">{{ stepIndex + 1 }}</span>
+                <div class="step-content">
+                  <div class="step-title">{{ step.title }}</div>
+                  <div class="step-description">{{ step.description }}</div>
+                </div>
+              </div>
+              
+              <div class="tips-box" v-if="tab.tips && tab.tips.length > 0">
+                <div class="tips-title">💡 实用技巧</div>
+                <ul class="tips-list">
+                  <li v-for="(tip, tipIndex) in tab.tips" :key="tipIndex">{{ tip }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          activeTab: 0,
+          animations: [],
+          stages: [],
+          tabs: [
+            {
+              title: '指定长度线段',
+              steps: [
+                {
+                  title: '确定起点',
+                  description: '在纸上用铅笔轻轻标记线段的起点位置，可以用一个小点表示。'
+                },
+                {
+                  title: '放置尺子',
+                  description: '将尺子的0刻度对齐起点，确保尺子的方向是你想要线段延伸的方向。'
+                },
+                {
+                  title: '标记终点',
+                  description: '在尺子上找到对应的长度刻度（例如5厘米），在纸上标记终点位置。'
+                },
+                {
+                  title: '画线段',
+                  description: '用铅笔紧贴尺子边缘，从起点画到终点，形成一条精确长度的线段。'
+                },
+                {
+                  title: '标注长度',
+                  description: '可以在线段上方或下方标注线段的长度，方便后续使用和检查。'
+                }
+              ],
+              tips: [
+                '起点和终点要精确对齐尺子的刻度',
+                '画线段时，确保尺子不会移动',
+                '可以使用细针或尖锐物体做更精确的标记',
+                '如果需要画多条等长线段，可以用尺子上的刻度作为参考'
+              ]
+            },
+            {
+              title: '平行线',
+              steps: [
+                {
+                  title: '画第一条直线',
+                  description: '使用尺子画一条直线，这是基准线。'
+                },
+                {
+                  title: '确定平行线距离',
+                  description: '确定两条平行线之间的距离，例如2厘米。'
+                },
+                {
+                  title: '放置直角三角板',
+                  description: '将直角三角板的一条直角边紧贴第一条直线，确保三角板稳定。'
+                },
+                {
+                  title: '标记距离点',
+                  description: '沿着三角板的另一条直角边，在所需距离处做标记点。'
+                },
+                {
+                  title: '平移三角板',
+                  description: '保持三角板的角度不变，将三角板平移到标记点位置。'
+                },
+                {
+                  title: '画平行线',
+                  description: '沿着三角板的直角边，用尺子画第二条直线，这样就得到了与第一条直线平行的线。'
+                }
+              ],
+              tips: [
+                '保持三角板的角度不变是关键',
+                '可以使用两个三角板来确保平行',
+                '平移时要保持三角板的稳定',
+                '画长平行线时，可以分段画，但要保证方向一致'
+              ]
+            },
+            {
+              title: '垂线',
+              steps: [
+                {
+                  title: '画基准直线',
+                  description: '使用尺子画一条直线，这是基准线。'
+                },
+                {
+                  title: '确定垂足位置',
+                  description: '在基准线上确定垂足的的位置，用铅笔标记这个点。'
+                },
+                {
+                  title: '放置直角三角板',
+                  description: '将直角三角板的一条直角边紧贴基准线，直角顶点对准垂足位置。'
+                },
+                {
+                  title: '检查对齐',
+                  description: '确保三角板的直角顶点精确对齐垂足，直角边与基准线完全重合。'
+                },
+                {
+                  title: '画垂线',
+                  description: '沿着三角板的另一条直角边，用尺子从垂足向上或向下画直线，这样就得到了垂直于基准线的垂线。'
+                },
+                {
+                  title: '标记直角',
+                  description: '可以在垂足处画一个小直角符号，表示这是90度角。'
+                }
+              ],
+              tips: [
+                '直角三角板的直角顶点必须精确对齐垂足',
+                '画垂线时，保持三角板稳定不动',
+                '可以使用量角器检查角度是否为90度',
+                '如果需要画多条垂线，每次都从基准线上的点出发'
+              ]
+            },
+            {
+              title: '三角形',
+              steps: [
+                {
+                  title: '确定三角形类型',
+                  description: '确定要画的三角形类型（等边、等腰、直角等）和边长。'
+                },
+                {
+                  title: '画第一条边',
+                  description: '使用尺子画第一条边，长度为指定的边长。'
+                },
+                {
+                  title: '确定第二个顶点',
+                  description: '在第一条边的一个端点，使用尺子量出第二条边的长度，标记第二个顶点的位置。'
+                },
+                {
+                  title: '使用三角板画角',
+                  description: '在第一个端点，使用直角三角板或量角器画出指定的角度。'
+                },
+                {
+                  title: '画第二条边',
+                  description: '从第一个端点，沿着角度线画第二条边，长度为指定的边长。'
+                },
+                {
+                  title: '连接第三个顶点',
+                  description: '从第二个端点画第三条边，连接到第一个端点，完成三角形。'
+                },
+                {
+                  title: '检查',
+                  description: '检查三条边的长度和三个角的角度是否符合要求。'
+                }
+              ],
+              tips: [
+                '画三角形时，先确定两条边和它们之间的夹角',
+                '使用三角板可以更准确地画出直角',
+                '画等边三角形时，三条边长度必须相等',
+                '画直角三角形时，可以使用三角板的直角边'
+              ]
+            },
+            {
+              title: '房子图形',
+              steps: [
+                {
+                  title: '画房子的底部',
+                  description: '使用尺子画一条水平线段作为房子的底部，长度约为6厘米。'
+                },
+                {
+                  title: '画房子的侧墙',
+                  description: '在底部线段的两端，使用直角三角板分别向上画两条等长的垂直线，作为房子的两侧墙，高度约为4厘米。'
+                },
+                {
+                  title: '画房子的顶部',
+                  description: '连接两条侧墙的顶部，画一条水平线段，完成房子的主体结构。'
+                },
+                {
+                  title: '画房子的屋顶',
+                  description: '在顶部线段的中点上方，画一个点作为屋顶的顶点。然后从顶点分别向两侧墙的顶部画两条斜线，形成三角形屋顶。'
+                },
+                {
+                  title: '画房子的门',
+                  description: '在房子底部的中下方，使用尺子和三角板画一个矩形门，宽度约为1.5厘米，高度约为2厘米。'
+                },
+                {
+                  title: '画房子的窗户',
+                  description: '在门的左右两侧，各画一个正方形窗户，使用三角板确保窗户是直角。'
+                },
+                {
+                  title: '完善细节',
+                  description: '可以添加门把手、窗框等细节，使房子图形更加完整。'
+                }
+              ],
+              tips: [
+                '画房子时，先画主体结构，再画细节',
+                '使用三角板确保所有直角都是90度',
+                '房子的各部分比例要协调',
+                '可以先画轻线条，确认无误后再加深'
+              ]
+            },
+            {
+              title: '旗子图形',
+              steps: [
+                {
+                  title: '画旗杆',
+                  description: '使用尺子画一条垂直线段作为旗杆，长度约为8厘米。'
+                },
+                {
+                  title: '确定旗子位置',
+                  description: '在旗杆的顶部，标记旗子开始的位置。'
+                },
+                {
+                  title: '画旗子的顶部边',
+                  description: '从旗杆顶部，使用尺子向右画一条水平线段，长度约为5厘米，这是旗子的顶部边。'
+                },
+                {
+                  title: '画旗子的右侧边',
+                  description: '从顶部边的右端点，使用直角三角板向下画一条垂直线，长度约为3厘米，这是旗子的右侧边。'
+                },
+                {
+                  title: '画旗子的底部边',
+                  description: '从右侧边的底端点，向左画一条水平线段，连接到旗杆，完成旗子的矩形部分。'
+                },
+                {
+                  title: '画旗子的三角形部分',
+                  description: '如果画的是三角形旗子，从旗杆顶部向右侧画一条斜线，然后在斜线的端点向下画一条垂线回到旗杆，形成三角形。'
+                },
+                {
+                  title: '添加装饰',
+                  description: '可以在旗子上添加图案、条纹或颜色，使旗子更加美观。'
+                }
+              ],
+              tips: [
+                '画旗子时，确保旗杆是垂直的',
+                '使用三角板确保旗子的边是水平的或垂直的',
+                '旗子的比例要协调，不要太长或太短',
+                '可以画不同形状的旗子，如矩形、三角形等'
+              ]
+            }
+          ]
+        };
+      },
+      mounted() {
+        this.$nextTick(() => {
+          this.initCanvas();
+        });
+      },
+      methods: {
+        switchTab(index) {
+          this.activeTab = index;
+          this.$nextTick(() => {
+            this.initCanvasForTab(index);
+          });
+        },
+        initCanvas() {
+          this.tabs.forEach((tab, index) => {
+            this.initCanvasForTab(index);
+          });
+        },
+        initCanvasForTab(index) {
+          const canvasId = 'canvas-' + index;
+          const canvasElement = document.getElementById(canvasId);
+          if (!canvasElement) return;
+          
+          // 清除之前的内容
+          canvasElement.innerHTML = '';
+          
+          // 初始化 Konva 舞台
+          if (typeof Konva !== 'undefined') {
+            const stage = new Konva.Stage({
+              container: canvasId,
+              width: canvasElement.offsetWidth,
+              height: 500
+            });
+            
+            const layer = new Konva.Layer();
+            stage.add(layer);
+            
+            this.stages[index] = stage;
+            this.animations[index] = {
+              stage: stage,
+              layer: layer,
+              playing: false,
+              timeline: null
+            };
+            
+            // 根据不同的 tab 绘制初始状态
+            this.drawInitialState(index, layer, stage);
+          } else {
+            // 如果 Konva 不可用，使用 Canvas API
+            this.initCanvasFallback(index, canvasElement);
+          }
+        },
+        drawInitialState(index, layer, stage) {
+          const width = stage.width();
+          const height = stage.height();
+          
+          // 绘制背景网格
+          const gridGroup = new Konva.Group();
+          for (let i = 0; i <= width; i += 20) {
+            const line = new Konva.Line({
+              points: [i, 0, i, height],
+              stroke: '#e0e0e0',
+              strokeWidth: 1,
+              listening: false
+            });
+            gridGroup.add(line);
+          }
+          for (let i = 0; i <= height; i += 20) {
+            const line = new Konva.Line({
+              points: [0, i, width, i],
+              stroke: '#e0e0e0',
+              strokeWidth: 1,
+              listening: false
+            });
+            gridGroup.add(line);
+          }
+          layer.add(gridGroup);
+          
+          layer.draw();
+        },
+        playAnimation(index) {
+          if (!this.animations[index]) return;
+          
+          const anim = this.animations[index];
+          if (anim.playing) return;
+          
+          anim.playing = true;
+          const layer = anim.layer;
+          const stage = anim.stage;
+          const width = stage.width();
+          const height = stage.height();
+          
+          // 清除之前的绘制结果
+          layer.destroyChildren();
+          this.drawInitialState(index, layer, stage);
+          
+          if (typeof gsap !== 'undefined') {
+            const timeline = gsap.timeline({
+              onComplete: () => {
+                anim.playing = false;
+              }
+            });
+            anim.timeline = timeline;
+            
+            switch(index) {
+              case 0:
+                this.animateSegment(layer, timeline, width, height);
+                break;
+              case 1:
+                this.animateParallelLines(layer, timeline, width, height);
+                break;
+              case 2:
+                this.animatePerpendicularLine(layer, timeline, width, height);
+                break;
+              case 3:
+                this.animateTriangle(layer, timeline, width, height);
+                break;
+              case 4:
+                this.animateHouse(layer, timeline, width, height);
+                break;
+              case 5:
+                this.animateFlag(layer, timeline, width, height);
+                break;
+            }
+          } else {
+            this.simpleAnimation(index, layer, width, height);
+          }
+        },
+        animateSegment(layer, timeline, width, height) {
+          const centerY = height / 2;
+          const startX = width * 0.2;
+          const segmentLength = 200;
+          const endX = startX + segmentLength;
+          
+          // 绘制起点
+          const startPoint = new Konva.Circle({
+            x: startX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false
+          });
+          layer.add(startPoint);
+          
+          // 绘制尺子
+          const ruler = new Konva.Rect({
+            x: startX - 10,
+            y: centerY - 15,
+            width: segmentLength + 20,
+            height: 30,
+            fill: '#e0e0e0',
+            stroke: '#bdbdbd',
+            strokeWidth: 2,
+            cornerRadius: 4,
+            shadowBlur: 5,
+            shadowOpacity: 0.3
+          });
+          layer.add(ruler);
+          
+          // 绘制尺子刻度
+          for (let i = 0; i <= segmentLength / 20; i++) {
+            const x = startX + i * 20;
+            const mark = new Konva.Line({
+              points: [x, centerY - 15, x, centerY - 5],
+              stroke: '#666',
+              strokeWidth: 2,
+              listening: false
+            });
+            layer.add(mark);
+          }
+          
+          // 动画：标记终点
+          timeline.to({}, { duration: 0.5 });
+          const endPoint = new Konva.Circle({
+            x: endX,
+            y: centerY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false,
+            opacity: 0
+          });
+          layer.add(endPoint);
+          timeline.to(endPoint, { duration: 0.5, opacity: 1 });
+          
+          // 动画：绘制线段
+          timeline.to({}, { duration: 0.5 });
+          const line = new Konva.Line({
+            points: [startX, centerY, startX, centerY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(line);
+          
+          const animObj = { progress: 0 };
+          timeline.to(animObj, {
+            duration: 2,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + (endX - startX) * animObj.progress;
+              line.points([startX, centerY, currentX, centerY]);
+              layer.draw();
+            }
+          });
+          
+          // 添加长度标注
+          timeline.to({}, { duration: 0.5 });
+          const label = new Konva.Text({
+            x: (startX + endX) / 2,
+            y: centerY - 30,
+            text: '5cm',
+            fontSize: 16,
+            fontFamily: 'Arial',
+            fill: '#667eea',
+            listening: false,
+            opacity: 0
+          });
+          layer.add(label);
+          timeline.to(label, { duration: 0.5, opacity: 1 });
+        },
+        animateParallelLines(layer, timeline, width, height) {
+          const centerY = height / 2;
+          const line1Y = centerY - 60;
+          const line2Y = centerY + 60;
+          const startX = width * 0.2;
+          const endX = width * 0.8;
+          const distance = line2Y - line1Y;
+          
+          // 绘制第一条线
+          const line1 = new Konva.Line({
+            points: [startX, line1Y, startX, line1Y],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(line1);
+          
+          const line1Anim = { progress: 0 };
+          timeline.to(line1Anim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + (endX - startX) * line1Anim.progress;
+              line1.points([startX, line1Y, currentX, line1Y]);
+              layer.draw();
+            }
+          });
+          
+          // 显示三角板
+          timeline.to({}, { duration: 0.5 });
+          const triangle = new Konva.Group();
+          const triangleBase = new Konva.Line({
+            points: [startX + 50, line1Y, startX + 150, line1Y],
+            stroke: '#3498db',
+            strokeWidth: 3,
+            listening: false
+          });
+          const triangleVertical = new Konva.Line({
+            points: [startX + 50, line1Y, startX + 50, line1Y + distance],
+            stroke: '#3498db',
+            strokeWidth: 3,
+            listening: false
+          });
+          const triangleHypotenuse = new Konva.Line({
+            points: [startX + 50, line1Y + distance, startX + 150, line1Y],
+            stroke: '#3498db',
+            strokeWidth: 3,
+            listening: false
+          });
+          triangle.add(triangleBase);
+          triangle.add(triangleVertical);
+          triangle.add(triangleHypotenuse);
+          layer.add(triangle);
+          layer.draw();
+          
+          // 标记距离点
+          timeline.to({}, { duration: 0.5 });
+          const markPoint = new Konva.Circle({
+            x: startX + 50,
+            y: line2Y,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false,
+            opacity: 0
+          });
+          layer.add(markPoint);
+          timeline.to(markPoint, { duration: 0.5, opacity: 1 });
+          
+          // 平移三角板
+          timeline.to({}, { duration: 0.5 });
+          const triangleAnim = { x: 0 };
+          timeline.to(triangleAnim, {
+            duration: 1,
+            x: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const offsetX = triangleAnim.x * (endX - startX - 100);
+              triangle.position({ x: offsetX, y: 0 });
+              layer.draw();
+            }
+          });
+          
+          // 绘制第二条平行线
+          timeline.to({}, { duration: 0.5 });
+          const line2 = new Konva.Line({
+            points: [startX, line2Y, startX, line2Y],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(line2);
+          
+          const line2Anim = { progress: 0 };
+          timeline.to(line2Anim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = startX + (endX - startX) * line2Anim.progress;
+              line2.points([startX, line2Y, currentX, line2Y]);
+              layer.draw();
+            }
+          });
+          
+          // 隐藏三角板
+          timeline.to({}, { duration: 0.5 });
+          timeline.to(triangle, { duration: 0.5, opacity: 0 });
+          timeline.to(markPoint, { duration: 0.5, opacity: 0 });
+        },
+        animatePerpendicularLine(layer, timeline, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const baseLineStartX = centerX - 150;
+          const baseLineEndX = centerX + 150;
+          const baseLineY = centerY;
+          const perpendicularLength = 120;
+          const footX = centerX;
+          const footY = centerY;
+          
+          // 绘制基准线
+          const baseLine = new Konva.Line({
+            points: [baseLineStartX, baseLineY, baseLineStartX, baseLineY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(baseLine);
+          
+          const baseAnim = { progress: 0 };
+          timeline.to(baseAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = baseLineStartX + (baseLineEndX - baseLineStartX) * baseAnim.progress;
+              baseLine.points([baseLineStartX, baseLineY, currentX, baseLineY]);
+              layer.draw();
+            }
+          });
+          
+          // 标记垂足
+          timeline.to({}, { duration: 0.5 });
+          const footPoint = new Konva.Circle({
+            x: footX,
+            y: footY,
+            radius: 5,
+            fill: '#e74c3c',
+            listening: false,
+            opacity: 0
+          });
+          layer.add(footPoint);
+          timeline.to(footPoint, { duration: 0.5, opacity: 1 });
+          
+          // 显示三角板
+          timeline.to({}, { duration: 0.5 });
+          const triangle = new Konva.Group();
+          const triangleBase = new Konva.Line({
+            points: [footX - 30, footY, footX + 30, footY],
+            stroke: '#3498db',
+            strokeWidth: 3,
+            listening: false
+          });
+          const triangleVertical = new Konva.Line({
+            points: [footX, footY, footX, footY - perpendicularLength],
+            stroke: '#3498db',
+            strokeWidth: 3,
+            listening: false,
+            opacity: 0
+          });
+          const triangleHypotenuse = new Konva.Line({
+            points: [footX - 30, footY, footX, footY - perpendicularLength],
+            stroke: '#3498db',
+            strokeWidth: 3,
+            listening: false,
+            opacity: 0
+          });
+          triangle.add(triangleBase);
+          triangle.add(triangleVertical);
+          triangle.add(triangleHypotenuse);
+          layer.add(triangle);
+          
+          // 显示三角板的垂直边
+          timeline.to({}, { duration: 0.5 });
+          timeline.to(triangleVertical, { duration: 0.5, opacity: 1 });
+          timeline.to(triangleHypotenuse, { duration: 0.5, opacity: 1 });
+          layer.draw();
+          
+          // 绘制垂线
+          timeline.to({}, { duration: 0.5 });
+          const perpLine = new Konva.Line({
+            points: [footX, footY, footX, footY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(perpLine);
+          
+          const perpAnim = { progress: 0 };
+          timeline.to(perpAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = footY - perpendicularLength * perpAnim.progress;
+              perpLine.points([footX, footY, footX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 标记直角符号
+          timeline.to({}, { duration: 0.5 });
+          const rightAngleMark = new Konva.Group();
+          const mark1 = new Konva.Line({
+            points: [footX - 15, footY, footX - 15, footY - 10],
+            stroke: '#667eea',
+            strokeWidth: 2,
+            listening: false
+          });
+          const mark2 = new Konva.Line({
+            points: [footX - 15, footY - 10, footX - 5, footY - 10],
+            stroke: '#667eea',
+            strokeWidth: 2,
+            listening: false
+          });
+          rightAngleMark.add(mark1);
+          rightAngleMark.add(mark2);
+          layer.add(rightAngleMark);
+          
+          // 隐藏三角板
+          timeline.to({}, { duration: 0.5 });
+          timeline.to(triangle, { duration: 0.5, opacity: 0 });
+        },
+        animateTriangle(layer, timeline, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const sideLength = 150;
+          const vertex1X = centerX;
+          const vertex1Y = centerY - 80;
+          const vertex2X = centerX - sideLength / 2;
+          const vertex2Y = centerY + 50;
+          const vertex3X = centerX + sideLength / 2;
+          const vertex3Y = centerY + 50;
+          
+          // 绘制第一条边
+          const side1 = new Konva.Line({
+            points: [vertex1X, vertex1Y, vertex1X, vertex1Y],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(side1);
+          
+          const side1Anim = { progress: 0 };
+          timeline.to(side1Anim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = vertex1X + (vertex2X - vertex1X) * side1Anim.progress;
+              const currentY = vertex1Y + (vertex2Y - vertex1Y) * side1Anim.progress;
+              side1.points([vertex1X, vertex1Y, currentX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制第二条边
+          timeline.to({}, { duration: 0.5 });
+          const side2 = new Konva.Line({
+            points: [vertex2X, vertex2Y, vertex2X, vertex2Y],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(side2);
+          
+          const side2Anim = { progress: 0 };
+          timeline.to(side2Anim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = vertex2X + (vertex3X - vertex2X) * side2Anim.progress;
+              const currentY = vertex2Y + (vertex3Y - vertex2Y) * side2Anim.progress;
+              side2.points([vertex2X, vertex2Y, currentX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制第三条边
+          timeline.to({}, { duration: 0.5 });
+          const side3 = new Konva.Line({
+            points: [vertex3X, vertex3Y, vertex3X, vertex3Y],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(side3);
+          
+          const side3Anim = { progress: 0 };
+          timeline.to(side3Anim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = vertex3X + (vertex1X - vertex3X) * side3Anim.progress;
+              const currentY = vertex3Y + (vertex1Y - vertex3Y) * side3Anim.progress;
+              side3.points([vertex3X, vertex3Y, currentX, currentY]);
+              layer.draw();
+            }
+          });
+        },
+        animateHouse(layer, timeline, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const houseWidth = 200;
+          const houseHeight = 120;
+          const roofHeight = 80;
+          const baseX = centerX - houseWidth / 2;
+          const baseY = centerY + 40;
+          const topY = baseY - houseHeight;
+          const roofTopY = topY - roofHeight;
+          const roofTopX = centerX;
+          
+          // 绘制房子底部
+          const bottom = new Konva.Line({
+            points: [baseX, baseY, baseX, baseY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(bottom);
+          
+          const bottomAnim = { progress: 0 };
+          timeline.to(bottomAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = baseX + houseWidth * bottomAnim.progress;
+              bottom.points([baseX, baseY, currentX, baseY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制左侧墙
+          timeline.to({}, { duration: 0.5 });
+          const leftWall = new Konva.Line({
+            points: [baseX, baseY, baseX, baseY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(leftWall);
+          
+          const leftWallAnim = { progress: 0 };
+          timeline.to(leftWallAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = baseY - houseHeight * leftWallAnim.progress;
+              leftWall.points([baseX, baseY, baseX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制右侧墙
+          timeline.to({}, { duration: 0.5 });
+          const rightWall = new Konva.Line({
+            points: [baseX + houseWidth, baseY, baseX + houseWidth, baseY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(rightWall);
+          
+          const rightWallAnim = { progress: 0 };
+          timeline.to(rightWallAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = baseY - houseHeight * rightWallAnim.progress;
+              rightWall.points([baseX + houseWidth, baseY, baseX + houseWidth, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制顶部
+          timeline.to({}, { duration: 0.5 });
+          const top = new Konva.Line({
+            points: [baseX, topY, baseX, topY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(top);
+          
+          const topAnim = { progress: 0 };
+          timeline.to(topAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = baseX + houseWidth * topAnim.progress;
+              top.points([baseX, topY, currentX, topY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制屋顶左侧
+          timeline.to({}, { duration: 0.5 });
+          const roofLeft = new Konva.Line({
+            points: [baseX, topY, baseX, topY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(roofLeft);
+          
+          const roofLeftAnim = { progress: 0 };
+          timeline.to(roofLeftAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = baseX + (roofTopX - baseX) * roofLeftAnim.progress;
+              const currentY = topY + (roofTopY - topY) * roofLeftAnim.progress;
+              roofLeft.points([baseX, topY, currentX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制屋顶右侧
+          timeline.to({}, { duration: 0.5 });
+          const roofRight = new Konva.Line({
+            points: [roofTopX, roofTopY, roofTopX, roofTopY],
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(roofRight);
+          
+          const roofRightAnim = { progress: 0 };
+          timeline.to(roofRightAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = roofTopX + (baseX + houseWidth - roofTopX) * roofRightAnim.progress;
+              const currentY = roofTopY + (topY - roofTopY) * roofRightAnim.progress;
+              roofRight.points([roofTopX, roofTopY, currentX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制门
+          timeline.to({}, { duration: 0.5 });
+          const doorWidth = 40;
+          const doorHeight = 60;
+          const doorX = centerX - doorWidth / 2;
+          const doorY = baseY - doorHeight;
+          
+          const door = new Konva.Rect({
+            x: doorX,
+            y: doorY,
+            width: doorWidth,
+            height: doorHeight,
+            stroke: '#2c3e50',
+            strokeWidth: 2,
+            listening: false,
+            opacity: 0
+          });
+          layer.add(door);
+          timeline.to(door, { duration: 0.5, opacity: 1 });
+          
+          // 绘制窗户
+          timeline.to({}, { duration: 0.5 });
+          const windowSize = 30;
+          const window1X = doorX - 50;
+          const window2X = doorX + doorWidth + 20;
+          const windowY = doorY + 10;
+          
+          const window1 = new Konva.Rect({
+            x: window1X,
+            y: windowY,
+            width: windowSize,
+            height: windowSize,
+            stroke: '#2c3e50',
+            strokeWidth: 2,
+            listening: false,
+            opacity: 0
+          });
+          const window2 = new Konva.Rect({
+            x: window2X,
+            y: windowY,
+            width: windowSize,
+            height: windowSize,
+            stroke: '#2c3e50',
+            strokeWidth: 2,
+            listening: false,
+            opacity: 0
+          });
+          layer.add(window1);
+          layer.add(window2);
+          timeline.to(window1, { duration: 0.5, opacity: 1 });
+          timeline.to(window2, { duration: 0.5, opacity: 1 });
+        },
+        animateFlag(layer, timeline, width, height) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const poleX = centerX - 80;
+          const poleTopY = centerY - 100;
+          const poleBottomY = centerY + 100;
+          const flagWidth = 120;
+          const flagHeight = 80;
+          const flagStartX = poleX;
+          const flagStartY = poleTopY;
+          const flagEndX = flagStartX + flagWidth;
+          const flagEndY = flagStartY + flagHeight;
+          
+          // 绘制旗杆
+          const pole = new Konva.Line({
+            points: [poleX, poleBottomY, poleX, poleBottomY],
+            stroke: '#2c3e50',
+            strokeWidth: 4,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(pole);
+          
+          const poleAnim = { progress: 0 };
+          timeline.to(poleAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = poleBottomY - (poleBottomY - poleTopY) * poleAnim.progress;
+              pole.points([poleX, poleBottomY, poleX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制旗子顶部边
+          timeline.to({}, { duration: 0.5 });
+          const flagTop = new Konva.Line({
+            points: [flagStartX, flagStartY, flagStartX, flagStartY],
+            stroke: '#e74c3c',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(flagTop);
+          
+          const flagTopAnim = { progress: 0 };
+          timeline.to(flagTopAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = flagStartX + flagWidth * flagTopAnim.progress;
+              flagTop.points([flagStartX, flagStartY, currentX, flagStartY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制旗子右侧边
+          timeline.to({}, { duration: 0.5 });
+          const flagRight = new Konva.Line({
+            points: [flagEndX, flagStartY, flagEndX, flagStartY],
+            stroke: '#e74c3c',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(flagRight);
+          
+          const flagRightAnim = { progress: 0 };
+          timeline.to(flagRightAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentY = flagStartY + flagHeight * flagRightAnim.progress;
+              flagRight.points([flagEndX, flagStartY, flagEndX, currentY]);
+              layer.draw();
+            }
+          });
+          
+          // 绘制旗子底部边
+          timeline.to({}, { duration: 0.5 });
+          const flagBottom = new Konva.Line({
+            points: [flagEndX, flagEndY, flagEndX, flagEndY],
+            stroke: '#e74c3c',
+            strokeWidth: 3,
+            lineCap: 'round',
+            listening: false
+          });
+          layer.add(flagBottom);
+          
+          const flagBottomAnim = { progress: 0 };
+          timeline.to(flagBottomAnim, {
+            duration: 1.5,
+            progress: 1,
+            ease: 'none',
+            onUpdate: () => {
+              const currentX = flagEndX - flagWidth * flagBottomAnim.progress;
+              flagBottom.points([flagEndX, flagEndY, currentX, flagEndY]);
+              layer.draw();
+            }
+          });
+          
+          // 填充旗子（可选）
+          timeline.to({}, { duration: 0.5 });
+          const flagFill = new Konva.Rect({
+            x: flagStartX,
+            y: flagStartY,
+            width: flagWidth,
+            height: flagHeight,
+            fill: 'rgba(231, 76, 60, 0.2)',
+            listening: false,
+            opacity: 0
+          });
+          layer.add(flagFill);
+          timeline.to(flagFill, { duration: 0.5, opacity: 1 });
+        },
+        resetAnimation(index) {
+          if (this.animations[index]) {
+            if (this.animations[index].timeline) {
+              this.animations[index].timeline.kill();
+            }
+            this.animations[index].playing = false;
+            this.initCanvasForTab(index);
+          }
+        },
+        pauseAnimation(index) {
+          if (this.animations[index] && this.animations[index].timeline) {
+            this.animations[index].timeline.pause();
+            this.animations[index].playing = false;
+          }
+        },
+        simpleAnimation(index, layer, width, height) {
+          this.animations[index].playing = false;
+        },
+        initCanvasFallback(index, element) {
+          const canvas = document.createElement('canvas');
+          canvas.width = element.offsetWidth;
+          canvas.height = 500;
+          element.appendChild(canvas);
+          
+          const ctx = canvas.getContext('2d');
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= canvas.width; i += 20) {
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, canvas.height);
+            ctx.stroke();
+          }
+          for (let i = 0; i <= canvas.height; i += 20) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(canvas.width, i);
+            ctx.stroke();
+          }
+          
+          ctx.fillStyle = '#667eea';
+          ctx.font = 'bold 20px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('请点击"播放动画"按钮查看演示', canvas.width / 2, canvas.height / 2);
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+
