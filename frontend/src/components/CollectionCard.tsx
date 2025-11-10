@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Copy, Trash2, ThumbsUp, X, Eye, Bookmark } from 'lucide-react';
 import ContentActionButtons from './ui/ContentActionButtons';
-import EditButton from './ui/EditButton';
+// EditButton removed - edit functionality not needed for c pages
 import CollectionListDialog from './CollectionListDialog';
 import { api } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
@@ -128,7 +128,7 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
       {/* 内容信息 */}
       <div className="p-4">
         {/* 标题 - 可点击跳转 */}
-        <Link href={`/content/${content.short_id || content.id}`} prefetch={false} className="block">
+        <Link href={`/c/${content.short_id || content.id}`} prefetch={false} className="block">
           <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
             {content.title}
           </h3>
@@ -182,8 +182,7 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
                 }
               }}
             />
-            {/* edit按钮 */}
-            <EditButton contentId={content.id} size="md" />
+            {/* Edit button removed - edit functionality not available in c pages */}
           </div>
         </div>
       </div>

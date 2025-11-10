@@ -9,38 +9,41 @@ import Logo from './Logo';
 import AiLoadingAnimation from './AiLoadingAnimation';
 import { useTranslation } from 'react-i18next';
 import { config } from '@/lib/config';
-import SandboxRenderer from './SandboxRenderer';
+import FullHTMLRenderer from './FullHTMLRenderer';
 import AIProviderSelector from './AIProviderSelector';
 
-const DEFAULT_HTML = '<div id="app">{{ message }}</div>';
-const DEFAULT_CSS = 'body { font-family: sans-serif; } #app { padding: 20px; }';
-const DEFAULT_JS = 'const { createApp } = Vue;\n\ncreateApp({\n  data() {\n    return {\n      message: "Hello World!"\n    }\n  }\n}).mount("#app");\n\n// VueKinesis示例\n// const { createApp } = Vue;\n// createApp({\n//   data() {\n//     return {\n//       message: "Hello VueKinesis!"\n//     }\n//   }\n// }).mount("#app");';
-
-function renderExternalLinks(links: string | string[]) {
-  let arr: string[] = [];
-  if (Array.isArray(links)) {
-    arr = links;
-  } else if (typeof links === 'string') {
-    arr = links
-      .split(/\n|,|;/)
-      .map(link => link.trim())
-      .filter(Boolean);
-  }
-  
-  // 分离CSS和JS文件，确保CSS先加载
-  const cssFiles = arr.filter(link => link.endsWith('.css'));
-  const jsFiles = arr.filter(link => !link.endsWith('.css'));
-  
-  // 确保Vue.js在插件之前加载
-  const vueFiles = jsFiles.filter(link => link.includes('vue'));
-  const otherFiles = jsFiles.filter(link => !link.includes('vue'));
-  const sortedJsFiles = [...vueFiles, ...otherFiles];
-  
-  const cssLinks = cssFiles.map(link => `<link rel="stylesheet" href="${link}">`).join('\n');
-  const jsScripts = sortedJsFiles.map(link => `<script src="${link}"></script>`).join('\n');
-  
-  return `${cssLinks}\n${jsScripts}`;
-}
+const DEFAULT_FULL_HTML = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新内容</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    #app {
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">{{ message }}</div>
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          message: "Hello World!"
+        }
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>`;
 
 function FixForm({ error, onSubmit, loading, t }: { error: string; onSubmit: (note: string) => void; loading: boolean; t: any }) {
   const [note, setNote] = useState(error || "");
@@ -112,15 +115,10 @@ export default function ContentForm({
   const [title, setTitle] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tagList, setTagList] = useState<string[]>([]);
-  const [external_links, setExternalLinks] = useState('https://unpkg.com/vue@3/dist/vue.global.prod.js');
-  const [code_html, setHtml] = useState(DEFAULT_HTML);
-  const [code_css, setCss] = useState(DEFAULT_CSS);
-  const [code_js, setJs] = useState(DEFAULT_JS);
-  const [activeTab, setActiveTab] = useState('html');
+  const [full_html, setFullHtml] = useState(DEFAULT_FULL_HTML);
   const [previewKey, setPreviewKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [externalLinksError, setExternalLinksError] = useState('');
   const [savedContentId, setSavedContentId] = useState<string | null>(null);
   const [contentShortId, setContentShortId] = useState<string | null>(null);
   
@@ -160,7 +158,7 @@ export default function ContentForm({
     }, 300); // 300ms 防抖
 
     return () => clearTimeout(debounceTimer);
-  }, [code_html, code_css, code_js, external_links]);
+  }, [full_html]);
 
   // 恢复"加载失败"提示（在组件挂载和页面从后台回到前台时触发）
   useEffect(() => {
@@ -205,10 +203,7 @@ export default function ContentForm({
       setTitle(initialContent.title || '');
       setDescription(initialContent.description || '');
       setTagList(initialContent.tags || []);
-      setExternalLinks(initialContent.external_links?.join('\n') || 'https://unpkg.com/vue@3/dist/vue.global.prod.js');
-      setHtml(initialContent.code_html || DEFAULT_HTML);
-      setCss(initialContent.code_css || DEFAULT_CSS);
-      setJs(initialContent.code_js || DEFAULT_JS);
+      setFullHtml(initialContent.full_html || DEFAULT_FULL_HTML);
       setContentType(initialContent.content_type || '');
       
       // 修复语言代码读取
@@ -312,19 +307,11 @@ export default function ContentForm({
           setTitle(data.title || '');
           setTagList(Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? data.tags.split(/,|\n/) : []));
           setTagInput('');
-          setHtml(data.code_html || DEFAULT_HTML);
-          setCss(data.code_css || DEFAULT_CSS);
-          setJs(data.code_js || DEFAULT_JS);
+          setFullHtml(data.full_html || DEFAULT_FULL_HTML);
           setDescription(data.description || '');
           setContentType(data.content_type || '');
           setLanguage(data.language || '');
           setAiGeneratedLanguage(data.language_code || data.language || '');
-          // 外部依赖显示为一行一个链接
-          if (Array.isArray(data.external_links)) {
-            setExternalLinks(data.external_links.join('\n'));
-          } else {
-            setExternalLinks(data.external_links || '');
-          }
           // 保存short_id用于打开按钮
           setContentShortId(data.short_id || null);
         } else {
@@ -345,13 +332,10 @@ export default function ContentForm({
       setTitle('');
       setTagList([]);
       setTagInput('');
-      setHtml(DEFAULT_HTML);
-      setCss(DEFAULT_CSS);
-      setJs(DEFAULT_JS);
+      setFullHtml(DEFAULT_FULL_HTML);
       setDescription('');
       setContentType('');
       setLanguage('');
-      setExternalLinks('https://unpkg.com/vue@3/dist/vue.global.prod.js');
       setContentShortId(null);
     }
   }, [mode, contentId]);
@@ -467,97 +451,6 @@ export default function ContentForm({
   // 调试信息
   // console.log('当前activeTab:', activeTab);
 
-  // 生成srcDoc，注入window.onerror
-  const generatePreviewHtml = (html: string, css: string, js: string, externalLinks: string) => {
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset='utf-8'>
-  <meta name='viewport' content='width=device-width,initial-scale=1,user-scalable=no'>
-  <style>
-    body { 
-      margin: 0; 
-      padding: 0; 
-      min-height: 100vh; 
-      overflow-x: hidden; 
-      font-family: Arial, sans-serif;
-    }
-    #app { 
-      min-height: 100vh; 
-      width: 100%; 
-      overflow-x: auto;
-    }
-    .ocean-background {
-      min-height: 100vh;
-      width: 100%;
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .game-container {
-      max-width: 100%;
-      overflow-x: auto;
-    }
-    .game-content {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-    }
-    .game-board {
-      max-width: 100%;
-      height: auto;
-      min-height: 400px;
-    }
-    .side-panel {
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .panel {
-      min-width: 120px;
-    }
-    .game-title {
-      font-size: 2rem !important;
-    }
-    .game-subtitle {
-      font-size: 0.9rem !important;
-    }
-    @media (max-width: 768px) {
-      .game-container {
-        transform: scale(0.7);
-      }
-      .game-content {
-        flex-direction: column;
-      }
-      .game-board {
-        width: 100%;
-        max-width: 300px;
-        transform: scale(0.6);
-      }
-      .side-panel {
-        flex-direction: row;
-        justify-content: center;
-        transform: scale(0.6);
-      }
-    }
-  </style>
-  ${renderExternalLinks(externalLinks)}
-  <style>${css||""}</style>
-</head>
-<body>
-  ${html||""}
-  <script>
-    window.onerror=function(m,s,l,c,e){
-      parent.postMessage({type:'RENDER_ERROR',message:m,stack:e?.stack},'*');
-    };
-  </script>
-  <script>${js||""}</script>
-</body>
-</html>`;
-  };
 
   const handlePreview = () => {
     setPreviewKey(prev => prev + 1);
@@ -586,43 +479,6 @@ export default function ContentForm({
     setTagList(tagList.filter(t => t !== removeTag));
   };
 
-  // 验证外部链接
-  const validateExternalLinks = (links: string) => {
-    const linkArray = links
-      .split(/\n|,|;/)
-      .map(link => link.trim())
-      .filter(Boolean);
-    
-    const errors: string[] = [];
-    
-    linkArray.forEach(link => {
-      if (!link.startsWith('http://') && !link.startsWith('https://')) {
-        errors.push(t('invalidUrl', { ns: 'content', defaultValue: `Link "${link}" is not a valid URL` }));
-      }
-      if (!link.endsWith('.js') && !link.endsWith('.css')) {
-        errors.push(t('invalidFileType', { ns: 'content', defaultValue: `Link "${link}" is not a valid JS or CSS file` }));
-      }
-    });
-    
-    if (errors.length > 0) {
-      setExternalLinksError(errors.join('\n'));
-    } else {
-      setExternalLinksError('');
-    }
-    return errors.join('\n');
-  };
-
-  const handleExternalLinksChange = (value: string) => {
-    // 自动将Vue开发版本替换为生产版本
-    let processedValue = value;
-    if (value.includes('vue.global.js')) {
-      processedValue = value.replace('vue.global.js', 'vue.global.prod.js');
-    }
-    
-    setExternalLinks(processedValue);
-    const error = validateExternalLinks(processedValue);
-    setExternalLinksError(error);
-  };
 
   // 异步AI生成处理函数
   const handleAsyncAiGenerate = async () => {
@@ -642,10 +498,7 @@ export default function ContentForm({
         description: description || '',
         language_code: language,
         content_type: 'vue',
-        code_html: '',
-        code_css: '',
-        code_js: '',
-        external_links: [],
+        full_html: DEFAULT_FULL_HTML,
         tags: [],
         created_by: user?.id
       };
@@ -667,7 +520,7 @@ export default function ContentForm({
 
       if (generateResponse.success) {
         // 3. 跳转到内容列表页面
-        router.push('/content');
+        router.push('/c');
       } else {
         throw new Error(generateResponse.error || '启动异步生成失败');
       }
@@ -716,22 +569,16 @@ export default function ContentForm({
 
       if (response.success && response.data) {
         // 第一次AI生成：直接从AI生成的内容中读取
-        const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = response.data;
+        const { full_html: generatedFullHtml, title: generatedTitle, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = response.data;
         
         // 更新表单内容
-        setHtml(html || DEFAULT_HTML);
-        setCss(css || DEFAULT_CSS);
-        setJs(js || DEFAULT_JS);
+        setFullHtml(generatedFullHtml || DEFAULT_FULL_HTML);
         setTitle(generatedTitle || title);
         setDescription(generatedDescription || description);
         // 只有当用户没有手动输入时才使用 AI 生成的值
         setContentType(content_type || generatedContentType || '');
         // 将AI生成的语言代码存储到专门的字段中
         setAiGeneratedLanguage(generatedLanguageCode || legacyLanguage || '');
-        
-        if (generatedLinks && Array.isArray(generatedLinks)) {
-          setExternalLinks(generatedLinks.join('\n'));
-        }
         
         // 统一处理标签去重
         const allNewTags = [];
@@ -760,8 +607,6 @@ export default function ContentForm({
           setTagList(prev => [...prev, ...uniqueNewTags]);
         }
         
-        // 切换到JS标签页显示生成的代码
-        setActiveTab('js');
         
         setError('');
         setHasGenerated(true); // 设置已生成标记
@@ -785,20 +630,14 @@ export default function ContentForm({
             // 处理fallback数据
             const logData = fallbackResponse.data;
             if (logData.response_meta) {
-              const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = logData.response_meta;
+              const { full_html: generatedFullHtml, title: generatedTitle, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = logData.response_meta;
               
               // 更新表单内容
-              setHtml(html || DEFAULT_HTML);
-              setCss(css || DEFAULT_CSS);
-              setJs(js || DEFAULT_JS);
+              setFullHtml(generatedFullHtml || DEFAULT_FULL_HTML);
               setTitle(generatedTitle || title);
               setDescription(generatedDescription || description);
               setContentType(content_type || generatedContentType || '');
               setAiGeneratedLanguage(generatedLanguageCode || legacyLanguage || '');
-              
-              if (generatedLinks && Array.isArray(generatedLinks)) {
-                setExternalLinks(generatedLinks.join('\n'));
-              }
               
               // 处理标签
               const allNewTags = [];
@@ -817,7 +656,6 @@ export default function ContentForm({
                 setTagList(prev => [...prev, ...uniqueNewTags]);
               }
               
-              setActiveTab('js');
               setError('');
               setHasGenerated(true);
               setAiGenerating(false);
@@ -881,20 +719,14 @@ export default function ContentForm({
           }
         }
         
-        const { html, css, js, title: generatedTitle, external_links: generatedLinks, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = extractedData;
+        const { full_html: generatedFullHtml, title: generatedTitle, tags: generatedTags, description: generatedDescription, content_type: generatedContentType, language_code: generatedLanguageCode, language: legacyLanguage } = extractedData;
         
         // 更新表单内容
-        setHtml(html || DEFAULT_HTML);
-        setCss(css || DEFAULT_CSS);
-        setJs(js || DEFAULT_JS);
+        setFullHtml(generatedFullHtml || DEFAULT_FULL_HTML);
         setTitle(generatedTitle || title);
         setDescription(generatedDescription || description);
         setContentType(content_type || generatedContentType || '');
         setAiGeneratedLanguage(generatedLanguageCode || legacyLanguage || '');
-        
-        if (generatedLinks && Array.isArray(generatedLinks)) {
-          setExternalLinks(generatedLinks.join('\n'));
-        }
         
         // 处理标签
         const allNewTags = [];
@@ -913,7 +745,6 @@ export default function ContentForm({
           setTagList(prev => [...prev, ...uniqueNewTags]);
         }
         
-        setActiveTab('js');
         setError('');
         setHasGenerated(true);
         setShowReloadButton(false);
@@ -934,10 +765,7 @@ export default function ContentForm({
     try {
       const requestBody: any = {
         note,
-        html: code_html,
-        css: code_css,
-        js: code_js,
-        external_links: external_links.split(/\n|,|;/).map(s => s.trim()).filter(Boolean)
+        full_html: full_html
       };
       // 管理员可选择 provider
       if (user && user.role === 'admin' && aiProvider) {
@@ -956,10 +784,7 @@ export default function ContentForm({
       }
       
       const result = await api.content.fix(requestBody);
-      if (result && result.html) setHtml(result.html);
-      if (result && result.css) setCss(result.css);
-      if (result && result.js) setJs(result.js);
-      if (result && result.external_links) setExternalLinks(result.external_links.join('\n'));
+      if (result && result.full_html) setFullHtml(result.full_html);
       if (result && result.fixed) setFixed(result.fixed); // 更新 fixed 状态
       // 保持修复表单显示，不清空错误信息，让用户可以继续优化
       setFixError(""); // 清空错误信息，表示修复成功
@@ -981,17 +806,10 @@ export default function ContentForm({
     setLoading(true);
     setError('');
     try {
-      const externalLinksArr = external_links
-        .split(/\n|,|;/)
-        .map(s => s.trim())
-        .filter(Boolean);
       const content = {
         title,
-        code_html,
-        code_css,
-        code_js,
+        full_html: full_html,
         tags: tagList,
-        external_links: externalLinksArr,
         description,
         content_type,
         language_code: aiGeneratedLanguage,
@@ -1008,7 +826,7 @@ export default function ContentForm({
           setSavedContentId(result.short_id);
         }
       }
-      router.push('/content');
+      router.push('/c');
     } catch (e: any) {
       // 检查是否是认证错误
       if (e.message?.includes('401') || e.message?.includes('无效的访问令牌') || e.message?.includes('访问令牌缺失')) {
@@ -1022,11 +840,6 @@ export default function ContentForm({
     }
   };
 
-  const TABS = [
-    { key: 'html', label: mounted ? t('tabs.html', { ns: 'content', defaultValue: 'HTML' }) : 'HTML' },
-    { key: 'css', label: mounted ? t('tabs.css', { ns: 'content', defaultValue: 'CSS' }) : 'CSS' },
-    { key: 'js', label: mounted ? t('tabs.js', { ns: 'content', defaultValue: 'JS' }) : 'JS' },
-  ];
   const LEARNING_STAGES: { value: string; label: string }[] = [];
 
   return (
@@ -1036,7 +849,7 @@ export default function ContentForm({
           <Logo size="md" />
         </div>
         <div className="flex justify-between items-center px-6 pt-6 pb-2 border-b border-gray-100">
-          <button onClick={() => router.push('/content')} className="text-gray-400 hover:text-black text-sm font-medium transition">{mounted ? t('back', { ns: 'common', defaultValue: '← Back' }) : '← Back'}</button>
+          <button onClick={() => router.push('/c')} className="text-gray-400 hover:text-black text-sm font-medium transition">{mounted ? t('back', { ns: 'common', defaultValue: '← Back' }) : '← Back'}</button>
           <div className="flex gap-2">
             <button 
               className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition" 
@@ -1052,7 +865,7 @@ export default function ContentForm({
                   }
                   
                   if (targetId) {
-                    window.open(`/content/${targetId}`, '_blank');
+                    window.open(`/c/${targetId}`, '_blank');
                   } else {
                     alert(mounted ? t('saveFirst', { ns: 'content', defaultValue: 'Please save content first' }) : 'Please save content first');
                   }
@@ -1252,45 +1065,25 @@ export default function ContentForm({
                     ))}
                   </div>
                 </div>
-                {!isRegularUser && (
-                  <div className="mt-2">
-                    <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('externalDependencies', { ns: 'content', defaultValue: 'External Dependencies (one CDN link per line, supports JS/CSS)' }) : 'External Dependencies (one CDN link per line, supports JS/CSS)'}</label>
-                    <textarea className="w-full border border-gray-200 p-2 rounded-lg h-16 focus:outline-none focus:ring-2 focus:ring-black bg-gray-50 font-mono text-xs" value={external_links} onChange={e => handleExternalLinksChange(e.target.value)} placeholder={mounted ? 'For example: https://unpkg.com/vue@3/dist/vue.global.js\nhttps://cdn.jsdelivr.net/npm/axios/dist/axios.min.js' : 'For example: https://unpkg.com/vue@3/dist/vue.global.js\nhttps://cdn.jsdelivr.net/npm/axios/dist/axios.min.js'} disabled={isAiFormDisabled} />
-                    {externalLinksError && <div className="text-red-600 text-xs mt-1">{externalLinksError}</div>}
-                  </div>
-                )}
               </div>
-              {/* 代码编辑Tabs */}
-              {!isRegularUser && (
-                <div className="bg-white/80 rounded-xl shadow border border-gray-100 p-0 flex flex-col">
-                  <div className="flex gap-2 border-b border-gray-100 px-4 pt-2">
-                    {TABS.map(tab => (
-                      <button
-                        key={tab.key}
-                        className={`px-5 py-1 text-sm font-medium rounded-t transition-all duration-150 cursor-pointer ${activeTab === tab.key ? 'bg-black text-white shadow' : 'text-gray-500 hover:text-black bg-gray-100'}`}
-                        onClick={() => {
-                          setActiveTab(tab.key);
-                        }}
-                        type="button"
-                        disabled={isAiFormDisabled}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="px-4 pb-4 pt-2">
-                    {activeTab === 'html' && (
-                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_html} onChange={e => setHtml(e.target.value)} placeholder={mounted ? 'Please enter HTML code' : 'Please enter HTML code'} disabled={isAiFormDisabled} />
-                    )}
-                    {activeTab === 'css' && (
-                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_css} onChange={e => setCss(e.target.value)} placeholder={mounted ? 'Please enter CSS code' : 'Please enter CSS code'} disabled={isAiFormDisabled} />
-                    )}
-                    {activeTab === 'js' && (
-                      <textarea className="w-full border border-gray-200 p-2 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" value={code_js} onChange={e => setJs(e.target.value)} placeholder={mounted ? 'Please enter JS code' : 'Please enter JS code'} disabled={isAiFormDisabled} />
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* 完整 HTML 编辑器 - 所有用户都可以编辑 */}
+              <div className="bg-white/80 rounded-xl shadow border border-gray-100 p-4 flex flex-col">
+                <label className="block font-semibold mb-2 text-gray-700">
+                  {mounted ? t('fullHtml', { ns: 'content', defaultValue: 'Complete HTML' }) : 'Complete HTML'} <span className="text-red-500">*</span>
+                </label>
+                <textarea 
+                  className="w-full border border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" 
+                  value={full_html} 
+                  onChange={e => setFullHtml(e.target.value)} 
+                  placeholder={mounted ? t('enterFullHtml', { ns: 'content', defaultValue: 'Enter complete HTML code (including DOCTYPE, html, head, body tags)' }) : 'Enter complete HTML code (including DOCTYPE, html, head, body tags)'} 
+                  disabled={isAiFormDisabled}
+                  rows={25}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  {mounted ? t('fullHtmlHint', { ns: 'content', defaultValue: 'Include all CSS in <style> tags and JavaScript in <script> tags. All external libraries should be loaded via CDN links in the HTML.' }) : 'Include all CSS in <style> tags and JavaScript in <script> tags. All external libraries should be loaded via CDN links in the HTML.'}
+                </p>
+              </div>
               {error && (
                 <div className="text-red-600 text-center mt-2">
                   <div>{error}</div>
@@ -1310,20 +1103,18 @@ export default function ContentForm({
             <div className="bg-gradient-to-br from-gray-100 to-white border border-gray-200 rounded-xl shadow flex flex-col h-[40rem]">
               <div className="text-xs text-gray-400 px-4 py-2 border-b border-gray-100 bg-white/80 rounded-t-xl">{mounted ? t('realTimePreview', { ns: 'content', defaultValue: 'Real-time Preview' }) : 'Real-time Preview'}</div>
               <div className="flex-1 relative">
-                {/* 调试字符计数已移除 */}
-                
-                <SandboxRenderer
+                <FullHTMLRenderer
                   key={previewKey}
-                  html={code_html}
-                  css={code_css}
-                  js={code_js}
-                  externalLinks={external_links}
+                  fullHTML={full_html}
                   className="w-full h-full"
                   style={{
                     minHeight: '700px',
                     height: '100%',
                     width: '100%'
                   }}
+                  autoHeight={false}
+                  fixedHeight={false}
+                  enableHeightListener={true}
                   onError={(err) => {
                     try {
                       const msg = String((err as any) ?? 'Load failed');

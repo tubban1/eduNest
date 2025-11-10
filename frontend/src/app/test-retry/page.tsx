@@ -76,10 +76,7 @@ export default function TestRetryPage() {
         const response = await api.content.create({
           title: `重试测试内容 ${new Date().toLocaleTimeString()}`,
           description: '通过重试按钮创建的真实测试内容',
-          code_html: '',
-          code_css: '',
-          code_js: '',
-          external_links: [],
+          full_html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>测试内容</title></head><body><div>测试内容</div></body></html>`,
           tags: ['重试测试'],
           content_type: 'vue',
           language_code: 'zh-CN'
@@ -382,9 +379,7 @@ export default function TestRetryPage() {
       if (contentData) {
         addLog(`✅ 获取内容成功`);
         addLog(`标题: ${contentData.title}`);
-        addLog(`HTML长度: ${contentData.code_html?.length || 0} 字符`);
-        addLog(`CSS长度: ${contentData.code_css?.length || 0} 字符`);
-        addLog(`JS长度: ${contentData.code_js?.length || 0} 字符`);
+        addLog(`Full HTML长度: ${contentData.full_html?.length || 0} 字符`);
         
         // 更新卡片显示AI生成的内容
         setTestContents(prev => prev.map(content => 
@@ -393,9 +388,7 @@ export default function TestRetryPage() {
                 ...content, 
                 title: contentData.title,
                 description: contentData.description || 'AI生成的教育内容',
-                code_html: contentData.code_html || '',
-                code_css: contentData.code_css || '',
-                code_js: contentData.code_js || '',
+                full_html: contentData.full_html || '',
                 tags: contentData.tags || ['AI生成']
               }
             : content
@@ -486,7 +479,7 @@ export default function TestRetryPage() {
           <div className="flex items-center justify-between">
             <div className="flex gap-4">
               <a href="/" className="text-blue-600 hover:text-blue-800">← 返回首页</a>
-              <a href="/content" className="text-blue-600 hover:text-blue-800">内容列表</a>
+              <a href="/c" className="text-blue-600 hover:text-blue-800">内容列表</a>
               <a href="/test-status" className="text-blue-600 hover:text-blue-800">状态测试</a>
             </div>
             <div className="text-sm text-gray-500">

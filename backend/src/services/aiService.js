@@ -7,39 +7,7 @@ const router = express.Router();
 const { supabase } = require('./database');
 const AIProviderFactory = require('./aiProviderFactory');
 
-// 支持的库映射表缓存
-let supportedLibrariesCache = null;
-
-// 加载支持的库配置
-const loadSupportedLibraries = () => {
-  if (supportedLibrariesCache) return supportedLibrariesCache;
-  
-  try {
-    const configPath = path.join(__dirname, '../../config/supported-libraries.json');
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    
-    // 转换为扁平化的映射表
-    const flatMap = {};
-    Object.values(config.libraries).forEach(lib => {
-      Object.entries(lib.versions).forEach(([version, url]) => {
-        lib.patterns.forEach(pattern => {
-          // 替换版本占位符
-          const finalPattern = pattern.replace('{version}', version);
-          flatMap[finalPattern] = url;
-        });
-      });
-    });
-    
-    supportedLibrariesCache = flatMap;
-    console.log(`Loaded ${Object.keys(flatMap).length} library mappings from config`);
-    return flatMap;
-  } catch (error) {
-    console.error('Failed to load supported libraries config:', error);
-    // 降级到空映射，避免服务中断
-    supportedLibrariesCache = {};
-    return {};
-  }
-};
+// loadSupportedLibraries 函数已删除（不再需要，因为已切换到 full_html 模式）
 
 // 抽象的AI使用日志记录方法
 const logAIUsageWithDefaults = async (params) => {
@@ -108,6 +76,176 @@ const safeReplace = (template, placeholder, value) => {
   return template.replace(new RegExp(escapedPlaceholder, 'g'), escapedValue);
 };
 
+const supportedLibrariesPath = path.join(__dirname, '../..', 'config', 'supported-libraries.json');
+const fallbackLibrariesPath = path.join(__dirname, '../..', 'config', 'libraries_cn.json');
+
+const loadJsonFile = (filePath) => {
+  try {
+    if (!fs.existsSync(filePath)) {
+      console.warn('[aiService] Library config not found:', filePath);
+      return null;
+    }
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error('[aiService] Failed to load JSON config:', filePath, error);
+    return null;
+  }
+};
+
+const buildLibraryEntries = (config) => {
+  if (!config || !config.libraries) return [];
+  const entries = [];
+  for (const [name, details] of Object.entries(config.libraries)) {
+    const basePatterns = Array.isArray(details.patterns) ? details.patterns : [];
+    const addEntry = (type, url, patterns = basePatterns) => {
+      if (!url) return;
+      entries.push({
+        name,
+        type,
+        url,
+        patterns: Array.isArray(patterns) ? patterns : []
+      });
+    };
+
+    if (details.versions) {
+      const versionUrl = Object.values(details.versions)[0];
+      addEntry('js', versionUrl);
+    }
+
+    if (details.css) {
+      const cssUrl = Object.values(details.css)[0];
+      addEntry('css', cssUrl);
+    }
+
+    if (details.extras) {
+      for (const [extraName, extraDetails] of Object.entries(details.extras)) {
+        const extraUrl = extraDetails?.versions ? Object.values(extraDetails.versions)[0] : null;
+        const extraPatterns = extraDetails?.patterns?.length ? extraDetails.patterns : basePatterns;
+        addEntry('js', extraUrl, extraPatterns);
+      }
+    }
+  }
+  return entries;
+};
+
+let supportedLibraryEntriesCache = null;
+let fallbackLibraryEntriesCache = null;
+
+const getSupportedLibraryEntries = () => {
+  if (!supportedLibraryEntriesCache) {
+    supportedLibraryEntriesCache = buildLibraryEntries(loadJsonFile(supportedLibrariesPath));
+  }
+  return supportedLibraryEntriesCache;
+};
+
+const getFallbackLibraryEntries = () => {
+  if (!fallbackLibraryEntriesCache) {
+    fallbackLibraryEntriesCache = buildLibraryEntries(loadJsonFile(fallbackLibrariesPath));
+  }
+  return fallbackLibraryEntriesCache;
+};
+
+const findReplacementUrl = (url, type) => {
+  if (!url || typeof url !== 'string') return null;
+
+  const matchFromEntries = (entries) => {
+    if (!entries || !entries.length) return null;
+    for (const entry of entries) {
+      if (entry.type !== type) continue;
+      if (!entry.patterns || !entry.patterns.length) continue;
+      if (entry.patterns.some(pattern => pattern && url.includes(pattern))) {
+        if (entry.url && entry.url !== url) {
+          return entry.url;
+        }
+      }
+    }
+    return null;
+  };
+
+  return (
+    matchFromEntries(getSupportedLibraryEntries()) ||
+    matchFromEntries(getFallbackLibraryEntries())
+  );
+};
+
+const replaceLibrariesInHtml = (html) => {
+  if (typeof html !== 'string' || !html.trim()) return html;
+
+  let updatedHtml = html;
+
+  // 替换 <script src="...">，优先使用 supported-libraries，失败回退到 libraries_cn（通过 onerror）
+  updatedHtml = updatedHtml.replace(
+    /<script\b([^>]*)\bsrc=["']([^"']+)["']([^>]*)><\/script>/gi,
+    (match, beforeAttrs, src, afterAttrs) => {
+      const primary = findReplacementUrl(src, 'js'); // supported
+      const fallback = (() => {
+        // 显式从 fallback 表里匹配
+        const entries = getFallbackLibraryEntries();
+        if (!entries || !entries.length) return null;
+        for (const entry of entries) {
+          if (entry.type !== 'js') continue;
+          if (entry.patterns && entry.patterns.some(p => p && src.includes(p))) {
+            return entry.url;
+          }
+        }
+        // 若 primary 命中了 supported，也尝试用相同库名在 fallback 找到对应 URL（模式匹配不足时）
+        if (primary) {
+          for (const entry of entries) {
+            if (entry.type === 'js' && entry.url) {
+              // 简单启发：同名库（根据 url 最后一段文件名判断）
+              const file = primary.split('/').pop();
+              const fbFile = entry.url.split('/').pop();
+              if (file && fbFile && file.toLowerCase().includes(fbFile.split('?')[0].toLowerCase().replace(/\.min\.js$|\.js$/,''))) {
+                return entry.url;
+              }
+            }
+          }
+        }
+        return null;
+      })();
+
+      // 重建 <script> 标签
+      const leftAttrs = beforeAttrs || '';
+      const rightAttrs = afterAttrs || '';
+
+      if (primary) {
+        if (fallback && !/onerror=/i.test(match)) {
+          return `<script${leftAttrs} src="${primary}" onerror="this.onerror=null; this.src='${fallback}'"${rightAttrs}></script>`;
+        }
+        return `<script${leftAttrs} src="${primary}"${rightAttrs}></script>`;
+      }
+
+      // 若未匹配到 supported，但能匹配到 fallback，直接使用 fallback
+      if (fallback) {
+        return `<script${leftAttrs} src="${fallback}"${rightAttrs}></script>`;
+      }
+
+      // 未匹配到任何替换，保持原样
+      return match;
+    }
+  );
+
+  // 替换 <link href="...">
+  updatedHtml = updatedHtml.replace(
+    /<link\b([^>]*)\bhref=["']([^"']+)["']([^>]*)>/gi,
+    (match, beforeAttrs, href, afterAttrs) => {
+      const relMatch = match.match(/\brel=["']([^"']+)["']/i);
+      const rel = relMatch ? relMatch[1].toLowerCase() : '';
+      if (rel && rel !== 'stylesheet' && rel !== 'preload' && rel !== 'prefetch') {
+        return match;
+      }
+      const primary = findReplacementUrl(href, 'css');
+      if (primary) {
+        return `<link${beforeAttrs || ''} href="${primary}"${afterAttrs || ''}>`;
+      }
+      return match;
+    }
+  );
+
+  return updatedHtml;
+};
+
 // AI服务配置
 const ARK_API_KEY = process.env.ARK_API_KEY;
 const ARK_MODEL = process.env.ARK_MODEL || 'kimi-k2-250905';
@@ -129,20 +267,27 @@ Your design must ensure:
 -- Key principles and their relationships
 -- Edge cases or common misunderstandings (where relevant)
 -- Gradual progression or scaffolding to support layered understanding
--Use metaphor, visualization, sound cues, and interaction to reinforce mental models.
+- Use metaphor, visualization, sound cues, and interaction to reinforce mental models.
 
 2. Technical Constraints
-- The entire project must run directly in plain HTML/CSS/JS environments such as sandbox editors or iframes, without any build tools, bundlers, or .vue files.
-- The CSS and JS fields must contain complete, self-contained, runnable code.
-- The HTML field must not include any <style> or <script> tags.
-- All external dependencies must be declared inside the external_links field.
+- You must generate a complete, standalone HTML file that can run directly in a browser or iframe.
+- The HTML file must include:
+  * A complete <!DOCTYPE html> declaration
+  * A <head> section with:
+    - <meta charset="UTF-8">
+    - <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    - <title> tag with the project title
+    - All external CSS and JS libraries loaded via <link> and <script> tags
+    - Internal <style> tags for CSS
+  * A <body> section with:
+    - All HTML content
+    - Internal <script> tags for JavaScript
 - Use Vue 3.5.20 with <script setup> syntax via production CDN.
-- In addition, you may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect (e.g. animation, charts, audio, 3D):
+- You may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect:
 Vue ecosystem: Vue, VueRouter, Vuex
-React ecosystem: Redux
 Sound: Tone.js, Howler.js
 Animation: Anime.js, GSAP.js
-3D: Three.js, Babylon.js, OrbitControls, AexsHelper, FontLoader,TextGeometry, GLTFLoader、three-mesh-ui
+3D: Three.js, Babylon.js, OrbitControls, FontLoader, TextGeometry, GLTFLoader, three-mesh-ui
 Charts: Chart.js, ECharts, D3.js
 Tools: Lodash, Moment.js, Day.js
 Forms: VeeValidate, VeeValidate Rules, VeeValidate i18n
@@ -151,9 +296,10 @@ Graphics: Fabric.js, Rough.js, Konva.js
 Physics/AI/Noise: cannon-es, Yuka, noisejs
 Math: KaTeX.min.js, KaTeX.min.css, auto-render
 UI: Bootstrap, Tailwindcss, Fontawesome
-- Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
-- All additional dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr).
-- All Vue variables, methods, and computed properties used in the HTML template must be explicitly defined and returned within the setup() function.
+- Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition.
+- All external dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr) directly in the HTML file.
+- All Vue variables, methods, and computed properties used in the HTML template must be explicitly defined within the Vue app setup.
+- The HTML file must be completely self-contained and runnable.
 
 3. UX/UI Requirements
 - Ensure the UI is responsive, touch-friendly, and optimized for both desktop and mobile.
@@ -167,25 +313,26 @@ UI: Bootstrap, Tailwindcss, Fontawesome
 - All text values in the JSON (including title, description, UI strings, tags and comments) must match the language indicated by language_code.
 
 5. Output Format
-Return the result as a single, valid, and minified JSON object. Strictly adhere to the specified structure below, with no leading or trailing text. The entire output must be parseable as a single JSON object. Any deviation, such as a missing comma, unclosed quote, or bracket, is a critical error.
+Return the result as a single, valid JSON object. Strictly adhere to the specified structure below, with no leading or trailing text. The entire output must be parseable as a single JSON object. Any deviation, such as a missing comma, unclosed quote, or bracket, is a critical error.
 
 {
   "title": "Title of the project",
   "description": "What this project teaches and how to interact with it",
-  "html": "<!-- Full, complete, and runnable HTML code.-->",
-  "css": "/* Full, complete, and runnable CSS code */",
-  "js": "// Full, complete, and runnable JS code using Vue 3 <script setup>, with all functions and components properly closed.",
-  "external_links": [
-    "https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js" *if used*
-    "Any additional library links you actually used from the allowed list"
-  ],
+  "full_html": "<!DOCTYPE html><html><head>...complete HTML file with all CSS and JS embedded...</head><body>...content...</body></html>",
   "tags": [
     "3-7 high-quality tags that reflect subject, domain, format, or interaction style"
   ],
   "content_type": "vue",
   "language_code": "MUST match the language_code input parameter exactly as per Constraint 4"
 }
+
+IMPORTANT: The "full_html" field must contain a complete, standalone HTML file that includes:
+- DOCTYPE declaration
+- Complete <html>, <head>, and <body> structure
+- All external libraries loaded in <head> or before closing </body>
+- All CSS in <style> tags within <head>
+- All JavaScript in <script> tags (Vue app initialization, etc.)
+- The HTML must be valid and runnable directly in a browser
 
 6. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.`;
 
@@ -306,10 +453,12 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           language_code: parsedDataRaw.language_code || languageCode || 'zh-CN'
         };
         
-        // 替换 external_links 为支持的库链接
-        if (parsedData.external_links && Array.isArray(parsedData.external_links)) {
-          parsedData.external_links = replaceWithSupportedLibraries(parsedData.external_links);
+        // 验证 full_html 是否存在
+        if (!parsedData.full_html || typeof parsedData.full_html !== 'string' || parsedData.full_html.trim().length === 0) {
+          throw new Error('AI返回的 full_html 字段为空或无效');
         }
+
+        parsedData.full_html = replaceLibrariesInHtml(parsedData.full_html);
         
         // 日志：成功解析JSON
         if (isAsyncMode && requestId) {
@@ -494,10 +643,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
 {
   "title": "项目标题",
   "description": "项目描述",
-  "html": "<div id='app'>{{ message }}</div>",
-  "css": "body { font-family: sans-serif; } #app { padding: 20px; }",
-  "js": "const { createApp } = Vue; createApp({ data() { return { message: 'Hello World!' } } }).mount('#app');",
-  "external_links": ["https://unpkg.com/vue@3/dist/vue.global.prod.js"],
+  "full_html": "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>项目标题</title><script src='https://unpkg.com/vue@3/dist/vue.global.prod.js'></script><style>body { font-family: sans-serif; } #app { padding: 20px; }</style></head><body><div id='app'>{{ message }}</div><script>const { createApp } = Vue; createApp({ data() { return { message: 'Hello World!' } } }).mount('#app');</script></body></html>",
   "tags": ["测试", "Vue3"],
   "content_type": "vue",
   "language_code": "zh-CN"
@@ -567,10 +713,12 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       if (jsonMatch) {
         parsedData = JSON.parse(jsonMatch[0]);
         
-        // 替换 external_links 为支持的库链接
-        if (parsedData.external_links && Array.isArray(parsedData.external_links)) {
-          parsedData.external_links = replaceWithSupportedLibraries(parsedData.external_links);
+        // 验证 full_html 是否存在
+        if (!parsedData.full_html || typeof parsedData.full_html !== 'string' || parsedData.full_html.trim().length === 0) {
+          throw new Error('AI返回的 full_html 字段为空或无效');
         }
+        
+        parsedData.full_html = replaceLibrariesInHtml(parsedData.full_html);
         
         return {
           success: true,
@@ -597,45 +745,35 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
 };
 
 // AI修复接口（已接入多提供商）
-const fixEducationalContent = async ({ html, css, js, external_links, note, content_type, language_code, title, description, user_id = null, provider = null, requestId = null }) => {
+const fixEducationalContent = async ({ full_html, note, content_type, language_code, title, description, user_id = null, provider = null, requestId = null }) => {
   let logParams = {};
   try {
     // 构建修复prompt
     const SYSTEM_PROMPT = `You are an expert Vue 3 frontend developer and educational UI engineer.
-    Your task is to fix and improve an interactive Vue 3 educational project.
-    Only modify the following fields in the provided JSON:
-    - html
-    - css
-    - js
-    - external_links
-    - fixed
+    Your task is to fix and improve a complete standalone HTML file for an interactive Vue 3 educational project.
+    Only modify the "full_html" field in the provided JSON:
+    - full_html: A complete, standalone HTML file that includes DOCTYPE, <html>, <head>, and <body> tags
+    - All CSS must be in <style> tags within <head>
+    - All JavaScript must be in <script> tags (before closing </body>)
+    - All external libraries must be loaded via CDN in <head> or before </body>
+    - fixed: A short non-technical summary of what was changed or fixed (1-2 sentences)
+    
     Constraints:
-    - Use Vue 3 with <script setup> style via production CDN: https://unpkg.com/vue@3/dist/vue.global.prod.js
-    - UUse Tone.js v14.8.49 when audio feedback, sound effects, or music would enhance the learning experience:
-  https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js
-    - Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition (e.g., pronunciation, instructions, responses).
-    - All code must be runnable in a browser-based sandbox with three panes: HTML, CSS, JavaScript.
-    - No build tools, bundlers, or .vue files are allowed.
-    - All external libraries must be loaded via production CDN (e.g., unpkg, cdnjs).
-    - Ensure mobile and desktop compatibility.
+    - Use Vue 3.5.20 with <script setup> style via production CDN
+    - The HTML file must be completely self-contained and runnable
+    - Ensure mobile and desktop compatibility
     - Only output valid JSON with the following format: 
     {
-      "html": "...",
-      "css": "...",
-      "js": "...",
-      "external_links": ["..."],
+      "full_html": "<!DOCTYPE html><html>...complete HTML file...</html>",
       "fixed": "a short non-technical summary of what was changed or fixed (1-2 sentences)"
-      }
-      If you receive error logs, fix the specific issue.
-      If you receive a user modification note, apply it as a functional update or enhancement.
-      Do not change project structure or title. Focus only on fixing code or updating interactivity/behavior.`;
+    }
+    If you receive error logs, fix the specific issue.
+    If you receive a user modification note, apply it as a functional update or enhancement.
+    Do not change project structure or title. Focus only on fixing code or updating interactivity/behavior.`;
       
-    const USER_PROMPT = safeReplace(`The current Vue 3 project has the following issue or user request:\n{{note}}\n\nCurrent code:\n{\n  \"html\": \"{{html}}\",\n  \"css\": \"{{css}}\",\n  \"js\": \"{{js}}\",\n  \"external_links\": {{external_links}}\n}`, '{{note}}', note);
+    const USER_PROMPT = safeReplace(`The current Vue 3 project has the following issue or user request:\n{{note}}\n\nCurrent full_html:\n{{full_html}}`, '{{note}}', note);
 
-    const finalUserPrompt = safeReplace(USER_PROMPT, '{{html}}', html)
-      .replace('{{css}}', css ? css : '')
-      .replace('{{js}}', js)
-      .replace('{{external_links}}', JSON.stringify(external_links || []));
+    const finalUserPrompt = safeReplace(USER_PROMPT, '{{full_html}}', full_html || '');
 
     // 使用AI提供商工厂发送请求
     const result = await aiProviderFactory.createChatCompletion({
@@ -662,7 +800,7 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
         input_tokens: promptTokens,
         output_tokens: completionTokens,
         total_tokens: totalTokens,
-        request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
+        request_payload: { full_html, note, content_type, language_code, title, description },
         response_metadata: { provider: result.provider, model: result.model, raw: result.response },
         error_message: 'AI返回内容为空',
         request_id: requestId
@@ -694,10 +832,12 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
       if (jsonMatch) {
         parsed = JSON.parse(jsonMatch[0]);
         
-        // 替换 external_links 为支持的库链接
-        if (parsed.external_links && Array.isArray(parsed.external_links)) {
-          parsed.external_links = replaceWithSupportedLibraries(parsed.external_links);
+        // 验证 full_html 是否存在
+        if (!parsed.full_html || typeof parsed.full_html !== 'string' || parsed.full_html.trim().length === 0) {
+          throw new Error('AI返回的 full_html 字段为空或无效');
         }
+        
+        parsed.full_html = replaceLibrariesInHtml(parsed.full_html);
         
         await logAIUsageWithDefaults({
           user_id,
@@ -707,7 +847,7 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
           input_tokens: promptTokens,
           output_tokens: completionTokens,
           total_tokens: totalTokens,
-          request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
+          request_payload: { full_html, note, content_type, language_code, title, description },
           response_metadata: { provider: result.provider, model: result.model, raw: result.response },
           created_at: new Date(result.created ? result.created * 1000 : Date.now()),
           is_json_valid: true,
@@ -727,7 +867,7 @@ const fixEducationalContent = async ({ html, css, js, external_links, note, cont
         input_tokens: promptTokens,
         output_tokens: completionTokens,
         total_tokens: totalTokens,
-        request_payload: { html, css, js, external_links, note, content_type, language_code, title, description },
+        request_payload: { full_html, note, content_type, language_code, title, description },
         response_metadata: { provider: result.provider, model: result.model, raw: result.response },
         created_at: new Date(result.created ? result.created * 1000 : Date.now()),
         is_json_valid: false,
@@ -811,75 +951,7 @@ const testSafeReplace = () => {
   });
 };
 
-// 将 AI 生成的库链接替换为支持的库链接
-const replaceWithSupportedLibraries = (externalLinks) => {
-  if (!Array.isArray(externalLinks)) {
-    return [];
-  }
-
-  // 从配置文件加载支持的库映射表
-  const supportedLibraries = loadSupportedLibraries();
-
-  const processedLinks = externalLinks.map(link => {
-    if (!link || typeof link !== 'string') {
-      return link;
-    }
-
-    // 尝试匹配库名和版本
-    for (const [pattern, replacement] of Object.entries(supportedLibraries)) {
-      if (link.includes(pattern)) {
-        return replacement;
-      }
-    }
-
-    // 如果没有匹配到，尝试更智能的版本匹配
-    // 处理类似 gsap@3.x.x, three@0.x.x 等版本范围
-    const versionMatch = link.match(/([a-zA-Z0-9-]+)@(\d+)\.(\d+)\.(\d+)/);
-    if (versionMatch) {
-      const [fullMatch, libName, major, minor, patch] = versionMatch;
-      
-      // 尝试匹配主版本号
-      const majorVersionPattern = `${libName}@${major}`;
-      if (supportedLibraries[majorVersionPattern]) {
-        return supportedLibraries[majorVersionPattern];
-      }
-      
-      // 尝试匹配库名（不带版本）
-      if (supportedLibraries[libName]) {
-        return supportedLibraries[libName];
-      }
-    }
-
-    // 额外处理：尝试从 URL 中提取库名进行模糊匹配
-    const urlMatch = link.match(/([a-zA-Z0-9-]+)(?:@\d+\.\d+\.\d+)?/);
-    if (urlMatch) {
-      const libName = urlMatch[1];
-      
-      // 查找包含该库名的任何模式
-      for (const [pattern, replacement] of Object.entries(supportedLibraries)) {
-        if (pattern.includes(libName) && !pattern.includes('@')) {
-          return replacement;
-        }
-      }
-    }
-
-    // 如果没有匹配到，返回原链接（可能是自定义链接）
-    return link;
-  });
-
-  // 去重：移除重复的库链接
-  const uniqueLinks = [];
-  const seenUrls = new Set();
-  
-  for (const link of processedLinks) {
-    if (!seenUrls.has(link)) {
-      seenUrls.add(link);
-      uniqueLinks.push(link);
-    }
-  }
-
-  return uniqueLinks;
-};
+// replaceWithSupportedLibraries 函数已删除（不再需要，因为已切换到 full_html 模式）
 
 // 记录前端渲染结果API
 router.post('/api/ai/log_render_status', async (req, res) => {
@@ -951,7 +1023,6 @@ module.exports = {
   fixEducationalContent,
   safeReplace,  // 导出安全替换函数供测试使用
   testSafeReplace,  // 导出测试函数
-  replaceWithSupportedLibraries, // 导出替换库链接函数
   aiProviderFactory, // 导出AI提供商工厂
   router // 导出路由
 }; 

@@ -33,7 +33,7 @@ export default function ShareButton({
 
   useEffect(() => { setMounted(true); }, []);
 
-  const url = typeof window !== 'undefined' ? `${window.location.origin}/content/${shortId || contentId}` : '';
+  const url = typeof window !== 'undefined' ? `${window.location.origin}/c/${shortId || contentId}` : '';
   const shareText = title ? `${title} - EduNest AI` : 'Check out this content on EduNest AI';
 
   const handleShare = (e: React.MouseEvent) => {

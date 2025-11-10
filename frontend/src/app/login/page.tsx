@@ -69,7 +69,7 @@ function LoginForm() {
         }
       } else {
         // 登录成功，跳转到内容页面
-        router.push('/content');
+        router.push('/c');
       }
     } catch (error: any) {
       setError(error.message || t('loginFailed', { ns: 'auth', defaultValue: '登录失败' }));

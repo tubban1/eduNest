@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import CollectionListDialog from './CollectionListDialog';
 import ContentActionButtons from './ui/ContentActionButtons';
@@ -17,6 +17,7 @@ import {
   isGenerating,
   isFinalStatus
 } from '@/utils/generationStatus';
+import { generateThumbnailFromHTML, extractThumbnailFromHTML } from '@/utils/thumbnailGenerator';
 
 interface ContentCardProps {
   content: {
@@ -27,6 +28,7 @@ interface ContentCardProps {
     tags?: string[];
     knowledge_point?: string[];
     created_at: string;
+    full_html?: string; // 添加 full_html 字段用于生成缩略图
     // 生成状态相关字段
     generation_status?: GenerationStatus & {
       started_at?: string;
@@ -42,7 +44,7 @@ interface ContentCardProps {
   refreshLists: () => Promise<void>;
   // 可选的回调函数，用于刷新内容列表
   onContentUpdate?: () => void;
-  // 可选的链接路径前缀，默认为 '/content'
+  // 可选的链接路径前缀，默认为 '/c'
   linkPathPrefix?: string;
 }
 
@@ -53,9 +55,14 @@ export default function ContentCard({
   lists, 
   refreshLists, 
   onContentUpdate,
-  linkPathPrefix = '/content'
+  linkPathPrefix = '/c'
 }: ContentCardProps) {
   const { t } = useTranslation(['content', 'common']);
+  // 使用 ref 存储 onContentUpdate，避免函数引用变化导致 effect 重新执行
+  const onContentUpdateRef = useRef(onContentUpdate);
+  useEffect(() => {
+    onContentUpdateRef.current = onContentUpdate;
+  }, [onContentUpdate]);
   const [showDialog, setShowDialog] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus | null>(
@@ -67,15 +74,101 @@ export default function ContentCard({
   const [retryCount, setRetryCount] = useState<number>(content.retry_count || 0);
   const [errorMessage, setErrorMessage] = useState<string>(content.generation_error || '');
   const [userQuery, setUserQuery] = useState<string>(content.user_query || '');
-  const [startedAt, setStartedAt] = useState<string>(content.generation_status?.started_at || '');
+  const [startedAt, setStartedAt] = useState<string>('');
+  const [queuedAt, setQueuedAt] = useState<string>(content.created_at);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [thumbnailLoading, setThumbnailLoading] = useState(false);
+  const hasAutoRefreshedRef = useRef(false);
+  // 记录上一次的状态，用于检测状态变化
+  const prevStatusRef = useRef<GenerationStatus | null | undefined>(content.generation_status);
 
   useEffect(() => { setMounted(true); }, []);
 
+  // 生成缩略图
+  useEffect(() => {
+    const generateThumbnail = async () => {
+      if (!content.full_html) {
+        setThumbnail(null);
+        return;
+      }
+
+      setThumbnailLoading(true);
+      try {
+        // 首先尝试快速提取 SVG（不需要渲染）
+        const extracted = extractThumbnailFromHTML(content.full_html);
+        if (extracted.type === 'svg' && extracted.data) {
+          setThumbnail(extracted.data);
+          setThumbnailLoading(false);
+          return;
+        }
+
+        // 如果有 Canvas，需要渲染 HTML 来生成缩略图
+        if (extracted.type === 'canvas' && mounted) {
+          const thumbnailData = await generateThumbnailFromHTML(content.full_html, {
+            width: 400,
+            height: 300,
+            quality: 0.7,
+            timeout: 3000
+          });
+          setThumbnail(thumbnailData);
+        } else {
+          setThumbnail(null);
+        }
+      } catch (error) {
+        setThumbnail(null);
+      } finally {
+        setThumbnailLoading(false);
+      }
+    };
+
+    if (mounted && content.full_html) {
+      generateThumbnail();
+    }
+  }, [content.full_html, content.id, mounted]);
+
   // 监听生成状态变化
   useEffect(() => {
+    setQueuedAt(content.created_at);
+    const initialTimes = (content as unknown as { generation_started_at?: string; started_at?: string });
+    if (initialTimes?.generation_started_at) {
+      setStartedAt(initialTimes.generation_started_at);
+    } else if (initialTimes?.started_at) {
+      setStartedAt(initialTimes.started_at);
+    }
+  }, [content.id, content.created_at]);
+
+  // 同步 content.generation_status 到本地状态
+  useEffect(() => {
+    if (content.generation_status !== undefined) {
+      const prevStatus = prevStatusRef.current;
+      const currentStatus = content.generation_status || null;
+      
+      // 检测状态变化：从非 done 变为 done
+      const statusChangedToDone = prevStatus !== 'done' && currentStatus === 'done';
+      
+      setGenerationStatus(currentStatus);
+      setGenerationProgress(content.generation_progress || 0);
+      setRetryCount(content.retry_count || 0);
+      setErrorMessage(content.generation_error || '');
+      setUserQuery(content.user_query || '');
+      
+      // 更新 prevStatusRef
+      prevStatusRef.current = currentStatus;
+      
+      // 如果状态从非 done 变为 done，且还没有刷新过，则触发刷新
+      if (statusChangedToDone && !hasAutoRefreshedRef.current && onContentUpdateRef.current) {
+        hasAutoRefreshedRef.current = true;
+        onContentUpdateRef.current();
+      }
+    }
+  }, [content.generation_status, content.generation_progress, content.retry_count, content.generation_error, content.user_query, content.id]);
+
+  useEffect(() => {
     const status = content.generation_status;
+    
     if (status && isGenerating(status)) {
+      hasAutoRefreshedRef.current = false;
       // 如果已经在轮询，先停止再重新开始，确保状态同步
       if (statusPollingManager.isPolling(content.id)) {
         statusPollingManager.stopPolling(content.id);
@@ -90,11 +183,32 @@ export default function ContentCard({
           setRetryCount(statusData.retry_count);
           setErrorMessage(statusData.error_message || '');
           setUserQuery(statusData.user_query || '');
-          setStartedAt(statusData.started_at || '');
+          setQueuedAt((prev) => statusData.created_at || statusData.updated_at || prev);
+          if (statusData.started_at) {
+            setStartedAt(statusData.started_at);
+          }
+
+          if (!isFinalStatus(statusData.status)) {
+            hasAutoRefreshedRef.current = false;
+          }
+
+          // 如果生成完成（done），刷新内容列表
+          // failed 状态不触发自动刷新，避免无限循环
+          if (statusData.status === 'done') {
+            statusPollingManager.stopPolling(content.id);
+            if (!hasAutoRefreshedRef.current) {
+              hasAutoRefreshedRef.current = true;
+              if (onContentUpdateRef.current) {
+                onContentUpdateRef.current();
+              }
+            }
+            return;
+          }
           
-          // 如果生成完成，刷新内容列表
-          if (isFinalStatus(statusData.status) && onContentUpdate) {
-            onContentUpdate();
+          // failed 状态停止轮询，但不刷新
+          if (statusData.status === 'failed') {
+            statusPollingManager.stopPolling(content.id);
+            return;
           }
         },
         (contentId: string) => api.getContentGenerationStatus(contentId)
@@ -108,7 +222,7 @@ export default function ContentCard({
     return () => {
       statusPollingManager.stopPolling(content.id);
     };
-  }, [content.id, content.generation_status, onContentUpdate]);
+  }, [content.id, content.generation_status]); // 移除 onContentUpdate 依赖，使用 ref 来避免不必要的重新执行
 
   // 重试处理函数 - 基于测试页面的成功逻辑优化
   const handleRetry = async () => {
@@ -126,6 +240,8 @@ export default function ContentCard({
         setRetryCount(0); // 重置重试计数
         setErrorMessage('');
         setStartedAt(''); // 重置开始时间
+        setQueuedAt(new Date().toISOString());
+        hasAutoRefreshedRef.current = false;
         
         // 等待一小段时间确保后端状态更新
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -139,18 +255,27 @@ export default function ContentCard({
             setRetryCount(statusData.retry_count);
             setErrorMessage(statusData.error_message || '');
             setUserQuery(statusData.user_query || '');
-            setStartedAt(statusData.started_at || '');
+            setQueuedAt((prev) => statusData.created_at || statusData.updated_at || prev);
+            if (statusData.started_at) {
+              setStartedAt(statusData.started_at);
+            }
             
             // 如果生成完成，触发内容更新
-            if (statusData.status === 'done' && onContentUpdate) {
-              onContentUpdate();
+            if (statusData.status === 'done') {
+              statusPollingManager.stopPolling(content.id);
+              if (!hasAutoRefreshedRef.current) {
+                hasAutoRefreshedRef.current = true;
+                if (onContentUpdateRef.current) {
+                  onContentUpdateRef.current();
+                }
+              }
+              return;
             }
           },
           (contentId: string) => api.getContentGenerationStatus(contentId)
         );
       }
     } catch (error) {
-      console.error('重试失败:', error);
       setIsRetrying(false);
     } finally {
       setIsRetrying(false);
@@ -208,7 +333,7 @@ export default function ContentCard({
   if (generationStatus && generationStatus !== 'done') {
     switch (generationStatus) {
       case 'pending':
-        return <PendingCard content={content} userQuery={userQuery} />;
+        return <PendingCard content={content} userQuery={userQuery} queuedAt={queuedAt} />;
       case 'processing':
         return (
           <ProcessingCard 
@@ -233,8 +358,47 @@ export default function ContentCard({
     }
   }
 
+  // 根据标签获取 emoji（作为缩略图备用）
+  const getEmojiByTags = (tags?: string[]) => {
+    if (!tags || !Array.isArray(tags)) return '📚';
+    const tagString = tags.join(' ').toLowerCase();
+    if (tagString.includes('数学') || tagString.includes('math')) return '🔢';
+    if (tagString.includes('物理') || tagString.includes('physics')) return '⚡';
+    if (tagString.includes('化学') || tagString.includes('chemistry')) return '🧪';
+    if (tagString.includes('生物') || tagString.includes('biology')) return '🧬';
+    if (tagString.includes('几何') || tagString.includes('geometry')) return '📐';
+    return '📚';
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-full sm:w-64 sm:min-w-56 sm:max-w-xs mx-auto">
+      {/* 缩略图区域 */}
+      <div className="relative w-full h-40 bg-gradient-to-br from-blue-100 to-purple-100 overflow-hidden">
+        {thumbnailLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : thumbnail ? (
+          <img
+            src={thumbnail}
+            alt={content.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // 如果图片加载失败，显示 emoji
+              (e.target as HTMLImageElement).style.display = 'none';
+              const parent = (e.target as HTMLImageElement).parentElement;
+              if (parent) {
+                parent.innerHTML = `<div class="flex items-center justify-center h-full"><span class="text-6xl">${getEmojiByTags(content.tags)}</span></div>`;
+              }
+            }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <span className="text-6xl">{getEmojiByTags(content.tags)}</span>
+          </div>
+        )}
+      </div>
+
       <div className="p-4">
         {/* 标题 - 可点击跳转 */}
         <Link href={contentUrl} prefetch={false} className="block">

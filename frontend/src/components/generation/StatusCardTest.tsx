@@ -32,7 +32,11 @@ const StatusCardTest: React.FC = () => {
         {/* 等待状态 */}
         <div>
           <h3 className="text-lg font-semibold mb-3">等待中 (Pending)</h3>
-          <PendingCard content={testContent} />
+          <PendingCard 
+            content={testContent} 
+            queuedAt={new Date(Date.now() - 45 * 1000).toISOString()}
+            userQuery="请生成一个关于光合作用的科普讲解"
+          />
         </div>
         
         {/* 生成中状态 */}
@@ -41,7 +45,9 @@ const StatusCardTest: React.FC = () => {
           <ProcessingCard 
             content={testContent} 
             progress={65} 
-            retryCount={1} 
+            retryCount={1}
+            userQuery="如何证明勾股定理？"
+            startedAt={new Date(Date.now() - 120 * 1000).toISOString()}
           />
         </div>
         

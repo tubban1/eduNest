@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { api } from '@/lib/api';
-import { generateStandaloneContentPage } from '@/utils/contentPageGenerator';
 
 export async function GET(
   request: NextRequest,
@@ -14,20 +13,12 @@ export async function GET(
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });
     }
 
-    const pageData = {
-      html: content.code_html,
-      css: content.code_css,
-      js: content.code_js,
-      externalLinks: content.external_links,
-      title: content.title || 'Interactive Content',
-      description: content.description || 'AI Generated Interactive Content',
-      keywords: 'interactive, content, ai, education',
-      author: 'AI Education Platform'
-    };
+    // 直接返回 full_html，如果没有则返回错误
+    if (!content.full_html) {
+      return NextResponse.json({ error: 'Content does not have full_html' }, { status: 404 });
+    }
 
-    const html = generateStandaloneContentPage(pageData);
-
-    return new NextResponse(html, {
+    return new NextResponse(content.full_html, {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',

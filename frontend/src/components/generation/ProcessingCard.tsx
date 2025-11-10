@@ -22,10 +22,8 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retr
 
   // 实时计算已用时间
   useEffect(() => {
-    if (!startedAt) {
-      return;
-    }
-    
+    if (!startedAt) return;
+
     const updateTimer = () => {
       const now = new Date();
       const start = new Date(startedAt);
@@ -33,17 +31,22 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retr
       const newElapsedTime = Math.max(0, elapsed);
       setElapsedTime(newElapsedTime);
     };
-    
+
     // 立即更新一次
     updateTimer();
-    
-    // 每秒更新
+
     const interval = setInterval(updateTimer, 1000);
-    
-    return () => {
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [startedAt]);
+
+  const formatElapsed = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, '0');
+    const secs = (seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
+
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
       {userQuery && (
@@ -57,7 +60,10 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retr
       {/* 计时器显示 */}
       <div className="mb-4 bg-blue-100 rounded-lg p-3 text-center">
         <div className="text-3xl font-bold text-blue-600 mb-1">
-          {elapsedTime}s
+          {formatElapsed(elapsedTime)}
+        </div>
+        <div className="text-xs text-blue-500">
+          {t('generation.processingElapsed', { ns: 'content', defaultValue: '生成耗时' })}
         </div>
       </div>
 

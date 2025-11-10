@@ -1,20 +1,53 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { truncateUserQuery } from '@/utils/generationStatus';
 
 interface PendingCardProps {
-  content: {
+  content?: {
     id: string;
     title: string;
     created_at: string;
   };
   userQuery?: string;
+  queuedAt?: string;
 }
 
-const PendingCard: React.FC<PendingCardProps> = ({ content, userQuery }) => {
+const PendingCard: React.FC<PendingCardProps> = ({ userQuery, queuedAt }) => {
   const { t } = useTranslation(['content', 'common']);
+  const [elapsedTime, setElapsedTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!queuedAt) {
+      setElapsedTime(null);
+      return;
+    }
+
+    const start = new Date(queuedAt);
+
+    const tick = () => {
+      const now = Date.now();
+      const diff = Math.max(0, Math.floor((now - start.getTime()) / 1000));
+      setElapsedTime(diff);
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [queuedAt]);
+
+  const formatElapsed = (seconds: number | null) => {
+    if (seconds === null) return '--:--';
+    const mins = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, '0');
+    const secs = Math.floor(seconds % 60)
+      .toString()
+      .padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
+
   return (
     <div className="bg-gray-100 rounded-lg p-4 animate-pulse">
       {userQuery && (
@@ -33,6 +66,9 @@ const PendingCard: React.FC<PendingCardProps> = ({ content, userQuery }) => {
           <span>⏳</span>
           <span>{t('generation.pending', { ns: 'content', defaultValue: '等待生成中...' })}</span>
         </div>
+      </div>
+      <div className="mt-3 text-center text-xs text-gray-500">
+        {t('generation.pendingElapsed', { ns: 'content', defaultValue: '排队时长' })}：{formatElapsed(elapsedTime)}
       </div>
     </div>
   );

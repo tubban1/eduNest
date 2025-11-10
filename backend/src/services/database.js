@@ -258,12 +258,22 @@ function generateShortId() {
 
 const createContent = async (contentData, userId) => {
   try {
-    const { title, code_html, code_css, code_js, full_html, tags, external_links, description, content_type, language_code } = contentData;
+    const { title, full_html, tags, description, content_type, language_code } = contentData;
+    
+    // 只接受 full_html，不再使用代码块字段
+    if (!full_html || typeof full_html !== 'string' || full_html.trim().length === 0) {
+      throw new Error('full_html 不能为空');
+    }
     
     const result = await supabase
       .from('content')
       .insert({
-        title, code_html, code_css, code_js, full_html, tags, external_links, description, content_type, language_code,
+        title,
+        full_html,
+        tags: tags || [],
+        description: description || '',
+        content_type: content_type || 'vue',
+        language_code: language_code || 'zh-CN',
         created_by: userId,
         short_id: generateShortId(),
         created_at: new Date().toISOString(),
@@ -506,35 +516,231 @@ const hasReferralForInvitee = async (inviteeId) => {
   }
 };
 
+// ===== 自动精选内容系统 =====
+
+// 获取 Admin 用户 ID
+const getAdminUserId = async () => {
+  try {
+    // 方案1: 从环境变量获取固定的 admin ID
+    const adminId = process.env.ADMIN_USER_ID;
+    if (adminId) return adminId;
+    
+    // 方案2: 从数据库查询 role='admin' 的用户
+    if (useMockData || !supabase) {
+      return null;
+    }
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'admin')
+      .limit(1)
+      .single();
+    
+    if (error) {
+      // 如果查询失败，尝试使用环境变量中的固定 ID
+      return process.env.ADMIN_USER_ID || null;
+    }
+    
+    return data?.id || null;
+  } catch (error) {
+    return process.env.ADMIN_USER_ID || null;
+  }
+};
+
+// 获取精选内容（自动从 admin 账号提取）
+const getFeaturedContents = async (options = {}) => {
+  try {
+    const {
+      limit = 20,
+      offset = 0,
+      category = null,
+      sortBy = 'quality_score',
+      tags = null,
+      language_code = null
+    } = options;
+    
+    const adminId = await getAdminUserId();
+    if (!adminId) {
+      return { data: [], error: null };
+    }
+    
+    if (useMockData || !supabase) {
+      return { data: [], error: null };
+    }
+    
+    // 构建查询
+    let query = supabase
+      .from('content')
+      .select('*')
+      .eq('created_by', adminId)
+      .eq('is_deleted', false);
+    
+    // 分类过滤（通过 tags）
+    if (category) {
+      query = query.contains('tags', [category]);
+    }
+    
+    // 标签过滤
+    if (tags && Array.isArray(tags)) {
+      tags.forEach(tag => {
+        query = query.contains('tags', [tag]);
+      });
+    }
+    
+    // 语言过滤
+    if (language_code) {
+      query = query.eq('language_code', language_code);
+    }
+    
+    // 先获取所有匹配的内容
+    const { data: allData, error: fetchError } = await query;
+    
+    if (fetchError) {
+      throw fetchError;
+    }
+    
+    if (!allData || allData.length === 0) {
+      return { data: [], error: null };
+    }
+    
+    // 批量获取所有内容的点赞数和收藏数（优化性能）
+    const contentIds = allData.map(c => c.id);
+    
+    // 批量查询点赞数
+    const { data: likesData } = await supabase
+      .from('content_likes')
+      .select('content_id')
+      .in('content_id', contentIds);
+    
+    // 批量查询收藏数
+    const { data: collectionsData } = await supabase
+      .from('user_collections')
+      .select('content_id')
+      .in('content_id', contentIds);
+    
+    // 统计每个内容的点赞数和收藏数
+    const likesCountMap = {};
+    const collectionsCountMap = {};
+    
+    (likesData || []).forEach(like => {
+      likesCountMap[like.content_id] = (likesCountMap[like.content_id] || 0) + 1;
+    });
+    
+    (collectionsData || []).forEach(collection => {
+      collectionsCountMap[collection.content_id] = (collectionsCountMap[collection.content_id] || 0) + 1;
+    });
+    
+    // 计算每个内容的质量评分
+    const contentsWithStats = allData.map((content) => {
+      const likesCount = likesCountMap[content.id] || 0;
+      const collectionsCount = collectionsCountMap[content.id] || 0;
+      
+      // 计算时间衰减因子
+      const daysSinceCreation = (Date.now() - new Date(content.created_at).getTime()) / (1000 * 60 * 60 * 24);
+      const timeDecay = Math.max(0.5, 1 - daysSinceCreation / 365); // 一年内的时间衰减
+      
+      // 计算质量评分
+      const qualityScore = (likesCount * 2 + collectionsCount * 3) * timeDecay;
+      
+      return {
+        ...content,
+        quality_score: qualityScore,
+        likes_count: likesCount,
+        collections_count: collectionsCount
+      };
+    });
+    
+    // 排序
+    let sortedContents = contentsWithStats;
+    if (sortBy === 'quality_score') {
+      sortedContents = contentsWithStats.sort((a, b) => b.quality_score - a.quality_score);
+    } else if (sortBy === 'likes_count') {
+      sortedContents = contentsWithStats.sort((a, b) => b.likes_count - a.likes_count);
+    } else if (sortBy === 'collections_count') {
+      sortedContents = contentsWithStats.sort((a, b) => b.collections_count - a.collections_count);
+    } else if (sortBy === 'created_at') {
+      sortedContents = contentsWithStats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+    
+    // 分页
+    const paginatedContents = sortedContents.slice(offset, offset + limit);
+    
+    return { data: paginatedContents, error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+// 获取精选内容的分类统计
+const getFeaturedContentCategories = async () => {
+  try {
+    const adminId = await getAdminUserId();
+    if (!adminId) {
+      return { data: [], error: null };
+    }
+    
+    if (useMockData || !supabase) {
+      return { data: [], error: null };
+    }
+    
+    const { data, error } = await supabase
+      .from('content')
+      .select('tags')
+      .eq('created_by', adminId)
+      .eq('is_deleted', false);
+    
+    if (error) {
+      throw error;
+    }
+    
+    if (!data || data.length === 0) {
+      return { data: [], error: null };
+    }
+    
+    // 统计每个标签的出现次数
+    const tagCounts = {};
+    data.forEach(content => {
+      if (content.tags && Array.isArray(content.tags)) {
+        content.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      }
+    });
+    
+    // 转换为数组并排序
+    const categories = Object.entries(tagCounts)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count);
+    
+    return { data: categories, error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
 const updateContent = async (contentId, contentData) => {
-  const {
-    title,
-    code_html,
-    code_css,
-    code_js,
-    full_html,
-    tags,
-    external_links,
-    description,
-    content_type,
-    language_code
-  } = contentData;
+  // 只更新 full_html，不再使用代码块字段
+  const updateFields = {
+    updated_at: new Date().toISOString()
+  };
+  
+  // 只更新传入的字段
+  if (contentData.title !== undefined) updateFields.title = contentData.title;
+  if (contentData.full_html !== undefined) {
+    if (typeof contentData.full_html !== 'string' || contentData.full_html.trim().length === 0) {
+      throw new Error('full_html 不能为空');
+    }
+    updateFields.full_html = contentData.full_html;
+  }
+  if (contentData.tags !== undefined) updateFields.tags = contentData.tags;
+  if (contentData.description !== undefined) updateFields.description = contentData.description;
+  if (contentData.content_type !== undefined) updateFields.content_type = contentData.content_type;
+  if (contentData.language_code !== undefined) updateFields.language_code = contentData.language_code;
 
   const result = await supabase
     .from('content')
-    .update({ 
-      title,
-      code_html,
-      code_css,
-      code_js,
-      full_html,
-      tags,
-      external_links,
-      description,
-      content_type,
-      language_code,
-      updated_at: new Date().toISOString()
-    })
+    .update(updateFields)
     .eq('id', contentId)
     .select()
     .single();
@@ -1190,6 +1396,117 @@ const getUserLikedCollections = async (userId) => {
   }
 };
 
+// 获取指定收藏列表的公开内容（不需要用户认证）
+const getPublicCollectionListContent = async (listId, options = {}) => {
+  try {
+    const { limit = 50, offset = 0 } = options;
+    
+    // 首先检查收藏列表是否存在且为公开
+    const { data: listData, error: listError } = await supabase
+      .from('collection_lists')
+      .select('id, name, visibility')
+      .eq('id', listId)
+      .single();
+    
+    if (listError || !listData) {
+      return { data: null, error: new Error('收藏列表不存在') };
+    }
+    
+    // 查询该列表下的所有内容
+    const { data: collectionsData, error: collectionsError } = await supabase
+      .from('user_collections')
+      .select(`
+        id,
+        content_id,
+        added_at,
+        content (
+          id,
+          short_id,
+          title,
+          description,
+          language_code,
+          tags,
+          content_type,
+          full_html,
+          created_at,
+          updated_at,
+          created_by
+        )
+      `)
+      .eq('list_id', listId)
+      .order('added_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (collectionsError) {
+      throw collectionsError;
+    }
+    
+    // 去重：按content_id分组，保留最新的收藏记录
+    const contentMap = new Map();
+    collectionsData.forEach(item => {
+      const contentId = item.content_id;
+      if (!contentMap.has(contentId) || 
+          new Date(item.added_at) > new Date(contentMap.get(contentId).added_at)) {
+        contentMap.set(contentId, item);
+      }
+    });
+    
+    // 获取内容的统计信息（点赞数、收藏数）
+    const contentIds = Array.from(contentMap.keys());
+    
+    // 获取点赞数
+    const { data: likesData } = await supabase
+      .from('content_likes')
+      .select('content_id')
+      .in('content_id', contentIds);
+    
+    const likesCountMap = new Map();
+    if (likesData) {
+      likesData.forEach(like => {
+        const count = likesCountMap.get(like.content_id) || 0;
+        likesCountMap.set(like.content_id, count + 1);
+      });
+    }
+    
+    // 获取收藏数
+    const { data: collectionsCountData } = await supabase
+      .from('user_collections')
+      .select('content_id')
+      .in('content_id', contentIds);
+    
+    const collectionsCountMap = new Map();
+    if (collectionsCountData) {
+      collectionsCountData.forEach(collection => {
+        const count = collectionsCountMap.get(collection.content_id) || 0;
+        collectionsCountMap.set(collection.content_id, count + 1);
+      });
+    }
+    
+    // 转换数据格式
+    const transformedData = Array.from(contentMap.values())
+      .filter(item => item.content) // 过滤掉没有内容的数据
+      .map(item => ({
+        id: item.content.id,
+        short_id: item.content.short_id,
+        title: item.content.title,
+        description: item.content.description,
+        tags: item.content.tags || [],
+        language_code: item.content.language_code,
+        content_type: item.content.content_type,
+        full_html: item.content.full_html,
+        created_at: item.content.created_at,
+        updated_at: item.content.updated_at,
+        created_by: item.content.created_by,
+        likes_count: likesCountMap.get(item.content.id) || 0,
+        collections_count: collectionsCountMap.get(item.content.id) || 0,
+      }));
+    
+    return { data: transformedData, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
 const likeContent = async (userId, contentId) => {
   try {
     
@@ -1419,6 +1736,7 @@ module.exports = {
   getUserLikedContent,
   checkDatabaseStatus,
   logAIUsage,
+  getPublicCollectionListContent,
   // credits & subscription
   getCreditsBalance,
   getCreditsHistory,
@@ -1431,5 +1749,9 @@ module.exports = {
   getUserByReferralCode,
   createReferralLog,
   countSuccessfulReferrals,
-  hasReferralForInvitee
+  hasReferralForInvitee,
+  // featured content
+  getAdminUserId,
+  getFeaturedContents,
+  getFeaturedContentCategories
 }; 

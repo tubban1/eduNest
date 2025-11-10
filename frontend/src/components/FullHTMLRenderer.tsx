@@ -107,7 +107,7 @@ export default function FullHTMLRenderer({
     };
   }, [autoHeight, fixedHeight]);
 
-  // 动态调整 iframe 高度（参考 SandboxRenderer 的实现）
+  // 动态调整 iframe 高度
   const adjustIframeHeight = useCallback(() => {
     if (!autoHeight || fixedHeight || !iframeRef.current) return;
 
@@ -127,7 +127,7 @@ export default function FullHTMLRenderer({
         const docClientHeight = docEl ? docEl.clientHeight : 0;
         const docOffsetHeight = docEl ? docEl.offsetHeight : 0;
         
-        // 使用最大的高度值，确保内容不被裁切（参考 SandboxRenderer）
+        // 使用最大的高度值，确保内容不被裁切
         const maxHeight = Math.max(
           contentHeight,
           clientHeight,
@@ -137,7 +137,7 @@ export default function FullHTMLRenderer({
           docOffsetHeight
         );
         
-        const extraSpace = 80; // 额外空间（与 SandboxRenderer 保持一致）
+        const extraSpace = 80; // 额外空间
         const newHeight = Math.max(0, maxHeight + extraSpace);
         
         iframe.style.height = `${newHeight}px`;
@@ -145,7 +145,7 @@ export default function FullHTMLRenderer({
         
         setIframeHeight(`${newHeight}px`);
         
-        // 触发重排（参考 SandboxRenderer）
+        // 触发重排
         iframe.style.display = 'none';
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         (iframe as any).offsetHeight;

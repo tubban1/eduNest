@@ -5,12 +5,12 @@ const DatabaseService = require('../services/database');
 const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
-// POST /api/content/fix
+// POST /api/content/fix（只支持 full_html）
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { content_id, note, html, css, js, external_links, content_type, language_code, title, description, provider, requestId } = req.body;
-    if (!html || !js) {
-      return res.status(400).json({ success: false, error: 'html, js 必填' });
+    const { content_id, note, full_html, content_type, language_code, title, description, provider, requestId } = req.body;
+    if (!full_html || typeof full_html !== 'string' || full_html.trim().length === 0) {
+      return res.status(400).json({ success: false, error: 'full_html 必填' });
     }
     
     const userId = req.user.id;
@@ -34,9 +34,10 @@ router.post('/', authenticateToken, async (req, res) => {
       }
       // 使用数据库中的原始内容信息
       const aiResult = await aiService.fixEducationalContent({
-        html, css, js, external_links, note,
+        full_html: original.full_html || full_html,
+        note,
         content_type: original.content_type,
-        language: original.language_code,
+        language_code: original.language_code,
         title: original.title,
         description: original.description,
         user_id: userId,
@@ -52,24 +53,22 @@ router.post('/', authenticateToken, async (req, res) => {
         await DatabaseService.addCreditChange(userId, 'usage', -1);
       }
       
-      const { html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed } = aiResult.data;
+      const { full_html: newFullHtml, fixed } = aiResult.data;
 
       // AI使用日志由aiService.fixEducationalContent统一记录
 
       return res.json({ 
         success: true, 
-        html: newHtml, 
-        css: newCss, 
-        js: newJs, 
-        external_links: newLinks, 
+        full_html: newFullHtml, 
         fixed 
       });
     } else {
       // 如果是创建模式，直接使用前端传递的参数
       const aiResult = await aiService.fixEducationalContent({
-        html, css, js, external_links, note,
+        full_html,
+        note,
         content_type: content_type || 'vue',
-        language: language_code || 'zh-CN',
+        language_code: language_code || 'zh-CN',
         title: title || '未命名内容',
         description: description || '',
         user_id: userId,
@@ -86,16 +85,13 @@ router.post('/', authenticateToken, async (req, res) => {
         await DatabaseService.addCreditChange(userId, 'usage', -1);
       }
       
-      const { html: newHtml, css: newCss, js: newJs, external_links: newLinks, fixed } = aiResult.data;
+      const { full_html: newFullHtml, fixed } = aiResult.data;
 
       // AI使用日志由aiService.fixEducationalContent统一记录
 
       return res.json({ 
         success: true, 
-        html: newHtml, 
-        css: newCss, 
-        js: newJs, 
-        external_links: newLinks, 
+        full_html: newFullHtml, 
         fixed 
       });
     }

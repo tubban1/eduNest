@@ -122,10 +122,7 @@ export interface Content {
   id: string;
   title: string;
   description?: string;
-  code_html?: string;
-  code_css?: string;
-  code_js?: string;
-  external_links?: string[];
+  full_html?: string;
   tags?: string[];
   language_code: string;
   content_type: string;

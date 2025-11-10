@@ -71,7 +71,7 @@ export default function AuthCallback() {
           api.setToken(accessToken);
           window.dispatchEvent(new Event('sessionChanged'));
           setStatus('登录成功，正在跳转...');
-          setTimeout(() => { window.location.href = '/content'; }, 800);
+          setTimeout(() => { window.location.href = '/c'; }, 800);
           return;
         }
 
@@ -132,7 +132,7 @@ export default function AuthCallback() {
         window.dispatchEvent(new Event('sessionChanged'));
 
         setStatus('登录成功，正在跳转...');
-        setTimeout(() => { window.location.href = '/content'; }, 800);
+        setTimeout(() => { window.location.href = '/c'; }, 800);
       } catch (error) {
         console.error('Auth callback error:', error);
         setStatus('处理登录时出错: ' + (error as Error).message);

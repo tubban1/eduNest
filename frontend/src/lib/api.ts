@@ -268,6 +268,79 @@ class ApiClient {
       });
       return data.success ? data : null;
     },
+
+    // 获取精选内容（自动从 admin 账号提取，公开接口）
+    getFeaturedContents: async (options?: {
+      limit?: number;
+      offset?: number;
+      category?: string;
+      sortBy?: 'quality_score' | 'created_at' | 'likes_count' | 'collections_count';
+      tags?: string[];
+      language_code?: string;
+    }) => {
+      const params = new URLSearchParams();
+      if (options?.limit) params.append('limit', options.limit.toString());
+      if (options?.offset) params.append('offset', options.offset.toString());
+      if (options?.category) params.append('category', options.category);
+      if (options?.sortBy) params.append('sortBy', options.sortBy);
+      if (options?.tags) {
+        options.tags.forEach(tag => params.append('tags', tag));
+      }
+      if (options?.language_code) params.append('language_code', options.language_code);
+      
+      // 这是公开接口，不需要认证
+      const response = await fetch(`${this.baseUrl}/content/featured?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.success ? data.data : [];
+    },
+
+    // 获取精选内容的分类统计（公开接口）
+    getFeaturedContentCategories: async () => {
+      const response = await fetch(`${this.baseUrl}/content/featured/categories`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.success ? data.data : [];
+    },
+
+    // 获取指定收藏列表的公开内容（公开接口）
+    getCollectionListContent: async (listId: string, options?: { limit?: number; offset?: number }) => {
+      const params = new URLSearchParams();
+      if (options?.limit) params.append('limit', options.limit.toString());
+      if (options?.offset) params.append('offset', options.offset.toString());
+      
+      const response = await fetch(`${this.baseUrl}/content/collection-list/${listId}?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.success ? data.data : [];
+    },
   };
 
   // Collection API
@@ -472,11 +545,12 @@ export interface Content {
   knowledge_point?: string[];
   created_at: string;
   updated_at: string;
-  code_html?: string;
-  code_css?: string;
-  code_js?: string;
-  full_html?: string; // 完整的 HTML 文件内容
-  external_links?: string[];
+  // 代码块字段已废弃，只使用 full_html
+  // code_html?: string;
+  // code_css?: string;
+  // code_js?: string;
+  full_html?: string; // 完整的 HTML 文件内容（必填）
+  // external_links?: string[];
   language_code?: string;
   content_type?: string;
   created_by?: string;
@@ -489,4 +563,8 @@ export interface Content {
   generation_error?: string;
   generation_updated_at?: string;
   user_query?: string;
+  // 精选内容相关字段（从 admin 账号自动提取）
+  likes_count?: number;
+  collections_count?: number;
+  quality_score?: number;
 } 

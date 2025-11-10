@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /*
-  Import HTML pages into `content` table and bind to a collection_list.
+  Import HTML pages into `content` table and bind to a collection_list using Supabase.
   Requirements:
   - content_type = 'vue'
   - full_html = complete HTML file content
@@ -21,7 +21,7 @@ const path = require('path');
 const { promisify } = require('util');
 const glob = require('fast-glob');
 const cheerio = require('cheerio');
-const { Client } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
 
 // 加载环境变量 - 优先从项目根目录的 .env 文件加载
 const projectRoot = path.resolve(__dirname, '../../');
@@ -29,7 +29,6 @@ const envPath = path.join(projectRoot, '.env');
 if (fs.existsSync(envPath)) {
   require('dotenv').config({ path: envPath });
 } else {
-  // 如果项目根目录没有 .env，尝试从当前目录加载
   require('dotenv').config();
 }
 
@@ -51,8 +50,8 @@ function parseArgs() {
   }
   if (out.dirs.length === 0) {
     out.dirs = [
-      'edu/frontend/public/math/*.html',
-      'edu/frontend/public/temp/*.html'
+      'public/math/*.html',
+      'public/temp/*.html'
     ];
   }
   return out;
@@ -66,7 +65,6 @@ async function extractFromHtml(filePath) {
   const raw = await readFile(filePath, 'utf-8');
   const $ = cheerio.load(raw, { decodeEntities: false });
 
-  // Extract only title, description, tags
   const title = ($('title').first().text() || $('h1').first().text() || path.basename(filePath, path.extname(filePath))).trim();
   const description = ($('meta[name="description"]').attr('content') || '').trim();
 
@@ -74,13 +72,9 @@ async function extractFromHtml(filePath) {
     .split(',').map(s => s.trim()).filter(Boolean);
   const tags = uniqArray(keywords);
 
-  // Knowledge points as empty per requirement
   const knowledge_points = [];
-
-  // Store complete HTML in full_html
   const full_html = raw.trim();
 
-  // meta author as short_id holder
   const metaAuthor = $('meta[name="author"]').attr('content');
   const currentShortId = (metaAuthor || '').trim();
 
@@ -151,9 +145,8 @@ async function upsertContent(supabase, rec) {
 }
 
 async function writeShortIdToHtml(filePath, rawHtml, $, shortId) {
-  // Ensure <meta name="author" content="short_id"> exists in <head>
   const hasHead = $('head').length > 0;
-  if (!hasHead) return; // refuse to mutate broken docs
+  if (!hasHead) return;
 
   const authorMeta = $('meta[name="author"]').first();
   if (authorMeta.length > 0) {
@@ -204,7 +197,7 @@ async function main() {
     process.exit(0);
   }
 
-  // 使用 Supabase 客户端
+  // 初始化 Supabase 客户端
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   
@@ -239,9 +232,9 @@ async function main() {
         }
 
         const up = await upsertContent(supabase, rec);
-        console.log(`[${up.mode}] ${file} -> short_id: ${up.short_id}`);
         if (up.mode === 'inserted') inserted++; else updated++;
         results.push({ file, id: up.id, short_id: up.short_id, mode: up.mode });
+        console.log(`[${up.mode}] ${file} -> short_id: ${up.short_id}`);
 
         // Write back meta author if needed
         if (!rec.currentShortId) {
@@ -254,7 +247,6 @@ async function main() {
     }
 
     if (!args.dryRun) {
-      // Bind all content to the given collection_list
       const ids = results.map(r => r.id);
       const bound = await bindAllToCollection(supabase, ids);
       console.log(`\n✅ Bind to collection_list ${TARGET_COLLECTION_LIST_ID}: ${bound} new relations.`);
@@ -271,3 +263,4 @@ main().catch(e => {
   console.error(e);
   process.exit(1);
 });
+

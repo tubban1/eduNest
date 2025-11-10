@@ -98,7 +98,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
   // 分享/邀请与手动刷新已移除，积分自动加载
 
   const menuItems = [
-    { href: '/content', label: t('myContent', { ns: 'navigation', defaultValue: 'My Creations' }), icon: BookOpen },
+    { href: '/c', label: t('myContent', { ns: 'navigation', defaultValue: 'My Creations' }), icon: BookOpen },
     { href: '/collections', label: t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }), icon: Heart },
   ];
 

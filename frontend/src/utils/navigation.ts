@@ -23,7 +23,7 @@ export const useSmartBack = () => {
         const pathname = referrerUrl.pathname;
         
         // 从内容列表页面来，返回到内容列表
-        if (pathname === '/content') return '/content';
+        if (pathname === '/c') return '/c';
         
         // 从首页来，返回到首页
         if (pathname === '/') return '/';

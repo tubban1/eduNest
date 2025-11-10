@@ -5,14 +5,11 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// 创建内容
+// 创建内容（只支持 full_html）
 router.post('/', authenticateToken, [
   body('title').isString().isLength({ min: 1, max: 200 }).withMessage('标题不能为空且长度不能超过200字'),
-  body('code_html').isString().withMessage('HTML代码不能为空'),
-  body('code_css').isString().withMessage('CSS代码不能为空'),
-  body('code_js').isString().withMessage('JS代码不能为空'),
-  body('tags').isArray().withMessage('标签必须是数组'),
-  body('external_links').isArray().withMessage('外部链接必须是数组'),
+  body('full_html').isString().isLength({ min: 1 }).withMessage('完整HTML内容不能为空'),
+  body('tags').optional().isArray().withMessage('标签必须是数组'),
   body('description').optional().isString().withMessage('描述必须是字符串'),
   body('content_type').optional().isString().withMessage('内容类型必须是字符串'),
   body('language_code').optional().isString().withMessage('语言必须是字符串（BCP 47）'),
@@ -115,6 +112,74 @@ router.get('/count', async (req, res) => {
   }
 });
 
+// 获取精选内容（自动从 admin 账号提取，公开接口）
+router.get('/featured', async (req, res) => {
+  try {
+    const {
+      limit = 20,
+      offset = 0,
+      category = null,
+      sortBy = 'quality_score',
+      tags = null,
+      language_code = null
+    } = req.query;
+    
+    const result = await DatabaseService.getFeaturedContents({
+      limit: parseInt(limit) || 20,
+      offset: parseInt(offset) || 0,
+      category: category || null,
+      sortBy: sortBy || 'quality_score',
+      tags: tags ? (Array.isArray(tags) ? tags : [tags]) : null,
+      language_code: language_code || null
+    });
+    
+    if (result.error) {
+      return res.status(500).json({ success: false, error: result.error.message });
+    }
+    
+    res.json({ success: true, data: result.data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取精选内容的分类统计（公开接口）
+router.get('/featured/categories', async (req, res) => {
+  try {
+    const result = await DatabaseService.getFeaturedContentCategories();
+    
+    if (result.error) {
+      return res.status(500).json({ success: false, error: result.error.message });
+    }
+    
+    res.json({ success: true, data: result.data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取指定收藏列表的公开内容（公开接口）
+router.get('/collection-list/:listId', async (req, res) => {
+  try {
+    const { listId } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 50;
+    const offset = req.query.offset ? parseInt(req.query.offset) : 0;
+    
+    const result = await DatabaseService.getPublicCollectionListContent(listId, {
+      limit,
+      offset
+    });
+    
+    if (result.error) {
+      return res.status(500).json({ success: false, error: result.error.message });
+    }
+    
+    res.json({ success: true, data: result.data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 获取内容列表
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -178,31 +243,30 @@ router.get('/short/:shortId', async (req, res) => {
   }
 });
 
-// 更新内容
-router.put('/:id', authenticateToken, async (req, res) => {
+// 更新内容（只支持 full_html）
+router.put('/:id', authenticateToken, [
+  body('title').optional().isString().isLength({ min: 1, max: 200 }).withMessage('标题长度不能超过200字'),
+  body('full_html').optional().isString().isLength({ min: 1 }).withMessage('完整HTML内容不能为空'),
+  body('tags').optional().isArray().withMessage('标签必须是数组'),
+  body('description').optional().isString().withMessage('描述必须是字符串'),
+  body('content_type').optional().isString().withMessage('内容类型必须是字符串'),
+  body('language_code').optional().isString().withMessage('语言必须是字符串（BCP 47）'),
+], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ error: '参数验证失败', details: errors.array() });
     }
 
-    const { title, code_html, code_css, code_js, tags, external_links, description, content_type, language_code } = req.body;
+    const { title, full_html, tags, description, content_type, language_code } = req.body;
     
-    if (!title || title.trim().length === 0) {
-      return res.status(400).json({ error: '标题不能为空' });
-    }
-
-    const updateData = {
-      title: title.trim(),
-      code_html: code_html || '',
-      code_css: code_css || '',
-      code_js: code_js || '',
-      tags: Array.isArray(tags) ? tags : [],
-      external_links: Array.isArray(external_links) ? external_links : [],
-      description: description || '',
-      content_type: content_type || 'vue',
-      language_code: language_code || 'zh-CN'
-    };
+    const updateData = {};
+    if (title !== undefined) updateData.title = title.trim();
+    if (full_html !== undefined) updateData.full_html = full_html;
+    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+    if (description !== undefined) updateData.description = description || '';
+    if (content_type !== undefined) updateData.content_type = content_type || 'vue';
+    if (language_code !== undefined) updateData.language_code = language_code || 'zh-CN';
 
     const result = await DatabaseService.updateContent(req.params.id, updateData);
     

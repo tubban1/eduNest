@@ -167,8 +167,11 @@
     }
     .chart-container {
       position: relative;
-      height: 400px;
-      margin: 20px 0;
+      margin: 20px 0 40px 0;
+      padding-bottom: 20px;
+    }
+    .chart-container canvas {
+      max-height: 450px;
     }
     .highlight {
       background: #fff3cd;
@@ -344,6 +347,19 @@
       </div>
 
       <div class="chart-container">
+        <h3>📊 数据趋势图表</h3>
+        <div class="controls" style="margin-bottom: 15px;">
+          <button class="btn" @click="startChartAnimation" :disabled="isChartAnimating">▶️ 播放图表动画</button>
+          <button class="btn" @click="pauseChartAnimation" :disabled="!isChartAnimating">⏸️ 暂停图表动画</button>
+          <button class="btn" @click="resetChartAnimation">🔄 重置图表动画</button>
+          <button class="btn" @click="showFullChart">📈 显示完整图表</button>
+        </div>
+        <div style="margin-bottom: 15px; text-align: center; color: #666; font-size: 14px;">
+          <span>图表动画进度：第 {{ chartAnimationDay }} 天 / 第 {{ answerDay || 83 }} 天</span>
+          <div style="width: 100%; max-width: 600px; margin: 10px auto; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+            <div :style="`width: ${answerDay > 0 ? (chartAnimationDay / answerDay) * 100 : 0}%; height: 20px; background: linear-gradient(90deg, #4ecdc4, #3498db); transition: width 0.3s;`"></div>
+          </div>
+        </div>
         <canvas ref="chartCanvas"></canvas>
       </div>
 
@@ -423,6 +439,10 @@
         const animationId = ref(null);
         const chart = ref(null);
         const answerDay = ref(0);
+        const isChartAnimating = ref(false);
+        const chartAnimationId = ref(null);
+        const chartAnimationDay = ref(0);
+        const showFullChartData = ref(false);
 
         // 查找到达终点的天数
         function findAnswerDay() {
@@ -599,7 +619,16 @@
         }
 
         // 更新图表
-        function updateChart() {
+        function updateChart(maxDay = null) {
+          console.log('=== updateChart called ===');
+          console.log('maxDay parameter:', maxDay);
+          console.log('chartCanvas.value:', !!chartCanvas.value);
+          console.log('Chart defined:', typeof Chart !== 'undefined');
+          console.log('isChartAnimating.value:', isChartAnimating.value);
+          console.log('chartAnimationDay.value:', chartAnimationDay.value);
+          console.log('showFullChartData.value:', showFullChartData.value);
+          console.log('answerDay.value:', answerDay.value);
+          
           if (!chartCanvas.value) {
             console.warn('Chart canvas not available');
             return;
@@ -616,21 +645,117 @@
           const lengthData = [];
           const positionData = [];
 
-          // 计算到当前天数或83天（答案）的数据
-          const maxDay = Math.min(Math.max(currentDay.value, 20), 100);
-          for (let i = 0; i <= maxDay; i++) {
+          // 确定要显示的最大天数
+          let targetMaxDay;
+          if (maxDay !== null) {
+            // 如果明确指定了最大天数，使用它
+            targetMaxDay = maxDay;
+            console.log('Using maxDay parameter:', targetMaxDay);
+          } else if (showFullChartData.value && answerDay.value > 0) {
+            // 显示完整图表模式
+            targetMaxDay = answerDay.value;
+            console.log('Using full chart mode:', targetMaxDay);
+          } else if (isChartAnimating.value || chartAnimationDay.value > 0) {
+            // 如果正在动画中，使用动画天数，但至少显示到第20天以便查看趋势
+            targetMaxDay = Math.max(chartAnimationDay.value, 20);
+            console.log('Using animation mode:', targetMaxDay, '(chartAnimationDay:', chartAnimationDay.value, ')');
+          } else {
+            // 默认显示逻辑
+            if (currentDay.value === 0 && chartAnimationDay.value === 0) {
+              // 初始状态，显示到第20天以便查看趋势（即使只有第0天的数据）
+              targetMaxDay = Math.min(20, answerDay.value || 20);
+              console.log('Using initial state:', targetMaxDay);
+            } else {
+              // 显示到当前天数，至少显示20天
+              targetMaxDay = Math.max(currentDay.value, Math.min(20, answerDay.value || 20));
+              console.log('Using default logic:', targetMaxDay);
+            }
+          }
+          
+          // 确保至少显示到第0天
+          if (targetMaxDay < 0) targetMaxDay = 0;
+          console.log('Final targetMaxDay:', targetMaxDay);
+
+          // 计算数据
+          // 在动画模式下，只计算到当前动画天数的数据点
+          const dataEndDay = isChartAnimating.value && chartAnimationDay.value >= 0 
+            ? chartAnimationDay.value 
+            : targetMaxDay;
+          
+          console.log('dataEndDay:', dataEndDay, '(isChartAnimating:', isChartAnimating.value, ', chartAnimationDay:', chartAnimationDay.value, ')');
+            
+          for (let i = 0; i <= dataEndDay; i++) {
             labels.push(i);
             const data = calculateDayData(i);
             relativeData.push(data.relative * 100);
             lengthData.push(data.length);
             positionData.push(data.position);
           }
-
-          if (chart.value) {
-            chart.value.destroy();
+          
+          console.log('Data calculated - labels:', labels.length, 'items:', labels.slice(0, 5), '...');
+          console.log('relativeData:', relativeData.slice(0, 5), '...');
+          console.log('lengthData:', lengthData.slice(0, 5), '...');
+          console.log('positionData:', positionData.slice(0, 5), '...');
+          
+          // 确保至少有2个数据点，避免图表显示异常
+          if (labels.length < 2) {
+            console.warn('Only', labels.length, 'data points, adding more...');
+            if (dataEndDay === 0) {
+              // 如果只有第0天，添加第1天的数据点（使用第0天的值）
+              labels.push(0, 1);
+              const data0 = calculateDayData(0);
+              relativeData.push(data0.relative * 100, data0.relative * 100);
+              lengthData.push(data0.length, data0.length);
+              positionData.push(data0.position, data0.position);
+            } else {
+              // 如果数据点不足，至少添加两个点
+              while (labels.length < 2 && labels.length <= dataEndDay) {
+                const day = labels.length;
+                labels.push(day);
+                const data = calculateDayData(day);
+                relativeData.push(data.relative * 100);
+                lengthData.push(data.length);
+                positionData.push(data.position);
+              }
+            }
+            console.log('After fix - labels:', labels.length, 'items');
           }
 
+          // 如果图表已存在，更新数据而不是销毁重建
+          if (chart.value) {
+            console.log('Updating existing chart with', labels.length, 'data points');
+            try {
+              // 更新图表数据
+              chart.value.data.labels = labels;
+              chart.value.data.datasets[0].data = relativeData;
+              chart.value.data.datasets[1].data = lengthData;
+              chart.value.data.datasets[2].data = positionData;
+              
+              // 更新X轴范围
+              const xMax = (isChartAnimating.value && targetMaxDay < 20) ? 20 : Math.max(targetMaxDay + 1, 20);
+              chart.value.options.scales.x.max = xMax;
+              
+              // 更新图表
+              chart.value.update('none'); // 'none' 表示不显示动画，立即更新
+              console.log('Chart updated successfully');
+              console.log('=== updateChart finished ===');
+              return;
+            } catch (error) {
+              console.error('Error updating chart:', error);
+              // 如果更新失败，销毁并重建
+              try {
+                chart.value.destroy();
+              } catch (destroyError) {
+                console.warn('Error destroying chart:', destroyError);
+              }
+              chart.value = null;
+            }
+          }
+
+          // 创建新图表
           try {
+            console.log('Creating new chart with', labels.length, 'data points');
+            console.log('X-axis max:', (isChartAnimating.value && targetMaxDay < 20) ? 20 : Math.max(targetMaxDay + 1, 20));
             chart.value = new Chart(chartCanvas.value, {
             type: 'line',
             data: {
@@ -642,7 +767,9 @@
                   borderColor: '#4ecdc4',
                   backgroundColor: 'rgba(78, 205, 196, 0.1)',
                   tension: 0.4,
-                  yAxisID: 'y'
+                  yAxisID: 'y',
+                  pointRadius: 3,
+                  pointHoverRadius: 5
                 },
                 {
                   label: '橡皮筋长度 (米)',
@@ -650,7 +777,9 @@
                   borderColor: '#ff6b6b',
                   backgroundColor: 'rgba(255, 107, 107, 0.1)',
                   tension: 0.4,
-                  yAxisID: 'y1'
+                  yAxisID: 'y1',
+                  pointRadius: 3,
+                  pointHoverRadius: 5
                 },
                 {
                   label: '蚂蚁位置 (米)',
@@ -658,13 +787,20 @@
                   borderColor: '#ffe66d',
                   backgroundColor: 'rgba(255, 230, 109, 0.1)',
                   tension: 0.4,
-                  yAxisID: 'y1'
+                  yAxisID: 'y1',
+                  pointRadius: 3,
+                  pointHoverRadius: 5
                 }
               ]
             },
             options: {
               responsive: true,
-              maintainAspectRatio: false,
+              maintainAspectRatio: true,
+              aspectRatio: 2.5,
+              animation: {
+                duration: showFullChartData.value ? 0 : (isChartAnimating.value ? 0 : 300), // 动画模式下不显示动画，立即更新
+                easing: 'easeOutQuad'
+              },
               plugins: {
                 legend: {
                   display: true,
@@ -697,20 +833,27 @@
                   },
                   grid: {
                     drawOnChartArea: false
-                  }
+                  },
+                  min: 0
                 },
                 x: {
                   title: {
                     display: true,
                     text: '天数'
-                  }
+                  },
+                  min: 0,
+                  // X轴最大值：动画模式下至少显示到20天，否则显示到目标天数+1
+                  max: (isChartAnimating.value && targetMaxDay < 20) ? 20 : Math.max(targetMaxDay + 1, 20)
                 }
               }
             }
           });
+          console.log('Chart created successfully');
           } catch (error) {
             console.error('Error creating chart:', error);
+            console.error('Error stack:', error.stack);
           }
+          console.log('=== updateChart finished ===');
         }
 
         // 更新状态
@@ -767,6 +910,158 @@
           }
         }
 
+        // 开始图表动画
+        function startChartAnimation() {
+          console.log('=== startChartAnimation called ===');
+          console.log('isChartAnimating.value (before):', isChartAnimating.value);
+          
+          if (isChartAnimating.value) {
+            console.log('Animation already running, returning');
+            return;
+          }
+          
+          // 确保答案天数已计算
+          if (answerDay.value === 0) {
+            answerDay.value = findAnswerDay();
+            console.log('Calculated answerDay:', answerDay.value);
+          }
+          
+          const targetDay = answerDay.value || 83;
+          console.log('targetDay:', targetDay);
+          
+          // 如果当前已经在最后一天，从头开始
+          if (chartAnimationDay.value >= targetDay) {
+            console.log('Resetting from day', chartAnimationDay.value, 'to 0');
+            chartAnimationDay.value = 0;
+            showFullChartData.value = false;
+          }
+          
+          // 确保图表已初始化（显示第0天的数据）
+          // 先重置状态，确保从第0天开始
+          chartAnimationDay.value = 0;
+          showFullChartData.value = false;
+          console.log('Reset state - chartAnimationDay:', chartAnimationDay.value, 'showFullChartData:', showFullChartData.value);
+          
+          // 先设置动画状态为true，这样updateChart会使用正确的逻辑
+          isChartAnimating.value = true;
+          console.log('Set isChartAnimating to true');
+          
+          // 初始化图表（显示第0天的数据，但X轴显示到20天以便查看趋势）
+          console.log('Calling updateChart(0)...');
+          updateChart(0);
+          
+          // 等待图表渲染完成后再开始动画循环
+          setTimeout(() => {
+            console.log('Checking if chart is created...');
+            console.log('chart.value exists:', !!chart.value);
+            if (chart.value) {
+              // 图表已创建，开始动画循环
+              console.log('Chart exists, starting animation loop');
+              startAnimationLoop();
+            } else {
+              // 如果图表还没创建，再等一会
+              console.warn('Chart not created yet, waiting...');
+              setTimeout(() => {
+                console.log('Checking chart again...');
+                console.log('chart.value exists:', !!chart.value);
+                if (chart.value) {
+                  console.log('Chart exists now, starting animation loop');
+                  startAnimationLoop();
+                } else {
+                  // 如果还是没创建，重置状态并重试
+                  console.error('Chart still not created after waiting');
+                  isChartAnimating.value = false;
+                  console.warn('Chart not created, retrying...');
+                  updateChart(0);
+                  setTimeout(() => {
+                    if (chart.value) {
+                      console.log('Chart created after retry, starting animation loop');
+                      isChartAnimating.value = true;
+                      startAnimationLoop();
+                    } else {
+                      console.error('Chart creation failed even after retry');
+                    }
+                  }, 200);
+                }
+              }, 200);
+            }
+          }, 300);
+          
+          function startAnimationLoop() {
+            console.log('=== startAnimationLoop called ===');
+            isChartAnimating.value = true;
+            
+            function animateChart() {
+              if (!isChartAnimating.value) {
+                console.log('Animation stopped');
+                return;
+              }
+              
+              if (chartAnimationDay.value < targetDay) {
+                chartAnimationDay.value++;
+                console.log('Animating to day', chartAnimationDay.value);
+                showFullChartData.value = false;
+                updateChart(chartAnimationDay.value);
+                
+                // 根据天数调整动画速度：前期快，后期慢
+                // 减慢速度，让用户更好地观察变化
+                let delay;
+                if (chartAnimationDay.value < 10) {
+                  delay = 100; // 前10天：100ms/天
+                } else if (chartAnimationDay.value < 20) {
+                  delay = 150; // 10-20天：150ms/天
+                } else if (chartAnimationDay.value < 50) {
+                  delay = 200; // 20-50天：200ms/天
+                } else if (chartAnimationDay.value < 75) {
+                  delay = 300; // 50-75天：300ms/天
+                } else {
+                  delay = 400; // 75天以后：400ms/天（较慢，便于观察）
+                }
+                
+                console.log('Next update in', delay, 'ms');
+                chartAnimationId.value = setTimeout(animateChart, delay);
+              } else {
+                // 动画完成
+                console.log('Animation completed at day', chartAnimationDay.value);
+                isChartAnimating.value = false;
+                chartAnimationId.value = null;
+                showFullChartData.value = true;
+                updateChart(targetDay);
+              }
+            }
+            
+            animateChart();
+          }
+        }
+
+        // 暂停图表动画
+        function pauseChartAnimation() {
+          isChartAnimating.value = false;
+          if (chartAnimationId.value) {
+            clearTimeout(chartAnimationId.value);
+            chartAnimationId.value = null;
+          }
+        }
+
+        // 重置图表动画
+        function resetChartAnimation() {
+          pauseChartAnimation();
+          chartAnimationDay.value = 0;
+          showFullChartData.value = false;
+          updateChart(0);
+        }
+
+        // 显示完整图表
+        function showFullChart() {
+          pauseChartAnimation();
+          if (answerDay.value === 0) {
+            answerDay.value = findAnswerDay();
+          }
+          showFullChartData.value = true;
+          chartAnimationDay.value = answerDay.value || 83;
+          updateChart(answerDay.value || 83);
+        }
+
         onMounted(() => {
           // 计算答案天数
           answerDay.value = findAnswerDay();
@@ -774,20 +1069,38 @@
           // 初始化状态
           updateState(0);
           
-          // 如果 Chart.js 还没加载，等待一下再尝试更新图表
-          if (typeof Chart === 'undefined') {
-            const checkChart = setInterval(() => {
-              if (typeof Chart !== 'undefined') {
+          // 初始化图表（显示第0天的状态）
+          chartAnimationDay.value = 0;
+          showFullChartData.value = false;
+          
+          // 初始化图表函数
+          const initChart = () => {
+            if (typeof Chart !== 'undefined' && chartCanvas.value) {
+              // 确保显示第0天的图表
+              updateChart(0);
+              return true;
+            }
+            return false;
+          };
+          
+          // 使用 nextTick 确保 DOM 已渲染
+          nextTick(() => {
+            // 立即尝试初始化
+            if (!initChart()) {
+              // 如果 Chart.js 还没加载，等待一下再尝试
+              const checkChart = setInterval(() => {
+                if (initChart()) {
+                  clearInterval(checkChart);
+                }
+              }, 100);
+              
+              // 5秒后停止检查，但仍尝试初始化一次
+              setTimeout(() => {
                 clearInterval(checkChart);
-                updateChart();
-              }
-            }, 100);
-            
-            // 5秒后停止检查
-            setTimeout(() => {
-              clearInterval(checkChart);
-            }, 5000);
-          }
+                initChart();
+              }, 5000);
+            }
+          });
         });
 
         return {
@@ -801,10 +1114,16 @@
           isAnimating,
           dataTable,
           answerDay,
+          isChartAnimating,
+          chartAnimationDay,
           startAnimation,
           pauseAnimation,
           resetAnimation,
           stepForward,
+          startChartAnimation,
+          pauseChartAnimation,
+          resetChartAnimation,
+          showFullChart,
           calculateRelativePosition
         };
       }

@@ -35,7 +35,7 @@ export default function EditButton({
 
   return (
     <Link
-      href={`/content/edit/${contentId}`}
+      href={`/c/edit/${contentId}`}
       className={`flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors ${sizeClasses[size]} ${className}`}
       title={mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
     >

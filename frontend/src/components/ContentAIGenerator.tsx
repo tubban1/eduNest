@@ -7,6 +7,39 @@ import { api } from '@/lib/api';
 import AIProviderSelector from '@/components/AIProviderSelector';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
 
+const DEFAULT_FULL_HTML = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新内容</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    #app {
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">{{ message }}</div>
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          message: "Hello World!"
+        }
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>`;
+
 interface ContentAIGeneratorProps {
   className?: string;
   onGenerated?: () => void;
@@ -123,10 +156,7 @@ export default function ContentAIGenerator({
         description: description || '',
         language_code: language,
         content_type: 'vue',
-        code_html: '',
-        code_css: '',
-        code_js: '',
-        external_links: [],
+        full_html: DEFAULT_FULL_HTML || '',
         tags: [],
         created_by: user?.id,
       } as any;

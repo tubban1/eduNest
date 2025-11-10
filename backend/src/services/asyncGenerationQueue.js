@@ -615,13 +615,15 @@ class AsyncGenerationQueue {
    */
   async updateContentFromAIResult(contentId, aiData) {
     try {
+      // 只更新 full_html，不再使用代码块字段
+      if (!aiData.full_html || typeof aiData.full_html !== 'string' || aiData.full_html.trim().length === 0) {
+        throw new Error('AI返回的 full_html 字段为空或无效');
+      }
+      
       const updateData = {
         title: aiData.title || 'AI生成内容',
         description: aiData.description || '',
-        code_html: aiData.html || '',
-        code_css: aiData.css || '',
-        code_js: aiData.js || '',
-        external_links: aiData.external_links || [],
+        full_html: aiData.full_html,
         tags: aiData.tags || [],
         language_code: aiData.language_code || 'zh-CN',
         updated_at: new Date().toISOString()
