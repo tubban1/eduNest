@@ -45,7 +45,7 @@ const StatusCardTest: React.FC = () => {
           <ProcessingCard 
             content={testContent} 
             progress={65} 
-            retryCount={1}
+            retryCount={1} 
             userQuery="如何证明勾股定理？"
             startedAt={new Date(Date.now() - 120 * 1000).toISOString()}
           />

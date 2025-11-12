@@ -23,7 +23,7 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retr
   // 实时计算已用时间
   useEffect(() => {
     if (!startedAt) return;
-
+    
     const updateTimer = () => {
       const now = new Date();
       const start = new Date(startedAt);
@@ -31,10 +31,10 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retr
       const newElapsedTime = Math.max(0, elapsed);
       setElapsedTime(newElapsedTime);
     };
-
+    
     // 立即更新一次
     updateTimer();
-
+    
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [startedAt]);
