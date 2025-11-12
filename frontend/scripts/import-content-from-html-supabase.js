@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 
 /*
-  Import HTML pages into `content` table and bind to a collection_list using Supabase.
+  Import/Update HTML pages into `content` table and bind to a collection_list using Supabase.
+  
+  Modes:
+  1. Import mode (default): Insert new content or update existing content by short_id
+  2. Update mode (--update-only): Only update existing content, skip files without short_id
+  
   Requirements:
   - content_type = 'vue'
   - full_html = complete HTML file content
@@ -12,6 +17,11 @@
   - Dedup/update by short_id stored in HTML <meta name="author" content="short_id">
     * If meta author exists: update that content row, else insert new row and write back meta author with returned short_id
   - After all content stored, bind all to collection_list 16c34498-578c-455f-80f4-c7d28cdd0b62
+
+  Usage:
+  - Import/Update: node scripts/import-content-from-html-supabase.js --dirs "public/buzz/*.html"
+  - Update only: node scripts/import-content-from-html-supabase.js --dirs "public/buzz/*.html" --update-only
+  - Dry run: node scripts/import-content-from-html-supabase.js --dirs "public/buzz/*.html" --dry-run
 
   See scripts/README.md for usage examples.
 */
@@ -42,10 +52,11 @@ const FIXED_CONTENT_TYPE = 'vue';
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const out = { dirs: [], dryRun: false };
+  const out = { dirs: [], dryRun: false, updateOnly: false };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '--dry-run') { out.dryRun = true; continue; }
+    if (a === '--update-only') { out.updateOnly = true; continue; }
     if (a === '--dirs') { out.dirs = (args[i+1] || '').split(',').map(s => s.trim()).filter(Boolean); i++; continue; }
   }
   if (out.dirs.length === 0) {
@@ -91,7 +102,7 @@ async function extractFromHtml(filePath) {
   };
 }
 
-async function upsertContent(supabase, rec) {
+async function upsertContent(supabase, rec, updateOnly = false) {
   // If short_id exists in HTML -> update that row; else insert new and return short_id
   if (rec.currentShortId) {
     const { data: existing, error: selectError } = await supabase
@@ -119,6 +130,16 @@ async function upsertContent(supabase, rec) {
       
       return { id: existing.id, short_id: existing.short_id, mode: 'updated' };
     }
+    
+    // If updateOnly mode and short_id exists but not found in DB, throw error
+    if (updateOnly) {
+      throw new Error(`Content with short_id ${rec.currentShortId} not found in database`);
+    }
+  }
+
+  // In update-only mode, skip files without short_id
+  if (updateOnly) {
+    throw new Error('No short_id found in HTML meta author tag. Use import mode to create new content.');
   }
 
   // Insert new row
@@ -215,6 +236,10 @@ async function main() {
   const results = [];
   let inserted = 0, updated = 0, skipped = 0;
 
+  if (args.updateOnly) {
+    console.log('📝 更新模式：只处理已有 short_id 的文件');
+  }
+
   try {
     for (const file of files) {
       try {
@@ -231,17 +256,21 @@ async function main() {
           continue;
         }
 
-        const up = await upsertContent(supabase, rec);
+        const up = await upsertContent(supabase, rec, args.updateOnly);
         if (up.mode === 'inserted') inserted++; else updated++;
         results.push({ file, id: up.id, short_id: up.short_id, mode: up.mode });
         console.log(`[${up.mode}] ${file} -> short_id: ${up.short_id}`);
 
-        // Write back meta author if needed
-        if (!rec.currentShortId) {
+        // Write back meta author if needed (only in import mode, not update-only mode)
+        if (!args.updateOnly && !rec.currentShortId) {
           await writeShortIdToHtml(file, rec.rawHtml, rec.$, up.short_id);
         }
       } catch (e) {
-        console.error(`[error] ${file}`, e.message);
+        if (args.updateOnly && e.message.includes('No short_id')) {
+          console.warn(`[skip] ${file} — ${e.message}`);
+        } else {
+          console.error(`[error] ${file}`, e.message);
+        }
         skipped++;
       }
     }

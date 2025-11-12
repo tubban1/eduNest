@@ -1396,6 +1396,175 @@ const getUserLikedCollections = async (userId) => {
   }
 };
 
+/**
+ * 根据 short_id 获取 collection_list 及其内容
+ * @param {string} shortId - collection_list 的 short_id
+ * @param {string} userId - 当前用户ID（可选）
+ * @returns {Promise<{data: object, error: Error}>}
+ */
+const getCollectionListByShortId = async (shortId, userId = null) => {
+  try {
+    // 1. 查询 collection_list
+    const { data: list, error: listError } = await supabase
+      .from('collection_lists')
+      .select('*')
+      .eq('short_id', shortId)
+      .single();
+    
+    if (listError || !list) {
+      return { data: null, error: new Error('列表不存在') };
+    }
+    
+    // 2. 权限检查
+    const isOwner = userId && list.user_id === userId;
+    const isPrivate = list.visibility === 'private';
+    
+    // private 列表：仅创建者可访问
+    if (isPrivate && !isOwner) {
+      return { data: null, error: new Error('无权限访问此列表') };
+    }
+    
+    // 3. 获取用户订阅和购买状态（如果已登录）
+    let isPlatformPremium = false;
+    let hasPurchasedList = false;
+    
+    if (userId) {
+      // 3.1 检查平台订阅状态
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('plan, status, current_period_end')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .in('plan', ['lite', 'pro'])
+        .gt('current_period_end', new Date().toISOString())
+        .single();
+      
+      isPlatformPremium = !!subscription;
+      
+      // 3.2 检查是否已购买该列表（仅当 pricing_mode = 'premium' 时）
+      if (list.pricing_mode === 'premium') {
+        const { data: purchase } = await supabase
+          .from('list_purchases')
+          .select('id, expires_at')
+          .eq('user_id', userId)
+          .eq('list_id', list.id)
+          .eq('payment_status', 'success')
+          .single();
+        
+        if (purchase) {
+          // 检查是否过期（如果设置了有效期）
+          if (!purchase.expires_at || new Date(purchase.expires_at) > new Date()) {
+            hasPurchasedList = true;
+          }
+        }
+      }
+    }
+    
+    // 4. 判断访问权限
+    const FREE_PREVIEW_COUNT = 3;  // 免费预览数量
+    
+    // 访问权限逻辑：
+    // - 创建者：始终可访问全部
+    // - 免费列表（pricing_mode = 'free'）：所有人可访问全部
+    // - 付费列表（pricing_mode = 'premium'）：已购买或平台订阅用户可访问全部，其他用户只能看前3条
+    // - 预览列表（pricing_mode = 'free_preview'）：平台订阅用户可访问全部，其他用户只能看前3条
+    const canAccessAll = isOwner || 
+                        (list.pricing_mode === 'free') ||
+                        (list.pricing_mode === 'premium' && (hasPurchasedList || isPlatformPremium)) ||
+                        (list.pricing_mode === 'free_preview' && isPlatformPremium);
+    
+    // 5. 获取列表内容
+    const { data: collections, error: collectionsError } = await supabase
+      .from('user_collections')
+      .select(`
+        id,
+        added_at,
+        content_id,
+        content:content_id (
+          id,
+          short_id,
+          title,
+          description,
+          tags,
+          language_code,
+          created_at
+        )
+      `)
+      .eq('list_id', list.id)
+      .order('added_at', { ascending: false });
+    
+    if (collectionsError) {
+      throw collectionsError;
+    }
+    
+    // 6. 处理内容访问权限
+    const processedContents = (collections || []).map((item, index) => {
+      const isFreePreview = index < FREE_PREVIEW_COUNT;
+      
+      // 判断是否需要付费：
+      // - 免费列表：不需要付费
+      // - 付费/预览列表：前3条免费，其余需付费
+      const requiresPayment = list.pricing_mode !== 'free' && !isFreePreview;
+      const isAccessible = canAccessAll || isFreePreview;
+      
+      return {
+        ...item,
+        index,
+        is_accessible: isAccessible,
+        requires_payment: requiresPayment,
+        is_free_preview: isFreePreview
+      };
+    });
+    
+    // 7. 统计信息
+    let freeCount = 0;
+    let premiumCount = 0;
+    
+    if (list.pricing_mode === 'free') {
+      // 免费列表：全部免费
+      freeCount = processedContents.length;
+      premiumCount = 0;
+    } else {
+      // 付费/预览列表：前3条免费，其余付费
+      freeCount = Math.min(FREE_PREVIEW_COUNT, processedContents.length);
+      premiumCount = Math.max(0, processedContents.length - FREE_PREVIEW_COUNT);
+    }
+    
+    // 8. 格式化价格
+    const formattedPrice = list.price 
+      ? new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: list.currency || 'USD'
+        }).format(list.price)
+      : null;
+    
+    return {
+      data: {
+        list,
+        contents: processedContents,
+        total: processedContents.length,
+        free_count: freeCount,
+        premium_count: premiumCount,
+        user_access: {
+          is_owner: isOwner,
+          is_platform_premium: isPlatformPremium,
+          has_purchased_list: hasPurchasedList,
+          can_access_all: canAccessAll
+        },
+        pricing: {
+          mode: list.pricing_mode || 'free',
+          price: list.price,
+          currency: list.currency || 'USD',
+          formatted_price: formattedPrice
+        }
+      },
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
 // 获取指定收藏列表的公开内容（不需要用户认证）
 const getPublicCollectionListContent = async (listId, options = {}) => {
   try {
@@ -1724,6 +1893,7 @@ module.exports = {
   getCollectionListsByUser,
   updateCollectionListOrder,
   deleteCollectionList,
+  getCollectionListByShortId,
   addContentToList,
   removeContentFromList,
   getContentCollections,

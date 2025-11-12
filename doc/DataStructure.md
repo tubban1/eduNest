@@ -224,6 +224,34 @@
     "column_default": "1000"
   },
   {
+    "table_name": "collection_lists",
+    "column_name": "pricing_mode",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'free'::text"
+  },
+  {
+    "table_name": "collection_lists",
+    "column_name": "price",
+    "data_type": "numeric",
+    "is_nullable": "YES",
+    "column_default": "NULL::numeric"
+  },
+  {
+    "table_name": "collection_lists",
+    "column_name": "currency",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'USD'::text"
+  },
+  {
+    "table_name": "collection_lists",
+    "column_name": "description",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "content",
     "column_name": "id",
     "data_type": "uuid",
@@ -295,13 +323,6 @@
   },
   {
     "table_name": "content",
-    "column_name": "full_html",
-    "data_type": "text",
-    "is_nullable": "YES",
-    "column_default": null
-  },
-  {
-    "table_name": "content",
     "column_name": "short_id",
     "data_type": "text",
     "is_nullable": "NO",
@@ -353,6 +374,13 @@
     "table_name": "content",
     "column_name": "deleted_at",
     "data_type": "timestamp without time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
+    "column_name": "full_html",
+    "data_type": "text",
     "is_nullable": "YES",
     "column_default": null
   },
@@ -446,6 +474,83 @@
     "data_type": "text",
     "is_nullable": "YES",
     "column_default": null
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "list_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "price",
+    "data_type": "numeric",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "currency",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'USD'::text"
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "payment_status",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'pending'::text"
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "stripe_session_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "purchased_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "expires_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "list_purchases",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
   },
   {
     "table_name": "maze_scores",

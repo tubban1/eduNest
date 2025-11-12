@@ -14,6 +14,11 @@ interface CollectionList {
   name: string;
   visibility: string;
   created_at: string;
+  short_id?: string;
+  pricing_mode?: string;
+  price?: number;
+  currency?: string;
+  description?: string;
 }
 
 interface CollectionContent {
@@ -208,6 +213,15 @@ export default function CollectionsPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{mounted ? t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }) : 'My Collections'}</h1>
               <p className="text-gray-600">{mounted ? t('manageCollections', { ns: 'content', defaultValue: 'Manage all your collected content' }) : 'Manage all your collected content'}</p>
+            </div>
+            {/* 列表管理按钮 */}
+            <div className="flex gap-2">
+              <a
+                href="/collections/lists"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                📋 {mounted ? t('collections:list.manageListsButton', { ns: 'collections', defaultValue: 'Manage Lists' }) : 'Manage Lists'}
+              </a>
             </div>
           </div>
           

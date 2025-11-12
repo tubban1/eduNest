@@ -117,7 +117,7 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// 可选认证中间件（不强制要求登录）
+// 可选认证中间件（不强制要求登录，支持 Supabase token）
 const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
@@ -128,24 +128,40 @@ const optionalAuth = async (req, res, next) => {
       return next();
     }
 
-    jwt.verify(token, config.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        // 令牌无效，继续执行但不设置用户信息
-        return next();
-      }
-
-      try {
-        const userResult = await DatabaseService.getUserById(decoded.userId);
-        if (userResult.data) {
-          req.user = userResult.data;
+    try {
+      // 尝试使用 Supabase token 验证
+      const user = await verifySupabaseToken(token);
+      
+      // 设置用户信息到请求对象
+      req.user = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'user'
+      };
+      
+      next();
+    } catch (tokenError) {
+      // Supabase token 验证失败，尝试使用 JWT token（向后兼容）
+      jwt.verify(token, config.JWT_SECRET, async (err, decoded) => {
+        if (err) {
+          // 令牌无效，继续执行但不设置用户信息
+          return next();
         }
-        next();
-      } catch (error) {
-        // 用户验证失败，继续执行但不设置用户信息
-        logger.warn('可选认证失败:', error.message);
-        next();
-      }
-    });
+
+        try {
+          const userResult = await DatabaseService.getUserById(decoded.userId);
+          if (userResult.data) {
+            req.user = userResult.data;
+          }
+          next();
+        } catch (error) {
+          // 用户验证失败，继续执行但不设置用户信息
+          logger.warn('可选认证失败:', error.message);
+          next();
+        }
+      });
+    }
   } catch (error) {
     logger.error('可选认证中间件错误:', error);
     next();

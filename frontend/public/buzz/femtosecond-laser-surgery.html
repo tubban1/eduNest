@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="飞秒激光手术动画演示，详细展示飞秒激光近视矫正手术的完整过程，包括角膜瓣制作、激光切削、复位等关键步骤，帮助理解现代眼科手术技术。">
+  <meta name="keywords" content="飞秒激光,激光手术,近视矫正,眼科手术,角膜手术,视力矫正,手术过程,医疗动画,眼科医疗">
+  <title>飞秒激光手术动画演示 - 交互式学习工具</title>
+  
+  <!-- Vue 3.5.20 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  
+  <!-- GSAP for animations -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+  
+  <!-- Three.js for 3D visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+  
+  <!-- Anime.js for additional animations -->
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/anime.min.js'"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.8;
+      color: #2c3e50;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    
+    h1 {
+      color: #1a1a1a;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-align: center;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 1.2em;
+      margin-bottom: 40px;
+    }
+    
+    .animation-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      background: linear-gradient(180deg, #e8f4f8 0%, #c8e6f0 100%);
+      border-radius: 12px;
+      margin: 30px 0;
+      overflow: hidden;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    #eyeCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    
+    .control-panel {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin: 30px 0;
+      padding: 25px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 30px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+    }
+    
+    .btn-warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    
+    .btn-warning:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    
+    .step-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ddd;
+      transition: all 0.3s ease;
+    }
+    
+    .step-dot.active {
+      background: #667eea;
+      transform: scale(1.3);
+      box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    }
+    
+    .step-dot.completed {
+      background: #38ef7d;
+    }
+    
+    .step-info {
+      text-align: center;
+      margin: 20px 0;
+      padding: 25px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: 8px;
+      border-left: 5px solid #667eea;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .step-info h3 {
+      color: #2c3e50;
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+    
+    .step-info p {
+      color: #555;
+      font-size: 1.1em;
+      line-height: 1.8;
+      margin-bottom: 15px;
+    }
+    
+    .detailed-explanation {
+      margin-top: 20px;
+      padding: 25px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    .detailed-explanation::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .detailed-explanation::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    
+    .detailed-explanation::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 4px;
+    }
+    
+    .detailed-explanation::-webkit-scrollbar-thumb:hover {
+      background: #5568d3;
+    }
+    
+    .detailed-explanation h4 {
+      color: #2c3e50;
+      font-size: 1.3em;
+      margin-bottom: 15px;
+      margin-top: 0;
+    }
+    
+    .detailed-explanation p {
+      color: #444;
+      font-size: 1em;
+      line-height: 1.9;
+      margin-bottom: 12px;
+      text-align: left;
+    }
+    
+    .detailed-explanation strong {
+      color: #2c3e50;
+      font-weight: 600;
+    }
+    
+    .detailed-explanation ul {
+      margin: 15px 0;
+      padding-left: 30px;
+      color: #444;
+    }
+    
+    .detailed-explanation li {
+      margin-bottom: 10px;
+      line-height: 1.9;
+      position: relative;
+    }
+    
+    .detailed-explanation li::marker {
+      color: #667eea;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s ease;
+      border-radius: 4px;
+    }
+    
+    .status-display {
+      text-align: center;
+      font-size: 18px;
+      color: #555;
+      margin: 15px 0;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>🔬 飞秒激光手术动画演示</h1>
+      <p class="subtitle">深入了解现代眼科激光手术的完整过程</p>
+      
+      <div class="step-info">
+        <h3>{{ currentStepInfo.title }}</h3>
+        <p>{{ currentStepInfo.description }}</p>
+        <div class="detailed-explanation" v-html="currentStepInfo.detailedExplanation"></div>
+      </div>
+      
+      <div class="progress-bar">
+        <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+      </div>
+      
+      <div class="status-display">
+        {{ statusText }}
+      </div>
+      
+      <div class="animation-container">
+        <canvas id="eyeCanvas"></canvas>
+      </div>
+      
+      <div class="step-indicator">
+        <div 
+          v-for="(step, index) in steps" 
+          :key="index"
+          class="step-dot"
+          :class="{ 
+            active: currentStep === index, 
+            completed: currentStep > index 
+          }"
+          :title="step.title"
+        ></div>
+      </div>
+      
+      <div class="control-panel">
+        <button 
+          class="btn btn-success" 
+          @click="startAnimation"
+          :disabled="isPlaying"
+        >
+          ▶️ 开始
+        </button>
+        <button 
+          class="btn btn-warning" 
+          @click="pauseAnimation"
+          :disabled="!isPlaying"
+        >
+          ⏸️ 暂停
+        </button>
+        <button 
+          class="btn btn-primary" 
+          @click="nextStep"
+          :disabled="isPlaying || currentStep >= steps.length - 1"
+        >
+          ⏭️ 下一步
+        </button>
+        <button 
+          class="btn btn-primary" 
+          @click="resetAnimation"
+        >
+          🔄 重置
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const currentStep = ref(0);
+        const isPlaying = ref(false);
+        const animationTimeline = ref(null);
+        const canvas = ref(null);
+        const ctx = ref(null);
+        const animationId = ref(null);
+        
+        const steps = [
+          {
+            title: "步骤 1: 术前准备",
+            description: "患者眼部定位，确保手术区域准确。医生检查设备状态，准备开始手术。",
+            detailedExplanation: `
+              <h4>🔍 详细解读：</h4>
+              <p><strong>1. 患者定位：</strong>患者躺在手术床上，头部固定，确保在整个手术过程中保持稳定。这是手术成功的基础，任何微小的移动都可能影响手术精度。</p>
+              <p><strong>2. 眼部检查：</strong>医生使用专业设备检查患者眼部状态，确认角膜厚度、瞳孔大小等关键参数。这些数据将用于后续的激光参数设置。</p>
+              <p><strong>3. 设备校准：</strong>飞秒激光设备进行自检和校准，确保激光能量、频率、聚焦点等参数精确无误。现代飞秒激光设备具有实时监控功能，可以自动调整参数。</p>
+              <p><strong>4. 麻醉准备：</strong>通常使用表面麻醉（眼药水），患者在整个手术过程中保持清醒，但不会感到疼痛。</p>
+              <p><strong>5. 环境控制：</strong>手术室保持无菌环境，温度、湿度、气压都经过严格控制，确保手术设备的最佳工作状态。</p>
+            `,
+            duration: 2000
+          },
+          {
+            title: "步骤 2: 角膜瓣制作",
+            description: "飞秒激光在角膜表面创建精确的角膜瓣，这是手术的关键第一步。激光以极快的速度在角膜内部创建气泡层。",
+            detailedExplanation: `
+              <h4>🔍 详细解读：</h4>
+              <p><strong>1. 飞秒激光原理：</strong>飞秒激光是一种超短脉冲激光，每个脉冲持续时间只有千万亿分之一秒（10⁻¹⁵秒）。这种极短的脉冲可以产生极高的峰值功率，但总能量很低，因此对周围组织损伤极小。</p>
+              <p><strong>2. 光爆破效应：</strong>当飞秒激光聚焦到角膜组织内部时，会产生"光爆破"效应。激光能量将组织中的水分子瞬间电离，产生微小的气泡。这些气泡在组织内部形成分离层。</p>
+              <p><strong>3. 角膜瓣设计：</strong>医生根据患者角膜的曲率、厚度等参数，精确设计角膜瓣的大小、形状和深度。通常角膜瓣厚度约为110-160微米，直径约8-9毫米，带有一个小"铰链"连接。</p>
+              <p><strong>4. 扫描模式：</strong>激光按照预设的扫描路径，在角膜内部逐点扫描，形成完整的分离平面。这个过程通常需要20-30秒，激光会扫描数千个点，每个点都精确到微米级别。</p>
+              <p><strong>5. 气泡层形成：</strong>随着激光扫描，角膜内部形成一层由微小气泡组成的分离层。这些气泡会在几小时内自然吸收，不会影响视力恢复。</p>
+              <p><strong>6. 精确控制：</strong>现代飞秒激光设备具有实时监控系统，可以检测激光能量、扫描位置等参数，确保角膜瓣制作的精确性和安全性。</p>
+            `,
+            duration: 3000
+          },
+          {
+            title: "步骤 3: 激光切削",
+            description: "根据患者视力情况，激光精确切削角膜组织，改变角膜曲率以矫正视力。",
+            detailedExplanation: `
+              <h4>🔍 详细解读：</h4>
+              <p><strong>1. 切削原理：</strong>准分子激光（通常是193纳米波长的ArF准分子激光）通过光化学作用，直接打断角膜组织分子的化学键，使组织气化蒸发。这个过程称为"光解离"，不会产生热量，因此不会损伤周围组织。</p>
+              <p><strong>2. 个性化切削方案：</strong>根据患者的屈光度数（近视、远视、散光）、角膜地形图、瞳孔大小等数据，计算机计算出精确的切削方案。每个患者的切削模式都是独一无二的。</p>
+              <p><strong>3. 切削深度计算：</strong>切削深度遵循Munnerlyn公式：切削深度 = (直径² × 屈光度) / 3。例如，矫正-6.00D近视，6mm切削区，需要切削约72微米的组织。</p>
+              <p><strong>4. 扫描方式：</strong>激光采用飞点扫描技术，以每秒数百个脉冲的速度，在角膜表面精确扫描。每个脉冲去除约0.25微米的组织，通过控制扫描密度和深度，形成精确的切削面。</p>
+              <p><strong>5. 实时跟踪：</strong>手术过程中，设备使用眼球跟踪系统，实时监测眼球位置。如果眼球移动超过安全范围，激光会自动停止，确保切削的精确性。</p>
+              <p><strong>6. 切削模式：</strong>根据矫正需求，激光可以创建不同的切削模式：</p>
+              <ul>
+                <li><strong>近视矫正：</strong>中央区域切削较深，周边较浅，形成凹面，降低角膜曲率</li>
+                <li><strong>远视矫正：</strong>周边区域切削较深，中央较浅，形成凸面，增加角膜曲率</li>
+                <li><strong>散光矫正：</strong>在特定轴向上进行非对称切削，矫正不规则曲率</li>
+              </ul>
+              <p><strong>7. 组织去除：</strong>切削过程会产生微小的组织碎片，这些碎片会被设备的抽吸系统及时清除，保持手术区域清晰。</p>
+            `,
+            duration: 4000
+          },
+          {
+            title: "步骤 4: 角膜瓣复位",
+            description: "将之前制作的角膜瓣重新复位到原位置，无需缝合，自然愈合。",
+            detailedExplanation: `
+              <h4>🔍 详细解读：</h4>
+              <p><strong>1. 瓣片分离：</strong>使用专门的器械（如瓣片分离器），沿着飞秒激光创建的气泡层，轻柔地将角膜瓣从底层组织分离。由于气泡层的存在，分离过程非常平滑，不会损伤组织。</p>
+              <p><strong>2. 瓣片翻转：</strong>将分离的角膜瓣小心地翻转，露出下方的角膜基质层。翻转时保持瓣片的完整性，避免撕裂或折叠。瓣片通过"铰链"仍然与角膜连接，这有助于后续的复位和愈合。</p>
+              <p><strong>3. 冲洗清洁：</strong>在瓣片复位前，使用生理盐水冲洗角膜基质层和瓣片，清除可能残留的组织碎片、气泡等，确保复位后的紧密贴合。</p>
+              <p><strong>4. 精确复位：</strong>将角膜瓣小心地放回原位置，确保边缘完全对齐。医生会仔细检查瓣片的位置，确保没有褶皱、气泡或错位。现代设备可以使用激光辅助定位，提高复位精度。</p>
+              <p><strong>5. 自然贴合：</strong>角膜瓣复位后，由于角膜内皮细胞的泵功能，会自然产生负压，使瓣片紧密贴合在基质层上。这种自然贴合比缝合更均匀，愈合更快。</p>
+              <p><strong>6. 干燥处理：</strong>使用无菌海绵轻轻吸干瓣片边缘的液体，促进边缘的紧密贴合。这个过程需要非常小心，避免过度干燥导致瓣片收缩。</p>
+              <p><strong>7. 愈合机制：</strong>复位后，角膜瓣通过以下机制愈合：</p>
+              <ul>
+                <li><strong>物理贴合：</strong>负压和表面张力使瓣片紧密贴合</li>
+                <li><strong>细胞迁移：</strong>角膜上皮细胞从边缘向中心迁移，封闭切口</li>
+                <li><strong>胶原重塑：</strong>角膜基质中的胶原纤维重新排列，形成牢固连接</li>
+                <li><strong>神经再生：</strong>角膜神经逐渐再生，恢复感觉功能</li>
+              </ul>
+              <p><strong>8. 无需缝合：</strong>由于飞秒激光制作的瓣片边缘非常平滑，加上自然贴合机制，通常不需要缝合。这大大减少了术后不适和恢复时间。</p>
+            `,
+            duration: 2500
+          },
+          {
+            title: "步骤 5: 手术完成",
+            description: "手术成功完成，患者视力得到矫正。术后需要定期复查以确保恢复良好。",
+            detailedExplanation: `
+              <h4>🔍 详细解读：</h4>
+              <p><strong>1. 即时检查：</strong>手术完成后，医生立即检查角膜瓣的位置、边缘贴合情况、是否有气泡或褶皱等。使用裂隙灯显微镜进行详细检查，确保手术质量。</p>
+              <p><strong>2. 视力测试：</strong>部分患者可能在手术当天就能感受到视力改善，但完全稳定需要数周甚至数月。医生会进行初步视力检查，评估手术效果。</p>
+              <p><strong>3. 保护措施：</strong>术后立即佩戴透明眼罩，保护眼睛免受意外碰撞。眼罩需要佩戴到第二天复查，睡觉时也要佩戴，防止无意识揉眼。</p>
+              <p><strong>4. 用药指导：</strong>医生会开具抗生素眼药水、抗炎眼药水等，预防感染和减轻炎症反应。患者需要严格按照医嘱用药，通常需要数周时间。</p>
+              <p><strong>5. 恢复时间表：</strong></p>
+              <ul>
+                <li><strong>术后1-3天：</strong>视力可能模糊，有轻微不适、流泪、畏光等症状，这是正常现象</li>
+                <li><strong>术后1周：</strong>视力明显改善，大部分日常活动可以正常进行</li>
+                <li><strong>术后1个月：</strong>视力基本稳定，可以恢复大部分工作和运动</li>
+                <li><strong>术后3-6个月：</strong>视力完全稳定，角膜愈合完成</li>
+              </ul>
+              <p><strong>6. 注意事项：</strong></p>
+              <ul>
+                <li>避免揉眼、用力眨眼</li>
+                <li>避免眼部进水，洗脸、洗头时注意保护</li>
+                <li>避免剧烈运动，防止眼部受到冲击</li>
+                <li>避免长时间用眼，注意休息</li>
+                <li>外出时佩戴太阳镜，避免强光刺激</li>
+                <li>避免使用化妆品，特别是眼妆</li>
+              </ul>
+              <p><strong>7. 定期复查：</strong>术后需要按照医生安排定期复查，通常为术后1天、1周、1个月、3个月、6个月、1年。复查内容包括视力检查、眼压测量、角膜地形图、裂隙灯检查等，确保恢复良好，及时发现和处理任何问题。</p>
+              <p><strong>8. 预期效果：</strong>大多数患者术后可以达到或接近术前最佳矫正视力，摆脱对眼镜或隐形眼镜的依赖。手术成功率通常在95%以上，但个体差异存在，需要合理预期。</p>
+              <p><strong>9. 可能的风险：</strong>虽然飞秒激光手术非常安全，但仍存在一些可能的并发症，如干眼症、夜间眩光、过矫或欠矫、感染等。选择经验丰富的医生和正规的医疗机构可以最大程度降低风险。</p>
+            `,
+            duration: 2000
+          }
+        ];
+        
+        const currentStepInfo = computed(() => {
+          return steps[currentStep.value] || steps[0];
+        });
+        
+        const progress = computed(() => {
+          return ((currentStep.value + 1) / steps.length) * 100;
+        });
+        
+        const statusText = computed(() => {
+          if (isPlaying.value) {
+            return `正在演示: ${currentStepInfo.value.title}`;
+          }
+          if (currentStep.value === steps.length - 1) {
+            return "演示完成";
+          }
+          return "准备就绪";
+        });
+        
+        const initCanvas = () => {
+          canvas.value = document.getElementById('eyeCanvas');
+          ctx.value = canvas.value.getContext('2d');
+          
+          const resizeCanvas = () => {
+            canvas.value.width = canvas.value.offsetWidth;
+            canvas.value.height = canvas.value.offsetHeight;
+            drawEye();
+          };
+          
+          resizeCanvas();
+          window.addEventListener('resize', resizeCanvas);
+        };
+        
+        const drawEye = (step = currentStep.value, progress = 0) => {
+          if (!ctx.value) return;
+          
+          const width = canvas.value.width;
+          const height = canvas.value.height;
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const eyeRadius = Math.min(width, height) * 0.3;
+          
+          // 清空画布
+          ctx.value.clearRect(0, 0, width, height);
+          
+          // 绘制背景渐变
+          const bgGradient = ctx.value.createLinearGradient(0, 0, 0, height);
+          bgGradient.addColorStop(0, '#e8f4f8');
+          bgGradient.addColorStop(1, '#c8e6f0');
+          ctx.value.fillStyle = bgGradient;
+          ctx.value.fillRect(0, 0, width, height);
+          
+          // 绘制眼白
+          ctx.value.beginPath();
+          ctx.value.ellipse(centerX, centerY, eyeRadius * 1.5, eyeRadius, 0, 0, Math.PI * 2);
+          ctx.value.fillStyle = '#ffffff';
+          ctx.value.fill();
+          ctx.value.strokeStyle = '#cccccc';
+          ctx.value.lineWidth = 2;
+          ctx.value.stroke();
+          
+          // 绘制虹膜
+          const irisRadius = eyeRadius * 0.6;
+          ctx.value.beginPath();
+          ctx.value.arc(centerX, centerY, irisRadius, 0, Math.PI * 2);
+          ctx.value.fillStyle = '#4a90e2';
+          ctx.value.fill();
+          
+          // 绘制瞳孔
+          const pupilRadius = irisRadius * 0.4;
+          ctx.value.beginPath();
+          ctx.value.arc(centerX, centerY, pupilRadius, 0, Math.PI * 2);
+          ctx.value.fillStyle = '#1a1a1a';
+          ctx.value.fill();
+          
+          // 根据步骤绘制不同内容
+          if (step >= 1) {
+            // 步骤2: 角膜瓣制作
+            drawCornealFlap(centerX, centerY, eyeRadius, progress);
+          }
+          
+          if (step >= 2) {
+            // 步骤3: 激光切削
+            drawLaserCutting(centerX, centerY, eyeRadius, progress);
+          }
+          
+          if (step >= 3) {
+            // 步骤4: 角膜瓣复位
+            drawFlapReposition(centerX, centerY, eyeRadius, progress);
+          }
+          
+          if (step >= 4) {
+            // 步骤5: 完成
+            drawCompletion(centerX, centerY, eyeRadius);
+          }
+        };
+        
+        const drawCornealFlap = (centerX, centerY, eyeRadius, progress) => {
+          const flapRadius = eyeRadius * 0.8;
+          const flapAngle = Math.PI * 0.3 * progress;
+          
+          // 绘制角膜瓣
+          ctx.value.save();
+          ctx.value.translate(centerX, centerY);
+          ctx.value.rotate(-flapAngle);
+          
+          ctx.value.beginPath();
+          ctx.value.arc(0, 0, flapRadius, -Math.PI * 0.3, Math.PI * 0.3);
+          ctx.value.lineTo(0, -flapRadius * 0.3);
+          ctx.value.closePath();
+          
+          ctx.value.fillStyle = `rgba(255, 200, 200, ${0.3 + progress * 0.4})`;
+          ctx.value.fill();
+          ctx.value.strokeStyle = '#ff6b6b';
+          ctx.value.lineWidth = 2;
+          ctx.value.stroke();
+          
+          // 绘制激光点
+          for (let i = 0; i < 20; i++) {
+            const angle = (i / 20) * Math.PI * 0.6 - Math.PI * 0.3;
+            const r = flapRadius * (0.3 + (i / 20) * 0.7);
+            const x = Math.cos(angle) * r;
+            const y = Math.sin(angle) * r;
+            
+            const pulse = (Date.now() / 100 + i * 0.5) % 1;
+            const size = 3 + pulse * 2;
+            
+            ctx.value.beginPath();
+            ctx.value.arc(x, y, size, 0, Math.PI * 2);
+            ctx.value.fillStyle = `rgba(255, 100, 100, ${0.8 - pulse * 0.5})`;
+            ctx.value.fill();
+          }
+          
+          ctx.value.restore();
+        };
+        
+        const drawLaserCutting = (centerX, centerY, eyeRadius, progress) => {
+          // 绘制激光束
+          const laserCount = 8;
+          for (let i = 0; i < laserCount; i++) {
+            const angle = (i / laserCount) * Math.PI * 2 + Date.now() / 50;
+            const startRadius = eyeRadius * 0.4;
+            const endRadius = eyeRadius * 0.7;
+            
+            const x1 = centerX + Math.cos(angle) * startRadius;
+            const y1 = centerY + Math.sin(angle) * startRadius;
+            const x2 = centerX + Math.cos(angle) * endRadius;
+            const y2 = centerY + Math.sin(angle) * endRadius;
+            
+            // 激光束渐变
+            const gradient = ctx.value.createLinearGradient(x1, y1, x2, y2);
+            gradient.addColorStop(0, 'rgba(255, 200, 0, 0)');
+            gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 50, 0, 0.4)');
+            
+            ctx.value.strokeStyle = gradient;
+            ctx.value.lineWidth = 3;
+            ctx.value.beginPath();
+            ctx.value.moveTo(x1, y1);
+            ctx.value.lineTo(x2, y2);
+            ctx.value.stroke();
+            
+            // 激光点
+            const pulse = (Date.now() / 100 + i) % 1;
+            ctx.value.beginPath();
+            ctx.value.arc(x2, y2, 5 + pulse * 3, 0, Math.PI * 2);
+            ctx.value.fillStyle = `rgba(255, 200, 0, ${0.9 - pulse * 0.3})`;
+            ctx.value.fill();
+          }
+          
+          // 绘制切削区域
+          const cutRadius = eyeRadius * 0.5 * progress;
+          ctx.value.beginPath();
+          ctx.value.arc(centerX, centerY, cutRadius, 0, Math.PI * 2);
+          ctx.value.strokeStyle = `rgba(255, 150, 0, ${0.5 + progress * 0.3})`;
+          ctx.value.lineWidth = 2;
+          ctx.value.setLineDash([5, 5]);
+          ctx.value.stroke();
+          ctx.value.setLineDash([]);
+        };
+        
+        const drawFlapReposition = (centerX, centerY, eyeRadius, progress) => {
+          const flapRadius = eyeRadius * 0.8;
+          const flapAngle = Math.PI * 0.3 * (1 - progress);
+          
+          // 绘制正在复位的角膜瓣
+          ctx.value.save();
+          ctx.value.translate(centerX, centerY);
+          ctx.value.rotate(-flapAngle);
+          
+          ctx.value.beginPath();
+          ctx.value.arc(0, 0, flapRadius, -Math.PI * 0.3, Math.PI * 0.3);
+          ctx.value.lineTo(0, -flapRadius * 0.3);
+          ctx.value.closePath();
+          
+          ctx.value.fillStyle = `rgba(200, 255, 200, ${0.5 + progress * 0.3})`;
+          ctx.value.fill();
+          ctx.value.strokeStyle = '#4ecdc4';
+          ctx.value.lineWidth = 2;
+          ctx.value.stroke();
+          
+          ctx.value.restore();
+        };
+        
+        const drawCompletion = (centerX, centerY, eyeRadius) => {
+          // 绘制成功标记
+          const checkSize = eyeRadius * 0.3;
+          ctx.value.strokeStyle = '#38ef7d';
+          ctx.value.lineWidth = 8;
+          ctx.value.lineCap = 'round';
+          ctx.value.lineJoin = 'round';
+          
+          ctx.value.beginPath();
+          ctx.value.moveTo(centerX - checkSize * 0.3, centerY);
+          ctx.value.lineTo(centerX - checkSize * 0.1, centerY + checkSize * 0.3);
+          ctx.value.lineTo(centerX + checkSize * 0.4, centerY - checkSize * 0.2);
+          ctx.value.stroke();
+          
+          // 绘制光晕效果
+          const glowGradient = ctx.value.createRadialGradient(
+            centerX, centerY, 0,
+            centerX, centerY, eyeRadius * 1.5
+          );
+          glowGradient.addColorStop(0, 'rgba(56, 239, 125, 0.3)');
+          glowGradient.addColorStop(1, 'rgba(56, 239, 125, 0)');
+          
+          ctx.value.fillStyle = glowGradient;
+          ctx.value.beginPath();
+          ctx.value.arc(centerX, centerY, eyeRadius * 1.5, 0, Math.PI * 2);
+          ctx.value.fill();
+        };
+        
+        const animateStep = (stepIndex) => {
+          if (stepIndex >= steps.length) {
+            isPlaying.value = false;
+            return;
+          }
+          
+          currentStep.value = stepIndex;
+          const step = steps[stepIndex];
+          const duration = step.duration;
+          const startTime = Date.now();
+          
+          // 使用 GSAP 增强动画效果
+          if (typeof gsap !== 'undefined') {
+            const progressObj = { value: 0 };
+            const tween = gsap.to(progressObj, {
+              value: 1,
+              duration: duration / 1000,
+              ease: "power2.out",
+              onUpdate: function() {
+                if (!isPlaying.value) {
+                  this.kill();
+                  return;
+                }
+                drawEye(stepIndex, progressObj.value);
+              },
+              onComplete: () => {
+                if (isPlaying.value && stepIndex < steps.length - 1) {
+                  setTimeout(() => {
+                    if (isPlaying.value) {
+                      animateStep(stepIndex + 1);
+                    }
+                  }, 500);
+                } else {
+                  isPlaying.value = false;
+                }
+              }
+            });
+            // 保存 tween 以便暂停时能正确停止
+            animationTimeline.value = tween;
+          } else {
+            // Fallback to requestAnimationFrame
+            const animate = () => {
+              if (!isPlaying.value) return;
+              
+              const elapsed = Date.now() - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              
+              drawEye(stepIndex, progress);
+              
+              if (progress < 1) {
+                animationId.value = requestAnimationFrame(animate);
+              } else {
+                // 当前步骤完成，继续下一步
+                setTimeout(() => {
+                  if (isPlaying.value) {
+                    animateStep(stepIndex + 1);
+                  }
+                }, 500);
+              }
+            };
+            
+            animate();
+          }
+        };
+        
+        const startAnimation = () => {
+          if (currentStep.value >= steps.length - 1) {
+            resetAnimation();
+          }
+          isPlaying.value = true;
+          animateStep(currentStep.value);
+        };
+        
+        const pauseAnimation = () => {
+          isPlaying.value = false;
+          if (animationId.value) {
+            cancelAnimationFrame(animationId.value);
+          }
+          // 停止 GSAP 动画
+          if (typeof gsap !== 'undefined' && animationTimeline.value) {
+            animationTimeline.value.kill();
+            animationTimeline.value = null;
+          }
+        };
+        
+        const nextStep = () => {
+          if (currentStep.value < steps.length - 1) {
+            currentStep.value++;
+            // 使用 GSAP 动画过渡到下一步
+            if (typeof gsap !== 'undefined') {
+              const progressObj = { value: 0 };
+              gsap.to(progressObj, {
+                value: 1,
+                duration: 0.5,
+                ease: "power2.out",
+                onUpdate: function() {
+                  drawEye(currentStep.value, progressObj.value);
+                }
+              });
+            } else {
+              drawEye(currentStep.value, 1);
+            }
+          }
+        };
+        
+        const resetAnimation = () => {
+          pauseAnimation();
+          currentStep.value = 0;
+          drawEye(0, 0);
+        };
+        
+        // 持续更新动画
+        const animationLoop = () => {
+          if (!isPlaying.value) {
+            // 即使不在播放状态，也要持续绘制静态画面以保持动画效果（如激光点闪烁）
+            drawEye(currentStep.value, currentStep.value >= steps.length - 1 ? 1 : 0);
+          }
+          requestAnimationFrame(animationLoop);
+        };
+        
+        onMounted(() => {
+          initCanvas();
+          drawEye(0, 0);
+          animationLoop();
+        });
+        
+        return {
+          currentStep,
+          isPlaying,
+          steps,
+          currentStepInfo,
+          progress,
+          statusText,
+          startAnimation,
+          pauseAnimation,
+          nextStep,
+          resetAnimation
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+

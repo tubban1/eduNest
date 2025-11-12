@@ -36,25 +36,44 @@ PGPASSWORD=your_password
 ```
 
 ## 运行方式
-支持通过 `--dirs` 指定多个目录（逗号分隔的 glob），以及 `--dry-run` 仅打印不入库。
+支持通过 `--dirs` 指定多个目录（逗号分隔的 glob），以及 `--dry-run` 仅打印不入库，`--update-only` 仅更新已有内容。
 
-- 仅预览（不入库，不写回 short_id，不绑定 collection）：
+### 1. 导入/更新模式（默认）
+同时支持插入新内容和更新已有内容：
 ```bash
-node scripts/import-content-from-html.js \
-  --dirs "edu/frontend/public/math/*.html,edu/frontend/public/temp/*.html" \
+node scripts/import-content-from-html-supabase.js \
+  --dirs "edu/frontend/public/buzz/*.html"
+```
+
+### 2. 仅更新模式（推荐用于代码更新）
+只更新已有 short_id 的内容，跳过新文件：
+```bash
+node scripts/import-content-from-html-supabase.js \
+  --dirs "edu/frontend/public/buzz/*.html" \
+  --update-only
+```
+
+### 3. 预览模式（不入库）
+仅预览，不实际写入数据库：
+```bash
+node scripts/import-content-from-html-supabase.js \
+  --dirs "edu/frontend/public/buzz/*.html" \
   --dry-run
 ```
 
-- 正式导入（入库 + 写回 short_id + 绑定到指定 collection_list）：
+### 4. 组合使用
+预览 + 仅更新模式：
 ```bash
-node scripts/import-content-from-html.js \
-  --dirs "edu/frontend/public/math/*.html,edu/frontend/public/temp/*.html"
+node scripts/import-content-from-html-supabase.js \
+  --dirs "edu/frontend/public/buzz/*.html" \
+  --update-only \
+  --dry-run
 ```
 
-- 默认扫描目录（未提供 `--dirs` 时）：
+### 默认扫描目录（未提供 `--dirs` 时）
 ```
-edu/frontend/public/math/*.html
-edu/frontend/public/temp/*.html
+public/math/*.html
+public/temp/*.html
 ```
 
 ## 字段抽取规则（简要）
@@ -88,11 +107,26 @@ edu/frontend/public/temp/*.html
 
 （若对应关系已存在则跳过）
 
+## 模式说明
+
+### 导入/更新模式（默认）
+- 如果 HTML 文件有 `short_id`（在 `<meta name="author">` 中），则更新数据库中的对应记录
+- 如果 HTML 文件没有 `short_id`，则插入新记录，并将返回的 `short_id` 写回 HTML 文件
+- 适用于首次导入或混合场景
+
+### 仅更新模式（--update-only）
+- **只处理已有 `short_id` 的文件**
+- 如果文件没有 `short_id`，会跳过并给出警告
+- 如果 `short_id` 在数据库中不存在，会报错
+- **不会插入新记录，不会写回 `short_id`**
+- **推荐用于本地代码更新后同步到数据库的场景**
+
 ## 常见问题
 - 预览为空：确认 `--dirs` 的路径匹配；可用引号包裹 glob 并逐步缩小范围。
-- 未写回 `short_id`：只在非 `--dry-run` 下写回；确认 HTML 存在 `<head>`。
-- 无 `<body>`：`code_html` 为空，将跳过并打印 `[skip]`。
-- 数据库连接失败：检查 `.env` 配置，或尝试本地 `psql` 连接排查。
+- 未写回 `short_id`：只在非 `--dry-run` 且非 `--update-only` 模式下写回；确认 HTML 存在 `<head>`。
+- 无 `<body>`：`full_html` 为空，将跳过并打印 `[skip]`。
+- 数据库连接失败：检查 `.env` 配置中的 `SUPABASE_URL` 和 `SUPABASE_SERVICE_KEY`。
+- 更新模式跳过文件：使用 `--update-only` 时，没有 `short_id` 的文件会被跳过，这是正常行为。
 
 ## 安全与建议
 - 建议先 `--dry-run` 预览，确认字段抽取符合预期后再正式导入。

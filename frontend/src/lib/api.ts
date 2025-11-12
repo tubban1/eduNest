@@ -518,6 +518,61 @@ class ApiClient {
     return this.get(`/user_collections/content/${contentId}`);
   }
 
+  // Collection Lists API
+  collectionList = {
+    /**
+     * 根据 short_id 获取 collection_list
+     */
+    getByShortId: async (shortId: string) => {
+      // 获取认证 token
+      const token = await this.getLatestToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${this.baseUrl}/collection_lists/by-short-id/${shortId}`, {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('列表不存在');
+        }
+        if (response.status === 403) {
+          throw new Error('无权限访问此列表');
+        }
+        throw new Error('获取列表失败');
+      }
+      
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || '获取列表失败');
+      }
+      
+      return data.data;
+    },
+
+    /**
+     * 更新列表设置（仅创建者）
+     */
+    updateSettings: async (listId: string, settings: {
+      name?: string;
+      description?: string;
+      visibility?: 'public' | 'private';
+      pricing_mode?: 'free' | 'premium' | 'free_preview';
+      price?: number;
+      currency?: string;
+    }) => {
+      return this.put(`/collection_lists/${listId}/settings`, settings);
+    },
+  };
+
   // Admin API
   async getAdminUsers() {
     return this.get('/credits/admin/users');

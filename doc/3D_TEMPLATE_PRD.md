@@ -208,7 +208,7 @@ ADD COLUMN code_snippets JSONB;
 - **VRButton** - VR 按钮
 - **XRControllerModelFactory** - XR 控制器模型
 
-### 4.2 CDN 导入方案（统一使用 three@0.134.0）
+### 4.2 CDN 导入方案（统一使用 three@0.147.0）
 
 #### 方案 A：ES 模块导入（推荐）
 
