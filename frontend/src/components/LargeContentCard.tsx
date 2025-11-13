@@ -219,6 +219,7 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
               {content.full_html ? (
                 <FullHTMLRenderer
                   fullHTML={content.full_html}
+                  externalUrl={`/full-html/${content.short_id}`}
                   autoHeight={false}
                   fixedHeight={false}
                   enableHeightListener={true}

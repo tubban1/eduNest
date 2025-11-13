@@ -267,6 +267,7 @@ export default function FullHTMLContentPage() {
         <div className="w-full">
           <FullHTMLRenderer
             fullHTML={content.full_html}
+            externalUrl={`/full-html/${content.short_id}`}
             autoHeight={true}
             enableHeightListener={true}
             className="w-full"
