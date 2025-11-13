@@ -385,7 +385,7 @@ export default function FullHTMLRenderer({
   }, [useExternalUrl, externalUrl, fullHTML, handleError]);
   useEffect(() => {
     if (forceExternalInWechat && !fixedHeight) {
-      setIframeHeight('680px');
+      setIframeHeight('100vh');
     }
   }, [forceExternalInWechat, fixedHeight]);
 
@@ -433,6 +433,13 @@ export default function FullHTMLRenderer({
         </div>
       )}
 
+      {/* 微信提示 */}
+      {forceExternalInWechat && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-yellow-50 border border-yellow-300 text-yellow-700 rounded-md text-sm shadow">
+          为获得完整体验，请点击右上角菜单并选择“在浏览器中打开”。
+        </div>
+      )}
+
       {/* 主 iframe 渲染 */}
       {forceExternalInWechat ? (
         externalUrl ? (
@@ -451,11 +458,11 @@ export default function FullHTMLRenderer({
               width: '100%',
               height: fixedHeight ? '100%' : iframeHeight,
               minHeight: fixedHeight ? undefined : iframeHeight,
-              overflow: fixedHeight ? 'auto' : 'visible',
+              overflow: 'auto',
               position: 'relative',
               WebkitOverflowScrolling: 'touch'
             }}
-            scrolling={fixedHeight ? 'auto' : 'no'}
+            scrolling="auto"
             onLoad={() => {
               setIsLoading(false);
               onLoad?.();
