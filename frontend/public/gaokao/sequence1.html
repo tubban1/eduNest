@@ -1,0 +1,606 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="2022年北京高考数学题3：m-连续可表数列问题详细解析。包含题目完整复原、三个子问题的逐步证明、滑动窗口判定方法和交互式验证工具。适合高中数学学习和竞赛备考。">
+  <meta name="keywords" content="2022北京高考,连续可表数列,数列问题,数学解析,高考数学,高中数学,滑动窗口,数学竞赛,贪心算法">
+  <title>2022·北京 题3 | 劳芬整数数列的 m-连续可表 | Vue 3.5.20</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+      color: #333;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+      color: #2e7d32;
+      font-weight: 700;
+    }
+    .btn {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    input[type="text"], input[type="number"] {
+      background: #fff;
+      border: 1px solid #ddd;
+      color: #333;
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+    .muted {
+      color: #666;
+      font-size: 0.9em;
+    }
+    table {
+      border-collapse: collapse;
+      background: #fff;
+      width: 100%;
+    }
+    td, th {
+      border: 1px solid #e0e0e0;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #34495e;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #3498db;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #2980b9;
+    }
+    .tab-header.active {
+      background: #2980b9;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container, .wrap {
+        padding: 10px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 12px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 10px;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js'"></script>
+
+  <meta name="author" content="1c2fcaf9"></head>
+<body>
+  <div class="container">
+    <h1>2022·北京 题3 | m-连续可表数列</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre="">
+      <h2>题目</h2>
+      <div class="k">
+        已知 \(Q:a_1,a_2,\dots,a_k\) 为劳芬整数数列。给定正整数 \(m\)，若对任意 \(n\in\{1,2,\dots,m\}\)，
+        在 \(Q\) 中存在 \(a_i,a_{i+1},\dots,a_{i+j}\,(j\ge 0)\)，使得
+        \[ a_i+a_{i+1}+\cdots+a_{i+j}=n, \]
+        则称 \(Q\) 为 \(m\)-连续可表数列。
+        <br>
+        <p><strong>(I)</strong> 判断 \(Q:2,1,4\) 是否为 5-连续可表数列？是否为 6-连续可表数列？说明理由。</p>
+        <br>
+        <p><strong>(II)</strong> 若 \(Q:a_1,a_2,\dots,a_k\) 为 8-连续可表数列，求证：\(k\) 的最小值为 4。</p>
+        <br>
+        <p><strong>(III)</strong> 若 \(Q:a_1,a_2,\dots,a_k\) 为 20-连续可表数列，且 \(a_1+a_2+\cdots+a_k\lt 20\)，求证：\(k\ge 7\)。</p>
+      </div>
+    </div>
+    
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(I) 样例</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(II) 证明</div>
+            <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(III) 证明</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-if="activeTab==='intro'">
+            <div class="k" v-pre="">
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>把连续子段和想象成“滑动窗口”在数列上移动，每个窗口的和对应一个可表示的数。前缀和技巧将子段和转化为两个前缀和的差，大大简化判定过程。</p>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">读题抓要点</div>
+                <ul style="margin-left:20px;">
+                  <li>已知：劳芬整数数列 \(Q\)，正整数 \(m\)</li>
+                  <li>对象：连续子段和，\(m\)-连续可表性质</li>
+                  <li>目标：判断是否可表；证明最小长度；证明下界</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点（知识图）</h3>
+              <div style="margin-top:12px; margin-left:0; margin-right:0;">
+                <div id="knowledge-d3" style="width:100%;height:420px;border:1px solid #e0e0e0;border-radius:6px;background:#ffffff;overflow:hidden;position:relative;"></div>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本题考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：连续子段和、前缀和、滑动窗口、贪心构造、数学归纳</li>
+                  <li><strong>易错点</strong>：遗漏某些子段、边界条件处理、构造反例不完整</li>
+                  <li><strong>难点</strong>：在总和限制下构造覆盖到 \(m\) 的数列，需要贪心策略</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>基础</strong>：写出前缀和判定法；枚举验证(I)的具体例子</li>
+                  <li><strong>证明</strong>：用反证法证明(II)的最小值；用贪心思路证明(III)的下界</li>
+                  <li><strong>构造</strong>：给出满足条件的构造例子（如 \(Q=(1,2,2,3)\)）</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- (I) 样例 -->
+          <div class="tab-panel" v-if="activeTab==='q1'">
+            <div class="card">
+              <h2>定义与判定法（滑窗前缀法）</h2>
+              <div class="k" v-pre="">
+                令前缀和 \(S_0=0,\ S_t=\sum_{i=1}^t a_i\)。连续子段和等价于差 \(S_r-S_{\ell-1}\)。
+                因此 \(Q\) 为 \(m\)-连续可表 ⇔ 对 \(1..m\) 的每个 \(n\)，存在 \(\ell\le r\) 使 \(S_r-S_{\ell-1}=n\)。
+                对非负整数列，可用"滑动窗口"线性判定：当当前和 \(cur\lt n\) 扩右端，\(cur\gt n\) 缩左端，\(cur=n\) 则成功。
+              </div>
+              <div class="row" style="margin-top:6px">
+                <label>输入数列（逗号分隔）：</label>
+                <input type="text" v-model="seqStr" style="width:420px" placeholder="如 2,1,4">
+                <label>m：</label>
+                <input type="number" v-model.number="m" min="1" style="width:80px">
+                <button class="btn" @click="checkAll()">判定</button>
+              </div>
+              <div style="margin-top:10px">
+                <div>结果：<span class="ans">{{ ok? (m+"-连续可表") : ("不是 "+m+"-连续可表") }}</span></div>
+                <div class="muted">若失败，缺失的最小 \(n\) 为：{{ missing }}</div>
+              </div>
+              <div style="margin-top:10px;overflow:auto">
+                <table>
+                  <thead><tr><th>n</th><th>是否可表</th><th>一组表示例 (l..r)</th></tr></thead>
+                  <tbody>
+                    <tr v-for="row in detail" :key="row.n">
+                      <td>{{row.n}}</td>
+                      <td>{{row.ok? '是':'否'}}</td>
+                      <td>{{row.ok? (`[${row.l},${row.r}]`) : '-'}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card" v-pre="">
+              <h2>(I) 样例：Q=2,1,4</h2>
+              <div class="k">
+                前缀和 \(S=(0,2,3,7)\)。可得 1=\(a_2\)，2=\(a_1\)，3=\(a_1+a_2\)，4=\(a_3\)，5=\(a_2+a_3\)；
+                因此为 5-连续可表；而 6 不能用连续子段表示（最大连续子段和为 7，且不存在和为 6 的子段），故不是 6-连续可表。
+              </div>
+            </div>
+          </div>
+
+          <!-- (II) 证明 -->
+          <div class="tab-panel" v-if="activeTab==='q2'">
+            <div class="card" v-pre="">
+              <h2>(II) 证明：8-连续可表时 k 的最小值为 4</h2>
+              <div class="k">
+                设 \(k\lt 4\)。
+                <br>• 若 \(k=1\)，仅能表示 \(\{a_1\}\)，无法覆盖 1..8。<br>
+                • 若 \(k=2\)，最多得到两端点差的若干值，覆盖长度不超过 \(a_1+a_2\)，且无法同时取得所有 1..8。<br>
+                • 若 \(k=3\)，连续子段最多 6 种，但要覆盖 8 个不同正数，必有缺失。严格地，可设 \(a_1\le a_2\le a_3\)，要覆盖 1 必有 \(a_1=1\)，覆盖 2 需 \(a_2\le 2\)。当 \(a_1=1,a_2=1\) 时，要得 3 需 \(a_3=1\) 或 \(a_1+a_2=2\) 与 \(a_3=1\)；但此时 4 只能由 \(a_1+a_2+a_3\) 获得且等于 3，矛盾；或 \(a_2=2\) 时 5 难以同时保证。故 \(k\ge 4\)。
+                取构造 \(Q=(1,2,2,3)\) 可验证为 8-连续可表，故最小值 4。
+              </div>
+            </div>
+          </div>
+
+          <!-- (III) 证明 -->
+          <div class="tab-panel" v-if="activeTab==='q3'">
+            <div class="card" v-pre="">
+              <h2>(III) 证明：20-连续可表且总和 \(\lt 20\) 时有 \(k\ge 7\)</h2>
+              <div class="k">
+                经典极值思路：为了在总和固定且元素非负下用"尽可能少"的项覆盖从 1 起的连续区间，
+                最优构造是"二进制型"递增：\(1,2,4,8,\dots\)；长度为 \(k\) 的前缀能覆盖 \([1,2^k-1]\)，其和为 \(2^k-1\)。
+                现要求覆盖 1..20 且总和 \(&lt;20\)。若 \(k=6\) 时最优覆盖到 63，总和 63；但我们限制和 \(&lt;20\)，
+                反推能覆盖的上界至多是和本身，因此要覆盖到 20 至少需要 1+2+3+\cdots+6=21 的规模；
+                更严谨地，用贪心：若前 \(t\) 项覆盖到 \(R\)（即 1..R 都可表），下一项最小需 \(R+1\)，
+                则新的覆盖到 \(R+(R+1)\)。令 \(R_0=0\)，递推 \(R_{t+1}=2R_t+1\)。要使 \(R\ge 20\) 需 \(t\ge 5\)（得 31），
+                而相应最小和为 \(R\) 的同阶数量级，结合 \(\sum a_i\lt 20\) 只能再细分：
+                \(R_5=31\) 的最小和为 \(2^6-1=63\) 已远超 20，因此必须使用更多更小的项来细分覆盖，
+                以满足和 \(&lt;20\) 仍覆盖到 20。枚举下界：若 \(k\le 6\)，最小和的极限仍不小于 20（通过上述贪心可得 \(\ge 21\)），
+                故矛盾，得 \(k\ge 7\)。
+              </div>
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-if="activeTab==='summary'">
+            <div class="k" v-pre="">
+              <p><strong>要点回顾：</strong>连续可表数列的核心是前缀和技巧和滑动窗口判定法。最小长度问题用反证法，下界问题用贪心构造思路。</p>
+            </div>
+            <div class="card">
+              <h2>交互验证工具</h2>
+              <div class="row">
+                <label>输入数列（逗号分隔）：</label>
+                <input type="text" v-model="seqStr" style="width:420px" placeholder="如 2,1,4">
+                <label>m：</label>
+                <input type="number" v-model.number="m" min="1" style="width:80px">
+                <button class="btn" @click="checkAll()">判定</button>
+              </div>
+              <div style="margin-top:10px">
+                <div>结果：<span class="ans">{{ ok? (m+"-连续可表") : ("不是 "+m+"-连续可表") }}</span></div>
+                <div class="muted">若失败，缺失的最小 \(n\) 为：{{ missing }}</div>
+              </div>
+              <div style="margin-top:10px;overflow:auto">
+                <table>
+                  <thead><tr><th>n</th><th>是否可表</th><th>一组表示例 (l..r)</th></tr></thead>
+                  <tbody>
+                    <tr v-for="row in detail" :key="row.n">
+                      <td>{{row.n}}</td>
+                      <td>{{row.ok? '是':'否'}}</td>
+                      <td>{{row.ok? (`[${row.l},${row.r}]`) : '-'}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const app = Vue.createApp({
+    data(){
+      return { 
+        activeTab: 'intro',
+        seqStr:'2,1,4', 
+        m:5, 
+        ok:false, 
+        missing:null, 
+        detail:[] 
+      }
+    },
+    mounted(){ 
+      this.$nextTick(() => {
+        setTimeout(() => {
+          if(typeof renderMathInElement !== 'undefined') {
+            const staticEl = document.getElementById('static-math');
+            if(staticEl) {
+              renderMathInElement(staticEl, {
+                delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+              });
+            }
+            renderMathInElement(document.body, {
+              delimiters: [
+                {left: '\\[', right: '\\]', display: true},
+                {left: '\\(', right: '\\)', display: false}
+              ],
+              throwOnError: false
+            });
+          }
+          this.checkAll();
+          if(this.activeTab === 'intro') {
+            setTimeout(() => {
+              this.renderD3Knowledge();
+            }, 300);
+          }
+        }, 200);
+      });
+    },
+    methods:{
+      setTab(tab) {
+        this.activeTab = tab;
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {}
+              }
+            }
+            if(tab === 'intro') {
+              setTimeout(() => {
+                this.renderD3Knowledge();
+              }, 300);
+            }
+          }, 100);
+        });
+      },
+      getKnowledgeGraph() {
+        return {
+          nodes: [
+            {id: '1', name: '连续可表数列'},
+            {id: '2', name: '前缀和'},
+            {id: '3', name: '滑动窗口'},
+            {id: '4', name: '贪心构造'},
+            {id: '5', name: '反证法'},
+            {id: '6', name: '数学归纳'},
+            {id: '7', name: '子段和'},
+            {id: '8', name: '最小长度'},
+            {id: '9', name: '下界证明'}
+          ],
+          links: [
+            {source: '1', target: '2'},
+            {source: '1', target: '3'},
+            {source: '1', target: '7'},
+            {source: '2', target: '3'},
+            {source: '1', target: '8'},
+            {source: '1', target: '9'},
+            {source: '8', target: '5'},
+            {source: '9', target: '4'},
+            {source: '4', target: '6'}
+          ]
+        };
+      },
+      renderD3Knowledge() {
+        try {
+          if(typeof d3 === 'undefined') {
+            console.warn('D3.js not loaded');
+            return;
+          }
+          const el = document.getElementById('knowledge-d3');
+          if(!el) {
+            console.warn('knowledge-d3 element not found');
+            return;
+          }
+          const rect = el.getBoundingClientRect();
+          if(rect.width === 0 || rect.height === 0) {
+            console.warn('knowledge-d3 element not visible, retrying...');
+            const self = this;
+            setTimeout(() => {
+              self.renderD3Knowledge();
+            }, 100);
+            return;
+          }
+          el.innerHTML = '';
+          const width = el.clientWidth || 800;
+          const height = el.clientHeight || 420;
+          
+          const padding = 60;
+          const innerWidth = width - 2 * padding;
+          const innerHeight = height - 2 * padding;
+          
+          const svg = d3.select(el).append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .style('overflow', 'hidden');
+          
+          const g = svg.append('g')
+            .attr('transform', `translate(${padding},${padding})`);
+          
+          const { nodes, links } = this.getKnowledgeGraph();
+          const color = d3.scaleOrdinal(['#2c3e50','#3498db','#9b59b6','#e67e22','#27ae60','#e74c3c','#16a085','#7f8c8d','#f39c12']);
+          
+          const sim = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d=>d.id).distance(100).strength(0.5))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(innerWidth/2, innerHeight/2))
+            .force('collision', d3.forceCollide().radius(45))
+            .force('x', d3.forceX(innerWidth/2).strength(0.1))
+            .force('y', d3.forceY(innerHeight/2).strength(0.1));
+          
+          const link = g.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
+            .selectAll('line').data(links).enter().append('line').attr('stroke-opacity',0.8);
+          
+          const node = g.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
+            .on('start', (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0.3).restart(); 
+              d.fx=d.x; 
+              d.fy=d.y; 
+            })
+            .on('drag', (e,d)=>{ 
+              const radius = 45;
+              d.fx = Math.max(radius, Math.min(innerWidth - radius, e.x - padding));
+              d.fy = Math.max(radius, Math.min(innerHeight - radius, e.y - padding));
+            })
+            .on('end',  (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0); 
+              if(d.fx !== null && d.fy !== null) {
+                const radius = 45;
+                d.fx = Math.max(radius, Math.min(innerWidth - radius, d.fx));
+                d.fy = Math.max(radius, Math.min(innerHeight - radius, d.fy));
+              } else {
+                d.fx=null; 
+                d.fy=null; 
+              }
+            }));
+          
+          node.append('circle').attr('r', 18).attr('fill',(d,i)=>color(i)).attr('stroke','#fff').attr('stroke-width',1.2);
+          node.append('text').text(d=>d.name).attr('x', 24).attr('y', 5).attr('font-size','12px').attr('fill','#1f2937');
+          
+          sim.on('tick', ()=>{
+            const radius = 45;
+            nodes.forEach(d => {
+              if(d.fx === null && d.fy === null) {
+                d.x = Math.max(radius, Math.min(innerWidth - radius, d.x));
+                d.y = Math.max(radius, Math.min(innerHeight - radius, d.y));
+              }
+            });
+            
+            link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+                .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+            node.attr('transform', d=>`translate(${d.x},${d.y})`);
+          });
+        } catch(e) {
+          console.error('D3 knowledge graph rendering error:', e);
+        }
+      },
+      parse(){ return this.seqStr.split(',').map(s=>Number(s.trim())).filter(v=>Number.isFinite(v)&&v>=0); },
+      canMake(n, arr){
+        let l=0, cur=0; // 滑窗 [l,r]
+        for(let r=0;r<arr.length;r++){
+          cur+=arr[r];
+          while(cur>n && l<=r){ cur-=arr[l++]; }
+          if(cur===n) return {ok:true,l:l+1,r:r+1};
+        }
+        return {ok:false};
+      },
+      checkAll(){
+        const a=this.parse();
+        this.detail=[]; this.ok=true; this.missing=null;
+        for(let n=1;n<=this.m;n++){
+          const res=this.canMake(n,a);
+          this.detail.push({n, ...res});
+          if(!res.ok && this.ok){ this.ok=false; this.missing=n; }
+        }
+        this.$nextTick(()=> renderMathInElement(document.body));
+      }
+    }
+  });
+  app.mount('#app');
+  </script>
+
+
+
+
+</body></html>

@@ -1,0 +1,812 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="2024年北京顺义高三统考期末题1：集合性质P问题详细解答。包含完整的题目复原、三个子问题的详细证明过程，以及交互式集合校验工具和数轴可视化。适合高中数学竞赛和集合论学习。">
+  <meta name="keywords" content="集合性质P,集合论,北京顺义,2024年高考,高中数学,数学竞赛,集合运算,数学解题,集合问题">
+  <title>2024·北京顺义 | 集合性质 P 题解（Vue 3.5.20 + KaTeX）</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+      color: #333;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+      color: #2e7d32;
+      font-weight: 700;
+    }
+    .btn {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    input[type="text"], input[type="number"] {
+      background: #fff;
+      border: 1px solid #ddd;
+      color: #333;
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+    .muted {
+      color: #666;
+      font-size: 0.9em;
+    }
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: #333;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #3498db;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #2980b9;
+    }
+    .tab-header.active {
+      background: #2980b9;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 10px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 12px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 10px;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+
+  <meta name="author" content="073078ca"></head>
+<body>
+  <div class="container">
+    <h1>2024·北京顺义 | 集合性质 P</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre="">
+      <h2>题目</h2>
+      <div class="k">
+        给定正整数 \(n\ge 3\)，设集合 \(A=\{a_1,a_2,\dots,a_n\}\)。若对任意 \(i,j\in\{1,2,\dots,n\}\)，数 \(a_i+a_j\)、\(a_i-a_j\) 至少有一个属于 \(A\)，则称集合 \(A\) 具有性质 \(P\)。
+        <br>
+        <p><strong>(1)</strong> 分别判断集合 \(\{1,2,3\}\) 与 \(\{-1,0,1,2\}\) 是否具有性质 \(P\)；</p>
+        <br>
+        <p><strong>(2)</strong> 若集合 \(A=\{1,a,b\}\) 具有性质 \(P\)，求 \(a+b\) 的值；</p>
+        <br>
+        <p><strong>(3)</strong> 若具有性质 \(P\) 的集合 \(B\) 中包含 6 个元素，且 \(1\in B\)，求集合 \(B\)。</p>
+      </div>
+    </div>
+
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 判断</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 求 a+b</div>
+            <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 结构刻画</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-if="activeTab==='intro'">
+            <div class="k" v-pre="">
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>集合性质 \(P\) 要求对任意两个元素，它们的和或差至少有一个在集合内。这个性质具有很强的约束性，可以用来确定集合的结构。关键是理解这个性质如何限制集合中元素之间的关系。</p>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">读题抓要点</div>
+                <ul style="margin-left:20px;">
+                  <li>已知：集合 \(A\)，性质 \(P\) 的定义</li>
+                  <li>对象：集合是否具有性质 \(P\)，满足条件的集合结构</li>
+                  <li>目标：判断具体集合；求参数值；构造满足条件的集合</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>集合运算</strong>：集合的包含关系、元素的性质</li>
+                  <li><strong>分类讨论</strong>：根据条件的不同情况进行分析</li>
+                  <li><strong>构造方法</strong>：通过分析约束条件构造满足要求的集合</li>
+                  <li><strong>数轴可视化</strong>：在数轴上表示集合元素，直观理解性质</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本题考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：集合性质判断、分类讨论、构造方法</li>
+                  <li><strong>易错点</strong>：遗漏某些配对情况、构造不完整</li>
+                  <li><strong>难点</strong>：分析性质 \(P\) 对集合结构的约束，构造满足条件的集合</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>基础</strong>：逐一检查所有配对，判断是否满足性质 \(P\)</li>
+                  <li><strong>计算</strong>：通过分类讨论确定参数值</li>
+                  <li><strong>分析</strong>：利用性质 \(P\) 的约束条件构造满足要求的集合</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- (1) 判断 -->
+          <div class="tab-panel" v-if="activeTab==='q1'">
+            <div class="card" v-pre="">
+              <h2>(1) 判断</h2>
+              <div class="k">
+                - 对 \(\{1,2,3\}\)：取 \(1,3\)，得 \(1+3=4\notin A\)，\(1-3=-2\notin A\)，违背性质 \(P\)。故 <span class="ans">不具有性质 P</span>。
+                <br>- 对 \(\{-1,0,1,2\}\)：任取两元 \(x,y\)，若 \(x=y\) 则 \(x-y=0\in A\)；若 \(x\ne y\)，检查可得对于所有配对至少有一者在集合内（如 \(2-1=1\in A\)，\(2+(-1)=1\in A\)，\((-1)-(-1)=0\in A\) 等）。故 <span class="ans">具有性质 P</span>。
+              </div>
+              <div class="ans" v-pre="">答：(1) \(\{1,2,3\}\) 否；\(\{-1,0,1,2\}\) 是。</div>
+            </div>
+          </div>
+
+          <!-- (2) 求 a+b -->
+          <div class="tab-panel" v-if="activeTab==='q2'">
+            <div class="card" v-pre="">
+              <h2>(2) 若 A=\{1,a,b\} 具有 P，求 a+b</h2>
+              <div class="k">
+                由 \((1,1)\)：\(1+1=2\) 或 \(1-1=0\) 必有一者在 \(A\)。
+                <br>情形 A：\(0\in A\)。设 \(A=\{1,0,b\}\)。由 \((b,1)\) 得 \(b+1\) 或 \(b-1\) 在 \(A\)。代入枚举可得 \(b\in\{-1,2\}\)。再核验性质 \(P\)，\(\{1,0,2\}\) 由于 \(1\pm 2\notin A\) 违背，\(\{1,0,-1\}\) 满足。
+                <br>情形 B：\(2\in A\)。设 \(A=\{1,2,b\}\)。由 \((1,2)\) 得 \(3\) 或 \(-1\) 在 \(A\)，即 \(b=3\) 或 \(b=-1\)。其中 \(\{1,2,3\}\) 在(1)中已证不满足，\(\{1,2,-1\}\) 由 \((-1,-1)\) 需 \(-2\) 或 \(0\) 在 \(A\) 不成立，故排除。
+                <br>综上唯一可行为 \(A=\{-1,0,1\}\)，于是 \(a+b=-1\)。
+              </div>
+              <div class="ans" v-pre="">答：(2) \(a+b=-1\)，且 \(A=\{-1,0,1\}\)。</div>
+            </div>
+          </div>
+
+          <!-- (3) 结构刻画 -->
+          <div class="tab-panel" v-if="activeTab==='q3'">
+            <div class="card" v-pre="">
+              <h2>(3) 结构刻画与答案</h2>
+              <div class="k">
+                <strong>结构分析：</strong>
+                <br>设集合 \(B\) 包含 \(0\)、正数和负数。将 \(B\) 表示为：
+                \[B=\{-b_k,-b_{k-1},\ldots,-b_1,0,a_1,a_2,\ldots,a_l\}\]
+                其中 \(k+l=5\)，且 \(0\lt a_1\lt a_2\lt\cdots\lt a_l\)，\(0\lt b_1\lt b_2\lt\cdots\lt b_k\)。
+                <br><br>
+                <strong>条件推导：</strong>
+                <br>由性质 \(P\) 可得：
+                <ol>
+                  <li>\(\{a_1-a_l,\ldots,a_{l-1}-a_l\}\subseteq \{-b_k,-b_{k-1},\ldots,-b_1\}\)</li>
+                  <li>\(\{b_k-b_1,b_{k-1}-b_1,\ldots,b_2-b_1\}\subseteq \{a_1,a_2,\ldots,a_l\}\)</li>
+                </ol>
+                由此推得 \((k,l)\) 的可能值为 \((2,3)\) 或 \((3,2)\)。
+                <br><br>
+                <strong>情形一：\((k,l)=(3,2)\)</strong>
+                <br>由条件(2)得：\(\{b_3-b_1,b_3-b_2\}=\{a_1,a_2\}\)。
+                <br>由条件(1)得：\(\{-b_3+b_1,-b_3+b_2\}=\{-b_1,b_2\}\)。
+                <br>由此推出：
+                <ul>
+                  <li>\(b_3=b_1+b_2\)</li>
+                  <li>\(a_2-a_1\in\{a_1,a_2\}\)，故 \(a_2=2a_1\)</li>
+                  <li>\((b_2,b_1)=(b_3-b_1,b_3-b_2)=(a_2,a_1)=(2a_1,a_1)\)</li>
+                  <li>\(b_3=b_1+b_2=3a_1\)</li>
+                </ul>
+                因此 \(B=\{-3a_1,-2a_1,-a_1,0,a_1,2a_1\}\)。
+                <br><br>
+                <strong>情形二：\((k,l)=(2,3)\)</strong>
+                <br>类似分析可得：\(B=\{-2a_1,-a_1,0,a_1,2a_1,3a_1\}\)。
+                <br><br>
+                <strong>最终答案：</strong>
+                <br>当 \(|B|=6\) 且 \(1\in B\) 时，满足条件的集合有 5 个：
+                <ol>
+                  <li>\(\{-2,-1,0,1,2\}\)</li>
+                  <li>\(\{-1,-\frac{1}{2},0,\frac{1}{2},1,\frac{3}{2}\}\)</li>
+                  <li>\(\{-\frac{2}{3},-\frac{1}{3},0,\frac{1}{3},\frac{2}{3},1\}\)</li>
+                  <li>\(\{-3,-2,-1,0,1,2\}\)</li>
+                  <li>\(\{-\frac{3}{2},-1,-\frac{1}{2},0,\frac{1}{2},1\}\)</li>
+                </ol>
+              </div>
+              <div class="ans" v-pre="">答：(3) 满足条件的集合 \(B\) 共有 5 个（如上所列）。</div>
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-if="activeTab==='summary'">
+            <div class="k" v-pre="">
+              <p><strong>要点回顾：</strong>集合性质 \(P\) 要求对任意两个元素，它们的和或差至少有一个在集合内。这个性质具有很强的约束性，可以用来确定集合的结构。关键是理解这个性质如何限制集合中元素之间的关系。</p>
+            </div>
+            <div class="card">
+              <h2>交互校验与可视化</h2>
+      <div class="row">
+        <label>输入集合（逗号分隔，升序/乱序均可）:</label>
+        <input type="text" v-model="inputSet" placeholder="例如: -2,-1,0,1,2,3">
+        <button class="btn" @click="checkInput()">校验性质 <span class="math-inline">\(P\)</span></button>
+      </div>
+      <div style="margin-top:10px">性质 <span class="math-inline">\(P\)</span> 校验：<span class="ans">{{ checkMsg }}</span></div>
+      <div class="chips" style="margin-top:8px"><span class="chip" v-for="x in parsed" :key="x">{{ x }}</span></div>
+      <div style="margin-top:12px" class="muted" v-pre="" data-render-math="true">提示：性质 \(P\) 指对任意 \(x,y\in B\)，\(x+y\in B\) 或 \(x-y\in B\) 至少有一个成立。</div>
+      <div style="margin-top:12px">
+        <canvas id="line" width="680" height="90"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 v-pre="" data-render-math="true">枚举满足 (3) 的所有 \(B\)</h2>
+      <div class="row">
+        <label>选择集合：</label>
+        <select v-model="selectedSetIndex">
+          <option v-for="(s, idx) in answerSets" :key="idx" :value="idx">集合 {{ idx + 1 }}</option>
+        </select>
+        <button class="btn" @click="loadSelectedSet()">加载并校验</button>
+        <button class="btn" @click="checkAllSets()">校验所有答案</button>
+      </div>
+      <div style="margin-top:10px" class="muted" v-pre="" data-render-math="true">根据 (3) 的分析，满足 \(|B|=6\) 且 \(1\in B\) 的集合共有 5 个（见上方答案）。</div>
+      <div style="margin-top:8px">
+        <div v-if="selectedSet.length > 0" style="margin:8px 0;padding:10px;background:#0f1433;border-radius:6px">
+          <div style="margin-bottom:6px">
+            <strong>当前集合：</strong>
+            <span class="chip" v-for="x in selectedSet" :key="x" style="margin:2px">{{ formatNumber(x) }}</span>
+          </div>
+          <div>性质 <span class="math-inline">\(P\)</span> 校验：<span class="ans">{{ selectedSetCheck }}</span></div>
+        </div>
+        <div v-if="allSetsChecked.length > 0" style="margin-top:12px">
+          <div style="margin-bottom:6px"><strong>所有 5 个答案集合的校验结果：</strong></div>
+          <div v-for="(result, idx) in allSetsChecked" :key="idx" style="margin:6px 0;padding:8px;background:#0f1433;border-radius:6px">
+            <div style="margin-bottom:4px">
+              <strong>集合 {{ idx + 1 }}：</strong>
+              <span class="chip" v-for="x in result.set" :key="x" style="margin:2px">{{ formatNumber(x) }}</span>
+            </div>
+            <div>性质 <span class="math-inline">\(P\)</span> 校验：<span class="ans">{{ result.valid ? '✓ 满足' : '✗ 不满足' }}</span></div>
+          </div>
+        </div>
+      </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // 页面加载完成后立即渲染静态数学内容
+  document.addEventListener('DOMContentLoaded', ()=> {
+    setTimeout(()=> {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl){
+        try {
+          console.log('Rendering static math...');
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false},
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false,
+            errorColor: '#ff6b6b'
+          });
+          const katexCount = staticEl.querySelectorAll('.katex').length;
+          console.log('Static math rendered,', katexCount, 'KaTeX elements');
+        } catch(e) { 
+          console.error('KaTeX render error in static:', e); 
+        }
+      }
+    }, 200);
+  });
+
+  const {createApp} = Vue;
+
+  const app = createApp({
+    data(){
+      return { 
+        activeTab: 'intro',
+        inputSet: '-2,-1,0,1,2,3', 
+        parsed: [], 
+        checkMsg: '尚未校验',
+        answerSets: [
+          [-2, -1, 0, 1, 2],
+          [-1, -0.5, 0, 0.5, 1, 1.5],
+          [-2/3, -1/3, 0, 1/3, 2/3, 1],
+          [-3, -2, -1, 0, 1, 2],
+          [-1.5, -1, -0.5, 0, 0.5, 1]
+        ],
+        selectedSetIndex: 0,
+        selectedSet: [],
+        selectedSetCheck: '',
+        allSetsChecked: []
+      }
+    },
+    mounted(){
+      // Vue mounted 后渲染数学表达式并初始化交互功能
+      // 使用多层延迟确保 DOM 完全就绪
+      this.$nextTick(()=> {
+        setTimeout(()=> {
+          this.renderMathInApp();
+          // 再次延迟渲染，确保所有内容都已就绪
+          setTimeout(()=> {
+            this.renderMathInApp();
+          }, 300);
+          this.checkInput();
+          this.loadSelectedSet();
+        }, 200);
+      });
+    },
+    updated(){
+      // 数据更新后重新渲染数学表达式
+      this.$nextTick(()=> {
+        this.renderMathInApp();
+      });
+    },
+    methods:{
+      setTab(tab) {
+        this.activeTab = tab;
+        setTimeout(() => {
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {}
+            }
+          }
+          this.renderMathInApp();
+        }, 50);
+      },
+      renderMathInApp(){
+        // 渲染 #app 内的所有数学表达式（v-pre 块和 math-inline 类）
+        const appEl = document.getElementById('app');
+        if(!appEl) {
+          console.warn('App element not found');
+          return;
+        }
+        
+        // 检查 katex 和 renderMathInElement 是否可用
+        if(typeof katex === 'undefined') {
+          console.error('KaTeX not loaded!');
+          return;
+        }
+        if(typeof renderMathInElement === 'undefined') {
+          console.error('renderMathInElement not loaded!');
+          return;
+        }
+        
+        // 渲染所有 v-pre 块
+        const vpreBlocks = appEl.querySelectorAll('[v-pre]');
+        console.log('Found', vpreBlocks.length, 'v-pre blocks');
+        
+        // 特别处理标记为需要渲染的元素
+        const specialBlocks = appEl.querySelectorAll('[data-render-math="true"]');
+        console.log('Found', specialBlocks.length, 'special math blocks');
+        
+        // 先处理特殊标记的块
+        specialBlocks.forEach((el, idx)=> {
+          console.log('Processing special block', idx);
+          const originalHTML = el.innerHTML;
+          let html = originalHTML;
+          
+          // 提取所有数学表达式
+          const mathExpressions = [];
+          
+          // 匹配 \(...\)
+          const inlinePattern = /\\\((.*?)\\\)/g;
+          let match;
+          while((match = inlinePattern.exec(html)) !== null) {
+            mathExpressions.push({
+              type: 'inline',
+              full: match[0],
+              math: match[1],
+              index: match.index
+            });
+          }
+          
+          // 匹配 \[...\]
+          const displayPattern = /\\\[(.*?)\\\]/g;
+          while((match = displayPattern.exec(html)) !== null) {
+            mathExpressions.push({
+              type: 'display',
+              full: match[0],
+              math: match[1],
+              index: match.index
+            });
+          }
+          
+          console.log('Special block', idx, 'found', mathExpressions.length, 'math expressions');
+          
+          // 从后往前替换，避免索引变化
+          mathExpressions.sort((a, b) => b.index - a.index);
+          for(const expr of mathExpressions) {
+            try {
+              const rendered = katex.renderToString(
+                expr.math.trim(), 
+                { 
+                  throwOnError: false, 
+                  displayMode: expr.type === 'display'
+                }
+              );
+              html = html.substring(0, expr.index) + rendered + html.substring(expr.index + expr.full.length);
+              console.log('Rendered:', expr.full, '->', rendered.substring(0, 50));
+            } catch(e) {
+              console.error('Failed to render:', expr.full, e);
+            }
+          }
+          
+          if(html !== originalHTML) {
+            el.innerHTML = html;
+            console.log('✓ Special block', idx, 'rendered successfully');
+          }
+        });
+        
+        vpreBlocks.forEach((el, idx)=> {
+          // 如果已经处理过（有 data-render-math），跳过
+          if(el.hasAttribute('data-render-math')) return;
+          
+          // 清除已有的 KaTeX 渲染
+          el.querySelectorAll('.katex').forEach(k=> k.remove());
+          
+          try {
+            const html = el.innerHTML;
+            console.log('Block', idx, 'HTML:', html.substring(0, 120));
+            
+            // 直接使用 renderMathInElement 尝试渲染
+            try {
+              renderMathInElement(el, {
+                delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+              });
+              
+              // 检查是否成功
+              const katexEls = el.querySelectorAll('.katex');
+              if(katexEls.length > 0) {
+                console.log('✓ Block', idx, 'rendered by renderMathInElement,', katexEls.length, 'KaTeX elements');
+                return; // 成功，跳过手动渲染
+              }
+            } catch(e) {
+              console.warn('renderMathInElement failed for block', idx, ':', e);
+            }
+            
+            // renderMathInElement 失败，使用手动渲染
+            console.log('Trying manual render for block', idx);
+            let replaced = html;
+            let count = 0;
+            
+            // 匹配所有 \(...\) （允许包含反斜杠，如 \in, \leq 等）
+            // 使用非贪婪匹配，但允许反斜杠后跟字母
+            const inlineRegex = /\\\((.*?)\\\)/g;
+            const inlineMatches = [];
+            let match;
+            while((match = inlineRegex.exec(html)) !== null) {
+              inlineMatches.push({full: match[0], math: match[1], index: match.index});
+            }
+            // 从后往前替换
+            for(let i = inlineMatches.length - 1; i >= 0; i--) {
+              const m = inlineMatches[i];
+              try {
+                count++;
+                const rendered = katex.renderToString(m.math.trim(), { throwOnError: false, displayMode: false });
+                replaced = replaced.substring(0, m.index) + rendered + replaced.substring(m.index + m.full.length);
+              } catch(e) {
+                console.warn('Failed to render inline:', m.full, e);
+              }
+            }
+            
+            // 匹配所有 \[...\]
+            const displayRegex = /\\\[(.*?)\\\]/g;
+            const displayMatches = [];
+            while((match = displayRegex.exec(html)) !== null) {
+              displayMatches.push({full: match[0], math: match[1], index: match.index});
+            }
+            // 从后往前替换
+            for(let i = displayMatches.length - 1; i >= 0; i--) {
+              const m = displayMatches[i];
+              try {
+                count++;
+                const rendered = katex.renderToString(m.math.trim(), { throwOnError: false, displayMode: true });
+                replaced = replaced.substring(0, m.index) + rendered + replaced.substring(m.index + m.full.length);
+              } catch(e) {
+                console.warn('Failed to render display:', m.full, e);
+              }
+            }
+            
+            if(replaced !== html) {
+              el.innerHTML = replaced;
+              console.log('✓ Block', idx, 'manually rendered,', count, 'expressions');
+            } else {
+              console.warn('Block', idx, 'no math expressions found or replaced');
+            }
+          } catch(e) { 
+            console.error('Error in block', idx, ':', e); 
+          }
+        });
+        
+        // 渲染内联数学表达式
+        const mathInline = appEl.querySelectorAll('.math-inline');
+        console.log('Found', mathInline.length, 'math-inline elements');
+        
+        mathInline.forEach((el, idx)=> {
+          el.querySelectorAll('.katex').forEach(k=> k.remove());
+          
+          try {
+            renderMathInElement(el, {
+              delimiters: [
+                {left: '\\(', right: '\\)', display: false}
+              ],
+              throwOnError: false
+            });
+            const katexEls = el.querySelectorAll('.katex');
+            if(katexEls.length > 0) {
+              console.log('Math-inline', idx, 'rendered successfully');
+            }
+          } catch(e) {
+            console.error('KaTeX render error in inline', idx, ':', e);
+          }
+        });
+      },
+      parseSet(txt){
+        const arr = txt.split(',').map(s=> s.trim()).filter(s=> s.length>0).map(Number).filter(x=> Number.isFinite(x));
+        const uniq=[...new Set(arr)].sort((a,b)=>a-b);
+        return uniq;
+      },
+      hasPropertyP(S){
+        const set = new Set(S);
+        for(let i=0;i<S.length;i++){
+          for(let j=0;j<S.length;j++){
+            const s=S[i]+S[j];
+            const d=S[i]-S[j];
+            if(!(set.has(s) || set.has(d))) return false;
+          }
+        }
+        return true;
+      },
+      checkInput(){
+        const S=this.parseSet(this.inputSet); this.parsed=S;
+        const ok=this.hasPropertyP(S);
+        this.checkMsg = ok? '满足性质 P' : '不满足性质 P';
+        this.drawNumberLine(S);
+      },
+      drawNumberLine(S){
+        const c=document.getElementById('line'); if(!c) return; const ctx=c.getContext('2d');
+        ctx.clearRect(0,0,c.width,c.height);
+        if(S.length === 0) return;
+        // axis
+        ctx.strokeStyle='#3a4e99'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(20,45); ctx.lineTo(660,45); ctx.stroke();
+        // ticks around min/max
+        const min=Math.min(...S), max=Math.max(...S);
+        const pad = Math.max(2, Math.ceil((max-min)*0.2));
+        const span = (max - min) + 2 * pad;
+        const xOf = v => 20 + (v - min + pad) * (620 / span);
+        for(let t=Math.floor(min-pad);t<=Math.ceil(max+pad);t++){
+          const x=xOf(t); ctx.strokeStyle='#2b3c7a'; ctx.beginPath(); ctx.moveTo(x,40); ctx.lineTo(x,50); ctx.stroke();
+          ctx.fillStyle='#7c8cff'; ctx.font='10px system-ui'; ctx.fillText(t.toString(), x-3, 65);
+        }
+        // points - 确保所有元素都显示
+        for(const v of S){ 
+          const x=xOf(v); 
+          ctx.fillStyle='#ffd166'; 
+          ctx.beginPath(); 
+          ctx.arc(x,45,6,0,Math.PI*2); 
+          ctx.fill(); 
+        }
+      },
+      loadSelectedSet(){
+        this.selectedSet = [...this.answerSets[this.selectedSetIndex]].sort((a,b)=>a-b);
+        const ok = this.hasPropertyP(this.selectedSet);
+        this.selectedSetCheck = ok ? '✓ 满足性质 P' : '✗ 不满足性质 P';
+        this.drawNumberLine(this.selectedSet);
+      },
+      formatNumber(n){
+        // 如果是整数，显示为整数；否则显示3位小数
+        if(Number.isInteger(n)) return n.toString();
+        // 检查是否为常见分数
+        const fractions = [[1/2, '1/2'], [1/3, '1/3'], [2/3, '2/3'], [3/2, '3/2']];
+        for(const [val, str] of fractions){
+          if(Math.abs(n - val) < 1e-9) return str;
+          if(Math.abs(n + val) < 1e-9) return '-' + str;
+        }
+        return n.toFixed(3);
+      },
+      checkAllSets(){
+        this.allSetsChecked = this.answerSets.map((set, idx)=> {
+          const sorted = [...set].sort((a,b)=>a-b);
+          return {
+            idx: idx + 1,
+            set: sorted,
+            valid: this.hasPropertyP(sorted)
+          };
+        });
+      }
+    }
+  });
+  
+  // 等待DOM准备就绪后再挂载
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      const appEl = document.getElementById('app');
+      if (appEl) {
+        const vm = app.mount('#app');
+        window.vm = vm;
+      }
+    });
+  } else {
+    const appEl = document.getElementById('app');
+    if (appEl) {
+      const vm = app.mount('#app');
+      window.vm = vm;
+    }
+  }
+  
+  // 窗口完全加载后再次尝试渲染所有数学表达式
+  window.addEventListener('load', ()=> {
+    setTimeout(()=> {
+      console.log('Window loaded, rendering all math...');
+      // 渲染静态内容
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+          console.log('Static math re-rendered on window load');
+        } catch(e) {
+          console.error('Error rendering static math on window load:', e);
+        }
+      }
+      // 渲染 app 内容
+      if(vm && vm.renderMathInApp) {
+        vm.renderMathInApp();
+        console.log('App math re-rendered on window load');
+      }
+    }, 500);
+  });
+  </script>
+
+
+
+
+</body></html>

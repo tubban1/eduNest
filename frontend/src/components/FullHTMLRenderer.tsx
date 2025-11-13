@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 
 /**
  * FullHTMLRenderer - 纯 HTML 渲染器
@@ -71,6 +71,42 @@ export default function FullHTMLRenderer({
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [iframeHeight, setIframeHeight] = useState<string>('calc(100% + 20px)');
+  const [wechatSourceIndex, setWechatSourceIndex] = useState(0);
+
+  const isWeChat = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    return /MicroMessenger|WeChat|X5Browser/i.test(ua);
+  }, []);
+
+  const wechatUrlCandidates = useMemo(() => {
+    const urls = new Set<string>();
+    if (externalUrl) {
+      urls.add(externalUrl.trim());
+    }
+    if (fullHTML) {
+      const metaRegex = /<meta\s+[^>]*name=["']wechat-external-url["'][^>]*>/gi;
+      const contentRegex = /content=["']([^"']+)["']/i;
+      let match: RegExpExecArray | null;
+      while ((match = metaRegex.exec(fullHTML)) !== null) {
+        const tag = match[0];
+        const contentMatch = tag.match(contentRegex);
+        if (contentMatch && contentMatch[1]) {
+          contentMatch[1]
+            .split(/[,;\s]+/)
+            .map(item => item.trim())
+            .filter(Boolean)
+            .forEach(item => urls.add(item));
+        }
+      }
+    }
+    return Array.from(urls);
+  }, [externalUrl, fullHTML]);
+
+  const shouldUseWechatMode = isWeChat && wechatUrlCandidates.length > 0;
+  const currentWechatUrl = shouldUseWechatMode
+    ? wechatUrlCandidates[Math.min(wechatSourceIndex, wechatUrlCandidates.length - 1)]
+    : undefined;
 
   // 错误处理
   const handleError = useCallback((error: string) => {
@@ -82,7 +118,7 @@ export default function FullHTMLRenderer({
 
   // 监听 iframe 消息（用于高度自适应）
   useEffect(() => {
-    if (!autoHeight || fixedHeight) return;
+    if (!autoHeight || fixedHeight || shouldUseWechatMode) return;
 
     const handleMessage = (event: MessageEvent) => {
       // 监听高度变化消息
@@ -105,11 +141,11 @@ export default function FullHTMLRenderer({
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [autoHeight, fixedHeight]);
+  }, [autoHeight, fixedHeight, shouldUseWechatMode]);
 
   // 动态调整 iframe 高度
   const adjustIframeHeight = useCallback(() => {
-    if (!autoHeight || fixedHeight || !iframeRef.current) return;
+    if (!autoHeight || fixedHeight || shouldUseWechatMode || !iframeRef.current) return;
 
     try {
       const iframe = iframeRef.current;
@@ -155,7 +191,7 @@ export default function FullHTMLRenderer({
       // 跨域限制，无法访问 iframe 内容
       // 这种情况下依赖 postMessage 机制
     }
-  }, [autoHeight, fixedHeight]);
+  }, [autoHeight, fixedHeight, shouldUseWechatMode]);
 
   // 重新渲染
   const refresh = useCallback(() => {
@@ -181,15 +217,29 @@ export default function FullHTMLRenderer({
 
   // 处理 iframe 加载错误
   const handleIframeError = useCallback(() => {
-    const errorMsg = useExternalUrl 
-      ? `外部 URL 加载失败: ${externalUrl}` 
+    const errorMsg = useExternalUrl
+      ? `外部 URL 加载失败: ${externalUrl}`
       : 'HTML 内容加载失败';
     handleError(errorMsg);
   }, [useExternalUrl, externalUrl, handleError]);
 
+  const handleWechatIframeLoad = useCallback(() => {
+    setIsLoading(false);
+    onLoad?.();
+  }, [onLoad]);
+
+  const handleWechatIframeError = useCallback(() => {
+    if (wechatSourceIndex < wechatUrlCandidates.length - 1) {
+      setWechatSourceIndex(prev => prev + 1);
+      setIsLoading(true);
+      return;
+    }
+    handleError('微信兼容模式未能加载页面，请检查 CDN 配置');
+  }, [wechatSourceIndex, wechatUrlCandidates.length, handleError]);
+
   // 处理 HTML 内容（可选注入高度监听脚本）
   const processedHTML = React.useMemo(() => {
-    if (!fullHTML || !enableHeightListener) {
+    if (!fullHTML || !enableHeightListener || shouldUseWechatMode) {
       return fullHTML; // 不注入，保持纯渲染
     }
 
@@ -362,7 +412,7 @@ export default function FullHTMLRenderer({
       // 如果没有 body 或 html 标签，直接追加
       return fullHTML + heightListenerScript;
     }
-  }, [fullHTML, enableHeightListener]);
+  }, [fullHTML, enableHeightListener, shouldUseWechatMode]);
 
   // 验证 props
   useEffect(() => {
@@ -376,6 +426,18 @@ export default function FullHTMLRenderer({
       return;
     }
   }, [useExternalUrl, externalUrl, fullHTML, handleError]);
+
+  useEffect(() => {
+    if (shouldUseWechatMode) {
+      setWechatSourceIndex(0);
+      setIsLoading(true);
+      setHasError(false);
+      setErrorMessage('');
+      if (!fixedHeight) {
+        setIframeHeight('680px');
+      }
+    }
+  }, [shouldUseWechatMode, wechatUrlCandidates.length, fixedHeight]);
 
   return (
     <div 
@@ -422,7 +484,31 @@ export default function FullHTMLRenderer({
       )}
 
       {/* 主 iframe 渲染 */}
-      {useExternalUrl && externalUrl ? (
+      {shouldUseWechatMode && currentWechatUrl ? (
+        <iframe
+          key={`${previewKey}-${wechatSourceIndex}`}
+          ref={iframeRef}
+          src={currentWechatUrl}
+          title={title}
+          className="w-full h-full border-0 bg-white"
+          style={{
+            border: 'none',
+            outline: 'none',
+            margin: '0',
+            padding: '0',
+            display: 'block',
+            width: '100%',
+            height: fixedHeight ? '100%' : iframeHeight,
+            minHeight: fixedHeight ? undefined : iframeHeight,
+            overflow: fixedHeight ? 'auto' : 'visible',
+            position: 'relative',
+            WebkitOverflowScrolling: 'touch'
+          }}
+          scrolling={fixedHeight ? 'auto' : 'no'}
+          onLoad={handleWechatIframeLoad}
+          onError={handleWechatIframeError}
+        />
+      ) : useExternalUrl && externalUrl ? (
         <iframe
           key={previewKey}
           ref={iframeRef}

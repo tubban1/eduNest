@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="用初中知识讲透平面亮点问题，结合图形、表格与动画展示三道小题的思路，帮助学生理解求解步骤。">
+  <meta name="keywords" content="亮点, 平面几何, 一次函数, 二次函数, 反射, 初中数学, 图像, 动画">
+  <title>亮点问题全解析｜初中视角的图形化讲解</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css';">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      background: #f6f8fb;
+      color: #34495e;
+      line-height: 1.8;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1160px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 20px 40px rgba(31,45,61,0.08);
+      padding: 32px 28px;
+    }
+    h1 {
+      font-size: 28px;
+      color: #273c75;
+      margin-bottom: 18px;
+      letter-spacing: 0.5px;
+    }
+    h2 {
+      font-size: 22px;
+      color: #2c3e50;
+      margin: 28px 0 14px;
+      border-left: 4px solid #00a8ff;
+      padding-left: 10px;
+    }
+    h3 {
+      color: #40739e;
+      margin: 18px 0 8px;
+      font-size: 18px;
+    }
+    p { margin-bottom: 10px; }
+    .problem-card, .card {
+      background: #fafcff;
+      border: 1px solid #e6ecf5;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 18px 0;
+    }
+    .highlight {
+      background: #ffeaa7;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .formula-box {
+      background: #f0f6ff;
+      border-left: 4px solid #74b9ff;
+      padding: 12px 16px;
+      margin: 12px 0;
+      overflow-x: auto;
+    }
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .tab-header {
+      cursor: pointer;
+      border: none;
+      background: linear-gradient(135deg,#74b9ff,#0984e3);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 14px;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .tab-header:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(9,132,227,0.25); }
+    .tab-header.active { background: linear-gradient(135deg,#0984e3,#487eb0); }
+    .tab-panel {
+      border: 1px solid #dce4f7;
+      border-radius: 10px;
+      padding: 20px;
+      background: #ffffff;
+    }
+    .step {
+      background: #f5f9ff;
+      border-radius: 8px;
+      border: 1px dashed #d0e2ff;
+      padding: 14px 16px;
+      margin: 12px 0;
+    }
+    .step-title {
+      font-weight: 600;
+      color: #1e3799;
+      margin-bottom: 6px;
+    }
+    canvas {
+      width: 100%;
+      max-width: 650px;
+      height: 360px;
+      border: 1px solid #dcdde1;
+      border-radius: 8px;
+      margin: 14px auto;
+      display: block;
+      background: #ffffff;
+    }
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin: 12px 0;
+      align-items: center;
+    }
+    .control-row label {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .control-row input[type="range"] {
+      width: 220px;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .data-table th, .data-table td {
+      border: 1px solid #dfe6f0;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .data-table th {
+      background: #f0f6ff;
+      color: #2d3436;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #dff9fb;
+      color: #0984e3;
+      font-size: 12px;
+      margin-left: 6px;
+    }
+    .tip {
+      background: #fef9e7;
+      border-left: 4px solid #f9ca24;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin: 14px 0;
+      color: #7f6c00;
+    }
+    .answer-box {
+      background: #e8f8f5;
+      border-left: 4px solid #1abc9c;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      color: #0a6053;
+    }
+    .radio-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .radio-group label {
+      background: #ecf5ff;
+      border-radius: 20px;
+      padding: 6px 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all .2s ease;
+    }
+    .radio-group input[type="radio"] { display: none; }
+    .radio-group input[type="radio"]:checked + span {
+      background: #74b9ff;
+      color: #fff;
+    }
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      .container { padding: 18px; }
+      h1 { font-size: 24px; }
+      canvas { height: 280px; }
+      .control-row input[type="range"] { width: 160px; }
+    }
+  </style>
+  <meta name="author" content="c942eae8">
+</head>
+<body>
+  <div class="container">
+    <h1>亮点问题全解析：图形与演示一步到位</h1>
+    <p>题目选自几何综合练习第 24 题，我们将保持“<span class="highlight">亮点</span>”的定义，完全站在初中生能掌握的知识点上，利用图像、表格与动画解释三问。</p>
+
+    <div class="problem-card" id="problem-statement" v-pre>
+      <h2>原题回顾</h2>
+      <p><strong>约定：</strong>在平面直角坐标系 \(xOy\) 中，两点 \(M(x_1,y_1)\)、\(N(x_2,y_2)\) 不重合。若 \(x_1 + y_1 = x_2 + y_2\)，称点 \(N\) 为点 \(M\) 的“亮点”。</p>
+      <p><strong>(1)</strong> 已知 \(N\) 是点 \(M(3,2)\) 的亮点，且 \(N\) 在直线 \(y = x + 2\) 上，求点 \(N\) 的坐标。</p>
+      <p><strong>(2)</strong> 已知点 \(N(x_2,y_2)\) 为点 \(M(x_1,y_1)\) 的亮点，且满足
+        \[
+          x_1^2 y_1^2 + x_2^2 y_2^2 + 4(x_1 y_1 + x_2 y_2) = -8,\quad
+          S_{\triangle MON} = \frac{3}{2},
+        \]
+        求直线 \(MN\) 的解析式。</p>
+      <p><strong>(3)</strong> 把抛物线 \(y = -x^2 + 2x + 3\) 在 \(x \leq m\)（其中 \(m < 3\)）的部分记作 \(W_1\)，再把它沿直线 \(x = m\) 翻折后得到的图像记作 \(W_2\)。已知 \(W_1 \cup W_2\) 上恰好出现点 \(M(0,m)\) 的两个亮点。令
+        \[
+          P = -m^2 + 2tm + t,
+        \]
+        若对所有满足条件的 \(m\)，都有 \(P \le t+1\)，求实数 \(t\) 的取值范围。</p>
+    </div>
+
+    <div id="app">
+      <div class="card">
+        <h2>解题导航</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <button class="tab-header" :class="{active: activeTab==='intro'}" @click="switchTab('intro')">题目结构图</button>
+            <button class="tab-header" :class="{active: activeTab==='q1'}" @click="switchTab('q1')">(1) 直线上的亮点</button>
+            <button class="tab-header" :class="{active: activeTab==='q2'}" @click="switchTab('q2')">(2) 面积条件与直线</button>
+            <button class="tab-header" :class="{active: activeTab==='q3'}" @click="switchTab('q3')">(3) 抛物线翻折</button>
+            <button class="tab-header" :class="{active: activeTab==='wrap'}" @click="switchTab('wrap')">结果总结</button>
+          </div>
+        </div>
+
+        <!-- Intro -->
+        <div class="tab-panel" v-show="activeTab==='intro'">
+          <div class="step">
+            <div class="step-title">启发思路</div>
+            <p>把“亮点”想成一束光：<strong>同一束光上所有点都有相同的“横坐标 + 纵坐标”</strong>。因此我们可以把亮点放在直线 \(x+y=\text{常数}\) 上找。</p>
+          </div>
+          <div class="step">
+            <div class="step-title">审题与提炼线索</div>
+            <ul style="margin-left:20px;">
+              <li>所有小题都离不开：<span class="highlight">亮点 ⇒ x+y 相等</span>。</li>
+              <li>第一问：已知直线，再叠加亮点条件。</li>
+              <li>第二问：亮点对称 + 三角形面积，考察坐标运算。</li>
+              <li>第三问：二次函数翻折，亮点来自镜像交点，最后串联到不等式。</li>
+            </ul>
+          </div>
+          <div class="step">
+            <div class="step-title">涉及知识点（树状图）</div>
+            <div class="knowledge-list">
+              <ul style="margin-left:12px;">
+                <li><strong>亮点直线</strong>：\(x+y=s\)；求交点——一次函数联立。</li>
+                <li><strong>面积公式</strong>：\(S_{\triangle AOB}=\tfrac12|x_1y_2-x_2y_1|\)，来源于平行四边形面积。</li>
+                <li><strong>镜面反射</strong>：关于直线 \(x=m\) 的翻折，坐标变换 \(x' = 2m - x\)。</li>
+                <li><strong>二次函数最值</strong>：\((m-t)^2\) 最小值 + 区间位置 → 处理不等式。</li>
+              </ul>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-title">拿分策略</div>
+            <ul style="margin-left:20px;">
+              <li>亮点题不会迷失：先写出 \(x+y=s\)，再结合条件联立。</li>
+              <li>面积题怕代数：记住“两个点的三角形面积”公式，直接代坐标。</li>
+              <li>翻折题怕运算：先写“新横坐标 = 2m - 旧横坐标”，其余保持不动。</li>
+              <li>不等式看不懂：把式子改写成“一个平方 ≥ 常数”，用最小值判断。</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Question 1 -->
+        <div class="tab-panel" v-show="activeTab==='q1'">
+          <h3>(1) 在直线 <span class="highlight">y = x + 2</span> 上找亮点</h3>
+          <div class="step">
+            <div class="step-title">解题步骤</div>
+            <ol style="margin-left:20px;">
+              <li>写出亮点等式：\(x + y = 3 + 2 = 5\)。</li>
+              <li>利用直线 \(y = x + 2\) 把 \(y\) 表示成 \(x\)。</li>
+              <li>代入得到方程：\(x + (x+2) = 5\)，求出 \(x\)，再回代求 \(y\)。</li>
+            </ol>
+          </div>
+          <div class="formula-box" v-pre>
+            \[
+              \begin{aligned}
+                &x + (x+2) = 5 \Rightarrow 2x = 3 \Rightarrow x = \frac{3}{2},\\
+                &y = x + 2 = \frac{7}{2}.
+              \end{aligned}
+            \]
+          </div>
+          <div class="tip">
+            <strong>提示：</strong>“亮点线”与“给定直线”交点即答案，一定要先写出亮点方程。
+          </div>
+          <div class="answer-box">
+            点 \(N\left(\dfrac{3}{2},\dfrac{7}{2}\right)\)。
+          </div>
+          <canvas id="canvas-q1"></canvas>
+          <p style="text-align:center;color:#718093;font-size:14px;">蓝色直线是 \(y = x + 2\)，红点为 \(M(3,2)\)，绿色点为求出的亮点 \(N\)。</p>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="tab-panel" v-show="activeTab==='q2'">
+          <h3>(2) 面积条件下的两组亮点</h3>
+          <div class="step">
+            <div class="step-title">拆分条件</div>
+            <ol style="margin-left:20px;">
+              <li>亮点关系：\(x_1 + y_1 = x_2 + y_2 = s\)。</li>
+              <li>代入等式可化为：\(x_1 y_1 = x_2 y_2 = -2\)。</li>
+              <li>面积条件：\(|x_1 y_2 - x_2 y_1| = 3\)（利用面积公式）。</li>
+            </ol>
+            <p>①、② 两条说明 \((x_1, y_1)\) 与 \((x_2, y_2)\) 是同一二次方程的两根互换。</p>
+          </div>
+
+          <div class="step">
+            <div class="step-title">两种可能</div>
+            <p>由根与系数关系得到 \(s = x_1 + y_1\) 可能取 \(1\) 或 \(-1\)。于是有两种成对坐标：</p>
+            <div class="radio-group">
+              <label>
+                <input type="radio" value="case1" v-model="caseSelection">
+                <span>方案 A：\(s = 1\)</span>
+              </label>
+              <label>
+                <input type="radio" value="case2" v-model="caseSelection">
+                <span>方案 B：\(s = -1\)</span>
+              </label>
+            </div>
+            <ul style="margin-left:24px;" v-if="caseSelection==='case1'">
+              <li>\(M(2, -1)\)，\(N(-1, 2)\)，直线 \(MN: y = -x + 1\)。</li>
+            </ul>
+            <ul style="margin-left:24px;" v-else>
+              <li>\(M(1, -2)\)，\(N(-2, 1)\)，直线 \(MN: y = -x - 1\)。</li>
+            </ul>
+          </div>
+
+          <div class="answer-box" v-if="caseSelection==='case1'">
+            解析式：<strong> \(y = -x + 1\)</strong>；对应点 \(M(2,-1)\)，\(N(-1,2)\)。
+          </div>
+          <div class="answer-box" v-else>
+            解析式：<strong> \(y = -x - 1\)</strong>；对应点 \(M(1,-2)\)，\(N(-2,1)\)。
+          </div>
+          <div class="tip">
+            <strong>说明：</strong>面积条件只决定“差值的绝对值=3”，所以会出现左右互换的两种情况。
+          </div>
+          <canvas id="canvas-q2"></canvas>
+          <p style="text-align:center;color:#718093;font-size:14px;">紫色三角形表示 \(\triangle MON\)，绿色/红色点分别为 \(M\)、\(N\)。可切换上方选项查看两种情况。</p>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="tab-panel" v-show="activeTab==='q3'">
+          <h3>(3) 二次函数翻折与不等式</h3>
+          <div class="step">
+            <div class="step-title">第一步：找到两个亮点</div>
+            <p>对于曲线 \(W_1\)、\(W_2\)，亮点同时满足 \(x + y = m\)。计算结果：</p>
+            <div class="formula-box" v-pre>
+              \[
+                \begin{aligned}
+                &W_1: x_1 = \frac{3 - \sqrt{21 - 4m}}{2},\quad y_1 = m - x_1, \\
+                &W_2: x_2 = \frac{4m - 1 + \sqrt{4m + 13}}{2},\quad y_2 = m - x_2.
+                \end{aligned}
+              \]
+            </div>
+            <p>要有两个不同的亮点，需要 \(m > -1\) 且 \(m < 3\)。下方滑块可以动态展示这两个点。</p>
+            <div class="control-row">
+              <label for="slider-m">选择 \(m\)：</label>
+              <input id="slider-m" type="range" min="-0.9" max="2.9" step="0.1" v-model.number="mValue">
+              <span class="badge">当前 \(m = {{ mValue.toFixed(1) }}\)</span>
+            </div>
+            <div class="control-row">
+              <button class="tab-header" style="padding:8px 16px;" @click="playFoldAnimation" :disabled="isAnimating">
+                {{ isAnimating ? '动画播放中…' : '播放翻折过程' }}
+              </button>
+              <span style="color:#636e72;font-size:14px;">蓝→橙：沿 \(x = m\) 翻折，绿色箭头为移动路径</span>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr><th>亮点</th><th>x 坐标</th><th>y 坐标</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>W₁ 上的点</td>
+                  <td>{{ brightPointW1.x.toFixed(3) }}</td>
+                  <td>{{ brightPointW1.y.toFixed(3) }}</td>
+                </tr>
+                <tr>
+                  <td>W₂ 上的点</td>
+                  <td>{{ brightPointW2.x.toFixed(3) }}</td>
+                  <td>{{ brightPointW2.y.toFixed(3) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <canvas id="canvas-q3"></canvas>
+            <p style="text-align:center;color:#718093;font-size:14px;">蓝色曲线为 \(W_1\)，橙色曲线为翻折后的 \(W_2\)，绿色虚线是 \(x+y=m\)，两处交点即为亮点。</p>
+          </div>
+
+          <div class="step">
+            <div class="step-title">第二步：分析表达式 \(P = -m^2 + 2tm + t\)</div>
+            <p>我们已知 \(m\) 的活动区间是 \((-1, 3)\)。要让 \(P \le t + 1\) 对所有这样的 \(m\) 都成立，可以改写为：</p>
+            <div class="formula-box" v-pre>
+              \[
+                -m^2 + 2tm + t \le t + 1 \Longleftrightarrow (m - t)^2 \ge t^2 - 1.
+              \]
+            </div>
+            <p>左边是一个平方，最小值发生在“<span class="highlight">t 到区间 (-1,3) 的距离</span>”上。观察得：</p>
+            <ul style="margin-left:24px;">
+              <li>若 \(t \in [-1,1]\)，可取 \(m = t\)，左侧最小值为 0，必然满足不等式；</li>
+              <li>若 \(t < -1\) 或 \(t > 1\)，即使取最优的 \(m\)，左侧最小值也小于右侧需要的数值，条件不再成立。</li>
+            </ul>
+            <div class="control-row">
+              <label for="slider-t">拖动 \(t\)：</label>
+              <input id="slider-t" type="range" min="-1.5" max="1.5" step="0.1" v-model.number="tValue">
+              <span class="badge">当前 \(t = {{ tValue.toFixed(1) }}\)</span>
+            </div>
+            <p>下表实时显示最有利的 \(m\) 以及对应的两侧数值，帮助验证：</p>
+            <table class="data-table">
+              <thead>
+                <tr><th>距离最近的 \(m\)</th><th>最小 \((m-t)^2\)</th><th>右侧 \(t^2 - 1\)</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{{ optimalM.toFixed(2) }}</td>
+                  <td>{{ minSquare.toFixed(3) }}</td>
+                  <td>{{ (tValue*tValue - 1).toFixed(3) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="answer-box">
+              只有当 <strong>\(t \in [-1, 1]\)</strong> 时，不等式对所有 \(m \in (-1,3)\) 都成立。
+            </div>
+          </div>
+        </div>
+
+        <!-- Wrap-up -->
+        <div class="tab-panel" v-show="activeTab==='wrap'">
+          <h3>趣味总结</h3>
+          <p><strong>亮点线</strong>像一条隐形的“跑道”，所有亮点都在同一条跑道上。一次函数画跑道，面积公式测“跑道+终点”形成的三角形，而抛物线翻折是在做“镜子实验”。</p>
+          <div class="step">
+            <div class="step-title">结果速览</div>
+            <ul style="margin-left: 20px;">
+              <li><strong>(1)</strong> \(N\left(\dfrac{3}{2}, \dfrac{7}{2}\right)\)。</li>
+              <li><strong>(2)</strong> 直线 \(y = -x + 1\) 或 \(y = -x - 1\)，对应两组亮点交换。</li>
+              <li><strong>(3)</strong> \(m \in (-1,3)\) 时才会出现两个亮点，进而限定 \(t \in [-1,1]\)。</li>
+            </ul>
+          </div>
+          <div class="step">
+            <div class="step-title">就地验证</div>
+            <ul style="margin-left:20px;">
+              <li>在 (1)(2) 的画布中拖动或切换选项，检验亮点是否都在同一条 \(x+y=s\) 线上。</li>
+              <li>在 (3) 里改变 \(m\)、播放翻折动画，观察镜面关系与不等式参数的变化。</li>
+            </ul>
+          </div>
+          <ul style="margin-left: 20px;">
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js';"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js';"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js';"></script>
+  <script>
+    function renderMath(root) {
+      if (typeof renderMathInElement === 'undefined') return;
+      try {
+        renderMathInElement(root, {
+          delimiters: [
+            {left: '\\[', right: '\\]', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ],
+          throwOnError: false
+        });
+      } catch (err) {
+        console.warn('KaTeX 渲染失败:', err);
+      }
+    }
+
+    function createCoordinateDrawer(canvas, options = {}) {
+      if (!canvas) return null;
+      const ctx = canvas.getContext('2d');
+      const config = Object.assign({
+        range: {xMin: -4, xMax: 6, yMin: -4, yMax: 6},
+        drawGrid: true
+      }, options);
+
+      function transform(x, y) {
+        const {xMin, xMax, yMin, yMax} = config.range;
+        const width = canvas.width;
+        const height = canvas.height;
+        const px = (x - xMin) / (xMax - xMin) * width;
+        const py = height - (y - yMin) / (yMax - yMin) * height;
+        return [px, py];
+      }
+
+      function clear() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function drawAxes() {
+        const {xMin, xMax, yMin, yMax} = config.range;
+        ctx.save();
+        ctx.strokeStyle = '#b2bec3';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        let [x0, y0] = transform(0, yMin);
+        let [x1, y1] = transform(0, yMax);
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        [x0, y0] = transform(xMin, 0);
+        [x1, y1] = transform(xMax, 0);
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawGrid() {
+        const {xMin, xMax, yMin, yMax} = config.range;
+        ctx.save();
+        ctx.strokeStyle = '#ecf0f1';
+        ctx.lineWidth = 1;
+        for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+          const [sx0, sy0] = transform(x, yMin);
+          const [sx1, sy1] = transform(x, yMax);
+          ctx.beginPath();
+          ctx.moveTo(sx0, sy0);
+          ctx.lineTo(sx1, sy1);
+          ctx.stroke();
+        }
+        for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+          const [sx0, sy0] = transform(xMin, y);
+          const [sx1, sy1] = transform(xMax, y);
+          ctx.beginPath();
+          ctx.moveTo(sx0, sy0);
+          ctx.lineTo(sx1, sy1);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawPoint(x, y, style = '#e74c3c', label = '') {
+        const [px, py] = transform(x, y);
+        ctx.save();
+        ctx.fillStyle = style;
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fill();
+        if (label) {
+          ctx.font = '14px Arial';
+          ctx.fillStyle = style;
+          ctx.fillText(label, px + 8, py - 8);
+        }
+        ctx.restore();
+      }
+
+      function drawLine(fx, style = '#0984e3') {
+        const {xMin, xMax} = config.range;
+        ctx.save();
+        ctx.strokeStyle = style;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        let first = true;
+        const steps = 200;
+        for (let i = 0; i <= steps; i++) {
+          const x = xMin + (xMax - xMin) * i / steps;
+          const y = fx(x);
+          const [px, py] = transform(x, y);
+          if (Number.isFinite(px) && Number.isFinite(py)) {
+            if (first) {
+              ctx.moveTo(px, py);
+              first = false;
+            } else {
+              ctx.lineTo(px, py);
+            }
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawSegment(points, style = '#6c5ce7', fill = false, fillStyle = 'rgba(108,92,231,0.15)') {
+        if (!points.length) return;
+        ctx.save();
+        ctx.strokeStyle = style;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        const [startX, startY] = transform(points[0][0], points[0][1]);
+        ctx.moveTo(startX, startY);
+        for (let i = 1; i < points.length; i++) {
+          const [x, y] = transform(points[i][0], points[i][1]);
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        if (fill) {
+          ctx.fillStyle = fillStyle;
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function drawText(x, y, text, color = '#2d3436') {
+        const [px, py] = transform(x, y);
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.font = '13px Arial';
+        ctx.fillText(text, px + 6, py - 6);
+        ctx.restore();
+      }
+
+      function redraw(cb) {
+        clear();
+        if (config.drawGrid) drawGrid();
+        drawAxes();
+        if (typeof cb === 'function') cb({drawPoint, drawLine, drawSegment, drawText, transform});
+      }
+
+      redraw();
+      return {redraw};
+    }
+
+    const { createApp } = Vue;
+    const app = createApp({
+      data() {
+        return {
+          activeTab: 'intro',
+          caseSelection: 'case1',
+          mValue: 0.5,
+          tValue: 0,
+          foldProgress: 1,
+          isAnimating: false
+        };
+      },
+      computed: {
+        brightPointW1() {
+          const m = this.mValue;
+          const delta = 21 - 4 * m;
+          const x = (3 - Math.sqrt(Math.max(delta, 0))) / 2;
+          return { x, y: m - x };
+        },
+        brightPointW2() {
+          const m = this.mValue;
+          const delta = 4 * m + 13;
+          const x = (4 * m - 1 + Math.sqrt(Math.max(delta, 0))) / 2;
+          return { x, y: m - x };
+        },
+        optimalM() {
+          const t = this.tValue;
+          if (t < -1) return -1;
+          if (t > 3) return 3;
+          return Math.min(Math.max(t, -1), 3);
+        },
+        minSquare() {
+          const t = this.tValue;
+          const m = this.optimalM;
+          return (m - t) * (m - t);
+        }
+      },
+      mounted() {
+        this.$nextTick(() => {
+          renderMath(document.body);
+          this.drawQ1();
+          this.drawQ2();
+          this.drawQ3();
+        });
+      },
+      watch: {
+        caseSelection() {
+          this.drawQ2();
+        },
+        mValue() {
+          if (this.isAnimating) {
+            this.isAnimating = false;
+          }
+          this.foldProgress = 1;
+          this.drawQ3();
+        },
+        activeTab() {
+          this.$nextTick(() => {
+            this.drawQ1();
+            this.drawQ2();
+            this.drawQ3(true);
+            renderMath(document.getElementById('app'));
+          });
+        }
+      },
+      methods: {
+        switchTab(name) {
+          this.activeTab = name;
+        },
+        drawQ1() {
+          const canvas = document.getElementById('canvas-q1');
+          if (!canvas || this.activeTab !== 'q1') return;
+          canvas.width = canvas.clientWidth * window.devicePixelRatio;
+          canvas.height = canvas.clientHeight * window.devicePixelRatio;
+          const drawer = createCoordinateDrawer(canvas, { range: {xMin: -2, xMax: 6, yMin: -1, yMax: 6}});
+          drawer.redraw(({drawPoint, drawLine, drawText}) => {
+            drawLine(x => x + 2, '#2980b9');
+            const M = {x: 3, y: 2};
+            const N = {x: 1.5, y: 3.5};
+            drawPoint(M.x, M.y, '#e74c3c', 'M(3,2)');
+            drawPoint(N.x, N.y, '#27ae60', 'N(3/2,7/2)');
+            drawText(0.2, 5.2, 'x+y=5', '#718093');
+          });
+        },
+        drawQ2() {
+          const canvas = document.getElementById('canvas-q2');
+          if (!canvas || this.activeTab !== 'q2') return;
+          canvas.width = canvas.clientWidth * window.devicePixelRatio;
+          canvas.height = canvas.clientHeight * window.devicePixelRatio;
+          const drawer = createCoordinateDrawer(canvas, { range: {xMin: -3, xMax: 3, yMin: -3, yMax: 3}});
+          const case1 = this.caseSelection === 'case1';
+          const M = case1 ? {x: 2, y: -1} : {x: 1, y: -2};
+          const N = case1 ? {x: -1, y: 2} : {x: -2, y: 1};
+          const line = case1 ? (x) => -x + 1 : (x) => -x - 1;
+          drawer.redraw(({drawPoint, drawLine, drawSegment, drawText}) => {
+            drawLine(line, '#273c75');
+            drawPoint(M.x, M.y, '#e74c3c', 'M');
+            drawPoint(N.x, N.y, '#20bf6b', 'N');
+            drawSegment([[0,0], [M.x, M.y], [N.x, N.y], [0,0]], '#9c88ff', true, 'rgba(156,136,255,0.18)');
+            drawPoint(0,0,'#2d3436','O');
+            drawText(-2.6, case1 ? 1.7 : -1.7, case1 ? 'y=-x+1' : 'y=-x-1', '#40739e');
+          });
+        },
+        drawQ3(forceReset = false) {
+          const canvas = document.getElementById('canvas-q3');
+          if (!canvas || this.activeTab !== 'q3') return;
+          canvas.width = canvas.clientWidth * window.devicePixelRatio;
+          canvas.height = canvas.clientHeight * window.devicePixelRatio;
+          const range = {xMin: -3, xMax: 5, yMin: -4, yMax: 6};
+          const drawer = createCoordinateDrawer(canvas, { range });
+          const m = this.mValue;
+          const w1Fn = x => -x * x + 2 * x + 3;
+          const lineFn = x => m - x;
+          const P1 = this.brightPointW1;
+          const P2 = this.brightPointW2;
+
+          const progress = forceReset ? this.foldProgress : Math.min(Math.max(this.foldProgress, 0), 1);
+
+          drawer.redraw(({drawPoint, drawLine, drawSegment, drawText}) => {
+            drawLine(w1Fn, '#0984e3');
+            drawLine(lineFn, '#00b894');
+
+            const steps = 220;
+            const foldPoints = [];
+            const arrowSegments = [];
+            for (let i = 0; i <= steps; i++) {
+              const x = range.xMin + (m - range.xMin) * (i / steps);
+              const y = w1Fn(x);
+              const targetX = 2 * m - x;
+              const currentX = x + (targetX - x) * progress;
+              foldPoints.push([currentX, y]);
+              if (i % 24 === 0) {
+                const midX = (x + currentX) / 2;
+                arrowSegments.push([[x, y], [midX, y], [currentX, y]]);
+              }
+            }
+            drawSegment(foldPoints, '#e17055', false);
+            arrowSegments.forEach(seg => drawSegment(seg, '#55efc4', false));
+
+            const movingPoint1 = {
+              x: P1.x + (2 * m - 2 * P1.x) * progress,
+              y: P1.y
+            };
+
+            drawPoint(P1.x, P1.y, '#2980b9', '点 A');
+            drawPoint(movingPoint1.x, movingPoint1.y, '#d35400', progress === 1 ? '点 B' : 'A→B');
+            drawPoint(P2.x, P2.y, '#d35400', progress === 1 ? '' : '目标 B');
+            drawText(m + 0.05, range.yMin + 0.5, '镜面 x = m', '#636e72');
+          });
+        },
+        playFoldAnimation() {
+          if (this.isAnimating) return;
+          this.isAnimating = true;
+          this.foldProgress = 0;
+          const duration = 1200;
+          const start = performance.now();
+          const animate = (time) => {
+            const elapsed = time - start;
+            this.foldProgress = Math.min(elapsed / duration, 1);
+            this.drawQ3();
+            if (elapsed < duration) {
+              requestAnimationFrame(animate);
+            } else {
+              this.foldProgress = 1;
+              this.isAnimating = false;
+              this.drawQ3();
+            }
+          };
+          requestAnimationFrame(animate);
+        }
+      }
+    });
+
+    app.mount('#app');
+
+    window.addEventListener('load', () => {
+      renderMath(document.body);
+    });
+  </script>
+</body>
+</html>
+

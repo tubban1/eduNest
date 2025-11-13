@@ -1,0 +1,696 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="2023年北京高考数学题2：数列与前缀和匹配问题详细解析。包含题目完整复原、三个子问题的逐步解答、前缀和计算方法讲解和交互式图表可视化工具。适合高中数学学习和竞赛备考。">
+  <meta name="keywords" content="2023北京高考,数列问题,前缀和,数学解析,高考数学,高中数学,双指针算法,数学竞赛,阶梯函数">
+  <title>2023·北京 题2 | 数列与前缀和匹配 r_k | Vue 3.5.20</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+      color: #333;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+      color: #2e7d32;
+      font-weight: 700;
+    }
+    .btn {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .btn:hover {
+      background: #2980b9;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    input[type="text"], input[type="number"] {
+      background: #fff;
+      border: 1px solid #ddd;
+      color: #333;
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+    .muted {
+      color: #666;
+      font-size: 0.9em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 960px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: block;
+      background: #fff;
+    }
+    table {
+      border-collapse: collapse;
+      background: #fff;
+      width: 100%;
+    }
+    td, th {
+      border: 1px solid #e0e0e0;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #34495e;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #3498db;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #2980b9;
+    }
+    .tab-header.active {
+      background: #2980b9;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container, .wrap {
+        padding: 10px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 12px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 10px;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/chart.umd.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js'"></script>
+
+  <meta name="author" content="df94c6fe"></head>
+<body>
+  <div class="container">
+    <h1>2023·北京 题2 | 数列与前缀和匹配 r_k</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre="">
+      <h2>题目</h2>
+      <div class="k">
+        设两数列 \(\{a_n\},\{b_n\}\) 的项数均为 \(m\,(m&gt;2)\)，且 \(a_n,b_n\in\{1,2,\dots,m\}\)。记 \(\{A_n\},\{B_n\}\) 为其前 \(n\) 项和，且规定 \(A_0=B_0=0\)。对 \(k\in\{0,1,\dots,m\}\)，定义
+        \[ r_k=\max\{\, i\mid B_i\le A_k,\ i\in\{0,1,\dots,m\}\,\}. \]
+        <br>
+        <p><strong>(I)</strong> 当 \(m=3\)，给定 \(a=(2,1,3),\ b=(1,3,3)\)，求 \(r_0,r_1,r_2,r_3\)。</p>
+        <br>
+        <p><strong>(II)</strong> 研究 \(r_k\) 的基本性质（单调性、界），并据此给出求解通用步骤。</p>
+        <br>
+        <p><strong>(III)</strong> 证明：存在 \(0\le p\lt q\le m\) 与 \(0\le r\lt s\le m\)，使得 \(A_p+B_s=A_q+B_r\)。</p>
+      </div>
+    </div>
+
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(I) 计算演示</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(II) 基本性质</div>
+            <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(III) 结论证明</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-if="activeTab==='intro'">
+            <div class="k" v-pre="">
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>把前缀和 \(A_k\) 和 \(B_i\) 想象成两条“阶梯曲线”，\(r_k\) 是“\(A_k\)”水平线最后穿过的 \(B\) 的阶梯位置。由于 \(a_i,b_j\ge 1\)，两条前缀和曲线单调递增，保证 \(r_k\) 的存在唯一。</p>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">读题抓要点</div>
+                <ul style="margin-left:20px;">
+                  <li>已知：两数列 \(\{a_n\},\{b_n\}\)，项数均为 \(m\)</li>
+                  <li>对象：前缀和 \(\{A_n\},\{B_n\}\)，匹配函数 \(r_k\)</li>
+                  <li>目标：计算 \(r_k\)；研究性质；证明存在性</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点（知识图）</h3>
+              <div style="margin-top:12px; margin-left:0; margin-right:0;">
+                <div id="knowledge-d3" style="width:100%;height:420px;border:1px solid #e0e0e0;border-radius:6px;background:#ffffff;overflow:hidden;position:relative;"></div>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本题考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：前缀和、单调性、双指针/二分搜索、抽屉原理</li>
+                  <li><strong>易错点</strong>：索引越界、\(B_{r_k}\le A_k\lt B_{r_k+1}\) 的边界、\(k=0\) 情况</li>
+                  <li><strong>难点</strong>：把图像直觉（阶梯最后穿过处）和形式化不等式对应起来</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>基础</strong>：先写出单调性与存在唯一；给出 \(B_{r_k}\le A_k\lt B_{r_k+1}\)</li>
+                  <li><strong>计算</strong>：演示一次双指针计算表格与折线图（可得过程分）</li>
+                  <li><strong>证明</strong>：抽屉或折线交错法给出(III)存在性（给出框架也可得分）</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- (I) 计算演示 -->
+          <div class="tab-panel" v-if="activeTab==='q1'">
+            <div class="card">
+              <h2>(I) 计算演示与可视化</h2>
+              <div class="row">
+                <label>m：</label>
+                <input type="number" v-model.number="m" min="3" style="width:80px">
+                <label>a：</label>
+                <input type="text" v-model="astr" style="width:300px" placeholder="如 2,1,3">
+                <label>b：</label>
+                <input type="text" v-model="bstr" style="width:300px" placeholder="如 1,3,3">
+                <button class="btn" @click="compute()">计算</button>
+              </div>
+              <div class="row" style="margin-top:8px">
+                <div class="muted">说明：以 \(A_k\) 为阈，寻找最大的 \(i\) 使 \(B_i\le A_k\)。</div>
+              </div>
+              <div style="margin-top:10px;overflow:auto">
+                <table>
+                  <thead><tr><th>k</th><th>A_k</th><th>r_k</th><th>B_{r_k}</th></tr></thead>
+                  <tbody>
+                    <tr v-for="(rk,k) in r" :key="k">
+                      <td>{{k}}</td><td>{{A[k]}}</td><td class="ans">{{rk}}</td><td>{{B[rk]}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="row" style="margin-top:12px">
+                <canvas id="chart" width="480" height="260"></canvas>
+              </div>
+              <div class="muted" style="margin-top:10px" v-pre="">
+                本题给定数据：\(a=(2,1,3),\ b=(1,3,3)\)。计算得到 \(A=(0,2,3,6)\), \(B=(0,1,4,7)\)，于是
+                \(r_0=0,\ r_1=1,\ r_2=1,\ r_3=2\)。（与图中"阶梯对比"一致）
+              </div>
+            </div>
+          </div>
+
+          <!-- (II) 基本性质 -->
+          <div class="tab-panel" v-if="activeTab==='q2'">
+            <div class="card" v-pre="">
+              <h2>(II) 基本性质与通用求解</h2>
+              <div class="k">
+                记 \(A_k=\sum_{i=1}^{k}a_i,\ B_i=\sum_{j=1}^{i}b_j\)。由于 \(a_i,b_j\ge1\)，故 \(A_k\)、\(B_i\) 严格递增且 \(A_0=B_0=0\)。对固定 \(k\)，函数 \(f(i)=B_i\) 递增，于是
+                \[ r_k=\max\{i\mid B_i\le A_k\}\ \text{存在且唯一}。 \]
+                性质：
+                <ul>
+                  <li>单调性：\(A_{k+1}\ge A_k\Rightarrow r_{k+1}\ge r_k\).</li>
+                  <li>界：\(0\le r_k\le m\)；且 \(B_{r_k}\le A_k\lt B_{r_k+1}\)（若 \(r_k\lt m\)）。</li>
+                  <li>算法：对每个 \(k\) 做一次二分/双指针扫描（整体 \(O(m)\)）。</li>
+                </ul>
+                这与"在 \(A\) 与 \(B\) 的前缀和折线图上，寻找 \(A_k\) 水平线最后穿过的 \(B\) 的阶梯"等价。
+              </div>
+            </div>
+          </div>
+
+          <!-- (III) 结论证明 -->
+          <div class="tab-panel" v-if="activeTab==='q3'">
+            <div class="card" v-pre="">
+              <h2>(III) 结论证明：存在 \(A_p+B_s=A_q+B_r\)</h2>
+              <div class="k">
+                设 \(X_k=A_k\,(k=0..m)\)、\(Y_i=B_i\,(i=0..m)\)。考虑 \((m+1)^2\) 个和 \(X_p+Y_s\)。
+                把它们按模 \(1\) 划分为整数值（事实上所有均为整数），但直接抽屉会过强。下面给出更直接的构造：
+                <br><br>
+                固定 \(s\)，观察序列 \(A_0+ B_s, A_1+B_s,\dots,A_m+B_s\) 单调递增；固定 \(p\) 观察 \(A_p+B_0,\dots,A_p+B_m\) 也单调递增。
+                记 \(C_k=A_k+B_{m-k}\,(k=0..m)\)。则 \(C_0=A_0+B_m\) 到 \(C_m=A_m+B_0\) 是一条从大到小的连续"折线"。另一方面，考虑 \(D_k=A_k+B_{m-k-1}\,(k=0..m-1)\)。
+                两条折线共有 \(m+(m-1)+2\) 个端点，落在区间 \([A_0+B_0, A_m+B_m]\) 上，根据介值与端点交错，必存在 \(k\) 使两条折线水平重合，
+                即存在 \(p\lt q\) 与 \(r\lt s\) 使 \(A_p+B_s=A_q+B_r\)。该结论亦可用经典抽屉法：
+                将 \(m(m+1)+1\) 个数 \(A_k+B_{m-k}\,(k=0..m)\) 与 \(A_k+B_{m-k-1}\,(k=0..m-1)\) 放入 \(m(m+1)\) 个区间 \([t,t+1)\)（此处可直接用整数比较），必有同值者。
+              </div>
+              <div class="muted" style="margin-top:6px">（说明：本条给出一种"和的折线交错"的常见证明方法；也可用更标准的抽屉原理改写。）</div>
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-if="activeTab==='summary'">
+            <div class="k" v-pre="">
+              <p><strong>要点回顾：</strong>前缀和单调性保证 \(r_k\) 的存在唯一；几何直觉是"\(A_k\)"水平线在 \(B\) 阶梯的最后穿越处。算法上用双指针整体 \(O(m)\)。</p>
+            </div>
+            <div class="card">
+              <h2>快速验证</h2>
+              <div class="row">
+                <label>m：</label>
+                <input type="number" v-model.number="m" min="3" style="width:80px">
+                <label>a：</label>
+                <input type="text" v-model="astr" style="width:260px" placeholder="a，如 2,1,3">
+                <label>b：</label>
+                <input type="text" v-model="bstr" style="width:260px" placeholder="b，如 1,3,3">
+                <button class="btn" @click="compute()">更新并绘图</button>
+              </div>
+              <div style="margin-top:10px;overflow:auto">
+                <table>
+                  <thead><tr><th>k</th><th>A_k</th><th>r_k</th><th>B_{r_k}</th></tr></thead>
+                  <tbody>
+                    <tr v-for="(rk,k) in r" :key="k">
+                      <td>{{k}}</td><td>{{A[k]}}</td><td class="ans">{{rk}}</td><td>{{B[rk]}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="row" style="margin-top:12px">
+                <canvas id="chart-summary" width="480" height="260"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const {createApp} = Vue;
+
+  const app = createApp({
+    data(){
+      return { 
+        activeTab: 'intro',
+        m: 3, 
+        astr: '2,1,3', 
+        bstr: '1,3,3', 
+        a:[], 
+        b:[], 
+        A:[0], 
+        B:[0], 
+        r:[], 
+        chart: null 
+      }
+    },
+    mounted(){ 
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.compute();
+          if(typeof renderMathInElement !== 'undefined') {
+            renderMathInElement(document.body, {
+              delimiters: [
+                {left: '\\[', right: '\\]', display: true},
+                {left: '\\(', right: '\\)', display: false}
+              ],
+              throwOnError: false
+            });
+          }
+          if(this.activeTab === 'intro') {
+            setTimeout(() => {
+              this.renderD3Knowledge();
+            }, 300);
+          }
+        }, 200);
+      });
+    },
+    methods:{
+      setTab(tab) {
+        this.activeTab = tab;
+        // 进入任一tab，若其内有可视化canvas且未初始化，则就地初始化
+        setTimeout(() => {
+          if(typeof renderMathInElement !== 'undefined') {
+            const appEl = document.getElementById('app');
+            if(appEl) {
+              try {
+                renderMathInElement(appEl, {
+                  delimiters: [
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false
+                });
+              } catch(e) {}
+            }
+          }
+          // 启发引导：渲染知识图
+          if(tab === 'intro') {
+            setTimeout(() => {
+              this.renderD3Knowledge();
+            }, 50);
+          } else if(tab === 'q1') {
+            setTimeout(() => {
+              this.compute();
+            }, 50);
+          } else if(tab === 'summary') {
+            setTimeout(() => {
+              this.compute();
+              this.draw('chart-summary');
+            }, 50);
+          }
+        }, 50);
+      },
+      getKnowledgeGraph() {
+        return {
+          nodes: [
+            {id: '1', name: '前缀和'},
+            {id: '2', name: '数列'},
+            {id: '3', name: '单调性'},
+            {id: '4', name: '双指针'},
+            {id: '5', name: '二分查找'},
+            {id: '6', name: '抽屉原理'},
+            {id: '7', name: '介值定理'},
+            {id: '8', name: '匹配问题'},
+            {id: '9', name: '算法设计'},
+            {id: '10', name: '几何直观'},
+            {id: '11', name: '阶梯函数'},
+            {id: '12', name: '存在性证明'}
+          ],
+          links: [
+            {source: '1', target: '2'},
+            {source: '1', target: '3'},
+            {source: '2', target: '3'},
+            {source: '8', target: '1'},
+            {source: '8', target: '4'},
+            {source: '8', target: '5'},
+            {source: '4', target: '9'},
+            {source: '5', target: '9'},
+            {source: '3', target: '4'},
+            {source: '12', target: '6'},
+            {source: '12', target: '7'},
+            {source: '10', target: '11'},
+            {source: '8', target: '10'}
+          ]
+        };
+      },
+      renderD3Knowledge() {
+        try {
+          if(typeof d3 === 'undefined') {
+            return;
+          }
+          const el = document.getElementById('knowledge-d3');
+          if(!el) {
+            return;
+          }
+          const rect = el.getBoundingClientRect();
+          if(rect.width === 0 || rect.height === 0) {
+            const self = this;
+            setTimeout(() => {
+              self.renderD3Knowledge();
+            }, 100);
+            return;
+          }
+          el.innerHTML = '';
+          const width = el.clientWidth || 800;
+          const height = el.clientHeight || 420;
+          
+          const padding = 60;
+          const innerWidth = width - 2 * padding;
+          const innerHeight = height - 2 * padding;
+          
+          const svg = d3.select(el).append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .style('overflow', 'hidden');
+          
+          const g = svg.append('g')
+            .attr('transform', `translate(${padding},${padding})`);
+          
+          const { nodes, links } = this.getKnowledgeGraph();
+          const color = d3.scaleOrdinal(['#2c3e50','#3498db','#9b59b6','#e67e22','#27ae60','#e74c3c','#16a085','#7f8c8d','#f39c12','#8e44ad','#1abc9c','#34495e']);
+          
+          const sim = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d=>d.id).distance(100).strength(0.5))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(innerWidth/2, innerHeight/2))
+            .force('collision', d3.forceCollide().radius(45))
+            .force('x', d3.forceX(innerWidth/2).strength(0.1))
+            .force('y', d3.forceY(innerHeight/2).strength(0.1));
+          
+          const link = g.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
+            .selectAll('line').data(links).enter().append('line').attr('stroke-opacity',0.8);
+          
+          const node = g.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
+            .on('start', (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0.3).restart(); 
+              d.fx=d.x; 
+              d.fy=d.y; 
+            })
+            .on('drag', (e,d)=>{ 
+              const radius = 45;
+              d.fx = Math.max(radius, Math.min(innerWidth - radius, e.x - padding));
+              d.fy = Math.max(radius, Math.min(innerHeight - radius, e.y - padding));
+            })
+            .on('end',  (e,d)=>{ 
+              if(!e.active) sim.alphaTarget(0); 
+              if(d.fx !== null && d.fy !== null) {
+                const radius = 45;
+                d.fx = Math.max(radius, Math.min(innerWidth - radius, d.fx));
+                d.fy = Math.max(radius, Math.min(innerHeight - radius, d.fy));
+              } else {
+                d.fx=null; 
+                d.fy=null; 
+              }
+            }));
+          
+          node.append('circle').attr('r', 18).attr('fill',(d,i)=>color(i)).attr('stroke','#fff').attr('stroke-width',1.2);
+          node.append('text').text(d=>d.name).attr('x', 24).attr('y', 5).attr('font-size','12px').attr('fill','#1f2937');
+          
+          sim.on('tick', ()=>{
+            const radius = 45;
+            nodes.forEach(d => {
+              if(d.fx === null && d.fy === null) {
+                d.x = Math.max(radius, Math.min(innerWidth - radius, d.x));
+                d.y = Math.max(radius, Math.min(innerHeight - radius, d.y));
+              }
+            });
+            
+            link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+                .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+            node.attr('transform', d=>`translate(${d.x},${d.y})`);
+          });
+        } catch(e) {
+          // D3 rendering error, silently fail
+        }
+      },
+      parseList(str){ return str.split(',').map(s=>Number(s.trim())).filter(v=>Number.isFinite(v)); },
+      prefixSum(arr){ const ps=[0]; for(let x of arr) ps.push(ps[ps.length-1]+x); return ps; },
+      compute(){
+        this.a = this.parseList(this.astr).slice(0,this.m);
+        this.b = this.parseList(this.bstr).slice(0,this.m);
+        if(this.a.length!==this.m||this.b.length!==this.m){ alert('长度需等于 m'); return; }
+        this.A = this.prefixSum(this.a);
+        this.B = this.prefixSum(this.b);
+        // 双指针一次扫出 r_k
+        this.r = Array(this.m+1).fill(0);
+        let i=0; // 指向B
+        for(let k=0;k<=this.m;k++){
+          while(i+1<=this.m && this.B[i+1] <= this.A[k]) i++;
+          this.r[k]=i;
+        }
+        this.draw();
+        this.$nextTick(()=> renderMathInElement(document.body));
+      },
+      draw(canvasId = 'chart'){
+        const canvas = document.getElementById(canvasId);
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const labels = Array.from({length:this.m+1},(_,i)=>i);
+        const dataA = this.A;
+        const dataB = this.B;
+        if(this.chart){ this.chart.destroy(); }
+        this.chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {label:'A_k',data:dataA,borderColor:'#3498db',backgroundColor:'transparent',tension:0,fill:false,lineWidth:2},
+              {label:'B_i',data:dataB,borderColor:'#e74c3c',backgroundColor:'transparent',tension:0,fill:false,lineWidth:2}
+            ]
+          },
+          options: {
+            scales:{
+              x:{
+                title:{display:true,text:'索引 (0..m)',color:'#34495e'},
+                ticks:{color:'#666'},
+                grid:{color:'#e0e0e0'}
+              },
+              y:{
+                beginAtZero:true,
+                ticks:{color:'#666'},
+                grid:{color:'#e0e0e0'}
+              }
+            },
+            plugins:{
+              legend:{
+                labels:{color:'#34495e',font:{size:12}}
+              }
+            }
+          }
+        });
+      }
+    }
+  });
+  
+  // 等待DOM准备就绪后再挂载
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      const appEl = document.getElementById('app');
+      if (appEl) {
+        const vm = app.mount('#app');
+        window.vm = vm;
+      }
+    });
+  } else {
+    const appEl = document.getElementById('app');
+    if (appEl) {
+      const vm = app.mount('#app');
+      window.vm = vm;
+    }
+  }
+  
+  // 等待页面加载完成后渲染数学公式
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+    }, 200);
+  });
+  </script>
+
+
+
+
+</body></html>
