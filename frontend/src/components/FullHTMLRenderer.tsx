@@ -50,7 +50,7 @@ interface FullHTMLRendererProps {
   autoHeight?: boolean; // 自动调整高度（仅在 fixedHeight 为 false 时生效）
   enableHeightListener?: boolean; // 是否注入高度监听脚本（可选，默认 false，保持纯渲染）
   codepenMode?: boolean; // CodePen 样式：仅在加载完成后测量一次高度
-  title?: string; // iframe title
+  title?: string; // iframe title（可覆盖自动解析的标题）
 }
 
 export default function FullHTMLRenderer({
@@ -65,8 +65,31 @@ export default function FullHTMLRenderer({
   autoHeight = true,
   enableHeightListener = false, // 默认不注入，保持纯渲染
   codepenMode = false,
-  title = 'HTML 预览'
+  title
 }: FullHTMLRendererProps) {
+  const iframeTitle = useMemo(() => {
+    if (title && title.trim()) {
+      return title.trim();
+    }
+
+    if (fullHTML) {
+      const match = fullHTML.match(/<title[^>]*>([^<]+)<\/title>/i);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+
+    if (externalUrl) {
+      try {
+        const parsed = new URL(externalUrl, typeof window !== 'undefined' ? window.location.origin : undefined);
+        return parsed.hostname || 'EduNest AI';
+      } catch {
+        // ignore
+      }
+    }
+
+    return 'EduNest AI';
+  }, [title, fullHTML, externalUrl]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,13 +122,6 @@ export default function FullHTMLRenderer({
       if (event.data && event.data.type === 'IFRAME_HEIGHT_CHANGE') {
         const { height, count } = event.data.data;
         const currentHeight = iframeRef.current?.style.height;
-        console.log('[FullHTMLRenderer] message(height)', {
-          reportedHeight: height,
-          iframeExistingHeight: currentHeight,
-          eventCount: count ?? 'n/a',
-          timestamp: Date.now()
-        });
-        
         // 只在高度合理范围内调整
         if (iframeRef.current && height > 0 && height < 10000) {
           const iframe = iframeRef.current;
@@ -113,24 +129,12 @@ export default function FullHTMLRenderer({
           const previousHeight = parseFloat(currentHeight || '0') || 0;
           const diff = newHeight - previousHeight;
           if (Math.abs(diff) < 2) {
-            console.log('[FullHTMLRenderer] iframe resize skipped (diff too small)', { previousHeight, requestedHeight: height });
             return;
           }
-          console.log('[FullHTMLRenderer] iframe resize decision', {
-            requestedHeight: height,
-            clampedHeight: newHeight,
-            previousHeight,
-            diff
-          });
           
           iframe.style.height = `${newHeight}px`;
           iframe.style.minHeight = `${newHeight}px`;
           setIframeHeight(`${newHeight}px`);
-
-          console.log('[FullHTMLRenderer] iframe resized', {
-            finalHeight: iframe.style.height,
-            finalMinHeight: iframe.style.minHeight
-          });
         }
       }
     };
@@ -144,14 +148,6 @@ export default function FullHTMLRenderer({
   // 动态调整 iframe 高度
   const adjustIframeHeight = useCallback(() => {
     if (!autoHeight || fixedHeight || forceExternalInWechat || !iframeRef.current) {
-      if (!codepenMode) {
-      console.log('[FullHTMLRenderer] adjustIframeHeight skipped', {
-        autoHeight,
-        fixedHeight,
-        forceExternalInWechat,
-        hasIframe: !!iframeRef.current
-      });
-      }
       return;
     }
 
@@ -184,21 +180,6 @@ export default function FullHTMLRenderer({
         const extraSpace = 80; // 额外空间
         const newHeight = Math.max(0, maxHeight + extraSpace);
         const previousHeight = parseFloat(iframe.style.height || '0') || 0;
-        if (!codepenMode) {
-          console.log('[FullHTMLRenderer] adjustIframeHeight metrics', {
-            contentHeight,
-            clientHeight,
-            offsetHeight,
-            docScrollHeight,
-            docClientHeight,
-            docOffsetHeight,
-            maxHeight,
-            extraSpace,
-            newHeight,
-            previousHeight,
-            diff: newHeight - previousHeight
-          });
-        }
         
         iframe.style.height = `${newHeight}px`;
         iframe.style.minHeight = `${newHeight}px`;
@@ -414,7 +395,7 @@ export default function FullHTMLRenderer({
             key={`${previewKey}-wechat`}
             ref={iframeRef}
             src={externalUrl}
-            title={title}
+            title={iframeTitle}
             className="w-full h-full border-0 bg-white"
             style={{
               border: 'none',
@@ -444,7 +425,7 @@ export default function FullHTMLRenderer({
           key={previewKey}
           ref={iframeRef}
           src={externalUrl}
-          title={title}
+          title={iframeTitle}
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
           className="w-full h-full border-0 bg-white"
           style={{
@@ -470,7 +451,7 @@ export default function FullHTMLRenderer({
           key={previewKey}
           ref={iframeRef}
           srcDoc={processedHTML}
-          title={title}
+          title={iframeTitle}
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
           className="w-full h-full border-0 bg-white"
           style={{
