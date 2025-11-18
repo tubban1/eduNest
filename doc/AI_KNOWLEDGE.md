@@ -360,7 +360,7 @@ The learning goal should stay clear and integrated into gameplay.
 
 ---
 
-用vue3.5.20解图中的题目，要求完整复原题目，解题部分需要用Tab区分启发引导（激发学生兴趣的方式来解析题目，提炼线索，整理出涉及的知识点，并用D3呈现，本题考点，易错点与难点，最后给出拿分策略）。然后按步骤详细解答题目，每个问题有一个单独Tab，如需图像，图表，请画出来。解题结束后有一个Tab做总结与验证。给页面添加Meta description和keywords，不要带有技术描述（例如vue，katex）。生成的代码放在public/math下面
+用vue3.5.20解图中的题目，要求完整复原题目，解题部分需要用Tab区分启发引导（解析题目，提炼线索，图像和动画辅助理解题目，整理出涉及的知识点，本题考点易错点与难点，最后给出拿分策略）。然后按步骤详细解答题目，每个问题有一个单独Tab，如需图像，图表，动画都实现出来。解题结束后有一个Tab做总结与验证（可以包含拔高与拓展，可调参数验证结果）。给页面添加Meta description和keywords，不要带有技术描述（例如vue，katex）。生成的代码放在public/math下面
 
 趣味性
 
@@ -368,8 +368,10 @@ The learning goal should stay clear and integrated into gameplay.
 
 辅助图像要更解题结合，清晰标注
 
-用vue3.5.20和 @libraries_cn.json  多种依赖库展示利兹卡尔顿品牌的服务化差异。如需图像，图表，请画出来。给页面添加Meta description和keywords，不要带有技术描述（例如vue，katex）。生成的代码放在public/buzz下面
+用vue3.5.20解图中的题目，要求完整复原题目，解题部分需要用Tab区分启发引导（解析题目，提炼线索，图像和动画辅助理解题目，整理出涉及的知识点，本题考点易错点与难点，最后给出拿分策略）。然后按步骤详细解答题目，每个问题有一个单独Tab，如需图像，图表，动画都实现出来。解题结束后有一个Tab做总结与验证（可以包含拔高与拓展，可调参数验证结果）。给页面添加Meta description和keywords，不要带有技术描述（例如vue，katex）。首选引用库 @supported-libraries.json fallback 引用库 @libraries_cn.json ，风格参考  @cross-product.html  生成的代码放在public/zhongkao下面   
 
-用vue3.5.20和 @libraries_cn.json 制作动作，清晰详细的解释如何用尺子画直线，线段长方形，正方形，用圆规和圆模板画圆。每个动画有一个单独的tab。给页面添加Meta description和keywords，不要带有技术描述（例如vue，katex）。生成的代码放在public/graphing下面
+用vue3.5.20和 @libraries_cn.json 制作动画，清晰详细的解释如何用尺子画直线，线段长方形，正方形，用圆规和圆模板画圆。每个动画有一个单独的tab。给页面添加Meta description和keywords，不要带有技术描述（例如vue，katex）。生成的代码放在public/graphing下面
 
 用vue3.5.20和 @libraries_cn.json 里面适合的引用库解题：一根弹性均匀的橡皮筋长5米，一只小蚂蚁从一端爬向另一端。小蚂蚁每天沿着橡皮筋爬1米。小蚂蚁每爬1米，橡皮筋就被瞬间拉长5米。问多少天小蚂蚁可以爬到橡皮筋的另一端。理想条件下，小蚂蚁不会死，橡皮筋不会被拉断。用简单的文字，图像，图表，动画呈现出来解题思路，公式，推导步骤，结果，验证。生成代码放在public/middleSchool下面
+
+含参函数画图时设定参数在符合数学逻辑的范围内可自由调节

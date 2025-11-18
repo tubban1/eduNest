@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive STEM lab with animated walkthroughs for finding the incenter and circumcenter of a triangle, plus chemistry and physics experiment demos.">
+  <title>Triangle Centers & STEM Lab</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #f4f6fb;
+      color: #1f2937;
+      line-height: 1.8;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 32px 28px;
+      border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+    }
+    h1 {
+      font-size: 30px;
+      color: #111827;
+      margin-bottom: 24px;
+    }
+    h2 {
+      color: #1f2937;
+      margin: 24px 0 12px;
+      border-left: 4px solid #2563eb;
+      padding-left: 12px;
+      font-size: 22px;
+    }
+    p {
+      margin-bottom: 10px;
+    }
+    .tabs {
+      margin-top: 24px;
+    }
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .tab-header {
+      cursor: pointer;
+      border: none;
+      background: linear-gradient(135deg,#2563eb,#2563eb);
+      color: #ffffff;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-size: 14px;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .tab-header:hover {
+      opacity: .85;
+      transform: translateY(-2px);
+    }
+    .tab-header.active {
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+    }
+    .tab-panel {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 24px;
+      background: #f9fafc;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .controls button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #ffffff;
+      background: #2563eb;
+      box-shadow: 0 12px 25px rgba(37, 99, 235, .25);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .controls button.secondary {
+      background: #6b7280;
+      box-shadow: 0 12px 20px rgba(107, 114, 128, .25);
+    }
+    .controls button:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .controls button:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+    canvas {
+      width: 100%;
+      max-width: 820px;
+      height: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #ffffff;
+      margin: 0 auto;
+      display: block;
+    }
+    .status {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #4b5563;
+      text-align: center;
+    }
+    .info-card {
+      background: #eef2ff;
+      color: #312e81;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      border: 1px solid #c7d2fe;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+      .container {
+        padding: 20px 16px;
+      }
+      .tab-panel {
+        padding: 16px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+</head>
+<body>
+  <div class="container">
+    <h1>Triangle Centers & Applied Science Lab</h1>
+    <p>
+      Explore animated, step-by-step explanations for four classic STEM scenarios. Each tab includes a fully narrated
+      canvas animation plus controls to start, pause, or advance one step at a time.
+    </p>
+
+    <div id="app">
+      <div class="tabs">
+        <div class="tab-headers">
+          <button class="tab-header" :class="{active: activeTab==='incenter'}" @click="setTab('incenter')">Triangle Incenter</button>
+          <button class="tab-header" :class="{active: activeTab==='circumcenter'}" @click="setTab('circumcenter')">Triangle Circumcenter</button>
+          <button class="tab-header" :class="{active: activeTab==='chemistry'}" @click="setTab('chemistry')">Chemistry Demo</button>
+          <button class="tab-header" :class="{active: activeTab==='physics'}" @click="setTab('physics')">Physics Demo</button>
+        </div>
+
+        <!-- Incenter -->
+        <div class="tab-panel" v-show="activeTab==='incenter'">
+          <div class="info-card">
+            <strong>Goal:</strong> Construct the incenter of a triangle by intersecting its angle bisectors, then draw the inscribed circle touching every side.
+          </div>
+          <div class="controls">
+            <button @click="startAnimation('incenter')" :disabled="animations.incenter.playing">Start</button>
+            <button class="secondary" @click="pauseAnimation('incenter')" :disabled="!animations.incenter.playing">Pause</button>
+            <button @click="stepAnimation('incenter')">Next Step</button>
+            <button class="secondary" @click="resetAnimation('incenter')">Reset</button>
+          </div>
+          <canvas id="canvas-incenter" width="820" height="520"></canvas>
+          <div class="info-card" style="margin-top: 18px; min-height: 100px;">
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">Current Step:</div>
+            <div style="line-height: 1.8;">{{ animations.incenter.status }}</div>
+          </div>
+        </div>
+
+        <!-- Circumcenter -->
+        <div class="tab-panel" v-show="activeTab==='circumcenter'">
+          <div class="info-card" style="background:#ecfeff;border-color:#a5f3fc;color:#0f172a;">
+            <strong>Goal:</strong> Build the circumcenter by intersecting perpendicular bisectors, then draw the circumscribed circle passing through all three vertices.
+          </div>
+          <div class="controls">
+            <button @click="startAnimation('circumcenter')" :disabled="animations.circumcenter.playing">Start</button>
+            <button class="secondary" @click="pauseAnimation('circumcenter')" :disabled="!animations.circumcenter.playing">Pause</button>
+            <button @click="stepAnimation('circumcenter')">Next Step</button>
+            <button class="secondary" @click="resetAnimation('circumcenter')">Reset</button>
+          </div>
+          <canvas id="canvas-circumcenter" width="820" height="520"></canvas>
+          <div class="info-card" style="margin-top: 18px; min-height: 100px; background:#ecfeff;border-color:#a5f3fc;color:#0f172a;">
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">Current Step:</div>
+            <div style="line-height: 1.8;">{{ animations.circumcenter.status }}</div>
+          </div>
+        </div>
+
+        <!-- Chemistry -->
+        <div class="tab-panel" v-show="activeTab==='chemistry'">
+          <div class="info-card" style="background:#fef3c7;border-color:#fde68a;color:#78350f;">
+            <strong>Scenario:</strong> Observe an exothermic reaction with two reagents mixing in a beaker. Watch color change, bubble formation, and heat indicator evolve.
+          </div>
+          <div class="controls">
+            <button @click="startAnimation('chemistry')" :disabled="animations.chemistry.playing">Start</button>
+            <button class="secondary" @click="pauseAnimation('chemistry')" :disabled="!animations.chemistry.playing">Pause</button>
+            <button @click="stepAnimation('chemistry')">Next Step</button>
+            <button class="secondary" @click="resetAnimation('chemistry')">Reset</button>
+          </div>
+          <canvas id="canvas-chemistry" width="820" height="460"></canvas>
+          <div class="info-card" style="margin-top: 18px; min-height: 100px; background:#fef3c7;border-color:#fde68a;color:#78350f;">
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">Current Step:</div>
+            <div style="line-height: 1.8;">{{ animations.chemistry.status }}</div>
+          </div>
+        </div>
+
+        <!-- Physics -->
+        <div class="tab-panel" v-show="activeTab==='physics'">
+          <div class="info-card" style="background:#ede9fe;border-color:#ddd6fe;color:#312e81;">
+            <strong>Scenario:</strong> Visualize simple harmonic motion. A mass oscillates on a spring while an energy bar and phase indicator explain the physics behind the motion.
+          </div>
+          <div class="controls">
+            <button @click="startAnimation('physics')" :disabled="animations.physics.playing">Start</button>
+            <button class="secondary" @click="pauseAnimation('physics')" :disabled="!animations.physics.playing">Pause</button>
+            <button @click="stepAnimation('physics')">Next Step</button>
+            <button class="secondary" @click="resetAnimation('physics')">Reset</button>
+          </div>
+          <canvas id="canvas-physics" width="820" height="460"></canvas>
+          <div class="info-card" style="margin-top: 18px; min-height: 100px; background:#ede9fe;border-color:#ddd6fe;color:#312e81;">
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">Current Step:</div>
+            <div style="line-height: 1.8;">{{ animations.physics.status }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js';"></script>
+  <script>
+    const { createApp } = Vue;
+
+    const TRIANGLE = {
+      A: { x: 140, y: 420 },
+      B: { x: 640, y: 120 },
+      C: { x: 720, y: 400 },
+    };
+
+    function midpoint(p1, p2) {
+      return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+    }
+
+    function distance(p1, p2) {
+      return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    }
+
+    function drawTriangleBase(ctx) {
+      ctx.beginPath();
+      ctx.moveTo(TRIANGLE.A.x, TRIANGLE.A.y);
+      ctx.lineTo(TRIANGLE.B.x, TRIANGLE.B.y);
+      ctx.lineTo(TRIANGLE.C.x, TRIANGLE.C.y);
+      ctx.closePath();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#1f2937';
+      ctx.stroke();
+      drawPoint(ctx, TRIANGLE.A, 'A', '#ef4444');
+      drawPoint(ctx, TRIANGLE.B, 'B', '#3b82f6');
+      drawPoint(ctx, TRIANGLE.C, 'C', '#10b981');
+    }
+
+    function drawPoint(ctx, { x, y }, label, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 16px "Segoe UI"';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, x, y - 14);
+    }
+
+    function lerpPoint(p1, p2, t) {
+      return { x: p1.x + (p2.x - p1.x) * t, y: p1.y + (p2.y - p1.y) * t };
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function drawInstruction(ctx, title, lines, color = '#1d4ed8') {
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = color;
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(40, 26, 320, 90, 14);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(54, 26);
+        ctx.lineTo(346, 26);
+        ctx.quadraticCurveTo(360, 26, 360, 40);
+        ctx.lineTo(360, 102);
+        ctx.quadraticCurveTo(360, 116, 346, 116);
+        ctx.lineTo(54, 116);
+        ctx.quadraticCurveTo(40, 116, 40, 102);
+        ctx.lineTo(40, 40);
+        ctx.quadraticCurveTo(40, 26, 54, 26);
+        ctx.closePath();
+      }
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px "Segoe UI"';
+      ctx.fillText(title, 58, 52);
+      ctx.font = '14px "Segoe UI"';
+      lines.forEach((line, index) => {
+        ctx.fillText(line, 58, 80 + index * 18);
+      });
+      ctx.restore();
+    }
+
+    function drawIncenterAnimation(ctx, phase) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      drawTriangleBase(ctx);
+
+      const steps = [
+        { label: 'A', vertex: TRIANGLE.A, side1: TRIANGLE.B, side2: TRIANGLE.C },
+        { label: 'B', vertex: TRIANGLE.B, side1: TRIANGLE.C, side2: TRIANGLE.A },
+        { label: 'C', vertex: TRIANGLE.C, side1: TRIANGLE.A, side2: TRIANGLE.B },
+      ];
+
+      const cappedPhase = Math.min(phase, 5);
+      const stage = Math.floor(cappedPhase);
+      const local = cappedPhase - stage;
+
+      steps.forEach((step, index) => {
+        const progress = stage > index ? 1 : stage === index ? local : 0;
+        if (progress > 0) {
+          drawAngleBisectorProcess(ctx, step.vertex, step.side1, step.side2, progress, step.label);
+        }
+      });
+
+      const incenter = computeIncenter();
+      if (cappedPhase >= 4) {
+        const radius = triangleArea() / halfPerimeter();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(incenter.x, incenter.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        drawPoint(ctx, incenter, 'I', '#f59e0b');
+
+        // Step 5: Inscribed circle - status text will be shown in HTML
+      }
+    }
+
+    function drawAngleBisectorProcess(ctx, vertex, side1, side2, t, angleLabel) {
+      const v1 = { x: side1.x - vertex.x, y: side1.y - vertex.y };
+      const v2 = { x: side2.x - vertex.x, y: side2.y - vertex.y };
+      const len1 = Math.hypot(v1.x, v1.y);
+      const len2 = Math.hypot(v2.x, v2.y);
+      v1.x /= len1; v1.y /= len1;
+      v2.x /= len2; v2.y /= len2;
+
+      const radius = Math.min(len1, len2) * 0.45;
+      const intersection1 = { x: vertex.x + v1.x * radius, y: vertex.y + v1.y * radius };
+      const intersection2 = { x: vertex.x + v2.x * radius, y: vertex.y + v2.y * radius };
+
+      const startAngle = Math.atan2(v1.y, v1.x);
+      let endAngle = Math.atan2(v2.y, v2.x);
+      let sweep = endAngle - startAngle;
+      if (sweep <= 0) sweep += Math.PI * 2;
+
+      const step1 = clamp(t * 3, 0, 1);
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      if (step1 > 0) {
+        ctx.beginPath();
+        ctx.arc(vertex.x, vertex.y, radius, startAngle, startAngle + sweep * step1, false);
+        ctx.stroke();
+      }
+
+      if (step1 >= 1) {
+        ctx.fillStyle = '#0ea5e9';
+        ctx.beginPath();
+        ctx.arc(intersection1.x, intersection1.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(intersection2.x, intersection2.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const step2 = clamp((t - 1 / 3) * 3, 0, 1);
+      if (step2 > 0) {
+        drawCrossArc(ctx, intersection1, intersection2, radius * 0.9, step2);
+      }
+
+      const step3 = clamp((t - 2 / 3) * 3, 0, 1);
+      if (step3 > 0) {
+        const dir = { x: v1.x + v2.x, y: v1.y + v2.y };
+        const dlen = Math.hypot(dir.x, dir.y);
+        dir.x /= dlen; dir.y /= dlen;
+        const endPoint = { x: vertex.x + dir.x * 620 * step3, y: vertex.y + dir.y * 620 * step3 };
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#9333ea';
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(vertex.x, vertex.y);
+        ctx.lineTo(endPoint.x, endPoint.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      drawStepDot(ctx, vertex, angleLabel);
+    }
+
+    function drawStepDot(ctx, position, label) {
+      ctx.fillStyle = 'rgba(59,130,246,0.85)';
+      ctx.beginPath();
+      ctx.arc(position.x, position.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px "Segoe UI"';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, position.x, position.y + 4);
+    }
+
+    function drawCrossArc(ctx, p1, p2, radius, progress) {
+      const midpoint = midpointPoint(p1, p2);
+      const vector = { x: p2.x - p1.x, y: p2.y - p1.y };
+      const norm = { x: -vector.y, y: vector.x };
+      const len = Math.hypot(norm.x, norm.y);
+      norm.x /= len; norm.y /= len;
+
+      const center1 = { x: p1.x + norm.x * radius, y: p1.y + norm.y * radius };
+      const center2 = { x: p2.x + norm.x * radius, y: p2.y + norm.y * radius };
+
+      ctx.strokeStyle = '#0ea5e9';
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.arc(center1.x, center1.y, radius, 0, Math.PI * 2 * progress);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(center2.x, center2.y, radius, Math.PI, Math.PI + Math.PI * 2 * progress);
+      ctx.stroke();
+
+      if (progress >= 1) {
+        ctx.fillStyle = '#f97316';
+        const crossPoint = { x: (center1.x + center2.x) / 2, y: (center1.y + center2.y) / 2 };
+        ctx.beginPath();
+        ctx.arc(crossPoint.x, crossPoint.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function computeIncenter() {
+      const a = distance(TRIANGLE.B, TRIANGLE.C);
+      const b = distance(TRIANGLE.A, TRIANGLE.C);
+      const c = distance(TRIANGLE.A, TRIANGLE.B);
+      const perimeter = a + b + c;
+      return {
+        x: (a * TRIANGLE.A.x + b * TRIANGLE.B.x + c * TRIANGLE.C.x) / perimeter,
+        y: (a * TRIANGLE.A.y + b * TRIANGLE.B.y + c * TRIANGLE.C.y) / perimeter,
+      };
+    }
+
+    function triangleArea() {
+      const { A, B, C } = TRIANGLE;
+      return Math.abs((A.x*(B.y-C.y) + B.x*(C.y-A.y) + C.x*(A.y-B.y)) / 2);
+    }
+
+    function halfPerimeter() {
+      return (distance(TRIANGLE.A, TRIANGLE.B) + distance(TRIANGLE.B, TRIANGLE.C) + distance(TRIANGLE.C, TRIANGLE.A)) / 2;
+    }
+
+    function midpointPoint(p1, p2) {
+      return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+    }
+
+    function drawCircumcenterAnimation(ctx, phase) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      drawTriangleBase(ctx);
+
+      const cappedPhase = Math.min(phase, 5);
+      const stage = Math.floor(cappedPhase);
+      const local = cappedPhase - stage;
+
+      const steps = [
+        { label: 'AB', p1: TRIANGLE.A, p2: TRIANGLE.B },
+        { label: 'BC', p1: TRIANGLE.B, p2: TRIANGLE.C },
+      ];
+
+      steps.forEach((step, index) => {
+        const midpointProgress = stage > index * 2 ? 1 : stage === index * 2 ? local : 0;
+        if (midpointProgress > 0) {
+          drawMidpointProcess(ctx, step.p1, step.p2, midpointProgress, step.label);
+        }
+
+        const bisectorProgress = stage > index * 2 + 1 ? 1 : stage === index * 2 + 1 ? local : 0;
+        if (bisectorProgress > 0) {
+          drawPerpendicularBisectorProcess(ctx, step.p1, step.p2, bisectorProgress);
+        }
+      });
+
+      if (cappedPhase >= 4) {
+        const circumcenter = computeCircumcenter();
+        const radius = distance(circumcenter, TRIANGLE.A);
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#14b8a6';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(circumcenter.x, circumcenter.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        drawPoint(ctx, circumcenter, 'O', '#14b8a6');
+        // Step 5: Circumcenter & circumcircle - status text will be shown in HTML
+      }
+    }
+
+    function drawMidpointProcess(ctx, p1, p2, t, label) {
+      const mid = midpointPoint(p1, p2);
+      const radius = distance(p1, p2) * 0.6;
+      const dir = { x: p2.x - p1.x, y: p2.y - p1.y };
+      const norm = { x: -dir.y, y: dir.x };
+      const len = Math.hypot(norm.x, norm.y);
+      norm.x /= len; norm.y /= len;
+      const center1 = { x: p1.x + norm.x * radius, y: p1.y + norm.y * radius };
+      const center2 = { x: p2.x + norm.x * radius, y: p2.y + norm.y * radius };
+      const center1b = { x: p1.x - norm.x * radius, y: p1.y - norm.y * radius };
+      const center2b = { x: p2.x - norm.x * radius, y: p2.y - norm.y * radius };
+
+      const arcProgress = clamp(t * 2, 0, 1);
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(center1.x, center1.y, radius, 0, Math.PI * 2 * arcProgress);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(center2.x, center2.y, radius, 0, Math.PI * 2 * arcProgress);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(center1b.x, center1b.y, radius, 0, Math.PI * 2 * arcProgress);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(center2b.x, center2b.y, radius, 0, Math.PI * 2 * arcProgress);
+      ctx.stroke();
+
+      if (t >= 0.5) {
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(mid.x, mid.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawPerpendicularBisectorProcess(ctx, p1, p2, t) {
+      const mid = midpointPoint(p1, p2);
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(mid.x, mid.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      const dir = { x: p2.x - p1.x, y: p2.y - p1.y };
+      const perp = { x: -dir.y, y: dir.x };
+      const len = Math.hypot(perp.x, perp.y);
+      perp.x /= len; perp.y /= len;
+      const start = { x: mid.x - perp.x * 520 * t, y: mid.y - perp.y * 520 * t };
+      const end = { x: mid.x + perp.x * 520 * t, y: mid.y + perp.y * 520 * t };
+      ctx.setLineDash([5, 6]);
+      ctx.strokeStyle = '#0ea5e9';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function computeCircumcenter() {
+      const { A, B, C } = TRIANGLE;
+      const D = 2 * (A.x*(B.y-C.y) + B.x*(C.y-A.y) + C.x*(A.y-B.y));
+      const ux = ((A.x*A.x + A.y*A.y)*(B.y-C.y) + (B.x*B.x + B.y*B.y)*(C.y-A.y) + (C.x*C.x + C.y*C.y)*(A.y-B.y)) / D;
+      const uy = ((A.x*A.x + A.y*A.y)*(C.x-B.x) + (B.x*B.x + B.y*B.y)*(A.x-C.x) + (C.x*C.x + C.y*C.y)*(B.x-A.x)) / D;
+      return { x: ux, y: uy };
+    }
+
+    function drawChemistryAnimation(ctx, phase) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      drawChemistrySetup(ctx);
+      const capped = Math.min(phase, 5);
+      const stage = Math.floor(capped);
+      const local = capped - stage;
+
+      if (capped >= 1) {
+        drawDroplet(ctx, local);
+      }
+      if (capped >= 2) {
+        drawMixingColor(ctx, Math.min(1, local));
+      }
+      if (capped >= 3) {
+        drawBubbles(ctx, Math.min(1, local));
+      }
+      if (capped >= 4) {
+        drawHeatIndicator(ctx, Math.min(1, local));
+      }
+    }
+
+    function drawChemistrySetup(ctx) {
+      ctx.fillStyle = '#93c5fd';
+      ctx.fillRect(0, ctx.canvas.height - 120, ctx.canvas.width, 120);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(360, 120, 100, 280);
+
+      ctx.beginPath();
+      ctx.moveTo(320, 120);
+      ctx.lineTo(500, 120);
+      ctx.lineTo(540, 360);
+      ctx.lineTo(280, 360);
+      ctx.closePath();
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.fillStyle = '#e0f2fe';
+      ctx.beginPath();
+      ctx.moveTo(296, 340);
+      ctx.lineTo(524, 340);
+      ctx.lineTo(508, 160);
+      ctx.lineTo(312, 160);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawDroplet(ctx, t) {
+      ctx.fillStyle = '#6366f1';
+      const y = 150 + t * 180;
+      ctx.beginPath();
+      ctx.arc(420, y, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawMixingColor(ctx, t) {
+      const gradient = ctx.createLinearGradient(312, 340, 508, 160);
+      gradient.addColorStop(0, '#a855f7');
+      gradient.addColorStop(Math.max(0.01, t), '#f97316');
+      gradient.addColorStop(1, '#fde68a');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(312, 340);
+      ctx.lineTo(508, 340);
+      ctx.lineTo(496, 180);
+      ctx.lineTo(324, 180);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawBubbles(ctx, t) {
+      const bubbleCount = 12;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      for (let i = 0; i < bubbleCount; i++) {
+        const x = 330 + Math.random() * 170;
+        const baseY = 310;
+        const y = baseY - (Math.random() * 120 * t);
+        ctx.beginPath();
+        ctx.arc(x, y, 6 + Math.random() * 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawHeatIndicator(ctx, t) {
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'bold 22px "Segoe UI"';
+      ctx.fillText('Temperature ↑', 580, 200);
+      ctx.fillRect(600, 230, 18, 160);
+      ctx.fillStyle = '#fde68a';
+      ctx.fillRect(600, 230 + (1 - t)*160, 18, t * 160);
+    }
+
+    function drawPhysicsAnimation(ctx, phase) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      drawPhysicsSetup(ctx);
+      const time = phase / 22;
+      const amplitude = 140;
+      const displacement = Math.cos(time);
+      const velocity = -Math.sin(time);
+      const x = 220 + amplitude * displacement;
+
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(120, 200);
+      ctx.lineTo(x, 200);
+      ctx.stroke();
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.roundRect(x, 160, 80, 80, 16);
+      ctx.fill();
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, 160, 80, 80);
+
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 18px "Segoe UI"';
+      ctx.fillText(`Displacement = ${(displacement).toFixed(2)} × amplitude`, 520, 200);
+      ctx.fillText(`Velocity = ${(velocity).toFixed(2)} × vmax`, 520, 230);
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(520, 270, 200, 20);
+      ctx.fillStyle = '#fde68a';
+      ctx.fillRect(520, 270, 200 * Math.pow(displacement, 2), 20);
+      ctx.fillStyle = '#a855f7';
+      ctx.fillRect(520, 300, 200, 20);
+      ctx.fillStyle = '#ddd6fe';
+      ctx.fillRect(520, 300, 200 * Math.pow(velocity, 2), 20);
+      ctx.fillStyle = '#1f2937';
+      ctx.fillText('Potential Energy           Kinetic Energy', 520, 340);
+    }
+
+    function drawPhysicsSetup(ctx) {
+      ctx.fillStyle = '#e5e7eb';
+      ctx.fillRect(0, ctx.canvas.height - 140, ctx.canvas.width, 140);
+
+      ctx.fillStyle = '#1f2937';
+      ctx.fillRect(80, 140, 30, 240);
+
+      for (let i = 0; i < 20; i++) {
+        ctx.fillStyle = i % 2 === 0 ? '#f97316' : '#facc15';
+        ctx.fillRect(120 + i * 12, 180, 12, 40);
+      }
+    }
+
+    const app = createApp({
+      data() {
+        return {
+          activeTab: 'incenter',
+          animations: {
+            incenter: { frame: 0, playing: false, status: 'Ready to construct the incenter.' },
+            circumcenter: { frame: 0, playing: false, status: 'Ready to construct the circumcenter.' },
+            chemistry: { frame: 0, playing: false, status: 'Ready to start the chemistry reaction.' },
+            physics: { frame: 0, playing: false, status: 'Mass-spring system is at rest.' },
+          },
+          rafId: null,
+          ctx: {},
+        };
+      },
+      mounted() {
+        this.ctx.incenter = document.getElementById('canvas-incenter').getContext('2d');
+        this.ctx.circumcenter = document.getElementById('canvas-circumcenter').getContext('2d');
+        this.ctx.chemistry = document.getElementById('canvas-chemistry').getContext('2d');
+        this.ctx.physics = document.getElementById('canvas-physics').getContext('2d');
+
+        drawIncenterAnimation(this.ctx.incenter, 0);
+        drawCircumcenterAnimation(this.ctx.circumcenter, 0);
+        drawChemistryAnimation(this.ctx.chemistry, 0);
+        drawPhysicsAnimation(this.ctx.physics, 0);
+
+        this.loop();
+      },
+      beforeUnmount() {
+        cancelAnimationFrame(this.rafId);
+      },
+      methods: {
+        setTab(tab) {
+          this.activeTab = tab;
+        },
+        loop() {
+          this.rafId = requestAnimationFrame(this.loop);
+          const delta = 0.01; // Slower speed for better reading
+
+          Object.keys(this.animations).forEach((key) => {
+            const anim = this.animations[key];
+            if (!anim.playing) return;
+            anim.frame += delta;
+            if (key === 'incenter') {
+              drawIncenterAnimation(this.ctx.incenter, anim.frame);
+            const stage = Math.floor(Math.min(anim.frame, 5));
+            const local = (anim.frame - stage);
+            const messages = [
+              local < 0.33 ? 'Step 1: Place the compass point at vertex A. Swing an arc that cuts both sides AB and AC. Mark the two intersection points where the arc meets the sides.' :
+              local < 0.67 ? 'Step 2: Using the two intersection points as centers, draw two arcs that cross each other. Connect vertex A to this crossing point with a straightedge. This purple dashed line is the angle bisector of ∠A.' :
+              'Step 3: The angle bisector of ∠A is complete. Now move to vertex B and repeat the same process: swing an arc, mark intersections, cross arcs, and draw the bisector.',
+              local < 0.5 ? 'Step 4: The bisector of ∠B is complete. Now construct the bisector of ∠C using the same compass method. Watch as all three bisectors converge.' :
+              'Step 5: All three angle bisectors intersect at a single point I (the incenter). From I, measure the perpendicular distance to any side. This distance is the radius. Use the compass with center I to draw the inscribed circle, which will be tangent to all three sides.',
+              'Step 6: The inscribed circle (incircle) is complete! It touches all three sides of the triangle at exactly one point per side. The incenter I is equidistant from all three sides.',
+            ];
+            if (stage === 0) {
+              anim.status = messages[0];
+            } else if (stage === 1) {
+              anim.status = messages[1];
+            } else if (stage === 2) {
+              anim.status = messages[2];
+            } else if (stage === 3) {
+              anim.status = messages[3];
+            } else if (stage === 4) {
+              anim.status = messages[4];
+            } else {
+              anim.status = messages[5];
+            }
+              if (anim.frame >= 5) anim.frame = 5;
+            }
+            if (key === 'circumcenter') {
+              drawCircumcenterAnimation(this.ctx.circumcenter, anim.frame);
+            const stage = Math.floor(Math.min(anim.frame, 5));
+            const local = (anim.frame - stage);
+            const messages = [
+              local < 0.5 ? 'Step 1: To find the midpoint of side AB, place the compass point at A. Open the compass wider than half of AB. Swing arcs above and below the line. Then place the compass point at B and swing arcs that intersect the previous arcs. The intersection of these arcs marks the midpoint of AB.' :
+              'Step 2: Draw a line through the midpoint of AB that is perpendicular to AB. This is the perpendicular bisector of AB. It extends in both directions and will be used to locate the circumcenter.',
+              local < 0.5 ? 'Step 3: Repeat the midpoint construction for side BC. Use the compass at B and C to swing arcs above and below BC. The intersection of these arcs marks the midpoint of BC.' :
+              'Step 4: Draw the perpendicular bisector of BC through its midpoint. This line will intersect the perpendicular bisector of AB at a single point O, which is the circumcenter.',
+              'Step 5: The circumcenter O is the point where the two perpendicular bisectors meet. Measure the distance from O to any vertex (OA, OB, or OC - they are all equal). Use this radius with center O to draw the circumscribed circle (circumcircle), which passes through all three vertices A, B, and C.',
+              'Step 6: The circumcircle is complete! It passes through all three vertices of the triangle. The circumcenter O is equidistant from all three vertices.',
+            ];
+            if (stage === 0) {
+              anim.status = messages[0];
+            } else if (stage === 1) {
+              anim.status = messages[1];
+            } else if (stage === 2) {
+              anim.status = messages[2];
+            } else if (stage === 3) {
+              anim.status = messages[3];
+            } else if (stage === 4) {
+              anim.status = messages[4];
+            } else {
+              anim.status = messages[5];
+            }
+              if (anim.frame >= 5) anim.frame = 5;
+            }
+            if (key === 'chemistry') {
+              drawChemistryAnimation(this.ctx.chemistry, anim.frame);
+            const stage = Math.floor(Math.min(anim.frame, 5));
+            const local = (anim.frame - stage);
+            const messages = [
+              'Step 0: Lab setup complete. Beaker A contains a blue solution (Solution A). The dropper is positioned above the beaker, ready to dispense Solution B. Ensure all safety equipment is in place before proceeding.',
+              local < 0.5 ? 'Step 1: Begin adding Solution B dropwise into Solution A. Release droplets one at a time, maintaining consistent spacing between drops. Watch carefully as each droplet falls into the beaker and begins to mix with Solution A.' :
+              'Step 2: As Solution B mixes with Solution A, observe the color change. The solution transitions from blue to orange, creating a gradient that shows diffusion from the bottom (where mixing occurs) to the top of the beaker. This color change indicates a chemical reaction is taking place.',
+              local < 0.5 ? 'Step 3: Gas bubbles begin to form and rise from the bottom of the beaker. This is evidence of gas evolution, a common sign of a chemical reaction. The bubbles indicate that a gas is being produced as a product of the reaction. Collect and identify the gas if possible.' :
+              'Step 4: The temperature of the mixture begins to rise, as shown by the thermometer. This is an exothermic reaction, meaning it releases heat. The temperature indicator climbs steadily. Record the peak temperature reached and note the time it takes to reach this maximum. Compare this data with other trials.',
+              'Step 5: The reaction is complete. The solution has fully changed color, gas evolution has slowed, and the temperature has reached its peak. Document all observations: final color, volume of gas produced, and maximum temperature. Clean up the equipment according to lab safety protocols.',
+            ];
+            if (stage === 0) {
+              anim.status = messages[0];
+            } else if (stage === 1) {
+              anim.status = messages[1];
+            } else if (stage === 2) {
+              anim.status = messages[2];
+            } else if (stage === 3) {
+              anim.status = messages[3];
+            } else if (stage === 4) {
+              anim.status = messages[4];
+            } else {
+              anim.status = messages[5];
+            }
+              if (anim.frame >= 5) anim.frame = 5;
+            }
+            if (key === 'physics') {
+              drawPhysicsAnimation(this.ctx.physics, anim.frame);
+            const time = anim.frame / 22;
+            const displacement = Math.cos(time);
+            const velocity = -Math.sin(time);
+            const phaseDescriptor = Math.abs(displacement) < 0.05 ? 'The mass is passing through the equilibrium position (x = 0). At this moment, the displacement is zero, but the velocity is at its maximum magnitude. The spring is neither compressed nor extended.' :
+              displacement > 0 ? `The mass is moving toward maximum compression. Current displacement: ${(displacement * 100).toFixed(1)}% of amplitude. The spring is being compressed, storing potential energy. Velocity: ${(velocity * 100).toFixed(1)}% of maximum (${velocity > 0 ? 'moving right' : 'moving left'}).` :
+              `The mass is moving toward maximum extension. Current displacement: ${(displacement * 100).toFixed(1)}% of amplitude. The spring is being stretched, storing potential energy. Velocity: ${(velocity * 100).toFixed(1)}% of maximum (${velocity > 0 ? 'moving right' : 'moving left'}).`;
+            const energyInfo = `Potential energy (yellow bar) is maximum when displacement is maximum. Kinetic energy (purple bar) is maximum when velocity is maximum (at equilibrium). The total energy (PE + KE) remains constant throughout the oscillation.`;
+            anim.status = `Simple Harmonic Motion: ${phaseDescriptor} ${energyInfo}`;
+              if (anim.frame >= Math.PI * 8) anim.frame = 0;
+            }
+          });
+        },
+        startAnimation(key) {
+          this.animations[key].playing = true;
+          if (this.animations[key].frame >= 5) this.animations[key].frame = 0;
+          if (key === 'physics' && this.animations[key].frame >= Math.PI * 6) this.animations[key].frame = 0;
+        },
+        pauseAnimation(key) {
+          this.animations[key].playing = false;
+        },
+        stepAnimation(key) {
+          const anim = this.animations[key];
+          anim.frame += 0.5; // Smaller step for manual control
+          if (key === 'incenter') {
+            drawIncenterAnimation(this.ctx.incenter, anim.frame);
+            const stage = Math.floor(Math.min(anim.frame, 5));
+            const local = (anim.frame - stage);
+            if (stage === 0) {
+              anim.status = local < 0.33 ? 'Step 1: Place the compass point at vertex A. Swing an arc that cuts both sides AB and AC. Mark the two intersection points where the arc meets the sides.' :
+              local < 0.67 ? 'Step 2: Using the two intersection points as centers, draw two arcs that cross each other. Connect vertex A to this crossing point with a straightedge. This purple dashed line is the angle bisector of ∠A.' :
+              'Step 3: The angle bisector of ∠A is complete. Now move to vertex B and repeat the same process: swing an arc, mark intersections, cross arcs, and draw the bisector.';
+            } else if (stage === 1) {
+              anim.status = 'Step 3: The angle bisector of ∠A is complete. Now move to vertex B and repeat the same process: swing an arc, mark intersections, cross arcs, and draw the bisector.';
+            } else if (stage === 2) {
+              anim.status = local < 0.5 ? 'Step 4: The bisector of ∠B is complete. Now construct the bisector of ∠C using the same compass method. Watch as all three bisectors converge.' :
+              'Step 5: All three angle bisectors intersect at a single point I (the incenter). From I, measure the perpendicular distance to any side. This distance is the radius. Use the compass with center I to draw the inscribed circle, which will be tangent to all three sides.';
+            } else if (stage >= 3) {
+              anim.status = 'Step 6: The inscribed circle (incircle) is complete! It touches all three sides of the triangle at exactly one point per side. The incenter I is equidistant from all three sides.';
+            }
+            if (anim.frame >= 5) anim.frame = 5;
+          }
+          if (key === 'circumcenter') {
+            drawCircumcenterAnimation(this.ctx.circumcenter, anim.frame);
+            const stage = Math.floor(Math.min(anim.frame, 5));
+            const local = (anim.frame - stage);
+            if (stage === 0) {
+              anim.status = local < 0.5 ? 'Step 1: To find the midpoint of side AB, place the compass point at A. Open the compass wider than half of AB. Swing arcs above and below the line. Then place the compass point at B and swing arcs that intersect the previous arcs. The intersection of these arcs marks the midpoint of AB.' :
+              'Step 2: Draw a line through the midpoint of AB that is perpendicular to AB. This is the perpendicular bisector of AB. It extends in both directions and will be used to locate the circumcenter.';
+            } else if (stage === 1) {
+              anim.status = 'Step 2: Draw a line through the midpoint of AB that is perpendicular to AB. This is the perpendicular bisector of AB. It extends in both directions and will be used to locate the circumcenter.';
+            } else if (stage === 2) {
+              anim.status = local < 0.5 ? 'Step 3: Repeat the midpoint construction for side BC. Use the compass at B and C to swing arcs above and below BC. The intersection of these arcs marks the midpoint of BC.' :
+              'Step 4: Draw the perpendicular bisector of BC through its midpoint. This line will intersect the perpendicular bisector of AB at a single point O, which is the circumcenter.';
+            } else if (stage >= 3) {
+              anim.status = 'Step 5: The circumcenter O is the point where the two perpendicular bisectors meet. Measure the distance from O to any vertex (OA, OB, or OC - they are all equal). Use this radius with center O to draw the circumscribed circle (circumcircle), which passes through all three vertices A, B, and C.';
+            }
+            if (anim.frame >= 5) anim.frame = 5;
+          }
+          if (key === 'chemistry') {
+            drawChemistryAnimation(this.ctx.chemistry, anim.frame);
+            const stage = Math.floor(Math.min(anim.frame, 5));
+            const local = (anim.frame - stage);
+            if (stage === 0) {
+              anim.status = 'Step 0: Lab setup complete. Beaker A contains a blue solution (Solution A). The dropper is positioned above the beaker, ready to dispense Solution B. Ensure all safety equipment is in place before proceeding.';
+            } else if (stage === 1) {
+              anim.status = local < 0.5 ? 'Step 1: Begin adding Solution B dropwise into Solution A. Release droplets one at a time, maintaining consistent spacing between drops. Watch carefully as each droplet falls into the beaker and begins to mix with Solution A.' :
+              'Step 2: As Solution B mixes with Solution A, observe the color change. The solution transitions from blue to orange, creating a gradient that shows diffusion from the bottom (where mixing occurs) to the top of the beaker. This color change indicates a chemical reaction is taking place.';
+            } else if (stage === 2) {
+              anim.status = 'Step 2: As Solution B mixes with Solution A, observe the color change. The solution transitions from blue to orange, creating a gradient that shows diffusion from the bottom (where mixing occurs) to the top of the beaker. This color change indicates a chemical reaction is taking place.';
+            } else if (stage === 3) {
+              anim.status = local < 0.5 ? 'Step 3: Gas bubbles begin to form and rise from the bottom of the beaker. This is evidence of gas evolution, a common sign of a chemical reaction. The bubbles indicate that a gas is being produced as a product of the reaction. Collect and identify the gas if possible.' :
+              'Step 4: The temperature of the mixture begins to rise, as shown by the thermometer. This is an exothermic reaction, meaning it releases heat. The temperature indicator climbs steadily. Record the peak temperature reached and note the time it takes to reach this maximum. Compare this data with other trials.';
+            } else if (stage >= 4) {
+              anim.status = 'Step 5: The reaction is complete. The solution has fully changed color, gas evolution has slowed, and the temperature has reached its peak. Document all observations: final color, volume of gas produced, and maximum temperature. Clean up the equipment according to lab safety protocols.';
+            }
+            if (anim.frame >= 5) anim.frame = 5;
+          }
+          if (key === 'physics') {
+            drawPhysicsAnimation(this.ctx.physics, anim.frame);
+            const time = anim.frame / 22;
+            const displacement = Math.cos(time);
+            const velocity = -Math.sin(time);
+            const phaseDescriptor = Math.abs(displacement) < 0.05 ? 'The mass is passing through the equilibrium position (x = 0). At this moment, the displacement is zero, but the velocity is at its maximum magnitude. The spring is neither compressed nor extended.' :
+              displacement > 0 ? `The mass is moving toward maximum compression. Current displacement: ${(displacement * 100).toFixed(1)}% of amplitude. The spring is being compressed, storing potential energy. Velocity: ${(velocity * 100).toFixed(1)}% of maximum (${velocity > 0 ? 'moving right' : 'moving left'}).` :
+              `The mass is moving toward maximum extension. Current displacement: ${(displacement * 100).toFixed(1)}% of amplitude. The spring is being stretched, storing potential energy. Velocity: ${(velocity * 100).toFixed(1)}% of maximum (${velocity > 0 ? 'moving right' : 'moving left'}).`;
+            const energyInfo = `Potential energy (yellow bar) is maximum when displacement is maximum. Kinetic energy (purple bar) is maximum when velocity is maximum (at equilibrium). The total energy (PE + KE) remains constant throughout the oscillation.`;
+            anim.status = `Simple Harmonic Motion: ${phaseDescriptor} ${energyInfo}`;
+          }
+        },
+        resetAnimation(key) {
+          const anim = this.animations[key];
+          anim.frame = 0;
+          anim.playing = false;
+          if (key === 'incenter') {
+            drawIncenterAnimation(this.ctx.incenter, 0);
+            anim.status = 'Ready to construct the incenter.';
+          }
+          if (key === 'circumcenter') {
+            drawCircumcenterAnimation(this.ctx.circumcenter, 0);
+            anim.status = 'Ready to construct the circumcenter.';
+          }
+          if (key === 'chemistry') {
+            drawChemistryAnimation(this.ctx.chemistry, 0);
+            anim.status = 'Ready to start the chemistry reaction.';
+          }
+          if (key === 'physics') {
+            drawPhysicsAnimation(this.ctx.physics, 0);
+            anim.status = 'Mass-spring system is at rest.';
+          }
+        },
+      },
+    });
+
+    app.mount('#app');
+  </script>
+</body>
+</html>
+

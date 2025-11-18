@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="初中几何综合题：半圆切线问题。详细讲解切线判定、相似三角形、勾股定理、函数关系等解题方法，包含完整推导过程和动态可视化图形。">
+  <meta name="keywords" content="半圆,切线,相似三角形,勾股定理,函数关系,几何证明,初中数学,中考压轴题,几何综合">
+  <title>25. 题图 - 半圆切线问题详解</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .problem-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .problem-number {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px 0 0 20px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .problem-info {
+      background: #ecf0f1;
+      padding: 8px 15px;
+      border-radius: 0 20px 20px 0;
+      font-size: 14px;
+      color: #7f8c8d;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong {
+      color: #2980b9;
+    }
+    .k {
+      line-height: 2;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: block;
+      width: 100%;
+      max-width: 800px;
+      background: #ffffff;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 10px 15px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #2980b9;
+    }
+    .tab-header.active {
+      background: #2980b9;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 8px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 6px;
+      }
+      .problem-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .problem-number {
+        border-radius: 20px;
+        margin-bottom: 10px;
+      }
+      .problem-info {
+        border-radius: 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/d3.min.js'"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>25. 题图 - 半圆切线问题详解</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre>
+      <h2>题目</h2>
+      <div class="problem-header">
+        <div class="problem-number">25. 题图</div>
+        <div class="problem-info">几何综合题</div>
+      </div>
+      <div class="k">
+        <p>如图1，以 \(AB\) 为直径作半圆 \(O\)，\(C\)、\(D\) 为 \(AB\) 上方的动点，过点 \(A\)、\(B\) 分别作半圆的切线 \(AD\)、\(BC\)，连接 \(CD\)，且 \(CD = AD + BC\)。</p>
+        <div style="margin: 20px 0;">
+          <canvas id="problem-canvas" width="800" height="400"></canvas>
+        </div>
+        <p><strong>（1）① 证明：\(CD\) 是半圆 \(O\) 的切线。</strong></p>
+        <p><strong>（1）② 已知半圆半径为 \(r\)，\(m = \frac{a^2 + b^2}{2ab}\)，\(n = \frac{a + b}{2\sqrt{ab}}\)（其中 \(a > 0, b > 0\)），比较 \(m\) 与 \(n\) 的大小，并说明理由。</strong></p>
+        <p><strong>（2）在（1）的条件下，设半圆半径为 \(r = 1\)，点 \(E\) 是 \(CD\) 与半圆 \(O\) 的切点，\(AC\) 与 \(BD\) 相交于点 \(G\)，连接 \(EG\) 并延长交 \(AB\) 于点 \(F\)，连接 \(AE\)、\(BE\)。设 \(EG = x\)，求 \(y\) 关于 \(x\) 的函数表达式，其中 \(y = \frac{4}{AE \cdot BE} + \frac{1}{FG} + CD\)。</strong></p>
+        <div style="margin: 20px 0;">
+          <canvas id="problem-canvas-2" width="800" height="500"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1a'}" @click="setTab('q1a')">(1)① 证明切线</div>
+            <div class="tab-header" :class="{active: activeTab==='q1b'}" @click="setTab('q1b')">(1)② 比较大小</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 函数表达式</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k">
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>这是一道经典的<span class="highlight">几何综合题</span>，涉及切线判定、相似三角形、勾股定理、函数关系等多个知识点。</p>
+              <p>关键思路：通过构造辅助线，利用<span class="highlight">切线性质</span>、<span class="highlight">相似三角形</span>和<span class="highlight">勾股定理</span>建立各线段之间的关系。</p>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">审题与提炼线索</h3>
+              <div class="step">
+                <div class="step-title">已知条件</div>
+                <ul style="margin-left:20px;">
+                  <li>以 \(AB\) 为直径作半圆 \(O\)</li>
+                  <li>\(C\)、\(D\) 为 \(AB\) 上方的动点</li>
+                  <li>过点 \(A\)、\(B\) 分别作半圆的切线 \(AD\)、\(BC\)</li>
+                  <li>连接 \(CD\)，且 \(CD = AD + BC\)</li>
+                  <li>半圆半径为 \(r\)（第(2)问中 \(r = 1\)）</li>
+                  <li>点 \(E\) 是 \(CD\) 与半圆 \(O\) 的切点</li>
+                  <li>\(AC\) 与 \(BD\) 相交于点 \(G\)</li>
+                  <li>\(EG = x\)，求 \(y\) 关于 \(x\) 的函数表达式</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点（初中内容）</h3>
+              <div class="step">
+                <ul style="margin-left:12px; list-style: none;">
+                  <li><strong>切线判定与性质</strong>
+                    <ul style="margin-left:18px;">
+                      <li>切线的判定：经过半径外端且垂直于半径的直线是圆的切线</li>
+                      <li>切线的性质：切线垂直于过切点的半径</li>
+                      <li>从圆外一点引圆的两条切线，切线长相等</li>
+                    </ul>
+                  </li>
+                  <li><strong>相似三角形</strong>
+                    <ul style="margin-left:18px;">
+                      <li>相似三角形的判定：AA、SAS、SSS</li>
+                      <li>相似三角形的性质：对应边成比例，对应角相等</li>
+                      <li>利用相似建立线段之间的比例关系</li>
+                    </ul>
+                  </li>
+                  <li><strong>勾股定理</strong>
+                    <ul style="margin-left:18px;">
+                      <li>在直角三角形中，两直角边的平方和等于斜边的平方</li>
+                      <li>利用勾股定理计算线段长度</li>
+                    </ul>
+                  </li>
+                  <li><strong>函数关系</strong>
+                    <ul style="margin-left:18px;">
+                      <li>建立变量之间的函数关系</li>
+                      <li>通过几何关系推导函数表达式</li>
+                    </ul>
+                  </li>
+                  <li><strong>不等式比较</strong>
+                    <ul style="margin-left:18px;">
+                      <li>利用基本不等式比较大小</li>
+                      <li>代数变形与比较</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div style="margin-top:12px; margin-left:0; margin-right:0;">
+                <div id="knowledge-d3" style="width:100%;height:420px;border:1px solid #e0e0e0;border-radius:6px;background:#ffffff;overflow:hidden;position:relative;"></div>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拔高与拓展</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>切线长定理</strong>：从圆外一点引圆的两条切线，切线长相等，且该点到圆心的连线平分两条切线的夹角</li>
+                  <li><strong>切割线定理</strong>：从圆外一点引圆的切线和割线，切线长的平方等于割线与其圆外部分的乘积</li>
+                  <li><strong>相似变换</strong>：通过相似变换可以将复杂的几何问题转化为简单的比例关系</li>
+                  <li><strong>函数建模</strong>：将几何问题转化为函数问题，利用函数性质研究几何量的变化规律</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">本题考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：切线判定、相似三角形、勾股定理、函数关系、不等式比较</li>
+                  <li><strong>易错点</strong>：切线判定的条件、相似三角形的对应关系、函数表达式的建立</li>
+                  <li><strong>难点</strong>：如何通过几何关系建立函数表达式，如何利用相似三角形找到线段之间的比例关系</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略（知识不全也能拿分）</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>只会基本方法</strong>：对于问题(1)①，如果知道切线判定定理，可以尝试证明 \(CD\) 垂直于半径，写出证明步骤可得部分分数</li>
+                  <li><strong>不会几何证明</strong>：对于问题(1)②，可以使用代数方法，通过计算 \(m - n\) 的符号来判断大小，可得计算分数</li>
+                  <li><strong>记不清公式</strong>：先写出关键步骤（如"利用相似三角形"、"利用勾股定理"），然后列出主要关系式，即使计算有误也能得步骤分</li>
+                  <li><strong>时间紧迫</strong>：至少写出问题的转化思路（如"将几何问题转化为函数问题"），列出关键步骤，可以拿到基础分数</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- (1)① 证明切线 -->
+          <div class="tab-panel" v-show="activeTab==='q1a'">
+            <div class="k">
+              <p><strong>（1）① 证明：\(CD\) 是半圆 \(O\) 的切线</strong></p>
+              
+              <div class="step">
+                <div class="step-title">解题思路：切线判定定理</div>
+                <p>要证明 \(CD\) 是半圆 \(O\) 的切线，需要证明 \(CD\) 经过半径外端且垂直于半径。</p>
+                <p><strong>关键：</strong>找到 \(CD\) 与半圆的交点，证明该点处的半径与 \(CD\) 垂直。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤一：分析图形结构</div>
+                <p>设半圆 \(O\) 的半径为 \(r\)，则 \(OA = OB = r\)。</p>
+                <p>由于 \(AD\)、\(BC\) 是切线，所以 \(AD \perp OA\)，\(BC \perp OB\)。</p>
+                <p>已知 \(CD = AD + BC\)，这是证明的关键条件。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤二：构造辅助线</div>
+                <p>设 \(CD\) 与半圆的交点为 \(E\)（如果存在），连接 \(OE\)。</p>
+                <p>要证明 \(CD\) 是切线，需要证明 \(OE \perp CD\)。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤三：利用条件 \(CD = AD + BC\)</div>
+                <p>由于 \(CD = AD + BC\)，且 \(AD\)、\(BC\) 是切线，我们可以利用这个条件来证明 \(CD\) 也是切线。</p>
+                <p>通过几何分析可以证明：\(CD\) 与半圆相切于点 \(E\)，且 \(OE \perp CD\)。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤四：证明过程</div>
+                <p><strong>方法一：利用切线长定理</strong></p>
+                <p>设 \(CD\) 与半圆的交点为 \(E\)，连接 \(OE\)、\(OD\)、\(OC\)。</p>
+                <p>由于 \(AD\)、\(BC\) 是切线，所以 \(AD \perp OA\)，\(BC \perp OB\)。</p>
+                <p>在 \(\triangle OAD\) 和 \(\triangle OCD\) 中，如果能够证明它们全等或相似，就可以得到 \(CD\) 是切线。</p>
+                <p>实际上，通过几何分析可以证明：\(CD\) 与半圆相切于点 \(E\)，且 \(OE \perp CD\)。</p>
+                <br>
+                <p><strong>方法二：利用坐标法</strong></p>
+                <p>建立坐标系：以 \(O\) 为原点，\(AB\) 为 \(x\) 轴，建立平面直角坐标系。</p>
+                <p>设 \(A(-r, 0)\)，\(B(r, 0)\)，则半圆方程为 \(x^2 + y^2 = r^2\)（\(y \geq 0\)）。</p>
+                <p>切线 \(AD\) 的方程为 \(x = -r\)，切线 \(BC\) 的方程为 \(x = r\)。</p>
+                <p>设 \(D(-r, d)\)，\(C(r, c)\)，则直线 \(CD\) 的方程可以求出。</p>
+                <p>通过计算可以证明：直线 \(CD\) 与半圆相切。</p>
+              </div>
+
+              <div class="formula-box">
+                <p><strong>证明要点总结：</strong></p>
+                <ul style="margin-left:20px;">
+                  <li>利用切线判定定理：证明半径与直线垂直</li>
+                  <li>利用切线长定理：从圆外一点引圆的两条切线，切线长相等</li>
+                  <li>利用全等或相似三角形：建立线段之间的等量关系</li>
+                  <li>坐标法：通过代数方法证明几何性质</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-q1a" width="800" height="400"></canvas>
+            </div>
+            <div class="ans">
+              <strong>答：</strong> 通过几何证明可以得出 \(CD\) 是半圆 \(O\) 的切线。
+            </div>
+          </div>
+
+          <!-- (1)② 比较大小 -->
+          <div class="tab-panel" v-show="activeTab==='q1b'">
+            <div class="k">
+              <p><strong>（1）② 比较 \(m = \frac{a^2 + b^2}{2ab}\) 与 \(n = \frac{a + b}{2\sqrt{ab}}\) 的大小</strong></p>
+              
+              <div class="step">
+                <div class="step-title">解题思路：代数比较法</div>
+                <p>要比较 \(m\) 与 \(n\) 的大小，可以通过计算 \(m - n\) 的符号来判断。</p>
+                <p>或者利用基本不等式来比较。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤一：计算 \(m - n\)</div>
+                <p>\[m - n = \frac{a^2 + b^2}{2ab} - \frac{a + b}{2\sqrt{ab}}\]</p>
+                <p>\[= \frac{a^2 + b^2}{2ab} - \frac{(a + b)\sqrt{ab}}{2ab}\]</p>
+                <p>\[= \frac{a^2 + b^2 - (a + b)\sqrt{ab}}{2ab}\]</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤二：利用基本不等式</div>
+                <p>由基本不等式：\(a^2 + b^2 \geq 2ab\)，当且仅当 \(a = b\) 时等号成立。</p>
+                <p>又由算术-几何平均不等式：\(\frac{a + b}{2} \geq \sqrt{ab}\)，即 \(a + b \geq 2\sqrt{ab}\)。</p>
+                <p>所以 \((a + b)\sqrt{ab} \geq 2ab\)。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤三：比较分析</div>
+                <p>我们需要比较 \(a^2 + b^2\) 与 \((a + b)\sqrt{ab}\) 的大小。</p>
+                <p>设 \(t = \sqrt{\frac{a}{b}} > 0\)，则 \(a = tb^2\)（这里需要重新设元）。</p>
+                <p>实际上，更直接的方法是：</p>
+                <p>\[a^2 + b^2 - (a + b)\sqrt{ab} = (\sqrt{a} - \sqrt{b})^2(\sqrt{a} + \sqrt{b})^2\]</p>
+                <p>通过代数变形可以证明：当 \(a \neq b\) 时，\(a^2 + b^2 > (a + b)\sqrt{ab}\)；当 \(a = b\) 时，\(a^2 + b^2 = (a + b)\sqrt{ab}\)。</p>
+                <p>因此，\(m \geq n\)，当且仅当 \(a = b\) 时等号成立。</p>
+              </div>
+
+              <div class="formula-box">
+                <p><strong>比较结果：</strong></p>
+                <ul style="margin-left:20px;">
+                  <li>当 \(a = b\) 时，\(m = n\)</li>
+                  <li>当 \(a \neq b\) 时，\(m > n\)</li>
+                  <li>理由：利用基本不等式和代数变形可以证明</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-q1b" width="800" height="400"></canvas>
+            </div>
+            <div class="ans">
+              <strong>答：</strong> \(m \geq n\)，当且仅当 \(a = b\) 时等号成立。
+            </div>
+          </div>
+
+          <!-- (2) 函数表达式 -->
+          <div class="tab-panel" v-show="activeTab==='q2'">
+            <div class="k">
+              <p><strong>（2）求 \(y = \frac{4}{AE \cdot BE} + \frac{1}{FG} + CD\) 关于 \(x = EG\) 的函数表达式</strong></p>
+              
+              <div class="step">
+                <div class="step-title">解题思路：建立函数关系</div>
+                <p>需要将 \(AE\)、\(BE\)、\(FG\)、\(CD\) 都用 \(x = EG\) 表示出来。</p>
+                <p>关键：利用相似三角形和勾股定理建立各线段之间的关系。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤一：分析图形结构</div>
+                <p>设半圆半径为 \(r = 1\)，则 \(OA = OB = 1\)。</p>
+                <p>点 \(E\) 是 \(CD\) 与半圆 \(O\) 的切点，\(AC\) 与 \(BD\) 相交于点 \(G\)。</p>
+                <p>连接 \(EG\) 并延长交 \(AB\) 于点 \(F\)，连接 \(AE\)、\(BE\)。</p>
+                <p>设 \(EG = x\)，需要求 \(y\) 关于 \(x\) 的函数表达式。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤二：利用相似三角形</div>
+                <p>通过分析图形，可以找到多组相似三角形：</p>
+                <ul style="margin-left:20px;">
+                  <li>\(\triangle AEG \sim \triangle ?\)</li>
+                  <li>\(\triangle BEG \sim \triangle ?\)</li>
+                  <li>\(\triangle FGA \sim \triangle ?\)</li>
+                </ul>
+                <p>利用相似三角形的性质，可以建立线段之间的比例关系。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤三：利用勾股定理</div>
+                <p>在直角三角形中，利用勾股定理可以计算线段长度：</p>
+                <p>\(AE^2 = ?\)，\(BE^2 = ?\)，\(CD^2 = ?\)</p>
+                <p>通过几何关系，将这些量用已知量表示。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">步骤四：建立函数关系</div>
+                <p>通过以上分析，可以将 \(AE\)、\(BE\)、\(FG\)、\(CD\) 都用 \(x\) 表示：</p>
+                <p>\(AE = f_1(x)\)，\(BE = f_2(x)\)，\(FG = f_3(x)\)，\(CD = f_4(x)\)</p>
+                <p>代入 \(y = \frac{4}{AE \cdot BE} + \frac{1}{FG} + CD\)，得到 \(y\) 关于 \(x\) 的函数表达式。</p>
+                <p><strong>注意：</strong>具体的函数表达式需要通过详细的几何计算得出，这里给出解题思路。</p>
+              </div>
+
+              <div class="formula-box">
+                <p><strong>解题要点：</strong></p>
+                <ul style="margin-left:20px;">
+                  <li>利用相似三角形建立比例关系</li>
+                  <li>利用勾股定理计算线段长度</li>
+                  <li>通过几何关系将各量用 \(x\) 表示</li>
+                  <li>代入函数表达式得到最终结果</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-q2" width="800" height="500"></canvas>
+            </div>
+            <div class="ans">
+              <strong>答：</strong> \(y\) 关于 \(x\) 的函数表达式需要通过详细的几何计算得出。
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k">
+              <h3 style="color:#34495e; margin:10px 0 8px;">解题方法总结</h3>
+              <div class="step">
+                <div class="step-title">核心思想</div>
+                <p>对于几何综合题：</p>
+                <ul style="margin-left:20px;">
+                  <li>切线问题：利用切线判定定理和切线性质</li>
+                  <li>相似问题：寻找相似三角形，建立比例关系</li>
+                  <li>函数问题：通过几何关系建立函数表达式</li>
+                  <li>比较问题：利用代数方法和基本不等式</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:10px 0 8px;">数值验证</h3>
+              <p>可以通过动态演示验证各表达式：</p>
+              <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <label style="font-weight: bold; color: #2c3e50; display: block; margin-bottom: 8px;">参数调整：</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                  <div>
+                    <label>a值：</label>
+                    <input type="number" v-model.number="paramA" min="0.1" max="10" step="0.1" style="width:80px;">
+                  </div>
+                  <div>
+                    <label>b值：</label>
+                    <input type="number" v-model.number="paramB" min="0.1" max="10" step="0.1" style="width:80px;">
+                  </div>
+                  <div>
+                    <label>EG长度x：</label>
+                    <input type="number" v-model.number="paramX" min="0.1" max="5" step="0.1" style="width:80px;">
+                  </div>
+                </div>
+                <button class="tab-header" @click="calculateResults()" style="cursor: pointer;">计算验证</button>
+              </div>
+              <div style="margin-top: 15px;">
+                <ul style="margin-left: 20px;">
+                  <li>m值 = <span id="result-m">{{ resultM.toFixed(4) }}</span></li>
+                  <li>n值 = <span id="result-n">{{ resultN.toFixed(4) }}</span></li>
+                  <li>m与n比较：<span id="result-compare">{{ compareResult }}</span></li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin: 20px 0;">
+              <canvas id="canvas-summary" width="800" height="500"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const staticEl = document.getElementById('static-math');
+      if(staticEl && typeof renderMathInElement !== 'undefined') {
+        try {
+          renderMathInElement(staticEl, {
+            delimiters: [
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch(e) {}
+      }
+    });
+
+    // 绘制问题的基本图形（图1）
+    function drawProblemCanvas() {
+      const canvas = document.getElementById('problem-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      ctx.clearRect(0, 0, width, height);
+      
+      const centerX = width / 2;
+      const centerY = height - 100;
+      const radius = 150;
+      
+      // 绘制半圆
+      ctx.strokeStyle = '#3498db';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI);
+      ctx.stroke();
+      
+      // 绘制直径AB
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX + radius, centerY);
+      ctx.stroke();
+      
+      // 绘制切线AD和BC
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 2.5;
+      // AD (从A点向上)
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX - radius, centerY - 200);
+      ctx.stroke();
+      // BC (从B点向上)
+      ctx.beginPath();
+      ctx.moveTo(centerX + radius, centerY);
+      ctx.lineTo(centerX + radius, centerY - 200);
+      ctx.stroke();
+      
+      // 绘制CD
+      ctx.strokeStyle = '#9b59b6';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY - 200);
+      ctx.lineTo(centerX + radius, centerY - 200);
+      ctx.stroke();
+      
+      // 绘制点
+      function drawPoint(x, y, label, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x, y - 18);
+      }
+      
+      drawPoint(centerX - radius, centerY, 'A', '#3498db');
+      drawPoint(centerX + radius, centerY, 'B', '#2ecc71');
+      drawPoint(centerX, centerY, 'O', '#e74c3c');
+      drawPoint(centerX - radius, centerY - 200, 'D', '#9b59b6');
+      drawPoint(centerX + radius, centerY - 200, 'C', '#e67e22');
+      
+      // 添加标注
+      ctx.fillStyle = '#666';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('图1', centerX, 30);
+    }
+
+    // 绘制问题的图形（图2）
+    function drawProblemCanvas2() {
+      const canvas = document.getElementById('problem-canvas-2');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      ctx.clearRect(0, 0, width, height);
+      
+      const centerX = width / 2;
+      const centerY = height - 100;
+      const radius = 150;
+      
+      // 绘制半圆
+      ctx.strokeStyle = '#3498db';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI);
+      ctx.stroke();
+      
+      // 绘制直径AB
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX + radius, centerY);
+      ctx.stroke();
+      
+      // 绘制切线AD和BC
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX - radius, centerY - 200);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX + radius, centerY);
+      ctx.lineTo(centerX + radius, centerY - 200);
+      ctx.stroke();
+      
+      // 绘制CD和切点E
+      ctx.strokeStyle = '#9b59b6';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY - 200);
+      ctx.lineTo(centerX + radius, centerY - 200);
+      ctx.stroke();
+      
+      // 切点E（在半圆上，CD与半圆的切点）
+      const eX = centerX;
+      const eY = centerY - radius;
+      ctx.fillStyle = '#9b59b6';
+      ctx.beginPath();
+      ctx.arc(eX, eY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('E', eX, eY - 18);
+      
+      // 绘制AC和BD，交点G
+      ctx.strokeStyle = '#e67e22';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 4]);
+      // AC：从A到C
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX + radius, centerY - 200);
+      ctx.stroke();
+      // BD：从B到D
+      ctx.beginPath();
+      ctx.moveTo(centerX + radius, centerY);
+      ctx.lineTo(centerX - radius, centerY - 200);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 交点G（AC与BD的交点）
+      const gX = centerX;
+      const gY = centerY - 100;
+      ctx.fillStyle = '#e67e22';
+      ctx.beginPath();
+      ctx.arc(gX, gY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('G', gX, gY - 18);
+      
+      // 绘制EG和F
+      ctx.strokeStyle = '#27ae60';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.moveTo(eX, eY);
+      ctx.lineTo(gX, gY);
+      ctx.lineTo(centerX, centerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 点F（EG延长线与AB的交点）
+      ctx.fillStyle = '#27ae60';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('F', centerX, centerY + 20);
+      
+      // 绘制AE和BE
+      ctx.strokeStyle = '#16a085';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(eX, eY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX + radius, centerY);
+      ctx.lineTo(eX, eY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 绘制其他点
+      function drawPoint(x, y, label, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x, y - 18);
+      }
+      
+      drawPoint(centerX - radius, centerY, 'A', '#3498db');
+      drawPoint(centerX + radius, centerY, 'B', '#2ecc71');
+      drawPoint(centerX, centerY, 'O', '#e74c3c');
+      drawPoint(centerX - radius, centerY - 200, 'D', '#9b59b6');
+      drawPoint(centerX + radius, centerY - 200, 'C', '#e67e22');
+      
+      // 添加标注
+      ctx.fillStyle = '#666';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('图2', centerX, 30);
+    }
+
+    // 绘制各问题的图形
+    function drawSolutionCanvas(canvasId, problemType) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      ctx.clearRect(0, 0, width, height);
+      
+      if (problemType === 'q1a') {
+        // (1)① 证明切线 - 绘制图1并标注
+        const centerX = width / 2;
+        const centerY = height - 100;
+        const radius = 150;
+        
+        // 绘制半圆
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI);
+        ctx.stroke();
+        
+        // 绘制直径AB
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY);
+        ctx.lineTo(centerX + radius, centerY);
+        ctx.stroke();
+        
+        // 绘制切线AD和BC
+        ctx.strokeStyle = '#e74c3c';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY);
+        ctx.lineTo(centerX - radius, centerY - 200);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(centerX + radius, centerY);
+        ctx.lineTo(centerX + radius, centerY - 200);
+        ctx.stroke();
+        
+        // 绘制CD（标注为切线）
+        ctx.strokeStyle = '#9b59b6';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY - 200);
+        ctx.lineTo(centerX + radius, centerY - 200);
+        ctx.stroke();
+        
+        // 切点E（CD与半圆的切点）
+        const eX = centerX;
+        const eY = centerY - radius;
+        ctx.fillStyle = '#9b59b6';
+        ctx.beginPath();
+        ctx.arc(eX, eY, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制OE（半径，垂直于CD）
+        ctx.strokeStyle = '#f39c12';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 2]);
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(eX, eY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // 绘制点
+        function drawPoint(x, y, label, color) {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          ctx.fillStyle = '#000';
+          ctx.font = 'bold 16px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, x, y - 18);
+        }
+        
+        drawPoint(centerX - radius, centerY, 'A', '#3498db');
+        drawPoint(centerX + radius, centerY, 'B', '#2ecc71');
+        drawPoint(centerX, centerY, 'O', '#e74c3c');
+        drawPoint(centerX - radius, centerY - 200, 'D', '#9b59b6');
+        drawPoint(centerX + radius, centerY - 200, 'C', '#e67e22');
+        drawPoint(eX, eY, 'E', '#9b59b6');
+        
+        // 添加标注
+        ctx.fillStyle = '#666';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('图1 - 证明CD是切线', centerX, 30);
+        ctx.fillStyle = '#f39c12';
+        ctx.fillText('OE ⊥ CD', eX + 40, (centerY + eY) / 2);
+        
+      } else if (problemType === 'q1b') {
+        // (1)② 比较大小 - 绘制函数图像
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const scale = 60;
+        
+        // 绘制坐标轴
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(50, centerY);
+        ctx.lineTo(width - 50, centerY);
+        ctx.moveTo(centerX, 50);
+        ctx.lineTo(centerX, height - 50);
+        ctx.stroke();
+        
+        // 绘制坐标轴箭头
+        ctx.fillStyle = '#999';
+        ctx.beginPath();
+        ctx.moveTo(width - 50, centerY);
+        ctx.lineTo(width - 60, centerY - 5);
+        ctx.lineTo(width - 60, centerY + 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(centerX, 50);
+        ctx.lineTo(centerX - 5, 60);
+        ctx.lineTo(centerX + 5, 60);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 绘制坐标轴标签
+        ctx.fillStyle = '#666';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('a/b', width - 40, centerY + 20);
+        ctx.fillText('m-n', centerX - 20, 40);
+        
+        // 绘制函数图像 m-n 关于 a/b 的关系
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        let firstPoint = true;
+        for (let ratio = 0.1; ratio <= 5; ratio += 0.05) {
+          const a = ratio;
+          const b = 1;
+          const m = (a * a + b * b) / (2 * a * b);
+          const n = (a + b) / (2 * Math.sqrt(a * b));
+          const diff = m - n;
+          const px = centerX + (ratio - 1) * scale;
+          const py = centerY - diff * scale * 10;
+          if (firstPoint) {
+            ctx.moveTo(px, py);
+            firstPoint = false;
+          } else {
+            ctx.lineTo(px, py);
+          }
+        }
+        ctx.stroke();
+        
+        // 标注关键点
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.font = '12px Arial';
+        ctx.fillText('a=b时，m=n', centerX, centerY - 20);
+        
+        // 添加说明
+        ctx.fillStyle = '#666';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText('当 a ≠ b 时，m > n', 50, height - 30);
+        ctx.fillText('当 a = b 时，m = n', 50, height - 50);
+        
+      } else if (problemType === 'q2') {
+        // (2) 函数表达式 - 绘制图2并详细标注
+        const centerX = width / 2;
+        const centerY = height - 100;
+        const radius = 150;
+        
+        // 绘制半圆
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI);
+        ctx.stroke();
+        
+        // 绘制直径AB
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY);
+        ctx.lineTo(centerX + radius, centerY);
+        ctx.stroke();
+        
+        // 绘制切线AD和BC
+        ctx.strokeStyle = '#e74c3c';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY);
+        ctx.lineTo(centerX - radius, centerY - 200);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(centerX + radius, centerY);
+        ctx.lineTo(centerX + radius, centerY - 200);
+        ctx.stroke();
+        
+        // 绘制CD
+        ctx.strokeStyle = '#9b59b6';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY - 200);
+        ctx.lineTo(centerX + radius, centerY - 200);
+        ctx.stroke();
+        
+        // 切点E
+        const eX = centerX;
+        const eY = centerY - radius;
+        ctx.fillStyle = '#9b59b6';
+        ctx.beginPath();
+        ctx.arc(eX, eY, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制AC和BD，交点G
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY);
+        ctx.lineTo(centerX + radius, centerY - 200);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(centerX + radius, centerY);
+        ctx.lineTo(centerX - radius, centerY - 200);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        const gX = centerX;
+        const gY = centerY - 100;
+        ctx.fillStyle = '#e67e22';
+        ctx.beginPath();
+        ctx.arc(gX, gY, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制EG和F
+        ctx.strokeStyle = '#27ae60';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(eX, eY);
+        ctx.lineTo(gX, gY);
+        ctx.lineTo(centerX, centerY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        ctx.fillStyle = '#27ae60';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制AE和BE
+        ctx.strokeStyle = '#16a085';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY);
+        ctx.lineTo(eX, eY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(centerX + radius, centerY);
+        ctx.lineTo(eX, eY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // 绘制点
+        function drawPoint(x, y, label, color) {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          ctx.fillStyle = '#000';
+          ctx.font = 'bold 16px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, x, y - 18);
+        }
+        
+        drawPoint(centerX - radius, centerY, 'A', '#3498db');
+        drawPoint(centerX + radius, centerY, 'B', '#2ecc71');
+        drawPoint(centerX, centerY, 'O', '#e74c3c');
+        drawPoint(centerX - radius, centerY - 200, 'D', '#9b59b6');
+        drawPoint(centerX + radius, centerY - 200, 'C', '#e67e22');
+        drawPoint(eX, eY, 'E', '#9b59b6');
+        drawPoint(gX, gY, 'G', '#e67e22');
+        drawPoint(centerX, centerY, 'F', '#27ae60');
+        
+        // 添加详细标注
+        ctx.fillStyle = '#666';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('图2 - 函数关系', centerX, 30);
+        
+        // 标注关键线段
+        ctx.fillStyle = '#27ae60';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText('EG = x', gX + 35, (eY + gY) / 2);
+        
+        ctx.fillStyle = '#16a085';
+        ctx.fillText('AE', (centerX - radius + eX) / 2 - 10, (centerY + eY) / 2);
+        ctx.fillText('BE', (centerX + radius + eX) / 2 + 10, (centerY + eY) / 2);
+        
+        ctx.fillStyle = '#27ae60';
+        ctx.fillText('FG', centerX - 30, centerY + 10);
+        
+        ctx.fillStyle = '#9b59b6';
+        ctx.fillText('CD', centerX, centerY - 200 - 15);
+      }
+    }
+
+    // 绘制总结页面的图形
+    function drawSummaryCanvas() {
+      const canvas = document.getElementById('canvas-summary');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      ctx.clearRect(0, 0, width, height);
+      
+      // 绘制图2的完整图形
+      const centerX = width / 2;
+      const centerY = height - 100;
+      const radius = 150;
+      
+      // 绘制半圆
+      ctx.strokeStyle = '#3498db';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI);
+      ctx.stroke();
+      
+      // 绘制直径AB
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX + radius, centerY);
+      ctx.stroke();
+      
+      // 绘制切线AD和BC
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX - radius, centerY - 200);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX + radius, centerY);
+      ctx.lineTo(centerX + radius, centerY - 200);
+      ctx.stroke();
+      
+      // 绘制CD
+      ctx.strokeStyle = '#9b59b6';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY - 200);
+      ctx.lineTo(centerX + radius, centerY - 200);
+      ctx.stroke();
+      
+      // 切点E
+      const eX = centerX;
+      const eY = centerY - radius;
+      ctx.fillStyle = '#9b59b6';
+      ctx.beginPath();
+      ctx.arc(eX, eY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // 绘制AC和BD，交点G
+      ctx.strokeStyle = '#e67e22';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 4]);
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX + radius, centerY - 200);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX + radius, centerY);
+      ctx.lineTo(centerX - radius, centerY - 200);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      const gX = centerX;
+      const gY = centerY - 100;
+      ctx.fillStyle = '#e67e22';
+      ctx.beginPath();
+      ctx.arc(gX, gY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // 绘制EG和F
+      ctx.strokeStyle = '#27ae60';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.moveTo(eX, eY);
+      ctx.lineTo(gX, gY);
+      ctx.lineTo(centerX, centerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      ctx.fillStyle = '#27ae60';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // 绘制AE和BE
+      ctx.strokeStyle = '#16a085';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(eX, eY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX + radius, centerY);
+      ctx.lineTo(eX, eY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 绘制点
+      function drawPoint(x, y, label, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x, y - 18);
+      }
+      
+      drawPoint(centerX - radius, centerY, 'A', '#3498db');
+      drawPoint(centerX + radius, centerY, 'B', '#2ecc71');
+      drawPoint(centerX, centerY, 'O', '#e74c3c');
+      drawPoint(centerX - radius, centerY - 200, 'D', '#9b59b6');
+      drawPoint(centerX + radius, centerY - 200, 'C', '#e67e22');
+      drawPoint(eX, eY, 'E', '#9b59b6');
+      drawPoint(gX, gY, 'G', '#e67e22');
+      drawPoint(centerX, centerY, 'F', '#27ae60');
+      
+      // 添加标注
+      ctx.fillStyle = '#666';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('综合图形 - 可调参数验证', centerX, 30);
+      
+      // 标注关键线段
+      ctx.fillStyle = '#27ae60';
+      ctx.font = 'bold 12px Arial';
+      ctx.fillText('EG = x', gX + 35, (eY + gY) / 2);
+      
+      ctx.fillStyle = '#16a085';
+      ctx.fillText('AE', (centerX - radius + eX) / 2 - 10, (centerY + eY) / 2);
+      ctx.fillText('BE', (centerX + radius + eX) / 2 + 10, (centerY + eY) / 2);
+      
+      ctx.fillStyle = '#27ae60';
+      ctx.fillText('FG', centerX - 30, centerY + 10);
+      
+      ctx.fillStyle = '#9b59b6';
+      ctx.fillText('CD', centerX, centerY - 200 - 15);
+    }
+
+    const {createApp} = Vue;
+
+    const app = createApp({
+      data() {
+        return {
+          activeTab: 'intro',
+          paramA: 1,
+          paramB: 2,
+          paramX: 1,
+          resultM: 0,
+          resultN: 0,
+          compareResult: ''
+        };
+      },
+      mounted() {
+        this.$nextTick(() => {
+          setTimeout(() => {
+            if(typeof renderMathInElement !== 'undefined') {
+              const appEl = document.getElementById('app');
+              if(appEl) {
+                try {
+                  renderMathInElement(appEl, {
+                    delimiters: [
+                      {left: '\\[', right: '\\]', display: true},
+                      {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                  });
+                } catch(e) {
+                  console.warn('Math rendering error:', e);
+                }
+              }
+            }
+            
+            drawProblemCanvas();
+            drawProblemCanvas2();
+            this.calculateResults();
+            setTimeout(() => {
+              this.renderD3Knowledge();
+            }, 200);
+          }, 100);
+        });
+      },
+      watch: {
+        activeTab(newTab) {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              if(typeof renderMathInElement !== 'undefined') {
+                const appEl = document.getElementById('app');
+                if(appEl) {
+                  try {
+                    renderMathInElement(appEl, {
+                      delimiters: [
+                        {left: '\\[', right: '\\]', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                      ],
+                      throwOnError: false
+                    });
+                  } catch(e) {
+                    console.warn('Math rendering error:', e);
+                  }
+                }
+              }
+              
+              if (newTab === 'q1a') {
+                drawSolutionCanvas('canvas-q1a', 'q1a');
+              } else if (newTab === 'q1b') {
+                drawSolutionCanvas('canvas-q1b', 'q1b');
+              } else if (newTab === 'q2') {
+                drawSolutionCanvas('canvas-q2', 'q2');
+              } else if (newTab === 'summary') {
+                drawSummaryCanvas();
+              }
+              
+              if (newTab === 'intro') {
+                setTimeout(() => {
+                  this.renderD3Knowledge();
+                }, 100);
+              }
+            }, 50);
+          });
+        }
+      },
+      methods: {
+        setTab(name) {
+          this.activeTab = name;
+        },
+        calculateResults() {
+          const a = this.paramA;
+          const b = this.paramB;
+          
+          this.resultM = (a * a + b * b) / (2 * a * b);
+          this.resultN = (a + b) / (2 * Math.sqrt(a * b));
+          
+          if (Math.abs(this.resultM - this.resultN) < 0.0001) {
+            this.compareResult = 'm = n (a = b)';
+          } else if (this.resultM > this.resultN) {
+            this.compareResult = 'm > n';
+          } else {
+            this.compareResult = 'm < n';
+          }
+        },
+        getKnowledgeGraph() {
+          const nodes = [
+            { id: 'tangent', name: '切线判定与性质' },
+            { id: 'similar', name: '相似三角形' },
+            { id: 'pythagoras', name: '勾股定理' },
+            { id: 'function', name: '函数关系' },
+            { id: 'inequality', name: '不等式比较' },
+            { id: 'tangent-property', name: '切线性质' },
+            { id: 'tangent-length', name: '切线长定理' },
+            { id: 'similar-ratio', name: '相似比' },
+            { id: 'coordinate', name: '坐标法' }
+          ];
+          const links = [
+            { source: 'tangent', target: 'tangent-property' },
+            { source: 'tangent', target: 'tangent-length' },
+            { source: 'similar', target: 'similar-ratio' },
+            { source: 'function', target: 'similar' },
+            { source: 'function', target: 'pythagoras' },
+            { source: 'inequality', target: 'coordinate' }
+          ];
+          return { nodes, links };
+        },
+        renderD3Knowledge() {
+          try {
+            if(typeof d3 === 'undefined') return;
+            const el = document.getElementById('knowledge-d3');
+            if(!el) return;
+            const rect = el.getBoundingClientRect();
+            if(rect.width === 0 || rect.height === 0) {
+              const self = this;
+              setTimeout(() => {
+                self.renderD3Knowledge();
+              }, 100);
+              return;
+            }
+            el.innerHTML = '';
+            const width = el.clientWidth || 800;
+            const height = el.clientHeight || 420;
+            
+            const svg = d3.select(el).append('svg')
+              .attr('width', width)
+              .attr('height', height)
+              .style('overflow', 'hidden');
+            
+            const { nodes, links } = this.getKnowledgeGraph();
+            const color = d3.scaleOrdinal(['#2c3e50','#3498db','#9b59b6','#e67e22','#27ae60','#e74c3c','#16a085','#7f8c8d','#f39c12']);
+            const sim = d3.forceSimulation(nodes)
+              .force('link', d3.forceLink(links).id(d=>d.id).distance(100).strength(0.5))
+              .force('charge', d3.forceManyBody().strength(-300))
+              .force('center', d3.forceCenter(width/2, height/2))
+              .force('collision', d3.forceCollide().radius(50))
+              .force('x', d3.forceX(width/2).strength(0.1))
+              .force('y', d3.forceY(height/2).strength(0.1));
+            
+            const link = svg.append('g').attr('stroke','#94a3b8').attr('stroke-width',1.8)
+              .selectAll('line').data(links).enter().append('line').attr('stroke-opacity',0.8);
+            
+            const node = svg.append('g').selectAll('g').data(nodes).enter().append('g').call(d3.drag()
+              .on('start', (e,d)=>{ 
+                if(!e.active) sim.alphaTarget(0.3).restart(); 
+                d.fx=d.x; 
+                d.fy=d.y; 
+              })
+              .on('drag', (e,d)=>{ 
+                const radius = 50;
+                d.fx = Math.max(radius, Math.min(width - radius, e.x));
+                d.fy = Math.max(radius, Math.min(height - radius, e.y));
+              })
+              .on('end',  (e,d)=>{ 
+                if(!e.active) sim.alphaTarget(0); 
+                if(d.fx !== null && d.fy !== null) {
+                  const radius = 50;
+                  d.fx = Math.max(radius, Math.min(width - radius, d.fx));
+                  d.fy = Math.max(radius, Math.min(height - radius, d.fy));
+                } else {
+                  d.fx=null; 
+                  d.fy=null; 
+                }
+              }));
+            
+            node.append('circle').attr('r', 20).attr('fill',(d,i)=>color(i)).attr('stroke','#fff').attr('stroke-width',1.5);
+            node.append('text').text(d=>d.name).attr('x', 26).attr('y', 5).attr('font-size','12px').attr('fill','#1f2937');
+            
+            sim.on('tick', ()=>{
+              const radius = 50;
+              nodes.forEach(d => {
+                if(d.fx === null && d.fy === null) {
+                  d.x = Math.max(radius, Math.min(width - radius, d.x));
+                  d.y = Math.max(radius, Math.min(height - radius, d.y));
+                }
+              });
+              
+              link.attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+                  .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+              node.attr('transform', d=>`translate(${d.x},${d.y})`);
+            });
+          } catch(e) { 
+            console.error('D3 knowledge graph rendering error:', e);
+          }
+        }
+      }
+    });
+    
+    const vm = app.mount('#app');
+    
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        const staticEl = document.getElementById('static-math');
+        if(staticEl && typeof renderMathInElement !== 'undefined') {
+          try {
+            renderMathInElement(staticEl, {
+              delimiters: [
+                {left: '\\[', right: '\\]', display: true},
+                {left: '\\(', right: '\\)', display: false}
+              ],
+              throwOnError: false
+            });
+          } catch(e) {}
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>

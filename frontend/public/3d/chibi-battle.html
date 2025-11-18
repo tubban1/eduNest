@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="赤壁之战交互式学习体验：通过滚动式动画画卷，深入了解这场改变三国格局的历史战役。包含兵力对比、战略布局、东风之变、火烧连营和战后格局等完整历史过程。">
+  <meta name="keywords" content="赤壁之战,三国历史,交互式学习,GSAP动画,Three.js,历史教育,滚动式学习">
+  <title>滚动画卷：赤壁之战 - 交互式历史学习</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', Arial, sans-serif;
+      background: #0a0e27;
+      color: #fff;
+      overflow-x: hidden;
+      overflow-y: auto;
+      height: auto;
+    }
+    html {
+      height: auto;
+      overflow-y: auto;
+    }
+    #app {
+      position: relative;
+      width: 100%;
+    }
+    .section {
+      min-height: 100vh;
+      height: 100vh;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px;
+      scroll-snap-align: start;
+      z-index: 100;
+    }
+    .canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: -1; /* 确保在背景层 */
+      pointer-events: none;
+      background: transparent;
+      opacity: 0.3; /* 降低Canvas透明度，让内容更突出 */
+    }
+    .canvas-container.active {
+      pointer-events: auto;
+      z-index: -1; /* 保持为背景层，不遮挡内容 */
+      opacity: 0.5; /* 激活时稍微提高透明度 */
+    }
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+    }
+    .content-wrapper {
+      position: relative;
+      z-index: 1000;
+      max-width: 1200px;
+      width: 100%;
+    }
+    .text-panel {
+      background: rgba(10, 14, 39, 0.95);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 40px;
+      margin: 20px 0;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+      z-index: 1001;
+    }
+    .text-panel h2 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: #ffd700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    .text-panel h3 {
+      font-size: 1.8em;
+      margin: 30px 0 15px;
+      color: #4fc3f7;
+    }
+    .text-panel p {
+      font-size: 1.2em;
+      line-height: 1.8;
+      margin: 15px 0;
+      color: #e0e0e0;
+    }
+    .troop-comparison {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin: 40px 0;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+    }
+    .troop-group {
+      text-align: center;
+    }
+    .troop-icon {
+      width: 40px;
+      height: 40px;
+      margin: 5px;
+      display: inline-block;
+      background: #4fc3f7;
+      border-radius: 50%;
+      opacity: 0;
+    }
+    .troop-icon.cao {
+      background: #e53935;
+    }
+    .troop-icon.allied {
+      background: #4fc3f7;
+    }
+    .troop-label {
+      font-size: 1.5em;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .wind-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      z-index: 100;
+    }
+    .wind-arrow {
+      width: 0;
+      height: 0;
+      border-left: 100px solid transparent;
+      border-right: 100px solid transparent;
+      border-bottom: 150px solid rgba(255, 255, 255, 0.8);
+      transform-origin: center bottom;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    }
+    .fire-path {
+      stroke: #ff6b35;
+      stroke-width: 3;
+      fill: none;
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+    }
+    .ship-model {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: #8d6e63;
+      border-radius: 8px;
+      opacity: 0;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .ship-model:hover {
+      transform: scale(1.2);
+    }
+    .ship-model.connected {
+      border: 3px solid #ff6b35;
+    }
+    .chain-line {
+      stroke: #ff6b35;
+      stroke-width: 2;
+      fill: none;
+      opacity: 0;
+    }
+    .flame-icon {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, #ff6b35, #e53935);
+      border-radius: 50%;
+      opacity: 0;
+      filter: blur(5px);
+    }
+    .progress-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 25px;
+      border-radius: 10px;
+      font-size: 1.1em;
+    }
+    .progress-bar {
+      width: 200px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4fc3f7, #ff6b35);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .interactive-hint {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 215, 0, 0.9);
+      color: #000;
+      padding: 15px 30px;
+      border-radius: 25px;
+      font-size: 1.1em;
+      font-weight: bold;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .scroll-hint {
+      position: fixed;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(79, 195, 247, 0.9);
+      color: #fff;
+      padding: 20px 40px;
+      border-radius: 30px;
+      font-size: 1.2em;
+      font-weight: bold;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      animation: bounce 2s infinite;
+    }
+    .scroll-hint.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateX(-50%) translateY(0);
+      }
+      50% {
+        transform: translateX(-50%) translateY(-10px);
+      }
+    }
+    .scroll-arrow {
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 15px solid #fff;
+      animation: arrow-bounce 1.5s infinite;
+    }
+    @keyframes arrow-bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(5px);
+      }
+    }
+    .map-container {
+      width: 100%;
+      height: 600px;
+      background: #1a237e;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .map-marker {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: #e53935;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+    }
+    .map-marker.allied {
+      background: #4fc3f7;
+    }
+    .map-label {
+      position: absolute;
+      color: #fff;
+      font-size: 0.9em;
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+      opacity: 0;
+    }
+    .three-kingdoms-map {
+      width: 100%;
+      height: 500px;
+      background: #1a237e;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kingdom-region {
+      position: absolute;
+      opacity: 0;
+      border: 3px solid;
+      border-radius: 8px;
+    }
+    .kingdom-region.wei {
+      background: rgba(231, 57, 53, 0.3);
+      border-color: #e53935;
+    }
+    .kingdom-region.shu {
+      background: rgba(76, 175, 80, 0.3);
+      border-color: #4caf50;
+    }
+    .kingdom-region.wu {
+      background: rgba(33, 150, 243, 0.3);
+      border-color: #2196f3;
+    }
+    .summary-text {
+      font-size: 1.5em;
+      line-height: 2;
+      text-align: center;
+      opacity: 0;
+      color: #ffd700;
+    }
+    @media (max-width: 768px) {
+      .text-panel {
+        padding: 20px;
+      }
+      .text-panel h2 {
+        font-size: 1.8em;
+      }
+      .text-panel h3 {
+        font-size: 1.4em;
+      }
+      .text-panel p {
+        font-size: 1em;
+      }
+      .troop-comparison {
+        flex-direction: column;
+        gap: 30px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 进度指示器 -->
+    <div class="progress-indicator">
+      <div>滚动进度: <span id="progress-text">0%</span></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div style="margin-top: 10px; font-size: 0.9em;" id="stage-text">序幕：兵临城下</div>
+    </div>
+
+    <!-- 3D Canvas 容器 -->
+    <div class="canvas-container" id="canvas-container">
+      <canvas id="three-canvas"></canvas>
+    </div>
+
+    <!-- 交互提示 -->
+    <div class="interactive-hint" id="interactive-hint"></div>
+    
+    <!-- 滚动提示 -->
+    <div class="scroll-hint" id="scroll-hint">
+      <span>向下滚动开始体验</span>
+      <div class="scroll-arrow"></div>
+    </div>
+
+    <!-- 第一阶段：序幕：兵临城下 (0-20%) -->
+    <section class="section" id="section-1">
+      <div class="content-wrapper">
+        <div class="text-panel">
+          <h2>序幕：兵临城下</h2>
+          <h3>背景介绍</h3>
+          <p>公元208年，曹操统一北方后，率大军南下，意图一举统一天下。面对强大的曹军，孙权和刘备结成联盟，共同抗曹。</p>
+          
+          <h3>兵力对比</h3>
+          <div class="troop-comparison" id="troop-comparison">
+            <div class="troop-group">
+              <div id="cao-troops"></div>
+              <div class="troop-label" style="color: #e53935;">曹军：约80万</div>
+            </div>
+            <div class="troop-group">
+              <div id="allied-troops"></div>
+              <div class="troop-label" style="color: #4fc3f7;">孙刘联军：约5万</div>
+            </div>
+          </div>
+
+          <h3>地理布局</h3>
+          <div class="map-container" id="map-container">
+            <div class="map-marker" id="marker-jingzhou" style="top: 30%; left: 40%;"></div>
+            <div class="map-label" id="label-jingzhou" style="top: 28%; left: 42%;">荆州</div>
+            
+            <div class="map-marker" id="marker-jiangling" style="top: 50%; left: 45%;"></div>
+            <div class="map-label" id="label-jiangling" style="top: 48%; left: 47%;">江陵</div>
+            
+            <div class="map-marker cao" id="marker-wulin" style="top: 60%; left: 50%;"></div>
+            <div class="map-label" id="label-wulin" style="top: 58%; left: 52%;">乌林（曹军）</div>
+            
+            <div class="map-marker allied" id="marker-chibi" style="top: 65%; left: 55%;"></div>
+            <div class="map-label" id="label-chibi" style="top: 63%; left: 57%;">赤壁（联军）</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 第二阶段：战略布局：巧借连环 (20-40%) -->
+    <section class="section" id="section-2">
+      <div class="content-wrapper">
+        <div class="text-panel">
+          <h2>战略布局：巧借连环</h2>
+          <h3>矛盾焦点</h3>
+          <p>曹军虽然人数众多，但多为北方士兵，不习水战。在长江上，战船摇晃不稳，严重影响战斗力。</p>
+          
+          <h3>连环计</h3>
+          <p>周瑜利用反间计，使曹操误杀水军将领蔡瑁、张允。随后，曹军采纳庞统的建议，用铁链将战船连接起来，以解决船只不稳的问题。</p>
+          <div style="position: relative; height: 300px; margin: 30px 0;" id="ship-demo">
+            <div class="ship-model" id="ship-1" style="top: 50px; left: 20%;"></div>
+            <div class="ship-model" id="ship-2" style="top: 50px; left: 40%;"></div>
+            <div class="ship-model" id="ship-3" style="top: 50px; left: 60%;"></div>
+            <div class="ship-model" id="ship-4" style="top: 50px; left: 80%;"></div>
+            <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+              <line class="chain-line" id="chain-1" x1="20%" y1="90px" x2="40%" y2="90px"></line>
+              <line class="chain-line" id="chain-2" x1="40%" y1="90px" x2="60%" y2="90px"></line>
+              <line class="chain-line" id="chain-3" x1="60%" y1="90px" x2="80%" y2="90px"></line>
+            </svg>
+          </div>
+          <p style="text-align: center; color: #ff6b35; font-weight: bold;">点击船只查看详情</p>
+          
+          <h3>后果揭示</h3>
+          <p>连环船虽然解决了稳定性问题，但也带来了致命的弱点：一旦起火，火势会迅速蔓延到所有船只。</p>
+          <div style="position: relative; height: 200px; margin: 30px 0;" id="flame-hint">
+            <div class="flame-icon" id="flame-icon" style="bottom: 0; left: 50%; transform: translateX(-50%);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 第三阶段：关键时刻：东风之变 (40-60%) -->
+    <section class="section" id="section-3">
+      <div class="content-wrapper">
+        <div class="text-panel">
+          <h2>关键时刻：东风之变</h2>
+          <h3>气候条件</h3>
+          <p>当时正值冬季，长江流域盛行西北风。如果使用火攻，火势会烧向自己的阵营。这是火攻计划的最大障碍。</p>
+          
+          <div class="wind-indicator" id="wind-indicator">
+            <div class="wind-arrow" id="wind-arrow"></div>
+          </div>
+          
+          <h3>借东风</h3>
+          <p>诸葛亮观测天象，预测到会有短暂的东南风。他设坛作法，在关键时刻"借"来了东风，为火攻创造了条件。</p>
+          
+          <h3>黄盖献计</h3>
+          <p>老将黄盖提出诈降计策，假装投降曹操，实则准备火攻。他率领装满易燃物的船只，向曹军大营驶去。</p>
+          <div style="position: relative; height: 300px; margin: 30px 0; background: rgba(0, 0, 0, 0.3); border-radius: 12px;">
+            <svg style="width: 100%; height: 100%;">
+              <path class="fire-path" id="fire-path" d="M 50 250 Q 200 200 350 150 T 650 100" stroke="#ff6b35"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 第四阶段：决战：火烧连营 (60-85%) -->
+    <section class="section" id="section-4">
+      <div class="content-wrapper">
+        <div class="text-panel">
+          <h2>决战：火烧连营</h2>
+          <h3>火船突击</h3>
+          <p>黄盖率领火船，趁着东风，快速冲向曹军舰队。火船在江面上划出一道S形轨迹，直扑连环船阵。</p>
+          
+          <h3>火焰爆发</h3>
+          <p>火船与连环船接触的瞬间，大火迅速蔓延。由于船只被铁链连接，火势无法控制，整个曹军舰队陷入火海。</p>
+          
+          <h3>战局逆转</h3>
+          <p>曹军大败，损失惨重。曹操被迫撤退，统一天下的计划就此破灭。这场战役奠定了三国鼎立的基础。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 第五阶段：尾声：三国鼎立 (85-100%) -->
+    <section class="section" id="section-5">
+      <div class="content-wrapper">
+        <div class="text-panel">
+          <h2>尾声：三国鼎立</h2>
+          <h3>战后格局</h3>
+          <p>赤壁之战后，曹操退回北方，孙权巩固了江东，刘备获得了荆州，三国鼎立的局面正式形成。</p>
+          
+          <div class="three-kingdoms-map" id="kingdoms-map">
+            <div class="kingdom-region wei" id="region-wei" style="top: 10%; left: 10%; width: 35%; height: 40%;">
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2em; font-weight: bold; color: #e53935;">魏</div>
+            </div>
+            <div class="kingdom-region shu" id="region-shu" style="top: 50%; left: 25%; width: 25%; height: 30%;">
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2em; font-weight: bold; color: #4caf50;">蜀</div>
+            </div>
+            <div class="kingdom-region wu" id="region-wu" style="top: 30%; left: 55%; width: 40%; height: 50%;">
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2em; font-weight: bold; color: #2196f3;">吴</div>
+            </div>
+          </div>
+          
+          <h3>历史意义</h3>
+          <div class="summary-text" id="summary-text">
+            <p>赤壁之战是中国历史上以少胜多的经典战役之一。</p>
+            <p>它不仅改变了当时的政治格局，更体现了智慧、勇气和团结的力量。</p>
+            <p>这场战役告诉我们：即使面对强大的敌人，只要策略得当、团结一致，就有可能创造奇迹。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 库引用 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"></script>
+  
+  <script>
+    // Fallback加载函数
+    function loadScript(src, callback) {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = callback;
+      script.onerror = () => {
+        console.warn('Failed to load:', src);
+        if (callback) callback();
+      };
+      document.head.appendChild(script);
+    }
+    
+    // 检查并加载fallback库
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (typeof Vue === 'undefined') {
+          loadScript('https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js');
+        }
+        if (typeof gsap === 'undefined') {
+          loadScript('https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', () => {
+            loadScript('https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/ScrollTrigger.min.js');
+          });
+        }
+        if (typeof THREE === 'undefined') {
+          loadScript('https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js');
+        }
+        if (typeof Howl === 'undefined') {
+          loadScript('https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/howler.min.js');
+        }
+      }, 1000);
+    });
+  </script>
+
+  <script>
+    // 等待所有库加载完成
+    function waitForLibraries(callback) {
+      const checkInterval = setInterval(() => {
+        if (typeof Vue !== 'undefined' && 
+            typeof gsap !== 'undefined' && 
+            typeof ScrollTrigger !== 'undefined' && 
+            typeof THREE !== 'undefined') {
+          clearInterval(checkInterval);
+          callback();
+        }
+      }, 100);
+      
+      // 超时保护（10秒后强制执行）
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        if (typeof Vue !== 'undefined') {
+          callback();
+        } else {
+          console.error('Vue.js failed to load');
+        }
+      }, 10000);
+    }
+    
+    waitForLibraries(() => {
+      initApp();
+    });
+    
+    function initApp() {
+      const { createApp } = Vue;
+      let scene, camera, renderer, ships = [], particles = [];
+      let currentSection = 1;
+      let windDirection = 0; // 0 = 北风, 180 = 南风
+
+      // 初始化Three.js场景
+      function initThreeJS() {
+      const canvas = document.getElementById('three-canvas');
+      scene = new THREE.Scene();
+      scene.background = null; // 透明背景，让页面背景显示
+      
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 5, 10);
+      
+      renderer = new THREE.WebGLRenderer({ 
+        canvas, 
+        antialias: true,
+        alpha: true // 启用透明背景
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setClearColor(0x000000, 0); // 设置透明背景
+      
+      // 添加光源
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(5, 10, 5);
+      scene.add(directionalLight);
+      
+      // 创建长江水面
+      const waterGeometry = new THREE.PlaneGeometry(50, 20);
+      const waterMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x1a237e,
+        metalness: 0.3,
+        roughness: 0.7
+      });
+      const water = new THREE.Mesh(waterGeometry, waterMaterial);
+      water.rotation.x = -Math.PI / 2;
+      water.position.y = 0;
+      scene.add(water);
+      
+      // 创建战船模型（简化版）
+      function createShip(x, z, isCao = true) {
+        const group = new THREE.Group();
+        
+        // 船体
+        const hullGeometry = new THREE.BoxGeometry(2, 0.5, 1);
+        const hullMaterial = new THREE.MeshStandardMaterial({ 
+          color: isCao ? 0x8d6e63 : 0x5d4037 
+        });
+        const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+        group.add(hull);
+        
+        // 帆
+        const sailGeometry = new THREE.PlaneGeometry(1.5, 2);
+        const sailMaterial = new THREE.MeshStandardMaterial({ 
+          color: 0xf5f5f5,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.8
+        });
+        const sail = new THREE.Mesh(sailGeometry, sailMaterial);
+        sail.position.set(0, 1, 0);
+        group.add(sail);
+        
+        group.position.set(x, 0.5, z);
+        scene.add(group);
+        ships.push({ mesh: group, isCao, x, z });
+        return group;
+      }
+      
+      // 创建曹军舰队
+      for (let i = 0; i < 8; i++) {
+        createShip(-10 + i * 2.5, -2, true);
+      }
+      
+      // 创建联军舰队
+      for (let i = 0; i < 3; i++) {
+        createShip(5 + i * 2, 3, false);
+      }
+      
+      animate();
+    }
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // 根据当前阶段更新场景
+      if (currentSection === 2) {
+        // 船只摇晃
+        ships.forEach((ship, index) => {
+          if (ship.isCao) {
+            ship.mesh.rotation.z = Math.sin(Date.now() * 0.001 + index) * 0.1;
+          }
+        });
+      }
+      
+      renderer.render(scene, camera);
+    }
+    
+    // 创建粒子系统（用于火焰效果）
+    function createFireParticles(x, y, z) {
+      const particleCount = 100;
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      const velocities = [];
+      
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        positions[i3] = x + (Math.random() - 0.5) * 2;
+        positions[i3 + 1] = y + Math.random() * 2;
+        positions[i3 + 2] = z + (Math.random() - 0.5) * 2;
+        
+        velocities.push({
+          vx: (Math.random() - 0.5) * 0.02,
+          vy: Math.random() * 0.05 + 0.02,
+          vz: (Math.random() - 0.5) * 0.02
+        });
+      }
+      
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      const material = new THREE.PointsMaterial({
+        color: 0xff6b35,
+        size: 0.3,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+      
+      particles.push({ points, velocities, life: 100 });
+    }
+    
+    function updateParticles() {
+      particles.forEach((particle, index) => {
+        if (particle.life <= 0) {
+          scene.remove(particle.points);
+          particles.splice(index, 1);
+          return;
+        }
+        
+        const positions = particle.points.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i += 3) {
+          positions[i] += particle.velocities[i / 3].vx;
+          positions[i + 1] += particle.velocities[i / 3].vy;
+          positions[i + 2] += particle.velocities[i / 3].vz;
+          
+          particle.velocities[i / 3].vy -= 0.001; // 重力
+        }
+        
+        particle.points.geometry.attributes.position.needsUpdate = true;
+        particle.life--;
+      });
+    }
+
+    const app = createApp({
+      mounted() {
+        // 注册ScrollTrigger插件
+        gsap.registerPlugin(ScrollTrigger);
+        
+        // 初始化Three.js
+        initThreeJS();
+        
+        // 设置滚动动画
+        this.setupScrollAnimations();
+        
+        // 设置交互
+        this.setupInteractions();
+        
+        // 刷新ScrollTrigger以确保正确计算
+        this.$nextTick(() => {
+          setTimeout(() => {
+            try {
+              ScrollTrigger.refresh();
+              console.log('ScrollTrigger 已刷新');
+            } catch (e) {
+              console.error('ScrollTrigger 刷新失败:', e);
+            }
+          }, 500);
+        });
+        
+        // 监听滚动事件，隐藏提示
+        let hasScrolled = false;
+        let firstScrollLogged = false;
+        const handleScroll = () => {
+          if (!hasScrolled) {
+            hasScrolled = true;
+            console.log('=== 第一次滚动事件触发 ===');
+            console.log('滚动位置:', window.scrollY, window.pageYOffset);
+            console.log('窗口高度:', window.innerHeight);
+            console.log('文档高度:', document.documentElement.scrollHeight, document.body.scrollHeight);
+            console.log('Body minHeight:', document.body.style.minHeight);
+            
+            // 检查section可见性
+            const sections = document.querySelectorAll('.section');
+            sections.forEach((section, index) => {
+              const rect = section.getBoundingClientRect();
+              console.log(`Section ${index + 1}:`, {
+                visible: rect.top < window.innerHeight && rect.bottom > 0,
+                top: rect.top,
+                bottom: rect.bottom,
+                height: rect.height,
+                zIndex: window.getComputedStyle(section).zIndex
+              });
+            });
+            
+            // 检查内容可见性
+            const contentWrappers = document.querySelectorAll('.content-wrapper');
+            contentWrappers.forEach((wrapper, index) => {
+              const rect = wrapper.getBoundingClientRect();
+              const style = window.getComputedStyle(wrapper);
+              console.log(`Content Wrapper ${index + 1}:`, {
+                visible: rect.top < window.innerHeight && rect.bottom > 0,
+                top: rect.top,
+                bottom: rect.bottom,
+                zIndex: style.zIndex,
+                display: style.display,
+                opacity: style.opacity
+              });
+            });
+            
+            // 检查Canvas容器
+            const canvasContainer = document.getElementById('canvas-container');
+            if (canvasContainer) {
+              const style = window.getComputedStyle(canvasContainer);
+              console.log('Canvas Container:', {
+                zIndex: style.zIndex,
+                position: style.position,
+                opacity: style.opacity,
+                display: style.display,
+                visibility: style.visibility
+              });
+            }
+            
+            const scrollHint = document.getElementById('scroll-hint');
+            if (scrollHint) {
+              scrollHint.classList.add('hidden');
+            }
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('wheel', handleScroll);
+            window.removeEventListener('touchmove', handleScroll);
+          }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('wheel', handleScroll, { passive: true });
+        window.addEventListener('touchmove', handleScroll, { passive: true });
+      },
+      methods: {
+        setupScrollAnimations() {
+          console.log('=== 初始化滚动动画 ===');
+          const sections = document.querySelectorAll('.section');
+          console.log('找到的section数量:', sections.length);
+          
+          // 确保每个section至少有100vh高度
+          sections.forEach((section, index) => {
+            section.style.minHeight = '100vh';
+            section.style.height = '100vh';
+            console.log(`Section ${index + 1} (${section.id}): 设置高度为 100vh`);
+          });
+          const totalHeight = sections.length * window.innerHeight;
+          console.log('计算的总高度:', totalHeight, 'px');
+          console.log('窗口高度:', window.innerHeight, 'px');
+          
+          // 确保body有足够的高度
+          document.body.style.minHeight = totalHeight + 'px';
+          console.log('Body minHeight 设置为:', totalHeight + 'px');
+          console.log('实际 Body scrollHeight:', document.body.scrollHeight);
+          console.log('实际 Document scrollHeight:', document.documentElement.scrollHeight);
+          
+          // 更新进度指示器
+          let firstUpdateLogged = false;
+          const mainScrollTrigger = ScrollTrigger.create({
+            trigger: 'body',
+            start: 'top top',
+            end: `+=${totalHeight}`,
+            onUpdate: (self) => {
+              const progress = self.progress * 100;
+              
+              // 第一次更新时的详细日志
+              if (!firstUpdateLogged && progress > 0) {
+                firstUpdateLogged = true;
+                console.log('=== ScrollTrigger 第一次 onUpdate ===');
+                console.log('Progress:', progress + '%');
+                console.log('Scroll position:', self.scroll());
+                console.log('Direction:', self.direction);
+                console.log('Total height:', totalHeight);
+                console.log('Window height:', window.innerHeight);
+                console.log('Body scrollHeight:', document.body.scrollHeight);
+                console.log('Document scrollHeight:', document.documentElement.scrollHeight);
+                
+                // 检查所有section
+                const sections = document.querySelectorAll('.section');
+                console.log('Sections count:', sections.length);
+                sections.forEach((section, index) => {
+                  const rect = section.getBoundingClientRect();
+                  const style = window.getComputedStyle(section);
+                  const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+                  console.log(`Section ${index + 1} (${section.id}):`, {
+                    visible: isVisible,
+                    top: rect.top,
+                    bottom: rect.bottom,
+                    height: rect.height,
+                    minHeight: style.minHeight,
+                    zIndex: style.zIndex,
+                    display: style.display,
+                    visibility: style.visibility,
+                    opacity: style.opacity,
+                    position: style.position
+                  });
+                  
+                  // 检查section内的content-wrapper
+                  const wrapper = section.querySelector('.content-wrapper');
+                  if (wrapper) {
+                    const wrapperRect = wrapper.getBoundingClientRect();
+                    const wrapperStyle = window.getComputedStyle(wrapper);
+                    console.log(`  └─ Content Wrapper:`, {
+                      visible: wrapperRect.top < window.innerHeight && wrapperRect.bottom > 0,
+                      top: wrapperRect.top,
+                      bottom: wrapperRect.bottom,
+                      zIndex: wrapperStyle.zIndex,
+                      display: wrapperStyle.display,
+                      opacity: wrapperStyle.opacity
+                    });
+                  }
+                });
+                
+                // 检查text-panel
+                const textPanels = document.querySelectorAll('.text-panel');
+                console.log('Text Panels count:', textPanels.length);
+                textPanels.forEach((panel, index) => {
+                  const rect = panel.getBoundingClientRect();
+                  const style = window.getComputedStyle(panel);
+                  const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+                  console.log(`Text Panel ${index + 1}:`, {
+                    visible: isVisible,
+                    top: rect.top,
+                    bottom: rect.bottom,
+                    width: rect.width,
+                    height: rect.height,
+                    zIndex: style.zIndex,
+                    display: style.display,
+                    opacity: style.opacity,
+                    visibility: style.visibility,
+                    position: style.position,
+                    backgroundColor: style.backgroundColor
+                  });
+                });
+              }
+              
+              const progressText = document.getElementById('progress-text');
+              const progressFill = document.getElementById('progress-fill');
+              const stageText = document.getElementById('stage-text');
+              const scrollHint = document.getElementById('scroll-hint');
+              
+              if (progressText) {
+                progressText.textContent = Math.round(progress) + '%';
+              }
+              if (progressFill) {
+                progressFill.style.width = progress + '%';
+              }
+              
+              // 隐藏滚动提示（当开始滚动时）
+              if (scrollHint && progress > 2) {
+                scrollHint.classList.add('hidden');
+              }
+              
+              // 更新阶段文本
+              if (stageText) {
+                if (progress < 20) {
+                  stageText.textContent = '序幕：兵临城下';
+                  currentSection = 1;
+                } else if (progress < 40) {
+                  stageText.textContent = '战略布局：巧借连环';
+                  currentSection = 2;
+                } else if (progress < 60) {
+                  stageText.textContent = '关键时刻：东风之变';
+                  currentSection = 3;
+                } else if (progress < 85) {
+                  stageText.textContent = '决战：火烧连营';
+                  currentSection = 4;
+                } else {
+                  stageText.textContent = '尾声：三国鼎立';
+                  currentSection = 5;
+                }
+              }
+            }
+          });
+          
+          console.log('ScrollTrigger 创建完成:', {
+            trigger: mainScrollTrigger.trigger,
+            start: mainScrollTrigger.start,
+            end: mainScrollTrigger.end,
+            isActive: mainScrollTrigger.isActive
+          });
+          
+          // 第一阶段：兵临城下
+          // 兵力对比动画
+          const caoTroops = document.getElementById('cao-troops');
+          const alliedTroops = document.getElementById('allied-troops');
+          
+          for (let i = 0; i < 80; i++) {
+            const icon = document.createElement('div');
+            icon.className = 'troop-icon cao';
+            caoTroops.appendChild(icon);
+          }
+          
+          for (let i = 0; i < 5; i++) {
+            const icon = document.createElement('div');
+            icon.className = 'troop-icon allied';
+            alliedTroops.appendChild(icon);
+          }
+          
+          gsap.to('.troop-icon.cao', {
+            opacity: 1,
+            stagger: 0.02,
+            scrollTrigger: {
+              trigger: '#section-1',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          gsap.to('.troop-icon.allied', {
+            opacity: 1,
+            stagger: 0.1,
+            scrollTrigger: {
+              trigger: '#section-1',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          // 地图标记动画
+          gsap.to(['#marker-jingzhou', '#marker-jiangling', '#marker-wulin', '#marker-chibi'], {
+            opacity: 1,
+            scale: 1,
+            stagger: 0.2,
+            scrollTrigger: {
+              trigger: '#map-container',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          gsap.to(['#label-jingzhou', '#label-jiangling', '#label-wulin', '#label-chibi'], {
+            opacity: 1,
+            y: 0,
+            stagger: 0.2,
+            scrollTrigger: {
+              trigger: '#map-container',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          // 第二阶段：连环计
+          // 不pin canvas，让它作为背景显示
+          const canvasContainer = document.getElementById('canvas-container');
+          if (canvasContainer) {
+            ScrollTrigger.create({
+              trigger: '#section-2',
+              start: 'top center',
+              end: 'bottom center',
+              onEnter: () => {
+                const container = document.getElementById('canvas-container');
+                if (container) {
+                  container.classList.add('active');
+                }
+              },
+              onLeave: () => {
+                const container = document.getElementById('canvas-container');
+                if (container) {
+                  container.classList.remove('active');
+                }
+              }
+            });
+          }
+          
+          // 船只连接动画
+          gsap.to('.ship-model', {
+            opacity: 1,
+            y: 0,
+            stagger: 0.1,
+            scrollTrigger: {
+              trigger: '#ship-demo',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          gsap.to('.chain-line', {
+            opacity: 1,
+            strokeDashoffset: 0,
+            scrollTrigger: {
+              trigger: '#ship-demo',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          // 火苗提示
+          gsap.to('#flame-icon', {
+            opacity: 1,
+            y: -100,
+            scale: 1.5,
+            scrollTrigger: {
+              trigger: '#flame-hint',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          // 第三阶段：东风之变
+          // 风向标旋转
+          gsap.to('#wind-arrow', {
+            rotation: 180,
+            ease: 'elastic.out(1, 0.5)',
+            scrollTrigger: {
+              trigger: '#section-3',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          // 背景色变化 - 使用ScrollTrigger直接修改body样式
+          ScrollTrigger.create({
+            trigger: '#section-3',
+            start: 'top center',
+            end: 'bottom center',
+            onUpdate: (self) => {
+              const progress = self.progress;
+              const body = document.body;
+              if (body) {
+                const r1 = Math.floor(10 + (26 - 10) * progress);
+                const g1 = Math.floor(14 + (10 - 14) * progress);
+                const b1 = Math.floor(39 + (10 - 39) * progress);
+                body.style.background = `linear-gradient(135deg, rgb(${r1}, ${g1}, ${b1}) 0%, rgb(26, 10, 10) 50%, rgb(42, 10, 10) 100%)`;
+              }
+            }
+          });
+          
+          // 火攻路径绘制
+          gsap.to('#fire-path', {
+            strokeDashoffset: 0,
+            scrollTrigger: {
+              trigger: '#section-3',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          // 第四阶段：火烧连营
+          ScrollTrigger.create({
+            trigger: '#section-4',
+            start: 'top center',
+            end: 'bottom center',
+            onEnter: () => {
+              // 创建火焰粒子
+              if (ships && ships.length > 0) {
+                ships.forEach((ship, index) => {
+                  if (ship && ship.isCao) {
+                    setTimeout(() => {
+                      if (typeof createFireParticles === 'function') {
+                        createFireParticles(ship.x, 1, ship.z);
+                      }
+                    }, index * 200);
+                  }
+                });
+              }
+            }
+          });
+          
+          // 船只沉没动画
+          if (ships && ships.length > 0) {
+            const caoShipMeshes = ships.filter(s => s && s.isCao && s.mesh);
+            if (caoShipMeshes.length > 0) {
+              // 使用自定义动画函数来操作 Three.js 对象
+              caoShipMeshes.forEach((ship, index) => {
+                gsap.to({}, {
+                  duration: 1,
+                  delay: index * 0.1,
+                  scrollTrigger: {
+                    trigger: '#section-4',
+                    start: 'top center',
+                    end: 'bottom center',
+                    scrub: 1
+                  },
+                  onUpdate: function() {
+                    const progress = this.progress();
+                    if (ship.mesh) {
+                      ship.mesh.position.y = -5 * progress;
+                      ship.mesh.rotation.x = (Math.PI / 2) * progress;
+                      // 通过修改材质透明度来实现淡出
+                      ship.mesh.traverse((child) => {
+                        if (child.isMesh && child.material) {
+                          child.material.opacity = 1 - progress;
+                          child.material.transparent = true;
+                        }
+                      });
+                    }
+                  }
+                });
+              });
+            }
+          }
+          
+          // 第五阶段：三国鼎立
+          gsap.to(['#region-wei', '#region-shu', '#region-wu'], {
+            opacity: 1,
+            scale: 1,
+            stagger: 0.3,
+            scrollTrigger: {
+              trigger: '#kingdoms-map',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+          
+          gsap.to('#summary-text', {
+            opacity: 1,
+            y: 0,
+            scrollTrigger: {
+              trigger: '#summary-text',
+              start: 'top center',
+              end: 'bottom center',
+              scrub: 1
+            }
+          });
+        },
+        
+        setupInteractions() {
+          // 船只点击交互
+          document.querySelectorAll('.ship-model').forEach((ship, index) => {
+            ship.addEventListener('click', () => {
+              ship.classList.add('connected');
+              gsap.to(ship, {
+                scale: 1.3,
+                yoyo: true,
+                repeat: 1,
+                duration: 0.3
+              });
+              
+              // 显示提示
+              const hint = document.getElementById('interactive-hint');
+              if (hint) {
+                hint.textContent = `船只 ${index + 1}：已连接`;
+                gsap.to(hint, { opacity: 1, duration: 0.3 });
+                setTimeout(() => {
+                  gsap.to(hint, { opacity: 0, duration: 0.3 });
+                }, 2000);
+              }
+            });
+          });
+        }
+      }
+    });
+    
+      app.mount('#app');
+      
+      // 窗口大小调整
+      window.addEventListener('resize', () => {
+        if (camera && renderer) {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+      });
+      
+      // 更新粒子系统
+      setInterval(updateParticles, 50);
+    }
+  </script>
+</body>
+</html>
+

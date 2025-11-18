@@ -1,0 +1,539 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Static-equilibrium walkthrough for a 7 kg block suspended by two cords, featuring guided analysis, visuals, and verifiable calculations.">
+  <meta name="keywords" content="static equilibrium, tension problem, angled ropes, physics walkthrough, problem solving">
+  <title>Two-Cord Tension Analysis - Guided Solution</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #1f3a93;
+      border-bottom: 3px solid #1abc9c;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #2c3e50;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #1abc9c;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .card strong { color: #1abc9c; }
+    .figure-box {
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+    }
+    .figure-box svg {
+      max-width: 320px;
+      width: 100%;
+      height: auto;
+    }
+    .tabs { margin-top: 10px; }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #1abc9c;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all .2s ease;
+    }
+    .tab-header:hover { background: #16a085; }
+    .tab-header.active {
+      background: #0e8a6e;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 18px;
+      background: #fff;
+    }
+    .step {
+      margin: 12px 0;
+      padding: 12px;
+      background: #f6fbfc;
+      border-left: 4px solid #1abc9c;
+      border-radius: 6px;
+    }
+    .step-title {
+      font-weight: 700;
+      color: #1f3a93;
+      margin-bottom: 6px;
+    }
+    ul { margin-left: 24px; }
+    canvas {
+      border: 1px solid #d7dee4;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #fefefe 0%, #f0f4f7 100%);
+      width: 100%;
+      max-width: 760px;
+      display: block;
+      margin: 10px auto;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #2980b9;
+      padding: 12px 16px;
+      margin: 12px 0;
+      overflow-x: auto;
+    }
+    .inputs-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 15px 0;
+    }
+    .input-field {
+      flex: 1;
+      min-width: 180px;
+      background: #fff;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .input-field label {
+      font-size: 13px;
+      color: #5c6c7c;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .input-field input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .result-card {
+      border-radius: 8px;
+      padding: 14px;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+    }
+    .result-card strong { color: #047857; }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #2ecc71;
+      padding: 14px;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+    .knowledge-list li { margin-bottom: 6px; }
+    @media (max-width: 768px) {
+      body { padding: 0; background: #fff; }
+      .container { border-radius: 0; box-shadow: none; padding: 20px; }
+      .tab-panel { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Two-Cord Static Equilibrium – 7 kg Block</h1>
+    <div class="card">
+      <h2>Problem Statement</h2>
+      <p>A 7 kg block hangs from a ring that is supported by two cords. The left cord makes a 60° angle with the horizontal bar, and the right cord makes a 40° angle. The system is at rest. Determine the tension in each cord. Provide a full reasoning process, include diagrams or animations that clarify the geometry, and explain how to verify the result numerically.</p>
+      <p>Given data:</p>
+      <ul>
+        <li>Mass of the block: m = 7 kg</li>
+        <li>Acceleration due to gravity: g = 9.81 m/s² (adjustable)</li>
+        <li>Left cord angle: 60° from the horizontal</li>
+        <li>Right cord angle: 40° from the horizontal</li>
+      </ul>
+      <div class="figure-box">
+        <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#d1d5db"/>
+              <stop offset="100%" stop-color="#94a3b8"/>
+            </linearGradient>
+          </defs>
+          <rect x="20" y="20" width="280" height="16" rx="8" fill="url(#barGrad)"/>
+          <line x1="80" y1="36" x2="160" y2="110" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round"/>
+          <line x1="240" y1="36" x2="160" y2="110" stroke="#e11d48" stroke-width="5" stroke-linecap="round"/>
+          <line x1="160" y1="110" x2="160" y2="170" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+          <rect x="130" y="170" width="60" height="40" rx="10" fill="#4b5563"/>
+          <circle cx="160" cy="110" r="6" fill="#0f172a"/>
+          <text x="70" y="32" font-size="14" fill="#1d4ed8">60°</text>
+          <text x="220" y="32" font-size="14" fill="#e11d48" text-anchor="end">40°</text>
+          <text x="40" y="160" font-size="14" fill="#1d4ed8">T₁</text>
+          <text x="280" y="160" font-size="14" fill="#e11d48" text-anchor="end">T₂</text>
+          <text x="200" y="210" font-size="14" fill="#0f172a">W = mg</text>
+        </svg>
+      </div>
+    </div>
+
+    <div id="app">
+      <div class="card">
+        <h2>Guided Solution Tabs</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <button class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">Insight Guide</button>
+            <button class="tab-header" :class="{active: activeTab==='step1'}" @click="setTab('step1')">Step 1 · Force Audit</button>
+            <button class="tab-header" :class="{active: activeTab==='step2'}" @click="setTab('step2')">Step 2 · Solve Tensions</button>
+            <button class="tab-header" :class="{active: activeTab==='step3'}" @click="setTab('step3')">Step 3 · Numerical Evaluation</button>
+            <button class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">Summary & Validation</button>
+          </div>
+
+          <div class="tab-panel" v-show="activeTab==='intro'">
+            <div class="k">
+              <h3 style="color:#2c3e50; margin-bottom:8px;">Mindset Kickoff</h3>
+              <p>Picture the node at the junction of the two cords and the vertical link to the block. The node is motionless, so the vector sum of all forces on it must vanish. Each cord transmits tension along its own direction, and the weight vector pulls straight down.</p>
+              <div class="step">
+                <div class="step-title">Extract the Clues</div>
+                <ul>
+                  <li>Known mass fixes the weight: W = mg.</li>
+                  <li>Angles are measured from the horizontal bar, so cosine controls horizontal pull and sine controls vertical lift.</li>
+                  <li>Equilibrium at the node means ΣF<sub>x</sub> = 0 and ΣF<sub>y</sub> = 0.</li>
+                  <li>Two unknowns (tension T₁ and T₂) pair with two linear equations.</li>
+                </ul>
+              </div>
+              <div class="step">
+                <div class="step-title">Visual + Animation</div>
+                <p>The canvas below shows the bar, the two cords, and the block. A gentle oscillation keeps the system “alive” without changing the static solution, helping learners focus on the geometry. Tension values update instantly when parameters change.</p>
+                <canvas id="tension-canvas" width="760" height="360"></canvas>
+              </div>
+              <div class="step">
+                <div class="step-title">Partial-Credit Strategy</div>
+                <ul>
+                  <li><strong>Identify forces:</strong> draw the free-body diagram and label components to secure modeling points.</li>
+                  <li><strong>Write balance equations:</strong> even without solving, writing ΣF<sub>x</sub> = 0 and ΣF<sub>y</sub> = 0 earns procedural credit.</li>
+                  <li><strong>Substitute numbers carefully:</strong> plug in W = 7 × 9.81 to gather calculation marks.</li>
+                  <li><strong>Check magnitudes:</strong> compare against weight to argue which cord bears more load.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" v-show="activeTab==='step1'">
+            <div class="k">
+              <p><strong>Goal:</strong> express horizontal and vertical balance at the node.</p>
+              <div class="step">
+                <div class="step-title">Horizontal Balance</div>
+                <div class="formula-box">
+                  <p>ΣF<sub>x</sub> = 0 ⇒ T₁ cos θ₁ = T₂ cos θ₂</p>
+                </div>
+                <p>The horizontal pull of the left cord is canceled by that of the right cord. This equation alone links the two tensions.</p>
+              </div>
+              <div class="step">
+                <div class="step-title">Vertical Balance</div>
+                <div class="formula-box">
+                  <p>ΣF<sub>y</sub> = 0 ⇒ T₁ sin θ₁ + T₂ sin θ₂ = W</p>
+                </div>
+                <p>The upward components of both tensions must support the weight W = mg.</p>
+              </div>
+              <div class="step">
+                <div class="step-title">Why Angles from the Horizontal?</div>
+                <ul>
+                  <li>The geometry in the figure references the bar, so cosine projects along the bar and sine projects vertically.</li>
+                  <li>Either choice (from the horizontal or vertical) works as long as it is applied consistently.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" v-show="activeTab==='step2'">
+            <div class="k">
+              <p><strong>Goal:</strong> solve the two linear equations for T₁ and T₂.</p>
+              <div class="step">
+                <div class="step-title">Substitution Route</div>
+                <div class="formula-box">
+                  <p>T₁ = T₂ · (cos θ₂ / cos θ₁)</p>
+                  <p>[(cos θ₂ / cos θ₁) sin θ₁ + sin θ₂] · T₂ = W</p>
+                  <p>T₂ = W · cos θ₁ / sin(θ₁ + θ₂)</p>
+                  <p>T₁ = W · cos θ₂ / sin(θ₁ + θ₂)</p>
+                </div>
+                <p>The denominator simplifies elegantly because sin(θ₁ + θ₂) = sin θ₁ cos θ₂ + cos θ₁ sin θ₂.</p>
+              </div>
+              <div class="step">
+                <div class="step-title">Symbolic Observations</div>
+                <ul>
+                  <li>If θ₁ increases (steeper left cord), cos θ₂ stays the same, so T₁ drops—more vertical alignment means less tension needed.</li>
+                  <li>The cord closer to horizontal always carries more load because its vertical component is small.</li>
+                  <li>The sum θ₁ + θ₂ controls the denominator; if the two cords become nearly colinear, tensions skyrocket.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" v-show="activeTab==='step3'">
+            <div class="k">
+              <p><strong>Adjust parameters</strong> to recompute the tensions, see constraint residuals, and watch the figure update.</p>
+              <div class="inputs-row">
+                <div class="input-field">
+                  <label>Mass (kg)</label>
+                  <input type="number" min="0.1" step="0.1" v-model.number="mass" @input="calculateTensions">
+                </div>
+                <div class="input-field">
+                  <label>Gravity (m/s²)</label>
+                  <input type="number" min="0.1" step="0.01" v-model.number="gravity" @input="calculateTensions">
+                </div>
+                <div class="input-field">
+                  <label>Left Angle θ₁ (° from horizontal)</label>
+                  <input type="number" min="10" max="85" step="1" v-model.number="leftAngle" @input="calculateTensions">
+                </div>
+                <div class="input-field">
+                  <label>Right Angle θ₂ (° from horizontal)</label>
+                  <input type="number" min="10" max="85" step="1" v-model.number="rightAngle" @input="calculateTensions">
+                </div>
+              </div>
+              <div class="results">
+                <div class="result-card">
+                  <strong>Tension T₁</strong>
+                  <p>{{ formatResult(tensions.T1) }}</p>
+                </div>
+                <div class="result-card">
+                  <strong>Tension T₂</strong>
+                  <p>{{ formatResult(tensions.T2) }}</p>
+                </div>
+                <div class="result-card">
+                  <strong>Horizontal Check</strong>
+                  <p>{{ formatResult(netCheck.fx) }}</p>
+                  <small>Should be near 0 N</small>
+                </div>
+                <div class="result-card">
+                  <strong>Vertical Check</strong>
+                  <p>{{ formatResult(netCheck.fy) }}</p>
+                  <small>Should be near 0 N</small>
+                </div>
+              </div>
+              <div class="ans">
+                <strong>Numerical outcome (default data):</strong>
+                T₁ ≈ 88.5 N, T₂ ≈ 111.8 N.
+                The shallower cord (40°) carries the larger tension because it must contribute the same vertical support with a smaller sine component.
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" v-show="activeTab==='summary'">
+            <div class="k">
+              <h3 style="color:#2c3e50;">Knowledge Wrap-Up</h3>
+              <ul class="knowledge-list">
+                <li><strong>Static equilibrium:</strong> both ΣF<sub>x</sub> and ΣF<sub>y</sub> must vanish at the node.</li>
+                <li><strong>Component reasoning:</strong> angles from the horizontal keep cosine tied to horizontal pulls.</li>
+                <li><strong>System sensitivities:</strong> tensions rise quickly if either cord approaches the horizontal.</li>
+                <li><strong>Transferable skill:</strong> the same algebra works for suspension bridges, camera rigs, and crane slings.</li>
+              </ul>
+              <div class="step">
+                <div class="step-title">Key Exam Targets</div>
+                <ul>
+                  <li><strong>Concept:</strong> interpreting the free-body diagram correctly.</li>
+                  <li><strong>Technique:</strong> resolving forces with sine/cosine relative to the chosen reference.</li>
+                  <li><strong>Computation:</strong> handling the algebra without sign slips.</li>
+                  <li><strong>Communication:</strong> stating why the larger tension sits on the smaller angle cord.</li>
+                </ul>
+              </div>
+              <div class="step">
+                <div class="step-title">Common Pitfalls</div>
+                <ul>
+                  <li>Mixing up sine and cosine because angles are given from the horizontal.</li>
+                  <li>Forgetting that both tensions help support the weight.</li>
+                  <li>Leaving answers as forces without units.</li>
+                </ul>
+              </div>
+              <div class="step">
+                <div class="step-title">Extension Ideas</div>
+                <ul>
+                  <li>Introduce a third cord or a horizontal push to explore statically indeterminate setups.</li>
+                  <li>Let g vary to simulate other planets or elevator acceleration.</li>
+                  <li>Attach a second mass on the right cord and analyze coupled tensions.</li>
+                </ul>
+              </div>
+              <div class="step">
+                <div class="step-title">Interactive Validation</div>
+                <p>The same calculator above acts as a sandbox. Try making both angles equal: tensions match each other and equal W / (2 sin θ). Push one angle toward 15° and watch that tension spike—an authentic warning for rigging safety.</p>
+              </div>
+              <div class="ans">
+                <strong>Takeaway:</strong> balance equations plus careful projections are enough to crack any two-cord suspension problem. Visual intuition and numerical verification prevent algebraic mistakes and build engineering-grade confidence.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <script>
+    const { createApp } = Vue;
+
+    const app = createApp({
+      data() {
+        return {
+          activeTab: 'intro',
+          mass: 7,
+          gravity: 9.81,
+          leftAngle: 60,
+          rightAngle: 40,
+          tensions: { T1: 0, T2: 0 },
+          netCheck: { fx: 0, fy: 0 },
+          canvasCtx: null,
+          animationFrame: null,
+          animationStart: null
+        };
+      },
+      mounted() {
+        this.calculateTensions();
+        this.$nextTick(() => {
+          this.initCanvas();
+        });
+      },
+      methods: {
+        setTab(name) {
+          this.activeTab = name;
+        },
+        calculateTensions() {
+          const theta1 = this.leftAngle * Math.PI / 180;
+          const theta2 = this.rightAngle * Math.PI / 180;
+          const weight = this.mass * this.gravity;
+          const denominator = Math.sin(theta1 + theta2);
+          if (denominator === 0) {
+            this.tensions = { T1: NaN, T2: NaN };
+            this.netCheck = { fx: NaN, fy: NaN };
+            return;
+          }
+          const T1 = weight * Math.cos(theta2) / denominator;
+          const T2 = weight * Math.cos(theta1) / denominator;
+          const fx = T1 * Math.cos(theta1) - T2 * Math.cos(theta2);
+          const fy = T1 * Math.sin(theta1) + T2 * Math.sin(theta2) - weight;
+          this.tensions = { T1, T2 };
+          this.netCheck = { fx, fy };
+          this.drawSystem();
+        },
+        formatResult(value) {
+          if (Number.isNaN(value)) return 'Undefined';
+          return value.toFixed(2) + ' N';
+        },
+        initCanvas() {
+          const canvas = document.getElementById('tension-canvas');
+          if (!canvas) return;
+          this.canvasCtx = canvas.getContext('2d');
+          const animate = (timestamp) => {
+            if (!this.animationStart) this.animationStart = timestamp;
+            this.drawSystem(timestamp);
+            this.animationFrame = requestAnimationFrame(animate);
+          };
+          this.animationFrame = requestAnimationFrame(animate);
+        },
+        drawSystem(timestamp = 0) {
+          if (!this.canvasCtx) return;
+          const ctx = this.canvasCtx;
+          const width = ctx.canvas.width;
+          const height = ctx.canvas.height;
+          ctx.clearRect(0, 0, width, height);
+
+          // gentle bobbing animation
+          const time = (timestamp - (this.animationStart || 0)) / 1000;
+          const bob = Math.sin(time * 2) * 6;
+
+          // geometry
+          const nodeX = width / 2;
+          const nodeY = 150 + bob;
+          const ropeLength = 140;
+          const theta1 = this.leftAngle * Math.PI / 180;
+          const theta2 = this.rightAngle * Math.PI / 180;
+          const anchorLeft = {
+            x: nodeX - Math.cos(theta1) * ropeLength,
+            y: nodeY - Math.sin(theta1) * ropeLength
+          };
+          const anchorRight = {
+            x: nodeX + Math.cos(theta2) * ropeLength,
+            y: nodeY - Math.sin(theta2) * ropeLength
+          };
+
+          // top bar
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillRect(anchorLeft.x - 40, anchorLeft.y - 10, (anchorRight.x - anchorLeft.x) + 80, 12);
+
+          // ropes
+          ctx.lineWidth = 4;
+          ctx.lineCap = 'round';
+
+          ctx.strokeStyle = '#1d4ed8';
+          ctx.beginPath();
+          ctx.moveTo(anchorLeft.x, anchorLeft.y);
+          ctx.lineTo(nodeX, nodeY);
+          ctx.stroke();
+
+          ctx.strokeStyle = '#e11d48';
+          ctx.beginPath();
+          ctx.moveTo(anchorRight.x, anchorRight.y);
+          ctx.lineTo(nodeX, nodeY);
+          ctx.stroke();
+
+          // vertical rope & block
+          const blockTopY = nodeY + 20;
+          const blockBottomY = blockTopY + 90;
+          ctx.strokeStyle = '#475569';
+          ctx.beginPath();
+          ctx.moveTo(nodeX, nodeY);
+          ctx.lineTo(nodeX, blockTopY);
+          ctx.stroke();
+
+          ctx.fillStyle = '#4b5563';
+          ctx.fillRect(nodeX - 35, blockTopY, 70, blockBottomY - blockTopY);
+
+          // node
+          ctx.fillStyle = '#111827';
+          ctx.beginPath();
+          ctx.arc(nodeX, nodeY, 7, 0, Math.PI * 2);
+          ctx.fill();
+
+          // labels
+          ctx.fillStyle = '#1d4ed8';
+          ctx.font = '16px Arial';
+          ctx.fillText(`T1 = ${this.tensions.T1.toFixed(1)} N`, anchorLeft.x + 10, anchorLeft.y + 20);
+          ctx.fillStyle = '#e11d48';
+          ctx.fillText(`T2 = ${this.tensions.T2.toFixed(1)} N`, anchorRight.x - 150, anchorRight.y + 20);
+          ctx.fillStyle = '#0f172a';
+          ctx.fillText(`W = ${(this.mass * this.gravity).toFixed(1)} N`, nodeX + 12, blockTopY + 40);
+        }
+      },
+      beforeUnmount() {
+        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+      }
+    });
+
+    app.mount('#app');
+  </script>
+</body></html>
+

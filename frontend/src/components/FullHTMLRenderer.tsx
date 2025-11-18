@@ -49,6 +49,7 @@ interface FullHTMLRendererProps {
   fixedHeight?: boolean; // 预览页固定高度，超出出现滚动条
   autoHeight?: boolean; // 自动调整高度（仅在 fixedHeight 为 false 时生效）
   enableHeightListener?: boolean; // 是否注入高度监听脚本（可选，默认 false，保持纯渲染）
+  codepenMode?: boolean; // CodePen 样式：仅在加载完成后测量一次高度
   title?: string; // iframe title
 }
 
@@ -63,6 +64,7 @@ export default function FullHTMLRenderer({
   fixedHeight = false,
   autoHeight = true,
   enableHeightListener = false, // 默认不注入，保持纯渲染
+  codepenMode = false,
   title = 'HTML 预览'
 }: FullHTMLRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -89,21 +91,46 @@ export default function FullHTMLRenderer({
 
   // 监听 iframe 消息（用于高度自适应）
   useEffect(() => {
+    if (codepenMode) return; // CodePen 模式不做持续监听
     if (!autoHeight || fixedHeight || forceExternalInWechat) return;
 
     const handleMessage = (event: MessageEvent) => {
       // 监听高度变化消息
       if (event.data && event.data.type === 'IFRAME_HEIGHT_CHANGE') {
-        const { height } = event.data.data;
+        const { height, count } = event.data.data;
+        const currentHeight = iframeRef.current?.style.height;
+        console.log('[FullHTMLRenderer] message(height)', {
+          reportedHeight: height,
+          iframeExistingHeight: currentHeight,
+          eventCount: count ?? 'n/a',
+          timestamp: Date.now()
+        });
         
         // 只在高度合理范围内调整
         if (iframeRef.current && height > 0 && height < 10000) {
           const iframe = iframeRef.current;
           const newHeight = Math.max(100, Math.min(height, 8000)); // 限制在100-8000px之间
+          const previousHeight = parseFloat(currentHeight || '0') || 0;
+          const diff = newHeight - previousHeight;
+          if (Math.abs(diff) < 2) {
+            console.log('[FullHTMLRenderer] iframe resize skipped (diff too small)', { previousHeight, requestedHeight: height });
+            return;
+          }
+          console.log('[FullHTMLRenderer] iframe resize decision', {
+            requestedHeight: height,
+            clampedHeight: newHeight,
+            previousHeight,
+            diff
+          });
           
           iframe.style.height = `${newHeight}px`;
           iframe.style.minHeight = `${newHeight}px`;
           setIframeHeight(`${newHeight}px`);
+
+          console.log('[FullHTMLRenderer] iframe resized', {
+            finalHeight: iframe.style.height,
+            finalMinHeight: iframe.style.minHeight
+          });
         }
       }
     };
@@ -112,11 +139,21 @@ export default function FullHTMLRenderer({
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [autoHeight, fixedHeight, forceExternalInWechat]);
+  }, [autoHeight, fixedHeight, forceExternalInWechat, codepenMode]);
 
   // 动态调整 iframe 高度
   const adjustIframeHeight = useCallback(() => {
-    if (!autoHeight || fixedHeight || forceExternalInWechat || !iframeRef.current) return;
+    if (!autoHeight || fixedHeight || forceExternalInWechat || !iframeRef.current) {
+      if (!codepenMode) {
+      console.log('[FullHTMLRenderer] adjustIframeHeight skipped', {
+        autoHeight,
+        fixedHeight,
+        forceExternalInWechat,
+        hasIframe: !!iframeRef.current
+      });
+      }
+      return;
+    }
 
     try {
       const iframe = iframeRef.current;
@@ -146,6 +183,22 @@ export default function FullHTMLRenderer({
         
         const extraSpace = 80; // 额外空间
         const newHeight = Math.max(0, maxHeight + extraSpace);
+        const previousHeight = parseFloat(iframe.style.height || '0') || 0;
+        if (!codepenMode) {
+          console.log('[FullHTMLRenderer] adjustIframeHeight metrics', {
+            contentHeight,
+            clientHeight,
+            offsetHeight,
+            docScrollHeight,
+            docClientHeight,
+            docOffsetHeight,
+            maxHeight,
+            extraSpace,
+            newHeight,
+            previousHeight,
+            diff: newHeight - previousHeight
+          });
+        }
         
         iframe.style.height = `${newHeight}px`;
         iframe.style.minHeight = `${newHeight}px`;
@@ -178,9 +231,16 @@ export default function FullHTMLRenderer({
     
     // 延迟调整高度，确保内容已渲染
     if (autoHeight && !fixedHeight) {
-      setTimeout(adjustIframeHeight, 100);
-      setTimeout(adjustIframeHeight, 300);
-      setTimeout(adjustIframeHeight, 1000);
+      const shouldRelyOnListener = enableHeightListener && !forceExternalInWechat && !codepenMode;
+      if (!shouldRelyOnListener) {
+        setTimeout(adjustIframeHeight, 100);
+        if (!codepenMode) {
+          setTimeout(adjustIframeHeight, 300);
+          setTimeout(adjustIframeHeight, 1000);
+        } else {
+          setTimeout(adjustIframeHeight, 500);
+        }
+      }
     }
     
     onLoad?.();
@@ -196,7 +256,7 @@ export default function FullHTMLRenderer({
 
   // 处理 HTML 内容（可选注入高度监听脚本）
   const processedHTML = React.useMemo(() => {
-    if (!fullHTML || !enableHeightListener || forceExternalInWechat) {
+    if (!fullHTML || !enableHeightListener || forceExternalInWechat || codepenMode) {
       return fullHTML; // 不注入，保持纯渲染
     }
 
@@ -206,10 +266,10 @@ export default function FullHTMLRenderer({
   (function() {
     var lastHeight = 0;
     var checkCount = 0;
-    var maxCheckCount = 1000; // 允许持续检查，不设上限
-    var throttleDelay = 100; // 节流延迟（毫秒）
-    var lastCheckTime = 0;
-    
+    var MIN_DIFF = 20;
+    var debounceTimer = null;
+    var initialSent = false;
+
     function getCurrentHeight() {
       return Math.max(
         document.body.scrollHeight || 0,
@@ -219,144 +279,51 @@ export default function FullHTMLRenderer({
         document.documentElement.clientHeight || 0
       );
     }
-    
-    function notifyHeightChange(force) {
-      var now = Date.now();
-      // 节流：避免过于频繁的检查
-      if (!force && now - lastCheckTime < throttleDelay) {
-        return;
-      }
-      lastCheckTime = now;
-      
-      var newHeight = getCurrentHeight();
+
+    function postHeight(force) {
+      var current = getCurrentHeight();
+      if (!force && Math.abs(current - lastHeight) < MIN_DIFF) return;
+      lastHeight = current;
       checkCount++;
-      
-      // 如果高度变化超过 10px 或者强制更新，则通知父窗口
-      if (force || Math.abs(newHeight - lastHeight) > 10) {
-        lastHeight = newHeight;
-        
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({
-            type: 'IFRAME_HEIGHT_CHANGE',
-            data: { height: newHeight, count: checkCount }
-          }, '*');
-        }
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'IFRAME_HEIGHT_CHANGE',
+          data: { height: current, count: checkCount }
+        }, '*');
       }
     }
-    
-    // 立即检查一次（强制）
-    function forceCheck() {
-      setTimeout(function() {
-        notifyHeightChange(true);
-      }, 50);
+
+    function schedulePost(delay, force) {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function() {
+        debounceTimer = null;
+        postHeight(!!force);
+      }, delay || 150);
     }
-    
-    // 监听各种可能影响高度的事件
-    ['load', 'resize', 'DOMContentLoaded'].forEach(function(event) {
-      window.addEventListener(event, function() {
-        setTimeout(forceCheck, 100);
-      });
-    });
-    
-    // 增强的 MutationObserver：监听所有可能的变化
-    if (window.MutationObserver) {
-      var observer = new MutationObserver(function() {
-        // DOM 变化时延迟检查，确保渲染完成
-        setTimeout(function() {
-          notifyHeightChange(false);
-        }, 50);
-      });
-      
-      // 监听整个文档的变化，包括属性、子节点、文本内容
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true, // 监听属性变化（如 style、class）
-        attributeFilter: ['style', 'class', 'hidden'], // 重点监听这些属性
-        characterData: true
-      });
-      
-      // 也监听 documentElement 的变化
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['style', 'class']
-      });
+
+    function sendInitial() {
+      if (initialSent) return;
+      initialSent = true;
+      postHeight(true);
     }
-    
-    // 监听点击事件（tab 切换等）并检查高度
-    // 使用事件委托，避免性能问题
-    document.addEventListener('click', function(e) {
-      var target = e.target;
-      if (!target) return;
-      
-      // 检查是否是 tab 相关的点击
-      var isTabClick = false;
-      var checkElement = target;
-      
-      // 向上遍历查找 tab 相关元素（最多3层）
-      for (var i = 0; i < 3 && checkElement; i++) {
-        if (checkElement.classList && (
-            checkElement.classList.contains('tab') ||
-            checkElement.classList.contains('tab-header') ||
-            checkElement.getAttribute && checkElement.getAttribute('role') === 'tab'
-        )) {
-          isTabClick = true;
-          break;
-        }
-        checkElement = checkElement.parentElement;
-      }
-      
-      if (isTabClick) {
-        // Tab 切换后延迟检查高度，确保 Vue 更新完成
-        setTimeout(forceCheck, 150);
-        setTimeout(forceCheck, 300);
-        setTimeout(forceCheck, 500);
-      }
+
+    if (document.readyState === 'complete') {
+      sendInitial();
+    } else {
+      window.addEventListener('load', sendInitial, { once: true });
+      document.addEventListener('DOMContentLoaded', sendInitial, { once: true });
+    }
+
+    document.addEventListener('click', function() {
+      schedulePost(250, false);
     }, true);
-    
-    // 定期检查（作为兜底机制）
-    var periodicCheck = setInterval(function() {
-      if (checkCount < maxCheckCount) {
-        notifyHeightChange(false);
-      } else {
-        clearInterval(periodicCheck);
+
+    window.addEventListener('message', function(event) {
+      if (!event || !event.data) return;
+      if (event.data.type === 'REQUEST_IFRAME_HEIGHT_CHECK') {
+        schedulePost(0, true);
       }
-    }, 1000);
-    
-    // 拦截 Vue 的响应式更新（如果存在 Vue）
-    // 注意：这可能会影响 Vue 的正常运行，所以采用更安全的方式
-    try {
-      if (window.Vue) {
-        // 监听 Vue 应用实例的创建
-        var originalCreateApp = window.Vue.createApp;
-        if (typeof originalCreateApp === 'function') {
-          window.Vue.createApp = function() {
-            var app = originalCreateApp.apply(this, arguments);
-            // 拦截 mount 方法，在挂载后添加高度检查
-            var originalMount = app.mount;
-            if (typeof originalMount === 'function') {
-              app.mount = function() {
-                var result = originalMount.apply(this, arguments);
-                setTimeout(forceCheck, 200);
-                return result;
-              };
-            }
-            return app;
-          };
-        }
-      }
-    } catch (e) {
-      // 静默处理错误，不影响页面正常功能
-    }
-    
-    // 初始检查
-    setTimeout(function() {
-      notifyHeightChange(true);
-      // 多次检查，确保内容完全渲染
-      setTimeout(forceCheck, 300);
-      setTimeout(forceCheck, 600);
-      setTimeout(forceCheck, 1000);
-    }, 100);
+    });
   })();
 </script>`;
 
@@ -369,7 +336,7 @@ export default function FullHTMLRenderer({
       // 如果没有 body 或 html 标签，直接追加
       return fullHTML + heightListenerScript;
     }
-  }, [fullHTML, enableHeightListener, forceExternalInWechat]);
+  }, [fullHTML, enableHeightListener, forceExternalInWechat, codepenMode]);
 
   // 验证 props
   useEffect(() => {
