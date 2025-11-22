@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Release Therapeutics 细胞宏封装技术互动分析，拆解舱体设计、血脑屏障穿越机制、应用路径与商业前景。">
+  <meta name="keywords" content="Release Therapeutics,细胞宏封装,BBB,治疗蛋白,技术分析,商业化沙盒,医疗器械,生物技术,交互式">
+  <title>Release Therapeutics 技术与产品分析实验室</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #2c3e50;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      overflow-x: hidden;
+    }
+    
+    #app {
+      min-height: 100vh;
+    }
+    
+    /* 导航栏 */
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+      z-index: 1000;
+      padding: 15px 50px;
+      transition: all 0.3s ease;
+    }
+    
+    .navbar.scrolled {
+      padding: 10px 50px;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+    }
+    
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 30px;
+    }
+    
+    .nav-link {
+      color: #2c3e50;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.3s;
+      position: relative;
+    }
+    
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      transition: width 0.3s;
+    }
+    
+    .nav-link:hover::after,
+    .nav-link.active::after {
+      width: 100%;
+    }
+    
+    .nav-link:hover,
+    .nav-link.active {
+      color: #11998e;
+    }
+    
+    /* Hero区域 */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+      opacity: 0.3;
+      animation: float 20s infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+    
+    .hero-content {
+      text-align: center;
+      color: white;
+      z-index: 10;
+      max-width: 900px;
+      padding: 0 20px;
+    }
+    
+    .hero-title {
+      font-size: 64px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+      opacity: 0;
+      transform: translateY(50px);
+    }
+    
+    .hero-subtitle {
+      font-size: 24px;
+      margin-bottom: 30px;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    
+    .hero-description {
+      font-size: 18px;
+      line-height: 1.8;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    
+    .scroll-indicator {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 14px;
+      animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-10px); }
+    }
+    
+    /* 内容区域 */
+    .section {
+      min-height: 100vh;
+      padding: 100px 50px;
+      position: relative;
+    }
+    
+    .section:nth-child(even) {
+      background: #f8f9fa;
+    }
+    
+    .section-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .section-title {
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 60px;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* 四象限特性展示 */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+      margin-top: 50px;
+    }
+    
+    .feature-card {
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .feature-card::before {
+      content: '✓';
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #11998e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #11998e;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    
+    .feature-card-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #11998e;
+      text-transform: uppercase;
+    }
+    
+    .feature-card-text {
+      font-size: 16px;
+      color: #666;
+      line-height: 1.8;
+    }
+    
+    /* 双列特性展示 */
+    .dual-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 50px;
+      position: relative;
+    }
+    
+    .dual-features::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #ddd;
+      transform: translateX(-50%);
+    }
+    
+    .dual-feature-card {
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    
+    .dual-feature-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #11998e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: #11998e;
+    }
+    
+    .dual-feature-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #2c3e50;
+      text-transform: uppercase;
+    }
+    
+    .dual-feature-text {
+      font-size: 16px;
+      color: #666;
+      line-height: 1.8;
+    }
+    
+    /* 圆形应用图表 */
+    .application-circle {
+      background: white;
+      border-radius: 15px;
+      padding: 60px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      margin-top: 50px;
+      position: relative;
+      min-height: 600px;
+    }
+    
+    .circle-container {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 0 auto;
+    }
+    
+    .circle-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 10;
+    }
+    
+    .capsule-shape {
+      width: 120px;
+      height: 80px;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      border-radius: 40px;
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+      padding: 10px;
+      box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+    }
+    
+    .circle-label {
+      font-size: 12px;
+      color: #2c3e50;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    
+    .circle-text {
+      font-size: 11px;
+      color: #666;
+      margin-top: 5px;
+      line-height: 1.4;
+    }
+    
+    /* 3D可视化容器 */
+    .visualization-container {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      margin: 40px 0;
+      height: 600px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    #bbb-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    
+    .canvas-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      background: rgba(255,255,255,0.9);
+      padding: 10px 20px;
+      border-radius: 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .control-btn {
+      padding: 8px 16px;
+      border: none;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s;
+    }
+    
+    .control-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    /* 技术说明 */
+    .tech-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      margin-top: 50px;
+    }
+    
+    .tech-info {
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    
+    .tech-title {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #11998e;
+    }
+    
+    .tech-text {
+      font-size: 18px;
+      line-height: 2;
+      color: #555;
+      margin-bottom: 20px;
+    }
+    
+    .spec-list {
+      list-style: none;
+      margin-top: 20px;
+    }
+    
+    .spec-item {
+      padding: 15px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 16px;
+      position: relative;
+      padding-left: 30px;
+    }
+    
+    .spec-item::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: #11998e;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    
+    .spec-item:last-child {
+      border-bottom: none;
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 36px;
+      }
+      
+      .hero-subtitle {
+        font-size: 18px;
+      }
+      
+      .section-title {
+        font-size: 32px;
+      }
+      
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .dual-features {
+        grid-template-columns: 1fr;
+      }
+      
+      .dual-features::before {
+        display: none;
+      }
+      
+      .tech-section {
+        grid-template-columns: 1fr;
+      }
+      
+      .circle-container {
+        width: 100%;
+        height: 400px;
+      }
+      
+      .nav-links {
+        gap: 15px;
+        font-size: 14px;
+      }
+      
+      .navbar {
+        padding: 15px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 导航栏 -->
+    <nav class="navbar" :class="{ scrolled: scrolled }">
+      <div class="nav-content">
+        <div class="logo">Release · MacroLab</div>
+        <div class="nav-links">
+          <a class="nav-link" :class="{ active: activeSection === 'tech' }" @click="scrollTo('tech')">技术拆解</a>
+          <a class="nav-link" :class="{ active: activeSection === 'capsule' }" @click="scrollTo('capsule')">舱体机制</a>
+          <a class="nav-link" :class="{ active: activeSection === 'analysis' }" @click="scrollTo('analysis')">方案推演</a>
+          <a class="nav-link" :class="{ active: activeSection === 'application' }" @click="scrollTo('application')">应用路径</a>
+          <a class="nav-link" :class="{ active: activeSection === 'market' }" @click="scrollTo('market')">商业沙盒</a>
+        </div>
+      </div>
+    </nav>
+    
+    <!-- Hero区域 -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="hero-title" ref="heroTitle">细胞宏封装 · BBB 技术解析</h1>
+        <p class="hero-subtitle" ref="heroSubtitle">让舱体设计、蛋白释放与商业逻辑在同一面板中可视化</p>
+        <p class="hero-description" ref="heroDesc">
+          Release Therapeutics 把直径 1 mm 的中空纤维变成“微型生物反应器”，
+          封装经过基因工程改造的成肌细胞并跨越血脑屏障。本页面通过互动卡片、模拟滑块与 3D 场景，
+          拆解其细胞保护、蛋白扩散与商业化路径。
+        </p>
+      </div>
+      <div class="scroll-indicator">向下滚动探索更多 ↓</div>
+    </section>
+    
+    <!-- 技术拆解 -->
+    <section id="tech" class="section">
+      <div class="section-content">
+        <h2 class="section-title">宏封装技术拆解</h2>
+        <p style="text-align:center;color:#6b7280;max-width:900px;margin:0 auto 30px;font-size:18px;">
+          从「细胞生存」「封装材料」「蛋白跨膜扩散」「植入策略」四个角度审视 Release 的舱体。
+          点击任意卡片即可在右侧面板查看更深层的技术假设与指标。
+        </p>
+        <div class="intro-grid">
+          <div
+            class="intro-card"
+            v-for="(card, index) in capsuleInsights"
+            :key="card.title"
+            :style="{ animationDelay: index * 0.15 + 's' }"
+            @click="activeScenario = card.scenario"
+          >
+            <div class="intro-card-icon">{{ card.icon }}</div>
+            <h3 class="intro-card-title">{{ card.title }}</h3>
+            <p class="intro-card-text">{{ card.description }}</p>
+            <ul style="margin-top:15px;color:#7b8a9a;font-size:14px;line-height:1.6;padding-left:18px;">
+              <li v-for="point in card.points" :key="point">{{ point }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top:40px;background:white;padding:30px;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,0.1);">
+          <div class="scenario-switcher" style="display:flex;flex-wrap:wrap;gap:15px;margin-bottom:20px;">
+            <button
+              v-for="scenario in techScenarios"
+              :key="scenario.key"
+              class="control-btn"
+              :style="{background: activeScenario === scenario.key ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' : '#ecfdf5', color: activeScenario === scenario.key ? '#fff' : '#0f766e'}"
+              @click="activeScenario = scenario.key"
+            >
+              {{ scenario.name }}
+            </button>
+          </div>
+          <div v-if="currentScenario" style="display:grid;grid-template-columns:2fr 1fr;gap:25px;align-items:center;">
+            <div>
+              <h3 style="font-size:26px;color:#065f46;margin-bottom:10px;">{{ currentScenario.headline }}</h3>
+              <p style="color:#475569;line-height:1.9;">{{ currentScenario.description }}</p>
+              <ul style="margin-top:20px;list-style:none;padding-left:0;">
+                <li
+                  v-for="point in currentScenario.notes"
+                  :key="point"
+                  style="padding:10px 0;border-bottom:1px dashed #e5e7eb;font-size:15px;color:#4b5563;"
+                >
+                  {{ point }}
+                </li>
+              </ul>
+            </div>
+            <div style="background:#ecfdf5;border-radius:12px;padding:25px;">
+              <h4 style="color:#0f766e;margin-bottom:15px;">关键指标</h4>
+              <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+                <div v-for="metric in currentScenario.metrics" :key="metric.label" style="background:white;border-radius:10px;padding:15px;">
+                  <div style="font-size:14px;color:#9ca3af;">{{ metric.label }}</div>
+                  <div style="font-size:26px;font-weight:bold;color:#065f46;">{{ metric.value }}</div>
+                  <div style="font-size:12px;color:#94a3b8;">{{ metric.note }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 产品特性 -->
+    <section id="features" class="section">
+      <div class="section-content">
+        <h2 class="section-title">产品特性</h2>
+        <div class="features-grid">
+          <div class="feature-card" v-for="(feature, index) in features" :key="index">
+            <h3 class="feature-card-title">{{ feature.title }}</h3>
+            <p class="feature-card-text">{{ feature.description }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 舱体机制 -->
+    <section id="capsule" class="section">
+      <div class="section-content">
+        <h2 class="section-title">舱体分层与血脑屏障适配</h2>
+        <div class="dual-features">
+          <div class="dual-feature-card" v-for="(advantage, index) in advantages" :key="index">
+            <div class="dual-feature-icon">✓</div>
+            <h3 class="dual-feature-title">{{ advantage.title }}</h3>
+            <p class="dual-feature-text">{{ advantage.description }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 方案推演 -->
+    <section id="analysis" class="section">
+      <div class="section-content">
+        <h2 class="section-title">方案推演面板</h2>
+        <p style="text-align:center;color:#64748b;max-width:850px;margin:0 auto 40px;">
+          通过不同适应症的假设组合，观察商业化路径。左侧标签描述技术路径，右侧面板展示在该路径下的患者规模与监管风险。
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;">
+          <div style="background:white;padding:30px;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <div class="analysis-tabs" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:25px;">
+              <button
+                v-for="tab in analysisTabs"
+                :key="tab.key"
+                class="control-btn"
+                :style="{background: activeAnalysis === tab.key ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' : '#ecfdf5', color: activeAnalysis === tab.key ? '#fff' : '#0f766e'}"
+                @click="activeAnalysis = tab.key"
+              >
+                {{ tab.title }}
+              </button>
+            </div>
+            <div v-if="currentAnalysis" style="min-height:260px;">
+              <h3 style="font-size:26px;color:#065f46;margin-bottom:10px;">{{ currentAnalysis.headline }}</h3>
+              <p style="color:#475569;line-height:1.9;margin-bottom:20px;">{{ currentAnalysis.description }}</p>
+              <div style="display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:15px;margin-bottom:20px;">
+                <div v-for="metric in currentAnalysis.metrics" :key="metric.label" style="background:#ecfdf5;border-radius:10px;padding:15px;">
+                  <div style="font-size:14px;color:#6b7280;">{{ metric.label }}</div>
+                  <div style="font-size:24px;font-weight:bold;color:#065f46;">{{ metric.value }}</div>
+                  <div style="font-size:12px;color:#94a3b8;">{{ metric.note }}</div>
+                </div>
+              </div>
+              <div>
+                <h4 style="color:#11998e;font-size:16px;margin-bottom:10px;">观测要点</h4>
+                <ul style="color:#64748b;font-size:14px;line-height:1.8;padding-left:18px;">
+                  <li v-for="note in currentAnalysis.notes" :key="note">{{ note }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div style="background:white;padding:30px;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <h3 style="font-size:24px;color:#065f46;margin-bottom:20px;">应用路径图</h3>
+            <div class="application-circle">
+              <div class="circle-container">
+                <canvas id="application-canvas" style="width: 100%; height: 400px;"></canvas>
+                <div class="circle-center">
+                  <div class="capsule-shape">胶囊<br>植入设备</div>
+                  <div class="circle-label">易于给药，患者便利</div>
+                  <div class="circle-text">可扩展且可组合</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 应用路径 -->
+    <section id="application" class="section">
+      <div class="section-content">
+        <h2 class="section-title">应用路径与验证节奏</h2>
+        <div style="padding:40px;">
+          <div style="display:flex;flex-wrap:wrap;gap:25px;">
+            <div
+              v-for="(lane, index) in applicationLanes"
+              :key="lane.title"
+              style="flex:1 1 220px;padding:20px;border-radius:15px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,0.08);"
+            >
+              <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg, #11998e 0%, #38ef7d 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-bottom:15px;">{{ index + 1 }}</div>
+              <h4 style="font-size:18px;color:#065f46;margin-bottom:12px;">{{ lane.title }}</h4>
+              <p style="color:#64748b;font-size:14px;line-height:1.6;margin-bottom:12px;">{{ lane.description }}</p>
+              <ul style="list-style:none;padding-left:0;color:#6b7280;font-size:13px;line-height:1.6;">
+                <li v-for="item in lane.checkpoints" :key="item" style="padding:6px 0;border-bottom:1px dotted #e5e7eb;">
+                  {{ item }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- BBB技术 -->
+    <section id="bbb" class="section">
+      <div class="section-content">
+        <h2 class="section-title">血脑屏障技术</h2>
+        <div class="tech-section">
+          <div class="tech-info">
+            <h3 class="tech-title">跨越BBB的突破</h3>
+            <p class="tech-text">
+              血脑屏障（BBB）是保护大脑的重要生理屏障，但也阻碍了
+              大多数治疗性分子的进入。Release Therapeutics的细胞宏封装技术
+              通过以下方式突破这一限制：
+            </p>
+            <ul class="spec-list">
+              <li class="spec-item">安全植入BBB之外，实现精准靶向递送</li>
+              <li class="spec-item">最小化全身毒性，减少对其他器官的不良影响</li>
+              <li class="spec-item">适合长期局部蛋白质递送，包括中枢神经系统</li>
+              <li class="spec-item">可达身体难以触及的区域</li>
+            </ul>
+          </div>
+          <div class="visualization-container">
+            <canvas id="bbb-canvas"></canvas>
+            <div class="canvas-controls">
+              <button class="control-btn" @click="rotateBBB">旋转模型</button>
+              <button class="control-btn" @click="resetBBBView">重置视角</button>
+              <button class="control-btn" @click="toggleBBBAnimation">{{ bbbAnimating ? '暂停' : '播放' }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 商业沙盒 -->
+    <section id="market" class="section">
+      <div class="section-content">
+        <h2 class="section-title">商业化沙盒</h2>
+        <div style="background:linear-gradient(135deg,#11998e 0%,#38ef7d 100%);padding:50px 40px;border-radius:20px;color:#fff;">
+          <p style="font-size:18px;line-height:2;max-width:820px;margin:0 auto 30px;text-align:center;">
+            通过调整患者渗透率、治疗价格与合作数量，实时观察市场规模捕获与投资回报指标的变化。
+            参数为定性模拟，用于快速讨论「是否该先锁定罕见病还是常见神经疾病」等策略问题。
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:25px;margin-bottom:30px;">
+            <div>
+              <label style="font-size:14px;color:#ecfdf5;display:block;margin-bottom:8px;">目标人群渗透率 {{ marketModel.penetration }}%</label>
+              <input type="range" min="10" max="80" v-model.number="marketModel.penetration" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:14px;color:#ecfdf5;display:block;margin-bottom:8px;">治疗价格溢价 {{ marketModel.price }}%</label>
+              <input type="range" min="0" max="300" v-model.number="marketModel.price" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:14px;color:#ecfdf5;display:block;margin-bottom:8px;">战略合作数量 {{ marketModel.partnerships }}</label>
+              <input type="range" min="1" max="5" v-model.number="marketModel.partnerships" style="width:100%;">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:25px;">
+            <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);padding:25px;border-radius:15px;text-align:center;">
+              <div style="font-size:14px;color:#ecfdf5;margin-bottom:8px;">预计可捕获市场规模</div>
+              <div style="font-size:32px;font-weight:bold;">${{ projectedRevenue }}M</div>
+              <div style="font-size:12px;color:#d1fae5;">按 3 类适应症场景测算</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);padding:25px;border-radius:15px;text-align:center;">
+              <div style="font-size:14px;color:#ecfdf5;margin-bottom:8px;">投资回收期</div>
+              <div style="font-size:32px;font-weight:bold;">{{ paybackPeriod }} 年</div>
+              <div style="font-size:12px;color:#d1fae5;">含临床与生产投入</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);padding:25px;border-radius:15px;text-align:center;">
+              <div style="font-size:14px;color:#ecfdf5;margin-bottom:8px;">商业确定性评分</div>
+              <div style="font-size:32px;font-weight:bold;">{{ marketConfidence }}/100</div>
+              <div style="font-size:12px;color:#d1fae5;">结合监管与临床复杂度</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Vue 3.5.20 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+  <!-- GSAP -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+
+  <script>
+    const { createApp } = Vue;
+    
+    createApp({
+      data() {
+        return {
+          scrolled: false,
+          activeSection: 'tech',
+          bbbAnimating: true,
+          activeScenario: 'cell',
+          capsuleInsights: [
+            {
+              icon: '🧬',
+              title: '细胞生存',
+              description: '成肌细胞经过基因改造后，能在中空纤维内长期存活并持续分泌蛋白质。',
+              points: ['细胞存活率 > 85%', '分泌持续时间 > 6个月', '细胞增殖受控'],
+              scenario: 'cell'
+            },
+            {
+              icon: '📦',
+              title: '封装材料',
+              description: '中空纤维膜允许营养物质和蛋白质双向扩散，同时阻止免疫细胞进入。',
+              points: ['孔径大小 0.2-0.4 μm', '免疫隔离效率 > 95%', '蛋白透过率 78%'],
+              scenario: 'material'
+            },
+            {
+              icon: '🌊',
+              title: '蛋白扩散',
+              description: '蛋白质从胶囊内部通过半透膜扩散到周围组织，浓度梯度驱动递送。',
+              points: ['扩散系数 2.3×10⁻⁶ cm²/s', '局部浓度峰值 45 ng/ml', '作用范围半径 5mm'],
+              scenario: 'diffusion'
+            },
+            {
+              icon: '📍',
+              title: '植入策略',
+              description: '胶囊可植入BBB之外的特定位置，通过局部递送避开血脑屏障限制。',
+              points: ['植入位置精度 ±1mm', 'BBB距离 2-5mm', '植入并发症率 < 3%'],
+              scenario: 'implant'
+            }
+          ],
+          techScenarios: [
+            {
+              key: 'cell',
+              name: '细胞场景',
+              headline: '成肌细胞工程化改造',
+              description: '通过基因工程使成肌细胞稳定表达目标蛋白质，同时控制细胞增殖以避免设备内过度拥挤。',
+              notes: [
+                '启动子选择影响蛋白质表达量',
+                '细胞密度需维持在 2×10⁶ cells/ml 以下',
+                '添加生长因子可延长细胞寿命至 8 个月'
+              ],
+              metrics: [
+                { label: '细胞存活率', value: '87%', note: '6个月后' },
+                { label: '蛋白表达量', value: '42 μg/day', note: '每百万细胞' }
+              ]
+            },
+            {
+              key: 'material',
+              name: '材料场景',
+              headline: '中空纤维膜特性',
+              description: '膜材料需要在允许小分子和蛋白质通过的同时，有效阻挡免疫细胞和抗体。',
+              notes: [
+                '聚丙烯腈材料具有良好的生物相容性',
+                '分子量截止点约 150 kDa',
+                '膜厚度 30-50 μm 时性能最佳'
+              ],
+              metrics: [
+                { label: '免疫隔离', value: '96%', note: '6个月后评估' },
+                { label: '蛋白透过率', value: '81%', note: '12周后测量' }
+              ]
+            },
+            {
+              key: 'diffusion',
+              name: '扩散场景',
+              headline: '局部蛋白质浓度分布',
+              description: '蛋白质从胶囊扩散到周围组织，形成浓度梯度，距离越远浓度越低。',
+              notes: [
+                '初始释放速率取决于细胞内蛋白质产量',
+                '组织间隙压力影响扩散速度',
+                '定期补充可维持稳定浓度'
+              ],
+              metrics: [
+                { label: '作用半径', value: '5.2 mm', note: '有效浓度范围' },
+                { label: '峰值浓度', value: '48 ng/ml', note: '距离胶囊 1mm 处' }
+              ]
+            },
+            {
+              key: 'implant',
+              name: '植入场景',
+              headline: 'BBB 旁路策略',
+              description: '将胶囊植入血脑屏障外侧的特定解剖位置，通过局部递送绕过 BBB 的限制。',
+              notes: [
+                '蛛网膜下腔植入风险较低',
+                '硬膜外植入操作更简单',
+                '需要避免损伤重要血管和神经'
+              ],
+              metrics: [
+                { label: '手术成功率', value: '94%', note: '无严重并发症' },
+                { label: '定位精度', value: '±0.8mm', note: '影像导航下' }
+              ]
+            }
+          ],
+          analysisTabs: [
+            {
+              key: 'cns',
+              title: '中枢神经',
+              headline: '神经退行性疾病',
+              description: '针对帕金森、阿尔茨海默等疾病，通过局部递送神经营养因子改善神经元功能。',
+              metrics: [
+                { label: '目标患者', value: '1.2M', note: '美国每年新增' },
+                { label: '临床试验', value: 'Phase 1/2', note: '进行中' },
+                { label: '预计获批', value: '2028', note: '乐观估计' }
+              ],
+              notes: [
+                '需要长期随访评估安全性',
+                '监管审批路径相对清晰'
+              ]
+            },
+            {
+              key: 'metabolic',
+              title: '代谢疾病',
+              headline: '罕见代谢缺陷',
+              description: '针对先天性酶缺陷疾病，通过持续递送缺失的酶来维持正常代谢。',
+              metrics: [
+                { label: '目标患者', value: '50K', note: '全球罕见病' },
+                { label: '临床阶段', value: 'Preclinical', note: '准备中' },
+                { label: '单价预估', value: '$250K', note: '年度治疗费用' }
+              ],
+              notes: [
+                '孤儿药资格可加速审批',
+                '高价格但小患者群体'
+              ]
+            },
+            {
+              key: 'cancer',
+              title: '脑部肿瘤',
+              headline: '胶质母细胞瘤',
+              description: '通过局部递送免疫检查点抑制剂或CAR-T相关因子，增强局部免疫反应。',
+              metrics: [
+                { label: '目标患者', value: '15K', note: '美国每年' },
+                { label: '开发阶段', value: 'Early R&D', note: '概念验证' },
+                { label: '市场潜力', value: '$800M', note: '5年峰值销售' }
+              ],
+              notes: [
+                '需要克服复杂的肿瘤微环境',
+                '联合其他疗法可能有协同效应'
+              ]
+            }
+          ],
+          activeAnalysis: 'cns',
+          applicationLanes: [
+            {
+              title: '神经系统疾病',
+              description: '优先开发帕金森和阿尔茨海默适应症，建立BBB旁路技术验证。',
+              checkpoints: ['动物模型疗效验证', '安全性评估', '影像学追踪方法']
+            },
+            {
+              title: '罕见代谢病',
+              description: '通过孤儿药路径快速推进，建立酶替代疗法标准。',
+              checkpoints: ['酶活性维持验证', '长期稳定性数据', '监管沟通']
+            },
+            {
+              title: '脑部肿瘤',
+              description: '探索与免疫疗法联合，增强局部抗肿瘤免疫反应。',
+              checkpoints: ['肿瘤微环境分析', '免疫因子组合筛选', '临床前疗效']
+            },
+            {
+              title: '生产工艺',
+              description: '建立GMP级细胞培养和封装生产线，确保批次一致性。',
+              checkpoints: ['细胞库建立', '封装工艺标准化', '质量控制系统']
+            }
+          ],
+          marketModel: {
+            penetration: 35,
+            price: 200,
+            partnerships: 2
+          },
+          features: [
+            {
+              title: '紧凑的细胞创新',
+              description: '小型空心纤维设备（长度：25mm，宽度：1mm），装载基因工程成肌细胞，实现精确的细胞封装。'
+            },
+            {
+              title: '保持细胞活性',
+              description: '优异的生物相容性，能够保持封装细胞在体内的活性，确保治疗效果的持续释放。'
+            },
+            {
+              title: '简单温和的插入',
+              description: '易于插入和提取，患者不适感最小化，大大提升了治疗的便利性和患者体验。'
+            },
+            {
+              title: '先进疗法分类',
+              description: '法规分类：先进治疗药物产品（ATMP），符合最新的医疗监管标准。'
+            }
+          ],
+          advantages: [
+            {
+              title: '优化的蛋白质递送',
+              description: '适合长期局部蛋白质递送，包括中枢神经系统（CNS）和身体难以到达的区域，实现精准治疗。'
+            },
+            {
+              title: '安全的BBB导航',
+              description: '可安全植入血脑屏障之外，我们的技术针对递送以最小化全身毒性，减少对其他器官的不良影响。'
+            }
+          ],
+          therapeuticProteins: [
+            '细胞因子', '趋化因子', '抗原', '单克隆抗体(mAbs)', '激素', '酶'
+          ],
+          diseaseAreas: [
+            '癌症', '免疫疾病', '传染病', '血友病', '代谢疾病'
+          ]
+        };
+      },
+      computed: {
+        currentScenario() {
+          return this.techScenarios.find(s => s.key === this.activeScenario) || this.techScenarios[0];
+        },
+        currentAnalysis() {
+          return this.analysisTabs.find(tab => tab.key === this.activeAnalysis) || this.analysisTabs[0];
+        },
+        projectedRevenue() {
+          const base = 380;
+          const penetrationFactor = this.marketModel.penetration / 100;
+          const priceFactor = 1 + this.marketModel.price / 150;
+          const partnershipBoost = 1 + this.marketModel.partnerships * 0.12;
+          return Math.round(base * penetrationFactor * priceFactor * partnershipBoost);
+        },
+        paybackPeriod() {
+          const base = 8;
+          const penetrationImpact = (this.marketModel.penetration - 30) / 50;
+          const partnershipImpact = this.marketModel.partnerships * 0.5;
+          const priceImpact = this.marketModel.price / 100;
+          return Math.max(3, (base - penetrationImpact - partnershipImpact + priceImpact).toFixed(1));
+        },
+        marketConfidence() {
+          const score = 55
+            + this.marketModel.partnerships * 8
+            + this.marketModel.penetration * 0.3
+            + this.marketModel.price * 0.15;
+          return Math.min(100, Math.round(score));
+        }
+      },
+      mounted() {
+        this.initAnimations();
+        this.init3DVisualizations();
+        this.initApplicationCanvas();
+        this.handleScroll();
+        window.addEventListener('scroll', this.handleScroll);
+        window.addEventListener('scroll', this.updateActiveSection);
+      },
+      beforeUnmount() {
+        window.removeEventListener('scroll', this.handleScroll);
+        window.removeEventListener('scroll', this.updateActiveSection);
+      },
+      methods: {
+        initAnimations() {
+          // Hero区域动画
+          const heroTitle = this.$refs.heroTitle;
+          const heroSubtitle = this.$refs.heroSubtitle;
+          const heroDesc = this.$refs.heroDesc;
+          
+          gsap.to(heroTitle, {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            delay: 0.2,
+            ease: 'power3.out'
+          });
+          
+          gsap.to(heroSubtitle, {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            delay: 0.5,
+            ease: 'power3.out'
+          });
+          
+          gsap.to(heroDesc, {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            delay: 0.8,
+            ease: 'power3.out'
+          });
+          
+          // 卡片进入动画
+          gsap.utils.toArray('.feature-card, .dual-feature-card').forEach((card, index) => {
+            gsap.from(card, {
+              opacity: 0,
+              y: 50,
+              duration: 0.8,
+              delay: index * 0.2,
+              scrollTrigger: {
+                trigger: card,
+                start: 'top 80%',
+                toggleActions: 'play none none none'
+              }
+            });
+          });
+        },
+        init3DVisualizations() {
+          this.initBBBCanvas();
+          this.initDeviceCanvas();
+        },
+        initBBBCanvas() {
+          const canvas = document.getElementById('bbb-canvas');
+          if (!canvas) return;
+          
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+          const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+          
+          renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+          renderer.setClearColor(0xffffff, 0);
+          
+          // 创建BBB（血脑屏障）场景
+          const bbbGroup = new THREE.Group();
+          
+          // 大脑（球体）
+          const brainGeometry = new THREE.SphereGeometry(2, 32, 32);
+          const brainMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0xff9999,
+            transparent: true,
+            opacity: 0.7
+          });
+          const brain = new THREE.Mesh(brainGeometry, brainMaterial);
+          bbbGroup.add(brain);
+          
+          // BBB屏障（半透明膜）
+          const bbbGeometry = new THREE.SphereGeometry(2.2, 32, 32);
+          const bbbMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x4a90e2,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+          });
+          const bbbBarrier = new THREE.Mesh(bbbGeometry, bbbMaterial);
+          bbbGroup.add(bbbBarrier);
+          
+          // 胶囊设备（在BBB之外）
+          const capsuleGroup = new THREE.Group();
+          const capsuleGeometry = new THREE.CapsuleGeometry(0.15, 0.6, 8, 16);
+          const capsuleMaterial = new THREE.MeshPhongMaterial({ color: 0x11998e });
+          const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+          capsule.position.set(3, 0, 0);
+          capsuleGroup.add(capsule);
+          
+          // 蛋白质分子（从胶囊释放）
+          const proteins = [];
+          for (let i = 0; i < 10; i++) {
+            const proteinGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const proteinMaterial = new THREE.MeshPhongMaterial({ color: 0x38ef7d });
+            const protein = new THREE.Mesh(proteinGeometry, proteinMaterial);
+            proteins.push(protein);
+            capsuleGroup.add(protein);
+          }
+          
+          scene.add(bbbGroup);
+          scene.add(capsuleGroup);
+          
+          // 光源
+          const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+          scene.add(ambientLight);
+          const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+          directionalLight1.position.set(5, 5, 5);
+          scene.add(directionalLight1);
+          const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+          directionalLight2.position.set(-5, -5, -5);
+          scene.add(directionalLight2);
+          
+          camera.position.set(6, 3, 6);
+          camera.lookAt(0, 0, 0);
+          
+          // 动画：蛋白质释放
+          let time = 0;
+          const animate = () => {
+            time += 0.01;
+            
+            // BBB屏障脉动
+            bbbBarrier.scale.set(1 + Math.sin(time * 2) * 0.05, 1 + Math.sin(time * 2) * 0.05, 1 + Math.sin(time * 2) * 0.05);
+            
+            // 胶囊旋转
+            if (this.bbbAnimating) {
+              capsuleGroup.rotation.y += 0.005;
+              
+              // 蛋白质分子从胶囊释放，向大脑移动
+              proteins.forEach((protein, index) => {
+                const angle = (index / proteins.length) * Math.PI * 2;
+                const radius = 0.5 + (time % 2) * 2;
+                protein.position.x = capsule.position.x + Math.cos(angle + time * 2) * radius;
+                protein.position.y = capsule.position.y + Math.sin(angle + time * 2) * radius * 0.5;
+                protein.position.z = capsule.position.z + Math.sin(angle + time * 2) * radius * 0.5;
+                
+                if (radius > 2) {
+                  protein.position.x = capsule.position.x;
+                  protein.position.y = capsule.position.y;
+                  protein.position.z = capsule.position.z;
+                }
+              });
+            }
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+          };
+          animate();
+          
+          // 响应式调整
+          window.addEventListener('resize', () => {
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+          });
+          
+          this.bbbScene = { scene, camera, renderer, capsuleGroup };
+        },
+        initDeviceCanvas() {
+          const canvas = document.getElementById('device-canvas');
+          if (!canvas) return;
+          
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+          const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+          
+          renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+          renderer.setClearColor(0xffffff, 0);
+          
+          // 创建胶囊设备模型
+          const deviceGroup = new THREE.Group();
+          
+          // 空心纤维管（主结构）
+          const fiberGeometry = new THREE.CylinderGeometry(0.5, 0.5, 10, 32);
+          const fiberMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x11998e,
+            transparent: true,
+            opacity: 0.8
+          });
+          const fiber = new THREE.Mesh(fiberGeometry, fiberMaterial);
+          deviceGroup.add(fiber);
+          
+          // 内部细胞（小点）
+          for (let i = 0; i < 20; i++) {
+            const cellGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const cellMaterial = new THREE.MeshPhongMaterial({ color: 0xffd93d });
+            const cell = new THREE.Mesh(cellGeometry, cellMaterial);
+            const y = -5 + (i / 20) * 10;
+            const angle = (i / 20) * Math.PI * 2;
+            cell.position.set(Math.cos(angle) * 0.3, y, Math.sin(angle) * 0.3);
+            deviceGroup.add(cell);
+          }
+          
+          // 外部结构
+          const outerGeometry = new THREE.CylinderGeometry(0.6, 0.6, 10.2, 32);
+          const outerMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x38ef7d,
+            transparent: true,
+            opacity: 0.3
+          });
+          const outer = new THREE.Mesh(outerGeometry, outerMaterial);
+          deviceGroup.add(outer);
+          
+          scene.add(deviceGroup);
+          
+          // 光源
+          const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+          scene.add(ambientLight);
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+          directionalLight.position.set(5, 5, 5);
+          scene.add(directionalLight);
+          
+          camera.position.set(8, 5, 8);
+          camera.lookAt(0, 0, 0);
+          
+          // 旋转动画
+          const animate = () => {
+            deviceGroup.rotation.y += 0.01;
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+          };
+          animate();
+          
+          // 响应式调整
+          window.addEventListener('resize', () => {
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+          });
+        },
+        initApplicationCanvas() {
+          const canvas = document.getElementById('application-canvas');
+          if (!canvas) return;
+          
+          const ctx = canvas.getContext('2d');
+          canvas.width = 500;
+          canvas.height = 500;
+          
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+          const radius = 200;
+          
+          // 绘制圆形背景
+          ctx.fillStyle = '#e8f5e9';
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 绘制外圈（疾病领域）
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 2;
+          ctx.font = '12px Arial';
+          ctx.fillStyle = '#2c3e50';
+          
+          const diseaseAreas = this.diseaseAreas;
+          diseaseAreas.forEach((disease, index) => {
+            const angle = (index / diseaseAreas.length) * Math.PI * 2 - Math.PI / 2;
+            const x = centerX + Math.cos(angle) * (radius - 30);
+            const y = centerY + Math.sin(angle) * (radius - 30);
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle + Math.PI / 2);
+            ctx.fillText(disease, -ctx.measureText(disease).width / 2, 0);
+            ctx.restore();
+            
+            // 连接线
+            ctx.beginPath();
+            ctx.moveTo(centerX + Math.cos(angle) * (radius - 50), centerY + Math.sin(angle) * (radius - 50));
+            ctx.lineTo(centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius);
+            ctx.stroke();
+          });
+          
+          // 绘制内圈（治疗性蛋白质）
+          ctx.strokeStyle = '#11998e';
+          ctx.fillStyle = '#11998e';
+          ctx.font = '11px Arial';
+          
+          const proteins = this.therapeuticProteins;
+          proteins.forEach((protein, index) => {
+            const angle = (index / proteins.length) * Math.PI * 2 - Math.PI / 2;
+            const x = centerX + Math.cos(angle) * (radius - 80);
+            const y = centerY + Math.sin(angle) * (radius - 80);
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle + Math.PI / 2);
+            ctx.fillText(protein, -ctx.measureText(protein).width / 2, 0);
+            ctx.restore();
+            
+            // 连接线
+            ctx.beginPath();
+            ctx.moveTo(centerX + Math.cos(angle) * (radius - 70), centerY + Math.sin(angle) * (radius - 70));
+            ctx.lineTo(centerX + Math.cos(angle) * (radius - 50), centerY + Math.sin(angle) * (radius - 50));
+            ctx.stroke();
+          });
+          
+          // 绘制细胞类型（顶部）
+          ctx.fillStyle = '#ffd93d';
+          ctx.font = '10px Arial';
+          
+          // 贴壁细胞
+          ctx.fillText('贴壁细胞', centerX - 100, centerY - radius + 20);
+          for (let i = 0; i < 5; i++) {
+            const x = centerX - 100 + i * 15;
+            const y = centerY - radius + 40;
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
+          // 悬浮细胞
+          ctx.fillText('悬浮细胞', centerX + 40, centerY - radius + 20);
+          for (let i = 0; i < 4; i++) {
+            const x = centerX + 60 + (i % 2) * 20;
+            const y = centerY - radius + 35 + Math.floor(i / 2) * 20;
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        },
+        rotateBBB() {
+          if (this.bbbScene && this.bbbScene.capsuleGroup) {
+            gsap.to(this.bbbScene.capsuleGroup.rotation, {
+              y: this.bbbScene.capsuleGroup.rotation.y + Math.PI * 2,
+              duration: 2,
+              ease: 'power2.inOut'
+            });
+          }
+        },
+        resetBBBView() {
+          if (this.bbbScene && this.bbbScene.capsuleGroup) {
+            gsap.to(this.bbbScene.capsuleGroup.rotation, {
+              x: 0,
+              y: 0,
+              z: 0,
+              duration: 1,
+              ease: 'power2.inOut'
+            });
+          }
+        },
+        toggleBBBAnimation() {
+          this.bbbAnimating = !this.bbbAnimating;
+        },
+        handleScroll() {
+          this.scrolled = window.scrollY > 50;
+        },
+        updateActiveSection() {
+          const sections = ['tech', 'capsule', 'analysis', 'application', 'bbb', 'market'];
+          const scrollPosition = window.scrollY + 200;
+          
+          for (let section of sections) {
+            const element = document.getElementById(section);
+            if (element) {
+              const offsetTop = element.offsetTop;
+              const offsetBottom = offsetTop + element.offsetHeight;
+              
+              if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
+                this.activeSection = section;
+                break;
+              }
+            }
+          }
+        },
+        scrollTo(section) {
+          const element = document.getElementById(section);
+          if (element) {
+            const navbarHeight = 70;
+            const elementPosition = element.offsetTop - navbarHeight;
+            
+            window.scrollTo({
+              top: elementPosition,
+              behavior: 'smooth'
+            });
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+

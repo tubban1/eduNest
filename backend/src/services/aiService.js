@@ -282,7 +282,15 @@ Your design must ensure:
   * A <body> section with:
     - All HTML content
     - Internal <script> tags for JavaScript
-- Use Vue 3.5.20 with <script setup> syntax via production CDN.
+  - Use Vue 3.5.20 with <script setup> syntax with ref, reactive, computed, onMounted, and nextTick via production CDN.
+  - Every reactive variable must be defined before use. No undefined references.
+  - Multi-stage interfaces must use v-if. Do NOT use v-show, opacity, or visibility to hide elements.
+  - Only one section/page can exist in the DOM at any time. Remove others completely.
+  -All DOM-dependent logic (Canvas, Three.js, Web Speech, audio) must run only inside onMounted + nextTick.
+  - All v-for must include a stable key.
+  - Hidden elements must use display:none. Avoid flex issues and overlapping containers.
+  - Check for undefined variables, wrong bindings, invalid API calls, or version mismatches before generating output.
+
 - You may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect:
 Vue ecosystem: Vue, VueRouter, Vuex
 Sound: Tone.js, Howler.js
