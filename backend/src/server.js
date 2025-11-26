@@ -40,6 +40,10 @@ app.set('supabase', supabase);
 // 安全中间件
 app.use(helmet());
 
+// Disable default compression for SSE
+// If compression is added later, it needs to be configured to ignore text/event-stream
+// app.use(compression(...)); 
+
 // CORS 配置
 console.log('CORS 配置的允许源:', config.ALLOWED_ORIGINS);
 app.use(cors({

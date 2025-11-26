@@ -580,9 +580,60 @@ class ApiClient {
       const data = await this.post('/ai-guide/init', { content_id: contentId });
       return data.success ? data.data : null;
     },
-    chat: async (conversationId: string, message: string, uiState?: any) => {
-      const data = await this.post('/ai-guide/chat', { conversation_id: conversationId, message, ui_state: uiState });
-      return data.success ? data.data : null;
+    chatStream: async (conversationId: string, message: string, uiState?: any, onChunk?: (text: string) => void) => {
+      const token = await new ApiClient().getLatestToken();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'}/ai-guide/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ conversation_id: conversationId, message, ui_state: uiState }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || error.error || 'Failed to send message');
+      }
+
+      if (!response.body) return;
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Process complete lines from buffer
+          const lines = buffer.split('\n\n');
+          // Keep the last part in buffer as it might be incomplete
+          buffer = lines.pop() || ''; 
+
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('data: ')) {
+              const data = trimmedLine.slice(6);
+              if (data === '[DONE]') return;
+              
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.content && onChunk) {
+                  onChunk(parsed.content);
+                }
+              } catch (e) {
+                // Ignore parse errors for partial chunks
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
     },
     getConversations: async (contentId: string) => {
       const data = await this.get(`/ai-guide/conversations?content_id=${contentId}`);

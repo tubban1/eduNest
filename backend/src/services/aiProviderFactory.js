@@ -89,7 +89,7 @@ class AIProviderFactory {
   }
 
   /**
-   * 发送聊天完成请求（带重试机制）
+   * 发送聊天完成请求（支持流式和非流式）
    * @param {Object} params - 请求参数
    * @param {string} params.provider - 提供商名称
    * @param {string} params.model - 模型名称（可选，使用默认模型）
@@ -97,7 +97,8 @@ class AIProviderFactory {
    * @param {number} params.temperature - 温度参数
    * @param {number} params.max_tokens - 最大token数
    * @param {number} params.maxRetries - 最大重试次数
-   * @returns {Promise<Object>} API响应
+   * @param {boolean} params.stream - 是否启用流式传输
+   * @returns {Promise<Object|AsyncGenerator>} API响应或流式生成器
    */
   async createChatCompletion({
     provider = null,
@@ -105,7 +106,8 @@ class AIProviderFactory {
     messages = [],
     temperature = 0.6,
     max_tokens = 24000,
-    maxRetries = 0
+    maxRetries = 0,
+    stream = false
   }) {
     const providerConfig = this.getProvider(provider);
     const requestModel = model || providerConfig.model;
@@ -114,16 +116,18 @@ class AIProviderFactory {
       model: requestModel,
       messages,
       temperature,
-      max_tokens
+      max_tokens,
+      stream
     };
 
     let lastError = null;
     
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         // 创建带超时的 fetch 请求
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 600000); // 10分钟超时，与任务超时一致
+        // 如果是流式，不需要设置总超时，而是应该设置 socket 读超时（fetch 不支持直接设置，这里先保持 10 分钟总超时）
+        const timeoutId = setTimeout(() => controller.abort(), 600000); 
         
         const response = await fetch(providerConfig.baseURL, {
           method: 'POST',
@@ -135,19 +139,23 @@ class AIProviderFactory {
         clearTimeout(timeoutId);
 
         if (response.ok) {
-          const data = await response.json();
-          
-          
-          // 统一响应格式
-          return {
-            provider: provider || this.defaultProvider,
-            model: requestModel,
-            response: data,
-            content: data.choices?.[0]?.message?.content,
-            usage: data.usage,
-            created: data.created,
-            id: data.id
-          };
+          if (stream) {
+            // 处理流式响应
+            return this.handleStreamResponse(response, provider || this.defaultProvider, requestModel);
+          } else {
+            const data = await response.json();
+            
+            // 统一响应格式
+            return {
+              provider: provider || this.defaultProvider,
+              model: requestModel,
+              response: data,
+              content: data.choices?.[0]?.message?.content,
+              usage: data.usage,
+              created: data.created,
+              id: data.id
+            };
+          }
         }
 
         // 处理错误响应
@@ -200,6 +208,55 @@ class AIProviderFactory {
     }
     
     throw lastError;
+  }
+
+  /**
+   * 处理流式响应
+   * @param {Response} response - fetch 响应对象
+   * @param {string} provider - 提供商名称
+   * @param {string} model - 模型名称
+   * @returns {AsyncGenerator} 异步生成器，yield 文本片段
+   */
+  async *handleStreamResponse(response, provider, model) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // 保留最后一个可能不完整的行
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine || trimmedLine === 'data: [DONE]') continue;
+          if (trimmedLine.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(trimmedLine.slice(6));
+              // Handle both OpenAI format and potentially direct text delta
+              const content = data.choices?.[0]?.delta?.content || data.content || '';
+              if (content) {
+                yield {
+                  content,
+                  provider,
+                  model,
+                  id: data.id,
+                  created: data.created
+                };
+              }
+            } catch (e) {
+              console.warn('解析流式数据失败:', trimmedLine, e);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   }
 
   /**

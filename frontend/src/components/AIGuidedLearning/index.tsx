@@ -56,16 +56,34 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
     const userMsg: Message = { role: 'user', content: text };
     setMessages(prev => [...prev, userMsg]);
     
+    // Add placeholder for AI message
+    const aiMsgId = Date.now().toString();
+    setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+    
     setIsLoading(true);
     try {
-      const res = await api.aiGuide.chat(conversationId, text, null); // Pass UI state if available
-      if (res && res.reply) {
-        const aiMsg: Message = { role: 'assistant', content: res.reply };
-        setMessages(prev => [...prev, aiMsg]);
-      }
+      let fullReply = '';
+      await api.aiGuide.chatStream(conversationId, text, null, (chunk) => {
+        fullReply += chunk;
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastMsg = newMessages[newMessages.length - 1];
+          if (lastMsg.role === 'assistant') {
+            lastMsg.content = fullReply;
+          }
+          return newMessages;
+        });
+      });
     } catch (error) {
       console.error('Failed to send message:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: '抱歉，我现在无法回答，请稍后再试。' }]);
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMsg = newMessages[newMessages.length - 1];
+        if (lastMsg.role === 'assistant' && !lastMsg.content) {
+            lastMsg.content = '抱歉，我现在无法回答，请稍后再试。';
+        }
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }

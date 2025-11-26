@@ -24,7 +24,7 @@ router.post('/init', authenticateToken, async (req, res) => {
   }
 });
 
-// Chat
+// Chat (Streaming support)
 router.post('/chat', authenticateToken, async (req, res) => {
   try {
     const { conversation_id, message, ui_state } = req.body;
@@ -34,11 +34,32 @@ router.post('/chat', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'conversation_id and message are required' });
     }
 
-    const result = await aiGuideService.handleChat(conversation_id, message, ui_state, user_id);
-    res.json({ success: true, data: result });
+    const streamGenerator = await aiGuideService.handleChat(conversation_id, message, ui_state, user_id);
+
+    // Set headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    for await (const chunk of streamGenerator) {
+      res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+      // Explicitly flush if possible (Express/Node might buffer)
+      if (res.flush) res.flush();
+    }
+    
+    res.write('data: [DONE]\n\n');
+    res.end();
+
   } catch (error) {
     console.error('API Error /chat:', error);
-    res.status(500).json({ success: false, error: error.message, message: error.message, stack: error.stack });
+    // If headers are not sent, send JSON error
+    if (!res.headersSent) {
+        res.status(500).json({ success: false, error: error.message, message: error.message, stack: error.stack });
+    } else {
+        // If headers sent (streaming started), send error event
+        res.write(`event: error\ndata: ${JSON.stringify({ message: error.message })}\n\n`);
+        res.end();
+    }
   }
 });
 

@@ -182,12 +182,11 @@ const initConversation = async (contentId, userId) => {
 };
 
 /**
- * Handle a user message in the guided learning session
+ * Handle a user message in the guided learning session (Streaming)
  */
 const handleChat = async (conversationId, message, uiState, userId) => {
   try {
-    // 1. Get conversation history (to find content_id and build context)
-    // We need to find the content_id first. It should be consistent for the request_id.
+    // 1. Get conversation history
     const { data: history, error: historyError } = await supabase
       .from('ai_usage_logs')
       .select('content_id, user_query, response_metadata, created_at')
@@ -197,7 +196,6 @@ const handleChat = async (conversationId, message, uiState, userId) => {
 
     if (historyError) throw historyError;
     if (!history || history.length === 0) {
-        // 如果找不到历史记录，可能是 init 时的 DB 写入失败，或者 conversationId 不正确
         const error = new Error('Conversation not found');
         error.code = 'CONVERSATION_NOT_FOUND';
         throw error;
@@ -218,7 +216,6 @@ const handleChat = async (conversationId, message, uiState, userId) => {
       { role: 'system', content: systemPrompt }
     ];
 
-    // Add history
     history.forEach(log => {
       if (log.user_query) {
         llmMessages.push({ role: 'user', content: log.user_query });
@@ -228,44 +225,61 @@ const handleChat = async (conversationId, message, uiState, userId) => {
       }
     });
 
-    // Add current user message with UI state if provided
     let finalUserMessage = message;
     if (uiState) {
       finalUserMessage += `\n\nUI STATE:\n${JSON.stringify(uiState, null, 2)}`;
     }
     llmMessages.push({ role: 'user', content: finalUserMessage });
 
-    // 4. Call LLM
-    const result = await aiProviderFactory.createChatCompletion({
+    // 4. Call LLM with streaming enabled
+    const stream = await aiProviderFactory.createChatCompletion({
       messages: llmMessages,
       max_tokens: 1000,
-      temperature: 0.7
+      temperature: 0.7,
+      stream: true
     });
 
-    const reply = result.content;
+    // Return a generator that yields chunks and logs on completion
+    async function* streamGenerator() {
+      let fullReply = '';
+      let model = '';
+      let inputTokens = 0; // Note: Stream response usually doesn't provide input usage
+      
+      try {
+        for await (const chunk of stream) {
+          fullReply += chunk.content;
+          model = chunk.model;
+          yield chunk.content;
+        }
+      } catch (error) {
+        console.error('Stream error:', error);
+        throw error;
+      } finally {
+        // 5. Save interaction (after stream completes)
+        if (fullReply) {
+          await logAIUsage({
+            user_id: userId,
+            request_id: conversationId,
+            action_type: 'ai_guide',
+            content_id: contentId,
+            user_query: message,
+            request_payload: { ui_state: uiState },
+            response_metadata: { 
+              reply: fullReply,
+              role: 'assistant'
+            },
+            model_name: model,
+            input_tokens: inputTokens, 
+            output_tokens: 0, // We might estimate this
+            total_tokens: 0,
+            is_render_success: true
+          });
+        }
+      }
+    }
 
-    // 5. Save interaction
-    await logAIUsage({
-      user_id: userId,
-      request_id: conversationId,
-      action_type: 'ai_guide',
-      content_id: contentId,
-      user_query: message, // Log original message, UI state is context
-      request_payload: { ui_state: uiState }, // Save UI state in payload
-      response_metadata: { 
-        reply: reply,
-        role: 'assistant'
-      },
-      model_name: result.model,
-      input_tokens: result.usage?.prompt_tokens || 0,
-      output_tokens: result.usage?.completion_tokens || 0,
-      total_tokens: result.usage?.total_tokens || 0,
-      is_render_success: true
-    });
+    return streamGenerator();
 
-    return {
-      reply
-    };
   } catch (error) {
     console.error('Error in handleChat:', error);
     throw error;
