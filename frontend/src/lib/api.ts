@@ -138,7 +138,8 @@ class ApiClient {
           throw new Error('认证失败或已过期');
         }
         
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        // 优先使用后端返回的 error 字段或 message 字段
+        throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       return await response.json();
@@ -571,6 +572,26 @@ class ApiClient {
     }) => {
       return this.put(`/collection_lists/${listId}/settings`, settings);
     },
+  };
+
+  // AI Guided Learning API
+  aiGuide = {
+    init: async (contentId: string) => {
+      const data = await this.post('/ai-guide/init', { content_id: contentId });
+      return data.success ? data.data : null;
+    },
+    chat: async (conversationId: string, message: string, uiState?: any) => {
+      const data = await this.post('/ai-guide/chat', { conversation_id: conversationId, message, ui_state: uiState });
+      return data.success ? data.data : null;
+    },
+    getConversations: async (contentId: string) => {
+      const data = await this.get(`/ai-guide/conversations?content_id=${contentId}`);
+      return data.success ? data.data.conversations : [];
+    },
+    getMessages: async (conversationId: string) => {
+      const data = await this.get(`/ai-guide/messages?conversation_id=${conversationId}`);
+      return data.success ? data.data.messages : [];
+    }
   };
 
   // Admin API

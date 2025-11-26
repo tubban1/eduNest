@@ -1829,13 +1829,15 @@ const logAIUsage = async (log) => {
         is_json_valid: typeof log.is_json_valid === 'boolean' ? log.is_json_valid : false,
         is_render_success: typeof log.is_render_success === 'boolean' ? log.is_render_success : false,
         error_message: log.error_message || null,
-        request_id: log.request_id || null
+        request_id: log.request_id || null,
+        content_id: log.content_id || null
       })
       .select()
       .single();
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
+    console.error('logAIUsage error:', error);
     return { data: null, error };
   }
 };

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import ContentActionButtons from '@/components/ui/ContentActionButtons';
 import { api, Content } from '@/lib/api';
 import FullHTMLRenderer from '@/components/FullHTMLRenderer';
+import { AIGuidedLearning } from '@/components/AIGuidedLearning';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
@@ -284,6 +285,13 @@ export default function FullHTMLContentPage() {
               setError(error);
             }}
           />
+          {/* AI Guided Learning */}
+          {content?.id && user && (
+            <AIGuidedLearning 
+              contentId={content.id} 
+              onUIStateChange={(state) => console.log('UI State:', state)} 
+            />
+          )}
         </div>
       </div>
     </div>

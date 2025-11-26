@@ -385,6 +385,27 @@
     "column_default": null
   },
   {
+    "table_name": "content",
+    "column_name": "metadata_json",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
+    "column_name": "metadata_created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
+    "column_name": "metadata_updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "content_likes",
     "column_name": "id",
     "data_type": "uuid",
