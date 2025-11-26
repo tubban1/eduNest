@@ -1,5 +1,6 @@
 import React, { useState, KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface AIGuideInputProps {
   onSend: (message: string) => void;
@@ -7,6 +8,7 @@ interface AIGuideInputProps {
 }
 
 export const AIGuideInput: React.FC<AIGuideInputProps> = ({ onSend, disabled }) => {
+  const { t } = useTranslation('aiGuide');
   const [text, setText] = useState('');
 
   const handleSend = () => {
@@ -30,7 +32,7 @@ export const AIGuideInput: React.FC<AIGuideInputProps> = ({ onSend, disabled }) 
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder="输入您的问题..."
+        placeholder={t('inputPlaceholder')}
         className="w-full border border-gray-300 rounded-xl p-3 pr-12 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 focus:bg-white transition-all text-sm"
         rows={2}
       />

@@ -1,5 +1,6 @@
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface AIGuideButtonProps {
   onClick: () => void;
@@ -7,6 +8,8 @@ interface AIGuideButtonProps {
 }
 
 export const AIGuideButton: React.FC<AIGuideButtonProps> = ({ onClick, hasNewMessage }) => {
+  const { t } = useTranslation('aiGuide');
+  
   return (
     <button
       onClick={onClick}
@@ -14,7 +17,7 @@ export const AIGuideButton: React.FC<AIGuideButtonProps> = ({ onClick, hasNewMes
     >
       <MessageCircle className="w-6 h-6" />
       <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap group-hover:ml-2">
-        AI 导学
+        {t('buttonLabel')}
       </span>
       {hasNewMessage && (
         <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>

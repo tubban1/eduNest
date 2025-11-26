@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { AIGuideMessageList } from './AIGuideMessageList';
 import { AIGuideInput } from './AIGuideInput';
 
@@ -24,6 +25,7 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
   onSendMessage,
   isLoading
 }) => {
+  const { t } = useTranslation('aiGuide');
   const [width] = useState(400);
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +40,7 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
         <h3 className="font-semibold text-gray-800 flex items-center">
-          🤖 AI 学习助手
+          🤖 {t('title')}
         </h3>
         <div className="flex items-center gap-2">
           <button
