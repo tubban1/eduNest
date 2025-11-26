@@ -111,7 +111,7 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(10px);
       padding: 20px;
       border-radius: 15px;
@@ -184,11 +184,11 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(20px);
       padding: 30px 50px;
       border-radius: 20px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.2);
       font-size: 48px;
       font-weight: bold;
       color: #fff;
@@ -197,7 +197,7 @@
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.3s, transform 0.3s;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       min-width: 300px;
     }
 
@@ -385,7 +385,7 @@
       return new Promise((resolve, reject) => {
         // 使用 jsdelivr CDN（与 hands 保持一致）
         const sources = [
-          'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js',
+          'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js',
           'https://unpkg.com/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js'
         ];
 
@@ -420,8 +420,8 @@
       return new Promise((resolve) => {
         // Drawing Utils 是可选的
         const sources = [
-          'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js',
-          'https://unpkg.com/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js'
+          'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js',
+          'https://unpkg.com/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js'
         ];
 
         function tryLoad(index) {
@@ -496,6 +496,8 @@
     let gestureHistory = [];
     let targetPosition = new THREE.Vector3(0, 0, 0);
     let lastHandPosition = new THREE.Vector3(0, 0, 0);
+    let previousTargetPosition = new THREE.Vector3(0, 0, 0); // 用于跟踪手指移动速度
+    let handVelocity = new THREE.Vector3(0, 0, 0); // 手指移动速度
 
     // 初始化 Three.js 场景
     function initThreeJS() {
@@ -529,14 +531,19 @@
       // 创建粒子系统
       createParticleSystem();
 
-      // 添加环境光
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      // 添加环境光 - 增强亮度
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
       scene.add(ambientLight);
 
-      // 添加点光源
-      const pointLight = new THREE.PointLight(0x667eea, 1, 100);
+      // 添加点光源 - 增强强度和颜色
+      const pointLight = new THREE.PointLight(0x667eea, 1.5, 100);
       pointLight.position.set(10, 10, 10);
       scene.add(pointLight);
+
+      // 添加第二个点光源 - 增强视觉效果
+      const pointLight2 = new THREE.PointLight(0x764ba2, 1.2, 100);
+      pointLight2.position.set(-10, -10, -10);
+      scene.add(pointLight2);
 
       // 窗口调整
       window.addEventListener('resize', onWindowResize);
@@ -544,7 +551,7 @@
 
     // 创建粒子系统
     function createParticleSystem() {
-      const particleCount = 2000;
+      const particleCount = 3000; // 增加粒子数量，增强视觉效果
       const geometry = new THREE.BufferGeometry();
       const positions = new Float32Array(particleCount * 3);
       const colors = new Float32Array(particleCount * 3);
@@ -559,19 +566,19 @@
         positions[i3 + 1] = (Math.random() - 0.5) * 20;
         positions[i3 + 2] = (Math.random() - 0.5) * 20;
 
-        // 随机颜色（蓝紫色系）
+        // 随机颜色（蓝紫色系，增强饱和度）
         const hue = 0.6 + Math.random() * 0.2; // 蓝紫色
-        const saturation = 0.7 + Math.random() * 0.3;
-        const lightness = 0.5 + Math.random() * 0.3;
+        const saturation = 0.8 + Math.random() * 0.2; // 提高饱和度
+        const lightness = 0.6 + Math.random() * 0.3; // 提高亮度
         const color = new THREE.Color().setHSL(hue, saturation, lightness);
         colors[i3] = color.r;
         colors[i3 + 1] = color.g;
         colors[i3 + 2] = color.b;
 
-        // 随机速度
-        velocities[i3] = (Math.random() - 0.5) * 0.02;
-        velocities[i3 + 1] = (Math.random() - 0.5) * 0.02;
-        velocities[i3 + 2] = (Math.random() - 0.5) * 0.02;
+        // 随机速度 - 增加初始速度，让粒子更活跃
+        velocities[i3] = (Math.random() - 0.5) * 0.03;
+        velocities[i3 + 1] = (Math.random() - 0.5) * 0.03;
+        velocities[i3 + 2] = (Math.random() - 0.5) * 0.03;
       }
 
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -579,12 +586,13 @@
 
       // 材质
       const material = new THREE.PointsMaterial({
-        size: 0.1,
+        size: 0.25, // 增大粒子大小，增强视觉效果
         vertexColors: true,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.95, // 增加不透明度，让粒子更明显
         blending: THREE.AdditiveBlending,
-        depthWrite: false
+        depthWrite: false,
+        sizeAttenuation: true // 启用距离衰减，增强3D效果
       });
 
       particleSystem = new THREE.Points(geometry, material);
@@ -625,12 +633,20 @@
         const wrist = landmarks[0];
 
         // 将2D坐标转换为3D坐标
-        const x = (indexFinger.x - 0.5) * 20;
+        // 注意：前置摄像头是镜像的，所以需要镜像X坐标
+        const x = (0.5 - indexFinger.x) * 20; // 镜像X坐标
         const y = (0.5 - indexFinger.y) * 20;
         const z = (indexFinger.z || 0) * 10;
 
+        // 更新目标位置
+        previousTargetPosition.copy(targetPosition);
         targetPosition.set(x, y, z);
         lastHandPosition.copy(targetPosition);
+        
+        // 计算手指移动速度（用于跟随效果）
+        // 使用平滑的速度计算，避免突然的速度变化
+        const newVelocity = new THREE.Vector3().subVectors(targetPosition, previousTargetPosition);
+        handVelocity.lerp(newVelocity, 0.5); // 使用线性插值平滑速度
 
         // 识别手势类型
         const gesture = recognizeGesture(landmarks);
@@ -819,56 +835,88 @@
 
         switch (gesture) {
           case 'point':
-            // 吸引粒子
-            if (distance < 5) {
-              force = direction.multiplyScalar(0.1 / (distance + 0.1));
+            // 将所有粒子聚集到食指尖并跟随移动
+            // 移除距离限制，所有粒子都受到吸引力
+            // 使用更强的吸引力，让粒子快速聚集
+            const attractionStrength = 2.0 / (distance + 0.1); // 增强吸引力
+            force = direction.multiplyScalar(attractionStrength);
+            
+            // 添加跟随效果：让粒子跟随手指移动
+            // 将手指速度的一部分传递给粒子，让粒子能够跟随手指移动
+            const followFactor = 0.4; // 跟随系数，增强跟随效果
+            force.add(handVelocity.clone().multiplyScalar(followFactor));
+            
+            // 如果粒子已经很接近指尖，减小速度以保持紧密聚集
+            if (distance < 0.8) {
+              // 进一步减小速度，让粒子在指尖周围稳定聚集
+              velocities[i3] *= 0.6;
+              velocities[i3 + 1] *= 0.6;
+              velocities[i3 + 2] *= 0.6;
+              
+              // 添加额外的向心力，让粒子更紧密地聚集
+              const centripetalForce = direction.multiplyScalar(0.5);
+              force.add(centripetalForce);
             }
             break;
 
           case 'open':
-            // 分散粒子
-            if (distance < 8) {
-              force = direction.multiplyScalar(-0.15 / (distance + 0.1));
+            // 分散粒子 - 增强反应范围和强度
+            if (distance < 12) {
+              force = direction.multiplyScalar(-0.35 / (distance + 0.1)); // 增强排斥力
             }
             break;
 
           case 'fist':
-            // 聚集粒子
-            if (distance < 6) {
-              force = direction.multiplyScalar(0.2 / (distance + 0.1));
+            // 聚集粒子 - 增强反应范围和强度
+            if (distance < 10) {
+              force = direction.multiplyScalar(0.5 / (distance + 0.1)); // 增强聚集力
             }
             break;
 
           case 'pinch':
-            // 旋转粒子
-            if (distance < 7) {
+            // 旋转粒子 - 增强反应范围和强度
+            if (distance < 10) {
               const tangent = new THREE.Vector3(-direction.y, direction.x, 0);
-              force = tangent.multiplyScalar(0.1 / (distance + 0.1));
+              force = tangent.multiplyScalar(0.25 / (distance + 0.1)); // 增强旋转力
             }
             break;
 
           case 'peace':
-            // 清除效果（重置粒子位置）
-            if (distance < 10) {
+            // 清除效果（重置粒子位置）- 扩大影响范围
+            if (distance < 15) {
               positions[i3] = (Math.random() - 0.5) * 20;
               positions[i3 + 1] = (Math.random() - 0.5) * 20;
               positions[i3 + 2] = (Math.random() - 0.5) * 20;
-              velocities[i3] = (Math.random() - 0.5) * 0.02;
-              velocities[i3 + 1] = (Math.random() - 0.5) * 0.02;
-              velocities[i3 + 2] = (Math.random() - 0.5) * 0.02;
+              velocities[i3] = (Math.random() - 0.5) * 0.03; // 增加初始速度
+              velocities[i3 + 1] = (Math.random() - 0.5) * 0.03;
+              velocities[i3 + 2] = (Math.random() - 0.5) * 0.03;
             }
             break;
         }
 
-        // 应用力到速度
-        velocities[i3] += force.x * 0.1;
-        velocities[i3 + 1] += force.y * 0.1;
-        velocities[i3 + 2] += force.z * 0.1;
+        // 应用力到速度 - 根据手势调整灵敏度
+        let forceMultiplier = 0.25; // 默认力的应用系数
+        
+        // 指向手势时使用更大的系数，让粒子更快聚集
+        if (gesture === 'point') {
+          forceMultiplier = 0.4; // 指向手势时使用更大的系数
+        }
+        
+        velocities[i3] += force.x * forceMultiplier;
+        velocities[i3 + 1] += force.y * forceMultiplier;
+        velocities[i3 + 2] += force.z * forceMultiplier;
 
-        // 阻尼
-        velocities[i3] *= 0.98;
-        velocities[i3 + 1] *= 0.98;
-        velocities[i3 + 2] *= 0.98;
+        // 阻尼 - 根据手势调整阻尼
+        let damping = 0.95; // 默认阻尼
+        
+        // 指向手势时减小阻尼，让粒子更快响应
+        if (gesture === 'point') {
+          damping = 0.92; // 指向手势时减小阻尼，让粒子更快聚集
+        }
+        
+        velocities[i3] *= damping;
+        velocities[i3 + 1] *= damping;
+        velocities[i3 + 2] *= damping;
       }
     }
 
@@ -886,11 +934,11 @@
         positions[i3 + 1] += velocities[i3 + 1];
         positions[i3 + 2] += velocities[i3 + 2];
 
-        // 边界反弹
+        // 边界反弹 - 增强反弹效果
         const boundary = 12;
-        if (Math.abs(positions[i3]) > boundary) velocities[i3] *= -0.8;
-        if (Math.abs(positions[i3 + 1]) > boundary) velocities[i3 + 1] *= -0.8;
-        if (Math.abs(positions[i3 + 2]) > boundary) velocities[i3 + 2] *= -0.8;
+        if (Math.abs(positions[i3]) > boundary) velocities[i3] *= -0.9; // 增强反弹
+        if (Math.abs(positions[i3 + 1]) > boundary) velocities[i3 + 1] *= -0.9;
+        if (Math.abs(positions[i3 + 2]) > boundary) velocities[i3 + 2] *= -0.9;
 
         // 限制在边界内
         positions[i3] = Math.max(-boundary, Math.min(boundary, positions[i3]));
@@ -964,9 +1012,8 @@
 
       // 绘制检测结果
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        // 翻转 canvas（因为视频是镜像的，所以绘制也需要镜像）
-        handCtx.scale(-1, 1);
-        handCtx.translate(-handCanvas.width, 0);
+        // 注意：不需要再次镜像，因为 hand-canvas 已经在 CSS 中镜像了（transform: scaleX(-1)）
+        // 直接绘制即可，MediaPipe 返回的坐标已经是正确的
 
         results.multiHandLandmarks.forEach((landmarks) => {
           // 绘制连接线
@@ -995,12 +1042,8 @@
             drawHandLandmarks(handCtx, landmarks);
           }
         });
-
-        // 恢复变换
-        handCtx.restore();
       } else {
-        // 没有检测到手部，清空 canvas
-        handCtx.restore();
+        // 没有检测到手部，清空 canvas（已在开头清空）
       }
     }
 
@@ -1080,8 +1123,8 @@
         // locateFile 用于加载模型文件（.wasm、.tflite 等）
         hands = new Hands({
           locateFile: (file) => {
-            // 使用 jsdelivr CDN（用户已验证可用）
-            const baseUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469404';
+            // 使用 jsdelivr CDN（与加载的库版本保持一致）
+            const baseUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240';
             
             // 处理文件路径
             // file 可能是 'hands_solution_packed_assets_loader.js' 或 'solution/hands_landmark_full.tflite' 等

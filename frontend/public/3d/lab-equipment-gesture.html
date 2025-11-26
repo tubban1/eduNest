@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手势交互实验器具 | EduNest AI</title>
+  <meta name="description" content="使用 MediaPipe 手势识别与实验器具进行交互式学习">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      overflow: hidden;
+      color: #fff;
+    }
+
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    #video-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    #hand-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    #info-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 350px;
+      z-index: 100;
+      pointer-events: auto;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s ease;
+    }
+
+    #info-panel.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #info-panel h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #info-panel .equipment-name {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    #info-panel .equipment-usage {
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 15px;
+    }
+
+    #info-panel .equipment-interaction {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    #status {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      border-radius: 15px;
+      font-size: 14px;
+      z-index: 100;
+      pointer-events: auto;
+      max-width: 300px;
+    }
+
+    #status.active {
+      background: rgba(0, 200, 0, 0.3);
+      border: 2px solid rgba(0, 255, 0, 0.5);
+    }
+
+    #controls {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+      pointer-events: auto;
+    }
+
+    .control-btn {
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 25px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .control-btn.active {
+      background: rgba(255, 255, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* 选中高亮效果 */
+    .equipment-highlight {
+      position: absolute;
+      border: 3px solid #00ff00;
+      border-radius: 10px;
+      pointer-events: none;
+      z-index: 4;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+      transition: all 0.2s;
+    }
+
+    @media (max-width: 768px) {
+      #info-panel {
+        max-width: 280px;
+        padding: 15px;
+        font-size: 12px;
+      }
+
+      #info-panel h2 {
+        font-size: 18px;
+      }
+
+      #status {
+        padding: 10px 15px;
+        font-size: 12px;
+        max-width: 250px;
+      }
+
+      #controls {
+        bottom: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .control-btn {
+        padding: 10px 20px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="canvas-container"></div>
+    
+    <div id="info-panel">
+      <h2>🧪 实验器具</h2>
+      <div class="equipment-name" id="equipment-name">请用手势选中器具</div>
+      <div class="equipment-usage" id="equipment-usage">将食指指向器具进行选择</div>
+      <div class="equipment-interaction" id="equipment-interaction"></div>
+    </div>
+
+    <div id="status">等待摄像头启动...</div>
+
+    <div id="video-container">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="hand-canvas"></canvas>
+    </div>
+
+    <div id="controls">
+      <button class="control-btn" id="startBtn">启动摄像头</button>
+      <button class="control-btn" id="resetBtn">重置场景</button>
+    </div>
+  </div>
+
+  <!-- MediaPipe Hands - 使用正确的版本和加载顺序 -->
+  <script>
+    // 库加载状态
+    window.mediaPipeLoaded = {
+      hands: false,
+      camera: false,
+      drawing: false
+    };
+
+    // 加载 MediaPipe Hands
+    function loadMediaPipeHands() {
+      return new Promise((resolve, reject) => {
+        const sources = [
+          'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js',
+          'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js',
+          'https://unpkg.com/@mediapipe/hands@0.4.1675469404/hands.js',
+          'https://unpkg.com/@mediapipe/hands@0.4.1675469240/hands.js'
+        ];
+
+        function tryLoad(index) {
+          if (index >= sources.length) {
+            reject(new Error('所有 MediaPipe Hands CDN 链接都失败了'));
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = sources[index];
+          script.async = true;
+          
+          script.onload = () => {
+            if (typeof Hands !== 'undefined') {
+              window.mediaPipeLoaded.hands = true;
+              console.log(`✓ MediaPipe Hands 加载成功`);
+              resolve();
+            } else {
+              tryLoad(index + 1);
+            }
+          };
+          
+          script.onerror = () => {
+            tryLoad(index + 1);
+          };
+          
+          document.head.appendChild(script);
+        }
+
+        tryLoad(0);
+      });
+    }
+
+    // 加载 Camera Utils
+    function loadCameraUtils() {
+      return new Promise((resolve, reject) => {
+        const sources = [
+          'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js',
+          'https://unpkg.com/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js'
+        ];
+
+        function tryLoad(index) {
+          if (index >= sources.length) {
+            reject(new Error('所有 Camera Utils CDN 链接都失败了'));
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = sources[index];
+          script.onload = () => {
+            window.mediaPipeLoaded.camera = true;
+            console.log(`✓ Camera Utils 加载成功`);
+            resolve();
+          };
+          script.onerror = () => {
+            tryLoad(index + 1);
+          };
+          document.head.appendChild(script);
+        }
+
+        tryLoad(0);
+      });
+    }
+
+    // 加载 Drawing Utils
+    function loadDrawingUtils() {
+      return new Promise((resolve) => {
+        const sources = [
+          'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js',
+          'https://unpkg.com/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js'
+        ];
+
+        function tryLoad(index) {
+          if (index >= sources.length) {
+            console.warn('Drawing Utils 加载失败（非必需）');
+            resolve();
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = sources[index];
+          script.onload = () => {
+            window.mediaPipeLoaded.drawing = true;
+            console.log(`✓ Drawing Utils 加载成功`);
+            resolve();
+          };
+          script.onerror = () => {
+            tryLoad(index + 1);
+          };
+          document.head.appendChild(script);
+        }
+
+        tryLoad(0);
+      });
+    }
+
+    // 按顺序加载所有库
+    window.loadMediaPipe = async function() {
+      const statusEl = document.getElementById('status');
+      try {
+        statusEl.textContent = '正在加载 MediaPipe 库...';
+        await loadMediaPipeHands();
+        await loadCameraUtils();
+        await loadDrawingUtils();
+        statusEl.textContent = '✓ MediaPipe 库加载完成';
+        statusEl.style.background = 'rgba(0, 150, 0, 0.3)';
+        statusEl.style.border = '2px solid rgba(0, 255, 0, 0.3)';
+        return true;
+      } catch (error) {
+        statusEl.innerHTML = `❌ ${error.message}`;
+        statusEl.style.background = 'rgba(200, 0, 0, 0.7)';
+        statusEl.style.border = '2px solid rgba(255, 0, 0, 0.5)';
+        console.error('MediaPipe 加载失败:', error);
+        return false;
+      }
+    };
+
+    // 页面加载完成后开始加载
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', window.loadMediaPipe);
+    } else {
+      window.loadMediaPipe();
+    }
+  </script>
+  
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+  <!-- PLYLoader -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/PLYLoader.js"></script>
+
+  <script>
+    // 全局变量
+    let camera, scene, renderer;
+    let hands;
+    let videoElement;
+    let handCanvas;
+    let handCtx;
+    let isDetecting = false;
+    let handLandmarks = null;
+    let raycaster;
+    let selectedEquipment = null;
+    let equipmentList = [];
+    let isRotating = false;
+    let isScaling = false;
+    let lastHandPosition = new THREE.Vector2();
+    let lastPinchDistance = 0; // 上次捏合距离
+    let originalEquipmentScale = new Map(); // 存储原始缩放
+    let originalEquipmentPosition = new Map(); // 存储原始位置
+
+    // 实验器具数据（只保留PLY模型）
+    const equipmentData = [
+      {
+        name: '烧杯',
+        usage: '用于盛放、加热和混合液体。使用时注意不要超过最大容量，加热时使用石棉网。',
+        interaction: '👆 指向：选中并略微放大 | ✋ 张开：旋转 | 🤏 捏合：缩放 | ✌️ 挥手：恢复',
+        color: 0x4a90e2,
+        position: [-4, 0, 0],
+        geometry: 'ply',
+        modelPath: '/3d/models/beaker.ply'
+      },
+      {
+        name: '显微镜',
+        usage: '用于观察微小物体。使用时要先低倍镜后高倍镜，调节焦距时要缓慢。',
+        interaction: '👆 指向：选中并略微放大 | ✋ 张开：旋转 | 🤏 捏合：缩放 | ✌️ 挥手：恢复',
+        color: 0x9b59b6,
+        position: [4, 0, 0],
+        geometry: 'ply',
+        modelPath: '/3d/models/microscope.ply'
+      },
+      {
+        name: '酒精灯',
+        usage: '用于加热实验。使用前检查酒精量，点燃时用火柴，熄灭时用灯帽盖灭。',
+        interaction: '👆 指向：选中并略微放大 | ✋ 张开：旋转 | 🤏 捏合：缩放 | ✌️ 挥手：恢复',
+        color: 0xffa500,
+        position: [-4, -3, 0],
+        geometry: 'ply',
+        modelPath: '/3d/models/alcohol-lamp.ply'
+      },
+      {
+        name: '滴定管',
+        usage: '用于精确测量和滴加液体体积。使用前要检查是否漏液，读数时要平视。',
+        interaction: '👆 指向：选中并略微放大 | ✋ 张开：旋转 | 🤏 捏合：缩放 | ✌️ 挥手：恢复',
+        color: 0x50c878,
+        position: [4, -3, 0],
+        geometry: 'ply',
+        modelPath: '/3d/models/buret.ply'
+      }
+    ];
+
+    // 初始化 Three.js 场景
+    function initThreeJS() {
+      const container = document.getElementById('canvas-container');
+      
+      // 场景（透明背景）
+      scene = new THREE.Scene();
+      scene.background = null;
+
+      // 相机
+      camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(0, 0, 15);
+
+      // 渲染器（透明背景）
+      renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true,
+        premultipliedAlpha: false
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setClearColor(0x000000, 0);
+      container.appendChild(renderer.domElement);
+
+      // 创建射线检测器
+      raycaster = new THREE.Raycaster();
+
+      // 创建实验器具
+      createEquipment();
+
+      // 添加环境光
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      // 添加点光源
+      const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
+      pointLight.position.set(10, 10, 10);
+      scene.add(pointLight);
+
+      const pointLight2 = new THREE.PointLight(0x667eea, 1.2, 100);
+      pointLight2.position.set(-10, -10, -10);
+      scene.add(pointLight2);
+
+      // 窗口调整
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    // 创建实验器具（只加载PLY模型）
+    function createEquipment() {
+      equipmentList = [];
+      
+      equipmentData.forEach((data, index) => {
+        // 只加载PLY模型
+        if (data.modelPath) {
+          loadPLYEquipment(data, index);
+        }
+      });
+    }
+
+    // 加载PLY模型器具
+    function loadPLYEquipment(data, index) {
+      const loader = new THREE.PLYLoader();
+      
+      loader.load(
+        data.modelPath,
+        (geometry) => {
+          // 计算法线
+          geometry.computeVertexNormals();
+          
+          // 创建材质
+          const material = new THREE.MeshStandardMaterial({
+            color: data.color,
+            metalness: 0.3,
+            roughness: 0.7,
+            transparent: true,
+            opacity: 0.9,
+            vertexColors: geometry.hasAttribute('color')
+          });
+          
+          const mesh = new THREE.Mesh(geometry, material);
+          
+          // 计算边界并居中
+          geometry.computeBoundingBox();
+          const box = geometry.boundingBox;
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = 1 / maxDim; // 缩放到合适大小
+          
+          mesh.scale.multiplyScalar(scale);
+          mesh.position.set(data.position[0], data.position[1], data.position[2]);
+          mesh.position.sub(center.multiplyScalar(scale));
+          
+          mesh.userData = {
+            equipmentData: data,
+            originalColor: data.color,
+            index: index,
+            baseScale: scale, // 基础缩放（用于适配模型大小）
+            originalPosition: mesh.position.clone()
+          };
+          
+          // 保存原始缩放和位置（baseScale是模型适配后的缩放，实际显示缩放是1.0）
+          originalEquipmentScale.set(mesh, 1.0); // 保存实际显示缩放为1.0
+          originalEquipmentPosition.set(mesh, mesh.position.clone());
+          mesh.userData.baseScale = scale; // 保存基础缩放用于计算
+          
+          // 添加发光效果（使用简化的几何体）
+          const glowGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+          const glowMaterial = new THREE.MeshBasicMaterial({
+            color: data.color,
+            transparent: true,
+            opacity: 0.3
+          });
+          const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+          glow.position.copy(mesh.position);
+          scene.add(glow);
+          mesh.userData.glow = glow;
+          
+          scene.add(mesh);
+          equipmentList.push(mesh);
+          
+          console.log(`✓ PLY模型加载完成: ${data.name}`);
+        },
+        (progress) => {
+          if (progress.lengthComputable) {
+            const percent = (progress.loaded / progress.total * 100).toFixed(0);
+            console.log(`加载 ${data.name}: ${percent}%`);
+          }
+        },
+        (error) => {
+          console.error(`PLY模型加载失败 ${data.name}:`, error);
+        }
+      );
+    }
+
+    // 手势识别回调
+    function onResults(results) {
+      if (!isDetecting) return;
+
+      const statusEl = document.getElementById('status');
+      
+      // 绘制手部关键点
+      drawHands(results);
+      
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        handLandmarks = landmarks;
+
+        // 获取食指指尖位置（索引8）
+        const indexFinger = landmarks[8];
+        
+        // 将归一化坐标转换为屏幕坐标（用于射线检测）
+        // 注意：前置摄像头是镜像的，所以需要镜像X坐标
+        const normalizedX = 1 - indexFinger.x; // 镜像X坐标
+        const normalizedY = indexFinger.y;
+        
+        // 转换为NDC坐标（-1到1）
+        const mouse = new THREE.Vector2();
+        mouse.x = normalizedX * 2 - 1;
+        mouse.y = -(normalizedY * 2 - 1); // Y轴翻转
+        
+        // 设置射线检测器
+        raycaster.setFromCamera(mouse, camera);
+        
+        // 检测与器具的交互
+        const intersects = raycaster.intersectObjects(equipmentList, true);
+        
+        // 识别手势类型
+        const gesture = recognizeGesture(landmarks);
+        
+        // 获取手部位置用于旋转和缩放
+        const handX = normalizedX;
+        const handY = normalizedY;
+        const currentHandPos = new THREE.Vector2(handX, handY);
+        
+        // 获取拇指位置
+        const thumb = landmarks[4];
+        const thumbX = 1 - thumb.x;
+        const thumbY = thumb.y;
+        const thumbPos = new THREE.Vector2(thumbX, thumbY);
+        
+        if (intersects.length > 0) {
+          // 找到实际的器具对象（可能是子对象）
+          let actualEquipment = intersects[0].object;
+          
+          // 如果击中的对象没有equipmentData，向上查找父对象
+          while (actualEquipment && !actualEquipment.userData.equipmentData) {
+            actualEquipment = actualEquipment.parent;
+            if (actualEquipment === scene) break;
+          }
+          
+          // 如果还是找不到，从equipmentList中查找
+          if (!actualEquipment || !actualEquipment.userData.equipmentData) {
+            actualEquipment = equipmentList.find(eq => 
+              eq === intersects[0].object || 
+              eq.children.includes(intersects[0].object) ||
+              intersects[0].object.parent === eq
+            );
+          }
+          
+          if (actualEquipment && actualEquipment.userData.equipmentData) {
+            selectEquipment(actualEquipment);
+            handleGestureInteraction(actualEquipment, gesture, currentHandPos, landmarks, thumbPos);
+          } else if (gesture === 'point') {
+            // 如果射线检测失败，使用基于距离的备用检测
+            selectNearestEquipment(landmarks, currentHandPos, thumbPos);
+          } else {
+            deselectEquipment();
+          }
+        } else if (gesture === 'point') {
+          // 射线检测失败，使用基于距离的备用检测
+          selectNearestEquipment(landmarks, currentHandPos, thumbPos);
+        } else {
+          deselectEquipment();
+        }
+        
+        // 更新状态显示（使用之前已声明的gesture变量）
+        if (gesture === 'point' && selectedEquipment) {
+          statusEl.textContent = `✓ 已选中：${selectedEquipment.userData.equipmentData.name}`;
+        } else if (gesture === 'point') {
+          statusEl.textContent = '✓ 检测到手部，指向器具进行选择';
+        } else {
+          statusEl.textContent = '✓ 检测到手部，指向器具进行交互';
+        }
+        statusEl.classList.add('active');
+      } else {
+        statusEl.textContent = '等待手势...（请将手放在摄像头前）';
+        statusEl.classList.remove('active');
+        handLandmarks = null;
+        deselectEquipment();
+      }
+    }
+
+    // 基于距离选择最近的器具（备用方法）
+    function selectNearestEquipment(landmarks, currentHandPos, thumbPos) {
+      const indexFinger = landmarks[8];
+      const normalizedX = 1 - indexFinger.x;
+      const normalizedY = indexFinger.y;
+      
+      // 将屏幕坐标转换为3D方向向量
+      const mouse = new THREE.Vector2();
+      mouse.x = normalizedX * 2 - 1;
+      mouse.y = -(normalizedY * 2 - 1);
+      
+      // 创建从相机出发的射线
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+      
+      // 计算射线与每个器具的距离（使用器具中心点）
+      let closestEquipment = null;
+      let closestDistance = Infinity;
+      const maxSelectDistance = 15; // 最大选择距离
+      
+      equipmentList.forEach(equipment => {
+        // 计算器具中心到射线的距离
+        const equipmentCenter = equipment.position.clone();
+        const rayOrigin = raycaster.ray.origin;
+        const rayDirection = raycaster.ray.direction;
+        
+        // 计算点到直线的距离
+        const toEquipment = equipmentCenter.clone().sub(rayOrigin);
+        const projection = toEquipment.dot(rayDirection);
+        const closestPoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(projection));
+        const distance = equipmentCenter.distanceTo(closestPoint);
+        
+        // 考虑器具的大小（粗略估算）
+        const equipmentSize = equipment.scale.x * 2; // 粗略估算大小
+        const effectiveDistance = distance - equipmentSize;
+        
+        if (effectiveDistance < maxSelectDistance && effectiveDistance < closestDistance) {
+          closestDistance = effectiveDistance;
+          closestEquipment = equipment;
+        }
+      });
+      
+      if (closestEquipment) {
+        selectEquipment(closestEquipment);
+        const gesture = recognizeGesture(landmarks);
+        handleGestureInteraction(closestEquipment, gesture, currentHandPos, landmarks, thumbPos);
+      } else {
+        deselectEquipment();
+      }
+    }
+
+    // 识别手势类型
+    function recognizeGesture(landmarks) {
+      const indexFinger = landmarks[8];
+      const indexPip = landmarks[6];
+      const middleFinger = landmarks[12];
+      const middlePip = landmarks[10];
+      const ringFinger = landmarks[16];
+      const ringPip = landmarks[14];
+      const pinky = landmarks[20];
+      const pinkyPip = landmarks[18];
+      const thumb = landmarks[4];
+      const thumbIp = landmarks[3];
+
+      const isIndexExtended = indexFinger.y < indexPip.y - 0.02;
+      const isMiddleExtended = middleFinger.y < middlePip.y - 0.02;
+      const isRingExtended = ringFinger.y < ringPip.y - 0.02;
+      const isPinkyExtended = pinky.y < pinkyPip.y - 0.02;
+      const isThumbExtended = Math.abs(thumb.x - thumbIp.x) > 0.05;
+
+      const extendedCount = [isIndexExtended, isMiddleExtended, isRingExtended, isPinkyExtended, isThumbExtended].filter(Boolean).length;
+
+      if (extendedCount === 1 && isIndexExtended) {
+        return 'point';
+      } else if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended) {
+        return 'peace';
+      } else if (isIndexExtended && isThumbExtended && extendedCount === 2) {
+        return 'pinch';
+      } else if (extendedCount >= 4) {
+        return 'open';
+      } else if (extendedCount === 0) {
+        return 'fist';
+      }
+      
+      return 'unknown';
+    }
+
+    // 选中器具（放大显示）
+    function selectEquipment(equipment) {
+      if (selectedEquipment === equipment) return;
+      
+      // 取消之前选中的器具
+      deselectEquipment();
+      
+      selectedEquipment = equipment;
+      
+      // 获取基础缩放
+      const baseScale = equipment.userData.baseScale || 1.0;
+      
+      // 保存原始状态（如果还没有保存）
+      if (!originalEquipmentScale.has(equipment)) {
+        // 保存当前相对缩放（1.0表示原始大小）
+        originalEquipmentScale.set(equipment, 1.0);
+        originalEquipmentPosition.set(equipment, equipment.position.clone());
+      }
+      
+      // 略微放大效果：移动到中心并略微放大
+      const currentRelativeScale = equipment.scale.x / baseScale; // 当前相对缩放
+      const targetRelativeScale = 1.3; // 略微放大1.3倍（相对缩放）
+      const targetPosition = new THREE.Vector3(0, 0, 0); // 移动到中心
+      
+      // 动画放大（使用相对缩放）
+      animateToScaleAndPosition(equipment, targetRelativeScale * baseScale, targetPosition, baseScale);
+      
+      // 高亮显示
+      if (equipment.material) {
+        equipment.material.emissive.setHex(0x444444);
+        equipment.material.emissiveIntensity = 0.5;
+      } else if (equipment.traverse) {
+        equipment.traverse((child) => {
+          if (child.isMesh && child.material) {
+            child.material.emissive.setHex(0x444444);
+            child.material.emissiveIntensity = 0.5;
+          }
+        });
+      }
+      
+      if (equipment.userData.glow) {
+        equipment.userData.glow.material.opacity = 0.6;
+      }
+      
+      // 显示信息
+      const data = equipment.userData.equipmentData;
+      document.getElementById('equipment-name').textContent = data.name;
+      document.getElementById('equipment-usage').textContent = data.usage;
+      document.getElementById('equipment-interaction').textContent = data.interaction;
+      document.getElementById('info-panel').classList.add('show');
+    }
+    
+    // 动画到指定缩放和位置
+    function animateToScaleAndPosition(equipment, targetScale, targetPosition, baseScale = 1.0) {
+      const startScale = equipment.scale.x;
+      const startPosition = equipment.position.clone();
+      const duration = 500; // 500ms动画
+      const startTime = Date.now();
+      
+      function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // 使用缓动函数
+        const easeProgress = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        
+        // 插值缩放
+        const currentScale = startScale + (targetScale - startScale) * easeProgress;
+        equipment.scale.set(currentScale, currentScale, currentScale);
+        
+        // 插值位置
+        equipment.position.lerpVectors(startPosition, targetPosition, easeProgress);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      }
+      
+      animate();
+    }
+
+    // 取消选中（恢复原始大小和位置）
+    function deselectEquipment() {
+      if (selectedEquipment) {
+        // 恢复原始缩放和位置
+        const baseScale = selectedEquipment.userData.baseScale || 1.0;
+        const originalRelativeScale = originalEquipmentScale.get(selectedEquipment) || 1.0;
+        const originalPosition = originalEquipmentPosition.get(selectedEquipment);
+        
+        if (originalPosition) {
+          // 恢复到原始相对缩放（1.0）乘以基础缩放
+          animateToScaleAndPosition(selectedEquipment, originalRelativeScale * baseScale, originalPosition, baseScale);
+        }
+        
+        // 取消高亮
+        if (selectedEquipment.material) {
+          selectedEquipment.material.emissive.setHex(0x000000);
+          selectedEquipment.material.emissiveIntensity = 0;
+        } else if (selectedEquipment.traverse) {
+          selectedEquipment.traverse((child) => {
+            if (child.isMesh && child.material) {
+              child.material.emissive.setHex(0x000000);
+              child.material.emissiveIntensity = 0;
+            }
+          });
+        }
+        
+        if (selectedEquipment.userData.glow) {
+          selectedEquipment.userData.glow.material.opacity = 0.3;
+        }
+        
+        selectedEquipment = null;
+        isRotating = false;
+        isScaling = false;
+        lastPinchDistance = 0;
+      }
+      
+      document.getElementById('info-panel').classList.remove('show');
+    }
+
+    // 计算两点之间的距离
+    function calculateDistance(pos1, pos2) {
+      const dx = pos1.x - pos2.x;
+      const dy = pos1.y - pos2.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // 处理手势交互
+    function handleGestureInteraction(equipment, gesture, currentHandPos, landmarks, thumbPos) {
+      if (!equipment) return;
+      
+      switch(gesture) {
+        case 'point':
+          // 指向：选中并略微放大（已在 selectEquipment 中处理）
+          isRotating = false;
+          isScaling = false;
+          break;
+          
+        case 'open':
+          // 张开手掌：旋转模型
+          if (!isRotating) {
+            lastHandPosition.copy(currentHandPos);
+            isRotating = true;
+            isScaling = false;
+          } else {
+            // 计算手部移动距离
+            const deltaX = currentHandPos.x - lastHandPosition.x;
+            const deltaY = currentHandPos.y - lastHandPosition.y;
+            
+            // 旋转模型
+            equipment.rotation.y += deltaX * 5; // 水平旋转
+            equipment.rotation.x += deltaY * 5; // 垂直旋转
+            
+            lastHandPosition.copy(currentHandPos);
+          }
+          break;
+          
+        case 'pinch':
+          // 捏合：根据食指和拇指距离缩放模型
+          if (!isScaling) {
+            lastPinchDistance = calculateDistance(currentHandPos, thumbPos);
+            isScaling = true;
+            isRotating = false;
+          } else {
+            // 计算当前捏合距离
+            const currentPinchDistance = calculateDistance(currentHandPos, thumbPos);
+            const distanceDelta = currentPinchDistance - lastPinchDistance;
+            
+            // 根据距离变化调整缩放
+            const baseScale = equipment.userData.baseScale || 1.0;
+            const currentRelativeScale = equipment.scale.x / baseScale; // 当前相对缩放
+            const scaleChange = distanceDelta * 3; // 缩放变化系数
+            const newRelativeScale = Math.max(0.5, Math.min(3.0, currentRelativeScale + scaleChange));
+            const newScale = newRelativeScale * baseScale;
+            
+            equipment.scale.set(newScale, newScale, newScale);
+            
+            lastPinchDistance = currentPinchDistance;
+          }
+          break;
+          
+        case 'peace':
+          // 挥手（和平手势）：恢复原始大小
+          const baseScale = equipment.userData.baseScale || 1.0;
+          const originalScale = originalEquipmentScale.get(equipment) || 1.0;
+          const originalPosition = originalEquipmentPosition.get(equipment);
+          if (originalPosition) {
+            animateToScaleAndPosition(equipment, originalScale * baseScale, originalPosition, baseScale);
+            equipment.rotation.set(0, 0, 0);
+          }
+          isRotating = false;
+          isScaling = false;
+          break;
+          
+        case 'fist':
+          // 握拳：重置旋转（保持当前缩放）
+          equipment.rotation.set(0, 0, 0);
+          isRotating = false;
+          isScaling = false;
+          break;
+      }
+    }
+
+
+    // 绘制手部关键点
+    function drawHands(results) {
+      if (!handCanvas || !handCtx || !videoElement) return;
+
+      handCtx.save();
+      handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+
+      if (videoElement.videoWidth && videoElement.videoHeight) {
+        if (handCanvas.width !== videoElement.videoWidth || handCanvas.height !== videoElement.videoHeight) {
+          handCanvas.width = videoElement.videoWidth;
+          handCanvas.height = videoElement.videoHeight;
+        }
+      }
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        // 注意：不需要再次镜像，因为 hand-canvas 已经在 CSS 中镜像了（transform: scaleX(-1)）
+        // MediaPipe 返回的坐标是归一化的（0-1），直接绘制即可
+
+        results.multiHandLandmarks.forEach((landmarks) => {
+          if (typeof drawConnectors !== 'undefined' && typeof HAND_CONNECTIONS !== 'undefined') {
+            drawConnectors(handCtx, landmarks, HAND_CONNECTIONS, { 
+              color: '#00FF00', 
+              lineWidth: 2 
+            });
+          }
+
+          if (typeof drawLandmarks !== 'undefined') {
+            drawLandmarks(handCtx, landmarks, { 
+              color: '#FF0000', 
+              lineWidth: 1, 
+              radius: 4 
+            });
+          }
+        });
+      }
+      
+      handCtx.restore();
+    }
+
+    // 初始化 MediaPipe Hands
+    function initMediaPipe() {
+      if (typeof Hands === 'undefined' || typeof Camera === 'undefined') {
+        throw new Error('MediaPipe 库未完全加载');
+      }
+
+      videoElement = document.getElementById('video');
+      if (!videoElement) {
+        throw new Error('未找到视频元素');
+      }
+
+      handCanvas = document.getElementById('hand-canvas');
+      if (handCanvas) {
+        handCtx = handCanvas.getContext('2d');
+        const updateCanvasSize = () => {
+          if (videoElement && handCanvas) {
+            handCanvas.width = videoElement.videoWidth || videoElement.offsetWidth;
+            handCanvas.height = videoElement.videoHeight || videoElement.offsetHeight;
+          }
+        };
+        videoElement.addEventListener('loadedmetadata', updateCanvasSize);
+        updateCanvasSize();
+      }
+
+      try {
+        hands = new Hands({
+          locateFile: (file) => {
+            const baseUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240';
+            const cleanFile = file.startsWith('/') ? file.substring(1) : file;
+            return `${baseUrl}/${cleanFile}`;
+          }
+        });
+
+        hands.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 0,
+          minDetectionConfidence: 0.3,
+          minTrackingConfidence: 0.3
+        });
+
+        hands.onResults(onResults);
+        
+        const camera = new Camera(videoElement, {
+          onFrame: async () => {
+            if (hands && isDetecting) {
+              try {
+                if (videoElement.readyState >= 2) {
+                  await hands.send({ image: videoElement });
+                }
+              } catch (error) {
+                console.error('MediaPipe 处理错误:', error);
+              }
+            }
+          },
+          width: 640,
+          height: 480
+        });
+
+        return camera;
+      } catch (error) {
+        console.error('初始化 MediaPipe 失败:', error);
+        throw new Error(`MediaPipe 初始化失败: ${error.message}`);
+      }
+    }
+
+    // 启动摄像头
+    async function startCamera() {
+      if (window.location.protocol === 'file:') {
+        alert('请使用 HTTP 服务器运行（不能使用 file:// 协议）');
+        return;
+      }
+
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = '正在启动摄像头...';
+      statusEl.classList.remove('active');
+
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('浏览器不支持媒体设备访问');
+        }
+
+        if (!window.mediaPipeLoaded || !window.mediaPipeLoaded.hands || !window.mediaPipeLoaded.camera) {
+          throw new Error('MediaPipe 库尚未加载完成，请等待几秒后重试');
+        }
+
+        statusEl.textContent = '正在请求摄像头权限...';
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user'
+          } 
+        });
+        stream.getTracks().forEach(track => track.stop());
+
+        statusEl.textContent = '正在初始化手势识别...';
+        const camera = initMediaPipe();
+
+        statusEl.textContent = '正在启动摄像头...';
+        await camera.start();
+        
+        await new Promise((resolve) => {
+          if (videoElement.readyState >= 2) {
+            resolve();
+          } else {
+            videoElement.addEventListener('loadeddata', resolve, { once: true });
+          }
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        isDetecting = true;
+        document.getElementById('startBtn').textContent = '摄像头运行中';
+        document.getElementById('startBtn').classList.add('active');
+        statusEl.textContent = '✓ 摄像头已启动，指向器具进行交互';
+        statusEl.style.background = 'rgba(0, 200, 0, 0.3)';
+        statusEl.style.border = '2px solid rgba(0, 255, 0, 0.5)';
+        statusEl.classList.add('active');
+      } catch (error) {
+        console.error('启动摄像头失败:', error);
+        statusEl.innerHTML = `❌ ${error.message}`;
+        statusEl.style.background = 'rgba(200, 0, 0, 0.7)';
+        statusEl.style.border = '2px solid rgba(255, 0, 0, 0.5)';
+        alert(`启动摄像头失败：${error.message}`);
+      }
+    }
+
+    // 重置场景
+    function resetScene() {
+      deselectEquipment();
+      isRotating = false;
+      equipmentList.forEach(equipment => {
+        equipment.rotation.set(0, 0, 0);
+        const originalScale = originalEquipmentScale.get(equipment);
+        const originalPosition = originalEquipmentPosition.get(equipment);
+        if (originalScale) {
+          equipment.scale.set(originalScale, originalScale, originalScale);
+        }
+        if (originalPosition) {
+          equipment.position.copy(originalPosition);
+        }
+        if (equipment.material) {
+          equipment.material.emissive.setHex(0x000000);
+          equipment.material.emissiveIntensity = 0;
+        } else if (equipment.traverse) {
+          equipment.traverse((child) => {
+            if (child.isMesh && child.material) {
+              child.material.emissive.setHex(0x000000);
+              child.material.emissiveIntensity = 0;
+            }
+          });
+        }
+        if (equipment.userData.glow) {
+          equipment.userData.glow.material.opacity = 0.3;
+        }
+      });
+    }
+
+    // 动画循环
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // 旋转器具（缓慢旋转，增加视觉效果）
+      equipmentList.forEach((equipment, index) => {
+        if (equipment !== selectedEquipment) {
+          equipment.rotation.y += 0.005;
+        }
+      });
+
+      // 相机轻微旋转
+      camera.position.x = Math.sin(Date.now() * 0.0005) * 2;
+      camera.position.y = Math.cos(Date.now() * 0.0003) * 2;
+      camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    // 窗口调整
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // 事件监听
+    document.getElementById('startBtn').addEventListener('click', startCamera);
+    document.getElementById('resetBtn').addEventListener('click', resetScene);
+
+    // 初始化
+    initThreeJS();
+    animate();
+
+    // 页面加载时检查
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.location.protocol === 'file:') {
+        document.getElementById('status').innerHTML = '⚠️ 请使用 HTTP 服务器运行';
+        document.getElementById('startBtn').disabled = true;
+        return;
+      }
+
+      const statusEl = document.getElementById('status');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusEl.innerHTML = '❌ 浏览器不支持摄像头访问';
+      } else {
+        statusEl.textContent = '✓ 已准备就绪，点击"启动摄像头"开始';
+        statusEl.style.background = 'rgba(0, 150, 0, 0.3)';
+        statusEl.style.border = '2px solid rgba(0, 255, 0, 0.3)';
+      }
+
+      const checkLibraries = setInterval(() => {
+        if (window.mediaPipeLoaded && window.mediaPipeLoaded.hands && window.mediaPipeLoaded.camera) {
+          clearInterval(checkLibraries);
+          statusEl.textContent = '✓ 已准备就绪，点击"启动摄像头"开始';
+        }
+      }, 500);
+
+      setTimeout(() => {
+        clearInterval(checkLibraries);
+        if (!window.mediaPipeLoaded || !window.mediaPipeLoaded.hands) {
+          statusEl.innerHTML = '❌ MediaPipe 库加载超时';
+          document.getElementById('startBtn').disabled = true;
+        }
+      }, 30000);
+    });
+  </script>
+</body>
+</html>
+

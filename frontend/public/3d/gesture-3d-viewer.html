@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手势3D模型查看器 | EduNest AI</title>
+  <meta name="description" content="使用 MediaPipe 手势识别旋转和查看3D模型">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      overflow: hidden;
+      color: #fff;
+    }
+
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    #video-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    #hand-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    #info-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 350px;
+      z-index: 100;
+      pointer-events: auto;
+    }
+
+    #info-panel h2 {
+      font-size: 24px;
+      margin-bottom: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #info-panel .model-name {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    #info-panel .gesture-hint {
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.9);
+      margin-top: 10px;
+    }
+
+    #model-selector {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 15px;
+      z-index: 100;
+      pointer-events: auto;
+      max-width: 250px;
+    }
+
+    #model-selector select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      font-size: 14px;
+    }
+
+    #model-selector select option {
+      background: #2a5298;
+      color: #fff;
+    }
+
+    #status {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      border-radius: 15px;
+      font-size: 14px;
+      z-index: 100;
+      pointer-events: auto;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    #status.active {
+      background: rgba(0, 200, 0, 0.3);
+      border: 2px solid rgba(0, 255, 0, 0.5);
+    }
+
+    #controls {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+      pointer-events: auto;
+    }
+
+    .control-btn {
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 25px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .control-btn.active {
+      background: rgba(255, 255, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px 40px;
+      border-radius: 15px;
+      z-index: 200;
+      font-size: 16px;
+    }
+
+    @media (max-width: 768px) {
+      #info-panel {
+        max-width: 280px;
+        padding: 15px;
+        font-size: 12px;
+      }
+
+      #model-selector {
+        max-width: 200px;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="canvas-container"></div>
+    
+    <div id="info-panel">
+      <h2>🎯 3D模型查看器</h2>
+      <div class="model-name" id="model-name">等待加载模型...</div>
+      <div class="gesture-hint">
+        <strong>手势操作：</strong><br>
+        👆 <strong>指向</strong>：选中模型<br>
+        ✋ <strong>张开手掌</strong>：旋转模型<br>
+        ✊ <strong>握拳</strong>：缩放模型<br>
+        🤏 <strong>捏合</strong>：重置视角
+      </div>
+    </div>
+
+    <div id="model-selector">
+      <label style="display: block; margin-bottom: 8px; font-size: 14px;">选择模型：</label>
+      <select id="model-select">
+        <option value="builtin-cube">内置：立方体</option>
+        <option value="builtin-sphere">内置：球体</option>
+        <option value="builtin-torus">内置：圆环</option>
+        <option value="builtin-teapot">内置：茶壶（几何体）</option>
+        <option value="beaker">烧杯 (PLY)</option>
+        <option value="microscope">显微镜 (PLY)</option>
+        <option value="external">外部模型（需提供URL）</option>
+      </select>
+    </div>
+
+    <div id="status">等待摄像头启动...</div>
+
+    <div id="video-container">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="hand-canvas"></canvas>
+    </div>
+
+    <div id="controls">
+      <button class="control-btn" id="startBtn">启动摄像头</button>
+      <button class="control-btn" id="resetBtn">重置模型</button>
+    </div>
+
+    <div class="loading" id="loading" style="display: none;">加载模型中...</div>
+  </div>
+
+  <!-- MediaPipe Hands -->
+  <script>
+    window.mediaPipeLoaded = {
+      hands: false,
+      camera: false,
+      drawing: false
+    };
+
+    function loadMediaPipeHands() {
+      return new Promise((resolve, reject) => {
+        const sources = [
+          'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js',
+          'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js',
+          'https://unpkg.com/@mediapipe/hands@0.4.1675469404/hands.js'
+        ];
+
+        function tryLoad(index) {
+          if (index >= sources.length) {
+            reject(new Error('MediaPipe Hands 加载失败'));
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = sources[index];
+          script.async = true;
+          
+          script.onload = () => {
+            if (typeof Hands !== 'undefined') {
+              window.mediaPipeLoaded.hands = true;
+              resolve();
+            } else {
+              tryLoad(index + 1);
+            }
+          };
+          
+          script.onerror = () => tryLoad(index + 1);
+          document.head.appendChild(script);
+        }
+
+        tryLoad(0);
+      });
+    }
+
+    function loadCameraUtils() {
+      return new Promise((resolve, reject) => {
+        const sources = [
+          'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js',
+          'https://unpkg.com/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js'
+        ];
+
+        function tryLoad(index) {
+          if (index >= sources.length) {
+            reject(new Error('Camera Utils 加载失败'));
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = sources[index];
+          script.onload = () => {
+            window.mediaPipeLoaded.camera = true;
+            resolve();
+          };
+          script.onerror = () => tryLoad(index + 1);
+          document.head.appendChild(script);
+        }
+
+        tryLoad(0);
+      });
+    }
+
+    function loadDrawingUtils() {
+      return new Promise((resolve) => {
+        const sources = [
+          'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js'
+        ];
+
+        function tryLoad(index) {
+          if (index >= sources.length) {
+            resolve();
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = sources[index];
+          script.onload = () => {
+            window.mediaPipeLoaded.drawing = true;
+            resolve();
+          };
+          script.onerror = () => tryLoad(index + 1);
+          document.head.appendChild(script);
+        }
+
+        tryLoad(0);
+      });
+    }
+
+    window.loadMediaPipe = async function() {
+      const statusEl = document.getElementById('status');
+      try {
+        statusEl.textContent = '正在加载 MediaPipe 库...';
+        await loadMediaPipeHands();
+        await loadCameraUtils();
+        await loadDrawingUtils();
+        statusEl.textContent = '✓ MediaPipe 库加载完成';
+        statusEl.style.background = 'rgba(0, 150, 0, 0.3)';
+        return true;
+      } catch (error) {
+        statusEl.innerHTML = `❌ ${error.message}`;
+        statusEl.style.background = 'rgba(200, 0, 0, 0.7)';
+        return false;
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', window.loadMediaPipe);
+    } else {
+      window.loadMediaPipe();
+    }
+  </script>
+  
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <!-- GLTFLoader -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- PLYLoader -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/PLYLoader.js"></script>
+
+  <script>
+    // 全局变量
+    let camera, scene, renderer;
+    let hands;
+    let videoElement;
+    let handCanvas, handCtx;
+    let isDetecting = false;
+    let currentModel = null;
+    let modelGroup = null;
+    let isRotating = false;
+    let isScaling = false;
+    let lastHandPosition = new THREE.Vector2();
+    let currentScale = 1.0;
+    let raycaster;
+
+    // 初始化 Three.js 场景
+    function initThreeJS() {
+      const container = document.getElementById('canvas-container');
+      
+      scene = new THREE.Scene();
+      scene.background = null;
+
+      camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(0, 0, 5);
+
+      renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true,
+        premultipliedAlpha: false
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setClearColor(0x000000, 0);
+      container.appendChild(renderer.domElement);
+
+      raycaster = new THREE.Raycaster();
+
+      // 创建模型组
+      modelGroup = new THREE.Group();
+      scene.add(modelGroup);
+
+      // 添加环境光
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const pointLight = new THREE.PointLight(0xffffff, 1.5, 100);
+      pointLight.position.set(10, 10, 10);
+      scene.add(pointLight);
+
+      const pointLight2 = new THREE.PointLight(0x667eea, 1.2, 100);
+      pointLight2.position.set(-10, -10, -10);
+      scene.add(pointLight2);
+
+      // 加载默认模型
+      loadBuiltinModel('builtin-cube');
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    // 加载内置模型（几何体）
+    function loadBuiltinModel(modelType) {
+      // 清除旧模型
+      while (modelGroup.children.length > 0) {
+        modelGroup.remove(modelGroup.children[0]);
+      }
+
+      let geometry;
+      let name;
+
+      switch(modelType) {
+        case 'builtin-cube':
+          geometry = new THREE.BoxGeometry(1, 1, 1);
+          name = '立方体';
+          break;
+        case 'builtin-sphere':
+          geometry = new THREE.SphereGeometry(0.7, 32, 32);
+          name = '球体';
+          break;
+        case 'builtin-torus':
+          geometry = new THREE.TorusGeometry(0.5, 0.3, 16, 100);
+          name = '圆环';
+          break;
+        case 'builtin-teapot':
+          // 使用茶壶形状的几何体（简化版）
+          geometry = new THREE.ConeGeometry(0.5, 1, 8);
+          name = '茶壶（简化）';
+          break;
+        default:
+          geometry = new THREE.BoxGeometry(1, 1, 1);
+          name = '立方体';
+      }
+
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x667eea,
+        metalness: 0.5,
+        roughness: 0.5,
+        transparent: true,
+        opacity: 0.9
+      });
+
+      currentModel = new THREE.Mesh(geometry, material);
+      currentModel.userData.name = name;
+      modelGroup.add(currentModel);
+
+      // 添加线框
+      const wireframe = new THREE.WireframeGeometry(geometry);
+      const line = new THREE.LineSegments(
+        wireframe,
+        new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 })
+      );
+      modelGroup.add(line);
+
+      document.getElementById('model-name').textContent = name;
+      currentScale = 1.0;
+      modelGroup.scale.set(1, 1, 1);
+      modelGroup.rotation.set(0, 0, 0);
+    }
+
+    // 预定义的模型库
+    const MODEL_LIBRARY = {
+      'beaker': {
+        path: '/3d/models/beaker.ply',
+        name: '烧杯',
+        type: 'ply'
+      },
+      'microscope': {
+        path: '/3d/models/microscope.ply',
+        name: '显微镜',
+        type: 'ply'
+      }
+    };
+
+    // 加载PLY模型
+    function loadPLYModel(url, modelName) {
+      const loadingEl = document.getElementById('loading');
+      loadingEl.style.display = 'block';
+      loadingEl.textContent = '加载PLY模型中...';
+
+      const loader = new THREE.PLYLoader();
+      
+      loader.load(
+        url,
+        (geometry) => {
+          // 清除旧模型
+          while (modelGroup.children.length > 0) {
+            modelGroup.remove(modelGroup.children[0]);
+          }
+
+          // 计算法线（用于光照）
+          geometry.computeVertexNormals();
+          
+          // 创建材质
+          const material = new THREE.MeshStandardMaterial({
+            color: 0x667eea,
+            metalness: 0.3,
+            roughness: 0.7,
+            transparent: true,
+            opacity: 0.9,
+            vertexColors: geometry.hasAttribute('color') // 如果PLY文件包含颜色信息
+          });
+
+          // 创建网格
+          const mesh = new THREE.Mesh(geometry, material);
+          
+          // 计算模型边界并居中
+          geometry.computeBoundingBox();
+          const box = geometry.boundingBox;
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = 2 / maxDim;
+          
+          mesh.scale.multiplyScalar(scale);
+          mesh.position.sub(center.multiplyScalar(scale));
+
+          currentModel = mesh;
+          modelGroup.add(mesh);
+
+          document.getElementById('model-name').textContent = modelName || url.split('/').pop().replace(/\.ply$/i, '');
+          currentScale = 1.0;
+          modelGroup.scale.set(1, 1, 1);
+          modelGroup.rotation.set(0, 0, 0);
+
+          loadingEl.style.display = 'none';
+          console.log('PLY模型加载成功:', modelName);
+        },
+        (progress) => {
+          if (progress.lengthComputable) {
+            const percent = (progress.loaded / progress.total * 100).toFixed(0);
+            loadingEl.textContent = `加载PLY模型中... ${percent}%`;
+          }
+        },
+        (error) => {
+          console.error('PLY模型加载失败:', error);
+          loadingEl.textContent = 'PLY模型加载失败，使用默认模型';
+          setTimeout(() => {
+            loadingEl.style.display = 'none';
+            loadBuiltinModel('builtin-cube');
+          }, 2000);
+        }
+      );
+    }
+
+    // 加载外部GLTF模型
+    function loadGLTFModel(url) {
+      const loadingEl = document.getElementById('loading');
+      loadingEl.style.display = 'block';
+
+      const loader = new THREE.GLTFLoader();
+      
+      loader.load(
+        url,
+        (gltf) => {
+          // 清除旧模型
+          while (modelGroup.children.length > 0) {
+            modelGroup.remove(modelGroup.children[0]);
+          }
+
+          const model = gltf.scene;
+          
+          // 计算模型边界并居中
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = 2 / maxDim;
+          
+          model.scale.multiplyScalar(scale);
+          model.position.sub(center.multiplyScalar(scale));
+
+          currentModel = model;
+          modelGroup.add(model);
+
+          const name = url.split('/').pop().replace(/\.(gltf|glb)$/i, '');
+          document.getElementById('model-name').textContent = name;
+          currentScale = 1.0;
+          modelGroup.scale.set(1, 1, 1);
+          modelGroup.rotation.set(0, 0, 0);
+
+          loadingEl.style.display = 'none';
+        },
+        (progress) => {
+          const percent = (progress.loaded / progress.total * 100).toFixed(0);
+          loadingEl.textContent = `加载模型中... ${percent}%`;
+        },
+        (error) => {
+          console.error('模型加载失败:', error);
+          loadingEl.textContent = '模型加载失败，使用默认模型';
+          setTimeout(() => {
+            loadingEl.style.display = 'none';
+            loadBuiltinModel('builtin-cube');
+          }, 2000);
+        }
+      );
+    }
+
+    // 手势识别回调
+    function onResults(results) {
+      if (!isDetecting || !currentModel) return;
+
+      drawHands(results);
+      
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        const indexFinger = landmarks[8];
+        const thumb = landmarks[4];
+        const middleFinger = landmarks[12];
+        const middlePip = landmarks[10];
+
+        // 获取手势类型
+        const gesture = recognizeGesture(landmarks);
+
+        // 计算手部位置（归一化坐标）
+        // 注意：前置摄像头是镜像的，所以需要镜像X坐标
+        const handX = 1 - indexFinger.x; // 镜像X坐标
+        const handY = indexFinger.y;
+        const currentHandPos = new THREE.Vector2(handX, handY);
+
+        switch(gesture) {
+          case 'point':
+            // 指向：选中模型（高亮）
+            selectModel();
+            isRotating = false;
+            isScaling = false;
+            break;
+
+          case 'open':
+            // 张开手掌：旋转模型
+            if (!isRotating) {
+              lastHandPosition.copy(currentHandPos);
+              isRotating = true;
+              isScaling = false;
+            } else {
+              // 计算手部移动距离
+              const deltaX = currentHandPos.x - lastHandPosition.x;
+              const deltaY = currentHandPos.y - lastHandPosition.y;
+              
+              // 旋转模型
+              modelGroup.rotation.y += deltaX * 5; // 水平旋转
+              modelGroup.rotation.x += deltaY * 5; // 垂直旋转
+              
+              lastHandPosition.copy(currentHandPos);
+            }
+            break;
+
+          case 'fist':
+            // 握拳：缩放模型
+            if (!isScaling) {
+              lastHandPosition.copy(currentHandPos);
+              isScaling = true;
+              isRotating = false;
+            } else {
+              // 计算手部移动距离（用于缩放）
+              const deltaY = lastHandPosition.y - currentHandPos.y; // 向上移动放大
+              
+              currentScale += deltaY * 2;
+              currentScale = Math.max(0.3, Math.min(3.0, currentScale)); // 限制缩放范围
+              modelGroup.scale.set(currentScale, currentScale, currentScale);
+              
+              lastHandPosition.copy(currentHandPos);
+            }
+            break;
+
+          case 'pinch':
+            // 捏合：重置视角
+            resetModel();
+            isRotating = false;
+            isScaling = false;
+            break;
+        }
+
+        document.getElementById('status').textContent = `手势：${getGestureName(gesture)}`;
+        document.getElementById('status').classList.add('active');
+      } else {
+        isRotating = false;
+        isScaling = false;
+        document.getElementById('status').textContent = '等待手势...';
+        document.getElementById('status').classList.remove('active');
+      }
+    }
+
+    // 识别手势类型
+    function recognizeGesture(landmarks) {
+      const indexFinger = landmarks[8];
+      const indexPip = landmarks[6];
+      const middleFinger = landmarks[12];
+      const middlePip = landmarks[10];
+      const ringFinger = landmarks[16];
+      const ringPip = landmarks[14];
+      const pinky = landmarks[20];
+      const pinkyPip = landmarks[18];
+      const thumb = landmarks[4];
+      const thumbIp = landmarks[3];
+
+      const isIndexExtended = indexFinger.y < indexPip.y - 0.02;
+      const isMiddleExtended = middleFinger.y < middlePip.y - 0.02;
+      const isRingExtended = ringFinger.y < ringPip.y - 0.02;
+      const isPinkyExtended = pinky.y < pinkyPip.y - 0.02;
+      const isThumbExtended = Math.abs(thumb.x - thumbIp.x) > 0.05;
+
+      const extendedCount = [isIndexExtended, isMiddleExtended, isRingExtended, isPinkyExtended, isThumbExtended].filter(Boolean).length;
+
+      if (extendedCount === 1 && isIndexExtended) {
+        return 'point';
+      } else if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended) {
+        return 'peace';
+      } else if (isIndexExtended && isThumbExtended && extendedCount === 2) {
+        return 'pinch';
+      } else if (extendedCount >= 4) {
+        return 'open';
+      } else if (extendedCount === 0) {
+        return 'fist';
+      }
+      
+      return 'unknown';
+    }
+
+    function getGestureName(gesture) {
+      const names = {
+        'point': '指向',
+        'open': '张开手掌',
+        'fist': '握拳',
+        'pinch': '捏合',
+        'peace': '和平手势',
+        'unknown': '未知'
+      };
+      return names[gesture] || '未知';
+    }
+
+    // 选中模型
+    function selectModel() {
+      if (currentModel) {
+        // 高亮效果
+        if (currentModel.material) {
+          currentModel.material.emissive.setHex(0x444444);
+        } else if (currentModel.traverse) {
+          currentModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+              child.material.emissive.setHex(0x444444);
+            }
+          });
+        }
+      }
+    }
+
+    // 重置模型
+    function resetModel() {
+      modelGroup.rotation.set(0, 0, 0);
+      modelGroup.scale.set(1, 1, 1);
+      currentScale = 1.0;
+      camera.position.set(0, 0, 5);
+      camera.lookAt(0, 0, 0);
+    }
+
+    // 绘制手部关键点
+    function drawHands(results) {
+      if (!handCanvas || !handCtx || !videoElement) return;
+
+      handCtx.save();
+      handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+
+      if (videoElement.videoWidth && videoElement.videoHeight) {
+        if (handCanvas.width !== videoElement.videoWidth || handCanvas.height !== videoElement.videoHeight) {
+          handCanvas.width = videoElement.videoWidth;
+          handCanvas.height = videoElement.videoHeight;
+        }
+      }
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        // 注意：不需要再次镜像，因为 hand-canvas 已经在 CSS 中镜像了（transform: scaleX(-1)）
+        // MediaPipe 返回的坐标是归一化的（0-1），直接绘制即可
+
+        results.multiHandLandmarks.forEach((landmarks) => {
+          if (typeof drawConnectors !== 'undefined' && typeof HAND_CONNECTIONS !== 'undefined') {
+            drawConnectors(handCtx, landmarks, HAND_CONNECTIONS, { 
+              color: '#00FF00', 
+              lineWidth: 2 
+            });
+          }
+
+          if (typeof drawLandmarks !== 'undefined') {
+            drawLandmarks(handCtx, landmarks, { 
+              color: '#FF0000', 
+              lineWidth: 1, 
+              radius: 4 
+            });
+          }
+        });
+      }
+      
+      handCtx.restore();
+    }
+
+    // 初始化 MediaPipe Hands
+    function initMediaPipe() {
+      if (typeof Hands === 'undefined' || typeof Camera === 'undefined') {
+        throw new Error('MediaPipe 库未完全加载');
+      }
+
+      videoElement = document.getElementById('video');
+      if (!videoElement) {
+        throw new Error('未找到视频元素');
+      }
+
+      handCanvas = document.getElementById('hand-canvas');
+      if (handCanvas) {
+        handCtx = handCanvas.getContext('2d');
+        const updateCanvasSize = () => {
+          if (videoElement && handCanvas) {
+            handCanvas.width = videoElement.videoWidth || videoElement.offsetWidth;
+            handCanvas.height = videoElement.videoHeight || videoElement.offsetHeight;
+          }
+        };
+        videoElement.addEventListener('loadedmetadata', updateCanvasSize);
+        updateCanvasSize();
+      }
+
+      hands = new Hands({
+        locateFile: (file) => {
+          const baseUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240';
+          const cleanFile = file.startsWith('/') ? file.substring(1) : file;
+          return `${baseUrl}/${cleanFile}`;
+        }
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 0,
+        minDetectionConfidence: 0.3,
+        minTrackingConfidence: 0.3
+      });
+
+      hands.onResults(onResults);
+      
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          if (hands && isDetecting) {
+            try {
+              if (videoElement.readyState >= 2) {
+                await hands.send({ image: videoElement });
+              }
+            } catch (error) {
+              console.error('MediaPipe 处理错误:', error);
+            }
+          }
+        },
+        width: 640,
+        height: 480
+      });
+
+      return camera;
+    }
+
+    // 启动摄像头
+    async function startCamera() {
+      if (window.location.protocol === 'file:') {
+        alert('请使用 HTTP 服务器运行');
+        return;
+      }
+
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = '正在启动摄像头...';
+
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('浏览器不支持媒体设备访问');
+        }
+
+        if (!window.mediaPipeLoaded || !window.mediaPipeLoaded.hands || !window.mediaPipeLoaded.camera) {
+          throw new Error('MediaPipe 库尚未加载完成');
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user'
+          } 
+        });
+        stream.getTracks().forEach(track => track.stop());
+
+        const camera = initMediaPipe();
+        await camera.start();
+        
+        await new Promise((resolve) => {
+          if (videoElement.readyState >= 2) {
+            resolve();
+          } else {
+            videoElement.addEventListener('loadeddata', resolve, { once: true });
+          }
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        isDetecting = true;
+        document.getElementById('startBtn').textContent = '摄像头运行中';
+        document.getElementById('startBtn').classList.add('active');
+        statusEl.textContent = '✓ 摄像头已启动，使用手势操作模型';
+        statusEl.style.background = 'rgba(0, 200, 0, 0.3)';
+        statusEl.classList.add('active');
+      } catch (error) {
+        console.error('启动摄像头失败:', error);
+        statusEl.innerHTML = `❌ ${error.message}`;
+        statusEl.style.background = 'rgba(200, 0, 0, 0.7)';
+        alert(`启动摄像头失败：${error.message}`);
+      }
+    }
+
+    // 动画循环
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // 相机轻微旋转（可选）
+      // camera.position.x = Math.sin(Date.now() * 0.0005) * 2;
+      // camera.position.y = Math.cos(Date.now() * 0.0003) * 2;
+      // camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    // 窗口调整
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // 事件监听
+    document.getElementById('startBtn').addEventListener('click', startCamera);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      resetModel();
+    });
+
+    document.getElementById('model-select').addEventListener('change', (e) => {
+      const value = e.target.value;
+      if (value.startsWith('builtin-')) {
+        loadBuiltinModel(value);
+      } else if (MODEL_LIBRARY[value]) {
+        // 加载预定义的PLY模型
+        const modelInfo = MODEL_LIBRARY[value];
+        if (modelInfo.type === 'ply') {
+          loadPLYModel(modelInfo.path, modelInfo.name);
+        } else {
+          loadGLTFModel(modelInfo.path);
+        }
+      } else if (value === 'external') {
+        const url = prompt('请输入GLTF/GLB或PLY模型的URL：');
+        if (url) {
+          if (url.toLowerCase().endsWith('.ply')) {
+            loadPLYModel(url);
+          } else {
+            loadGLTFModel(url);
+          }
+        } else {
+          e.target.value = 'builtin-cube';
+        }
+      }
+    });
+
+    // 初始化
+    initThreeJS();
+    animate();
+
+    // 页面加载时检查
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.location.protocol === 'file:') {
+        document.getElementById('status').innerHTML = '⚠️ 请使用 HTTP 服务器运行';
+        document.getElementById('startBtn').disabled = true;
+        return;
+      }
+
+      const statusEl = document.getElementById('status');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusEl.innerHTML = '❌ 浏览器不支持摄像头访问';
+      } else {
+        statusEl.textContent = '✓ 已准备就绪，点击"启动摄像头"开始';
+        statusEl.style.background = 'rgba(0, 150, 0, 0.3)';
+      }
+
+      const checkLibraries = setInterval(() => {
+        if (window.mediaPipeLoaded && window.mediaPipeLoaded.hands && window.mediaPipeLoaded.camera) {
+          clearInterval(checkLibraries);
+          statusEl.textContent = '✓ 已准备就绪，点击"启动摄像头"开始';
+        }
+      }, 500);
+
+      setTimeout(() => {
+        clearInterval(checkLibraries);
+        if (!window.mediaPipeLoaded || !window.mediaPipeLoaded.hands) {
+          statusEl.innerHTML = '❌ MediaPipe 库加载超时';
+          document.getElementById('startBtn').disabled = true;
+        }
+      }, 30000);
+    });
+  </script>
+</body>
+</html>
+

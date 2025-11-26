@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>经典几何作图还原 - Konva 几何图库</title>
+  <meta name="description" content="使用 Konva 精准还原四幅经典几何图：嵌套圆与割线、同心圆与切线、圆内多边形、正方形组合。支持 CDN 自动回落，保证在不同网络环境下顺畅加载。" />
+  
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+      background: linear-gradient(135deg, #f7f8fc 0%, #dfe9f3 100%);
+      color: #2c3e50;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .page {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+      overflow: hidden;
+    }
+    
+    header {
+      padding: 50px 60px 40px;
+      background: linear-gradient(120deg, #5568d3, #8f73ff);
+      color: white;
+    }
+    
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 2.6rem;
+      letter-spacing: 1px;
+    }
+    
+    header p {
+      margin: 0;
+      max-width: 760px;
+      line-height: 1.6;
+      opacity: 0.92;
+    }
+    
+    .diagram-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 32px;
+      padding: 40px 50px 60px;
+    }
+    
+    .diagram-card {
+      background: #fbfbfd;
+      border-radius: 18px;
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+    
+    .diagram-card h2 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+      color: #333;
+    }
+    
+    .diagram-card p {
+      margin: 0 0 18px;
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+    
+    .diagram-canvas {
+      width: 100%;
+      min-height: 320px;
+      border-radius: 16px;
+      background: white;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    }
+    
+    .diagram-note {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    
+    .loading,
+    .error {
+      text-align: center;
+      padding: 30px;
+      color: #475569;
+    }
+    
+    .error {
+      color: #dc2626;
+      font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+      header {
+        padding: 40px 24px 32px;
+      }
+      
+      header h1 {
+        font-size: 2.1rem;
+      }
+      
+      .diagram-grid {
+        padding: 30px 24px 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Konva 精准还原 · 几何图库</h1>
+      <p>
+        参考题目原图，使用 <strong>Konva</strong> 在 HTML5 Canvas 上 1:1 重现线条、圆弧、标注与堆叠关系。
+        采用自适应布局与 CDN 回落策略，无论在教室还是家中都能流畅展示。
+      </p>
+    </header>
+    
+    <div id="status" class="loading">正在加载依赖库...</div>
+    
+    <section id="gallery" class="diagram-grid" style="display:none;">
+      <article class="diagram-card">
+        <h2>三圆基础构图</h2>
+        <p>完全按照参考图摆放大圆、中圆与小圆，暂不绘制内部直径。</p>
+        <div id="diagram-1" class="diagram-canvas"></div>
+        <div class="diagram-note">仅呈现圆周位置关系，为后续添加直径线打好基础。</div>
+      </article>
+      
+      <article class="diagram-card">
+        <h2>相切圆与直径</h2>
+        <p>展示三个圆内切于同一点 L，且圆心均在同一条直径上的几何关系。</p>
+        <div id="diagram-2" class="diagram-canvas"></div>
+        <div class="diagram-note">直线 GL 与 FH 垂直相交于大圆圆心 G。</div>
+      </article>
+      
+      <article class="diagram-card">
+        <h2>球体内接四面体（Three.js 3D）</h2>
+        <p>球体内部的一个截面构图，透视感更强的 3D 渲染。</p>
+        <div id="diagram-3" class="diagram-canvas" style="height: 520px; position: relative;"></div>
+        <div class="diagram-note">拖动鼠标可旋转观察，滚轮缩放。灰色线条为球体轮廓，内接三角形为截面。</div>
+      </article>
+      
+      <article class="diagram-card">
+        <h2>正方体组合（Three.js 3D）</h2>
+        <p>三个正方体围绕公共中心堆叠，呈现强烈的空间透视感。</p>
+        <div id="diagram-4" class="diagram-canvas" style="height: 520px; position: relative;"></div>
+        <div class="diagram-note">三个正方体共用一个顶点，通过透明材质展示内部连接关系。</div>
+      </article>
+    </section>
+  </div>
+  
+  <script>
+    const CDN_SOURCES = {
+      konva: {
+        primary: 'https://cdn.jsdelivr.net/npm/konva@9.3.22/konva.min.js',
+        fallback: 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'
+      },
+      three: {
+        primary: 'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js',
+        fallback: 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'
+      },
+      orbitControls: {
+        primary: 'https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js',
+        fallback: 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'
+      }
+    };
+    
+    // 加载 UMD 版本的 OrbitControls（为了简单起见，使用特定的 CDN 地址或手动实现简单的控制）
+    // 由于 ES Module 在普通 script 标签中加载比较麻烦，我们这里使用 CDN 上的 UMD 版本或者简单的鼠标交互脚本
+    // 为了兼容性，我们这里尝试加载一个 UMD 版本的 OrbitControls，如果没有，就实现一个简易的
+    
+    function loadScriptWithFallback(name, primary, fallback) {
+      return new Promise((resolve, reject) => {
+        const primaryScript = document.createElement('script');
+        primaryScript.src = primary;
+        primaryScript.async = true;
+        primaryScript.onload = () => resolve(name);
+        primaryScript.onerror = () => {
+          console.warn(`[CDN] ${name} 主 CDN 加载失败，尝试回落...`);
+          const fallbackScript = document.createElement('script');
+          fallbackScript.src = fallback;
+          fallbackScript.async = true;
+          fallbackScript.onload = () => resolve(name);
+          fallbackScript.onerror = () => reject(new Error(`无法加载 ${name}`));
+          document.head.appendChild(fallbackScript);
+        };
+        document.head.appendChild(primaryScript);
+      });
+    }
+    
+    function initGallery() {
+      document.getElementById('status').style.display = 'none';
+      document.getElementById('gallery').style.display = 'grid';
+      drawDiagram1();
+      drawDiagram2();
+      // 图3和图4都需要 Three.js，统一异步初始化
+      initThreeJSDiagrams();
+    }
+
+    // 统一初始化 Three.js 图表
+    function initThreeJSDiagrams() {
+      // 确保 Three.js 已加载
+      if (typeof THREE === 'undefined') {
+        // 加载 Three.js
+        loadScriptWithFallback('Three', CDN_SOURCES.three.primary, CDN_SOURCES.three.fallback)
+          .then(() => {
+             const controlsUrl = CDN_SOURCES.orbitControls.primary;
+             const controlsFallback = CDN_SOURCES.orbitControls.fallback;
+             
+             loadScriptWithFallback('OrbitControls', controlsUrl, controlsFallback)
+               .then(() => {
+                 drawDiagram3Three();
+                 drawDiagram4Three();
+               })
+               .catch((e) => {
+                 console.warn('OrbitControls 加载失败，使用静态视角', e);
+                 drawDiagram3Three();
+                 drawDiagram4Three();
+               });
+          })
+          .catch(err => {
+            document.getElementById('diagram-3').textContent = '3D 引擎加载失败: ' + err.message;
+            document.getElementById('diagram-4').textContent = '3D 引擎加载失败: ' + err.message;
+          });
+        return;
+      }
+      // Three.js 已加载
+      drawDiagram3Three();
+      drawDiagram4Three();
+    }
+
+    function drawDiagram3Three() {
+      const container = document.getElementById('diagram-3');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // 场景
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+
+      // 相机
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(0, 0, 50);
+
+      // 渲染器
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      // 控制器
+      let controls;
+      if (typeof THREE.OrbitControls !== 'undefined') {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+      }
+
+      // 1. 绘制球体轮廓 (Wireframe Sphere or Circle outline looking like sphere)
+      // 为了还原图中的“灰色大圆轮廓”，我们画一个对着相机的圆环，或者一个透明球体带轮廓
+      // 原图看起来像是一个球体的线框投影，或者就是一个透明球体。
+      // 我们画一个稍微透明的球体，配上明显的边缘线。
+      
+      const sphereGeom = new THREE.SphereGeometry(15, 32, 32);
+      
+      // 材质：稍微透明，显示背面
+      const sphereMat = new THREE.MeshBasicMaterial({
+        color: 0xf0f0f0,
+        transparent: true,
+        opacity: 0.1,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const sphereMesh = new THREE.Mesh(sphereGeom, sphereMat);
+      scene.add(sphereMesh);
+
+      // 球体边缘轮廓 (总是面向相机的圆圈，或者一个真正的 3D 轮廓)
+      // 为了简单且像原图，我们创建一个线条圆环，始终朝向相机？
+      // 不，原图是静态的透视。我们用 3D 线条画一个“大圆”（Great Circle）作为轮廓。
+      // 或者直接用 EdgesGeometry? 不太好看。
+      // 我们加一个 CircleGeometry 的线框，半径 15，面向相机。
+      const outlineGeom = new THREE.RingGeometry(14.9, 15.1, 64);
+      const outlineMat = new THREE.MeshBasicMaterial({ color: 0x888888, side: THREE.DoubleSide });
+      const outlineMesh = new THREE.Mesh(outlineGeom, outlineMat);
+      // 让轮廓稍微对齐相机，或者固定在 XY 平面
+      scene.add(outlineMesh);
+
+      // 2. 绘制内部截面 (Triangle inside Sphere)
+      // 图中有三个点在大圆内部（或者是球面上？）
+      // 看起来像是一个内接于球体的三角形，或者是从球心出发的？
+      // 仔细看原图：
+      // 有一个中心点（可能是球心），连接到球面上的三个点？
+      // 或者是一个四面体？
+      // 原图描述：三条线汇聚于一点（球心？），这三条线的另一端在球面上？
+      // 并连接了外面的三个点形成一个三角形。
+      // 这是一个“球心锥体”截取球面的图。
+      // 中心点 O，球面点 A, B, C。
+      // 连接 OA, OB, OC。
+      // 连接 AB, BC, CA (形成截面三角形)。
+      
+      const radius = 15;
+      const O = new THREE.Vector3(0, 0, 0); // 球心
+
+      // 定义球面上的三个点 A, B, C
+      // 根据图3的视觉位置：
+      // A: 左侧偏上
+      // B: 右侧偏上
+      // C: 右侧偏下
+      
+      // 使用球坐标生成
+      const A = new THREE.Vector3(-12, 4, 6); // 左
+      const B = new THREE.Vector3(8, 10, 4);  // 右上
+      const C = new THREE.Vector3(10, -5, 8); // 右下
+      
+      // 归一化并乘以半径，确保在球面上
+      A.normalize().multiplyScalar(radius);
+      B.normalize().multiplyScalar(radius);
+      C.normalize().multiplyScalar(radius);
+
+      // 绘制线条
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x666666, linewidth: 2 });
+
+      // OA, OB, OC
+      const pointsRadial = [O, A, O, B, O, C];
+      const radialGeom = new THREE.BufferGeometry().setFromPoints(pointsRadial);
+      const radialLines = new THREE.LineSegments(radialGeom, lineMat);
+      scene.add(radialLines);
+
+      // AB, BC, CA (截面三角形)
+      const pointsTriangle = [A, B, B, C, C, A];
+      const triGeom = new THREE.BufferGeometry().setFromPoints(pointsTriangle);
+      const triLines = new THREE.LineSegments(triGeom, lineMat);
+      scene.add(triLines);
+
+      // 添加一个半透明的三角形面，增加立体感
+      const triShapeGeom = new THREE.BufferGeometry();
+      const vertices = new Float32Array([
+        A.x, A.y, A.z,
+        B.x, B.y, B.z,
+        C.x, C.y, C.z
+      ]);
+      triShapeGeom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      // 计算法线以便光照（虽然是 BasicMaterial 不需要）
+      triShapeGeom.computeVertexNormals();
+      
+      const triMeshMat = new THREE.MeshBasicMaterial({ 
+        color: 0xaaaaaa, 
+        transparent: true, 
+        opacity: 0.2, 
+        side: THREE.DoubleSide 
+      });
+      const triMesh = new THREE.Mesh(triShapeGeom, triMeshMat);
+      scene.add(triMesh);
+
+      // 动画循环
+      function animate() {
+        requestAnimationFrame(animate);
+        if (controls) controls.update();
+        // 让轮廓圆环始终朝向相机（可选，或者就固定在 XY 平面模拟 2D 视图的球体轮廓）
+        // outlineMesh.lookAt(camera.position); 
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // 响应式调整
+      window.addEventListener('resize', () => {
+        // 重新获取容器尺寸（因为是 grid 布局，容器大小可能变了）
+        const newWidth = container.clientWidth;
+        const newHeight = container.clientHeight; // 或保持比例
+        camera.aspect = newWidth / newHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(newWidth, newHeight);
+      });
+    }
+    
+    function createResponsiveStage(containerId, baseWidth, baseHeight) {
+      const container = document.getElementById(containerId);
+      const stage = new Konva.Stage({
+        container: containerId,
+        width: baseWidth,
+        height: baseHeight
+      });
+      const scaleStage = () => {
+        const availableWidth = container.clientWidth || baseWidth;
+        const ratio = availableWidth / baseWidth;
+        stage.width(availableWidth);
+        stage.height(baseHeight * ratio);
+        stage.scale({ x: ratio, y: ratio });
+        container.style.height = `${baseHeight * ratio}px`;
+        stage.batchDraw();
+      };
+      scaleStage();
+      window.addEventListener('resize', scaleStage);
+      return stage;
+    }
+    
+    function createPoint(layer, x, y, label, options = {}) {
+      layer.add(new Konva.Circle({
+        x, y,
+        radius: options.radius || 7,
+        fill: options.fill || '#fff',
+        stroke: options.stroke || '#4b5563',
+        strokeWidth: options.strokeWidth || 3
+      }));
+      if (label) {
+        layer.add(new Konva.Text({
+          x: x + (options.labelOffsetX || 8),
+          y: y + (options.labelOffsetY || -20),
+          text: label,
+          fontSize: 20,
+          fontStyle: '600',
+          fill: options.labelColor || '#4b5563'
+        }));
+      }
+    }
+    
+    function normalize(vec) {
+      const len = Math.hypot(vec.x, vec.y) || 1;
+      return { x: vec.x / len, y: vec.y / len };
+    }
+    
+    function lineCircleIntersections(point, direction, circleCenter, radius) {
+      const dir = direction;
+      const f = { x: point.x - circleCenter.x, y: point.y - circleCenter.y };
+      const a = dir.x * dir.x + dir.y * dir.y;
+      const b = 2 * (f.x * dir.x + f.y * dir.y);
+      const c = f.x * f.x + f.y * f.y - radius * radius;
+      const discriminant = b * b - 4 * a * c;
+      if (discriminant < 0) return [];
+      const sqrtDisc = Math.sqrt(discriminant);
+      const t1 = (-b - sqrtDisc) / (2 * a);
+      const t2 = (-b + sqrtDisc) / (2 * a);
+      return [
+        { x: point.x + dir.x * t1, y: point.y + dir.y * t1, t: t1 },
+        { x: point.x + dir.x * t2, y: point.y + dir.y * t2, t: t2 }
+      ];
+    }
+    
+    function intersectLines(p1, d1, p2, d2) {
+      const det = d1.x * d2.y - d1.y * d2.x;
+      if (Math.abs(det) < 1e-6) return null;
+      const diff = { x: p2.x - p1.x, y: p2.y - p1.y };
+      const t = (diff.x * d2.y - diff.y * d2.x) / det;
+      return { x: p1.x + d1.x * t, y: p1.y + d1.y * t };
+    }
+    
+    function drawDiagram1() {
+      const stage = createResponsiveStage('diagram-1', 620, 560);
+      const layer = new Konva.Layer();
+      
+      // 调整中心位置以适应大圆
+      const centerC = { x: 400, y: 300 };
+      const mediumRadius = 150;
+      
+      // 旋转角度（逆时针约15度）
+      const rotation = -15 * Math.PI / 180;
+      const cosR = Math.cos(rotation);
+      const sinR = Math.sin(rotation);
+      
+      // 方向向量
+      const dirAB = { x: cosR, y: sinR };
+      
+      // 计算中圆上的关键点
+      const B = {
+        x: centerC.x + mediumRadius * cosR,
+        y: centerC.y + mediumRadius * sinR
+      };
+      
+      const A = {
+        x: centerC.x - mediumRadius * cosR,
+        y: centerC.y - mediumRadius * sinR
+      };
+      
+      // 大圆：与中圆在B点内切
+      const bigRadius = 270;
+      // 大圆圆心在CB连线上（向左延伸）
+      // Vector B->C is -dirAB
+      // CenterBig = B + (-dirAB) * bigRadius
+      const centerBig = {
+        x: B.x - dirAB.x * bigRadius,
+        y: B.y - dirAB.y * bigRadius
+      };
+      
+      // D, E 是垂直直径端点（D在上方）
+      // 垂直于dirAB的向量：(sinR, -cosR)
+      const dirDE = { x: sinR, y: -cosR };
+      
+      const D = {
+        x: centerC.x + mediumRadius * dirDE.x,
+        y: centerC.y + mediumRadius * dirDE.y
+      };
+      const E = {
+        x: centerC.x - mediumRadius * dirDE.x,
+        y: centerC.y - mediumRadius * dirDE.y
+      };
+      
+      // 小圆：直径为CD，圆心F为CD中点
+      const F = {
+        x: (centerC.x + D.x) / 2,
+        y: (centerC.y + D.y) / 2
+      };
+      const smallRadius = mediumRadius / 2;
+      
+      // 直线GH：经过A和F
+      const vecAF = { x: F.x - A.x, y: F.y - A.y };
+      const dirGH = normalize(vecAF);
+      
+      // 计算G, H（直线GH与大圆的交点）
+      const ghIntersections = lineCircleIntersections(A, dirGH, centerBig, bigRadius);
+      ghIntersections.sort((p, q) => p.x - q.x);
+      const G = ghIntersections[0];
+      const H = ghIntersections[1];
+      
+      // 绘制图形
+      
+      const bigCircle = new Konva.Circle({
+        x: centerBig.x,
+        y: centerBig.y,
+        radius: bigRadius,
+        stroke: '#4b4b4b',
+        strokeWidth: 4
+      });
+      
+      const mediumCircle = new Konva.Circle({
+        x: centerC.x,
+        y: centerC.y,
+        radius: mediumRadius,
+        stroke: '#3d3d3d',
+        strokeWidth: 4
+      });
+      
+      const smallCircle = new Konva.Circle({
+        x: F.x,
+        y: F.y,
+        radius: smallRadius,
+        stroke: '#595959',
+        strokeWidth: 4
+      });
+      
+      const lineGH = new Konva.Line({
+        points: [G.x, G.y, H.x, H.y],
+        stroke: '#4b4b4b',
+        strokeWidth: 5,
+        lineCap: 'round'
+      });
+      
+      const diameterAB = new Konva.Line({
+        points: [A.x, A.y, B.x, B.y],
+        stroke: '#4b4b4b',
+        strokeWidth: 4,
+        lineCap: 'round'
+      });
+      
+      const diameterDE = new Konva.Line({
+        points: [D.x, D.y, E.x, E.y],
+        stroke: '#4b4b4b',
+        strokeWidth: 4,
+        lineCap: 'round'
+      });
+      
+      // 连接DB
+      const lineDB = new Konva.Line({
+        points: [D.x, D.y, B.x, B.y],
+        stroke: '#4b4b4b',
+        strokeWidth: 4,
+        lineCap: 'round'
+      });
+      
+      layer.add(bigCircle, mediumCircle, smallCircle, lineGH, diameterAB, diameterDE, lineDB);
+      
+      // 绘制点和标签
+      
+      createPoint(layer, A.x, A.y, 'A', { fill: '#1d4ed8', stroke: '#1d4ed8', labelColor: '#1d4ed8', labelOffsetY: -25 });
+      
+      layer.add(new Konva.Circle({
+        x: B.x,
+        y: B.y,
+        radius: 10,
+        stroke: '#2563eb',
+        strokeWidth: 3
+      }));
+      createPoint(layer, B.x, B.y, 'B', { stroke: '#2563eb', fill: '#fff', labelOffsetX: 12, labelColor: '#2563eb' });
+      
+      createPoint(layer, centerC.x, centerC.y, 'C', { labelOffsetY: -25, labelOffsetX: -15 });
+      createPoint(layer, D.x, D.y, 'D', { labelOffsetY: -28 });
+      createPoint(layer, E.x, E.y, 'E', { labelOffsetY: 8 });
+      createPoint(layer, F.x, F.y, 'F', { radius: 6, labelOffsetY: -25 });
+      
+      if (G) createPoint(layer, G.x, G.y, 'G', { fill: '#666', stroke: '#4b4b4b', labelOffsetY: -25, labelOffsetX: 5 });
+      if (H) createPoint(layer, H.x, H.y, 'H', { fill: '#666', stroke: '#4b4b4b', labelOffsetY: -25, labelOffsetX: 0 });
+      
+      stage.add(layer);
+    }
+    
+    function drawDiagram2() {
+      const stage = createResponsiveStage('diagram-2', 520, 520);
+      const layer = new Konva.Layer();
+      
+      // G 是大圆圆心
+      const G = { x: 260, y: 260 };
+      const bigRadius = 200;
+      
+      // 角度设置（参考原图）
+      // GL 指向右下方（约 20 度）
+      // FH 指向右上方（与 GL 垂直，约 -70 度）
+      const angleGL = 20 * Math.PI / 180;
+      const angleFH = -70 * Math.PI / 180;
+      
+      const dirGL = { x: Math.cos(angleGL), y: Math.sin(angleGL) };
+      const dirFH = { x: Math.cos(angleFH), y: Math.sin(angleFH) };
+      
+      // 计算关键点
+      
+      // L 在大圆上
+      const L = {
+        x: G.x + bigRadius * dirGL.x,
+        y: G.y + bigRadius * dirGL.y
+      };
+      
+      // 直线 ML (大圆直径的一部分，从对面 M 到 L)
+      const M = {
+        x: G.x - bigRadius * dirGL.x,
+        y: G.y - bigRadius * dirGL.y
+      };
+      
+      // F 和 H 在大圆上 (FH 也是直径)
+      const H = {
+        x: G.x + bigRadius * dirFH.x,
+        y: G.y + bigRadius * dirFH.y
+      };
+      const F = {
+        x: G.x - bigRadius * dirFH.x,
+        y: G.y - bigRadius * dirFH.y
+      };
+      
+      // 中圆：内切于 L，经过 G
+      // 直径为 GL，半径为 bigRadius / 2
+      // 圆心 J 是 GL 中点
+      const J = {
+        x: (G.x + L.x) / 2,
+        y: (G.y + L.y) / 2
+      };
+      const mediumRadius = bigRadius / 2;
+      
+      // 小圆：内切于 L，经过 J
+      // 直径为 JL，半径为 mediumRadius / 2 (即 bigRadius / 4)
+      // 圆心 K_pos 是 JL 中点
+      const K_pos = {
+        x: (J.x + L.x) / 2,
+        y: (J.y + L.y) / 2
+      };
+      const smallRadius = mediumRadius / 2;
+      
+      // 绘制图形
+      const strokeColor = '#0070c0'; // 接近原图的蓝色
+      const lineWidth = 3;
+      
+      // 大圆
+      const bigCircle = new Konva.Circle({
+        x: G.x,
+        y: G.y,
+        radius: bigRadius,
+        stroke: strokeColor,
+        strokeWidth: lineWidth
+      });
+      
+      // 中圆
+      const mediumCircle = new Konva.Circle({
+        x: J.x,
+        y: J.y,
+        radius: mediumRadius,
+        stroke: strokeColor,
+        strokeWidth: lineWidth
+      });
+      
+      // 小圆
+      const smallCircle = new Konva.Circle({
+        x: K_pos.x,
+        y: K_pos.y,
+        radius: smallRadius,
+        stroke: strokeColor,
+        strokeWidth: lineWidth
+      });
+      
+      // 直线 ML
+      const lineML = new Konva.Line({
+        points: [M.x, M.y, L.x, L.y],
+        stroke: strokeColor,
+        strokeWidth: lineWidth,
+        lineCap: 'round'
+      });
+      
+      // 直线 FH
+      const lineFH = new Konva.Line({
+        points: [F.x, F.y, H.x, H.y],
+        stroke: strokeColor,
+        strokeWidth: lineWidth,
+        lineCap: 'round'
+      });
+      
+      layer.add(bigCircle, mediumCircle, smallCircle, lineML, lineFH);
+      
+      // 绘制点和标签
+      const labelColor = '#000'; // 黑色标签
+      const pointFill = strokeColor; // 蓝色实心点
+      
+      // G 点
+      createPoint(layer, G.x, G.y, 'G', { 
+        fill: pointFill, stroke: pointFill, labelColor: labelColor,
+        labelOffsetY: -30, labelOffsetX: -5 
+      });
+      
+      // J 点
+      createPoint(layer, J.x, J.y, 'J', { 
+        fill: pointFill, stroke: pointFill, labelColor: labelColor,
+        labelOffsetY: -30, labelOffsetX: -5
+      });
+      
+      // K 点 (圆心) 和标签 (箭头指示)
+      // 绘制 K 的圆心点
+      layer.add(new Konva.Circle({
+        x: K_pos.x,
+        y: K_pos.y,
+        radius: 5,
+        fill: pointFill,
+        stroke: pointFill,
+        strokeWidth: 3
+      }));
+      
+      // K 标签和箭头
+      const kLabelX = K_pos.x + 50;
+      const kLabelY = K_pos.y - 30;
+      
+      layer.add(new Konva.Text({
+        x: kLabelX,
+        y: kLabelY,
+        text: 'K',
+        fontSize: 24,
+        fontStyle: 'italic',
+        fill: labelColor
+      }));
+      
+      // 弯曲箭头指向 K 点
+      layer.add(new Konva.Arrow({
+        points: [kLabelX - 5, kLabelY + 10, K_pos.x + 15, K_pos.y - 5, K_pos.x + 8, K_pos.y],
+        tension: 0.5,
+        pointerLength: 8,
+        pointerWidth: 8,
+        stroke: '#333',
+        strokeWidth: 1.5,
+        fill: '#333'
+      }));
+      
+      // L 点 (无实心点，只有标签)
+      createPoint(layer, L.x, L.y, 'L', { 
+        radius: 0, labelColor: labelColor, 
+        labelOffsetX: 15, labelOffsetY: 5 
+      });
+      
+      // F 点
+      createPoint(layer, F.x, F.y, 'F', { 
+        radius: 0, labelColor: labelColor, 
+        labelOffsetY: 10 
+      });
+      
+      // H 点
+      createPoint(layer, H.x, H.y, 'H', { 
+        radius: 0, labelColor: labelColor, 
+        labelOffsetY: -30 
+      });
+      
+      stage.add(layer);
+    }
+    
+    function drawDiagram3() {
+      const stage = createResponsiveStage('diagram-3', 620, 560);
+      const layer = new Konva.Layer();
+      
+      // 圆心和半径
+      const center = { x: 310, y: 280 };
+      const radius = 240;
+      
+      // 关键点角度（模拟圆周角定理图）
+      // A 在左侧圆弧
+      const angleA = 165 * Math.PI / 180;
+      // B 在右上方
+      const angleB = -50 * Math.PI / 180; // 310度
+      // C 在右下方
+      const angleC = 10 * Math.PI / 180;
+      
+      const A = {
+        x: center.x + radius * Math.cos(angleA),
+        y: center.y + radius * Math.sin(angleA)
+      };
+      
+      const B = {
+        x: center.x + radius * Math.cos(angleB),
+        y: center.y + radius * Math.sin(angleB)
+      };
+      
+      const C = {
+        x: center.x + radius * Math.cos(angleC),
+        y: center.y + radius * Math.sin(angleC)
+      };
+      
+      // 绘制大圆
+      const circle = new Konva.Circle({
+        x: center.x,
+        y: center.y,
+        radius: radius,
+        stroke: '#6b7280',
+        strokeWidth: 3
+      });
+      
+      // 绘制圆周角连线 AB, AC
+      const lineAB = new Konva.Line({
+        points: [A.x, A.y, B.x, B.y],
+        stroke: '#6b7280',
+        strokeWidth: 3,
+        lineCap: 'round'
+      });
+      
+      const lineAC = new Konva.Line({
+        points: [A.x, A.y, C.x, C.y],
+        stroke: '#6b7280',
+        strokeWidth: 3,
+        lineCap: 'round'
+      });
+      
+      // 绘制圆心角连线 OB, OC
+      const lineOB = new Konva.Line({
+        points: [center.x, center.y, B.x, B.y],
+        stroke: '#6b7280',
+        strokeWidth: 3,
+        lineCap: 'round'
+      });
+      
+      const lineOC = new Konva.Line({
+        points: [center.x, center.y, C.x, C.y],
+        stroke: '#6b7280',
+        strokeWidth: 3,
+        lineCap: 'round'
+      });
+      
+      // 绘制弦 BC
+      const lineBC = new Konva.Line({
+        points: [B.x, B.y, C.x, C.y],
+        stroke: '#6b7280',
+        strokeWidth: 3,
+        lineCap: 'round'
+      });
+      
+      layer.add(circle, lineAB, lineAC, lineOB, lineOC, lineBC);
+      stage.add(layer);
+    }
+    
+    function drawDiagram4Three() {
+      const container = document.getElementById('diagram-4');
+      // 清空容器防止重复渲染
+      container.innerHTML = '';
+      
+      const width = container.clientWidth;
+      const height = container.clientHeight || 520;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+
+      // 扩大视锥体范围，防止裁剪
+      const aspect = width / height;
+      const frustumSize = 50; 
+      const camera = new THREE.OrthographicCamera(
+        frustumSize * aspect / -2, 
+        frustumSize * aspect / 2, 
+        frustumSize / 2, 
+        frustumSize / -2, 
+        1, 
+        1000
+      );
+      
+      // ISO 视角
+      camera.position.set(20, 20, 20);
+      camera.lookAt(0, 0, 0);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      let controls;
+      if (typeof THREE.OrbitControls !== 'undefined') {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+      }
+
+      const group = new THREE.Group();
+      scene.add(group);
+
+      // 材质：加深颜色，增强可见性
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x222222, linewidth: 2 });
+      const faceMat = new THREE.MeshBasicMaterial({ 
+        color: 0xdddddd, 
+        transparent: true, 
+        opacity: 0.3, 
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const cutFaceMat = new THREE.MeshBasicMaterial({ 
+        color: 0xbbbbbb, 
+        transparent: true, 
+        opacity: 0.5, 
+        side: THREE.DoubleSide 
+      });
+
+      // 几何构建
+      const P = new THREE.Vector3(0, 0, 0);
+      const len = 12;
+      
+      // 轴向量
+      const X = new THREE.Vector3(len, 0, 0);
+      const Y = new THREE.Vector3(0, len, 0);
+      const Z = new THREE.Vector3(0, 0, len);
+      
+      // 对角
+      const XY = new THREE.Vector3(len, len, 0);
+      const YZ = new THREE.Vector3(0, len, len);
+      const XZ = new THREE.Vector3(len, 0, len);
+
+      // 1. 三个面
+      const planesGeom = new THREE.BufferGeometry();
+      const planesVertices = [
+        // XY Plane
+        P.x, P.y, P.z,  X.x, X.y, X.z,  XY.x, XY.y, XY.z,
+        P.x, P.y, P.z,  XY.x, XY.y, XY.z, Y.x, Y.y, Y.z,
+        // YZ Plane
+        P.x, P.y, P.z,  Y.x, Y.y, Y.z,  YZ.x, YZ.y, YZ.z,
+        P.x, P.y, P.z,  YZ.x, YZ.y, YZ.z, Z.x, Z.y, Z.z,
+        // XZ Plane
+        P.x, P.y, P.z,  Z.x, Z.y, Z.z,  XZ.x, XZ.y, XZ.z,
+        P.x, P.y, P.z,  XZ.x, XZ.y, XZ.z, X.x, X.y, X.z
+      ];
+      planesGeom.setAttribute('position', new THREE.Float32BufferAttribute(planesVertices, 3));
+      const planesMesh = new THREE.Mesh(planesGeom, faceMat);
+      group.add(planesMesh);
+
+      // 2. 边框
+      const edgesPoints = [
+        X, XY, XY, Y, Y, P, P, X, // XY Rect
+        Y, YZ, YZ, Z, Z, P,       // YZ Rect
+        Z, XZ, XZ, X              // XZ Rect
+      ];
+      const edgesGeom = new THREE.BufferGeometry().setFromPoints(edgesPoints);
+      const edgesLines = new THREE.LineSegments(edgesGeom, lineMat);
+      group.add(edgesLines);
+
+      // 3. 截面
+      const cutRatio = 0.55; // 稍微大于 0.5 以匹配视觉
+      const Cx = X.clone().multiplyScalar(cutRatio);
+      const Cy = Y.clone().multiplyScalar(cutRatio);
+      const Cz = Z.clone().multiplyScalar(cutRatio);
+
+      const cutGeom = new THREE.BufferGeometry();
+      const cutVertices = [
+        Cx.x, Cx.y, Cx.z,
+        Cy.x, Cy.y, Cy.z,
+        Cz.x, Cz.y, Cz.z
+      ];
+      cutGeom.setAttribute('position', new THREE.Float32BufferAttribute(cutVertices, 3));
+      const cutMesh = new THREE.Mesh(cutGeom, cutFaceMat);
+      group.add(cutMesh);
+
+      const cutEdgesPoints = [Cx, Cy, Cy, Cz, Cz, Cx];
+      const cutEdgesGeom = new THREE.BufferGeometry().setFromPoints(cutEdgesPoints);
+      const cutEdgesLines = new THREE.LineSegments(cutEdgesGeom, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
+      group.add(cutEdgesLines);
+
+      // 4. 外轮廓连线
+      const outerPoints = [
+        XY, YZ,
+        YZ, XZ,
+        XZ, XY
+      ];
+      const outerGeom = new THREE.BufferGeometry().setFromPoints(outerPoints);
+      const outerLines = new THREE.LineSegments(outerGeom, lineMat);
+      group.add(outerLines);
+
+      // 旋转调整
+      group.rotation.x = Math.PI / 6; // 30 deg
+      group.rotation.y = -Math.PI / 4; // -45 deg
+      
+      function animate() {
+        requestAnimationFrame(animate);
+        if (controls) controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      const handleResize = () => {
+        if (!container) return;
+        const newWidth = container.clientWidth;
+        const newHeight = container.clientHeight || 520;
+        const newAspect = newWidth / newHeight;
+        
+        camera.left = frustumSize * newAspect / -2;
+        camera.right = frustumSize * newAspect / 2;
+        camera.top = frustumSize / 2;
+        camera.bottom = frustumSize / -2;
+        
+        camera.updateProjectionMatrix();
+        renderer.setSize(newWidth, newHeight);
+      };
+      
+      window.addEventListener('resize', handleResize);
+      // 立即触发
+      handleResize();
+    }
+    
+    loadScriptWithFallback('Konva', CDN_SOURCES.konva.primary, CDN_SOURCES.konva.fallback)
+      .then(initGallery)
+      .catch((err) => {
+        const status = document.getElementById('status');
+        status.className = 'error';
+        status.textContent = `资源加载失败：${err.message}`;
+      });
+  </script>
+</body>
+</html>
+
