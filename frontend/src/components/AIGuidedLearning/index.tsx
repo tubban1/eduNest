@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { AIGuideButton } from './AIGuideButton';
 import { AIGuideDrawer } from './AIGuideDrawer';
 import { api } from '../../lib/api';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AIGuidedLearningProps {
   contentId: string;
@@ -15,6 +18,9 @@ interface Message {
 }
 
 export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, onUIStateChange }) => {
+  const { user } = useAuth();
+  const router = useRouter();
+  const { t } = useTranslation('aiGuide');
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +30,18 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
   // Initialize conversation when opening for the first time
   const initSession = async () => {
     if (hasInit) return;
+    
+    // Check if user is logged in
+    if (!user) {
+      // Show welcome message for non-logged-in users
+      setMessages([{ 
+        role: 'assistant', 
+        content: t('loginPrompt')
+      }]);
+      setHasInit(true);
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const res = await api.aiGuide.init(contentId);
@@ -36,6 +54,19 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
       }
     } catch (error) {
       console.error('Failed to init AI guide:', error);
+      const errorMsg = error instanceof Error ? error.message : '';
+      if (errorMsg.includes('认证') || errorMsg.includes('登录') || errorMsg.includes('authentication')) {
+        setMessages([{ 
+          role: 'assistant', 
+          content: t('loginPrompt')
+        }]);
+      } else {
+        setMessages([{ 
+          role: 'assistant', 
+          content: t('errorInitializing') + ': ' + errorMsg
+        }]);
+      }
+      setHasInit(true);
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +81,23 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
   };
 
   const handleSendMessage = async (text: string) => {
-    if (!conversationId) return;
+    // Check if user is logged in
+    if (!user) {
+      // Redirect to login or show prompt
+      setMessages(prev => [...prev, 
+        { role: 'user', content: text },
+        { role: 'assistant', content: t('loginPrompt') }
+      ]);
+      return;
+    }
+    
+    if (!conversationId) {
+      setMessages(prev => [...prev, 
+        { role: 'user', content: text },
+        { role: 'assistant', content: t('errorInitializing') }
+      ]);
+      return;
+    }
 
     // Add user message immediately
     const userMsg: Message = { role: 'user', content: text };
@@ -76,11 +123,16 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
       });
     } catch (error) {
       console.error('Failed to send message:', error);
+      const errorMsg = error instanceof Error ? error.message : '';
       setMessages(prev => {
         const newMessages = [...prev];
         const lastMsg = newMessages[newMessages.length - 1];
         if (lastMsg.role === 'assistant' && !lastMsg.content) {
-            lastMsg.content = '抱歉，我现在无法回答，请稍后再试。';
+          if (errorMsg.includes('认证') || errorMsg.includes('登录') || errorMsg.includes('authentication')) {
+            lastMsg.content = t('loginPrompt');
+          } else {
+            lastMsg.content = t('errorSending') + ': ' + errorMsg;
+          }
         }
         return newMessages;
       });
@@ -100,6 +152,7 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
         messages={messages}
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
+        isLoggedIn={!!user}
       />
     </>
   );

@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Les Lois de Newton - Exploration Interactive</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 20px;
+            background: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .law-title {
+            font-size: 2em;
+            color: #667eea;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .law-icon {
+            font-size: 1.2em;
+        }
+
+        .law-formula {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.5em;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .explanation {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .demo-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .demo-title {
+            font-size: 1.3em;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        canvas {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        input[type="range"] {
+            width: 200px;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            display: inline-block;
+            min-width: 60px;
+            padding: 5px 10px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .application-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .application-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .application-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .application-item strong {
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #f5576c;
+        }
+
+        .info-box h3 {
+            color: #d63031;
+            margin-bottom: 10px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1 class="floating">⚛️ Les Lois de Newton</h1>
+            <p>Exploration Interactive de la Mécanique Classique</p>
+        </div>
+
+        <div class="tabs">
+            <button 
+                v-for="(law, index) in laws" 
+                :key="index"
+                class="tab"
+                :class="{ active: currentLaw === index }"
+                @click="currentLaw = index"
+            >
+                {{ law.shortTitle }}
+            </button>
+        </div>
+
+        <div class="content-card">
+            <div class="law-title">
+                <span class="law-icon">{{ laws[currentLaw].icon }}</span>
+                <span>{{ laws[currentLaw].title }}</span>
+            </div>
+
+            <div class="law-formula">
+                {{ laws[currentLaw].formula }}
+            </div>
+
+            <div class="explanation">
+                {{ laws[currentLaw].explanation }}
+            </div>
+
+            <!-- Démonstration pour la 1ère loi -->
+            <div v-if="currentLaw === 0" class="demo-container">
+                <div class="demo-title">🎯 Démonstration Interactive - Inertie</div>
+                <canvas ref="canvas1" width="800" height="400"></canvas>
+                <div class="controls">
+                    <button @click="startDemo1">Démarrer</button>
+                    <button @click="stopDemo1">Arrêter</button>
+                    <button @click="applyForce1">Appliquer une Force</button>
+                    <button @click="resetDemo1">Réinitialiser</button>
+                </div>
+                <div class="info-box">
+                    <h3>💡 Observation</h3>
+                    <p>L'objet reste au repos ou continue son mouvement rectiligne uniforme jusqu'à ce qu'une force externe soit appliquée.</p>
+                </div>
+            </div>
+
+            <!-- Démonstration pour la 2ème loi -->
+            <div v-if="currentLaw === 1" class="demo-container">
+                <div class="demo-title">🚀 Démonstration Interactive - F = ma</div>
+                <canvas ref="canvas2" width="800" height="400"></canvas>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Force (N): <span class="value-display">{{ force }}</span></label>
+                        <input type="range" v-model="force" min="0" max="100" step="5">
+                    </div>
+                    <div class="control-group">
+                        <label>Masse (kg): <span class="value-display">{{ mass }}</span></label>
+                        <input type="range" v-model="mass" min="1" max="20" step="1">
+                    </div>
+                    <button @click="applyForce2">Appliquer la Force</button>
+                    <button @click="resetDemo2">Réinitialiser</button>
+                </div>
+                <div class="grid-2">
+                    <div class="stat-card">
+                        <div class="stat-label">Accélération</div>
+                        <div class="stat-value">{{ acceleration.toFixed(2) }} m/s²</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Vitesse</div>
+                        <div class="stat-value">{{ velocity.toFixed(2) }} m/s</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas ref="chart2"></canvas>
+                </div>
+            </div>
+
+            <!-- Démonstration pour la 3ème loi -->
+            <div v-if="currentLaw === 2" class="demo-container">
+                <div class="demo-title">⚖️ Démonstration Interactive - Action-Réaction</div>
+                <canvas ref="canvas3" width="800" height="400"></canvas>
+                <div class="controls">
+                    <button @click="startDemo3">Collision</button>
+                    <button @click="resetDemo3">Réinitialiser</button>
+                </div>
+                <div class="info-box">
+                    <h3>💡 Principe</h3>
+                    <p>Pour chaque action, il existe une réaction égale et opposée. Les forces agissent toujours par paires.</p>
+                </div>
+                <div class="chart-container">
+                    <canvas ref="chart3"></canvas>
+                </div>
+            </div>
+
+            <!-- Applications -->
+            <div class="demo-container">
+                <div class="demo-title">🌍 Applications Pratiques</div>
+                <ul class="application-list">
+                    <li v-for="(app, index) in laws[currentLaw].applications" :key="index" class="application-item">
+                        <strong>{{ app.title }}</strong>
+                        <p>{{ app.description }}</p>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Réflexion -->
+            <div class="info-box">
+                <h3>🤔 Questions de Réflexion</h3>
+                <ul>
+                    <li v-for="(question, index) in laws[currentLaw].questions" :key="index">
+                        {{ question }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentLaw: 0,
+                    force: 50,
+                    mass: 10,
+                    acceleration: 0,
+                    velocity: 0,
+                    laws: [
+                        {
+                            shortTitle: "1ère Loi - Inertie",
+                            title: "Première Loi de Newton - Loi d'Inertie",
+                            icon: "🎯",
+                            formula: "Si ΣF = 0, alors v = constante",
+                            explanation: "Un objet au repos reste au repos et un objet en mouvement continue son mouvement rectiligne uniforme, sauf si une force externe agit sur lui. C'est le principe de l'inertie : la tendance d'un corps à résister aux changements de son état de mouvement.",
+                            applications: [
+                                {
+                                    title: "🚗 Ceinture de Sécurité",
+                                    description: "Lors d'un freinage brusque, votre corps tend à continuer son mouvement vers l'avant en raison de l'inertie. La ceinture applique une force pour vous arrêter."
+                                },
+                                {
+                                    title: "🏀 Sports de Balle",
+                                    description: "Une balle lancée continue son mouvement jusqu'à ce que la gravité et la résistance de l'air (forces externes) la ralentissent."
+                                },
+                                {
+                                    title: "🚀 Voyages Spatiaux",
+                                    description: "Dans l'espace, sans friction, un vaisseau spatial continue son mouvement sans avoir besoin de propulsion constante."
+                                }
+                            ],
+                            questions: [
+                                "Pourquoi est-il plus difficile d'arrêter un camion en mouvement qu'une voiture ?",
+                                "Que se passerait-il si vous lanciez une balle dans l'espace ?",
+                                "Comment les astronautes se déplacent-ils dans la station spatiale ?"
+                            ]
+                        },
+                        {
+                            shortTitle: "2ème Loi - F = ma",
+                            title: "Deuxième Loi de Newton - Loi Fondamentale de la Dynamique",
+                            icon: "🚀",
+                            formula: "F = m × a",
+                            explanation: "L'accélération d'un objet est directement proportionnelle à la force nette appliquée et inversement proportionnelle à sa masse. Plus la force est grande, plus l'accélération est importante. Plus la masse est grande, plus l'accélération est faible pour une même force.",
+                            applications: [
+                                {
+                                    title: "🚗 Moteurs de Voiture",
+                                    description: "Un moteur plus puissant (plus de force) permet une accélération plus rapide. Une voiture plus lourde nécessite plus de force pour la même accélération."
+                                },
+                                {
+                                    title: "🚀 Fusées Spatiales",
+                                    description: "Les fusées utilisent une force énorme pour accélérer leur masse importante et vaincre la gravité terrestre."
+                                },
+                                {
+                                    title: "⚽ Sports",
+                                    description: "Frapper une balle plus fort (plus de force) lui donne une plus grande accélération. Une balle de bowling (plus de masse) est plus difficile à accélérer qu'une balle de tennis."
+                                }
+                            ],
+                            questions: [
+                                "Pourquoi faut-il plus de force pour pousser un camion qu'une voiture ?",
+                                "Comment les fusées peuvent-elles accélérer dans l'espace ?",
+                                "Quelle est la relation entre la force, la masse et l'accélération ?"
+                            ]
+                        },
+                        {
+                            shortTitle: "3ème Loi - Action-Réaction",
+                            title: "Troisième Loi de Newton - Principe d'Action-Réaction",
+                            icon: "⚖️",
+                            formula: "F₁₂ = -F₂₁",
+                            explanation: "Pour chaque action, il existe une réaction égale et opposée. Lorsqu'un objet A exerce une force sur un objet B, l'objet B exerce simultanément une force de même intensité mais de direction opposée sur l'objet A. Ces forces agissent sur des objets différents.",
+                            applications: [
+                                {
+                                    title: "🚀 Propulsion de Fusée",
+                                    description: "Les gaz éjectés vers le bas (action) poussent la fusée vers le haut (réaction). C'est le principe de la propulsion par réaction."
+                                },
+                                {
+                                    title: "🚶 Marche",
+                                    description: "Vous poussez le sol vers l'arrière (action), et le sol vous pousse vers l'avant (réaction), vous permettant de marcher."
+                                },
+                                {
+                                    title: "🚤 Navigation",
+                                    description: "Un bateau pousse l'eau vers l'arrière avec ses rames ou son hélice (action), et l'eau pousse le bateau vers l'avant (réaction)."
+                                }
+                            ],
+                            questions: [
+                                "Pourquoi ne pouvez-vous pas vous soulever en tirant sur vos propres cheveux ?",
+                                "Comment un oiseau peut-il voler en utilisant ce principe ?",
+                                "Que se passe-t-il lorsque deux patineurs se poussent l'un l'autre ?"
+                            ]
+                        }
+                    ],
+                    // Animation variables
+                    demo1Running: false,
+                    demo1Object: { x: 100, y: 200, vx: 0, vy: 0 },
+                    demo2Object: { x: 50, y: 200, vx: 0 },
+                    demo3Objects: [
+                        { x: 200, y: 200, vx: 2, mass: 50, color: '#667eea' },
+                        { x: 600, y: 200, vx: -2, mass: 50, color: '#f5576c' }
+                    ],
+                    chart2Instance: null,
+                    chart3Instance: null,
+                    forceData: [],
+                    accelerationData: [],
+                    timeData: []
+                };
+            },
+            mounted() {
+                this.initDemo1();
+                this.initDemo2();
+                this.initDemo3();
+            },
+            computed: {
+                calculatedAcceleration() {
+                    return this.force / this.mass;
+                }
+            },
+            watch: {
+                force() {
+                    this.updateAcceleration();
+                },
+                mass() {
+                    this.updateAcceleration();
+                }
+            },
+            methods: {
+                // Demo 1: Inertie
+                initDemo1() {
+                    const canvas = this.$refs.canvas1;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    this.drawDemo1(ctx);
+                },
+                drawDemo1(ctx) {
+                    ctx.clearRect(0, 0, 800, 400);
+                    
+                    // Dessiner le sol
+                    ctx.fillStyle = '#e0e0e0';
+                    ctx.fillRect(0, 350, 800, 50);
+                    
+                    // Dessiner l'objet
+                    ctx.fillStyle = '#667eea';
+                    ctx.beginPath();
+                    ctx.arc(this.demo1Object.x, this.demo1Object.y, 30, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Dessiner la vitesse
+                    if (this.demo1Object.vx !== 0 || this.demo1Object.vy !== 0) {
+                        ctx.strokeStyle = '#f5576c';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(this.demo1Object.x, this.demo1Object.y);
+                        ctx.lineTo(this.demo1Object.x + this.demo1Object.vx * 20, this.demo1Object.y + this.demo1Object.vy * 20);
+                        ctx.stroke();
+                        
+                        // Flèche
+                        const angle = Math.atan2(this.demo1Object.vy, this.demo1Object.vx);
+                        const arrowX = this.demo1Object.x + this.demo1Object.vx * 20;
+                        const arrowY = this.demo1Object.y + this.demo1Object.vy * 20;
+                        ctx.beginPath();
+                        ctx.moveTo(arrowX, arrowY);
+                        ctx.lineTo(arrowX - 10 * Math.cos(angle - Math.PI / 6), arrowY - 10 * Math.sin(angle - Math.PI / 6));
+                        ctx.moveTo(arrowX, arrowY);
+                        ctx.lineTo(arrowX - 10 * Math.cos(angle + Math.PI / 6), arrowY - 10 * Math.sin(angle + Math.PI / 6));
+                        ctx.stroke();
+                    }
+                },
+                startDemo1() {
+                    this.demo1Running = true;
+                    this.animateDemo1();
+                },
+                stopDemo1() {
+                    this.demo1Running = false;
+                },
+                applyForce1() {
+                    this.demo1Object.vx = 3;
+                    this.demo1Object.vy = 0;
+                    this.startDemo1();
+                },
+                resetDemo1() {
+                    this.demo1Running = false;
+                    this.demo1Object = { x: 100, y: 200, vx: 0, vy: 0 };
+                    this.initDemo1();
+                },
+                animateDemo1() {
+                    if (!this.demo1Running) return;
+                    
+                    const canvas = this.$refs.canvas1;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Mise à jour de la position
+                    this.demo1Object.x += this.demo1Object.vx;
+                    this.demo1Object.y += this.demo1Object.vy;
+                    
+                    // Rebond sur les bords
+                    if (this.demo1Object.x > 770 || this.demo1Object.x < 30) {
+                        this.demo1Object.vx *= -0.9;
+                    }
+                    
+                    this.drawDemo1(ctx);
+                    requestAnimationFrame(this.animateDemo1);
+                },
+
+                // Demo 2: F = ma
+                initDemo2() {
+                    const canvas = this.$refs.canvas2;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    this.drawDemo2(ctx);
+                    this.initChart2();
+                },
+                drawDemo2(ctx) {
+                    ctx.clearRect(0, 0, 800, 400);
+                    
+                    // Dessiner le sol
+                    ctx.fillStyle = '#e0e0e0';
+                    ctx.fillRect(0, 350, 800, 50);
+                    
+                    // Dessiner l'objet avec taille proportionnelle à la masse
+                    const size = 20 + this.mass * 2;
+                    ctx.fillStyle = '#667eea';
+                    ctx.fillRect(this.demo2Object.x - size/2, this.demo2Object.y - size/2, size, size);
+                    
+                    // Afficher la masse
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.mass + ' kg', this.demo2Object.x, this.demo2Object.y);
+                    
+                    // Dessiner la force appliquée
+                    if (this.force > 0 && this.demo2Object.x < 700) {
+                        ctx.strokeStyle = '#f5576c';
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.moveTo(this.demo2Object.x + size/2, this.demo2Object.y);
+                        ctx.lineTo(this.demo2Object.x + size/2 + this.force * 2, this.demo2Object.y);
+                        ctx.stroke();
+                        
+                        // Flèche
+                        const arrowX = this.demo2Object.x + size/2 + this.force * 2;
+                        ctx.beginPath();
+                        ctx.moveTo(arrowX, this.demo2Object.y);
+                        ctx.lineTo(arrowX - 10, this.demo2Object.y - 10);
+                        ctx.moveTo(arrowX, this.demo2Object.y);
+                        ctx.lineTo(arrowX - 10, this.demo2Object.y + 10);
+                        ctx.stroke();
+                        
+                        // Texte de la force
+                        ctx.fillStyle = '#f5576c';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.fillText('F = ' + this.force + ' N', arrowX + 30, this.demo2Object.y - 10);
+                    }
+                },
+                updateAcceleration() {
+                    this.acceleration = this.force / this.mass;
+                },
+                applyForce2() {
+                    this.updateAcceleration();
+                    this.animateDemo2();
+                },
+                resetDemo2() {
+                    this.demo2Object = { x: 50, y: 200, vx: 0 };
+                    this.velocity = 0;
+                    this.acceleration = 0;
+                    this.forceData = [];
+                    this.accelerationData = [];
+                    this.timeData = [];
+                    this.initDemo2();
+                    if (this.chart2Instance) {
+                        this.chart2Instance.data.labels = [];
+                        this.chart2Instance.data.datasets[0].data = [];
+                        this.chart2Instance.data.datasets[1].data = [];
+                        this.chart2Instance.update();
+                    }
+                },
+                animateDemo2() {
+                    const canvas = this.$refs.canvas2;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (this.demo2Object.x < 700) {
+                        // Calculer l'accélération et la vitesse
+                        this.acceleration = this.force / this.mass;
+                        this.velocity += this.acceleration * 0.1;
+                        this.demo2Object.x += this.velocity;
+                        
+                        // Mettre à jour les données du graphique
+                        const time = this.timeData.length * 0.1;
+                        this.timeData.push(time.toFixed(1));
+                        this.forceData.push(this.force);
+                        this.accelerationData.push(this.acceleration);
+                        
+                        if (this.chart2Instance) {
+                            this.chart2Instance.data.labels = this.timeData;
+                            this.chart2Instance.data.datasets[0].data = this.forceData;
+                            this.chart2Instance.data.datasets[1].data = this.accelerationData;
+                            this.chart2Instance.update('none');
+                        }
+                        
+                        this.drawDemo2(ctx);
+                        requestAnimationFrame(this.animateDemo2);
+                    }
+                },
+                initChart2() {
+                    const canvas = this.$refs.chart2;
+                    if (!canvas) return;
+                    
+                    this.chart2Instance = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                {
+                                    label: 'Force (N)',
+                                    data: [],
+                                    borderColor: '#f5576c',
+                                    backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Accélération (m/s²)',
+                                    data: [],
+                                    borderColor: '#667eea',
+                                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Force et Accélération en fonction du Temps'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Valeur'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Temps (s)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                // Demo 3: Action-Réaction
+                initDemo3() {
+                    const canvas = this.$refs.canvas3;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    this.drawDemo3(ctx);
+                    this.initChart3();
+                },
+                drawDemo3(ctx) {
+                    ctx.clearRect(0, 0, 800, 400);
+                    
+                    // Dessiner le sol
+                    ctx.fillStyle = '#e0e0e0';
+                    ctx.fillRect(0, 350, 800, 50);
+                    
+                    // Dessiner les deux objets
+                    this.demo3Objects.forEach((obj, index) => {
+                        ctx.fillStyle = obj.color;
+                        ctx.beginPath();
+                        ctx.arc(obj.x, obj.y, obj.mass / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Afficher la masse
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(obj.mass + ' kg', obj.x, obj.y);
+                        
+                        // Dessiner les vecteurs de vitesse
+                        if (obj.vx !== 0) {
+                            ctx.strokeStyle = 'white';
+                            ctx.lineWidth = 3;
+                            ctx.beginPath();
+                            ctx.moveTo(obj.x, obj.y);
+                            ctx.lineTo(obj.x + obj.vx * 20, obj.y);
+                            ctx.stroke();
+                        }
+                    });
+                },
+                startDemo3() {
+                    this.animateDemo3();
+                },
+                resetDemo3() {
+                    this.demo3Objects = [
+                        { x: 200, y: 200, vx: 2, mass: 50, color: '#667eea' },
+                        { x: 600, y: 200, vx: -2, mass: 50, color: '#f5576c' }
+                    ];
+                    this.initDemo3();
+                },
+                animateDemo3() {
+                    const canvas = this.$refs.canvas3;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Mise à jour des positions
+                    this.demo3Objects.forEach(obj => {
+                        obj.x += obj.vx;
+                    });
+                    
+                    // Vérifier la collision
+                    const obj1 = this.demo3Objects[0];
+                    const obj2 = this.demo3Objects[1];
+                    const distance = Math.abs(obj1.x - obj2.x);
+                    
+                    if (distance < (obj1.mass / 2 + obj2.mass / 2)) {
+                        // Collision élastique
+                        const v1 = obj1.vx;
+                        const v2 = obj2.vx;
+                        const m1 = obj1.mass;
+                        const m2 = obj2.mass;
+                        
+                        obj1.vx = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+                        obj2.vx = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+                        
+                        // Mettre à jour le graphique
+                        if (this.chart3Instance) {
+                            const time = this.chart3Instance.data.labels.length;
+                            this.chart3Instance.data.labels.push(time);
+                            this.chart3Instance.data.datasets[0].data.push(obj1.vx * obj1.mass);
+                            this.chart3Instance.data.datasets[1].data.push(obj2.vx * obj2.mass);
+                            this.chart3Instance.update('none');
+                        }
+                    }
+                    
+                    this.drawDemo3(ctx);
+                    
+                    // Continuer l'animation si les objets sont dans le canvas
+                    if (obj1.x > 50 && obj1.x < 750 && obj2.x > 50 && obj2.x < 750) {
+                        requestAnimationFrame(this.animateDemo3);
+                    }
+                },
+                initChart3() {
+                    const canvas = this.$refs.chart3;
+                    if (!canvas) return;
+                    
+                    this.chart3Instance = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                {
+                                    label: 'Quantité de Mouvement Objet 1 (kg⋅m/s)',
+                                    data: [],
+                                    borderColor: '#667eea',
+                                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Quantité de Mouvement Objet 2 (kg⋅m/s)',
+                                    data: [],
+                                    borderColor: '#f5576c',
+                                    backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Conservation de la Quantité de Mouvement'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Quantité de Mouvement (kg⋅m/s)'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Temps'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

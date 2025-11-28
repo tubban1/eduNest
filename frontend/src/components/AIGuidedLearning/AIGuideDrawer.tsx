@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
 import { AIGuideMessageList } from './AIGuideMessageList';
 import { AIGuideInput } from './AIGuideInput';
 
@@ -16,6 +17,7 @@ interface AIGuideDrawerProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  isLoggedIn: boolean;
 }
 
 export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
@@ -23,11 +25,21 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
   onClose,
   messages,
   onSendMessage,
-  isLoading
+  isLoading,
+  isLoggedIn
 }) => {
   const { t } = useTranslation('aiGuide');
+  const router = useRouter();
   const [width] = useState(400);
   const drawerRef = useRef<HTMLDivElement>(null);
+
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
+  const handleRegister = () => {
+    router.push('/register');
+  };
 
   if (!isOpen) return null;
 
@@ -56,8 +68,27 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
       <div className="flex-1 overflow-hidden flex flex-col">
         <AIGuideMessageList messages={messages} isLoading={isLoading} />
       </div>
+      
+      {/* Input or Login Buttons */}
       <div className="p-4 border-t border-gray-100 bg-white">
-        <AIGuideInput onSend={onSendMessage} disabled={isLoading} />
+        {isLoggedIn ? (
+          <AIGuideInput onSend={onSendMessage} disabled={isLoading} />
+        ) : (
+          <div className="space-y-3">
+            <button
+              onClick={handleLogin}
+              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              {t('loginButton')}
+            </button>
+            <button
+              onClick={handleRegister}
+              className="w-full py-3 px-4 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all duration-200"
+            >
+              {t('registerButton')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

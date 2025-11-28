@@ -285,8 +285,8 @@ export default function FullHTMLContentPage() {
               setError(error);
             }}
           />
-          {/* AI Guided Learning */}
-          {content?.id && user && (
+          {/* AI Guided Learning - Always show button, even for non-logged-in users */}
+          {content?.id && (
             <AIGuidedLearning 
               contentId={content.id} 
               onUIStateChange={(state) => console.log('UI State:', state)} 
