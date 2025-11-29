@@ -239,13 +239,17 @@ class AIProviderFactory {
               const data = JSON.parse(trimmedLine.slice(6));
               // Handle both OpenAI format and potentially direct text delta
               const content = data.choices?.[0]?.delta?.content || data.content || '';
-              if (content) {
+              const usage = data.usage; // Capture usage info if present
+              
+              // Always yield, even if content is empty (for usage info in final chunk)
+              if (content || usage) {
                 yield {
-                  content,
+                  content: content || '',
                   provider,
                   model,
                   id: data.id,
-                  created: data.created
+                  created: data.created,
+                  usage: usage || null // Include usage if available
                 };
               }
             } catch (e) {

@@ -154,11 +154,23 @@ const initConversation = async (contentId, userId) => {
       action_type: 'ai_guide',
       content_id: contentId,
       user_query: 'Start the session.',
+      request_payload: {
+        messages: [
+          { role: 'system', content: 'SYSTEM_PROMPT_TEMPLATE' },
+          { role: 'user', content: 'Start the session.' }
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+        metadata_summary: {
+          title: metadata?.meta?.title || metadata?.title || 'Unknown',
+          content_type: metadata?.meta?.contentType || metadata?.content_type || 'Unknown'
+        }
+      },
       response_metadata: { 
         reply: initialMessage,
         role: 'assistant'
       },
-      model_name: result.model,
+      model_name: result.model || 'fallback',
       input_tokens: result.usage?.prompt_tokens || 0,
       output_tokens: result.usage?.completion_tokens || 0,
       total_tokens: result.usage?.total_tokens || 0,
@@ -243,12 +255,16 @@ const handleChat = async (conversationId, message, uiState, userId) => {
     async function* streamGenerator() {
       let fullReply = '';
       let model = '';
-      let inputTokens = 0; // Note: Stream response usually doesn't provide input usage
+      let usage = null; // Store usage info if provided
       
       try {
         for await (const chunk of stream) {
           fullReply += chunk.content;
           model = chunk.model;
+          // Some providers send usage info in the last chunk
+          if (chunk.usage) {
+            usage = chunk.usage;
+          }
           yield chunk.content;
         }
       } catch (error) {
@@ -257,21 +273,40 @@ const handleChat = async (conversationId, message, uiState, userId) => {
       } finally {
         // 5. Save interaction (after stream completes)
         if (fullReply) {
+          // Estimate tokens if not provided by stream
+          // Rough estimation: 1 token ≈ 4 characters for Chinese, 1 token ≈ 4 characters for English
+          const estimateTokens = (text) => Math.ceil(text.length / 3);
+          
+          const inputTokens = usage?.prompt_tokens || estimateTokens(llmMessages.map(m => m.content).join(''));
+          const outputTokens = usage?.completion_tokens || estimateTokens(fullReply);
+          const totalTokens = usage?.total_tokens || (inputTokens + outputTokens);
+          
           await logAIUsage({
             user_id: userId,
             request_id: conversationId,
             action_type: 'ai_guide',
             content_id: contentId,
             user_query: message,
-            request_payload: { ui_state: uiState },
+            request_payload: {
+              messages: llmMessages.map(m => ({
+                role: m.role,
+                content: m.role === 'system' ? 'SYSTEM_PROMPT_WITH_METADATA' : m.content.substring(0, 200) // Truncate for storage
+              })),
+              max_tokens: 1000,
+              temperature: 0.7,
+              stream: true,
+              ui_state: uiState,
+              history_length: history.length
+            },
             response_metadata: { 
               reply: fullReply,
-              role: 'assistant'
+              role: 'assistant',
+              estimated: !usage // Flag if tokens were estimated
             },
-            model_name: model,
+            model_name: model || 'unknown',
             input_tokens: inputTokens, 
-            output_tokens: 0, // We might estimate this
-            total_tokens: 0,
+            output_tokens: outputTokens,
+            total_tokens: totalTokens,
             is_render_success: true
           });
         }
