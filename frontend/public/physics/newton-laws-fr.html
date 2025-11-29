@@ -57,7 +57,7 @@
             flex: 1;
             min-width: 200px;
             padding: 15px 20px;
-            background: white;
+            background: #e3f2fd;
             border: none;
             border-radius: 10px;
             cursor: pointer;
@@ -428,6 +428,17 @@
                     mass: 10,
                     acceleration: 0,
                     velocity: 0,
+                    // Non-reactive variables for animations
+                    demo1Running: false,
+                    demo1Object: { x: 100, y: 200, vx: 0, vy: 0 },
+                    demo2Object: { x: 50, y: 200, vx: 0 },
+                    demo3Objects: [
+                        { x: 200, y: 200, vx: 2, mass: 50, color: '#667eea' },
+                        { x: 600, y: 200, vx: -2, mass: 50, color: '#f5576c' }
+                    ],
+                    forceData: [],
+                    accelerationData: [],
+                    timeData: [],
                     laws: [
                         {
                             shortTitle: "1ère Loi - Inertie",
@@ -515,18 +526,28 @@
                     demo3Objects: [
                         { x: 200, y: 200, vx: 2, mass: 50, color: '#667eea' },
                         { x: 600, y: 200, vx: -2, mass: 50, color: '#f5576c' }
-                    ],
-                    chart2Instance: null,
-                    chart3Instance: null,
-                    forceData: [],
-                    accelerationData: [],
-                    timeData: []
+                    ]
                 };
             },
+            // Store chart instances and data outside of reactive data to avoid Vue reactivity conflicts
+            chart2Instance: null,
+            chart3Instance: null,
+            forceData: [],
+            accelerationData: [],
+            timeData: [],
             mounted() {
                 this.initDemo1();
                 this.initDemo2();
                 this.initDemo3();
+            },
+            beforeUnmount() {
+                // Clean up chart instances
+                if (this.$options.chart2Instance) {
+                    this.$options.chart2Instance.destroy();
+                }
+                if (this.$options.chart3Instance) {
+                    this.$options.chart3Instance.destroy();
+                }
             },
             computed: {
                 calculatedAcceleration() {
@@ -539,6 +560,18 @@
                 },
                 mass() {
                     this.updateAcceleration();
+                },
+                currentLaw(newVal) {
+                    // Re-initialize demos when switching tabs
+                    this.$nextTick(() => {
+                        if (newVal === 0) {
+                            this.initDemo1();
+                        } else if (newVal === 1) {
+                            this.initDemo2();
+                        } else if (newVal === 2) {
+                            this.initDemo3();
+                        }
+                    });
                 }
             },
             methods: {
@@ -681,16 +714,23 @@
                     this.demo2Object = { x: 50, y: 200, vx: 0 };
                     this.velocity = 0;
                     this.acceleration = 0;
-                    this.forceData = [];
-                    this.accelerationData = [];
-                    this.timeData = [];
-                    this.initDemo2();
-                    if (this.chart2Instance) {
-                        this.chart2Instance.data.labels = [];
-                        this.chart2Instance.data.datasets[0].data = [];
-                        this.chart2Instance.data.datasets[1].data = [];
-                        this.chart2Instance.update();
+                    
+                    // Reset non-reactive arrays
+                    this.$options.forceData = [];
+                    this.$options.accelerationData = [];
+                    this.$options.timeData = [];
+                    
+                    // Destroy existing chart before recreating
+                    if (this.$options.chart2Instance) {
+                        this.$options.chart2Instance.destroy();
+                        this.$options.chart2Instance = null;
                     }
+                    
+                    const canvas = this.$refs.canvas2;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    this.drawDemo2(ctx);
+                    this.initChart2();
                 },
                 animateDemo2() {
                     const canvas = this.$refs.canvas2;
@@ -703,17 +743,17 @@
                         this.velocity += this.acceleration * 0.1;
                         this.demo2Object.x += this.velocity;
                         
-                        // Mettre à jour les données du graphique
-                        const time = this.timeData.length * 0.1;
-                        this.timeData.push(time.toFixed(1));
-                        this.forceData.push(this.force);
-                        this.accelerationData.push(this.acceleration);
+                        // Mettre à jour les données du graphique (using non-reactive arrays)
+                        const time = this.$options.timeData.length * 0.1;
+                        this.$options.timeData.push(time.toFixed(1));
+                        this.$options.forceData.push(this.force);
+                        this.$options.accelerationData.push(this.acceleration);
                         
-                        if (this.chart2Instance) {
-                            this.chart2Instance.data.labels = this.timeData;
-                            this.chart2Instance.data.datasets[0].data = this.forceData;
-                            this.chart2Instance.data.datasets[1].data = this.accelerationData;
-                            this.chart2Instance.update('none');
+                        if (this.$options.chart2Instance) {
+                            this.$options.chart2Instance.data.labels = this.$options.timeData;
+                            this.$options.chart2Instance.data.datasets[0].data = this.$options.forceData;
+                            this.$options.chart2Instance.data.datasets[1].data = this.$options.accelerationData;
+                            this.$options.chart2Instance.update('none');
                         }
                         
                         this.drawDemo2(ctx);
@@ -724,7 +764,12 @@
                     const canvas = this.$refs.chart2;
                     if (!canvas) return;
                     
-                    this.chart2Instance = new Chart(canvas, {
+                    // Destroy existing chart if it exists
+                    if (this.$options.chart2Instance) {
+                        this.$options.chart2Instance.destroy();
+                    }
+                    
+                    this.$options.chart2Instance = new Chart(canvas, {
                         type: 'line',
                         data: {
                             labels: [],
@@ -748,6 +793,7 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            animation: false, // Disable animation to prevent infinite loops
                             plugins: {
                                 title: {
                                     display: true,
@@ -820,7 +866,18 @@
                         { x: 200, y: 200, vx: 2, mass: 50, color: '#667eea' },
                         { x: 600, y: 200, vx: -2, mass: 50, color: '#f5576c' }
                     ];
-                    this.initDemo3();
+                    
+                    // Destroy existing chart before recreating
+                    if (this.$options.chart3Instance) {
+                        this.$options.chart3Instance.destroy();
+                        this.$options.chart3Instance = null;
+                    }
+                    
+                    const canvas = this.$refs.canvas3;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    this.drawDemo3(ctx);
+                    this.initChart3();
                 },
                 animateDemo3() {
                     const canvas = this.$refs.canvas3;
@@ -846,15 +903,15 @@
                         
                         obj1.vx = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
                         obj2.vx = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
-                        
-                        // Mettre à jour le graphique
-                        if (this.chart3Instance) {
-                            const time = this.chart3Instance.data.labels.length;
-                            this.chart3Instance.data.labels.push(time);
-                            this.chart3Instance.data.datasets[0].data.push(obj1.vx * obj1.mass);
-                            this.chart3Instance.data.datasets[1].data.push(obj2.vx * obj2.mass);
-                            this.chart3Instance.update('none');
-                        }
+                    }
+                    
+                    // Mettre à jour le graphique à chaque frame pour montrer la conservation de la quantité de mouvement
+                    if (this.$options.chart3Instance) {
+                        const time = this.$options.chart3Instance.data.labels.length * 0.05;
+                        this.$options.chart3Instance.data.labels.push(time.toFixed(2));
+                        this.$options.chart3Instance.data.datasets[0].data.push(obj1.vx * obj1.mass);
+                        this.$options.chart3Instance.data.datasets[1].data.push(obj2.vx * obj2.mass);
+                        this.$options.chart3Instance.update('none');
                     }
                     
                     this.drawDemo3(ctx);
@@ -868,7 +925,12 @@
                     const canvas = this.$refs.chart3;
                     if (!canvas) return;
                     
-                    this.chart3Instance = new Chart(canvas, {
+                    // Destroy existing chart if it exists
+                    if (this.$options.chart3Instance) {
+                        this.$options.chart3Instance.destroy();
+                    }
+                    
+                    this.$options.chart3Instance = new Chart(canvas, {
                         type: 'line',
                         data: {
                             labels: [],
@@ -892,6 +954,7 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            animation: false, // Disable animation to prevent infinite loops
                             plugins: {
                                 title: {
                                     display: true,
