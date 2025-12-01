@@ -178,53 +178,59 @@
       transition: all 0.1s;
     }
 
-    /* 手势提示文字 */
+    /* 手势提示文字 - 移到右下角并缩小 */
     #gesture-hint {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(20px);
-      padding: 30px 50px;
-      border-radius: 20px;
+      bottom: 30px;
+      right: 30px;
+      transform: none;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      border-radius: 12px;
       border: 2px solid rgba(255, 255, 255, 0.2);
-      font-size: 48px;
+      font-size: 16px;
       font-weight: bold;
       color: #fff;
-      text-align: center;
+      text-align: left;
       z-index: 50;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.3s, transform 0.3s;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      min-width: 300px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      min-width: 180px;
+      max-width: 250px;
     }
 
     #gesture-hint.show {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1.1);
+      transform: translateY(-5px);
     }
 
     #gesture-hint .gesture-icon {
-      font-size: 64px;
-      margin-bottom: 15px;
-      display: block;
+      font-size: 32px;
+      margin-right: 10px;
+      display: inline-block;
+      vertical-align: middle;
     }
 
     #gesture-hint .gesture-name {
-      font-size: 32px;
-      margin-bottom: 10px;
+      font-size: 16px;
+      margin-bottom: 5px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      display: inline-block;
+      vertical-align: middle;
     }
 
     #gesture-hint .gesture-desc {
-      font-size: 18px;
-      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
       font-weight: normal;
+      margin-top: 5px;
+      display: block;
     }
 
     @media (max-width: 768px) {
@@ -256,21 +262,23 @@
       }
 
       #gesture-hint {
-        padding: 20px 30px;
-        font-size: 36px;
-        min-width: 250px;
+        padding: 12px 16px;
+        font-size: 14px;
+        min-width: 150px;
+        bottom: 20px;
+        right: 20px;
       }
 
       #gesture-hint .gesture-icon {
-        font-size: 48px;
-      }
-
-      #gesture-hint .gesture-name {
         font-size: 24px;
       }
 
-      #gesture-hint .gesture-desc {
+      #gesture-hint .gesture-name {
         font-size: 14px;
+      }
+
+      #gesture-hint .gesture-desc {
+        font-size: 11px;
       }
     }
   </style>
@@ -280,15 +288,17 @@
     <div id="canvas-container"></div>
     
     <div id="info">
-      <h1>🎨 手势指挥 3D 粒子</h1>
-      <p>使用你的手势来控制 3D 粒子轨迹！</p>
+      <h1>🎨 手势变换 3D 粒子</h1>
+      <p>使用手势让粒子变换成不同的3D形状！</p>
       <ul>
-        <li>👆 <strong>食指指向</strong>：吸引粒子</li>
-        <li>✋ <strong>张开手掌</strong>：分散粒子</li>
-        <li>✊ <strong>握拳</strong>：聚集粒子</li>
-        <li>🤏 <strong>捏合</strong>：旋转粒子</li>
-        <li>👋 <strong>挥手</strong>：清除轨迹</li>
+        <li>🖐️ <strong>张开五指</strong>：3D 爱心 ❤️</li>
+        <li>☝️ <strong>食指</strong>：3D 花朵 🌸</li>
+        <li>✌️ <strong>V手势</strong>：土星+星环 🪐</li>
+        <li>🤘 <strong>Rock/ILY</strong>：3D 佛像 🙏</li>
+        <li>👌 <strong>OK手势</strong>：字母Jenny ✨</li>
+        <li>✊ <strong>握拳</strong>：重置粒子</li>
       </ul>
+      <p style="font-size: 12px; margin-top: 10px; opacity: 0.8;">💡 所有形状会缓慢旋转</p>
     </div>
 
     <div id="status">等待摄像头启动...</div>
@@ -498,6 +508,11 @@
     let lastHandPosition = new THREE.Vector3(0, 0, 0);
     let previousTargetPosition = new THREE.Vector3(0, 0, 0); // 用于跟踪手指移动速度
     let handVelocity = new THREE.Vector3(0, 0, 0); // 手指移动速度
+    
+    // 形状变换相关
+    let currentShape = null; // 当前形状: 'heart', 'flower', 'saturn', 'buddha', 'firework', null
+    let targetShapePositions = []; // 目标形状的位置数组
+    let shapeRotation = 0; // 形状旋转角度
 
     // 初始化 Three.js 场景
     function initThreeJS() {
@@ -693,35 +708,40 @@
 
     // 手势信息映射
     const gestureInfo = {
-      'point': {
-        icon: '👆',
-        name: '指向手势',
-        desc: '吸引粒子'
+      'one': {
+        icon: '☝️',
+        name: '食指',
+        desc: '3D 花朵'
       },
-      'open': {
-        icon: '✋',
-        name: '张开手掌',
-        desc: '分散粒子'
+      'peace': {
+        icon: '✌️',
+        name: 'V手势',
+        desc: '土星+星环'
+      },
+      'five': {
+        icon: '🖐️',
+        name: '张开五指',
+        desc: '3D 爱心'
+      },
+      'rock': {
+        icon: '🤘',
+        name: 'Rock/ILY',
+        desc: '3D 佛像'
+      },
+      'ok': {
+        icon: '👌',
+        name: 'OK手势',
+        desc: '字母Jenny'
       },
       'fist': {
         icon: '✊',
         name: '握拳',
-        desc: '聚集粒子'
-      },
-      'pinch': {
-        icon: '🤏',
-        name: '捏合',
-        desc: '旋转粒子'
-      },
-      'peace': {
-        icon: '✌️',
-        name: '和平手势',
-        desc: '清除轨迹'
+        desc: '重置粒子'
       },
       'unknown': {
         icon: '🤚',
         name: '未知手势',
-        desc: '请尝试其他手势'
+        desc: '尝试其他手势'
       }
     };
 
@@ -766,11 +786,11 @@
       const pinkyPip = landmarks[18];
       const thumb = landmarks[4];
       const thumbIp = landmarks[3]; // 拇指第二关节
+      const thumbTip = landmarks[4];
       const wrist = landmarks[0];
 
       // 计算手指是否伸直（使用更准确的方法：比较指尖和关节的Y坐标）
-      // 对于食指、中指、无名指、小指：指尖Y坐标应该小于关节Y坐标（因为坐标原点在左上角）
-      const isIndexExtended = indexFinger.y < indexPip.y - 0.02; // 添加阈值
+      const isIndexExtended = indexFinger.y < indexPip.y - 0.02;
       const isMiddleExtended = middleFinger.y < middlePip.y - 0.02;
       const isRingExtended = ringFinger.y < ringPip.y - 0.02;
       const isPinkyExtended = pinky.y < pinkyPip.y - 0.02;
@@ -783,23 +803,31 @@
       // 判断手势（按优先级）
       let gesture = 'unknown';
       
-      // 1. 指向手势：只有食指伸直
-      if (extendedCount === 1 && isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {
-        gesture = 'point';
+      // 1. OK手势：拇指和食指形成圆圈，其他手指伸直
+      const thumbIndexDistance = Math.sqrt(
+        Math.pow(thumbTip.x - indexFinger.x, 2) + 
+        Math.pow(thumbTip.y - indexFinger.y, 2)
+      );
+      if (thumbIndexDistance < 0.05 && isMiddleExtended && isRingExtended && isPinkyExtended) {
+        gesture = 'ok';
       }
-      // 2. 和平手势：食指和中指伸直，其他弯曲
-      else if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended) {
+      // 2. Rock/ILY手势：食指、小指和拇指伸直，中指和无名指弯曲
+      else if (isIndexExtended && isPinkyExtended && isThumbExtended && !isMiddleExtended && !isRingExtended) {
+        gesture = 'rock';
+      }
+      // 3. 食指（One）：只有食指伸直
+      else if (extendedCount === 1 && isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended && !isThumbExtended) {
+        gesture = 'one';
+      }
+      // 4. V手势（Peace）：食指和中指伸直，其他弯曲
+      else if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended && !isThumbExtended) {
         gesture = 'peace';
       }
-      // 3. 捏合：食指和拇指伸直
-      else if (isIndexExtended && isThumbExtended && extendedCount === 2) {
-        gesture = 'pinch';
-      }
-      // 4. 张开手掌：所有手指都伸直
+      // 5. 张开五指（Five）：所有手指都伸直
       else if (extendedCount >= 4) {
-        gesture = 'open';
+        gesture = 'five';
       }
-      // 5. 握拳：没有手指伸直
+      // 6. 握拳：没有手指伸直
       else if (extendedCount === 0 || (!isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended)) {
         gesture = 'fist';
       }
@@ -812,12 +840,317 @@
       return gesture;
     }
 
+    // ========== 3D 形状生成函数 ==========
+    
+    // 生成3D爱心形状
+    function generateHeartShape(particleCount) {
+      const positions = [];
+      for (let i = 0; i < particleCount; i++) {
+        const t = (i / particleCount) * Math.PI * 2;
+        const u = Math.random() * Math.PI * 2;
+        
+        // 心形参数方程
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+        const z = (Math.random() - 0.5) * 5; // 添加厚度
+        
+        positions.push(new THREE.Vector3(x * 0.3, y * 0.3, z * 0.3));
+      }
+      return positions;
+    }
+    
+    // 生成3D花朵形状
+    function generateFlowerShape(particleCount) {
+      const positions = [];
+      const petalCount = 8; // 8片花瓣
+      
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2;
+        const radius = 3 + 2 * Math.sin(petalCount * angle); // 花瓣形状
+        const height = Math.random() * 2 - 1;
+        
+        const x = radius * Math.cos(angle);
+        const y = height;
+        const z = radius * Math.sin(angle);
+        
+        positions.push(new THREE.Vector3(x, y, z));
+      }
+      return positions;
+    }
+    
+    // 生成土星+星环形状
+    function generateSaturnShape(particleCount) {
+      const positions = [];
+      const planetParticles = Math.floor(particleCount * 0.4); // 40% 用于星球
+      const ringParticles = particleCount - planetParticles; // 60% 用于星环
+      
+      // 生成星球（球体）
+      for (let i = 0; i < planetParticles; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const radius = 2 + Math.random() * 0.5;
+        
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi);
+        
+        positions.push(new THREE.Vector3(x, y, z));
+      }
+      
+      // 生成星环（扁平圆环）
+      for (let i = 0; i < ringParticles; i++) {
+        const angle = (i / ringParticles) * Math.PI * 2;
+        const radius = 4 + Math.random() * 2; // 星环半径
+        const thickness = (Math.random() - 0.5) * 0.3; // 星环厚度
+        
+        const x = radius * Math.cos(angle);
+        const y = thickness;
+        const z = radius * Math.sin(angle);
+        
+        positions.push(new THREE.Vector3(x, y, z));
+      }
+      
+      return positions;
+    }
+    
+    // 生成3D佛像形状（简化版）
+    function generateBuddhaShape(particleCount) {
+      const positions = [];
+      
+      // 头部（球体）
+      const headParticles = Math.floor(particleCount * 0.3);
+      for (let i = 0; i < headParticles; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const radius = 2;
+        
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = 3 + radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi);
+        
+        positions.push(new THREE.Vector3(x, y, z));
+      }
+      
+      // 身体（圆柱体）
+      const bodyParticles = Math.floor(particleCount * 0.5);
+      for (let i = 0; i < bodyParticles; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 1.5 + Math.random() * 0.5;
+        const height = Math.random() * 4 - 2;
+        
+        const x = radius * Math.cos(angle);
+        const y = height;
+        const z = radius * Math.sin(angle);
+        
+        positions.push(new THREE.Vector3(x, y, z));
+      }
+      
+      // 底座（扁平圆盘）
+      const baseParticles = particleCount - headParticles - bodyParticles;
+      for (let i = 0; i < baseParticles; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 2 + Math.random() * 1;
+        const height = -2 + (Math.random() - 0.5) * 0.5;
+        
+        const x = radius * Math.cos(angle);
+        const y = height;
+        const z = radius * Math.sin(angle);
+        
+        positions.push(new THREE.Vector3(x, y, z));
+      }
+      
+      return positions;
+    }
+    
+    // 生成字母Jenny形状
+    function generateJennyShape(particleCount) {
+      const positions = [];
+      const particlesPerLetter = Math.floor(particleCount / 10); // 只用10%的粒子
+      const letterSpacing = 2.2; // 字母间距(更紧凑)
+      const letterScale = 1.5; // 放大字母尺寸
+      const startX = -5; // 起始位置(调整居中)
+      
+      // 定义每个字母的路径点(标准字体形态)
+      const letters = {
+        // J: 竖线向下,底部向左弯钩
+        'J': [
+          [0.5, 4], [0.5, 3.5], [0.5, 3], [0.5, 2.5], [0.5, 2], 
+          [0.5, 1.5], [0.5, 1], [0.5, 0.5], [0.5, 0], [0.5, -0.5],
+          [0.4, -0.8], [0.2, -1], [0, -1.1], [-0.2, -1.1], 
+          [-0.4, -1], [-0.5, -0.8], [-0.5, -0.5]
+        ],
+        // e: 圆形,中间有横线
+        'e': [
+          // 外圈(逆时针)
+          [0.8, 2], [0.7, 2.3], [0.5, 2.5], [0.2, 2.6], 
+          [-0.1, 2.5], [-0.3, 2.3], [-0.4, 2], [-0.4, 1.7],
+          [-0.3, 1.4], [-0.1, 1.2], [0.2, 1.1], [0.5, 1.2],
+          [0.7, 1.4], [0.8, 1.7],
+          // 中间横线
+          [-0.4, 1.85], [-0.2, 1.85], [0, 1.85], [0.2, 1.85], 
+          [0.4, 1.85], [0.6, 1.85], [0.8, 1.85]
+        ],
+        // n: 左竖线,圆弧,右竖线
+        'n': [
+          // 左竖线
+          [0, 0], [0, 0.4], [0, 0.8], [0, 1.2], [0, 1.6], [0, 2], [0, 2.4], [0, 2.8],
+          // 圆弧顶部
+          [0.1, 2.7], [0.3, 2.6], [0.5, 2.5], [0.7, 2.3], [0.9, 2.1],
+          // 右竖线
+          [1, 1.9], [1, 1.6], [1, 1.3], [1, 1], [1, 0.7], [1, 0.4], [1, 0]
+        ],
+        // n2: 第二个n(相同)
+        'n2': [
+          // 左竖线
+          [0, 0], [0, 0.4], [0, 0.8], [0, 1.2], [0, 1.6], [0, 2], [0, 2.4], [0, 2.8],
+          // 圆弧顶部
+          [0.1, 2.7], [0.3, 2.6], [0.5, 2.5], [0.7, 2.3], [0.9, 2.1],
+          // 右竖线
+          [1, 1.9], [1, 1.6], [1, 1.3], [1, 1], [1, 0.7], [1, 0.4], [1, 0]
+        ],
+        // y: 左斜线,右斜线,下弯钩
+        'y': [
+          // 左斜线(从上到中)
+          [0, 2.8], [0.1, 2.5], [0.2, 2.2], [0.3, 1.9], [0.4, 1.6], 
+          [0.5, 1.3], [0.6, 1],
+          // 右斜线(从上到中)
+          [1.2, 2.8], [1.1, 2.5], [1, 2.2], [0.9, 1.9], [0.8, 1.6], 
+          [0.7, 1.3], [0.6, 1],
+          // 下弯钩(从中到下)
+          [0.6, 0.7], [0.6, 0.4], [0.6, 0.1], [0.6, -0.2], [0.6, -0.5],
+          [0.5, -0.8], [0.4, -1], [0.2, -1.1], [0, -1.2], 
+          [-0.2, -1.2], [-0.4, -1.1], [-0.5, -0.9]
+        ]
+      };
+      
+      const letterArray = ['J', 'e', 'n', 'n2', 'y'];
+      
+      // 只使用部分粒子来绘制字母
+      letterArray.forEach((letter, letterIndex) => {
+        const points = letters[letter];
+        const offsetX = startX + letterIndex * letterSpacing;
+        
+        // 沿着路径均匀分布粒子
+        for (let i = 0; i < particlesPerLetter; i++) {
+          const t = i / particlesPerLetter;
+          const totalPoints = points.length;
+          const floatIndex = t * (totalPoints - 1); // 不循环回起点
+          const pointIndex = Math.floor(floatIndex);
+          const nextPointIndex = Math.min(pointIndex + 1, totalPoints - 1);
+          const localT = floatIndex - pointIndex;
+          
+          const point1 = points[pointIndex];
+          const point2 = points[nextPointIndex];
+          
+          // 线性插值
+          const x = (offsetX + (point1[0] + (point2[0] - point1[0]) * localT)) * letterScale;
+          const y = (point1[1] + (point2[1] - point1[1]) * localT) * letterScale;
+          const z = (Math.random() - 0.5) * 0.15; // 轻微深度变化
+          
+          positions.push(new THREE.Vector3(x, y, z));
+        }
+      });
+      
+      // 剩余粒子放到远处,不影响显示
+      const remaining = particleCount - positions.length;
+      for (let i = 0; i < remaining; i++) {
+        positions.push(new THREE.Vector3(
+          (Math.random() - 0.5) * 100 + 50, // 放到远处
+          (Math.random() - 0.5) * 100,
+          (Math.random() - 0.5) * 100
+        ));
+      }
+      
+      return positions;
+    }
+    
+    // 根据手势设置目标形状
+    function setTargetShape(gesture) {
+      const particleCount = particleSystem.geometry.attributes.position.array.length / 3;
+      
+      switch (gesture) {
+        case 'five':
+          currentShape = 'heart';
+          targetShapePositions = generateHeartShape(particleCount);
+          break;
+        case 'one':
+          currentShape = 'flower';
+          targetShapePositions = generateFlowerShape(particleCount);
+          break;
+        case 'peace':
+          currentShape = 'saturn';
+          targetShapePositions = generateSaturnShape(particleCount);
+          break;
+        case 'rock':
+          currentShape = 'buddha';
+          targetShapePositions = generateBuddhaShape(particleCount);
+          break;
+        case 'ok':
+          currentShape = 'jenny';
+          targetShapePositions = generateJennyShape(particleCount);
+          break;
+        case 'fist':
+          currentShape = null;
+          targetShapePositions = [];
+          break;
+        default:
+          return;
+      }
+    }
+    
     // 应用手势效果
     function applyGestureEffect(gesture, targetPos) {
       const positions = particleSystem.geometry.attributes.position.array;
       const velocities = particleSystem.userData.velocities;
       const particleCount = positions.length / 3;
+      
+      // 检查是否需要切换形状
+      if (['five', 'one', 'peace', 'rock', 'ok', 'fist'].includes(gesture)) {
+        setTargetShape(gesture);
+      }
+      
+      // 如果有目标形状，让粒子移动到目标位置
+      if (currentShape && targetShapePositions.length > 0) {
+        for (let i = 0; i < particleCount; i++) {
+          const i3 = i * 3;
+          const particlePos = new THREE.Vector3(
+            positions[i3],
+            positions[i3 + 1],
+            positions[i3 + 2]
+          );
+          
+          // 获取目标位置（带旋转）
+          const targetPos = targetShapePositions[i % targetShapePositions.length].clone();
+          
+          // 应用旋转
+          const rotatedTarget = new THREE.Vector3(
+            targetPos.x * Math.cos(shapeRotation) - targetPos.z * Math.sin(shapeRotation),
+            targetPos.y,
+            targetPos.x * Math.sin(shapeRotation) + targetPos.z * Math.cos(shapeRotation)
+          );
+          
+          // 计算到目标位置的方向和距离
+          const direction = new THREE.Vector3()
+            .subVectors(rotatedTarget, particlePos)
+            .normalize();
+          const distance = particlePos.distanceTo(rotatedTarget);
+          
+          // 使用弹簧力让粒子移动到目标位置
+          const springStrength = 0.05;
+          const damping = 0.9;
+          
+          velocities[i3] += direction.x * springStrength * distance;
+          velocities[i3 + 1] += direction.y * springStrength * distance;
+          velocities[i3 + 2] += direction.z * springStrength * distance;
+          
+          velocities[i3] *= damping;
+          velocities[i3 + 1] *= damping;
+          velocities[i3 + 2] *= damping;
+        }
+        return; // 形状模式下不执行其他效果
+      }
 
+      // 原有的手势效果（当没有形状时）
       for (let i = 0; i < particleCount; i++) {
         const i3 = i * 3;
         const particlePos = new THREE.Vector3(
@@ -833,90 +1166,20 @@
 
         let force = new THREE.Vector3(0, 0, 0);
 
-        switch (gesture) {
-          case 'point':
-            // 将所有粒子聚集到食指尖并跟随移动
-            // 移除距离限制，所有粒子都受到吸引力
-            // 使用更强的吸引力，让粒子快速聚集
-            const attractionStrength = 2.0 / (distance + 0.1); // 增强吸引力
-            force = direction.multiplyScalar(attractionStrength);
-            
-            // 添加跟随效果：让粒子跟随手指移动
-            // 将手指速度的一部分传递给粒子，让粒子能够跟随手指移动
-            const followFactor = 0.4; // 跟随系数，增强跟随效果
-            force.add(handVelocity.clone().multiplyScalar(followFactor));
-            
-            // 如果粒子已经很接近指尖，减小速度以保持紧密聚集
-            if (distance < 0.8) {
-              // 进一步减小速度，让粒子在指尖周围稳定聚集
-              velocities[i3] *= 0.6;
-              velocities[i3 + 1] *= 0.6;
-              velocities[i3 + 2] *= 0.6;
-              
-              // 添加额外的向心力，让粒子更紧密地聚集
-              const centripetalForce = direction.multiplyScalar(0.5);
-              force.add(centripetalForce);
-            }
-            break;
-
-          case 'open':
-            // 分散粒子 - 增强反应范围和强度
-            if (distance < 12) {
-              force = direction.multiplyScalar(-0.35 / (distance + 0.1)); // 增强排斥力
-            }
-            break;
-
-          case 'fist':
-            // 聚集粒子 - 增强反应范围和强度
-            if (distance < 10) {
-              force = direction.multiplyScalar(0.5 / (distance + 0.1)); // 增强聚集力
-            }
-            break;
-
-          case 'pinch':
-            // 旋转粒子 - 增强反应范围和强度
-            if (distance < 10) {
-              const tangent = new THREE.Vector3(-direction.y, direction.x, 0);
-              force = tangent.multiplyScalar(0.25 / (distance + 0.1)); // 增强旋转力
-            }
-            break;
-
-          case 'peace':
-            // 清除效果（重置粒子位置）- 扩大影响范围
-            if (distance < 15) {
-              positions[i3] = (Math.random() - 0.5) * 20;
-              positions[i3 + 1] = (Math.random() - 0.5) * 20;
-              positions[i3 + 2] = (Math.random() - 0.5) * 20;
-              velocities[i3] = (Math.random() - 0.5) * 0.03; // 增加初始速度
-              velocities[i3 + 1] = (Math.random() - 0.5) * 0.03;
-              velocities[i3 + 2] = (Math.random() - 0.5) * 0.03;
-            }
-            break;
-        }
-
-        // 应用力到速度 - 根据手势调整灵敏度
-        let forceMultiplier = 0.25; // 默认力的应用系数
+        // 默认效果：轻微的随机运动
+        force = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.01,
+          (Math.random() - 0.5) * 0.01,
+          (Math.random() - 0.5) * 0.01
+        );
         
-        // 指向手势时使用更大的系数，让粒子更快聚集
-        if (gesture === 'point') {
-          forceMultiplier = 0.4; // 指向手势时使用更大的系数
-        }
+        velocities[i3] += force.x;
+        velocities[i3 + 1] += force.y;
+        velocities[i3 + 2] += force.z;
         
-        velocities[i3] += force.x * forceMultiplier;
-        velocities[i3 + 1] += force.y * forceMultiplier;
-        velocities[i3 + 2] += force.z * forceMultiplier;
-
-        // 阻尼 - 根据手势调整阻尼
-        let damping = 0.95; // 默认阻尼
-        
-        // 指向手势时减小阻尼，让粒子更快响应
-        if (gesture === 'point') {
-          damping = 0.92; // 指向手势时减小阻尼，让粒子更快聚集
-        }
-        
-        velocities[i3] *= damping;
-        velocities[i3 + 1] *= damping;
-        velocities[i3 + 2] *= damping;
+        velocities[i3] *= 0.98;
+        velocities[i3 + 1] *= 0.98;
+        velocities[i3 + 2] *= 0.98;
       }
     }
 
@@ -954,6 +1217,11 @@
       requestAnimationFrame(animate);
 
       updateParticles();
+      
+      // 如果有形状，缓慢旋转
+      if (currentShape) {
+        shapeRotation += 0.005; // 缓慢旋转
+      }
 
       // 相机轻微旋转
       camera.position.x = Math.sin(Date.now() * 0.0005) * 2;

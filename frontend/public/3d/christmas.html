@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Golden Particle Christmas Tree - EduNest AI</title>
+  <meta name="description" content="A 3D Christmas tree made of countless golden spheres, supporting photo decoration">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: radial-gradient(circle at center, #1a2a6c, #b21f1f, #fdbb2d); /* Festive gradient */
+      background: linear-gradient(to bottom, #000000, #0f2027); /* Deep starry background */
+      overflow: hidden;
+      color: #fff;
+    }
+
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #title {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    #title h1 {
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #FFD700 0%, #FDB931 50%, #FFD700 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      margin-bottom: 5px;
+      letter-spacing: 2px;
+    }
+
+    #title p {
+      font-size: 14px;
+      color: rgba(255, 215, 0, 0.8);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    #status-bar {
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      color: rgba(255, 255, 255, 0.4);
+      font-family: monospace;
+      font-size: 14px;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    #upload-panel {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      z-index: 100;
+      pointer-events: auto;
+    }
+
+    #upload-panel input[type="file"] {
+      display: none;
+    }
+
+    #upload-btn {
+      padding: 15px 50px;
+      background: rgba(255, 215, 0, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 215, 0, 0.5);
+      border-radius: 30px;
+      color: #FFD700;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #upload-btn:hover {
+      background: rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+      transform: translateY(-2px);
+    }
+
+    #photo-count {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    #controls {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      z-index: 100;
+      pointer-events: auto;
+    }
+
+    .control-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative; /* Positioning for panel */
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+
+    /* General panel styles */
+    .panel {
+      position: absolute;
+      right: 55px; /* Left of button */
+      top: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      padding: 10px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column; /* Default vertical alignment */
+      gap: 10px;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: right top;
+      opacity: 1;
+      transform: scale(1);
+      min-width: 40px;
+    }
+    
+    .panel.hidden {
+      opacity: 0;
+      transform: scale(0.8) translateX(20px);
+      pointer-events: none;
+    }
+
+    /* Specific styles for color panel */
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .icon {
+      font-size: 16px;
+      opacity: 0.8;
+    }
+
+    input[type="range"] {
+      width: 80px; /* Shorten slider */
+      accent-color: #FFD700;
+      cursor: pointer;
+      height: 4px;
+    }
+    
+    input[type="color"] {
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 50%;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+      overflow: hidden;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 50%;
+    }
+
+    /* Specific styles for shape panel */
+    #shape-panel {
+      flex-direction: row; /* Horizontal alignment */
+      right: 55px;
+      top: 0; 
+    }
+
+    .shape-option {
+      width: 24px;
+      height: 24px;
+      background: rgba(255, 215, 0, 0.8);
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .shape-option:hover {
+      transform: scale(1.2);
+      background: #fff;
+    }
+    
+    .shape-circle { border-radius: 50%; }
+    .shape-sphere { 
+      border-radius: 50%; 
+      background: radial-gradient(circle at 30% 30%, #fff, rgba(255, 215, 0, 0.8));
+    }
+    .shape-triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); background: rgba(255, 215, 0, 0.8); }
+    .shape-square { border-radius: 2px; }
+    .shape-diamond { transform: rotate(45deg) scale(0.8); border-radius: 2px; }
+    .shape-star { 
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      background: rgba(255, 215, 0, 0.8);
+    }
+
+    /* Photo preview modal */
+    #photo-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      pointer-events: auto;
+      backdrop-filter: blur(5px);
+    }
+
+    #photo-modal.active {
+      display: flex;
+    }
+
+    #photo-modal img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border: 5px solid #fff;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+      transform: scale(0.9);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    #photo-modal.active img {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    #photo-modal .close-btn {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    #photo-modal .close-btn:hover {
+      color: #fff;
+      transform: rotate(90deg);
+    }
+
+    @media (max-width: 768px) {
+      #title h1 { font-size: 32px; }
+      #title p { font-size: 12px; }
+      #upload-btn { padding: 12px 30px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="canvas-container"></div>
+    
+    <div id="title">
+      <h1>GOLDEN XMAS</h1>
+      <p>MERRY CHRISTMAS</p>
+    </div>
+
+    <div id="status-bar">MODE: TREE</div>
+
+    <div id="controls">
+        <button class="control-btn" id="auto-rotate-btn" title="自动旋转">🔄</button>
+        
+        <div style="position: relative;">
+          <button class="control-btn" id="shape-btn" title="Switch Shape">💠</button>
+          <div id="shape-panel" class="panel hidden">
+            <div class="shape-option shape-circle" data-shape="circle" title="Circle"></div>
+            <div class="shape-option shape-sphere" data-shape="sphere" title="Sphere"></div>
+            <div class="shape-option shape-triangle" data-shape="triangle" title="Triangle"></div>
+            <div class="shape-option shape-square" data-shape="square" title="Square"></div>
+            <div class="shape-option shape-diamond" data-shape="diamond" title="Diamond"></div>
+            <div class="shape-option shape-star" data-shape="star" title="Star"></div>
+          </div>
+        </div>
+
+        <div style="position: relative;">
+          <button class="control-btn" id="color-btn" title="Appearance">🎨</button>
+          <div id="color-panel" class="panel hidden">
+            <div class="control-row">
+              <span class="icon" title="Color">🎨</span>
+              <input type="color" id="color-picker" value="#ffd700">
+            </div>
+            <div class="control-row">
+              <span class="icon" title="Opacity">💧</span>
+              <input type="range" id="opacity-slider" min="0.1" max="1" step="0.05" value="0.95">
+            </div>
+          </div>
+        </div>
+
+        <button class="control-btn" id="clear-photos-btn" title="清除照片">🗑️</button>
+      </div>
+
+    <div id="upload-panel">
+      <input type="file" id="photo-input" accept="image/*" multiple>
+      <button id="upload-btn">Add Memories</button>
+      <div id="photo-count" style="display: none;">0 photos added</div>
+    </div>
+
+    <div id="photo-modal">
+      <div class="close-btn">×</div>
+      <img id="modal-img" src="" alt="照片">
+    </div>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    // Global variables
+    let camera, scene, renderer, controls;
+    let christmasTree;
+    let particleMaterial; // Global material
+    let photoCards = [];
+    let uploadedPhotos = [];
+    let autoRotate = true;
+    let raycaster, mouse;
+    let snowSystem, snowGeo, snowMaterial;
+    const snowCount = 2000; // Snow count
+    let textRotationAngle = 0; // Text display rotation angle
+
+    // Animation state management
+    const STATES = { TREE: 0, HEART: 1, TEXT: 2 };
+    let currentState = STATES.TREE;
+    let nextState = STATES.HEART;
+    let stateStartTime = 0;
+    let isTransitioning = false;
+    let transitionStartTime = 0;
+    
+    // Duration for each state
+    const DURATIONS = {
+      [STATES.TREE]: 5000,
+      [STATES.HEART]: 5000,
+      [STATES.TEXT]: 3000
+    };
+    const TRANSITION_DURATION = 2000; // 2 seconds transition
+
+    // Particle data
+    let particleData = []; // Store position info for each particle
+    let instancedMesh; // Global reference
+
+    // Initialize scene
+    function initScene() {
+      const container = document.getElementById('canvas-container');
+      
+      // Scene
+      scene = new THREE.Scene();
+      // Add fog effect for depth
+      scene.fog = new THREE.FogExp2(0x050505, 0.02);
+
+      // Camera
+      camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(0, 8, 25);
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true,
+        powerPreference: "high-performance"
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      container.appendChild(renderer.domElement);
+
+      // Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.03;
+      controls.minDistance = 10;
+      controls.maxDistance = 40;
+      controls.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent camera going below ground
+      controls.autoRotate = autoRotate;
+      controls.autoRotateSpeed = 0.5;
+
+      // Raycaster
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      // Lighting system
+      initLights();
+
+      // Create golden particle Christmas tree
+      createGoldenTree();
+
+      // Create particle snow system
+      initSnow();
+
+      // Event listeners
+      window.addEventListener('resize', onWindowResize);
+      renderer.domElement.addEventListener('click', onMouseClick);
+      renderer.domElement.addEventListener('mousemove', onMouseMove);
+    }
+
+    // Initialize lighting
+    function initLights() {
+      // Ambient light - high intensity for base brightness
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+      scene.add(ambientLight);
+
+      // Main light - warm color
+      const mainLight = new THREE.PointLight(0xFFD700, 3.0, 150);
+      mainLight.position.set(10, 20, 10);
+      mainLight.castShadow = true;
+      scene.add(mainLight);
+
+      // Front light (Headlight) - Ensures particles are always lit
+      const frontLight = new THREE.DirectionalLight(0xffffff, 1.5);
+      frontLight.position.set(0, 0, 10);
+      scene.add(frontLight);
+
+      // Fill light - cool color
+      const fillLight = new THREE.PointLight(0x4444ff, 1.5, 50);
+      fillLight.position.set(-10, 10, -10);
+      scene.add(fillLight);
+
+      // Bottom light
+      const bottomLight = new THREE.PointLight(0xff0000, 1.0, 30);
+      bottomLight.position.set(0, -10, 0);
+      scene.add(bottomLight);
+    }
+
+    // Generate heart shape points (parametric equation)
+    function getHeartPosition(u, v, scale = 1) {
+      // u: 0 -> 2PI, v: 0 -> PI
+      const x = 16 * Math.pow(Math.sin(u), 3) * Math.sin(v);
+      const y = (13 * Math.cos(u) - 5 * Math.cos(2*u) - 2 * Math.cos(3*u) - Math.cos(4*u)) * Math.sin(v);
+      const z = 6 * Math.cos(v); // Thickness
+      
+      // Remove +5 offset, center naturally downwards
+      return new THREE.Vector3(x * scale, y * scale, z * scale);
+    }
+
+    // Generate text dot positions (Canvas sampling)
+    function generateTextPositions(text, count) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const width = 800; // Increased width
+      const height = 400; // Increased height
+      canvas.width = width;
+      canvas.height = height;
+      
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 80px Arial'; // Larger font
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Draw in two lines
+      ctx.fillText("MERRY", width / 2, height * 0.35);
+      ctx.fillText("CHRISTMAS", width / 2, height * 0.65);
+      
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      const validPixels = [];
+      
+      // Scan pixels with larger steps to reduce density
+      for (let y = 0; y < height; y += 4) {
+        for (let x = 0; x < width; x += 4) {
+          if (data[(y * width + x) * 4] > 128) {
+            validPixels.push({x, y});
+          }
+        }
+      }
+      
+      const positions = [];
+      // Assign to particles
+      for (let i = 0; i < count; i++) {
+        // Uniformly sample from valid pixels to ensure full text coverage
+        const pixelIndex = Math.floor(i * validPixels.length / count);
+        const pixel = validPixels[pixelIndex];
+        
+        // Map to 3D space
+        const x3d = (pixel.x / width - 0.5) * 50; 
+        const y3d = -(pixel.y / height - 0.5) * 20; 
+        const z3d = (Math.random() - 0.5) * 0.5; // Slight depth
+        
+        positions.push(new THREE.Vector3(x3d, y3d, z3d));
+      }
+      
+      return positions;
+    }
+
+    // Create golden particle system (supports morphing)
+    function createGoldenTree() {
+      christmasTree = new THREE.Group();
+      const totalParticles = 1500;
+      particleData = [];
+
+      // Use triangular faces
+      const geometry = new THREE.SphereGeometry(0.25, 16, 16);
+      
+    // Shared advanced metal material - Classic Gold
+    particleMaterial = new THREE.MeshStandardMaterial({
+      color: 0xFFD700,        // Classic Gold
+      metalness: 1.0,         // Full metal
+      roughness: 0.2,         // Shiny
+      emissive: 0xFFD700,     // Gold glow
+      emissiveIntensity: 0.4, // Boost brightness
+      transparent: true,
+      opacity: 1.0,
+    });
+
+      instancedMesh = new THREE.InstancedMesh(geometry, particleMaterial, totalParticles);
+      instancedMesh.castShadow = true;
+      instancedMesh.receiveShadow = true;
+      
+      const dummy = new THREE.Object3D();
+      const treeHeight = 20;
+      const maxRadius = 8;
+      
+      // Pre-calculate text positions
+      const textPositions = generateTextPositions("MERRY CHRISTMAS", totalParticles);
+
+      for (let i = 0; i < totalParticles; i++) {
+        // --- 1. Calculate tree shape position ---
+        const p = i / (totalParticles - 1);
+        const y = p * treeHeight;
+        const radius = maxRadius * Math.pow((1 - p), 0.9);
+        const theta = i * 2.39996 + (Math.random() * 0.5);
+        const rOffset = (Math.random() - 0.5) * 1.5;
+        const finalRadius = Math.max(0.1, radius + rOffset);
+        
+        const treePos = new THREE.Vector3(
+          finalRadius * Math.cos(theta),
+          y - 9, // Center adjustment
+          finalRadius * Math.sin(theta)
+        );
+
+        // --- 2. Calculate heart shape position ---
+        // Randomly distribute on/in heart surface
+        const u = Math.random() * Math.PI * 2;
+        const v = Math.random() * Math.PI;
+        // Radius distribution 0.8 ~ 1.0, concentrate on surface but with thickness
+        const rScale = 0.4 + Math.random() * 0.1; 
+        const heartPos = getHeartPosition(u, v, rScale);
+
+        // --- 3. Get text position ---
+        const textPos = textPositions[i];
+
+        // Initialization
+        dummy.position.copy(treePos);
+        dummy.rotation.set(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2);
+        const scale = 0.4 + Math.random() * 0.8;
+        dummy.scale.set(scale, scale, scale);
+        dummy.updateMatrix();
+        
+        instancedMesh.setMatrixAt(i, dummy.matrix);
+
+        // Store data
+        particleData.push({
+          treePos: treePos,
+          heartPos: heartPos,
+          textPos: textPos,
+          currentPos: treePos.clone(),
+          rotation: dummy.rotation.clone(),
+          scale: dummy.scale.clone(),
+          rotationSpeed: new THREE.Vector3(
+            (Math.random()-0.5)*0.05, 
+            (Math.random()-0.5)*0.05, 
+            (Math.random()-0.5)*0.05
+          )
+        });
+      }
+      
+      instancedMesh.instanceMatrix.needsUpdate = true;
+      christmasTree.add(instancedMesh);
+      
+      // Top star
+      createTopStar();
+
+      scene.add(christmasTree);
+      
+      // Initialize time
+      stateStartTime = Date.now();
+    }
+
+    // Create top star
+    function createTopStar() {
+      const geometry = new THREE.OctahedronGeometry(0.8, 0);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xFFFF00,
+        emissive: 0xFFD700,
+        emissiveIntensity: 2.0,
+        metalness: 0.5,
+        roughness: 0.1
+      });
+      const star = new THREE.Mesh(geometry, material);
+      star.position.y = 18.5; // Tree top height + 0.5
+      
+      // Star glow
+      const light = new THREE.PointLight(0xFFFF00, 2, 10);
+      star.add(light);
+      
+      christmasTree.add(star);
+      
+      // Star rotation animation
+      const animateStar = () => {
+        star.rotation.y += 0.02;
+        requestAnimationFrame(animateStar);
+      };
+      animateStar();
+    }
+
+    // Initialize snow system (using Three.js Points)
+    function initSnow() {
+      snowGeo = new THREE.BufferGeometry();
+      const positions = [];
+      const velocities = []; // Store velocities
+
+      for (let i = 0; i < snowCount; i++) {
+        // Distribute uniformly in frustum
+        const x = (Math.random() - 0.5) * 60;
+        const y = Math.random() * 40 - 10;
+        const z = (Math.random() - 0.5) * 60;
+        
+        positions.push(x, y, z);
+        
+        // Random falling velocity
+        velocities.push(
+          (Math.random() - 0.5) * 0.02, // x drift
+          -(Math.random() * 0.05 + 0.02), // y fall (negative)
+          (Math.random() - 0.5) * 0.02 // z drift
+        );
+      }
+
+      snowGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      snowGeo.setAttribute('velocity', new THREE.Float32BufferAttribute(velocities, 3));
+
+      // Procedurally generate circular snow texture
+      const canvas = document.createElement('canvas');
+      canvas.width = 32;
+      canvas.height = 32;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 32, 32);
+      const texture = new THREE.CanvasTexture(canvas);
+
+      snowMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.3,
+        map: texture,
+        transparent: true,
+        opacity: 0.6,
+        depthWrite: false, // Don't occlude objects behind
+        blending: THREE.AdditiveBlending
+      });
+
+      snowSystem = new THREE.Points(snowGeo, snowMaterial);
+      scene.add(snowSystem);
+    }
+
+    // Update snow position
+    function updateSnow() {
+      if (!snowGeo) return;
+      
+      const positions = snowGeo.attributes.position.array;
+      const velocities = snowGeo.attributes.velocity.array;
+
+      for (let i = 0; i < snowCount; i++) {
+        // Update position
+        positions[i * 3] += velocities[i * 3];     // x
+        positions[i * 3 + 1] += velocities[i * 3 + 1]; // y
+        positions[i * 3 + 2] += velocities[i * 3 + 2]; // z
+
+        // Boundary check and reset
+        // If fallen too low, reset to top
+        if (positions[i * 3 + 1] < -15) {
+          positions[i * 3 + 1] = 25; // Top height
+          positions[i * 3] = (Math.random() - 0.5) * 60; // Random x
+          positions[i * 3 + 2] = (Math.random() - 0.5) * 60; // Random z
+        }
+      }
+
+      snowGeo.attributes.position.needsUpdate = true;
+    }
+
+    // Update particle morphing
+    function updateMorphingParticles() {
+      if (!autoRotate) return; // Use existing pause switch
+
+      const now = Date.now();
+      const dummy = new THREE.Object3D();
+      
+      // State machine logic
+      if (isTransitioning) {
+        // Transition phase
+        const progress = Math.min((now - transitionStartTime) / TRANSITION_DURATION, 1);
+        // Use easing function (Ease In Out Quad)
+        const easedProgress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+        // Pre-calculate text rotation matrix (around Y axis)
+        const s = Math.sin(textRotationAngle);
+        const c = Math.cos(textRotationAngle);
+
+        for (let i = 0; i < particleData.length; i++) {
+          const p = particleData[i];
+          
+          let startPos, endPos;
+          
+          // Determine start
+          if (currentState === STATES.TREE) startPos = p.treePos;
+          else if (currentState === STATES.HEART) startPos = p.heartPos;
+          else {
+             // Text state start (apply rotation)
+             startPos = new THREE.Vector3(
+                p.textPos.x * c + p.textPos.z * s,
+                p.textPos.y,
+                -p.textPos.x * s + p.textPos.z * c
+             );
+          }
+          
+          // Determine end
+          if (nextState === STATES.TREE) endPos = p.treePos;
+          else if (nextState === STATES.HEART) endPos = p.heartPos;
+          else {
+             // Text state end (apply rotation)
+             endPos = new THREE.Vector3(
+                p.textPos.x * c + p.textPos.z * s,
+                p.textPos.y,
+                -p.textPos.x * s + p.textPos.z * c
+             );
+          }
+          
+          // Interpolate position
+          p.currentPos.lerpVectors(startPos, endPos, easedProgress);
+          
+          // Rotate particle itself
+          p.rotation.x += p.rotationSpeed.x;
+          p.rotation.y += p.rotationSpeed.y;
+          
+          dummy.position.copy(p.currentPos);
+          dummy.rotation.copy(p.rotation);
+          dummy.scale.copy(p.scale);
+          dummy.updateMatrix();
+          
+          instancedMesh.setMatrixAt(i, dummy.matrix);
+        }
+
+        if (progress >= 1) {
+          isTransitioning = false;
+          currentState = nextState;
+          stateStartTime = now;
+          // Update status bar display
+          const names = { [STATES.TREE]: 'MODE: TREE', [STATES.HEART]: 'MODE: HEART', [STATES.TEXT]: 'MODE: MERRY CHRISTMAS' };
+          const statusBar = document.getElementById('status-bar');
+          if (statusBar) statusBar.textContent = names[currentState];
+        }
+      } else {
+        // Static hold phase (with self-rotation)
+        
+        // If TEXT state, need to maintain rotated position
+        const s = Math.sin(textRotationAngle);
+        const c = Math.cos(textRotationAngle);
+
+        for (let i = 0; i < particleData.length; i++) {
+          const p = particleData[i];
+          p.rotation.x += p.rotationSpeed.x;
+          p.rotation.y += p.rotationSpeed.y;
+          
+          if (currentState === STATES.TEXT) {
+             // Maintain rotation
+             p.currentPos.set(
+                p.textPos.x * c + p.textPos.z * s,
+                p.textPos.y,
+                -p.textPos.x * s + p.textPos.z * c
+             );
+          }
+          
+          dummy.position.copy(p.currentPos);
+          dummy.rotation.copy(p.rotation);
+          dummy.scale.copy(p.scale);
+          dummy.updateMatrix();
+          
+          instancedMesh.setMatrixAt(i, dummy.matrix);
+        }
+
+        // Check if next morph should start
+        const duration = DURATIONS[currentState] || 5000;
+        if (now - stateStartTime > duration) {
+          isTransitioning = true;
+          transitionStartTime = now;
+          // State cycle: TREE -> HEART -> TEXT -> TREE
+          nextState = (currentState + 1) % 3; 
+          
+          // If about to become text, capture current camera angle
+          if (nextState === STATES.TEXT) {
+             textRotationAngle = controls.getAzimuthalAngle();
+          }
+        }
+      }
+      
+      instancedMesh.instanceMatrix.needsUpdate = true;
+    }
+
+    // Add photo card
+    function addPhotoCard(imageUrl) {
+      const cardWidth = 2.5;
+      const cardHeight = 2.5 * 0.75; // 4:3 ratio
+      
+      const cardGeometry = new THREE.PlaneGeometry(cardWidth, cardHeight);
+      const loader = new THREE.TextureLoader();
+      
+      loader.load(imageUrl, (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const cardMaterial = new THREE.MeshBasicMaterial({ 
+          map: texture,
+          side: THREE.DoubleSide
+        });
+        
+        const card = new THREE.Mesh(cardGeometry, cardMaterial);
+        
+        // --- 1. Calculate tree position ---
+        const h = 2 + Math.random() * 13;
+        const p = h / 18;
+        const maxR = 7 * Math.pow((1 - p), 0.9);
+        const r = maxR + 0.5;
+        const theta = Math.random() * Math.PI * 2;
+        
+        const treePos = new THREE.Vector3(
+          r * Math.cos(theta),
+          h - 8,
+          r * Math.sin(theta)
+        );
+        
+        // --- 2. Calculate heart position ---
+        // Randomly select point on heart surface
+        const u = Math.random() * Math.PI * 2;
+        const v = Math.random() * Math.PI;
+        
+        // Heart slightly larger (scale=1.3), let photo float on particle surface
+        const heartSurfacePos = getHeartPosition(u, v, 1.3); 
+        
+        // --- 3. Calculate text below position ---
+        // Randomly distribute in area below text
+        const textStatePos = new THREE.Vector3(
+          (Math.random() - 0.5) * 30, // x range
+          -10 + (Math.random() - 0.5) * 6, // y range (below text)
+          (Math.random() - 0.5) * 5 // z depth random
+        );
+        
+        // Initial position set to target position of current state
+        let currentTarget;
+        if (currentState === STATES.TREE) currentTarget = treePos;
+        else if (currentState === STATES.HEART) currentTarget = heartSurfacePos;
+        else currentTarget = textStatePos;
+        
+        card.position.copy(currentTarget);
+        
+        // Face logic: tree faces axis, heart faces center
+        // Handled dynamically in updatePhotos
+        
+        // Add white polaroid style border
+        const borderGeo = new THREE.PlaneGeometry(cardWidth + 0.2, cardHeight + 0.5);
+        const borderMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const border = new THREE.Mesh(borderGeo, borderMat);
+        border.position.z = -0.01;
+        border.position.y = -0.1;
+        card.add(border);
+        
+        // Store data
+        card.userData = {
+          isPhotoCard: true,
+          imageUrl: imageUrl,
+          originalScale: 1,
+          floatPhase: Math.random() * Math.PI * 2,
+          treePos: treePos,
+          heartPos: heartSurfacePos,
+          textPos: textStatePos,
+          currentPos: currentTarget.clone()
+        };
+        
+        christmasTree.add(card);
+        photoCards.push(card);
+      });
+    }
+
+    // Update photo positions (follow morphing)
+    function updatePhotos() {
+      if (!autoRotate && currentState !== STATES.TEXT) return; // Force update in text state to follow view
+      if (currentState === STATES.TEXT && !isTransitioning && !autoRotate) {
+         // In TEXT state if not auto rotating, no need to update every frame unless we need it to face camera
+         // But since we stopped camera rotation and text position is fixed, photo position just needs to interpolate
+      }
+      
+      const now = Date.now();
+      const time = now * 0.001;
+
+      // If morphing, calculate interpolation
+      let progress = 0;
+      let startState = currentState;
+      let targetState = currentState;
+
+      if (isTransitioning) {
+        const rawProgress = Math.min((now - transitionStartTime) / TRANSITION_DURATION, 1);
+        progress = rawProgress < 0.5 ? 2 * rawProgress * rawProgress : 1 - Math.pow(-2 * rawProgress + 2, 2) / 2;
+        startState = currentState;
+        targetState = nextState;
+      }
+
+      // Pre-calculate text rotation matrix
+      const s = Math.sin(textRotationAngle);
+      const c = Math.cos(textRotationAngle);
+
+      photoCards.forEach(card => {
+        // Base floating animation
+        const floatY = Math.sin(time + card.userData.floatPhase) * 0.1;
+        
+        let startPos, endPos;
+        
+        // Get position for each state (dynamically calculate text state position)
+        const getPos = (state) => {
+           if (state === STATES.TREE) return card.userData.treePos;
+           if (state === STATES.HEART) return card.userData.heartPos;
+           if (state === STATES.TEXT) {
+              const tp = card.userData.textPos;
+              return new THREE.Vector3(
+                 tp.x * c + tp.z * s,
+                 tp.y,
+                 -tp.x * s + tp.z * c
+              );
+           }
+           return card.userData.treePos;
+        };
+
+        if (isTransitioning) {
+          startPos = getPos(startState);
+          endPos = getPos(targetState);
+          card.position.lerpVectors(startPos, endPos, progress);
+        } else {
+          // Static hold
+          const targetPos = getPos(currentState);
+          card.position.lerp(targetPos, 0.1);
+        }
+        
+        // Add floating
+        card.position.y += floatY;
+        
+        // Dynamic orientation
+        if (progress > 0.5 || currentState === STATES.HEART) {
+          // Heart mode: face heart center
+          card.lookAt(0, 5, 0);
+        }
+        
+        if ((isTransitioning && targetState === STATES.TEXT && progress > 0.5) || (!isTransitioning && currentState === STATES.TEXT)) {
+           // Text mode: face camera direction (textRotationAngle)
+           // Actually just need to face camera with plane parallel to text
+           // Since text plane rotated by textRotationAngle, photo should rotate same angle
+           card.rotation.set(0, textRotationAngle, 0); 
+           // Or use lookAt far point
+           // card.lookAt(camera.position); // This makes side photos tilt in slightly, maybe better
+           // But for neatness, unified orientation is better:
+           // card.rotation.y = textRotationAngle; 
+        } else if (!((isTransitioning && targetState === STATES.TEXT && progress > 0.5) || currentState === STATES.TEXT) && !((isTransitioning && targetState === STATES.HEART && progress > 0.5) || currentState === STATES.HEART)) {
+           // Tree mode: face central axis
+           card.lookAt(0, card.position.y, 0);
+        }
+        
+        // Slight self-rotation (only in non-text state, or keep a little life in text state)
+        if (currentState !== STATES.TEXT) {
+           card.rotation.z += Math.sin(time * 0.5 + card.userData.floatPhase) * 0.02;
+        } else {
+           card.rotation.z = 0; // Straighten in text state
+        }
+      });
+    }
+
+    // Mouse click event
+    function onMouseClick(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(photoCards, true);
+
+      if (intersects.length > 0) {
+        // Find top-level parent object (card itself, not border)
+        let target = intersects[0].object;
+        while(target.parent && !target.userData.isPhotoCard) {
+          target = target.parent;
+        }
+        
+        if (target.userData && target.userData.isPhotoCard) {
+          showPhotoModal(target.userData.imageUrl);
+        }
+      }
+    }
+
+    // Mouse move event (hover effect)
+    function onMouseMove(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(photoCards, true);
+      
+      document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+
+      // Simple hover scaling logic
+      photoCards.forEach(card => {
+        // Restore original size
+        const targetScale = 1;
+        card.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+      });
+      
+      if (intersects.length > 0) {
+        let target = intersects[0].object;
+        while(target.parent && !target.userData.isPhotoCard) {
+          target = target.parent;
+        }
+        if (target.userData.isPhotoCard) {
+          target.scale.set(1.1, 1.1, 1.1);
+        }
+      }
+    }
+
+    // Show photo modal
+    function showPhotoModal(imageUrl) {
+      const modal = document.getElementById('photo-modal');
+      const img = document.getElementById('modal-img');
+      img.src = imageUrl;
+      modal.classList.add('active');
+      autoRotate = false; // Pause rotation
+    }
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Controls update
+      // Stop auto rotate in TEXT state for easier reading
+      if (currentState === STATES.TEXT && !isTransitioning) {
+        controls.autoRotate = false;
+        
+        // Optional: Smoothly move camera back to front (0, 8, 25) here
+        // But might conflict with user manual control, so just stop rotation
+      } else {
+        controls.autoRotate = autoRotate;
+      }
+      
+      controls.update();
+      
+      // Update snow
+      updateSnow();
+      
+      // Update particle morphing
+      if (particleData.length > 0) {
+        updateMorphingParticles();
+      }
+
+      // Photo animation
+      updatePhotos();
+
+      renderer.render(scene, camera);
+    }
+
+    // Window resize
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // UI Event Listeners
+    document.getElementById('upload-btn').addEventListener('click', () => {
+      document.getElementById('photo-input').click();
+    });
+
+    document.getElementById('photo-input').addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files.length > 0) {
+        Array.from(files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const imageUrl = event.target.result;
+            uploadedPhotos.push(imageUrl);
+            addPhotoCard(imageUrl);
+            
+            const countEl = document.getElementById('photo-count');
+            countEl.textContent = `${uploadedPhotos.length} photos added`;
+            countEl.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    });
+
+    document.getElementById('auto-rotate-btn').addEventListener('click', () => {
+      autoRotate = !autoRotate;
+      const btn = document.getElementById('auto-rotate-btn');
+      btn.style.background = autoRotate ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 255, 255, 0.1)';
+    });
+
+    document.getElementById('clear-photos-btn').addEventListener('click', () => {
+      if (confirm('Clear all photos?')) {
+        photoCards.forEach(card => christmasTree.remove(card));
+        photoCards = [];
+        uploadedPhotos = [];
+        document.getElementById('photo-count').style.display = 'none';
+      }
+    });
+
+    // Color/Opacity Control
+    const colorBtn = document.getElementById('color-btn');
+    const colorPanel = document.getElementById('color-panel');
+    const colorPicker = document.getElementById('color-picker');
+    const opacitySlider = document.getElementById('opacity-slider');
+    
+    // Shape Control
+    const shapeBtn = document.getElementById('shape-btn');
+    const shapePanel = document.getElementById('shape-panel');
+
+    function togglePanel(panel, btn) {
+      // Close other panels
+      document.querySelectorAll('.panel').forEach(p => {
+        if (p !== panel) p.classList.add('hidden');
+      });
+      panel.classList.toggle('hidden');
+    }
+
+    colorBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePanel(colorPanel, colorBtn);
+    });
+    
+    shapeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePanel(shapePanel, shapeBtn);
+    });
+
+    // Click outside to close all panels
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#controls')) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+      }
+    });
+
+    // Shape switch logic
+    document.querySelectorAll('.shape-option').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        const shape = e.target.dataset.shape;
+        switchShape(shape);
+        // Blink to indicate selection
+        e.target.style.transform = 'scale(0.8)';
+        setTimeout(() => e.target.style.transform = '', 150);
+      });
+    });
+
+    function switchShape(shapeType) {
+      if (!instancedMesh) return;
+      
+      let newGeometry;
+      switch(shapeType) {
+        case 'circle':
+          newGeometry = new THREE.CircleGeometry(0.25, 8);
+          break;
+        case 'sphere':
+          newGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+          break;
+        case 'triangle':
+          newGeometry = new THREE.CircleGeometry(0.25, 3);
+          break;
+        case 'square':
+          newGeometry = new THREE.CircleGeometry(0.28, 4, Math.PI / 4); // Rotate 45 deg for square
+          break;
+        case 'diamond':
+          newGeometry = new THREE.OctahedronGeometry(0.25, 0); // Octahedron
+          break;
+        case 'star':
+          // Simulate star with tetrahedron for sparkle
+          newGeometry = new THREE.TetrahedronGeometry(0.28, 0); 
+          break;
+        default:
+          newGeometry = new THREE.CircleGeometry(0.25, 8);
+      }
+      
+      // Replace geometry
+      instancedMesh.geometry.dispose();
+      instancedMesh.geometry = newGeometry;
+    }
+
+    colorPicker.addEventListener('input', (e) => {
+      const color = new THREE.Color(e.target.value);
+      if (particleMaterial) {
+        particleMaterial.color.copy(color);
+        // Emissive follows color but darker
+        particleMaterial.emissive.copy(color).multiplyScalar(0.5);
+        particleMaterial.needsUpdate = true;
+      }
+      
+      // Update title color
+      const titleH1 = document.querySelector('#title h1');
+      titleH1.style.background = `linear-gradient(135deg, ${e.target.value} 0%, #ffffff 50%, ${e.target.value} 100%)`;
+      titleH1.style.webkitBackgroundClip = 'text';
+    });
+
+    opacitySlider.addEventListener('input', (e) => {
+      const opacity = parseFloat(e.target.value);
+      if (particleMaterial) {
+        particleMaterial.opacity = opacity;
+        particleMaterial.needsUpdate = true;
+      }
+    });
+
+    // Modal close logic
+
+    document.querySelector('#photo-modal .close-btn').addEventListener('click', () => {
+      document.getElementById('photo-modal').classList.remove('active');
+      autoRotate = true; // Resume rotation
+    });
+
+    document.getElementById('photo-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'photo-modal') {
+        document.getElementById('photo-modal').classList.remove('active');
+        autoRotate = true;
+      }
+    });
+
+    // Initialize
+    initScene();
+    animate();
+  </script>
+</body>
+</html>
