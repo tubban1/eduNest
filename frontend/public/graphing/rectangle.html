@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>矩形对角线动画：探索对称中心</title>
+    <script  src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script  src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script  src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/anime.min.js'"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        #app {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 400px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .info-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .info-panel h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .info-panel p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+        
+        .highlight {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .stage-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stage-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s ease;
+        }
+        
+        .stage-dot.active {
+            background: #667eea;
+            transform: scale(1.3);
+        }
+        
+        .reflection {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .reflection h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .reflection p {
+            color: #555;
+            line-height: 1.8;
+            font-size: 1.1em;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            canvas {
+                height: 300px;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>矩形对角线动画：探索对称中心</h1>
+            
+            <div class="stage-indicator">
+                <div v-for="(stage, index) in stages" :key="index" 
+                     class="stage-dot" :class="{ active: currentStage >= index }">
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <h3>{{ stages[currentStage].title }}</h3>
+                <p v-html="stages[currentStage].description"></p>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas ref="canvas" @click="handleCanvasClick"></canvas>
+            </div>
+            
+            <div class="controls">
+                <button @click="startAnimation" :disabled="isAnimating">
+                    {{ isAnimating ? '动画进行中...' : '开始动画' }}
+                </button>
+                <button @click="resetCanvas">重置</button>
+                <button @click="toggleSymmetryMode">
+                    {{ symmetryMode ? '退出对称模式' : '探索对称性' }}
+                </button>
+                <button @click="nextStage" :disabled="currentStage >= stages.length - 1">
+                    下一步
+                </button>
+            </div>
+            
+            <div v-if="currentStage === stages.length - 1" class="reflection">
+                <h3>🎯 深度思考</h3>
+                <p>矩形的对称中心不仅是几何图形的中心点，更是理解<span class="highlight">对称性</span>、<span class="highlight">平衡</span>和<span class="highlight">和谐</span>的关键。这个性质在建筑、艺术、自然界中无处不在，从蜂巢的六边形到雪花的对称，都体现了中心对称的美妙。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                const canvas = ref(null);
+                const ctx = ref(null);
+                const isAnimating = ref(false);
+                const currentStage = ref(0);
+                const symmetryMode = ref(false);
+                const mousePos = ref({ x: 0, y: 0 });
+                
+                const stages = ref([
+                    {
+                        title: '第一步：认识矩形',
+                        description: '矩形是一个四边形，有四个直角。注意观察它的<span class="highlight">对边平行且相等</span>。'
+                    },
+                    {
+                        title: '第二步：绘制对角线',
+                        description: '对角线是连接矩形相对顶点的线段。一个矩形有两条对角线。'
+                    },
+                    {
+                        title: '第三步：发现交点',
+                        description: '两条对角线会在矩形的<span class="highlight">中心点</span>相交，这个点就是对称中心。'
+                    },
+                    {
+                        title: '第四步：验证对称性',
+                        description: '对称中心将矩形分成四个全等的三角形，每个点都有对应的对称点。'
+                    },
+                    {
+                        title: '第五步：深度理解',
+                        description: '对称中心是矩形的<span class="highlight">几何中心</span>，也是它的<span class="highlight">平衡点</span>。'
+                    }
+                ]);
+                
+                let rect = {
+                    x: 0,
+                    y: 0,
+                    width: 300,
+                    height: 200
+                };
+                
+                let center = { x: 0, y: 0 };
+                let vertices = [];
+                let diagonals = [];
+                let symmetryLines = [];
+                
+                const initCanvas = () => {
+                    ctx.value = canvas.value.getContext('2d');
+                    resizeCanvas();
+                    calculateGeometry();
+                    draw();
+                };
+                
+                const resizeCanvas = () => {
+                    const container = canvas.value.parentElement;
+                    canvas.value.width = container.clientWidth - 40;
+                    canvas.value.height = 400;
+                };
+                
+                const calculateGeometry = () => {
+                    rect.x = (canvas.value.width - rect.width) / 2;
+                    rect.y = (canvas.value.height - rect.height) / 2;
+                    
+                    center.x = rect.x + rect.width / 2;
+                    center.y = rect.y + rect.height / 2;
+                    
+                    vertices = [
+                        { x: rect.x, y: rect.y },
+                        { x: rect.x + rect.width, y: rect.y },
+                        { x: rect.x + rect.width, y: rect.y + rect.height },
+                        { x: rect.x, y: rect.y + rect.height }
+                    ];
+                    
+                    diagonals = [
+                        { start: vertices[0], end: vertices[2] },
+                        { start: vertices[1], end: vertices[3] }
+                    ];
+                    
+                    symmetryLines = [
+                        { start: { x: center.x, y: rect.y }, end: { x: center.x, y: rect.y + rect.height } },
+                        { start: { x: rect.x, y: center.y }, end: { x: rect.x + rect.width, y: center.y } }
+                    ];
+                };
+                
+                const playSound = (frequency, duration) => {
+                    const synth = new Tone.Synth().toDestination();
+                    synth.triggerAttackRelease(frequency, duration);
+                };
+                
+                const draw = () => {
+                    ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height);
+                    
+                    // 绘制矩形
+                    ctx.value.strokeStyle = '#667eea';
+                    ctx.value.lineWidth = 3;
+                    ctx.value.strokeRect(rect.x, rect.y, rect.width, rect.height);
+                    
+                    // 绘制顶点
+                    vertices.forEach((vertex, index) => {
+                        ctx.value.beginPath();
+                        ctx.value.arc(vertex.x, vertex.y, 6, 0, Math.PI * 2);
+                        ctx.value.fillStyle = '#764ba2';
+                        ctx.value.fill();
+                        
+                        // 顶点标签
+                        ctx.value.fillStyle = '#333';
+                        ctx.value.font = '14px Arial';
+                        const labels = ['A', 'B', 'C', 'D'];
+                        ctx.value.fillText(labels[index], vertex.x + 10, vertex.y - 10);
+                    });
+                    
+                    // 绘制对角线（根据当前阶段）
+                    if (currentStage.value >= 1) {
+                        diagonals.forEach((diagonal, index) => {
+                            ctx.value.beginPath();
+                            ctx.value.moveTo(diagonal.start.x, diagonal.start.y);
+                            ctx.value.lineTo(diagonal.end.x, diagonal.end.y);
+                            ctx.value.strokeStyle = index === 0 ? '#e17055' : '#00b894';
+                            ctx.value.lineWidth = 2;
+                            ctx.value.stroke();
+                        });
+                    }
+                    
+                    // 绘制中心点
+                    if (currentStage.value >= 2) {
+                        ctx.value.beginPath();
+                        ctx.value.arc(center.x, center.y, 8, 0, Math.PI * 2);
+                        ctx.value.fillStyle = '#fdcb6e';
+                        ctx.value.fill();
+                        ctx.value.strokeStyle = '#e17055';
+                        ctx.value.lineWidth = 2;
+                        ctx.value.stroke();
+                        
+                        // 中心点标签
+                        ctx.value.fillStyle = '#333';
+                        ctx.value.font = '16px Arial';
+                        ctx.value.fillText('对称中心', center.x + 15, center.y - 15);
+                    }
+                    
+                    // 对称模式
+                    if (symmetryMode.value) {
+                        symmetryLines.forEach(line => {
+                            ctx.value.beginPath();
+                            ctx.value.moveTo(line.start.x, line.start.y);
+                            ctx.value.lineTo(line.end.x, line.end.y);
+                            ctx.value.strokeStyle = 'rgba(102, 126, 234, 0.5)';
+                            ctx.value.lineWidth = 1;
+                            ctx.value.setLineDash([5, 5]);
+                            ctx.value.stroke();
+                            ctx.value.setLineDash([]);
+                        });
+                        
+                        // 绘制对称三角形
+                        if (mousePos.value.x && mousePos.value.y) {
+                            const relX = mousePos.value.x - center.x;
+                            const relY = mousePos.value.y - center.y;
+                            const symX = center.x - relX;
+                            const symY = center.y - relY;
+                            
+                            ctx.value.beginPath();
+                            ctx.value.moveTo(center.x, center.y);
+                            ctx.value.lineTo(mousePos.value.x, mousePos.value.y);
+                            ctx.value.lineTo(symX, symY);
+                            ctx.value.closePath();
+                            ctx.value.fillStyle = 'rgba(255, 118, 117, 0.3)';
+                            ctx.value.fill();
+                            ctx.value.strokeStyle = '#ff7675';
+                            ctx.value.lineWidth = 1;
+                            ctx.value.stroke();
+                        }
+                    }
+                };
+                
+                const startAnimation = async () => {
+                    if (isAnimating.value) return;
+                    
+                    isAnimating.value = true;
+                    playSound('C4', '8n');
+                    
+                    // 动画绘制对角线
+                    if (currentStage.value >= 1) {
+                        await animateDiagonal(diagonals[0], '#e17055');
+                        await animateDiagonal(diagonals[1], '#00b894');
+                        playSound('E4', '8n');
+                    }
+                    
+                    // 动画显示中心点
+                    if (currentStage.value >= 2) {
+                        await animateCenter();
+                        playSound('G4', '8n');
+                    }
+                    
+                    isAnimating.value = false;
+                };
+                
+                const animateDiagonal = (diagonal, color) => {
+                    return new Promise(resolve => {
+                        const duration = 1500;
+                        const startTime = Date.now();
+                        
+                        const animate = () => {
+                            const elapsed = Date.now() - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            
+                            draw();
+                            
+                            ctx.value.beginPath();
+                            ctx.value.moveTo(diagonal.start.x, diagonal.start.y);
+                            const currentX = diagonal.start.x + (diagonal.end.x - diagonal.start.x) * progress;
+                            const currentY = diagonal.start.y + (diagonal.end.y - diagonal.start.y) * progress;
+                            ctx.value.lineTo(currentX, currentY);
+                            ctx.value.strokeStyle = color;
+                            ctx.value.lineWidth = 3;
+                            ctx.value.stroke();
+                            
+                            if (progress < 1) {
+                                requestAnimationFrame(animate);
+                            } else {
+                                resolve();
+                            }
+                        };
+                        
+                        animate();
+                    });
+                };
+                
+                const animateCenter = () => {
+                    return new Promise(resolve => {
+                        let scale = 0;
+                        const duration = 1000;
+                        const startTime = Date.now();
+                        
+                        const animate = () => {
+                            const elapsed = Date.now() - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            scale = progress;
+                            
+                            draw();
+                            
+                            ctx.value.save();
+                            ctx.value.translate(center.x, center.y);
+                            ctx.value.scale(scale, scale);
+                            ctx.value.beginPath();
+                            ctx.value.arc(0, 0, 8, 0, Math.PI * 2);
+                            ctx.value.fillStyle = '#fdcb6e';
+                            ctx.value.fill();
+                            ctx.value.strokeStyle = '#e17055';
+                            ctx.value.lineWidth = 2;
+                            ctx.value.stroke();
+                            ctx.value.restore();
+                            
+                            if (progress < 1) {
+                                requestAnimationFrame(animate);
+                            } else {
+                                resolve();
+                            }
+                        };
+                        
+                        animate();
+                    });
+                };
+                
+                const resetCanvas = () => {
+                    currentStage.value = 0;
+                    symmetryMode.value = false;
+                    mousePos.value = { x: 0, y: 0 };
+                    draw();
+                    playSound('C3', '8n');
+                };
+                
+                const nextStage = () => {
+                    if (currentStage.value < stages.value.length - 1) {
+                        currentStage.value++;
+                        playSound('D4', '8n');
+                        draw();
+                    }
+                };
+                
+                const toggleSymmetryMode = () => {
+                    symmetryMode.value = !symmetryMode.value;
+                    playSound(symmetryMode.value ? 'F4' : 'A3', '8n');
+                    draw();
+                };
+                
+                const handleCanvasClick = (event) => {
+                    const rect = canvas.value.getBoundingClientRect();
+                    mousePos.value = {
+                        x: event.clientX - rect.left,
+                        y: event.clientY - rect.top
+                    };
+                    
+                    if (symmetryMode.value) {
+                        playSound('A4', '16n');
+                        draw();
+                    }
+                };
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initCanvas();
+                        window.addEventListener('resize', () => {
+                            resizeCanvas();
+                            calculateGeometry();
+                            draw();
+                        });
+                    });
+                });
+                
+                return {
+                    canvas,
+                    isAnimating,
+                    currentStage,
+                    symmetryMode,
+                    stages,
+                    startAnimation,
+                    resetCanvas,
+                    nextStage,
+                    toggleSymmetryMode,
+                    handleCanvasClick
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
