@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Lineare Gleichungen lösen: Schritt-für-Schritt-Anleitung mit interaktiver Visualisierung und Überprüfung.">
+  <meta name="keywords" content="Mathematik,Gleichungen,Algebra,Bruchrechnung,Gleichungen lösen,Mittelschule">
+  <title>Lineare Gleichungen lösen - Mathematik Übungen</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+      text-align: center;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    h3 {
+      color: #555;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    .problem-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .problem-box p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .equation-display {
+      font-size: 24px;
+      font-family: 'Times New Roman', serif;
+      margin: 15px 0;
+      padding: 15px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      text-align: center;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .formula-box {
+      background: #f8f9fa;
+      border-left: 3px solid #007bff;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+      font-family: 'Times New Roman', serif;
+      font-size: 18px;
+      overflow-x: auto;
+    }
+    .step {
+      background: #fff;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .step-number {
+      display: inline-block;
+      background: #28a745;
+      color: white;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      border-radius: 50%;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    .answer-box {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .controls {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .btn {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      background: #2980b9;
+      transform: translateY(-2px);
+    }
+    .btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn.active {
+      background: #27ae60;
+    }
+    .task-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .task-btn {
+      background: #ecf0f1;
+      color: #2c3e50;
+      border: 2px solid #bdc3c7;
+      padding: 15px 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    .task-btn:hover {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+    .task-btn.active {
+      background: #3498db;
+      color: white;
+      border-color: #2980b9;
+    }
+    .task-btn.solved {
+      background: #27ae60;
+      color: white;
+      border-color: #1e8449;
+    }
+    .solution-container {
+      margin-top: 30px;
+    }
+    .step-container {
+      transition: all 0.3s ease;
+    }
+    .step-container.hidden {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    .step-container.visible {
+      opacity: 1;
+      max-height: 500px;
+    }
+    .verification {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .verification.error {
+      background: #ffebee;
+      border-left-color: #f44336;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .math {
+      font-family: 'Times New Roman', serif;
+      font-size: 18px;
+    }
+    .fraction {
+      display: inline-block;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .fraction .num {
+      display: block;
+      border-bottom: 1px solid #333;
+      padding: 0 5px;
+    }
+    .fraction .den {
+      display: block;
+      padding: 0 5px;
+    }
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .info-item {
+      background: #ecf0f1;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .info-item .label {
+      font-size: 14px;
+      color: #7f8c8d;
+      margin-bottom: 5px;
+    }
+    .info-item .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #ecf0f1;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4ecdc4, #3498db);
+      transition: width 0.3s;
+    }
+    .explanation {
+      background: #fff9e6;
+      border: 1px solid #ffc107;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    .explanation-icon {
+      font-size: 20px;
+      margin-right: 8px;
+    }
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      .equation-display {
+        font-size: 18px;
+      }
+      .task-btn {
+        padding: 10px 20px;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>📐 Lineare Gleichungen lösen</h1>
+      
+      <div class="problem-box">
+        <h2>📋 Aufgabenstellung</h2>
+        <p><strong>Aufgabe 5:</strong> Bestimme x für die folgenden Gleichungen:</p>
+        <div class="equation-display">
+          <div style="margin: 10px 0;">a) <span class="fraction"><span class="num">2</span><span class="den">3</span></span>(x + 4) − 8 = 54</div>
+          <div style="margin: 10px 0;">b) <span class="fraction"><span class="num">3</span><span class="den">8</span></span>(x − 3) + 12 = 15</div>
+          <div style="margin: 10px 0;">c) <span class="fraction"><span class="num">3</span><span class="den">10</span></span>(20 + x) − 6 = 4</div>
+          <div style="margin: 10px 0;">d) <span class="fraction"><span class="num">2</span><span class="den">5</span></span>(x − 3) + 2 = <span class="fraction"><span class="num">1</span><span class="den">8</span></span>(4 + 2x) − 8</div>
+        </div>
+      </div>
+
+      <h2>🎯 Wähle eine Aufgabe</h2>
+      <div class="task-selector">
+        <button 
+          v-for="task in tasks" 
+          :key="task.id"
+          class="task-btn"
+          :class="{ active: currentTask === task.id, solved: task.solved }"
+          @click="selectTask(task.id)"
+        >
+          {{ task.label }}
+          <span v-if="task.solved">✓</span>
+        </button>
+      </div>
+
+      <div class="info-panel">
+        <div class="info-item">
+          <div class="label">Aktuelle Aufgabe</div>
+          <div class="value">{{ currentTaskData.label }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Aktueller Schritt</div>
+          <div class="value">{{ currentStep }} / {{ currentTaskData.steps.length }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Gelöste Aufgaben</div>
+          <div class="value">{{ solvedCount }} / {{ tasks.length }}</div>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" @click="showNextStep" :disabled="currentStep >= currentTaskData.steps.length">
+          ▶️ Nächster Schritt
+        </button>
+        <button class="btn" @click="showAllSteps" :disabled="currentStep >= currentTaskData.steps.length">
+          ⏭️ Alle Schritte zeigen
+        </button>
+        <button class="btn" @click="resetTask">
+          🔄 Zurücksetzen
+        </button>
+      </div>
+
+      <div class="solution-container">
+        <h2>📝 Lösungsweg für Aufgabe {{ currentTaskData.label }}</h2>
+        
+        <div class="card">
+          <h3>Ursprüngliche Gleichung:</h3>
+          <div class="formula-box" v-html="currentTaskData.equation"></div>
+        </div>
+
+        <div 
+          v-for="(step, index) in currentTaskData.steps" 
+          :key="index"
+          class="step-container"
+          :class="{ visible: index < currentStep, hidden: index >= currentStep }"
+        >
+          <div class="step">
+            <span class="step-number">{{ index + 1 }}</span>
+            <strong>{{ step.title }}</strong>
+            <div class="formula-box" v-html="step.formula"></div>
+            <div class="explanation" v-if="step.explanation">
+              <span class="explanation-icon">💡</span>
+              {{ step.explanation }}
+            </div>
+          </div>
+        </div>
+
+        <div v-if="currentStep >= currentTaskData.steps.length" class="answer-box">
+          <div>🎯 Lösung: <span style="font-size: 36px;">x = <span v-html="currentTaskData.answer"></span></span></div>
+        </div>
+
+        <div v-if="currentStep >= currentTaskData.steps.length" class="verification">
+          <h3>✅ Probe (Überprüfung)</h3>
+          <p><strong>Setze x = <span v-html="currentTaskData.answer"></span> in die ursprüngliche Gleichung ein:</strong></p>
+          <div class="formula-box" v-html="currentTaskData.verification"></div>
+          <p style="margin-top: 15px; color: #27ae60; font-weight: bold;">
+            ✓ Die Lösung ist korrekt!
+          </p>
+        </div>
+      </div>
+
+      <h2>📚 Lösungsmethode</h2>
+      <div class="card">
+        <h3>Schritte zum Lösen linearer Gleichungen:</h3>
+        <div class="step">
+          <span class="step-number">1</span>
+          <strong>Klammern auflösen</strong>
+          <p>Multipliziere den Bruch mit jedem Term in der Klammer.</p>
+        </div>
+        <div class="step">
+          <span class="step-number">2</span>
+          <strong>Brüche eliminieren</strong>
+          <p>Multipliziere beide Seiten mit dem Hauptnenner, um Brüche zu entfernen.</p>
+        </div>
+        <div class="step">
+          <span class="step-number">3</span>
+          <strong>Terme zusammenfassen</strong>
+          <p>Vereinfache beide Seiten der Gleichung.</p>
+        </div>
+        <div class="step">
+          <span class="step-number">4</span>
+          <strong>Variable isolieren</strong>
+          <p>Bringe alle x-Terme auf eine Seite und alle Zahlen auf die andere.</p>
+        </div>
+        <div class="step">
+          <span class="step-number">5</span>
+          <strong>Nach x auflösen</strong>
+          <p>Teile beide Seiten durch den Koeffizienten von x.</p>
+        </div>
+        <div class="step">
+          <span class="step-number">6</span>
+          <strong>Probe machen</strong>
+          <p>Setze die Lösung in die ursprüngliche Gleichung ein und überprüfe.</p>
+        </div>
+      </div>
+
+      <h2>💡 Tipps</h2>
+      <div class="card">
+        <p><strong>1. Bruchrechnung:</strong> Beim Multiplizieren eines Bruchs mit einer Klammer wird der Bruch mit jedem Term multipliziert.</p>
+        <p><strong>2. Äquivalenzumformungen:</strong> Was man auf einer Seite macht, muss man auch auf der anderen Seite machen.</p>
+        <p><strong>3. Vorzeichen beachten:</strong> Besonders beim Auflösen von Klammern mit Minus davor.</p>
+        <p><strong>4. Probe nicht vergessen:</strong> Die Probe ist der beste Weg, um die Lösung zu überprüfen.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+      setup() {
+        const currentTask = ref('a');
+        const currentStep = ref(0);
+
+        const tasks = ref([
+          {
+            id: 'a',
+            label: 'a)',
+            equation: '<span class="fraction"><span class="num">2</span><span class="den">3</span></span>(x + 4) − 8 = 54',
+            answer: '89',
+            solved: false,
+            steps: [
+              {
+                title: 'Addiere 8 auf beiden Seiten',
+                formula: '<span class="fraction"><span class="num">2</span><span class="den">3</span></span>(x + 4) = 54 + 8<br><br><span class="fraction"><span class="num">2</span><span class="den">3</span></span>(x + 4) = 62',
+                explanation: 'Wir isolieren den Bruchterm, indem wir 8 auf beiden Seiten addieren.'
+              },
+              {
+                title: 'Multipliziere beide Seiten mit 3/2 (Kehrwert)',
+                formula: 'x + 4 = 62 × <span class="fraction"><span class="num">3</span><span class="den">2</span></span><br><br>x + 4 = <span class="fraction"><span class="num">186</span><span class="den">2</span></span><br><br>x + 4 = 93',
+                explanation: 'Um den Bruch 2/3 zu eliminieren, multiplizieren wir mit seinem Kehrwert 3/2.'
+              },
+              {
+                title: 'Subtrahiere 4 auf beiden Seiten',
+                formula: 'x = 93 − 4<br><br><strong>x = 89</strong>',
+                explanation: 'Wir isolieren x, indem wir 4 subtrahieren.'
+              }
+            ],
+            verification: 'Linke Seite: <span class="fraction"><span class="num">2</span><span class="den">3</span></span>(89 + 4) − 8 = <span class="fraction"><span class="num">2</span><span class="den">3</span></span> × 93 − 8 = 62 − 8 = 54 ✓<br><br>Rechte Seite: 54 ✓<br><br>54 = 54 ✓'
+          },
+          {
+            id: 'b',
+            label: 'b)',
+            equation: '<span class="fraction"><span class="num">3</span><span class="den">8</span></span>(x − 3) + 12 = 15',
+            answer: '11',
+            solved: false,
+            steps: [
+              {
+                title: 'Subtrahiere 12 auf beiden Seiten',
+                formula: '<span class="fraction"><span class="num">3</span><span class="den">8</span></span>(x − 3) = 15 − 12<br><br><span class="fraction"><span class="num">3</span><span class="den">8</span></span>(x − 3) = 3',
+                explanation: 'Wir isolieren den Bruchterm.'
+              },
+              {
+                title: 'Multipliziere beide Seiten mit 8/3 (Kehrwert)',
+                formula: 'x − 3 = 3 × <span class="fraction"><span class="num">8</span><span class="den">3</span></span><br><br>x − 3 = 8',
+                explanation: 'Der Kehrwert von 3/8 ist 8/3.'
+              },
+              {
+                title: 'Addiere 3 auf beiden Seiten',
+                formula: 'x = 8 + 3<br><br><strong>x = 11</strong>',
+                explanation: 'Wir isolieren x.'
+              }
+            ],
+            verification: 'Linke Seite: <span class="fraction"><span class="num">3</span><span class="den">8</span></span>(11 − 3) + 12 = <span class="fraction"><span class="num">3</span><span class="den">8</span></span> × 8 + 12 = 3 + 12 = 15 ✓<br><br>Rechte Seite: 15 ✓<br><br>15 = 15 ✓'
+          },
+          {
+            id: 'c',
+            label: 'c)',
+            equation: '<span class="fraction"><span class="num">3</span><span class="den">10</span></span>(20 + x) − 6 = 4',
+            answer: '40/3 ≈ 13,33',
+            solved: false,
+            steps: [
+              {
+                title: 'Addiere 6 auf beiden Seiten',
+                formula: '<span class="fraction"><span class="num">3</span><span class="den">10</span></span>(20 + x) = 4 + 6<br><br><span class="fraction"><span class="num">3</span><span class="den">10</span></span>(20 + x) = 10',
+                explanation: 'Wir isolieren den Bruchterm.'
+              },
+              {
+                title: 'Multipliziere beide Seiten mit 10/3 (Kehrwert)',
+                formula: '20 + x = 10 × <span class="fraction"><span class="num">10</span><span class="den">3</span></span><br><br>20 + x = <span class="fraction"><span class="num">100</span><span class="den">3</span></span>',
+                explanation: 'Der Kehrwert von 3/10 ist 10/3.'
+              },
+              {
+                title: 'Subtrahiere 20 auf beiden Seiten',
+                formula: 'x = <span class="fraction"><span class="num">100</span><span class="den">3</span></span> − 20<br><br>x = <span class="fraction"><span class="num">100</span><span class="den">3</span></span> − <span class="fraction"><span class="num">60</span><span class="den">3</span></span><br><br><strong>x = <span class="fraction"><span class="num">40</span><span class="den">3</span></span> ≈ 13,33</strong>',
+                explanation: 'Wir wandeln 20 in einen Bruch mit Nenner 3 um: 20 = 60/3.'
+              }
+            ],
+            verification: 'Linke Seite: <span class="fraction"><span class="num">3</span><span class="den">10</span></span>(20 + <span class="fraction"><span class="num">40</span><span class="den">3</span></span>) − 6<br><br>= <span class="fraction"><span class="num">3</span><span class="den">10</span></span>(<span class="fraction"><span class="num">60 + 40</span><span class="den">3</span></span>) − 6<br><br>= <span class="fraction"><span class="num">3</span><span class="den">10</span></span> × <span class="fraction"><span class="num">100</span><span class="den">3</span></span> − 6<br><br>= 10 − 6 = 4 ✓<br><br>Rechte Seite: 4 ✓<br><br>4 = 4 ✓'
+          },
+          {
+            id: 'd',
+            label: 'd)',
+            equation: '<span class="fraction"><span class="num">2</span><span class="den">5</span></span>(x − 3) + 2 = <span class="fraction"><span class="num">1</span><span class="den">8</span></span>(4 + 2x) − 8',
+            answer: '−166/3 ≈ −55,33',
+            solved: false,
+            steps: [
+              {
+                title: 'Klammern auflösen',
+                formula: '<span class="fraction"><span class="num">2x</span><span class="den">5</span></span> − <span class="fraction"><span class="num">6</span><span class="den">5</span></span> + 2 = <span class="fraction"><span class="num">4</span><span class="den">8</span></span> + <span class="fraction"><span class="num">2x</span><span class="den">8</span></span> − 8<br><br><span class="fraction"><span class="num">2x</span><span class="den">5</span></span> − <span class="fraction"><span class="num">6</span><span class="den">5</span></span> + 2 = <span class="fraction"><span class="num">1</span><span class="den">2</span></span> + <span class="fraction"><span class="num">x</span><span class="den">4</span></span> − 8',
+                explanation: 'Wir multiplizieren die Brüche mit den Klammerinhalten und vereinfachen.'
+              },
+              {
+                title: 'Hauptnenner finden (HN = 20) und multiplizieren',
+                formula: '20 × (<span class="fraction"><span class="num">2x</span><span class="den">5</span></span> − <span class="fraction"><span class="num">6</span><span class="den">5</span></span> + 2) = 20 × (<span class="fraction"><span class="num">1</span><span class="den">2</span></span> + <span class="fraction"><span class="num">x</span><span class="den">4</span></span> − 8)<br><br>8x − 24 + 40 = 10 + 5x − 160',
+                explanation: 'Der Hauptnenner von 5, 2 und 4 ist 20. Wir multiplizieren beide Seiten mit 20.'
+              },
+              {
+                title: 'Terme zusammenfassen',
+                formula: '8x + 16 = 5x − 150',
+                explanation: 'Linke Seite: −24 + 40 = 16. Rechte Seite: 10 − 160 = −150.'
+              },
+              {
+                title: 'x-Terme auf eine Seite bringen',
+                formula: '8x − 5x = −150 − 16<br><br>3x = −166',
+                explanation: 'Wir subtrahieren 5x und 16 auf beiden Seiten.'
+              },
+              {
+                title: 'Nach x auflösen',
+                formula: 'x = <span class="fraction"><span class="num">−166</span><span class="den">3</span></span><br><br><strong>x = −55,33... ≈ −55<span class="fraction"><span class="num">1</span><span class="den">3</span></span></strong>',
+                explanation: 'Wir teilen beide Seiten durch 3.'
+              }
+            ],
+            verification: 'Setze x = −166/3 ein und überprüfe:<br><br>Linke Seite: <span class="fraction"><span class="num">2</span><span class="den">5</span></span>(−<span class="fraction"><span class="num">166</span><span class="den">3</span></span> − 3) + 2<br>= <span class="fraction"><span class="num">2</span><span class="den">5</span></span>(−<span class="fraction"><span class="num">175</span><span class="den">3</span></span>) + 2<br>= −<span class="fraction"><span class="num">70</span><span class="den">3</span></span> + 2 = −<span class="fraction"><span class="num">64</span><span class="den">3</span></span><br><br>Rechte Seite: <span class="fraction"><span class="num">1</span><span class="den">8</span></span>(4 + 2×(−<span class="fraction"><span class="num">166</span><span class="den">3</span></span>)) − 8<br>= <span class="fraction"><span class="num">1</span><span class="den">8</span></span>(<span class="fraction"><span class="num">12 − 332</span><span class="den">3</span></span>) − 8<br>= <span class="fraction"><span class="num">1</span><span class="den">8</span></span>(−<span class="fraction"><span class="num">320</span><span class="den">3</span></span>) − 8<br>= −<span class="fraction"><span class="num">40</span><span class="den">3</span></span> − 8 = −<span class="fraction"><span class="num">64</span><span class="den">3</span></span> ✓'
+          }
+        ]);
+
+        const currentTaskData = computed(() => {
+          return tasks.value.find(t => t.id === currentTask.value) || tasks.value[0];
+        });
+
+        const solvedCount = computed(() => {
+          return tasks.value.filter(t => t.solved).length;
+        });
+
+        const progressPercent = computed(() => {
+          if (currentTaskData.value.steps.length === 0) return 0;
+          return (currentStep.value / currentTaskData.value.steps.length) * 100;
+        });
+
+        function selectTask(taskId) {
+          currentTask.value = taskId;
+          currentStep.value = 0;
+        }
+
+        function showNextStep() {
+          if (currentStep.value < currentTaskData.value.steps.length) {
+            currentStep.value++;
+            if (currentStep.value >= currentTaskData.value.steps.length) {
+              const task = tasks.value.find(t => t.id === currentTask.value);
+              if (task) task.solved = true;
+            }
+          }
+        }
+
+        function showAllSteps() {
+          currentStep.value = currentTaskData.value.steps.length;
+          const task = tasks.value.find(t => t.id === currentTask.value);
+          if (task) task.solved = true;
+        }
+
+        function resetTask() {
+          currentStep.value = 0;
+        }
+
+        return {
+          currentTask,
+          currentStep,
+          tasks,
+          currentTaskData,
+          solvedCount,
+          progressPercent,
+          selectTask,
+          showNextStep,
+          showAllSteps,
+          resetTask
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+

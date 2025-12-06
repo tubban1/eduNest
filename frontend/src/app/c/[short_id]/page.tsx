@@ -146,7 +146,7 @@ export default function FullHTMLContentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 页面头部 */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -264,35 +264,32 @@ export default function FullHTMLContentPage() {
       </div>
 
       {/* 内容区域：只显示 full_html */}
-      <div className="w-full">
-        <div className="w-full">
-          <FullHTMLRenderer
-            fullHTML={content.full_html}
-            externalUrl={`/full-html/${content.short_id}`}
-            autoHeight={true}
-            enableHeightListener={true}
-            className="w-full"
-            style={{ 
-              width: '100%',
-              height: 'auto',
-              minHeight: 'calc(100vh - 160px)',
-              border: 'none',
-              margin: '0',
-              padding: '0'
-            }}
-            onError={(error) => {
-              console.error('FullHTMLRenderer error:', error);
-              setError(error);
-            }}
+      <div className="w-full flex-1 flex flex-col bg-white">
+        <FullHTMLRenderer
+          fullHTML={content.full_html}
+          externalUrl={`/full-html/${content.short_id}`}
+          autoHeight={true}
+          enableHeightListener={true}
+          className="w-full flex-1"
+          style={{ 
+            width: '100%',
+            minHeight: 'calc(100vh - 140px)',
+            border: 'none',
+            margin: '0',
+            padding: '0'
+          }}
+          onError={(error) => {
+            console.error('FullHTMLRenderer error:', error);
+            setError(error);
+          }}
+        />
+        {/* AI Guided Learning - Always show button, even for non-logged-in users */}
+        {content?.id && (
+          <AIGuidedLearning 
+            contentId={content.id} 
+            onUIStateChange={(state) => console.log('UI State:', state)} 
           />
-          {/* AI Guided Learning - Always show button, even for non-logged-in users */}
-          {content?.id && (
-            <AIGuidedLearning 
-              contentId={content.id} 
-              onUIStateChange={(state) => console.log('UI State:', state)} 
-            />
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

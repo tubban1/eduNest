@@ -41,23 +41,48 @@ export default function FullHTMLRenderer({
   title
 }: FullHTMLRendererProps) {
   const [runtimeFullScreen, setRuntimeFullScreen] = useState(false);
+  // 运行时检测到内容高度远超视口，覆盖静态全屏检测
+  const [runtimeOverrideFullScreen, setRuntimeOverrideFullScreen] = useState(false);
 
   // 检测是否为 3D/WebGL 应用或全屏应用
   const isStaticFullScreenApp = useMemo(() => {
     if (!fullHTML) return false;
     const lower = fullHTML.toLowerCase();
-    return lower.includes('three.js') || 
-           lower.includes('three.min.js') || 
-           lower.includes('webgl') ||
-           lower.includes('height: 100vh') || 
-           lower.includes('height:100vh') ||
-           lower.includes('overflow: hidden') ||
-           lower.includes('overflow:hidden') ||
-           // 检测全屏 canvas 样式特征
-           (lower.includes('<canvas') && (lower.includes('height: 100%') || lower.includes('height:100%')));
+    
+    // 检测 3D/WebGL 库
+    const has3DLib = lower.includes('three.js') || 
+                     lower.includes('three.min.js') || 
+                     lower.includes('webgl');
+    
+    // 更精确的全屏检测：只检测 body 或 html 标签上的样式
+    // 匹配 body { ... overflow: hidden ... } 或 html, body { ... overflow: hidden ... }
+    const bodyOverflowHiddenRegex = /body\s*\{[^}]*overflow\s*:\s*hidden/i;
+    const htmlBodyOverflowRegex = /html\s*,?\s*body\s*\{[^}]*overflow\s*:\s*hidden/i;
+    const hasBodyOverflowHidden = bodyOverflowHiddenRegex.test(fullHTML) || htmlBodyOverflowRegex.test(fullHTML);
+    
+    // 检测 body 上的 height: 100vh
+    const bodyHeightVhRegex = /body\s*\{[^}]*height\s*:\s*100vh/i;
+    const hasBodyHeightVh = bodyHeightVhRegex.test(fullHTML);
+    
+    // 全屏 canvas 特征
+    const hasFullscreenCanvas = lower.includes('<canvas') && 
+                                 (lower.includes('height: 100%') || lower.includes('height:100%'));
+    
+    const result = has3DLib || hasBodyOverflowHidden || hasBodyHeightVh || hasFullscreenCanvas;
+    
+    console.log('[FullHTMLRenderer] isStaticFullScreenApp check:', {
+      has3DLib,
+      hasBodyOverflowHidden,
+      hasBodyHeightVh,
+      hasFullscreenCanvas,
+      result
+    });
+    
+    return result;
   }, [fullHTML]);
 
-  const effectiveCodepenMode = codepenMode || isStaticFullScreenApp || runtimeFullScreen;
+  // 如果运行时检测到内容高度远超视口，覆盖静态检测
+  const effectiveCodepenMode = codepenMode || runtimeFullScreen || (isStaticFullScreenApp && !runtimeOverrideFullScreen);
 
   const iframeTitle = useMemo(() => {
     if (title && title.trim()) return title.trim();
@@ -80,6 +105,8 @@ export default function FullHTMLRenderer({
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [iframeHeight, setIframeHeight] = useState<number>(600);
+  const heightUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAppliedHeightRef = useRef<number>(0);
   
 
   const isWeChat = useMemo(() => {
@@ -97,16 +124,34 @@ export default function FullHTMLRenderer({
   }, [onError]);
 
   /**
-   * 设置高度
+   * 设置高度（带防抖）
    */
   const applyHeight = useCallback((height: number) => {
-    if (!autoHeight || fixedHeight || forceExternalInWechat || effectiveCodepenMode) return;
-    if (height < 100 || height > 15000) return;
+    if (!autoHeight || fixedHeight || forceExternalInWechat || effectiveCodepenMode) {
+      return;
+    }
+    if (height < 100 || height > 15000) {
+      return;
+    }
     
-    const bufferedHeight = height + 50;
+    // 如果高度变化小于 20px，忽略（避免微小抖动）
+    if (Math.abs(height - lastAppliedHeightRef.current) < 20) {
+      return;
+    }
     
-    // 直接设置高度，允许高度减少
-    setIframeHeight(bufferedHeight);
+    // 清除之前的定时器
+    if (heightUpdateTimerRef.current) {
+      clearTimeout(heightUpdateTimerRef.current);
+    }
+    
+    // 防抖：延迟 200ms 更新
+    heightUpdateTimerRef.current = setTimeout(() => {
+      const bufferedHeight = height + 50;
+      console.log('[FullHTMLRenderer] Setting iframe height:', bufferedHeight, '(original:', height, ')');
+      lastAppliedHeightRef.current = height;
+      setIframeHeight(bufferedHeight);
+      heightUpdateTimerRef.current = null;
+    }, 200);
   }, [autoHeight, fixedHeight, forceExternalInWechat, effectiveCodepenMode]);
 
   // 监听 iframe 消息
@@ -117,17 +162,64 @@ export default function FullHTMLRenderer({
       if (event.data && event.data.type === 'IFRAME_HEIGHT_CHANGE') {
         const { height, isFullScreen } = event.data.data;
         
+        console.log('[FullHTMLRenderer] Received height message:', { height, isFullScreen, isStaticFullScreenApp, runtimeOverrideFullScreen });
+        
         if (isFullScreen) {
           setRuntimeFullScreen(true);
-        } else if (!effectiveCodepenMode) {
-          applyHeight(height);
+          setRuntimeOverrideFullScreen(false);
+          // 全屏模式也保存高度，用于设置容器 minHeight
+          if (height > 0 && height < 15000) {
+            setIframeHeight(height);
+          }
+        } else {
+          // 如果之前是全屏模式，现在收到非全屏消息，说明内容变化导致不再满足全屏条件
+          // 需要退出全屏模式，切换到普通模式，并直接应用高度
+          const wasFullScreen = runtimeFullScreen;
+          if (wasFullScreen) {
+            console.log('[FullHTMLRenderer] Exiting fullscreen mode, content height changed to:', height);
+            setRuntimeFullScreen(false);
+            // 直接应用高度，因为状态更新是异步的，applyHeight 可能还会检查旧的 effectiveCodepenMode
+            if (height >= 100 && height <= 15000) {
+              const bufferedHeight = height + 50;
+              console.log('[FullHTMLRenderer] Direct height set after exiting fullscreen:', bufferedHeight);
+              setIframeHeight(bufferedHeight);
+              lastAppliedHeightRef.current = height;
+            }
+            return; // 已经处理了，不需要继续
+          }
+          
+          // 如果静态检测认为是全屏应用，但运行时发现内容高度远超视口（超过视口高度 + 200px）
+          // 说明这是误判，应该覆盖静态检测，使用自动高度模式
+          if (isStaticFullScreenApp && height > window.innerHeight + 200) {
+            console.log('[FullHTMLRenderer] Runtime override: content height', height, 'exceeds viewport', window.innerHeight, ', disabling fullscreen mode');
+            setRuntimeOverrideFullScreen(true);
+            // 直接应用高度，因为我们已经覆盖了全屏模式
+            if (height >= 100 && height <= 15000) {
+              const bufferedHeight = height + 50;
+              console.log('[FullHTMLRenderer] Direct height set after override:', bufferedHeight);
+              setIframeHeight(bufferedHeight);
+              lastAppliedHeightRef.current = height;
+            }
+          } else {
+            // 正常情况，使用 applyHeight
+            applyHeight(height);
+          }
         }
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [autoHeight, fixedHeight, forceExternalInWechat, applyHeight, effectiveCodepenMode]);
+  }, [autoHeight, fixedHeight, forceExternalInWechat, applyHeight, isStaticFullScreenApp, runtimeFullScreen]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (heightUpdateTimerRef.current) {
+        clearTimeout(heightUpdateTimerRef.current);
+      }
+    };
+  }, []);
 
   // 重新渲染
   const refresh = useCallback(() => {
@@ -136,6 +228,7 @@ export default function FullHTMLRenderer({
     setHasError(false);
     setErrorMessage('');
     setIframeHeight(600);
+    lastAppliedHeightRef.current = 0;
   }, []);
 
   const handleIframeLoad = useCallback(() => {
@@ -166,6 +259,7 @@ export default function FullHTMLRenderer({
 (function() {
   var lastHeight = 0;
   var throttleTimer = null;
+  var hasSentInitialHeight = false;
   // 运行时检测：页面是否包含 Canvas
   // 如果包含，通常意味着这是一个 3D/图表应用，应该由容器控制高度，而不是内容撑开高度
   var is3DApp = !!document.querySelector('canvas'); 
@@ -173,40 +267,63 @@ export default function FullHTMLRenderer({
 
   function getHeight() {
     var body = document.body;
+    var html = document.documentElement;
     if (!body) return 0;
     
-    // 获取精确高度
-    var rect = body.getBoundingClientRect();
-    var height = rect.height;
-    var style = window.getComputedStyle(body);
-    height += (parseFloat(style.marginTop) || 0) + (parseFloat(style.marginBottom) || 0);
-    return Math.ceil(height);
+    // 获取精确高度 - 使用 scrollHeight 作为主要依据
+    var scrollHeight = Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      html.scrollHeight,
+      html.offsetHeight
+    );
+    
+    return Math.ceil(scrollHeight);
   }
 
-  function sendHeight() {
-    // 运行时全屏检测策略
+  function sendHeight(force) {
+    var height = getHeight();
+    var viewportHeight = window.innerHeight;
+    
+    // 运行时全屏检测策略（仅对 3D 应用）
     if (is3DApp) {
-        var bodyHeight = getHeight();
+        // 对于 3D 应用，判断是否需要全屏模式：
+        // 如果高度 <= 视口高度的 105%（允许 5% 误差），认为是全屏应用
+        // 否则，用父容器滚动
+        var heightRatio = height / viewportHeight;
+        var heightDiff = height - viewportHeight;
         
-        // 如果内容高度与视口高度非常接近（误差 20px 内），或者是 100vh 这种
-        // 我们认为这是全屏应用，通知父窗口切换到全屏模式
-        if (Math.abs(bodyHeight - window.innerHeight) < 20) {
+        if (heightRatio <= 1.05) {
+           // 高度接近视口（误差在 5% 内），认为是全屏应用
+           console.log('[IframeHeight] Detected fullscreen 3D app, bodyHeight:', height, 'innerHeight:', viewportHeight, 'ratio:', heightRatio.toFixed(2), 'diff:', heightDiff);
            if (window.parent) {
               window.parent.postMessage({
                 type: "IFRAME_HEIGHT_CHANGE",
-                data: { height: bodyHeight, isFullScreen: true }
+                data: { height: height, isFullScreen: true }
               }, "*");
            }
            return;
+        } else {
+           // 高度明显超过视口（> 5%），用父容器滚动
+           console.log('[IframeHeight] 3D app with tall content, using parent scroll, height:', height, 'viewport:', viewportHeight, 'ratio:', heightRatio.toFixed(2), 'diff:', heightDiff);
+           // 继续执行下面的普通高度发送逻辑
         }
     }
-
-    var height = getHeight();
     
-    // Jitter 处理：忽略 4px 以内的微小变化
-    if (Math.abs(height - lastHeight) <= 4) return;
+    // 对于普通内容：只在初始加载时发送一次，之后不再发送（避免循环）
+    if (!is3DApp && hasSentInitialHeight && !force) {
+      return;
+    }
+    
+    // Jitter 处理：忽略 10px 以内的微小变化
+    if (!force && Math.abs(height - lastHeight) <= 10) {
+      return;
+    }
 
+    console.log('[IframeHeight] Sending height to parent:', height, '(lastHeight was:', lastHeight, ', is3DApp:', is3DApp, ')');
     lastHeight = height;
+    hasSentInitialHeight = true;
+    
     if (window.parent) {
       window.parent.postMessage({
         type: "IFRAME_HEIGHT_CHANGE",
@@ -216,37 +333,53 @@ export default function FullHTMLRenderer({
   }
 
   function onResize() {
-    // 3D 应用依然需要响应 resize，但我们会过滤掉全屏的情况
+    // 对于普通内容，不监听 ResizeObserver（避免循环）
+    if (!is3DApp) {
+      return;
+    }
+    
+    // 3D 应用需要响应 resize，但增加防抖
     if (throttleTimer) return;
     throttleTimer = setTimeout(function() {
       sendHeight();
       throttleTimer = null;
-    }, 100);
+    }, 200);
   }
 
   function checkAppType() {
     is3DApp = !!document.querySelector('canvas');
+    console.log('[IframeHeight] App type check - is3DApp:', is3DApp);
   }
 
-  // 初始化
-  if (document.readyState === 'complete') {
+  // 初始化：只在页面加载完成后发送一次高度
+  function init() {
     checkAppType();
-    onResize();
+    // 延迟发送，确保内容已渲染
+    setTimeout(function() {
+      sendHeight(true); // 强制发送初始高度
+    }, 100);
+    
+    // 对于 3D 应用，启动 ResizeObserver
+    if (is3DApp) {
+      setTimeout(function() {
+        if (document.body) {
+          observer = new ResizeObserver(onResize);
+          observer.observe(document.body);
+          console.log('[IframeHeight] ResizeObserver attached to body (3D app)');
+        }
+      }, 500);
+    }
+  }
+
+  console.log('[IframeHeight] Script initialized, readyState:', document.readyState);
+  if (document.readyState === 'complete') {
+    init();
   } else {
     window.addEventListener('load', function() {
-       checkAppType();
-       onResize();
+       console.log('[IframeHeight] Window load event fired');
+       init();
     });
   }
-
-  // 延迟启动观察者，并再次检查 App 类型
-  setTimeout(function() {
-      checkAppType();
-      if (document.body) {
-        observer = new ResizeObserver(onResize);
-        observer.observe(document.body);
-      }
-  }, 500);
 
 })();
 </script>`;
@@ -277,6 +410,8 @@ export default function FullHTMLRenderer({
     }
   }, [forceExternalInWechat, fixedHeight]);
 
+  const isRuntimeFullscreenLayout = runtimeFullScreen;
+
   // iframe 样式 - 简单稳定
   const iframeStyle: React.CSSProperties = {
     border: 'none',
@@ -285,13 +420,50 @@ export default function FullHTMLRenderer({
     padding: 0,
     display: 'block',
     width: '100%',
-    // 在 Flex 容器中，使用 flex: 1 确保填满剩余空间
-    // 如果不是全屏模式，则使用固定高度
-    flex: (fixedHeight || effectiveCodepenMode) ? '1 1 0%' : 'none',
-    height: (fixedHeight || effectiveCodepenMode) ? '100%' : `${iframeHeight}px`,
+    // 全屏模式下使用内容高度，避免 100% 导致被父容器截断
+    flex: fixedHeight
+      ? '1 1 0%'
+      : isRuntimeFullscreenLayout
+        ? 'none'
+        : (effectiveCodepenMode ? '1 1 0%' : 'none'),
+    height: fixedHeight
+      ? '100%'
+      : isRuntimeFullscreenLayout
+        ? `${iframeHeight}px`
+        : (effectiveCodepenMode ? '100%' : `${iframeHeight}px`),
     overflow: 'hidden',
     WebkitOverflowScrolling: 'touch',
   };
+
+  // Debug log
+  console.log('[FullHTMLRenderer] Render state:', {
+    fixedHeight,
+    effectiveCodepenMode,
+    isStaticFullScreenApp,
+    runtimeFullScreen,
+    codepenMode,
+    iframeHeight,
+    'iframeStyle.height': iframeStyle.height,
+    'iframeStyle.flex': iframeStyle.flex
+  });
+
+  // 计算容器样式
+  const containerMinHeight = (() => {
+    if (fixedHeight) {
+      return style?.minHeight || '100%';
+    }
+    if (isRuntimeFullscreenLayout) {
+      // 运行时全屏：直接使用内容高度，避免被截断
+      return `${iframeHeight}px`;
+    }
+    if (effectiveCodepenMode) {
+      return style?.minHeight || '100%';
+    }
+    // 自动高度模式：使用内容高度
+    return style?.minHeight || `${iframeHeight}px`;
+  })();
+
+  console.log('[FullHTMLRenderer] Container minHeight:', containerMinHeight, 'iframeHeight:', iframeHeight, 'effectiveCodepenMode:', effectiveCodepenMode);
 
   return (
     <div 
@@ -307,10 +479,14 @@ export default function FullHTMLRenderer({
         overflow: 'hidden',
         ...style,
         // 确保关键样式不被外部 style (如 height: auto) 覆盖
-        height: (fixedHeight || effectiveCodepenMode) ? '100%' : (style?.height || 'auto'),
-        minHeight: (fixedHeight || effectiveCodepenMode) 
-          ? (style?.minHeight || '100%') 
-          : (style?.minHeight || `${iframeHeight}px`),
+        // 全屏模式：使用 minHeight 作为实际高度，因为父容器可能没有高度，100% 不生效
+        height: (() => {
+          if (fixedHeight) return style?.minHeight || '100%';
+          if (isRuntimeFullscreenLayout) return `${iframeHeight}px`;
+          if (effectiveCodepenMode) return style?.minHeight || '100%';
+          return style?.height || 'auto';
+        })(),
+        minHeight: containerMinHeight,
         paddingBottom: 0, // 强制移除底部内边距
         marginBottom: 0,  // 强制移除底部外边距
       }}
@@ -379,7 +555,7 @@ export default function FullHTMLRenderer({
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
           className="w-full h-full border-0 bg-white"
           style={iframeStyle}
-          scrolling={(fixedHeight || effectiveCodepenMode) ? 'auto' : 'no'}
+          scrolling="no"
           onLoad={handleIframeLoad}
           onError={handleIframeError}
         />
@@ -392,7 +568,7 @@ export default function FullHTMLRenderer({
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
           className="w-full h-full border-0 bg-white"
           style={iframeStyle}
-          scrolling={(fixedHeight || effectiveCodepenMode) ? 'auto' : 'no'}
+          scrolling="no"
           onLoad={handleIframeLoad}
           onError={handleIframeError}
         />

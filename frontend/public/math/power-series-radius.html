@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="幂级数收敛半径计算：根值法与比值法详解，动画可视化演示">
+  <meta name="keywords" content="幂级数,收敛半径,根值法,比值法,数学分析,高等数学">
+  <title>幂级数收敛半径计算 - 动画演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <!-- MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #e74c3c;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+      text-align: center;
+      font-size: 2em;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 15px;
+      border-left: 5px solid #e74c3c;
+      font-size: 1.4em;
+    }
+    h3 {
+      color: #555;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    
+    /* 题目框 */
+    .problem-box {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .problem-box .source {
+      font-size: 0.9em;
+      color: #aaa;
+      margin-bottom: 15px;
+    }
+    .problem-box .formula {
+      font-size: 1.3em;
+      margin: 20px 0;
+      text-align: center;
+      line-height: 2.5;
+    }
+    .problem-box .question {
+      background: rgba(255,255,255,0.1);
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      text-align: center;
+    }
+    
+    /* 答案框 */
+    .answer-box {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin: 25px 0;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    .answer-box .big-number {
+      font-size: 3em;
+      display: block;
+      margin: 10px 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* 方法卡片 */
+    .method-card {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 20px 0;
+      transition: all 0.3s;
+    }
+    .method-card:hover {
+      border-color: #e74c3c;
+      box-shadow: 0 5px 20px rgba(231, 76, 60, 0.2);
+    }
+    .method-card.active {
+      border-color: #27ae60;
+      background: #f0fff4;
+    }
+    
+    /* 公式框 */
+    .formula-box {
+      background: #fff;
+      border-left: 4px solid #e74c3c;
+      padding: 20px;
+      margin: 15px 0;
+      border-radius: 8px;
+      font-size: 1.1em;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      overflow-x: auto;
+    }
+    .formula-box.highlight {
+      background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
+      border-left-color: #e74c3c;
+    }
+    .formula-box.success {
+      background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+      border-left-color: #27ae60;
+    }
+    
+    /* 步骤显示 */
+    .step {
+      background: #fff;
+      border-left: 4px solid #3498db;
+      padding: 15px 20px;
+      margin: 15px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      opacity: 0.3;
+      transform: translateX(-20px);
+      transition: all 0.5s ease-out;
+    }
+    .step.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .step.current {
+      border-left-color: #e74c3c;
+      background: #fff5f5;
+    }
+    .step-number {
+      display: inline-block;
+      background: #3498db;
+      color: white;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      border-radius: 50%;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    .step.current .step-number {
+      background: #e74c3c;
+    }
+    
+    /* 控制按钮 */
+    .controls {
+      margin: 25px 0;
+      text-align: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .btn {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    }
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn.success {
+      background: linear-gradient(135deg, #27ae60, #1e8449);
+    }
+    .btn.warning {
+      background: linear-gradient(135deg, #f39c12, #d68910);
+    }
+    .btn.info {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+    
+    /* 动画区域 */
+    .animation-area {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 30px;
+      margin: 20px 0;
+      min-height: 200px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 数轴可视化 */
+    .number-line {
+      position: relative;
+      height: 100px;
+      margin: 30px 20px;
+    }
+    .axis {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #666;
+    }
+    .axis::after {
+      content: '';
+      position: absolute;
+      right: -10px;
+      top: -5px;
+      border: 6px solid transparent;
+      border-left-color: #666;
+    }
+    .tick {
+      position: absolute;
+      bottom: 35px;
+      width: 2px;
+      height: 15px;
+      background: #888;
+      transform: translateX(-50%);
+    }
+    .tick-label {
+      position: absolute;
+      bottom: 10px;
+      transform: translateX(-50%);
+      color: #aaa;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .radius-marker {
+      position: absolute;
+      bottom: 38px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      transition: all 0.5s ease-out;
+    }
+    .radius-marker.r1 {
+      background: #3498db;
+      box-shadow: 0 0 10px #3498db;
+    }
+    .radius-marker.r2 {
+      background: #e74c3c;
+      box-shadow: 0 0 10px #e74c3c;
+    }
+    .radius-marker.r-result {
+      background: #2ecc71;
+      box-shadow: 0 0 15px #2ecc71;
+      width: 20px;
+      height: 20px;
+    }
+    .radius-label {
+      position: absolute;
+      bottom: 60px;
+      transform: translateX(-50%);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .radius-label.r1 {
+      background: #3498db;
+      color: white;
+    }
+    .radius-label.r2 {
+      background: #e74c3c;
+      color: white;
+    }
+    .radius-label.r-result {
+      background: #2ecc71;
+      color: white;
+      font-weight: bold;
+    }
+    
+    /* 收敛区间可视化 */
+    .convergence-interval {
+      position: absolute;
+      bottom: 43px;
+      height: 8px;
+      border-radius: 4px;
+      transition: all 0.5s ease-out;
+    }
+    .convergence-interval.r1 {
+      background: rgba(52, 152, 219, 0.4);
+    }
+    .convergence-interval.r2 {
+      background: rgba(231, 76, 60, 0.4);
+    }
+    .convergence-interval.r-result {
+      background: rgba(46, 204, 113, 0.4);
+    }
+    
+    /* 信息面板 */
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .info-item {
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    .info-item .label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    .info-item .value {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .info-item.highlight .value {
+      color: #e74c3c;
+    }
+    .info-item.success .value {
+      color: #27ae60;
+    }
+    
+    /* 进度条 */
+    .progress-container {
+      margin: 20px 0;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 20px;
+      background: #ecf0f1;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #e74c3c, #c0392b);
+      transition: width 0.5s;
+      border-radius: 10px;
+    }
+    .progress-text {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+      color: #555;
+    }
+    
+    /* 知识点卡片 */
+    .knowledge-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    .knowledge-card h4 {
+      margin-bottom: 15px;
+      font-size: 1.2em;
+    }
+    .knowledge-card ul {
+      margin-left: 20px;
+    }
+    .knowledge-card li {
+      margin: 8px 0;
+    }
+    
+    /* 计算动画 */
+    .calc-display {
+      text-align: center;
+      color: white;
+      padding: 20px;
+    }
+    .calc-line {
+      font-size: 1.4em;
+      margin: 15px 0;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease-out;
+    }
+    .calc-line.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .calc-line.result {
+      font-size: 2em;
+      color: #2ecc71;
+      font-weight: bold;
+    }
+    .calc-highlight {
+      color: #ffd700;
+    }
+    .calc-operator {
+      color: #ff6b6b;
+    }
+    
+    /* 速度控制 */
+    .speed-control {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .speed-control label {
+      font-weight: bold;
+      color: #555;
+    }
+    .speed-control input[type="range"] {
+      width: 200px;
+      cursor: pointer;
+    }
+    
+    /* 表格 */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .summary-table th,
+    .summary-table td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    .summary-table th {
+      background: #e74c3c;
+      color: white;
+    }
+    .summary-table tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .summary-table tr:hover {
+      background: #ffe0e0;
+    }
+    
+    /* 动画关键帧 */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes pulse {
+      0%, 100% {
+        transform: translateX(-50%) scale(1);
+      }
+      50% {
+        transform: translateX(-50%) scale(1.3);
+      }
+    }
+    @keyframes glow {
+      0%, 100% {
+        box-shadow: 0 0 10px currentColor;
+      }
+      50% {
+        box-shadow: 0 0 25px currentColor;
+      }
+    }
+    .pulse {
+      animation: pulse 0.5s ease-in-out;
+    }
+    .glow {
+      animation: glow 1s ease-in-out infinite;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
+      .problem-box .formula {
+        font-size: 1em;
+      }
+      .calc-line {
+        font-size: 1.1em;
+      }
+      .calc-line.result {
+        font-size: 1.5em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>📐 幂级数收敛半径计算</h1>
+      
+      <!-- 题目 -->
+      <div class="problem-box">
+        <div class="source">📝 题目编号：2002303</div>
+        <h3 style="color: #ffd700; margin-bottom: 15px;">📋 问题</h3>
+        <div class="formula">
+          设幂级数 \(\displaystyle\sum_{n=1}^{\infty} a_n x^n\) 与 \(\displaystyle\sum_{n=1}^{\infty} b_n x^n\) 的收敛半径分别为 
+          <span style="color: #3498db;">\(\dfrac{\sqrt{5}}{3}\)</span> 与 
+          <span style="color: #e74c3c;">\(\dfrac{1}{3}\)</span>
+        </div>
+        <div class="question">
+          <strong>求：</strong>幂级数 \(\displaystyle\sum_{n=1}^{\infty} \frac{a_n^2}{b_n^2} x^n\) 的收敛半径为 <span style="color: #2ecc71; font-size: 1.3em;">______</span>
+        </div>
+      </div>
+
+      <!-- 答案 -->
+      <div class="answer-box">
+        <div>🎯 答案</div>
+        <span class="big-number">{{ finalAnswer }}</span>
+      </div>
+
+      <!-- 核心知识点 -->
+      <h2>📚 核心知识点</h2>
+      <div class="knowledge-card">
+        <h4>🔑 幂级数收敛半径公式（根值法 - Cauchy-Hadamard公式）</h4>
+        <div class="formula-box" style="background: rgba(255,255,255,0.95); color: #333;">
+          <p>对于幂级数 \(\sum_{n=1}^{\infty} c_n x^n\)，其收敛半径 \(R\) 满足：</p>
+          <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">
+            \(\displaystyle\frac{1}{R} = \limsup_{n \to \infty} |c_n|^{1/n}\)
+          </p>
+          <p>即：\(\displaystyle\lim_{n \to \infty} |c_n|^{1/n} = \frac{1}{R}\)（当极限存在时）</p>
+        </div>
+        <ul style="margin-top: 15px;">
+          <li>📌 收敛半径 \(R\) 越大，级数在更大范围内收敛</li>
+          <li>📌 若 \(|c_n|^{1/n} \to L\)，则 \(R = \frac{1}{L}\)</li>
+          <li>📌 系数的幂次变化会影响收敛半径</li>
+        </ul>
+      </div>
+
+      <!-- 解题演示 -->
+      <h2>🎬 动画演示解题过程</h2>
+      <div class="method-card" :class="{ active: isAnimating }">
+        <h3>📝 详细解答步骤</h3>
+        
+        <div class="controls">
+          <button class="btn" @click="startAnimation" :disabled="isAnimating">
+            ▶️ 播放解题动画
+          </button>
+          <button class="btn warning" @click="pauseAnimation" :disabled="!isAnimating">
+            ⏸️ 暂停
+          </button>
+          <button class="btn info" @click="resetAnimation">
+            🔄 重置
+          </button>
+          <button class="btn success" @click="showAllSteps">
+            ⏩ 显示全部
+          </button>
+        </div>
+
+        <div class="speed-control">
+          <label>动画速度：</label>
+          <input type="range" v-model="animationSpeed" min="500" max="2000" step="100">
+          <span>{{ animationSpeed }}ms</span>
+        </div>
+
+        <!-- 步骤展示 -->
+        <div class="step" :class="{ visible: currentStep >= 1, current: currentStep === 1 }">
+          <span class="step-number">1</span>
+          <strong>理解已知条件</strong>
+          <div class="formula-box">
+            <p>设 \(\displaystyle\lim_{n \to \infty} |a_n|^{1/n} = \frac{1}{R_1}\)，\(\displaystyle\lim_{n \to \infty} |b_n|^{1/n} = \frac{1}{R_2}\)</p>
+            <p style="margin-top: 10px;">
+              已知：\(R_1 = \dfrac{\sqrt{5}}{3}\)，\(R_2 = \dfrac{1}{3}\)
+            </p>
+            <p style="margin-top: 10px;">
+              则：\(\displaystyle\lim_{n \to \infty} |a_n|^{1/n} = \frac{3}{\sqrt{5}} = \frac{3\sqrt{5}}{5}\)，
+              \(\displaystyle\lim_{n \to \infty} |b_n|^{1/n} = 3\)
+            </p>
+          </div>
+        </div>
+
+        <div class="step" :class="{ visible: currentStep >= 2, current: currentStep === 2 }">
+          <span class="step-number">2</span>
+          <strong>分析新级数的系数</strong>
+          <div class="formula-box">
+            <p>新级数 \(\displaystyle\sum_{n=1}^{\infty} \frac{a_n^2}{b_n^2} x^n\) 的系数为 \(c_n = \dfrac{a_n^2}{b_n^2}\)</p>
+            <p style="margin-top: 10px;">
+              需要计算：\(\displaystyle\lim_{n \to \infty} |c_n|^{1/n} = \lim_{n \to \infty} \left|\frac{a_n^2}{b_n^2}\right|^{1/n}\)
+            </p>
+          </div>
+        </div>
+
+        <div class="step" :class="{ visible: currentStep >= 3, current: currentStep === 3 }">
+          <span class="step-number">3</span>
+          <strong>化简极限表达式</strong>
+          <div class="formula-box highlight">
+            <p>\(\displaystyle\lim_{n \to \infty} \left|\frac{a_n^2}{b_n^2}\right|^{1/n} = \lim_{n \to \infty} \frac{|a_n|^{2/n}}{|b_n|^{2/n}}\)</p>
+            <p style="margin-top: 15px;">
+              \(\displaystyle = \lim_{n \to \infty} \frac{\left(|a_n|^{1/n}\right)^2}{\left(|b_n|^{1/n}\right)^2}\)
+            </p>
+            <p style="margin-top: 15px;">
+              \(\displaystyle = \frac{\left(\displaystyle\lim_{n \to \infty}|a_n|^{1/n}\right)^2}{\left(\displaystyle\lim_{n \to \infty}|b_n|^{1/n}\right)^2}\)
+            </p>
+          </div>
+        </div>
+
+        <div class="step" :class="{ visible: currentStep >= 4, current: currentStep === 4 }">
+          <span class="step-number">4</span>
+          <strong>代入已知值计算</strong>
+          <div class="formula-box highlight">
+            <p>代入 \(\displaystyle\lim_{n \to \infty}|a_n|^{1/n} = \frac{1}{R_1}\)，\(\displaystyle\lim_{n \to \infty}|b_n|^{1/n} = \frac{1}{R_2}\)</p>
+            <p style="margin-top: 15px;">
+              \(\displaystyle\lim_{n \to \infty} |c_n|^{1/n} = \frac{(1/R_1)^2}{(1/R_2)^2} = \frac{1/R_1^2}{1/R_2^2} = \frac{R_2^2}{R_1^2}\)
+            </p>
+          </div>
+        </div>
+
+        <div class="step" :class="{ visible: currentStep >= 5, current: currentStep === 5 }">
+          <span class="step-number">5</span>
+          <strong>计算新的收敛半径</strong>
+          <div class="formula-box success">
+            <p>由 \(\dfrac{1}{R} = \dfrac{R_2^2}{R_1^2}\)，得：</p>
+            <p style="margin-top: 15px; font-size: 1.2em;">
+              \(\displaystyle R = \frac{R_1^2}{R_2^2} = \frac{(\sqrt{5}/3)^2}{(1/3)^2} = \frac{5/9}{1/9} = \frac{5}{9} \times \frac{9}{1} = \boxed{5}\)
+            </p>
+          </div>
+        </div>
+
+        <!-- 动画可视化区域 -->
+        <div class="animation-area" v-if="currentStep >= 1">
+          <div class="calc-display">
+            <div class="calc-line" :class="{ visible: calcStep >= 1 }">
+              <span class="calc-highlight">R₁</span> = √5/3 ≈ 0.745
+              &nbsp;&nbsp;
+              <span class="calc-highlight">R₂</span> = 1/3 ≈ 0.333
+            </div>
+            <div class="calc-line" :class="{ visible: calcStep >= 2 }">
+              R₁² = <span class="calc-highlight">(√5/3)²</span> = <span class="calc-highlight">5/9</span>
+            </div>
+            <div class="calc-line" :class="{ visible: calcStep >= 3 }">
+              R₂² = <span class="calc-highlight">(1/3)²</span> = <span class="calc-highlight">1/9</span>
+            </div>
+            <div class="calc-line" :class="{ visible: calcStep >= 4 }">
+              R = R₁²/R₂² = <span class="calc-highlight">(5/9)</span> <span class="calc-operator">÷</span> <span class="calc-highlight">(1/9)</span>
+            </div>
+            <div class="calc-line" :class="{ visible: calcStep >= 5 }">
+              R = <span class="calc-highlight">5/9</span> <span class="calc-operator">×</span> <span class="calc-highlight">9/1</span>
+            </div>
+            <div class="calc-line result" :class="{ visible: calcStep >= 6 }">
+              R = 5
+            </div>
+          </div>
+          
+          <!-- 数轴可视化 -->
+          <div class="number-line" v-if="showNumberLine">
+            <div class="axis"></div>
+            <!-- 刻度 -->
+            <div class="tick" style="left: 0%;"><span class="tick-label">0</span></div>
+            <div class="tick" style="left: 20%;"><span class="tick-label">1</span></div>
+            <div class="tick" style="left: 40%;"><span class="tick-label">2</span></div>
+            <div class="tick" style="left: 60%;"><span class="tick-label">3</span></div>
+            <div class="tick" style="left: 80%;"><span class="tick-label">4</span></div>
+            <div class="tick" style="left: 100%;"><span class="tick-label">5</span></div>
+            
+            <!-- 收敛区间 -->
+            <div class="convergence-interval r1" 
+                 :style="{ left: '0%', width: (r1Value / 5 * 100) + '%' }"
+                 v-if="showR1"></div>
+            <div class="convergence-interval r2" 
+                 :style="{ left: '0%', width: (r2Value / 5 * 100) + '%' }"
+                 v-if="showR2"></div>
+            <div class="convergence-interval r-result" 
+                 :style="{ left: '0%', width: '100%' }"
+                 v-if="showResult"></div>
+            
+            <!-- 收敛半径标记 -->
+            <div class="radius-marker r1" 
+                 :style="{ left: (r1Value / 5 * 100) + '%' }"
+                 :class="{ glow: showR1 }"
+                 v-if="showR1">
+              <span class="radius-label r1">R₁ = √5/3</span>
+            </div>
+            <div class="radius-marker r2" 
+                 :style="{ left: (r2Value / 5 * 100) + '%' }"
+                 :class="{ glow: showR2 }"
+                 v-if="showR2">
+              <span class="radius-label r2">R₂ = 1/3</span>
+            </div>
+            <div class="radius-marker r-result" 
+                 :style="{ left: '100%' }"
+                 :class="{ glow: showResult, pulse: showResult }"
+                 v-if="showResult">
+              <span class="radius-label r-result">R = 5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 信息面板 -->
+        <div class="info-panel">
+          <div class="info-item">
+            <div class="label">R₁ (第一个级数)</div>
+            <div class="value" style="color: #3498db;">√5/3</div>
+          </div>
+          <div class="info-item">
+            <div class="label">R₂ (第二个级数)</div>
+            <div class="value" style="color: #e74c3c;">1/3</div>
+          </div>
+          <div class="info-item highlight">
+            <div class="label">R₁²</div>
+            <div class="value">5/9</div>
+          </div>
+          <div class="info-item highlight">
+            <div class="label">R₂²</div>
+            <div class="value">1/9</div>
+          </div>
+          <div class="info-item success">
+            <div class="label">新收敛半径 R</div>
+            <div class="value">{{ currentStep >= 5 ? '5' : '?' }}</div>
+          </div>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: (currentStep / 5 * 100) + '%' }"></div>
+          </div>
+          <div class="progress-text">解题进度：{{ currentStep }} / 5 步</div>
+        </div>
+      </div>
+
+      <!-- 公式总结 -->
+      <h2>📋 公式总结</h2>
+      <div class="method-card">
+        <div class="formula-box success" style="text-align: center;">
+          <h4 style="margin-bottom: 15px;">关键结论</h4>
+          <p style="font-size: 1.2em;">
+            若 \(\sum a_n x^n\) 收敛半径为 \(R_1\)，\(\sum b_n x^n\) 收敛半径为 \(R_2\)
+          </p>
+          <p style="font-size: 1.3em; margin: 20px 0; color: #e74c3c;">
+            则 \(\displaystyle\sum \frac{a_n^2}{b_n^2} x^n\) 的收敛半径为 \(\boxed{\dfrac{R_1^2}{R_2^2}}\)
+          </p>
+        </div>
+        
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>幂级数形式</th>
+              <th>收敛半径公式</th>
+              <th>本题结果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(\sum a_n x^n\)</td>
+              <td>\(R_1\)</td>
+              <td>\(\dfrac{\sqrt{5}}{3}\)</td>
+            </tr>
+            <tr>
+              <td>\(\sum b_n x^n\)</td>
+              <td>\(R_2\)</td>
+              <td>\(\dfrac{1}{3}\)</td>
+            </tr>
+            <tr>
+              <td>\(\sum a_n^2 x^n\)</td>
+              <td>\(R_1^2\)</td>
+              <td>\(\dfrac{5}{9}\)</td>
+            </tr>
+            <tr>
+              <td>\(\sum \dfrac{1}{b_n^2} x^n\)</td>
+              <td>\(\dfrac{1}{R_2^2}\) 或 \(R_2^2\)*</td>
+              <td>—</td>
+            </tr>
+            <tr style="background: #ffe0e0;">
+              <td><strong>\(\sum \dfrac{a_n^2}{b_n^2} x^n\)</strong></td>
+              <td><strong>\(\dfrac{R_1^2}{R_2^2}\)</strong></td>
+              <td><strong>5</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 解题技巧 -->
+      <h2>💡 解题技巧</h2>
+      <div class="knowledge-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+        <h4>🎯 关键点</h4>
+        <ul>
+          <li>📌 幂级数系数的幂次变化：\(a_n \to a_n^k\) 时，\(|a_n^k|^{1/n} = |a_n|^{k/n} = (|a_n|^{1/n})^k\)</li>
+          <li>📌 收敛半径与系数极限的关系：\(\dfrac{1}{R} = \lim |c_n|^{1/n}\)</li>
+          <li>📌 除法变乘法：\(\dfrac{a_n^2}{b_n^2}\) 的第 \(n\) 次根 = \(\dfrac{(|a_n|^{1/n})^2}{(|b_n|^{1/n})^2}\)</li>
+          <li>📌 最终公式：新收敛半径 \(R = \dfrac{R_1^2}{R_2^2}\)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+
+    createApp({
+      setup() {
+        const finalAnswer = ref(5);
+        const currentStep = ref(0);
+        const calcStep = ref(0);
+        const isAnimating = ref(false);
+        const animationSpeed = ref(1000);
+        let animationTimer = null;
+        let calcTimer = null;
+
+        // 数轴显示控制
+        const showNumberLine = ref(false);
+        const showR1 = ref(false);
+        const showR2 = ref(false);
+        const showResult = ref(false);
+        
+        const r1Value = Math.sqrt(5) / 3; // ≈ 0.745
+        const r2Value = 1 / 3; // ≈ 0.333
+
+        function startAnimation() {
+          if (isAnimating.value) return;
+          resetAnimation();
+          isAnimating.value = true;
+          
+          let step = 0;
+          animationTimer = setInterval(() => {
+            step++;
+            currentStep.value = step;
+            
+            // 触发计算动画
+            if (step === 4) {
+              startCalcAnimation();
+            }
+            
+            // 触发数轴动画
+            if (step === 1) {
+              showNumberLine.value = true;
+              setTimeout(() => showR1.value = true, 300);
+              setTimeout(() => showR2.value = true, 600);
+            }
+            
+            if (step >= 5) {
+              clearInterval(animationTimer);
+              showResult.value = true;
+              isAnimating.value = false;
+            }
+          }, animationSpeed.value);
+        }
+
+        function startCalcAnimation() {
+          let calc = 0;
+          calcTimer = setInterval(() => {
+            calc++;
+            calcStep.value = calc;
+            if (calc >= 6) {
+              clearInterval(calcTimer);
+            }
+          }, 400);
+        }
+
+        function pauseAnimation() {
+          isAnimating.value = false;
+          if (animationTimer) {
+            clearInterval(animationTimer);
+            animationTimer = null;
+          }
+          if (calcTimer) {
+            clearInterval(calcTimer);
+            calcTimer = null;
+          }
+        }
+
+        function resetAnimation() {
+          pauseAnimation();
+          currentStep.value = 0;
+          calcStep.value = 0;
+          showNumberLine.value = false;
+          showR1.value = false;
+          showR2.value = false;
+          showResult.value = false;
+        }
+
+        function showAllSteps() {
+          pauseAnimation();
+          currentStep.value = 5;
+          calcStep.value = 6;
+          showNumberLine.value = true;
+          showR1.value = true;
+          showR2.value = true;
+          showResult.value = true;
+        }
+
+        onMounted(() => {
+          // 重新渲染 MathJax
+          if (window.MathJax) {
+            MathJax.typesetPromise();
+          }
+        });
+
+        onUnmounted(() => {
+          pauseAnimation();
+        });
+
+        return {
+          finalAnswer,
+          currentStep,
+          calcStep,
+          isAnimating,
+          animationSpeed,
+          showNumberLine,
+          showR1,
+          showR2,
+          showResult,
+          r1Value,
+          r2Value,
+          startAnimation,
+          pauseAnimation,
+          resetAnimation,
+          showAllSteps
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
+

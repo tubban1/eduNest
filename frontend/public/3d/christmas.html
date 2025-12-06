@@ -306,6 +306,154 @@
       transform: rotate(90deg);
     }
 
+    /* 文字编辑模态框 */
+    #text-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+
+    #text-modal.active {
+      display: flex;
+    }
+
+    .text-modal-content {
+      background: rgba(20, 20, 30, 0.95);
+      border: 1px solid rgba(255, 215, 0, 0.5);
+      border-radius: 16px;
+      padding: 24px;
+      min-width: 320px;
+      max-width: 90vw;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
+      transform: scale(0.9);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    #text-modal.active .text-modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .text-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .text-modal-header h3 {
+      color: #FFD700;
+      font-size: 18px;
+      margin: 0;
+      letter-spacing: 1px;
+    }
+
+    .text-modal-close {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 24px;
+      cursor: pointer;
+      transition: color 0.2s;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .text-modal-close:hover {
+      color: #fff;
+    }
+
+    .text-modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .text-modal-body label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .text-modal-body input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .text-modal-body input[type="text"]:focus {
+      border-color: rgba(255, 215, 0, 0.8);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+    }
+
+    .text-modal-body input[type="text"]::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .text-modal-footer {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      justify-content: flex-end;
+    }
+
+    .text-modal-footer button {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    #text-apply-btn {
+      background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+      border: none;
+      color: #000;
+    }
+
+    #text-apply-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+    }
+
+    #text-cancel-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    #text-cancel-btn:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      color: #fff;
+    }
+
     @media (max-width: 768px) {
       #title h1 { font-size: 32px; }
       #title p { font-size: 12px; }
@@ -354,7 +502,29 @@
         </div>
 
         <button class="control-btn" id="clear-photos-btn" title="清除照片">🗑️</button>
+        
+        <button class="control-btn" id="text-btn" title="编辑文字">✏️</button>
       </div>
+
+    <!-- 文字编辑模态框 -->
+    <div id="text-modal">
+      <div class="text-modal-content">
+        <div class="text-modal-header">
+          <h3>Edit Display Text</h3>
+          <button class="text-modal-close">×</button>
+        </div>
+        <div class="text-modal-body">
+          <label for="line1-input">Line 1:</label>
+          <input type="text" id="line1-input" value="MERRY" maxlength="20" placeholder="First line">
+          <label for="line2-input">Line 2:</label>
+          <input type="text" id="line2-input" value="CHRISTMAS" maxlength="20" placeholder="Second line">
+        </div>
+        <div class="text-modal-footer">
+          <button id="text-apply-btn">Apply</button>
+          <button id="text-cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
 
     <div id="upload-panel">
       <input type="file" id="photo-input" accept="image/*" multiple>
@@ -384,6 +554,10 @@
     let snowSystem, snowGeo, snowMaterial;
     const snowCount = 2000; // Snow count
     let textRotationAngle = 0; // Text display rotation angle
+    
+    // 自定义文字
+    let customLine1 = 'MERRY';
+    let customLine2 = 'CHRISTMAS';
 
     // Animation state management
     const STATES = { TREE: 0, HEART: 1, TEXT: 2 };
@@ -506,7 +680,7 @@
     }
 
     // Generate text dot positions (Canvas sampling)
-    function generateTextPositions(text, count) {
+    function generateTextPositions(line1, line2, count) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const width = 800; // Increased width
@@ -521,9 +695,9 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
-      // Draw in two lines
-      ctx.fillText("MERRY", width / 2, height * 0.35);
-      ctx.fillText("CHRISTMAS", width / 2, height * 0.65);
+      // Draw in two lines (使用自定义文字)
+      ctx.fillText(line1.toUpperCase(), width / 2, height * 0.35);
+      ctx.fillText(line2.toUpperCase(), width / 2, height * 0.65);
       
       const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
@@ -543,7 +717,7 @@
       for (let i = 0; i < count; i++) {
         // Uniformly sample from valid pixels to ensure full text coverage
         const pixelIndex = Math.floor(i * validPixels.length / count);
-        const pixel = validPixels[pixelIndex];
+        const pixel = validPixels[pixelIndex] || validPixels[0] || {x: width/2, y: height/2};
         
         // Map to 3D space
         const x3d = (pixel.x / width - 0.5) * 50; 
@@ -554,6 +728,21 @@
       }
       
       return positions;
+    }
+    
+    // 更新文字位置（不重建整个粒子系统）
+    function updateTextPositions() {
+      const newTextPositions = generateTextPositions(customLine1, customLine2, particleData.length);
+      
+      for (let i = 0; i < particleData.length; i++) {
+        particleData[i].textPos = newTextPositions[i];
+      }
+      
+      // 更新状态栏显示
+      const statusBar = document.getElementById('status-bar');
+      if (currentState === STATES.TEXT) {
+        statusBar.textContent = `MODE: ${customLine1} ${customLine2}`;
+      }
     }
 
     // Create golden particle system (supports morphing)
@@ -584,8 +773,8 @@
       const treeHeight = 20;
       const maxRadius = 8;
       
-      // Pre-calculate text positions
-      const textPositions = generateTextPositions("MERRY CHRISTMAS", totalParticles);
+      // Pre-calculate text positions (使用自定义文字)
+      const textPositions = generateTextPositions(customLine1, customLine2, totalParticles);
 
       for (let i = 0; i < totalParticles; i++) {
         // --- 1. Calculate tree shape position ---
@@ -819,10 +1008,13 @@
           isTransitioning = false;
           currentState = nextState;
           stateStartTime = now;
-          // Update status bar display
-          const names = { [STATES.TREE]: 'MODE: TREE', [STATES.HEART]: 'MODE: HEART', [STATES.TEXT]: 'MODE: MERRY CHRISTMAS' };
+          // Update status bar display (使用自定义文字)
           const statusBar = document.getElementById('status-bar');
-          if (statusBar) statusBar.textContent = names[currentState];
+          if (statusBar) {
+            if (currentState === STATES.TREE) statusBar.textContent = 'MODE: TREE';
+            else if (currentState === STATES.HEART) statusBar.textContent = 'MODE: HEART';
+            else if (currentState === STATES.TEXT) statusBar.textContent = `MODE: ${customLine1} ${customLine2}`;
+          }
         }
       } else {
         // Static hold phase (with self-rotation)
@@ -1291,6 +1483,74 @@
       if (e.target.id === 'photo-modal') {
         document.getElementById('photo-modal').classList.remove('active');
         autoRotate = true;
+      }
+    });
+
+    // 文字编辑模态框逻辑
+    const textBtn = document.getElementById('text-btn');
+    const textModal = document.getElementById('text-modal');
+    const line1Input = document.getElementById('line1-input');
+    const line2Input = document.getElementById('line2-input');
+    const textApplyBtn = document.getElementById('text-apply-btn');
+    const textCancelBtn = document.getElementById('text-cancel-btn');
+    const textModalClose = document.querySelector('.text-modal-close');
+
+    function openTextModal() {
+      // 同步当前文字到输入框
+      line1Input.value = customLine1;
+      line2Input.value = customLine2;
+      textModal.classList.add('active');
+      autoRotate = false; // 暂停旋转
+      line1Input.focus();
+    }
+
+    function closeTextModal() {
+      textModal.classList.remove('active');
+      autoRotate = true; // 恢复旋转
+    }
+
+    function applyTextChanges() {
+      const newLine1 = line1Input.value.trim() || 'MERRY';
+      const newLine2 = line2Input.value.trim() || 'CHRISTMAS';
+      
+      customLine1 = newLine1.toUpperCase();
+      customLine2 = newLine2.toUpperCase();
+      
+      // 更新粒子文字位置
+      updateTextPositions();
+      
+      closeTextModal();
+    }
+
+    textBtn.addEventListener('click', openTextModal);
+    textCancelBtn.addEventListener('click', closeTextModal);
+    textModalClose.addEventListener('click', closeTextModal);
+    textApplyBtn.addEventListener('click', applyTextChanges);
+
+    // 点击模态框外部关闭
+    textModal.addEventListener('click', (e) => {
+      if (e.target.id === 'text-modal') {
+        closeTextModal();
+      }
+    });
+
+    // 回车键应用更改
+    line1Input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        line2Input.focus();
+      }
+    });
+    
+    line2Input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        applyTextChanges();
+      }
+    });
+
+    // ESC 键关闭模态框
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && textModal.classList.contains('active')) {
+        closeTextModal();
       }
     });
 
