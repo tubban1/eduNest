@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数学建模入门 - 初中数学教学</title>
+    <meta name="description" content="学习数学建模的基本步骤，掌握线性模型和比例模型的建立方法，理解模型检验与改进的重要性，通过交互式工具进行变量选择、模型模拟和误差可视化。">
+    <meta name="keywords" content="数学建模,线性模型,比例模型,模型检验,误差分析,变量选择,模型模拟,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .step-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .step-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .step-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .model-panel {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .control-group input[type="number"],
+        .control-group input[type="text"],
+        .control-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .canvas-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            width: 100%;
+            height: 400px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .error-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .error-metrics {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .error-metrics h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metric-label {
+            color: #666;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .data-input {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .data-table th {
+            background: #667eea;
+            color: white;
+        }
+        
+        .data-table input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .model-formula {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch, reactive } = Vue;
+
+        createApp({
+            setup() {
+                // 模型类型
+                const modelType = ref('linear'); // 'linear' 或 'proportional'
+                
+                // 模型参数
+                const linearA = ref(2);
+                const linearB = ref(1);
+                const proportionalK = ref(3);
+                
+                // 数据点
+                const dataPoints = ref([
+                    { x: 1, y: 3 },
+                    { x: 2, y: 5 },
+                    { x: 3, y: 7 },
+                    { x: 4, y: 9 },
+                    { x: 5, y: 11 }
+                ]);
+                
+                // 画布引用
+                const modelStage = ref(null);
+                const modelLayer = ref(null);
+                const errorStage = ref(null);
+                const errorLayer = ref(null);
+                
+                // 误差统计
+                const errorStats = computed(() => {
+                    if (dataPoints.value.length === 0) {
+                        return { mse: 0, rmse: 0, r2: 0, mae: 0 };
+                    }
+                    
+                    let sumSquaredError = 0;
+                    let sumAbsoluteError = 0;
+                    let sumY = 0;
+                    let sumYSquared = 0;
+                    
+                    dataPoints.value.forEach(point => {
+                        const predicted = modelType.value === 'linear' 
+                            ? linearA.value * point.x + linearB.value
+                            : proportionalK.value * point.x;
+                        const error = point.y - predicted;
+                        sumSquaredError += error * error;
+                        sumAbsoluteError += Math.abs(error);
+                        sumY += point.y;
+                        sumYSquared += point.y * point.y;
+                    });
+                    
+                    const n = dataPoints.value.length;
+                    const mse = sumSquaredError / n;
+                    const rmse = Math.sqrt(mse);
+                    const mae = sumAbsoluteError / n;
+                    
+                    // R² 计算
+                    const yMean = sumY / n;
+                    let sumSquaredTotal = 0;
+                    dataPoints.value.forEach(point => {
+                        sumSquaredTotal += (point.y - yMean) * (point.y - yMean);
+                    });
+                    const r2 = sumSquaredTotal > 0 ? 1 - (sumSquaredError / sumSquaredTotal) : 0;
+                    
+                    return {
+                        mse: mse.toFixed(4),
+                        rmse: rmse.toFixed(4),
+                        r2: r2.toFixed(4),
+                        mae: mae.toFixed(4)
+                    };
+                });
+                
+                // 当前模型公式
+                const currentFormula = computed(() => {
+                    if (modelType.value === 'linear') {
+                        return `y = ${linearA.value}x + ${linearB.value}`;
+                    } else {
+                        return `y = ${proportionalK.value}x`;
+                    }
+                });
+                
+                // 当前模型公式（KaTeX格式）
+                const currentFormulaText = computed(() => {
+                    if (modelType.value === 'linear') {
+                        return `\\(y = ${linearA.value}x + ${linearB.value}\\)`;
+                    } else {
+                        return `\\(y = ${proportionalK.value}x\\)`;
+                    }
+                });
+                
+                // 绘制模型图
+                const drawModelGraph = () => {
+                    if (!modelStage.value || !modelLayer.value) return;
+                    
+                    modelLayer.value.destroyChildren();
+                    
+                    const stage = modelStage.value;
+                    const layer = modelLayer.value;
+                    const w = stage.width();
+                    const h = stage.height();
+                    
+                    // 边距
+                    const padding = { top: 40, right: 40, bottom: 60, left: 60 };
+                    const plotWidth = w - padding.left - padding.right;
+                    const plotHeight = h - padding.top - padding.bottom;
+                    
+                    // 查找数据范围
+                    if (dataPoints.value.length === 0) {
+                        return; // 没有数据时不绘制
+                    }
+                    
+                    let minX = Infinity, maxX = -Infinity;
+                    let minY = Infinity, maxY = -Infinity;
+                    
+                    dataPoints.value.forEach(p => {
+                        if (p && typeof p.x === 'number' && typeof p.y === 'number') {
+                            minX = Math.min(minX, p.x);
+                            maxX = Math.max(maxX, p.x);
+                            minY = Math.min(minY, p.y);
+                            maxY = Math.max(maxY, p.y);
+                        }
+                    });
+                    
+                    if (minX === Infinity || maxX === -Infinity) {
+                        return; // 没有有效数据
+                    }
+                    
+                    // 计算模型预测范围
+                    const modelMinX = Math.max(0, minX - 1);
+                    const modelMaxX = maxX + 1;
+                    let modelMinY, modelMaxY;
+                    
+                    if (modelType.value === 'linear') {
+                        modelMinY = linearA.value * modelMinX + linearB.value;
+                        modelMaxY = linearA.value * modelMaxX + linearB.value;
+                    } else {
+                        modelMinY = proportionalK.value * modelMinX;
+                        modelMaxY = proportionalK.value * modelMaxX;
+                    }
+                    
+                    minY = Math.min(minY, modelMinY);
+                    maxY = Math.max(maxY, modelMaxY);
+                    
+                    const rangeX = maxX - minX || 1;
+                    const rangeY = maxY - minY || 1;
+                    
+                    // 坐标转换函数
+                    const toX = (x) => padding.left + ((x - minX) / rangeX) * plotWidth;
+                    const toY = (y) => padding.top + plotHeight - ((y - minY) / rangeY) * plotHeight;
+                    
+                    // 绘制坐标轴
+                    const axisX = new Konva.Line({
+                        points: [padding.left, padding.top + plotHeight, padding.left + plotWidth, padding.top + plotHeight],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    const axisY = new Konva.Line({
+                        points: [padding.left, padding.top, padding.left, padding.top + plotHeight],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    layer.add(axisX);
+                    layer.add(axisY);
+                    
+                    // 绘制网格
+                    const gridStepX = rangeX / 10;
+                    const gridStepY = rangeY / 10;
+                    for (let i = 0; i <= 10; i++) {
+                        const x = minX + i * gridStepX;
+                        const lineX = new Konva.Line({
+                            points: [toX(x), padding.top, toX(x), padding.top + plotHeight],
+                            stroke: '#e0e0e0',
+                            strokeWidth: 1,
+                            dash: [5, 5]
+                        });
+                        layer.add(lineX);
+                    }
+                    for (let i = 0; i <= 10; i++) {
+                        const y = minY + i * gridStepY;
+                        const lineY = new Konva.Line({
+                            points: [padding.left, toY(y), padding.left + plotWidth, toY(y)],
+                            stroke: '#e0e0e0',
+                            strokeWidth: 1,
+                            dash: [5, 5]
+                        });
+                        layer.add(lineY);
+                    }
+                    
+                    // 绘制模型曲线
+                    const modelPoints = [];
+                    const steps = 100;
+                    for (let i = 0; i <= steps; i++) {
+                        const x = modelMinX + (i / steps) * (modelMaxX - modelMinX);
+                        const y = modelType.value === 'linear' 
+                            ? linearA.value * x + linearB.value
+                            : proportionalK.value * x;
+                        modelPoints.push(toX(x), toY(y));
+                    }
+                    
+                    const modelLine = new Konva.Line({
+                        points: modelPoints,
+                        stroke: '#667eea',
+                        strokeWidth: 3,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    });
+                    layer.add(modelLine);
+                    
+                    // 绘制数据点
+                    dataPoints.value.forEach((point, idx) => {
+                        const circle = new Konva.Circle({
+                            x: toX(point.x),
+                            y: toY(point.y),
+                            radius: 6,
+                            fill: '#f59e0b',
+                            stroke: '#fff',
+                            strokeWidth: 2
+                        });
+                        layer.add(circle);
+                        
+                        // 绘制误差线
+                        const predicted = modelType.value === 'linear'
+                            ? linearA.value * point.x + linearB.value
+                            : proportionalK.value * point.x;
+                        const errorLine = new Konva.Line({
+                            points: [toX(point.x), toY(point.y), toX(point.x), toY(predicted)],
+                            stroke: '#ef4444',
+                            strokeWidth: 2,
+                            dash: [5, 5]
+                        });
+                        layer.add(errorLine);
+                        
+                        // 预测点
+                        const predCircle = new Konva.Circle({
+                            x: toX(point.x),
+                            y: toY(predicted),
+                            radius: 4,
+                            fill: '#667eea',
+                            stroke: '#fff',
+                            strokeWidth: 1
+                        });
+                        layer.add(predCircle);
+                    });
+                    
+                    // 坐标轴标签
+                    for (let i = 0; i <= 5; i++) {
+                        const x = minX + (i / 5) * rangeX;
+                        const labelX = new Konva.Text({
+                            x: toX(x),
+                            y: padding.top + plotHeight + 10,
+                            text: x.toFixed(1),
+                            fontSize: 12,
+                            fill: '#666',
+                            align: 'center',
+                            offsetX: 20
+                        });
+                        layer.add(labelX);
+                    }
+                    
+                    for (let i = 0; i <= 5; i++) {
+                        const y = minY + (i / 5) * rangeY;
+                        const labelY = new Konva.Text({
+                            x: padding.left - 10,
+                            y: toY(y),
+                            text: y.toFixed(1),
+                            fontSize: 12,
+                            fill: '#666',
+                            align: 'right',
+                            offsetX: 40
+                        });
+                        layer.add(labelY);
+                    }
+                    
+                    // 轴标题
+                    const xAxisLabel = new Konva.Text({
+                        x: padding.left + plotWidth / 2,
+                        y: h - 20,
+                        text: 'x (自变量)',
+                        fontSize: 14,
+                        fill: '#333',
+                        align: 'center',
+                        offsetX: 40
+                    });
+                    const yAxisLabel = new Konva.Text({
+                        x: 20,
+                        y: padding.top + plotHeight / 2,
+                        text: 'y (因变量)',
+                        fontSize: 14,
+                        fill: '#333',
+                        align: 'center',
+                        offsetY: 40,
+                        rotation: -90
+                    });
+                    layer.add(xAxisLabel);
+                    layer.add(yAxisLabel);
+                    
+                    layer.draw();
+                };
+                
+                // 绘制误差图
+                const drawErrorGraph = () => {
+                    if (!errorStage.value || !errorLayer.value) return;
+                    
+                    errorLayer.value.destroyChildren();
+                    
+                    const stage = errorStage.value;
+                    const layer = errorLayer.value;
+                    const w = stage.width();
+                    const h = stage.height();
+                    
+                    const padding = { top: 40, right: 40, bottom: 60, left: 60 };
+                    const plotWidth = w - padding.left - padding.right;
+                    const plotHeight = h - padding.top - padding.bottom;
+                    
+                    if (dataPoints.value.length === 0) {
+                        return; // 没有数据时不绘制
+                    }
+                    
+                    // 计算误差
+                    const errors = dataPoints.value
+                        .filter(point => point && typeof point.x === 'number' && typeof point.y === 'number')
+                        .map(point => {
+                            const predicted = modelType.value === 'linear'
+                                ? linearA.value * point.x + linearB.value
+                                : proportionalK.value * point.x;
+                            return {
+                                x: point.x,
+                                error: point.y - predicted
+                            };
+                        });
+                    
+                    if (errors.length === 0) {
+                        return; // 没有有效数据
+                    }
+                    
+                    // 查找误差范围
+                    let minError = Infinity, maxError = -Infinity;
+                    errors.forEach(e => {
+                        minError = Math.min(minError, e.error);
+                        maxError = Math.max(maxError, e.error);
+                    });
+                    const rangeError = maxError - minError || 1;
+                    
+                    const toX = (x) => {
+                        const minX = Math.min(...errors.map(e => e.x));
+                        const maxX = Math.max(...errors.map(e => e.x));
+                        const rangeX = maxX - minX || 1;
+                        return padding.left + ((x - minX) / rangeX) * plotWidth;
+                    };
+                    const toY = (error) => padding.top + plotHeight - ((error - minError) / rangeError) * plotHeight;
+                    
+                    // 绘制坐标轴
+                    const axisX = new Konva.Line({
+                        points: [padding.left, padding.top + plotHeight / 2, padding.left + plotWidth, padding.top + plotHeight / 2],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    const axisY = new Konva.Line({
+                        points: [padding.left, padding.top, padding.left, padding.top + plotHeight],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    layer.add(axisX);
+                    layer.add(axisY);
+                    
+                    // 绘制误差点
+                    errors.forEach(e => {
+                        const isPositive = e.error >= 0;
+                        const barHeight = Math.abs(e.error / rangeError) * plotHeight;
+                        const barY = isPositive 
+                            ? padding.top + plotHeight / 2 - barHeight
+                            : padding.top + plotHeight / 2;
+                        
+                        const bar = new Konva.Rect({
+                            x: toX(e.x) - 15,
+                            y: barY,
+                            width: 30,
+                            height: barHeight,
+                            fill: isPositive ? '#22c55e' : '#ef4444',
+                            opacity: 0.7
+                        });
+                        layer.add(bar);
+                        
+                        const circle = new Konva.Circle({
+                            x: toX(e.x),
+                            y: toY(e.error),
+                            radius: 5,
+                            fill: isPositive ? '#16a34a' : '#dc2626',
+                            stroke: '#fff',
+                            strokeWidth: 2
+                        });
+                        layer.add(circle);
+                    });
+                    
+                    // 轴标签
+                    const xAxisLabel = new Konva.Text({
+                        x: padding.left + plotWidth / 2,
+                        y: h - 20,
+                        text: 'x 值',
+                        fontSize: 14,
+                        fill: '#333',
+                        align: 'center',
+                        offsetX: 20
+                    });
+                    const yAxisLabel = new Konva.Text({
+                        x: 20,
+                        y: padding.top + plotHeight / 2,
+                        text: '误差 (实际值 - 预测值)',
+                        fontSize: 14,
+                        fill: '#333',
+                        align: 'center',
+                        offsetY: 60,
+                        rotation: -90
+                    });
+                    layer.add(xAxisLabel);
+                    layer.add(yAxisLabel);
+                    
+                    layer.draw();
+                };
+                
+                // 初始化画布
+                const initCanvases = () => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            // 模型图
+                            const modelContainer = document.getElementById('model-canvas');
+                            if (modelContainer && typeof Konva !== 'undefined') {
+                                modelStage.value = new Konva.Stage({
+                                    container: 'model-canvas',
+                                    width: modelContainer.offsetWidth,
+                                    height: 400
+                                });
+                                modelLayer.value = new Konva.Layer();
+                                modelStage.value.add(modelLayer.value);
+                                drawModelGraph();
+                            }
+                            
+                            // 误差图
+                            const errorContainer = document.getElementById('error-canvas');
+                            if (errorContainer && typeof Konva !== 'undefined') {
+                                errorStage.value = new Konva.Stage({
+                                    container: 'error-canvas',
+                                    width: errorContainer.offsetWidth,
+                                    height: 300
+                                });
+                                errorLayer.value = new Konva.Layer();
+                                errorStage.value.add(errorLayer.value);
+                                drawErrorGraph();
+                            }
+                            
+                            // 渲染 KaTeX
+                            renderKaTeX();
+                        }, 100);
+                    });
+                };
+                
+                // 渲染 KaTeX
+                const renderKaTeX = () => {
+                    nextTick(() => {
+                        if (typeof renderMathInElement !== 'undefined') {
+                            const container = document.getElementById('app');
+                            if (container) {
+                                renderMathInElement(container, {
+                                    delimiters: [
+                                        { left: '$$', right: '$$', display: true },
+                                        { left: '$', right: '$', display: false },
+                                        { left: '\\[', right: '\\]', display: true },
+                                        { left: '\\(', right: '\\)', display: false }
+                                    ],
+                                    throwOnError: false
+                                });
+                            }
+                        }
+                    });
+                };
+                
+                // 添加数据点
+                const addDataPoint = () => {
+                    // 找到当前最大的x值，新点放在后面
+                    let maxX = 0;
+                    if (dataPoints.value.length > 0) {
+                        const validPoints = dataPoints.value.filter(p => p && typeof p.x === 'number' && !isNaN(p.x));
+                        if (validPoints.length > 0) {
+                            maxX = Math.max(...validPoints.map(p => p.x));
+                        }
+                    }
+                    const newPoint = { x: maxX + 1, y: 0 };
+                    // 直接使用 push，Vue 3 可以检测到
+                    dataPoints.value.push(newPoint);
+                    
+                    // 强制触发响应式更新和图表重绘
+                    nextTick(() => {
+                        drawModelGraph();
+                        drawErrorGraph();
+                    });
+                };
+                
+                // 删除数据点
+                const removeDataPoint = (index) => {
+                    dataPoints.value.splice(index, 1);
+                    nextTick(() => {
+                        drawModelGraph();
+                        drawErrorGraph();
+                    });
+                };
+                
+                // 加载示例数据
+                const loadExampleData = () => {
+                    if (modelType.value === 'linear') {
+                        dataPoints.value = [
+                            { x: 1, y: 3 },
+                            { x: 2, y: 5 },
+                            { x: 3, y: 7 },
+                            { x: 4, y: 9 },
+                            { x: 5, y: 11 }
+                        ];
+                    } else {
+                        dataPoints.value = [
+                            { x: 1, y: 3 },
+                            { x: 2, y: 6 },
+                            { x: 3, y: 9 },
+                            { x: 4, y: 12 },
+                            { x: 5, y: 15 }
+                        ];
+                    }
+                    nextTick(() => {
+                        drawModelGraph();
+                        drawErrorGraph();
+                    });
+                };
+                
+                // 自动拟合模型（简单最小二乘法）
+                const fitModel = () => {
+                    if (dataPoints.value.length < 2) return;
+                    
+                    if (modelType.value === 'linear') {
+                        // 线性模型: y = ax + b
+                        const n = dataPoints.value.length;
+                        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+                        
+                        dataPoints.value.forEach(p => {
+                            sumX += p.x;
+                            sumY += p.y;
+                            sumXY += p.x * p.y;
+                            sumX2 += p.x * p.x;
+                        });
+                        
+                        const a = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+                        const b = (sumY - a * sumX) / n;
+                        
+                        linearA.value = Number(a.toFixed(2));
+                        linearB.value = Number(b.toFixed(2));
+                    } else {
+                        // 比例模型: y = kx
+                        let sumXY = 0, sumX2 = 0;
+                        
+                        dataPoints.value.forEach(p => {
+                            sumXY += p.x * p.y;
+                            sumX2 += p.x * p.x;
+                        });
+                        
+                        const k = sumXY / sumX2;
+                        proportionalK.value = Number(k.toFixed(2));
+                    }
+                    
+                    nextTick(() => {
+                        drawModelGraph();
+                        drawErrorGraph();
+                        renderKaTeX();
+                    });
+                };
+                
+                // 监听参数变化
+                watch([linearA, linearB, proportionalK, modelType], () => {
+                    nextTick(() => {
+                        drawModelGraph();
+                        drawErrorGraph();
+                        renderKaTeX();
+                    });
+                });
+                
+                // 监听数据点变化
+                watch(dataPoints, () => {
+                    nextTick(() => {
+                        drawModelGraph();
+                        drawErrorGraph();
+                    });
+                }, { deep: true });
+                
+                onMounted(() => {
+                    initCanvases();
+                    
+                    // 窗口调整
+                    window.addEventListener('resize', () => {
+                        setTimeout(() => {
+                            if (modelStage.value && modelLayer.value) {
+                                const container = document.getElementById('model-canvas');
+                                if (container) {
+                                    modelStage.value.width(container.offsetWidth);
+                                    drawModelGraph();
+                                }
+                            }
+                            if (errorStage.value && errorLayer.value) {
+                                const container = document.getElementById('error-canvas');
+                                if (container) {
+                                    errorStage.value.width(container.offsetWidth);
+                                    drawErrorGraph();
+                                }
+                            }
+                        }, 100);
+                    });
+                    
+                    if (window.gsap) {
+                        gsap.from('.section', { opacity: 0, y: 20, duration: 0.6, stagger: 0.1 });
+                    }
+                });
+                
+                return {
+                    modelType,
+                    linearA,
+                    linearB,
+                    proportionalK,
+                    dataPoints,
+                    errorStats,
+                    currentFormula,
+                    currentFormulaText,
+                    addDataPoint,
+                    removeDataPoint,
+                    loadExampleData,
+                    fitModel,
+                    drawModelGraph,
+                    drawErrorGraph
+                };
+            },
+            template: `
+            <div class="container">
+                <h1>数学建模入门</h1>
+                <p class="subtitle">学习建模步骤，掌握线性与比例模型，理解检验与改进</p>
+                
+                <div class="section">
+                    <h2>一、数学建模的步骤</h2>
+                    <div class="step-grid">
+                        <div class="step-card">
+                            <div class="step-number">1</div>
+                            <h3>理解问题</h3>
+                            <p>明确目标，识别变量，收集数据</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">2</div>
+                            <h3>建立模型</h3>
+                            <p>选择合适的数学模型描述关系</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">3</div>
+                            <h3>求解模型</h3>
+                            <p>确定模型参数，得到数学表达式</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">4</div>
+                            <h3>检验模型</h3>
+                            <p>用实际数据验证模型的准确性</p>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">5</div>
+                            <h3>应用改进</h3>
+                            <p>使用模型预测，根据误差改进</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>二、线性模型与比例模型</h2>
+                    
+                    <div class="model-panel">
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">变量选择与参数设置</h3>
+                            
+                            <div class="control-group">
+                                <label>模型类型</label>
+                                <select v-model="modelType" @change="loadExampleData(); renderKaTeX();">
+                                    <option value="linear">线性模型 \\(y = ax + b\\)</option>
+                                    <option value="proportional">比例模型 \\(y = kx\\)</option>
+                                </select>
+                            </div>
+                            
+                            <div v-if="modelType === 'linear'">
+                                <div class="control-group">
+                                    <label>参数 a (斜率): {{ linearA }}</label>
+                                    <input type="range" v-model.number="linearA" min="-10" max="10" step="0.1" />
+                                </div>
+                                <div class="control-group">
+                                    <label>参数 b (截距): {{ linearB }}</label>
+                                    <input type="range" v-model.number="linearB" min="-10" max="10" step="0.1" />
+                                </div>
+                            </div>
+                            
+                            <div v-else>
+                                <div class="control-group">
+                                    <label>参数 k (比例系数): {{ proportionalK }}</label>
+                                    <input type="range" v-model.number="proportionalK" min="0" max="10" step="0.1" />
+                                </div>
+                            </div>
+                            
+                            <div class="model-formula" v-html="'<strong>当前模型:</strong><br>' + currentFormulaText"></div>
+                            
+                            <button class="btn" @click="fitModel">自动拟合模型</button>
+                            <button class="btn btn-secondary" @click="loadExampleData">加载示例数据</button>
+                        </div>
+                        
+                        <div class="canvas-container">
+                            <h3 style="color: #667eea; margin-bottom: 15px;">模型可视化</h3>
+                            <div id="model-canvas" class="canvas-wrapper"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="data-input">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">数据输入</h3>
+                        <button class="btn" @click="addDataPoint">添加数据点</button>
+                        <span style="margin-left: 10px; color: #666; font-size: 14px;">当前共有 {{ dataPoints.length }} 个数据点</span>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>x (自变量)</th>
+                                    <th>y (因变量)</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template v-if="dataPoints.length > 0">
+                                    <tr v-for="(point, index) in dataPoints" :key="'point-' + index">
+                                        <td>{{ index + 1 }}</td>
+                                        <td>
+                                            <input type="number" v-model.number="point.x" step="0.1" @input="drawModelGraph(); drawErrorGraph();" />
+                                        </td>
+                                        <td>
+                                            <input type="number" v-model.number="point.y" step="0.1" @input="drawModelGraph(); drawErrorGraph();" />
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-secondary" @click="removeDataPoint(index)" style="padding: 5px 10px; font-size: 12px;">删除</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr v-else>
+                                    <td colspan="4" style="text-align: center; color: #999; padding: 20px;">
+                                        暂无数据，请点击"添加数据点"按钮添加数据
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>三、模型检验与误差可视化</h2>
+                    
+                    <div class="error-panel">
+                        <div class="error-metrics">
+                            <h3>误差统计指标</h3>
+                            <div class="metric-item">
+                                <span class="metric-label">均方误差 (MSE):</span>
+                                <span class="metric-value">{{ errorStats.mse }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">均方根误差 (RMSE):</span>
+                                <span class="metric-value">{{ errorStats.rmse }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">平均绝对误差 (MAE):</span>
+                                <span class="metric-value">{{ errorStats.mae }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">决定系数 (R²):</span>
+                                <span class="metric-value">{{ errorStats.r2 }}</span>
+                            </div>
+                            <div style="margin-top: 15px; padding: 10px; background: #f0f9ff; border-radius: 5px; font-size: 0.9em; color: #666;">
+                                <strong>说明：</strong><br>
+                                • MSE 和 RMSE 越小越好<br>
+                                • MAE 越小越好<br>
+                                • R² 越接近 1 越好，表示模型拟合度越高
+                            </div>
+                        </div>
+                        
+                        <div class="canvas-container">
+                            <h3 style="color: #667eea; margin-bottom: 15px;">误差分布图</h3>
+                            <div id="error-canvas" class="canvas-wrapper" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>四、模型改进建议</h2>
+                    <p style="line-height: 1.8; font-size: 1.05em;">
+                        当模型的误差较大时（R² 较小，RMSE 较大），可以考虑以下改进方法：<br><br>
+                        1. <strong>检查数据质量：</strong>确保数据准确，去除异常值<br>
+                        2. <strong>尝试其他模型：</strong>线性模型不适合时，考虑二次模型、指数模型等<br>
+                        3. <strong>增加数据量：</strong>更多数据可以提高模型的可靠性<br>
+                        4. <strong>变量变换：</strong>对变量进行对数、平方根等变换<br>
+                        5. <strong>重新选择变量：</strong>考虑是否遗漏了重要的影响因素
+                    </p>
+                </div>
+            </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

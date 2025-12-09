@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>概率基础 - 初中数学教学</title>
+    <meta name="description" content="学习概率基础概念，理解样本空间和简单事件，通过抛硬币和掷骰子实验比较实验概率与理论概率，掌握概率计算方法。">
+    <meta name="keywords" content="概率,样本空间,事件,抛硬币,掷骰子,实验概率,理论概率,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .experiment-type {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .experiment-btn {
+            padding: 12px 24px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .experiment-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .experiment-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .simulation-area {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .coin-display {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+        
+        .coin-heads {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #333;
+        }
+        
+        .coin-tails {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+            color: #333;
+        }
+        
+        .coin-flipping {
+            animation: flip 0.6s ease-in-out;
+        }
+        
+        @keyframes flip {
+            0%, 100% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg) scale(1.1); }
+        }
+        
+        .dice-display {
+            width: 100px;
+            height: 100px;
+            margin: 20px auto;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+        
+        .dice-rolling {
+            animation: roll 0.6s ease-in-out;
+        }
+        
+        @keyframes roll {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg) scale(1.1); }
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .chart-container {
+            margin: 20px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .chart-wrapper {
+            width: 100%;
+            height: 400px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .info-panel {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            margin: 10px 0;
+            line-height: 1.8;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .comparison-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .formula-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .formula-text {
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+    
+    <!-- Vue.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                const experimentType = ref('coin');
+                const isAnimating = ref(false);
+                
+                // 硬币数据
+                const coinResult = ref(null);
+                const coinCounts = ref({ heads: 0, tails: 0 });
+                const coinTotal = ref(0);
+                
+                // 骰子数据
+                const diceResult = ref(null);
+                const diceCounts = ref({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 });
+                const diceTotal = ref(0);
+                
+                // 历史记录
+                const coinHistory = ref([]);
+                const diceHistory = ref([]);
+                
+                // Konva引用
+                const chartStage = ref(null);
+                const chartLayer = ref(null);
+                
+                // 理论概率
+                const theoreticalProbabilities = computed(() => {
+                    if (experimentType.value === 'coin') {
+                        return { heads: 0.5, tails: 0.5 };
+                    } else {
+                        return { 1: 1/6, 2: 1/6, 3: 1/6, 4: 1/6, 5: 1/6, 6: 1/6 };
+                    }
+                });
+                
+                // 实验概率
+                const experimentalProbabilities = computed(() => {
+                    if (experimentType.value === 'coin') {
+                        if (coinTotal.value === 0) return { heads: 0, tails: 0 };
+                        return {
+                            heads: coinCounts.value.heads / coinTotal.value,
+                            tails: coinCounts.value.tails / coinTotal.value
+                        };
+                    } else {
+                        if (diceTotal.value === 0) return { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+                        return {
+                            1: diceCounts.value[1] / diceTotal.value,
+                            2: diceCounts.value[2] / diceTotal.value,
+                            3: diceCounts.value[3] / diceTotal.value,
+                            4: diceCounts.value[4] / diceTotal.value,
+                            5: diceCounts.value[5] / diceTotal.value,
+                            6: diceCounts.value[6] / diceTotal.value
+                        };
+                    }
+                });
+                
+                // 抛硬币
+                function flipCoin() {
+                    if (isAnimating.value) return;
+                    isAnimating.value = true;
+                    coinResult.value = null;
+                    
+                    // 动画
+                    setTimeout(() => {
+                        const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                        coinResult.value = result;
+                        coinCounts.value[result]++;
+                        coinTotal.value++;
+                        coinHistory.value.push(result);
+                        
+                        if (coinHistory.value.length > 100) {
+                            coinHistory.value.shift();
+                        }
+                        
+                        isAnimating.value = false;
+                        nextTick(() => {
+                            drawChart();
+                        });
+                    }, 600);
+                }
+                
+                // 掷骰子
+                function rollDice() {
+                    if (isAnimating.value) return;
+                    isAnimating.value = true;
+                    diceResult.value = null;
+                    
+                    // 动画
+                    setTimeout(() => {
+                        const result = Math.floor(Math.random() * 6) + 1;
+                        diceResult.value = result;
+                        diceCounts.value[result]++;
+                        diceTotal.value++;
+                        diceHistory.value.push(result);
+                        
+                        if (diceHistory.value.length > 100) {
+                            diceHistory.value.shift();
+                        }
+                        
+                        isAnimating.value = false;
+                        nextTick(() => {
+                            drawChart();
+                        });
+                    }, 600);
+                }
+                
+                // 批量实验
+                function runBatch(count) {
+                    if (isAnimating.value) return;
+                    isAnimating.value = true;
+                    
+                    let completed = 0;
+                    const batchSize = 10;
+                    
+                    function runBatchStep() {
+                        for (let i = 0; i < batchSize && completed < count; i++) {
+                            if (experimentType.value === 'coin') {
+                                const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                                coinCounts.value[result]++;
+                                coinTotal.value++;
+                                coinHistory.value.push(result);
+                            } else {
+                                const result = Math.floor(Math.random() * 6) + 1;
+                                diceCounts.value[result]++;
+                                diceTotal.value++;
+                                diceHistory.value.push(result);
+                            }
+                            completed++;
+                        }
+                        
+                        if (coinHistory.value.length > 100) {
+                            coinHistory.value.shift();
+                        }
+                        if (diceHistory.value.length > 100) {
+                            diceHistory.value.shift();
+                        }
+                        
+                        drawChart();
+                        
+                        if (completed < count) {
+                            setTimeout(runBatchStep, 50);
+                        } else {
+                            isAnimating.value = false;
+                        }
+                    }
+                    
+                    runBatchStep();
+                }
+                
+                // 重置
+                function reset() {
+                    coinResult.value = null;
+                    coinCounts.value = { heads: 0, tails: 0 };
+                    coinTotal.value = 0;
+                    coinHistory.value = [];
+                    
+                    diceResult.value = null;
+                    diceCounts.value = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+                    diceTotal.value = 0;
+                    diceHistory.value = [];
+                    
+                    nextTick(() => {
+                        drawChart();
+                    });
+                }
+                
+                // 绘制柱状图
+                function drawChart() {
+                    if (!chartLayer.value || !chartStage.value) return;
+                    
+                    chartLayer.value.destroyChildren();
+                    
+                    const width = chartStage.value.width();
+                    const height = chartStage.value.height();
+                    const padding = 60;
+                    const chartWidth = width - padding * 2;
+                    const chartHeight = height - padding * 2;
+                    
+                    if (experimentType.value === 'coin') {
+                        const categories = ['正面', '反面'];
+                        const theoretical = [theoreticalProbabilities.value.heads, theoreticalProbabilities.value.tails];
+                        const experimental = [experimentalProbabilities.value.heads, experimentalProbabilities.value.tails];
+                        const maxValue = 1;
+                        const barWidth = chartWidth / 4;
+                        
+                        // 绘制坐标轴
+                        const xAxis = new Konva.Line({
+                            points: [padding, height - padding, width - padding, height - padding],
+                            stroke: '#333',
+                            strokeWidth: 2
+                        });
+                        chartLayer.value.add(xAxis);
+                        
+                        const yAxis = new Konva.Line({
+                            points: [padding, padding, padding, height - padding],
+                            stroke: '#333',
+                            strokeWidth: 2
+                        });
+                        chartLayer.value.add(yAxis);
+                        
+                        // Y轴标签
+                        for (let i = 0; i <= 10; i++) {
+                            const value = i * 0.1;
+                            const y = padding + chartHeight - (value / maxValue) * chartHeight;
+                            const label = new Konva.Text({
+                                x: padding - 50,
+                                y: y - 8,
+                                text: value.toFixed(1),
+                                fontSize: 12,
+                                fill: '#666'
+                            });
+                            chartLayer.value.add(label);
+                            
+                            // 网格线
+                            const gridLine = new Konva.Line({
+                                points: [padding, y, width - padding, y],
+                                stroke: '#e0e0e0',
+                                strokeWidth: 1,
+                                dash: [5, 5]
+                            });
+                            chartLayer.value.add(gridLine);
+                        }
+                        
+                        // 绘制柱状图
+                        categories.forEach((category, index) => {
+                            const x = padding + (index + 0.5) * (chartWidth / categories.length);
+                            
+                            // 理论概率（蓝色）
+                            const theoreticalHeight = (theoretical[index] / maxValue) * chartHeight;
+                            const theoreticalBar = new Konva.Rect({
+                                x: x - barWidth / 2,
+                                y: height - padding - theoreticalHeight,
+                                width: barWidth / 2 - 5,
+                                height: theoreticalHeight,
+                                fill: '#667eea',
+                                opacity: 0.8
+                            });
+                            chartLayer.value.add(theoreticalBar);
+                            
+                            // 实验概率（绿色）
+                            const experimentalHeight = (experimental[index] / maxValue) * chartHeight;
+                            const experimentalBar = new Konva.Rect({
+                                x: x + 5,
+                                y: height - padding - experimentalHeight,
+                                width: barWidth / 2 - 5,
+                                height: experimentalHeight,
+                                fill: '#4caf50',
+                                opacity: 0.8
+                            });
+                            chartLayer.value.add(experimentalBar);
+                            
+                            // 标签
+                            const label = new Konva.Text({
+                                x: x - 20,
+                                y: height - padding + 10,
+                                text: category,
+                                fontSize: 14,
+                                fill: '#333',
+                                fontStyle: 'bold'
+                            });
+                            chartLayer.value.add(label);
+                        });
+                        
+                        // 图例
+                        const legendY = 20;
+                        const legend1 = new Konva.Rect({
+                            x: padding + 10,
+                            y: legendY,
+                            width: 20,
+                            height: 15,
+                            fill: '#667eea'
+                        });
+                        chartLayer.value.add(legend1);
+                        const legend1Text = new Konva.Text({
+                            x: padding + 35,
+                            y: legendY,
+                            text: '理论概率',
+                            fontSize: 14,
+                            fill: '#333'
+                        });
+                        chartLayer.value.add(legend1Text);
+                        
+                        const legend2 = new Konva.Rect({
+                            x: padding + 120,
+                            y: legendY,
+                            width: 20,
+                            height: 15,
+                            fill: '#4caf50'
+                        });
+                        chartLayer.value.add(legend2);
+                        const legend2Text = new Konva.Text({
+                            x: padding + 145,
+                            y: legendY,
+                            text: '实验概率',
+                            fontSize: 14,
+                            fill: '#333'
+                        });
+                        chartLayer.value.add(legend2Text);
+                        
+                    } else {
+                        // 骰子柱状图
+                        const categories = ['1', '2', '3', '4', '5', '6'];
+                        const theoretical = [
+                            theoreticalProbabilities.value[1],
+                            theoreticalProbabilities.value[2],
+                            theoreticalProbabilities.value[3],
+                            theoreticalProbabilities.value[4],
+                            theoreticalProbabilities.value[5],
+                            theoreticalProbabilities.value[6]
+                        ];
+                        const experimental = [
+                            experimentalProbabilities.value[1],
+                            experimentalProbabilities.value[2],
+                            experimentalProbabilities.value[3],
+                            experimentalProbabilities.value[4],
+                            experimentalProbabilities.value[5],
+                            experimentalProbabilities.value[6]
+                        ];
+                        const maxValue = 1;
+                        const barWidth = chartWidth / 12;
+                        
+                        // 绘制坐标轴
+                        const xAxis = new Konva.Line({
+                            points: [padding, height - padding, width - padding, height - padding],
+                            stroke: '#333',
+                            strokeWidth: 2
+                        });
+                        chartLayer.value.add(xAxis);
+                        
+                        const yAxis = new Konva.Line({
+                            points: [padding, padding, padding, height - padding],
+                            stroke: '#333',
+                            strokeWidth: 2
+                        });
+                        chartLayer.value.add(yAxis);
+                        
+                        // Y轴标签
+                        for (let i = 0; i <= 10; i++) {
+                            const value = i * 0.1;
+                            const y = padding + chartHeight - (value / maxValue) * chartHeight;
+                            const label = new Konva.Text({
+                                x: padding - 50,
+                                y: y - 8,
+                                text: value.toFixed(1),
+                                fontSize: 12,
+                                fill: '#666'
+                            });
+                            chartLayer.value.add(label);
+                            
+                            // 网格线
+                            const gridLine = new Konva.Line({
+                                points: [padding, y, width - padding, y],
+                                stroke: '#e0e0e0',
+                                strokeWidth: 1,
+                                dash: [5, 5]
+                            });
+                            chartLayer.value.add(gridLine);
+                        }
+                        
+                        // 绘制柱状图
+                        categories.forEach((category, index) => {
+                            const x = padding + (index + 0.5) * (chartWidth / categories.length);
+                            
+                            // 理论概率
+                            const theoreticalHeight = (theoretical[index] / maxValue) * chartHeight;
+                            const theoreticalBar = new Konva.Rect({
+                                x: x - barWidth / 2,
+                                y: height - padding - theoreticalHeight,
+                                width: barWidth / 2 - 5,
+                                height: theoreticalHeight,
+                                fill: '#667eea',
+                                opacity: 0.8
+                            });
+                            chartLayer.value.add(theoreticalBar);
+                            
+                            // 实验概率
+                            const experimentalHeight = (experimental[index] / maxValue) * chartHeight;
+                            const experimentalBar = new Konva.Rect({
+                                x: x + 5,
+                                y: height - padding - experimentalHeight,
+                                width: barWidth / 2 - 5,
+                                height: experimentalHeight,
+                                fill: '#4caf50',
+                                opacity: 0.8
+                            });
+                            chartLayer.value.add(experimentalBar);
+                            
+                            // 标签
+                            const label = new Konva.Text({
+                                x: x - 8,
+                                y: height - padding + 10,
+                                text: category,
+                                fontSize: 14,
+                                fill: '#333',
+                                fontStyle: 'bold'
+                            });
+                            chartLayer.value.add(label);
+                        });
+                        
+                        // 图例
+                        const legendY = 20;
+                        const legend1 = new Konva.Rect({
+                            x: padding + 10,
+                            y: legendY,
+                            width: 20,
+                            height: 15,
+                            fill: '#667eea'
+                        });
+                        chartLayer.value.add(legend1);
+                        const legend1Text = new Konva.Text({
+                            x: padding + 35,
+                            y: legendY,
+                            text: '理论概率',
+                            fontSize: 14,
+                            fill: '#333'
+                        });
+                        chartLayer.value.add(legend1Text);
+                        
+                        const legend2 = new Konva.Rect({
+                            x: padding + 120,
+                            y: legendY,
+                            width: 20,
+                            height: 15,
+                            fill: '#4caf50'
+                        });
+                        chartLayer.value.add(legend2);
+                        const legend2Text = new Konva.Text({
+                            x: padding + 145,
+                            y: legendY,
+                            text: '实验概率',
+                            fontSize: 14,
+                            fill: '#333'
+                        });
+                        chartLayer.value.add(legend2Text);
+                    }
+                    
+                    chartLayer.value.draw();
+                }
+                
+                // 初始化图表
+                function initChart() {
+                    const container = document.getElementById('chart-canvas');
+                    if (!container || typeof Konva === 'undefined') return;
+                    
+                    chartStage.value = new Konva.Stage({
+                        container: 'chart-canvas',
+                        width: container.clientWidth,
+                        height: 400
+                    });
+                    
+                    chartLayer.value = new Konva.Layer();
+                    chartStage.value.add(chartLayer.value);
+                    
+                    drawChart();
+                }
+                
+                // 渲染KaTeX
+                function renderKaTeX() {
+                    if (typeof katex !== 'undefined') {
+                        setTimeout(() => {
+                            document.querySelectorAll('.katex-static').forEach(el => {
+                                const formula = el.getAttribute('data-formula');
+                                if (formula && !el.querySelector('.katex-html')) {
+                                    try {
+                                        katex.render(formula, el, { throwOnError: false });
+                                    } catch(e) {
+                                        console.warn('KaTeX渲染失败:', e);
+                                    }
+                                }
+                            });
+                        }, 100);
+                    }
+                }
+                
+                // 监听实验类型变化
+                watch(experimentType, () => {
+                    nextTick(() => {
+                        drawChart();
+                        renderKaTeX();
+                    });
+                });
+                
+                // 监听数据变化
+                watch([coinTotal, diceTotal], () => {
+                    nextTick(() => {
+                        drawChart();
+                    });
+                });
+                
+                onMounted(() => {
+                    setTimeout(() => {
+                        initChart();
+                        renderKaTeX();
+                        
+                        // 窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (chartStage.value) {
+                                const container = document.getElementById('chart-canvas');
+                                if (container) {
+                                    chartStage.value.width(container.clientWidth);
+                                    drawChart();
+                                }
+                            }
+                        });
+                    }, 200);
+                });
+                
+                return {
+                    experimentType,
+                    isAnimating,
+                    coinResult,
+                    coinCounts,
+                    coinTotal,
+                    diceResult,
+                    diceCounts,
+                    diceTotal,
+                    theoreticalProbabilities,
+                    experimentalProbabilities,
+                    flipCoin,
+                    rollDice,
+                    runBatch,
+                    reset
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>概率基础</h1>
+                    
+                    <div class="section">
+                        <h2>基本概念</h2>
+                        <div class="info-panel">
+                            <div class="info-item">
+                                <strong>概率：</strong>表示某个事件发生的可能性大小，用0到1之间的数表示。
+                            </div>
+                            <div class="info-item">
+                                <strong>样本空间：</strong>所有可能结果的集合。例如，抛硬币的样本空间是{正面，反面}。
+                            </div>
+                            <div class="info-item">
+                                <strong>简单事件：</strong>样本空间中的一个结果。例如，抛硬币得到正面是一个简单事件。
+                            </div>
+                            <div class="info-item">
+                                <strong>理论概率：</strong>根据理论计算得出的概率。例如，抛硬币得到正面的理论概率是0.5。
+                            </div>
+                            <div class="info-item">
+                                <strong>实验概率：</strong>通过实际实验得到的概率，等于事件发生的次数除以总实验次数。
+                            </div>
+                        </div>
+                        
+                        <div class="formula-card">
+                            <h3>概率计算公式</h3>
+                            <div class="formula-text">
+                                <span class="katex-static" data-formula="P(事件) = \\frac{有利结果数}{所有可能结果数}"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>实验模拟</h2>
+                        <div class="experiment-type">
+                            <button class="experiment-btn" :class="{ active: experimentType === 'coin' }" 
+                                    @click="experimentType = 'coin'">抛硬币</button>
+                            <button class="experiment-btn" :class="{ active: experimentType === 'dice' }" 
+                                    @click="experimentType = 'dice'">掷骰子</button>
+                        </div>
+                        
+                        <div class="simulation-area">
+                            <!-- 硬币显示 -->
+                            <div v-if="experimentType === 'coin'">
+                                <div class="coin-display" 
+                                     :class="{'coin-heads': coinResult === 'heads', 'coin-tails': coinResult === 'tails', 'coin-flipping': isAnimating}">
+                                    <span v-if="coinResult === 'heads'">正</span>
+                                    <span v-else-if="coinResult === 'tails'">反</span>
+                                    <span v-else>?</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 骰子显示 -->
+                            <div v-if="experimentType === 'dice'">
+                                <div class="dice-display" :class="{'dice-rolling': isAnimating}">
+                                    {{ diceResult || '?' }}
+                                </div>
+                            </div>
+                            
+                            <div class="controls">
+                                <button class="btn" @click="experimentType === 'coin' ? flipCoin() : rollDice()" 
+                                        :disabled="isAnimating">
+                                    {{ experimentType === 'coin' ? '抛硬币' : '掷骰子' }}
+                                </button>
+                                <button class="btn" @click="runBatch(10)" :disabled="isAnimating">连续10次</button>
+                                <button class="btn" @click="runBatch(50)" :disabled="isAnimating">连续50次</button>
+                                <button class="btn" @click="runBatch(100)" :disabled="isAnimating">连续100次</button>
+                                <button class="btn" @click="reset">重置</button>
+                            </div>
+                            
+                            <!-- 统计数据 -->
+                            <div class="stats-display" v-if="experimentType === 'coin'">
+                                <div class="stat-card">
+                                    <h3>总次数</h3>
+                                    <div class="value">{{ coinTotal }}</div>
+                                </div>
+                                <div class="stat-card">
+                                    <h3>正面次数</h3>
+                                    <div class="value">{{ coinCounts.heads }}</div>
+                                </div>
+                                <div class="stat-card">
+                                    <h3>反面次数</h3>
+                                    <div class="value">{{ coinCounts.tails }}</div>
+                                </div>
+                                <div class="stat-card">
+                                    <h3>正面概率</h3>
+                                    <div class="value">{{ (experimentalProbabilities.heads * 100).toFixed(1) }}%</div>
+                                </div>
+                                <div class="stat-card">
+                                    <h3>反面概率</h3>
+                                    <div class="value">{{ (experimentalProbabilities.tails * 100).toFixed(1) }}%</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stats-display" v-if="experimentType === 'dice'">
+                                <div class="stat-card">
+                                    <h3>总次数</h3>
+                                    <div class="value">{{ diceTotal }}</div>
+                                </div>
+                                <div class="stat-card" v-for="i in 6" :key="i">
+                                    <h3>数字{{ i }}次数</h3>
+                                    <div class="value">{{ diceCounts[i] }}</div>
+                                </div>
+                                <div class="stat-card" v-for="i in 6" :key="'prob-' + i">
+                                    <h3>数字{{ i }}概率</h3>
+                                    <div class="value">{{ (experimentalProbabilities[i] * 100).toFixed(1) }}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>理论概率与实验概率对比</h2>
+                        <div class="chart-container">
+                            <div id="chart-canvas" class="chart-wrapper"></div>
+                        </div>
+                        
+                        <table class="comparison-table" v-if="experimentType === 'coin'">
+                            <thead>
+                                <tr>
+                                    <th>结果</th>
+                                    <th>理论概率</th>
+                                    <th>实验概率</th>
+                                    <th>实验次数</th>
+                                    <th>差值</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>正面</td>
+                                    <td>{{ (theoreticalProbabilities.heads * 100).toFixed(1) }}%</td>
+                                    <td>{{ (experimentalProbabilities.heads * 100).toFixed(1) }}%</td>
+                                    <td>{{ coinCounts.heads }}</td>
+                                    <td>{{ Math.abs(theoreticalProbabilities.heads - experimentalProbabilities.heads).toFixed(3) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>反面</td>
+                                    <td>{{ (theoreticalProbabilities.tails * 100).toFixed(1) }}%</td>
+                                    <td>{{ (experimentalProbabilities.tails * 100).toFixed(1) }}%</td>
+                                    <td>{{ coinCounts.tails }}</td>
+                                    <td>{{ Math.abs(theoreticalProbabilities.tails - experimentalProbabilities.tails).toFixed(3) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <table class="comparison-table" v-if="experimentType === 'dice'">
+                            <thead>
+                                <tr>
+                                    <th>结果</th>
+                                    <th>理论概率</th>
+                                    <th>实验概率</th>
+                                    <th>实验次数</th>
+                                    <th>差值</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="i in 6" :key="i">
+                                    <td>{{ i }}</td>
+                                    <td>{{ (theoreticalProbabilities[i] * 100).toFixed(1) }}%</td>
+                                    <td>{{ (experimentalProbabilities[i] * 100).toFixed(1) }}%</td>
+                                    <td>{{ diceCounts[i] }}</td>
+                                    <td>{{ Math.abs(theoreticalProbabilities[i] - experimentalProbabilities[i]).toFixed(3) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+        
+        // KaTeX渲染（全局）
+        function renderKaTeXGlobal() {
+            if (typeof katex !== 'undefined') {
+                setTimeout(() => {
+                    document.querySelectorAll('.katex-static').forEach(el => {
+                        const formula = el.getAttribute('data-formula');
+                        if (formula && !el.querySelector('.katex-html')) {
+                            try {
+                                katex.render(formula, el, { throwOnError: false });
+                            } catch(e) {
+                                console.warn('KaTeX渲染失败:', e);
+                            }
+                        }
+                    });
+                }, 300);
+            }
+        }
+        
+        setTimeout(renderKaTeXGlobal, 500);
+    </script>
+</body>
+</html>
+

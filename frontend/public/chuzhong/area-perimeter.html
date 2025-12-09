@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>面积与周长 - 初中数学教学</title>
+    <meta name="description" content="学习长方形、三角形、平行四边形、梯形的面积和周长计算方法，理解面积公式的来源，掌握面积分割与重组的方法。">
+    <meta name="keywords" content="面积,周长,长方形,三角形,平行四边形,梯形,面积公式,分割重组,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .shape-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .shape-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .shape-btn:hover {
+            background: #e3f2fd;
+        }
+        
+        .shape-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .canvas-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .info-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .info-item {
+            margin: 10px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .info-item strong {
+            color: #667eea;
+            margin-right: 10px;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .input-group input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+        }
+        
+        .calculator {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .calculator h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .result-box {
+            margin: 15px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .result-box strong {
+            color: #1976d2;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .practice-area {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .practice-question.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .practice-question.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 150px;
+            margin: 10px;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                // 当前形状类型
+                const shapeType = ref('rectangle');
+                const demoType = ref('triangle');
+                const recomposeStage = ref(null);
+                const recomposeLayer = ref(null);
+                const isAnimatingRecompose = ref(false); // 'rectangle', 'triangle', 'parallelogram', 'trapezoid'
+                
+                // 画布引用
+                const demoStage = ref(null);
+                const demoLayer = ref(null);
+                const calcStage = ref(null);
+                const calcLayer = ref(null);
+                
+                // 每个形状类型的计算画布
+                const rectCalcStage = ref(null);
+                const rectCalcLayer = ref(null);
+                const triangleCalcStage = ref(null);
+                const triangleCalcLayer = ref(null);
+                const paraCalcStage = ref(null);
+                const paraCalcLayer = ref(null);
+                const trapCalcStage = ref(null);
+                const trapCalcLayer = ref(null);
+                
+                // 尺寸参数（计算用）
+                const rectLength = ref(10);
+                const rectWidth = ref(6);
+                const triangleBase = ref(8);
+                const triangleHeight = ref(6);
+                const paraBase = ref(10);
+                const paraHeight = ref(6);
+                const trapTopBase = ref(6);
+                const trapBottomBase = ref(10);
+                const trapHeight = ref(6);
+                
+                // 动画状态
+                const animating = ref(false);
+                
+                // 计算面积和周长
+                const rectangleArea = computed(() => rectLength.value * rectWidth.value);
+                const rectanglePerimeter = computed(() => 2 * (rectLength.value + rectWidth.value));
+                
+                const triangleArea = computed(() => triangleBase.value * triangleHeight.value / 2);
+                const trianglePerimeter = computed(() => {
+                    // 假设是直角三角形，斜边 = sqrt(base^2 + height^2)
+                    const hypotenuse = Math.sqrt(triangleBase.value ** 2 + triangleHeight.value ** 2);
+                    return triangleBase.value + triangleHeight.value + hypotenuse;
+                });
+                
+                const parallelogramArea = computed(() => paraBase.value * paraHeight.value);
+                const parallelogramPerimeter = computed(() => {
+                    // 假设另一边长度为height * 1.2（任意值用于演示）
+                    const otherSide = paraHeight.value * 1.2;
+                    return 2 * (paraBase.value + otherSide);
+                });
+                
+                const trapezoidArea = computed(() => {
+                    return (trapTopBase.value + trapBottomBase.value) * trapHeight.value / 2;
+                });
+                const trapezoidPerimeter = computed(() => {
+                    // 假设两条斜边相等，每条 = sqrt(height^2 + ((bottom-top)/2)^2)
+                    const sideDiff = (trapBottomBase.value - trapTopBase.value) / 2;
+                    const side = Math.sqrt(trapHeight.value ** 2 + sideDiff ** 2);
+                    return trapTopBase.value + trapBottomBase.value + 2 * side;
+                });
+                
+                // 计算过程的公式字符串（用于KaTeX渲染）
+                const rectAreaFormula = computed(() => {
+                    return `${rectLength.value} \\times ${rectWidth.value} = ${rectangleArea.value.toFixed(2)}`;
+                });
+                
+                const rectPerimeterFormula = computed(() => {
+                    return `2(${rectLength.value} + ${rectWidth.value}) = ${rectanglePerimeter.value.toFixed(2)}`;
+                });
+                
+                const triAreaFormula = computed(() => {
+                    return `\\frac{${triangleBase.value} \\times ${triangleHeight.value}}{2} = ${triangleArea.value.toFixed(2)}`;
+                });
+                
+                const paraAreaFormula = computed(() => {
+                    return `${paraBase.value} \\times ${paraHeight.value} = ${parallelogramArea.value.toFixed(2)}`;
+                });
+                
+                const trapAreaFormula = computed(() => {
+                    return `\\frac{(${trapTopBase.value} + ${trapBottomBase.value}) \\times ${trapHeight.value}}{2} = ${trapezoidArea.value.toFixed(2)}`;
+                });
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        shape: 'rectangle',
+                        length: 12,
+                        width: 8,
+                        question: '长方形的面积是多少？',
+                        answer: '96',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        shape: 'triangle',
+                        base: 10,
+                        height: 6,
+                        question: '三角形的面积是多少？',
+                        answer: '30',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        shape: 'parallelogram',
+                        base: 9,
+                        height: 5,
+                        question: '平行四边形的面积是多少？',
+                        answer: '45',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        shape: 'trapezoid',
+                        topBase: 4,
+                        bottomBase: 8,
+                        height: 5,
+                        question: '梯形的面积是多少？',
+                        answer: '30',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        shape: 'rectangle',
+                        length: 15,
+                        width: 10,
+                        question: '长方形的周长是多少？',
+                        answer: '50',
+                        userAnswer: '',
+                        correct: null
+                    }
+                ]);
+                
+                // 绘制公式演示动画
+                function drawFormulaDemo() {
+                    if (!demoLayer.value) return;
+                    
+                    demoLayer.value.destroyChildren();
+                    animating.value = false;
+                    
+                    const width = demoStage.value.width();
+                    const height = demoStage.value.height();
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    
+                    if (shapeType.value === 'rectangle') {
+                        drawRectangleDemo(centerX, centerY, width, height);
+                    } else if (shapeType.value === 'triangle') {
+                        drawTriangleDemo(centerX, centerY, width, height);
+                    } else if (shapeType.value === 'parallelogram') {
+                        drawParallelogramDemo(centerX, centerY, width, height);
+                    } else if (shapeType.value === 'trapezoid') {
+                        drawTrapezoidDemo(centerX, centerY, width, height);
+                    }
+                }
+                
+                // 绘制长方形公式演示
+                function drawRectangleDemo(cx, cy, width, height) {
+                    const w = 120;
+                    const h = 80;
+                    const startX = cx - w / 2;
+                    const startY = cy - h / 2;
+                    
+                    // 绘制长方形
+                    const rect = new Konva.Rect({
+                        x: startX,
+                        y: startY,
+                        width: w,
+                        height: h,
+                        fill: 'rgba(102, 126, 234, 0.3)',
+                        stroke: '#667eea',
+                        strokeWidth: 3
+                    });
+                    demoLayer.value.add(rect);
+                    
+                    // 标注长度
+                    const lengthLine = new Konva.Line({
+                        points: [startX, startY - 20, startX + w, startY - 20],
+                        stroke: '#4caf50',
+                        strokeWidth: 2,
+                        dash: [5, 5]
+                    });
+                    demoLayer.value.add(lengthLine);
+                    
+                    const lengthLabel = new Konva.Text({
+                        x: startX + w / 2 - 20,
+                        y: startY - 45,
+                        text: '长 a',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(lengthLabel);
+                    
+                    // 标注宽度
+                    const widthLine = new Konva.Line({
+                        points: [startX - 20, startY, startX - 20, startY + h],
+                        stroke: '#4caf50',
+                        strokeWidth: 2,
+                        dash: [5, 5]
+                    });
+                    demoLayer.value.add(widthLine);
+                    
+                    const widthLabel = new Konva.Text({
+                        x: startX - 70,
+                        y: startY + h / 2 - 10,
+                        text: '宽 b',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(widthLabel);
+                    
+                    // 显示公式
+                    const formulaText = new Konva.Text({
+                        x: cx - 100,
+                        y: cy + h / 2 + 30,
+                        text: '面积 = 长 × 宽 = a × b',
+                        fontSize: 18,
+                        fill: '#333',
+                        fontStyle: 'bold',
+                        padding: 10,
+                        background: 'rgba(255,255,255,0.95)',
+                        cornerRadius: 8
+                    });
+                    demoLayer.value.add(formulaText);
+                    
+                    // 分割成小正方形演示
+                    if (typeof gsap !== 'undefined' && !animating.value) {
+                        animating.value = true;
+                        setTimeout(() => {
+                            const gridSize = 20;
+                            const cols = Math.floor(w / gridSize);
+                            const rows = Math.floor(h / gridSize);
+                            
+                            for (let i = 0; i < rows; i++) {
+                                for (let j = 0; j < cols; j++) {
+                                    const square = new Konva.Rect({
+                                        x: startX + j * gridSize,
+                                        y: startY + i * gridSize,
+                                        width: gridSize - 2,
+                                        height: gridSize - 2,
+                                        fill: 'rgba(255, 152, 0, 0.5)',
+                                        stroke: '#ff9800',
+                                        strokeWidth: 1,
+                                        opacity: 0
+                                    });
+                                    demoLayer.value.add(square);
+                                    
+                                    gsap.to(square, {
+                                        opacity: 1,
+                                        duration: 0.1,
+                                        delay: (i * cols + j) * 0.02,
+                                        ease: 'power2.out'
+                                    });
+                                }
+                            }
+                            
+                            const countText = new Konva.Text({
+                                x: cx - 80,
+                                y: cy + h / 2 + 70,
+                                text: `可分成 ${cols} × ${rows} = ${cols * rows} 个小正方形`,
+                                fontSize: 16,
+                                fill: '#ff9800',
+                                fontStyle: 'bold',
+                                padding: 8,
+                                background: 'rgba(255,255,255,0.95)',
+                                cornerRadius: 8,
+                                opacity: 0
+                            });
+                            demoLayer.value.add(countText);
+                            
+                            gsap.to(countText, {
+                                opacity: 1,
+                                duration: 0.5,
+                                delay: rows * cols * 0.02 + 0.3
+                            });
+                        }, 500);
+                    }
+                    
+                    demoLayer.value.draw();
+                }
+                
+                // 绘制三角形公式演示
+                function drawTriangleDemo(cx, cy, width, height) {
+                    const base = 120;
+                    const h = 80;
+                    const startX = cx - base / 2;
+                    const startY = cy + h / 2;
+                    
+                    // 绘制三角形
+                    const triangle = new Konva.Line({
+                        points: [
+                            startX, startY,
+                            startX + base, startY,
+                            startX + base / 2, startY - h,
+                            startX, startY
+                        ],
+                        closed: true,
+                        fill: 'rgba(102, 126, 234, 0.3)',
+                        stroke: '#667eea',
+                        strokeWidth: 3
+                    });
+                    demoLayer.value.add(triangle);
+                    
+                    // 标注底边
+                    const baseLabel = new Konva.Text({
+                        x: startX + base / 2 - 20,
+                        y: startY + 20,
+                        text: '底 a',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(baseLabel);
+                    
+                    // 标注高
+                    const heightLine = new Konva.Line({
+                        points: [startX + base / 2, startY, startX + base / 2, startY - h],
+                        stroke: '#ff9800',
+                        strokeWidth: 2,
+                        dash: [5, 5]
+                    });
+                    demoLayer.value.add(heightLine);
+                    
+                    const heightLabel = new Konva.Text({
+                        x: startX + base / 2 + 15,
+                        y: startY - h / 2 - 10,
+                        text: '高 h',
+                        fontSize: 14,
+                        fill: '#ff9800',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(heightLabel);
+                    
+                    // 显示公式
+                    const formulaText = new Konva.Text({
+                        x: cx - 100,
+                        y: startY + 50,
+                        text: '面积 = 底 × 高 ÷ 2 = a × h ÷ 2',
+                        fontSize: 18,
+                        fill: '#333',
+                        fontStyle: 'bold',
+                        padding: 10,
+                        background: 'rgba(255,255,255,0.95)',
+                        cornerRadius: 8
+                    });
+                    demoLayer.value.add(formulaText);
+                    
+                    // 演示：两个三角形组成平行四边形
+                    if (typeof gsap !== 'undefined' && !animating.value) {
+                        animating.value = true;
+                        setTimeout(() => {
+                            const triangle2 = new Konva.Line({
+                                points: [
+                                    startX + base, startY,
+                                    startX, startY,
+                                    startX + base / 2, startY - h,
+                                    startX + base, startY
+                                ],
+                                closed: true,
+                                fill: 'rgba(255, 152, 0, 0.3)',
+                                stroke: '#ff9800',
+                                strokeWidth: 3,
+                                opacity: 0
+                            });
+                            demoLayer.value.add(triangle2);
+                            
+                            gsap.to(triangle2, {
+                                opacity: 1,
+                                duration: 1,
+                                delay: 0.5,
+                                onComplete: () => {
+                                    const explanationText = new Konva.Text({
+                                        x: cx - 120,
+                                        y: startY + 90,
+                                        text: '两个相同的三角形可以拼成一个平行四边形',
+                                        fontSize: 16,
+                                        fill: '#ff9800',
+                                        fontStyle: 'bold',
+                                        padding: 8,
+                                        background: 'rgba(255,255,255,0.95)',
+                                        cornerRadius: 8,
+                                        opacity: 0
+                                    });
+                                    demoLayer.value.add(explanationText);
+                                    
+                                    gsap.to(explanationText, {
+                                        opacity: 1,
+                                        duration: 0.5
+                                    });
+                                }
+                            });
+                        }, 500);
+                    }
+                    
+                    demoLayer.value.draw();
+                }
+                
+                // 绘制平行四边形公式演示
+                function drawParallelogramDemo(cx, cy, width, height) {
+                    const base = 120;
+                    const h = 80;
+                    const offset = 30;
+                    const startX = cx - base / 2;
+                    const startY = cy;
+                    
+                    // 绘制平行四边形
+                    const para = new Konva.Line({
+                        points: [
+                            startX, startY,
+                            startX + base, startY,
+                            startX + base + offset, startY - h,
+                            startX + offset, startY - h,
+                            startX, startY
+                        ],
+                        closed: true,
+                        fill: 'rgba(102, 126, 234, 0.3)',
+                        stroke: '#667eea',
+                        strokeWidth: 3
+                    });
+                    demoLayer.value.add(para);
+                    
+                    // 标注底边
+                    const baseLabel = new Konva.Text({
+                        x: startX + base / 2 - 20,
+                        y: startY + 20,
+                        text: '底 a',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(baseLabel);
+                    
+                    // 标注高
+                    const heightLine = new Konva.Line({
+                        points: [startX + offset + base, startY, startX + offset + base, startY - h],
+                        stroke: '#ff9800',
+                        strokeWidth: 2,
+                        dash: [5, 5]
+                    });
+                    demoLayer.value.add(heightLine);
+                    
+                    const heightLabel = new Konva.Text({
+                        x: startX + base + offset + 15,
+                        y: startY - h / 2 - 10,
+                        text: '高 h',
+                        fontSize: 14,
+                        fill: '#ff9800',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(heightLabel);
+                    
+                    // 显示公式
+                    const formulaText = new Konva.Text({
+                        x: cx - 100,
+                        y: startY + 50,
+                        text: '面积 = 底 × 高 = a × h',
+                        fontSize: 18,
+                        fill: '#333',
+                        fontStyle: 'bold',
+                        padding: 10,
+                        background: 'rgba(255,255,255,0.95)',
+                        cornerRadius: 8
+                    });
+                    demoLayer.value.add(formulaText);
+                    
+                    demoLayer.value.draw();
+                }
+                
+                // 绘制梯形公式演示
+                function drawTrapezoidDemo(cx, cy, width, height) {
+                    const topBase = 60;
+                    const bottomBase = 120;
+                    const h = 80;
+                    const startX = cx - bottomBase / 2;
+                    const startY = cy;
+                    
+                    // 绘制梯形
+                    const trap = new Konva.Line({
+                        points: [
+                            startX + (bottomBase - topBase) / 2, startY - h,
+                            startX + (bottomBase - topBase) / 2 + topBase, startY - h,
+                            startX + bottomBase, startY,
+                            startX, startY,
+                            startX + (bottomBase - topBase) / 2, startY - h
+                        ],
+                        closed: true,
+                        fill: 'rgba(102, 126, 234, 0.3)',
+                        stroke: '#667eea',
+                        strokeWidth: 3
+                    });
+                    demoLayer.value.add(trap);
+                    
+                    // 标注上底
+                    const topLabel = new Konva.Text({
+                        x: startX + bottomBase / 2 - 20,
+                        y: startY - h - 25,
+                        text: '上底 a',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(topLabel);
+                    
+                    // 标注下底
+                    const bottomLabel = new Konva.Text({
+                        x: startX + bottomBase / 2 - 20,
+                        y: startY + 20,
+                        text: '下底 b',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(bottomLabel);
+                    
+                    // 标注高
+                    const heightLine = new Konva.Line({
+                        points: [startX + bottomBase, startY, startX + bottomBase, startY - h],
+                        stroke: '#ff9800',
+                        strokeWidth: 2,
+                        dash: [5, 5]
+                    });
+                    demoLayer.value.add(heightLine);
+                    
+                    const heightLabel = new Konva.Text({
+                        x: startX + bottomBase + 15,
+                        y: startY - h / 2 - 10,
+                        text: '高 h',
+                        fontSize: 14,
+                        fill: '#ff9800',
+                        fontStyle: 'bold'
+                    });
+                    demoLayer.value.add(heightLabel);
+                    
+                    // 显示公式
+                    const formulaText = new Konva.Text({
+                        x: cx - 120,
+                        y: startY + 50,
+                        text: '面积 = (上底 + 下底) × 高 ÷ 2 = (a + b) × h ÷ 2',
+                        fontSize: 18,
+                        fill: '#333',
+                        fontStyle: 'bold',
+                        padding: 10,
+                        background: 'rgba(255,255,255,0.95)',
+                        cornerRadius: 8
+                    });
+                    demoLayer.value.add(formulaText);
+                    
+                    demoLayer.value.draw();
+                }
+                
+                // 绘制分割与重组动画
+                function drawRecomposeCanvas() {
+                    if (!recomposeLayer.value || !recomposeStage.value) return;
+                    
+                    recomposeLayer.value.destroyChildren();
+                    const width = recomposeStage.value.width();
+                    const height = recomposeStage.value.height();
+                    const margin = 40; // 边距
+                    const cx = width / 2;
+                    const cy = height / 2;
+                    const availableWidth = width - margin * 2;
+                    const availableHeight = height - margin * 2;
+                    
+                    if (demoType.value === 'triangle') {
+                        drawTriangleRecompose(cx, cy, availableWidth, availableHeight, margin);
+                    } else if (demoType.value === 'parallelogram') {
+                        drawParallelogramRecompose(cx, cy, availableWidth, availableHeight, margin);
+                    }
+                    
+                    recomposeLayer.value.draw();
+                }
+                
+                // 三角形重组动画（普通三角形拼平行四边形）
+                function drawTriangleRecompose(cx, cy, availableWidth, availableHeight, margin) {
+                    // 计算合适的尺寸
+                    const base = Math.min(availableWidth / 4.5, 100);
+                    const h = Math.min(availableHeight / 3.5, 75);
+                    
+                    // ========== 使用辅助坐标系简化定位 ==========
+                    // 两个三角形形成平行四边形：
+                    // 左侧三角形：顶点在上，底边在下
+                    // 右侧三角形：旋转180度后，顶点在下，底边在上
+                    // 两个三角形的顶点应该在垂直方向上对齐（x坐标相同）
+                    // 两个三角形的底边应该贴在一起（共享一条边）
+                    
+                    // 定义中心点
+                    const centerX = cx;
+                    const centerY = cy;
+                    
+                    // 左侧三角形：顶点在中心上方，底边在中心
+                    // 顶点C：(centerX - base/2, centerY - h)
+                    // 左下角A：(centerX - base, centerY)
+                    // 右下角B：(centerX, centerY)
+                    const target1X = centerX - base;  // 左侧三角形x位置
+                    const target1Y = centerY - h;     // 左侧三角形y位置（底边在centerY）
+                    
+                    // 右侧三角形旋转180度后：
+                    // - C和D重合：左侧顶点C(centerX - base/2, centerY - h) = 右侧旋转后D的位置
+                    // - A和F重合：左侧左下角A(centerX - base, centerY) = 右侧旋转后F的位置
+                    // 
+                    // 右侧三角形旋转180度后，原左下角D移动到(target2X + base, target2Y)
+                    // 原顶点F移动到(target2X + base/2, target2Y + h)
+                    // 
+                    // 条件1：target2X + base = centerX - base/2  => target2X = centerX - 3*base/2
+                    // 条件2：target2X + base/2 = centerX - base  => target2X = centerX - 3*base/2
+                    // 条件3：target2Y = centerY - h（D与C重合）
+                    // 条件4：target2Y + h = centerY（F与A重合）
+                    // 
+                    // 条件3和4矛盾！让我重新理解...
+                    // 实际上应该是：右侧三角形旋转180度后，D与C重合，F与A重合
+                    // 原左下角D旋转后位置 = (target2X + base, target2Y) = C的位置(centerX - base/2, centerY - h)
+                    // 原顶点F旋转后位置 = (target2X + base/2, target2Y + h) = A的位置(centerX - base, centerY)
+                    // 
+                    // target2X + base = centerX - base/2  => target2X = centerX - 3*base/2
+                    // target2Y = centerY - h
+                    // target2X + base/2 = centerX - base  => 验证：centerX - 3*base/2 + base/2 = centerX - base ✓
+                    // target2Y + h = centerY  => 验证：centerY - h + h = centerY ✓
+                    const target2X = centerX - 3 * base / 2;
+                    const target2Y = centerY - h;
+                    
+                    // 初始状态：两个相同的三角形分居左右，拉开距离，但高度对齐
+                    const spacing = availableWidth * 0.2;
+                    const triangle1X = target1X - spacing;
+                    const triangle1Y = target1Y;  // centerY - h
+                    const triangle2X = target2X + spacing;
+                    const triangle2Y = target2Y;  // centerY（已包含h偏移）
+                    
+                    // 三角形形状（相同的普通三角形，顶点在上，底边在下）
+                    // 左下(0,h), 右下(base, h), 顶点(base/2, 0)
+                    const trianglePoints = [0, h, base, h, base / 2, 0];
+                    
+                    // 左侧三角形（蓝色）分组，标记随三角形一起移动/旋转
+                    const group1 = new Konva.Group({
+                        x: triangle1X,
+                        y: triangle1Y,
+                        name: 'group1'
+                    });
+                    const triangle1 = new Konva.Line({
+                        points: trianglePoints,
+                        closed: true,
+                        fill: 'rgba(102, 126, 234, 0.8)',
+                        stroke: '#667eea',
+                        strokeWidth: 3,
+                        name: 'triangle1',
+                        x: 0,
+                        y: 0
+                    });
+                    group1.add(triangle1);
+                    // A(0,h), B(base,h), C(base/2,0)
+                    group1.add(new Konva.Circle({ x: 0, y: h, radius: 6, fill: '#667eea', stroke: '#fff', strokeWidth: 2, listening: false, name: 'point1A' }));
+                    group1.add(new Konva.Text({ x: -15, y: h + 10, text: 'A', fontSize: 16, fill: '#667eea', fontStyle: 'bold', listening: false }));
+                    group1.add(new Konva.Circle({ x: base, y: h, radius: 6, fill: '#667eea', stroke: '#fff', strokeWidth: 2, listening: false, name: 'point1B' }));
+                    group1.add(new Konva.Text({ x: base + 10, y: h + 10, text: 'B', fontSize: 16, fill: '#667eea', fontStyle: 'bold', listening: false }));
+                    group1.add(new Konva.Circle({ x: base / 2, y: 0, radius: 6, fill: '#667eea', stroke: '#fff', strokeWidth: 2, listening: false, name: 'point1C' }));
+                    group1.add(new Konva.Text({ x: base / 2 - 8, y: -20, text: 'C', fontSize: 16, fill: '#667eea', fontStyle: 'bold', listening: false }));
+                    recomposeLayer.value.add(group1);
+                    
+                    // 右侧三角形（橙色）分组，标记随三角形一起移动/旋转（无偏移，绕左上角旋转）
+                    const group2 = new Konva.Group({
+                        x: triangle2X,
+                        y: triangle2Y,
+                        name: 'group2'
+                    });
+                    const triangle2 = new Konva.Line({
+                        points: trianglePoints,
+                        closed: true,
+                        fill: 'rgba(255, 152, 0, 0.8)',
+                        stroke: '#ff9800',
+                        strokeWidth: 3,
+                        name: 'triangle2',
+                        x: 0,
+                        y: 0
+                    });
+                    group2.add(triangle2);
+                    // D(0,h), E(base,h), F(base/2,0)
+                    group2.add(new Konva.Circle({ x: 0, y: h, radius: 6, fill: '#ff9800', stroke: '#fff', strokeWidth: 2, listening: false, name: 'point2D' }));
+                    group2.add(new Konva.Text({ x: -15, y: h + 10, text: 'D', fontSize: 16, fill: '#ff9800', fontStyle: 'bold', listening: false, name: 'label2D' }));
+                    group2.add(new Konva.Circle({ x: base, y: h, radius: 6, fill: '#ff9800', stroke: '#fff', strokeWidth: 2, listening: false, name: 'point2E' }));
+                    group2.add(new Konva.Text({ x: base + 10, y: h + 10, text: 'E', fontSize: 16, fill: '#ff9800', fontStyle: 'bold', listening: false, name: 'label2E' }));
+                    group2.add(new Konva.Circle({ x: base / 2, y: 0, radius: 6, fill: '#ff9800', stroke: '#fff', strokeWidth: 2, listening: false, name: 'point2F' }));
+                    group2.add(new Konva.Text({ x: base / 2 - 8, y: -20, text: 'F', fontSize: 16, fill: '#ff9800', fontStyle: 'bold', listening: false, name: 'label2F' }));
+                    recomposeLayer.value.add(group2);
+                    
+                    // 目标平行四边形虚线框
+                    // 左侧三角形：顶点C(centerX - base/2, centerY - h)，右下角B(centerX, centerY)
+                    // 右侧三角形旋转后：E与C重合(centerX - base/2, centerY - h)，F与B重合(centerX, centerY)
+                    // 
+                    // 左侧三角形左下角A：(centerX - base, centerY)
+                    // 右侧三角形旋转后左下角D：(target2X + base, target2Y) = (centerX + base/2, centerY - h)
+                    // 
+                    // 平行四边形顶点（逆时针，从左上开始）：
+                    //   左上：A (centerX - base, centerY)
+                    //   右上：B/F (centerX, centerY) 【重合点】
+                    //   右下：D (centerX + base/2, centerY - h)
+                    //   左下：C/E (centerX - base/2, centerY - h) 【重合点】
+                    const dashPara = new Konva.Line({
+                        points: [
+                            centerX - base, centerY,          // 左上（A）
+                            centerX, centerY,                 // 右上（B/F重合点）
+                            centerX + base / 2, centerY - h,  // 右下（D）
+                            centerX - base / 2, centerY - h,  // 左下（C/E重合点）
+                            centerX - base, centerY           // 闭合
+                        ],
+                        closed: true,
+                        stroke: '#4caf50',
+                        strokeWidth: 3,
+                        dash: [8, 5],
+                        opacity: 0,
+                        name: 'target-parallelogram'
+                    });
+                    recomposeLayer.value.add(dashPara);
+                    
+                    // 添加说明文字
+                    const instruction = new Konva.Text({
+                        x: cx - 120,
+                        y: Math.min(cy + h + 50, margin + availableHeight - 20),
+                        text: '点击"播放动画"查看两个三角形如何拼成平行四边形',
+                        fontSize: 14,
+                        fill: '#666',
+                        align: 'center',
+                        width: 240
+                    });
+                    recomposeLayer.value.add(instruction);
+                }
+                
+                // 平行四边形重组动画（居中显示，虚线框覆盖原图）
+                function drawParallelogramRecompose(cx, cy, availableWidth, availableHeight, margin) {
+                    // 计算合适的尺寸，确保居中且不超出边界
+                    const base = Math.min(availableWidth / 3.5, 110);
+                    const h = Math.min(availableHeight / 3, 65);
+                    const offset = Math.min(25, base * 0.23);
+                    
+                    // 居中位置：平行四边形与目标长方形重叠在同一区域
+                    const paraX = cx - (base + offset) / 2;
+                    const paraY = cy - h / 2;
+                    const rectX = paraX;
+                    const rectY = paraY;
+                    
+                    // 确保不超出边界
+                    const minX = margin;
+                    const maxX = margin + availableWidth;
+                    const minY = margin;
+                    const maxY = margin + availableHeight;
+                    
+                    const finalParaX = Math.max(minX, Math.min(paraX, maxX - base - offset));
+                    const finalRectX = Math.max(minX, Math.min(rectX, maxX - base));
+                    const finalParaY = Math.max(minY + 10, Math.min(paraY, maxY - h - 10));
+                    const finalRectY = finalParaY;
+                    
+                    // 绘制原始平行四边形（左侧，居中）
+                    // 四个顶点：A(0,0), B(base,0), C(base+offset,h), D(offset,h)
+                    const para = new Konva.Line({
+                        points: [
+                            0, 0,
+                            base, 0,
+                            base + offset, h,
+                            offset, h,
+                            0, 0
+                        ],
+                        closed: true,
+                        fill: 'rgba(102, 126, 234, 0.6)',
+                        stroke: '#667eea',
+                        strokeWidth: 3,
+                        name: 'parallelogram',
+                        x: finalParaX,
+                        y: finalParaY
+                    });
+                    recomposeLayer.value.add(para);
+                    
+                    // 添加平行四边形的四个角标记（作为独立元素）
+                    const paraCorners = [
+                        { x: finalParaX + 0, y: finalParaY + 0, label: 'A', offsetX: -10, offsetY: -20 },
+                        { x: finalParaX + base, y: finalParaY + 0, label: 'B', offsetX: 10, offsetY: -20 },
+                        { x: finalParaX + base + offset, y: finalParaY + h, label: 'C', offsetX: 10, offsetY: 10 },
+                        { x: finalParaX + offset, y: finalParaY + h, label: 'D', offsetX: -10, offsetY: 10 }
+                    ];
+                    paraCorners.forEach(corner => {
+                        const circle = new Konva.Circle({
+                            x: corner.x,
+                            y: corner.y,
+                            radius: 5,
+                            fill: '#667eea',
+                            stroke: '#fff',
+                            strokeWidth: 2,
+                            name: `para-corner-${corner.label}`,
+                            listening: false
+                        });
+                        recomposeLayer.value.add(circle);
+                        const text = new Konva.Text({
+                            x: corner.x + corner.offsetX,
+                            y: corner.y + corner.offsetY,
+                            text: corner.label,
+                            fontSize: 16,
+                            fill: '#667eea',
+                            fontStyle: 'bold',
+                            name: `para-label-${corner.label}`,
+                            listening: false
+                        });
+                        recomposeLayer.value.add(text);
+                    });
+                    
+                    // 绘制右侧虚线（切下三角形的位置）
+                    const rightDashLine = new Konva.Line({
+                        points: [base, 0, base, h],
+                        stroke: '#ff9800',
+                        strokeWidth: 2,
+                        dash: [5, 5],
+                        name: 'right-dash-line',
+                        x: finalParaX,
+                        y: finalParaY,
+                        opacity: 0.7
+                    });
+                    recomposeLayer.value.add(rightDashLine);
+                    
+                    // 绘制切下来的三角形（右侧的三角形部分，从平行四边形切下）
+                    // 三角形顶点：B(base,0), C(base+offset,h), 以及垂直向下的点(base, h)
+                    // 这样三角形完全在平行四边形内
+                    const triangle = new Konva.Line({
+                        points: [
+                            base, 0,           // B点
+                            base + offset, h,  // C点
+                            base, h,           // 垂直向下的点
+                            base, 0            // 闭合
+                        ],
+                        closed: true,
+                        fill: 'rgba(255, 152, 0, 0.8)',
+                        stroke: '#ff9800',
+                        strokeWidth: 3,
+                        name: 'cut-triangle',
+                        x: finalParaX,
+                        y: finalParaY
+                    });
+                    recomposeLayer.value.add(triangle);
+                    
+                    // 绘制左侧虚线（补到三角形的位置）
+                    const leftDashLine = new Konva.Line({
+                        points: [offset, 0, offset, h],
+                        stroke: '#4caf50',
+                        strokeWidth: 2,
+                        dash: [5, 5],
+                        name: 'left-dash-line',
+                        x: finalParaX,
+                        y: finalParaY,
+                        opacity: 0.7
+                    });
+                    recomposeLayer.value.add(leftDashLine);
+                    
+                    // 绘制重组后的长方形（与原图重叠，虚线表示目标）
+                    const rect = new Konva.Rect({
+                        x: finalRectX,
+                        y: finalRectY,
+                        width: base,
+                        height: h,
+                        fill: 'rgba(76, 175, 80, 0.2)',
+                        stroke: '#4caf50',
+                        strokeWidth: 2,
+                        dash: [8, 5],
+                        name: 'rectangle',
+                        opacity: 0.5
+                    });
+                    recomposeLayer.value.add(rect);
+                    
+                    // 添加长方形的四个角标记（A', B', C', D'）（作为独立元素）
+                    const rectCorners = [
+                        { x: finalRectX + 0, y: finalRectY + 0, label: "A'", offsetX: -15, offsetY: -20 },
+                        { x: finalRectX + base, y: finalRectY + 0, label: "B'", offsetX: 10, offsetY: -20 },
+                        { x: finalRectX + base, y: finalRectY + h, label: "C'", offsetX: 10, offsetY: 10 },
+                        { x: finalRectX + 0, y: finalRectY + h, label: "D'", offsetX: -15, offsetY: 10 }
+                    ];
+                    rectCorners.forEach(corner => {
+                        const circle = new Konva.Circle({
+                            x: corner.x,
+                            y: corner.y,
+                            radius: 5,
+                            fill: '#4caf50',
+                            stroke: '#fff',
+                            strokeWidth: 2,
+                            name: `rect-corner-${corner.label}`,
+                            listening: false
+                        });
+                        recomposeLayer.value.add(circle);
+                        const text = new Konva.Text({
+                            x: corner.x + corner.offsetX,
+                            y: corner.y + corner.offsetY,
+                            text: corner.label,
+                            fontSize: 16,
+                            fill: '#4caf50',
+                            fontStyle: 'bold',
+                            name: `rect-label-${corner.label}`,
+                            listening: false
+                        });
+                        recomposeLayer.value.add(text);
+                    });
+                    
+                    // 添加说明（靠近下边缘，避免与移动后的文字重叠）
+                    const instruction = new Konva.Text({
+                        x: cx - 140,
+                        y: maxY - 15,
+                        text: '点击"播放动画"查看沿右侧虚线切下三角形，移动到左侧虚线处，形成平行四边形',
+                        fontSize: 14,
+                        fill: '#666',
+                        align: 'center',
+                        width: 280
+                    });
+                    recomposeLayer.value.add(instruction);
+                }
+                
+                // 播放重组动画
+                function playRecomposeAnimation() {
+                    if (isAnimatingRecompose.value) return;
+                    isAnimatingRecompose.value = true;
+                    
+                    if (demoType.value === 'triangle') {
+                        animateTriangleRecompose();
+                    } else if (demoType.value === 'parallelogram') {
+                        animateParallelogramRecompose();
+                    }
+                }
+                
+                // 三角形重组动画（两个三角形拼成平行四边形）
+                function animateTriangleRecompose() {
+                    const group1 = recomposeLayer.value.findOne('.group1');
+                    const group2 = recomposeLayer.value.findOne('.group2');
+                    const triangle1 = recomposeLayer.value.findOne('.triangle1');
+                    const triangle2 = recomposeLayer.value.findOne('.triangle2');
+                    const targetPara = recomposeLayer.value.findOne('.target-parallelogram');
+                    if (!group1 || !group2 || !triangle1 || !triangle2) {
+                        return;
+                    }
+                    
+                    const width = recomposeStage.value.width();
+                    const height = recomposeStage.value.height();
+                    const margin = 40;
+                    const availableWidth = width - margin * 2;
+                    const availableHeight = height - margin * 2;
+                    
+                    const base = Math.min(availableWidth / 4.5, 100);
+                    const h = Math.min(availableHeight / 3.5, 75);
+                    
+                    const cx = width / 2;
+                    const cy = height / 2;
+                    
+                    // ========== 使用辅助坐标系简化定位 ==========
+                    // 两个三角形的顶点应该在垂直方向上对齐（x坐标相同）
+                    const centerX = cx;
+                    const centerY = cy;
+                    
+                    // 相对于中心点的坐标
+                    // 左侧三角形：顶点C(centerX - base/2, centerY - h)，右下角B(centerX, centerY)
+                    const target1X = centerX - base;
+                    const target1Y = centerY - h;
+                    // 右侧三角形旋转180度（绕左上角）后：C与E重合，B与F重合
+                    // 旋转180度后：
+                    //   E(base,h) -> (target2X - base, target2Y - h)
+                    //   F(base/2,0) -> (target2X - base/2, target2Y)
+                    // 需要满足：
+                    //   E重合C: target2X - base = target1X + base/2，target2Y - h = target1Y
+                    //   F重合B: target2X - base/2 = target1X + base， target2Y = target1Y + h
+                    // 解得：
+                    //   target2X = target1X + base/2 + base = target1X + 1.5*base = centerX + 0.5*base
+                    //   target2Y = target1Y + h = centerY
+                    const target2X = centerX + base / 2;
+                    const target2Y = centerY;
+                    
+                    
+                    // 确保目标位置在canvas内
+                    const maxY = margin + availableHeight;
+                    const finalTarget1Y = Math.max(margin + 20, Math.min(target1Y, maxY - 2 * h - 60));
+                    // 由于target1Y调整为finalTarget1Y，需要重新计算target2X和target2Y
+                    // C位置：(target1X + base/2, finalTarget1Y) = (centerX - base/2, finalTarget1Y)
+                    // B位置：(target1X + base, finalTarget1Y + h) = (centerX, finalTarget1Y + h)
+                    // E旋转后位置：(finalTarget2X - base, finalTarget2Y - h) - 应该与C重合
+                    // F旋转后位置：(finalTarget2X - base/2, finalTarget2Y) - 应该与B重合
+                    // C和E重合：finalTarget2X - base = centerX - base/2, finalTarget2Y - h = finalTarget1Y
+                    //   => finalTarget2X = centerX + base/2, finalTarget2Y = finalTarget1Y + h
+                    // B和F重合：finalTarget2X - base/2 = centerX, finalTarget2Y = finalTarget1Y + h
+                    //   => finalTarget2X = centerX + base/2 ✓
+                    const finalTarget2X = centerX + base / 2;
+                    const finalTarget2Y = finalTarget1Y + h;
+                    
+                    if (typeof gsap !== 'undefined') {
+                        // 创建时间轴动画
+                        const tl = gsap.timeline({
+                            onUpdate: () => {
+                                recomposeLayer.value.draw();
+                            }
+                        });
+                        
+                        // 第一步：左侧三角形移动到目标位置
+                        tl.to(group1, {
+                            x: target1X,
+                            y: finalTarget1Y,
+                            duration: 1,
+                            ease: 'power2.inOut'
+                        }, 0);
+                        
+                        // 第二步：右侧三角形先旋转180度（翻转）
+                        tl.to(group2, {
+                            rotation: 180,
+                            duration: 0.8,
+                            ease: 'power2.inOut'
+                        }, 0.3);
+                        
+                        // 第三步：右侧三角形移动到左侧旁边，完全贴紧对齐
+                        tl.to(group2, {
+                            x: finalTarget2X,
+                            y: finalTarget2Y,
+                            duration: 1,
+                            ease: 'power2.inOut',
+                            onComplete: () => {
+                                // 显示虚线平行四边形框
+                                if (targetPara) {
+                                    targetPara.opacity(1);
+                                }
+                            }
+                        }, 1.1);
+                        
+                        // 第四步：添加说明文字
+                        tl.to({}, {
+                            duration: 0.3,
+                            onComplete: () => {
+                                const resultText = new Konva.Text({
+                                    x: cx - 90,
+                                    y: Math.min(finalTarget1Y + h + 30, maxY - 60),
+                                    text: '右侧三角形旋转后，与左侧三角形拼成平行四边形\n面积 = 底 × 高',
+                                    fontSize: 15,
+                                    fill: '#4caf50',
+                                    fontStyle: 'bold',
+                                    align: 'center',
+                                    padding: 10,
+                                    background: 'rgba(255,255,255,0.95)',
+                                    cornerRadius: 8
+                                });
+                                recomposeLayer.value.add(resultText);
+                                recomposeLayer.value.draw();
+                                isAnimatingRecompose.value = false;
+                            }
+                        }, 2.1);
+                    }
+                }
+                
+                // 平行四边形重组动画（清晰展示切补过程）
+                function animateParallelogramRecompose() {
+                    const para = recomposeLayer.value.findOne('.parallelogram');
+                    const triangle = recomposeLayer.value.findOne('.cut-triangle');
+                    const rect = recomposeLayer.value.findOne('.rectangle');
+                    const rightDashLine = recomposeLayer.value.findOne('.right-dash-line');
+                    const leftDashLine = recomposeLayer.value.findOne('.left-dash-line');
+                    if (!para || !triangle || !rect) return;
+                    
+                    const width = recomposeStage.value.width();
+                    const height = recomposeStage.value.height();
+                    const margin = 40;
+                    const availableWidth = width - margin * 2;
+                    const availableHeight = height - margin * 2;
+                    
+                    const base = Math.min(availableWidth / 3.5, 110);
+                    const h = Math.min(availableHeight / 3, 65);
+                    const offset = Math.min(25, base * 0.23);
+                    
+                    const paraX = para.x();
+                    const paraY = para.y();
+                    const rectX = paraX;
+                    const rectY = paraY;
+                    
+                    // 确保目标位置在canvas内
+                    const maxY = margin + availableHeight;
+                    const finalRectX = rectX;
+                    const finalRectY = Math.max(margin + 10, Math.min(rectY, maxY - h - 60));
+                    
+                    // 三角形的初始位置：和平行四边形在同一位置（从右侧切下）
+                    // 三角形使用相对于para的坐标：(base,0), (base+offset,h), (base,h)
+                    const triangleStartX = paraX;
+                    const triangleStartY = paraY;
+                    
+                    // 三角形的目标位置（移动到左侧虚线处，形成平行四边形）
+                    // 移动到左侧后，三角形应该位于：(0,0), (offset,h), (0,h)
+                    // 所以目标位置是 finalParaX（和paraX相同，但相对坐标从(base,0)变为(0,0)）
+                    // 实际上需要移动 -base 的距离
+                    const triangleEndX = paraX - base;  // 向左移动base的距离
+                    const triangleEndY = paraY;         // y坐标不变
+                    
+                    // 确保三角形初始位置正确（应该已经在正确位置，因为它在绘制时就和para在同一位置）
+                    
+                    if (typeof gsap !== 'undefined') {
+                        // 创建时间轴动画
+                        const tl = gsap.timeline({
+                            onUpdate: () => {
+                                recomposeLayer.value.draw();
+                            }
+                        });
+                        
+                        // 第一步：高亮显示右侧虚线
+                        if (rightDashLine) {
+                            tl.to(rightDashLine, {
+                                opacity: 1,
+                                strokeWidth: 3,
+                                duration: 0.3
+                            }, 0);
+                        }
+                        
+                        // 第二步：高亮显示要切下的三角形
+                        tl.to(triangle, {
+                            scaleX: 1.1,
+                            scaleY: 1.1,
+                            duration: 0.5,
+                            ease: 'power2.out'
+                        }, 0.3);
+                        
+                        tl.to(triangle, {
+                            scaleX: 1,
+                            scaleY: 1,
+                            duration: 0.3
+                        }, 0.8);
+                        
+                        // 第三步：切下的三角形移动到左侧虚线处
+                        tl.to(triangle, {
+                            x: triangleEndX,
+                            y: triangleEndY,
+                            duration: 1.2,
+                            ease: 'power2.inOut',
+                            onStart: () => {
+                                // 显示左侧虚线
+                                if (leftDashLine) {
+                                    leftDashLine.opacity(1);
+                                    leftDashLine.strokeWidth(3);
+                                }
+                            },
+                            onComplete: () => {
+                                // 隐藏原平行四边形和右侧虚线
+                                para.opacity(0);
+                                if (rightDashLine) rightDashLine.opacity(0);
+                            }
+                        }, 1.1);
+                        
+                        // 第四步：显示重组后的长方形（实线）
+                        tl.to(rect, {
+                            opacity: 1,
+                            strokeWidth: 3,
+                            dash: [],
+                            duration: 0.5,
+                            onComplete: () => {
+                                // 隐藏左侧虚线
+                                if (leftDashLine) leftDashLine.opacity(0);
+                                // 显示长方形的角标记
+                                ["A'", "B'", "C'", "D'"].forEach(label => {
+                                    const corner = recomposeLayer.value.findOne(`.rect-corner-${label}`);
+                                    const labelText = recomposeLayer.value.findOne(`.rect-label-${label}`);
+                                    if (corner) corner.opacity(1);
+                                    if (labelText) labelText.opacity(1);
+                                });
+                                // 添加说明文字
+                                const resultText = new Konva.Text({
+                                    x: finalRectX + base / 2 - 70,
+                                    y: Math.min(finalRectY + h + 60, maxY - 30), // 再下移，避免遮挡
+                                    text: '平行四边形 = 长方形\n面积 = 底 × 高',
+                                    fontSize: 15,
+                                    fill: '#4caf50',
+                                    fontStyle: 'bold',
+                                    align: 'center',
+                                    padding: 10,
+                                    background: 'rgba(255,255,255,0.95)',
+                                    cornerRadius: 8
+                                });
+                                recomposeLayer.value.add(resultText);
+                                recomposeLayer.value.draw();
+                                isAnimatingRecompose.value = false;
+                            }
+                        }, 2.3);
+                    }
+                }
+                
+                // 重置重组动画
+                function resetRecomposeAnimation() {
+                    isAnimatingRecompose.value = false;
+                    if (typeof gsap !== 'undefined') {
+                        const allShapes = recomposeLayer.value?.find('Line');
+                        const allRects = recomposeLayer.value?.find('Rect');
+                        if (allShapes) gsap.killTweensOf(allShapes);
+                        if (allRects) gsap.killTweensOf(allRects);
+                    }
+                    drawRecomposeCanvas();
+                }
+                
+                // 监听演示类型变化
+                Vue.watch(demoType, () => {
+                    resetRecomposeAnimation();
+                });
+                
+                // 绘制计算图形
+                function drawCalcShape(stageRef, layerRef) {
+                    if (!layerRef.value || !stageRef.value) return;
+                    
+                    layerRef.value.destroyChildren();
+                    
+                    const width = stageRef.value.width();
+                    const height = stageRef.value.height();
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const scale = 15; // 每单位对应的像素数
+                    
+                    if (shapeType.value === 'rectangle') {
+                        const w = rectLength.value * scale;
+                        const h = rectWidth.value * scale;
+                        const rect = new Konva.Rect({
+                            x: centerX - w / 2,
+                            y: centerY - h / 2,
+                            width: w,
+                            height: h,
+                            fill: 'rgba(102, 126, 234, 0.3)',
+                            stroke: '#667eea',
+                            strokeWidth: 3
+                        });
+                        layerRef.value.add(rect);
+                        
+                        // 标注尺寸
+                        const lengthLabel = new Konva.Text({
+                            x: centerX - w / 2,
+                            y: centerY - h / 2 - 30,
+                            text: `${rectLength.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(lengthLabel);
+                        
+                        const widthLabel = new Konva.Text({
+                            x: centerX - w / 2 - 30,
+                            y: centerY,
+                            text: `${rectWidth.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(widthLabel);
+                        
+                    } else if (shapeType.value === 'triangle') {
+                        const base = triangleBase.value * scale;
+                        const h = triangleHeight.value * scale;
+                        const triangle = new Konva.Line({
+                            points: [
+                                centerX - base / 2, centerY + h / 2,
+                                centerX + base / 2, centerY + h / 2,
+                                centerX, centerY - h / 2,
+                                centerX - base / 2, centerY + h / 2
+                            ],
+                            closed: true,
+                            fill: 'rgba(102, 126, 234, 0.3)',
+                            stroke: '#667eea',
+                            strokeWidth: 3
+                        });
+                        layerRef.value.add(triangle);
+                        
+                        // 标注尺寸
+                        const baseLabel = new Konva.Text({
+                            x: centerX - base / 2,
+                            y: centerY + h / 2 + 20,
+                            text: `${triangleBase.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(baseLabel);
+                        
+                        const heightLabel = new Konva.Text({
+                            x: centerX + base / 2 + 15,
+                            y: centerY,
+                            text: `${triangleHeight.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(heightLabel);
+                        
+                    } else if (shapeType.value === 'parallelogram') {
+                        const base = paraBase.value * scale;
+                        const h = paraHeight.value * scale;
+                        const offset = 20;
+                        const para = new Konva.Line({
+                            points: [
+                                centerX - base / 2, centerY,
+                                centerX + base / 2, centerY,
+                                centerX + base / 2 + offset, centerY - h,
+                                centerX - base / 2 + offset, centerY - h,
+                                centerX - base / 2, centerY
+                            ],
+                            closed: true,
+                            fill: 'rgba(102, 126, 234, 0.3)',
+                            stroke: '#667eea',
+                            strokeWidth: 3
+                        });
+                        layerRef.value.add(para);
+                        
+                        // 标注尺寸
+                        const baseLabel = new Konva.Text({
+                            x: centerX - base / 2,
+                            y: centerY + 20,
+                            text: `${paraBase.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(baseLabel);
+                        
+                        const heightLabel = new Konva.Text({
+                            x: centerX + base / 2 + offset + 15,
+                            y: centerY - h / 2,
+                            text: `${paraHeight.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(heightLabel);
+                        
+                    } else if (shapeType.value === 'trapezoid') {
+                        const topBase = trapTopBase.value * scale;
+                        const bottomBase = trapBottomBase.value * scale;
+                        const h = trapHeight.value * scale;
+                        const diff = (bottomBase - topBase) / 2;
+                        
+                        const trap = new Konva.Line({
+                            points: [
+                                centerX - bottomBase / 2 + diff, centerY - h / 2,
+                                centerX - bottomBase / 2 + diff + topBase, centerY - h / 2,
+                                centerX + bottomBase / 2, centerY + h / 2,
+                                centerX - bottomBase / 2, centerY + h / 2,
+                                centerX - bottomBase / 2 + diff, centerY - h / 2
+                            ],
+                            closed: true,
+                            fill: 'rgba(102, 126, 234, 0.3)',
+                            stroke: '#667eea',
+                            strokeWidth: 3
+                        });
+                        layerRef.value.add(trap);
+                        
+                        // 标注尺寸
+                        const topLabel = new Konva.Text({
+                            x: centerX - bottomBase / 2 + diff + topBase / 2 - 15,
+                            y: centerY - h / 2 - 30,
+                            text: `${trapTopBase.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(topLabel);
+                        
+                        const bottomLabel = new Konva.Text({
+                            x: centerX - bottomBase / 2 + bottomBase / 2 - 15,
+                            y: centerY + h / 2 + 20,
+                            text: `${trapBottomBase.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(bottomLabel);
+                        
+                        const heightLabel = new Konva.Text({
+                            x: centerX + bottomBase / 2 + 15,
+                            y: centerY,
+                            text: `${trapHeight.value}`,
+                            fontSize: 16,
+                            fill: '#333',
+                            fontStyle: 'bold'
+                        });
+                        layerRef.value.add(heightLabel);
+                    }
+                    
+                    layerRef.value.draw();
+                }
+                
+                // 初始化画布
+                function initCanvas(canvasId, stageRef, layerRef, drawFunc) {
+                    const container = document.getElementById(canvasId);
+                    if (!container || stageRef.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = container.offsetHeight || 300;
+                    
+                    stageRef.value = new Konva.Stage({
+                        container: canvasId,
+                        width: width,
+                        height: height
+                    });
+                    
+                    layerRef.value = new Konva.Layer();
+                    stageRef.value.add(layerRef.value);
+                    
+                    if (drawFunc) drawFunc();
+                }
+                
+                // 初始化所有计算画布
+                function initCalcCanvases() {
+                    // 使用setTimeout确保DOM已渲染
+                    setTimeout(() => {
+                        if (shapeType.value === 'rectangle') {
+                            initCanvas('rect-calc-canvas', rectCalcStage, rectCalcLayer, () => {
+                                drawCalcShape(rectCalcStage, rectCalcLayer);
+                            });
+                        } else if (shapeType.value === 'triangle') {
+                            initCanvas('triangle-calc-canvas', triangleCalcStage, triangleCalcLayer, () => {
+                                drawCalcShape(triangleCalcStage, triangleCalcLayer);
+                            });
+                        } else if (shapeType.value === 'parallelogram') {
+                            initCanvas('para-calc-canvas', paraCalcStage, paraCalcLayer, () => {
+                                drawCalcShape(paraCalcStage, paraCalcLayer);
+                            });
+                        } else if (shapeType.value === 'trapezoid') {
+                            initCanvas('trap-calc-canvas', trapCalcStage, trapCalcLayer, () => {
+                                drawCalcShape(trapCalcStage, trapCalcLayer);
+                            });
+                        }
+                    }, 100);
+                }
+                
+                // 检查练习答案
+                function checkAnswer(question) {
+                    const userAns = parseFloat(question.userAnswer);
+                    const correctAns = parseFloat(question.answer);
+                    
+                    if (isNaN(userAns)) {
+                        question.correct = false;
+                        return;
+                    }
+                    
+                    question.correct = Math.abs(userAns - correctAns) < 0.01;
+                }
+                
+                // 计算得分
+                const score = computed(() => {
+                    if (!practiceQuestions.value || practiceQuestions.value.length === 0) {
+                        return { correct: 0, total: 0 };
+                    }
+                    const total = practiceQuestions.value.length;
+                    const correct = practiceQuestions.value.filter(q => q.correct === true).length;
+                    return { correct, total };
+                });
+                
+                // 监听形状类型变化
+                Vue.watch(shapeType, () => {
+                    if (demoLayer.value) {
+                        drawFormulaDemo();
+                    }
+                    // 重新初始化计算画布
+                    setTimeout(() => {
+                        initCalcCanvases();
+                        rerenderKaTeX();
+                    }, 50);
+                });
+                
+                // 辅助函数：重新渲染所有KaTeX公式
+                function rerenderKaTeX() {
+                    setTimeout(() => {
+                        if (typeof katex !== 'undefined') {
+                            const katexStaticElements = document.querySelectorAll('.katex-static');
+                            katexStaticElements.forEach(el => {
+                                const formula = el.getAttribute('data-formula');
+                                if (formula) {
+                                    el.innerHTML = '';
+                                    try {
+                                        katex.render(formula, el, {
+                                            throwOnError: false,
+                                            displayMode: false
+                                        });
+                                    } catch (e) {
+                                        console.error('KaTeX 渲染错误:', e);
+                                    }
+                                }
+                            });
+                        }
+                    }, 100);
+                }
+                
+                // 监听尺寸变化
+                Vue.watch([rectLength, rectWidth, rectAreaFormula, rectPerimeterFormula], () => {
+                    if (shapeType.value === 'rectangle' && rectCalcLayer.value) {
+                        drawCalcShape(rectCalcStage, rectCalcLayer);
+                    }
+                    nextTick(() => {
+                        rerenderKaTeX();
+                    });
+                });
+                
+                Vue.watch([triangleBase, triangleHeight, triAreaFormula], () => {
+                    if (shapeType.value === 'triangle' && triangleCalcLayer.value) {
+                        drawCalcShape(triangleCalcStage, triangleCalcLayer);
+                    }
+                    nextTick(() => {
+                        rerenderKaTeX();
+                    });
+                });
+                
+                Vue.watch([paraBase, paraHeight, paraAreaFormula], () => {
+                    if (shapeType.value === 'parallelogram' && paraCalcLayer.value) {
+                        drawCalcShape(paraCalcStage, paraCalcLayer);
+                    }
+                    nextTick(() => {
+                        rerenderKaTeX();
+                    });
+                });
+                
+                Vue.watch([trapTopBase, trapBottomBase, trapHeight, trapAreaFormula], () => {
+                    if (shapeType.value === 'trapezoid' && trapCalcLayer.value) {
+                        drawCalcShape(trapCalcStage, trapCalcLayer);
+                    }
+                    nextTick(() => {
+                        rerenderKaTeX();
+                    });
+                });
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initCanvas('demo-canvas', demoStage, demoLayer, drawFormulaDemo);
+                        initCanvas('demo-recompose-canvas', recomposeStage, recomposeLayer, drawRecomposeCanvas);
+                        initCalcCanvases();
+                        
+                        // 监听窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (demoStage.value) {
+                                const container = document.getElementById('demo-canvas');
+                                if (container) {
+                                    demoStage.value.width(container.offsetWidth);
+                                    drawFormulaDemo();
+                                }
+                            }
+                            // 重新初始化计算画布
+                            setTimeout(() => {
+                                initCalcCanvases();
+                            }, 100);
+                        });
+                        
+                        // 自动渲染 KaTeX
+                        setTimeout(() => {
+                            if (typeof renderMathInElement !== 'undefined') {
+                                try {
+                                    renderMathInElement(document.body, {
+                                        delimiters: [
+                                            {left: '$$', right: '$$', display: true},
+                                            {left: '$', right: '$', display: false},
+                                            {left: '\\[', right: '\\]', display: true},
+                                            {left: '\\(', right: '\\)', display: false}
+                                        ],
+                                        throwOnError: false
+                                    });
+                                } catch (e) {
+                                    console.error('KaTeX 渲染错误:', e);
+                                }
+                            }
+                            
+                            // 手动渲染静态公式
+                            if (typeof katex !== 'undefined') {
+                                const katexStaticElements = document.querySelectorAll('.katex-static');
+                                katexStaticElements.forEach(el => {
+                                    const formula = el.getAttribute('data-formula');
+                                    if (formula && !el.querySelector('.katex-html')) {
+                                        try {
+                                            katex.render(formula, el, {
+                                                throwOnError: false
+                                            });
+                                        } catch (e) {
+                                            console.error('KaTeX 静态公式渲染错误:', e);
+                                        }
+                                    }
+                                });
+                            }
+                        }, 100);
+                    });
+                });
+                
+                return {
+                    shapeType,
+                    demoType,
+                    rectLength,
+                    rectWidth,
+                    triangleBase,
+                    triangleHeight,
+                    paraBase,
+                    paraHeight,
+                    trapTopBase,
+                    trapBottomBase,
+                    trapHeight,
+                    rectangleArea,
+                    rectanglePerimeter,
+                    triangleArea,
+                    trianglePerimeter,
+                    parallelogramArea,
+                    parallelogramPerimeter,
+                    trapezoidArea,
+                    trapezoidPerimeter,
+                    rectAreaFormula,
+                    rectPerimeterFormula,
+                    triAreaFormula,
+                    paraAreaFormula,
+                    trapAreaFormula,
+                    playRecomposeAnimation,
+                    resetRecomposeAnimation,
+                    practiceQuestions,
+                    score,
+                    checkAnswer
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>📐 面积与周长</h1>
+                    <p class="subtitle">掌握常见图形的面积和周长计算方法</p>
+                    
+                    <!-- 形状选择 -->
+                    <div class="section">
+                        <h2>📚 面积公式</h2>
+                        <div class="shape-selector">
+                            <button class="shape-btn" :class="{ active: shapeType === 'rectangle' }" 
+                                    @click="shapeType = 'rectangle'">长方形</button>
+                            <button class="shape-btn" :class="{ active: shapeType === 'triangle' }" 
+                                    @click="shapeType = 'triangle'">三角形</button>
+                            <button class="shape-btn" :class="{ active: shapeType === 'parallelogram' }" 
+                                    @click="shapeType = 'parallelogram'">平行四边形</button>
+                            <button class="shape-btn" :class="{ active: shapeType === 'trapezoid' }" 
+                                    @click="shapeType = 'trapezoid'">梯形</button>
+                        </div>
+                        
+                        <div class="canvas-container">
+                            <div id="demo-canvas" class="canvas-wrapper"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 计算工具 -->
+                    <div class="section">
+                        <h2>🧮 计算工具</h2>
+                        <div class="calculator">
+                            <!-- 长方形 -->
+                            <div v-if="shapeType === 'rectangle'">
+                                <h3>长方形</h3>
+                                <div class="info-item" style="margin-bottom: 20px;">
+                                    <strong>面积公式：</strong>
+                                    <span class="katex-static" data-formula="S = a \\times b"></span>
+                                    <span style="margin-left: 10px; color: #666;">（长 × 宽）</span>
+                                </div>
+                                <div class="info-item" style="margin-bottom: 20px;">
+                                    <strong>周长公式：</strong>
+                                    <span class="katex-static" data-formula="C = 2(a + b)"></span>
+                                    <span style="margin-left: 10px; color: #666;">（2 × (长 + 宽)）</span>
+                                </div>
+                                <div class="input-group">
+                                    <label>长 a：</label>
+                                    <input type="number" v-model.number="rectLength" min="1" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>宽 b：</label>
+                                    <input type="number" v-model.number="rectWidth" min="1" step="0.1">
+                                </div>
+                                <div id="rect-calc-canvas" class="canvas-wrapper" style="height: 300px;"></div>
+                                <div class="result-box">
+                                    <strong>面积：</strong>
+                                    <span class="katex-static" :data-formula="rectAreaFormula" :key="'rect-area-' + rectLength + '-' + rectWidth"></span>
+                                </div>
+                                <div class="result-box">
+                                    <strong>周长：</strong>
+                                    <span class="katex-static" :data-formula="rectPerimeterFormula" :key="'rect-peri-' + rectLength + '-' + rectWidth"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- 三角形 -->
+                            <div v-if="shapeType === 'triangle'">
+                                <h3>三角形</h3>
+                                <div class="info-item" style="margin-bottom: 20px;">
+                                    <strong>面积公式：</strong>
+                                    <span class="katex-static" data-formula="S = \\frac{1}{2} \\times a \\times h"></span>
+                                    <span style="margin-left: 10px; color: #666;">（底 × 高 ÷ 2）</span>
+                                </div>
+                                <div class="info-item" style="margin-bottom: 20px;">
+                                    <strong>周长公式：</strong>
+                                    <span class="katex-static" data-formula="C = a + b + c"></span>
+                                    <span style="margin-left: 10px; color: #666;">（三边之和）</span>
+                                </div>
+                                <div class="input-group">
+                                    <label>底 a：</label>
+                                    <input type="number" v-model.number="triangleBase" min="1" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>高 h：</label>
+                                    <input type="number" v-model.number="triangleHeight" min="1" step="0.1">
+                                </div>
+                                <div id="triangle-calc-canvas" class="canvas-wrapper" style="height: 300px;"></div>
+                                <div class="result-box">
+                                    <strong>面积：</strong>
+                                    <span class="katex-static" :data-formula="'\\frac{' + triangleBase + ' \\times ' + triangleHeight + '}{2} = ' + triangleArea.toFixed(2)" :key="'tri-area-' + triangleBase + '-' + triangleHeight"></span>
+                                </div>
+                                <div class="result-box">
+                                    <strong>周长：</strong>
+                                    <span style="color: #666;">{{ trianglePerimeter.toFixed(2) }}（近似值）</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 平行四边形 -->
+                            <div v-if="shapeType === 'parallelogram'">
+                                <h3>平行四边形</h3>
+                                <div class="info-item" style="margin-bottom: 20px;">
+                                    <strong>面积公式：</strong>
+                                    <span class="katex-static" data-formula="S = a \\times h"></span>
+                                    <span style="margin-left: 10px; color: #666;">（底 × 高）</span>
+                                </div>
+                                <div class="info-item" style="margin-bottom: 20px;">
+                                    <strong>周长公式：</strong>
+                                    <span class="katex-static" data-formula="C = 2(a + b)"></span>
+                                    <span style="margin-left: 10px; color: #666;">（2 × (底 + 另一边)）</span>
+                                </div>
+                                <div class="input-group">
+                                    <label>底 a：</label>
+                                    <input type="number" v-model.number="paraBase" min="1" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>高 h：</label>
+                                    <input type="number" v-model.number="paraHeight" min="1" step="0.1">
+                                </div>
+                                <div id="para-calc-canvas" class="canvas-wrapper" style="height: 300px;"></div>
+                                <div class="result-box">
+                                    <strong>面积：</strong>
+                                    <span class="katex-static" :data-formula="paraAreaFormula" :key="'para-area-' + paraBase + '-' + paraHeight"></span>
+                                </div>
+                                <div class="result-box">
+                                    <strong>周长：</strong>
+                                    <span style="color: #666;">{{ parallelogramPerimeter.toFixed(2) }}（近似值）</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 梯形 -->
+                            <div v-if="shapeType === 'trapezoid'">
+                                <h3>梯形</h3>
+                                <div class="info-item" style="margin-bottom: 20px;">
+                                    <strong>面积公式：</strong>
+                                    <span class="katex-static" data-formula="S = \\frac{(a + b) \\times h}{2}"></span>
+                                    <span style="margin-left: 10px; color: #666;">（(上底 + 下底) × 高 ÷ 2）</span>
+                                </div>
+                                <div class="info-item" style="margin-bottom: 20px;">
+                                    <strong>周长公式：</strong>
+                                    <span class="katex-static" data-formula="C = a + b + c + d"></span>
+                                    <span style="margin-left: 10px; color: #666;">（四边之和）</span>
+                                </div>
+                                <div class="input-group">
+                                    <label>上底 a：</label>
+                                    <input type="number" v-model.number="trapTopBase" min="1" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>下底 b：</label>
+                                    <input type="number" v-model.number="trapBottomBase" min="1" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>高 h：</label>
+                                    <input type="number" v-model.number="trapHeight" min="1" step="0.1">
+                                </div>
+                                <div id="trap-calc-canvas" class="canvas-wrapper" style="height: 300px;"></div>
+                                <div class="result-box">
+                                    <strong>面积：</strong>
+                                    <span class="katex-static" :data-formula="trapAreaFormula" :key="'trap-area-' + trapTopBase + '-' + trapBottomBase + '-' + trapHeight"></span>
+                                </div>
+                                <div class="result-box">
+                                    <strong>周长：</strong>
+                                    <span style="color: #666;">{{ trapezoidPerimeter.toFixed(2) }}（近似值）</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 面积分割与重组 -->
+                    <div class="section">
+                        <h2>✂️ 面积分割与重组法</h2>
+                        <div class="info-panel" style="margin-bottom: 30px;">
+                            <div class="info-item">
+                                <strong>分割法：</strong>将一个复杂图形分割成几个简单的图形，分别计算面积后相加
+                            </div>
+                            <div class="info-item">
+                                <strong>重组法：</strong>将图形重新组合成熟悉的图形（如长方形），然后计算面积
+                            </div>
+                        </div>
+                        
+                        <!-- 演示选择器 -->
+                        <div class="shape-selector" style="margin-bottom: 20px;">
+                            <button class="shape-btn" :class="{ active: demoType === 'triangle' }" 
+                                    @click="demoType = 'triangle'">三角形→平行四边形</button>
+                            <button class="shape-btn" :class="{ active: demoType === 'parallelogram' }" 
+                                    @click="demoType = 'parallelogram'">平行四边形→长方形</button>
+                        </div>
+                        
+                        <!-- 动画演示画布 -->
+                        <div class="canvas-container">
+                            <div id="demo-recompose-canvas" class="canvas-wrapper" style="height: 400px;"></div>
+                        </div>
+                        
+                        <div class="info-panel" style="margin-top: 20px;">
+                            <div class="info-item" v-if="demoType === 'triangle'">
+                                <strong>三角形重组：</strong>两个相同的三角形可以拼成一个平行四边形，因此三角形面积 = 底 × 高 ÷ 2
+                            </div>
+                            <div class="info-item" v-if="demoType === 'parallelogram'">
+                                <strong>平行四边形重组：</strong>将平行四边形的一端切下来，移到另一端，可以拼成一个长方形
+                            </div>
+                            <div style="margin-top: 15px;">
+                                <button class="btn" @click="playRecomposeAnimation" style="margin-right: 10px;">▶️ 播放动画</button>
+                                <button class="btn" @click="resetRecomposeAnimation">🔄 重置</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习 -->
+                    <div class="section">
+                        <h2>✏️ 练习</h2>
+                        <div class="practice-area">
+                            <div v-for="question in practiceQuestions" :key="question.id" 
+                                 :class="['practice-question', question && question.correct === true ? 'correct' : question && question.correct === false ? 'incorrect' : '']">
+                                <h3>{{ question.question }}</h3>
+                                <div style="margin: 10px 0; color: #666;">
+                                    <span v-if="question.shape === 'rectangle'">
+                                        长：{{ question.length }}，宽：{{ question.width }}
+                                    </span>
+                                    <span v-else-if="question.shape === 'triangle'">
+                                        底：{{ question.base }}，高：{{ question.height }}
+                                    </span>
+                                    <span v-else-if="question.shape === 'parallelogram'">
+                                        底：{{ question.base }}，高：{{ question.height }}
+                                    </span>
+                                    <span v-else-if="question.shape === 'trapezoid'">
+                                        上底：{{ question.topBase }}，下底：{{ question.bottomBase }}，高：{{ question.height }}
+                                    </span>
+                                </div>
+                                <div class="controls">
+                                    <input type="number" v-model="question.userAnswer" class="answer-input" placeholder="输入答案" step="0.01">
+                                    <button class="btn" @click="checkAnswer(question)">检查</button>
+                                </div>
+                                <div v-if="question && question.correct === true" class="feedback correct">
+                                    ✓ 正确！
+                                </div>
+                                <div v-if="question && question.correct === false" class="feedback incorrect">
+                                    ✗ 错误，正确答案是：{{ question.answer }}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                                <h3 style="color: #1976d2;">得分：{{ score.correct }} / {{ score.total }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

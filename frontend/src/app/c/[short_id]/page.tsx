@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import ContentActionButtons from '@/components/ui/ContentActionButtons';
+import LanguageSelector from '@/components/LanguageSelector';
 import { api, Content } from '@/lib/api';
 import FullHTMLRenderer from '@/components/FullHTMLRenderer';
 import { AIGuidedLearning } from '@/components/AIGuidedLearning';
@@ -25,7 +26,6 @@ export default function FullHTMLContentPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [collectionCount, setCollectionCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showAllTags, setShowAllTags] = useState(false);
 
   useEffect(() => {
     // 保存原始标题，用于组件卸载时恢复
@@ -145,28 +145,62 @@ export default function FullHTMLContentPage() {
     );
   }
 
+  const HEADER_HEIGHT = 64;
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* 页面头部 */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          {/* 第一行：返回按钮、标题、logo */}
-          <div className="flex items-center mb-3">
-            {/* 左侧：返回按钮 */}
+    <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
+      {/* 顶栏：固定一行 */}
+      <div className="sticky top-0 z-40 bg-white shadow-sm border-b h-16">
+        <div className="max-w-7xl mx-auto h-full px-4">
+          <div className="flex items-center h-full gap-3">
+            {/* 返回 */}
             <button
               onClick={handleSmartBack}
-              className="px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors mr-3"
+              className="px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
               ← {t('back')}
             </button>
-            
-            {/* 中间：标题 */}
-            <h1 className="flex-1 font-bold text-gray-900 text-lg sm:text-xl md:text-2xl truncate">
-              {content.title}
-            </h1>
-            
-            {/* 右侧：favicon logo链接到首页 */}
-            <Link href="/" className="ml-3">
+
+            {/* 点赞收藏分享组合 */}
+            <ContentActionButtons
+              contentId={content.id}
+              shortId={content.short_id}
+              title={content.title}
+              initialLiked={user ? isLiked : false}
+              initialCollected={user ? isCollected : false}
+              initialLikeCount={likeCount}
+              initialCollectionCount={collectionCount}
+              size="md"
+              showCount={true}
+              showText={false}
+              disabled={!user}
+              onLikeChange={(liked, count) => {
+                if (user) {
+                  setIsLiked(liked);
+                  setLikeCount(count);
+                }
+              }}
+              onCollectChange={(collected, count) => {
+                if (user) {
+                  setIsCollected(collected);
+                  setCollectionCount(count);
+                }
+              }}
+            />
+
+            {/* 占位撑开 */}
+            <div className="flex-1" />
+
+            {/* 语言切换 */}
+            <div className="hidden sm:block">
+              <LanguageSelector variant="button" />
+            </div>
+            <div className="sm:hidden">
+              <LanguageSelector variant="button" />
+            </div>
+
+            {/* Logo */}
+            <Link href="/" className="ml-2">
               <Image
                 src="/favicon.png"
                 alt="EduNest AI"
@@ -176,104 +210,21 @@ export default function FullHTMLContentPage() {
               />
             </Link>
           </div>
-          
-          {/* 第二行：description */}
-          {content.description && (
-            <div className="mb-3">
-              <p className="text-gray-600 text-sm sm:text-base">
-                {content.description}
-              </p>
-            </div>
-          )}
-          
-          {/* 第三行：点赞收藏按钮 + 标签 */}
-          <div className="flex items-center">
-            {/* 左侧：点赞收藏分享按钮 - 使用统一控件 */}
-            <div className="mr-4">
-              <ContentActionButtons
-                contentId={content.id}
-                shortId={content.short_id}
-                title={content.title}
-                initialLiked={user ? isLiked : false}
-                initialCollected={user ? isCollected : false}
-                initialLikeCount={likeCount}
-                initialCollectionCount={collectionCount}
-                size="md"
-                showCount={true}
-                showText={false}
-                disabled={!user}
-                onLikeChange={(liked, count) => {
-                  if (user) {
-                    setIsLiked(liked);
-                    setLikeCount(count);
-                  }
-                }}
-                onCollectChange={(collected, count) => {
-                  if (user) {
-                    setIsCollected(collected);
-                    setCollectionCount(count);
-                  }
-                }}
-              />
-            </div>
-            
-            {/* 右侧：标签一行显示，超出显示+号 */}
-            <div className="flex-1 min-w-0">
-              {content.tags && content.tags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1">
-                  {(() => {
-                    const maxVisibleTags = 3;
-                    const visibleTags = showAllTags ? content.tags : content.tags.slice(0, maxVisibleTags);
-                    const remainingCount = content.tags.length - maxVisibleTags;
-                    
-                    return (
-                      <>
-                        {visibleTags.map((tag, index) => (
-                          <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full whitespace-nowrap">
-                            {tag}
-                          </span>
-                        ))}
-                        
-                        {!showAllTags && remainingCount > 0 && (
-                          <button
-                            onClick={() => setShowAllTags(true)}
-                            className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full hover:bg-blue-200 transition-colors"
-                            title={`还有 ${remainingCount} 个标签`}
-                          >
-                            +{remainingCount}
-                          </button>
-                        )}
-                        
-                        {showAllTags && content.tags.length > maxVisibleTags && (
-                          <button
-                            onClick={() => setShowAllTags(false)}
-                            className="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded-full hover:bg-gray-300 transition-colors"
-                            title="收起标签"
-                          >
-                            收起
-                          </button>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
-
-      {/* 内容区域：只显示 full_html */}
-      <div className="w-full flex-1 flex flex-col bg-white">
+      
+      {/* 内容区域：iframe 内滚动，父容器不出现滚动条 */}
+      <div className="w-full flex-1 flex flex-col bg-white min-h-0 overflow-hidden">
         <FullHTMLRenderer
           fullHTML={content.full_html}
           externalUrl={`/full-html/${content.short_id}`}
-          autoHeight={true}
-          enableHeightListener={true}
+          autoHeight={false}
+          fixedHeight={true}
           className="w-full flex-1"
           style={{ 
             width: '100%',
-            minHeight: 'calc(100vh - 140px)',
+            height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+            minHeight: `calc(100vh - ${HEADER_HEIGHT}px)`,
             border: 'none',
             margin: '0',
             padding: '0'

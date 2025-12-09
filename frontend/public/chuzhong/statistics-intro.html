@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统计学基础 - 初中数学教学</title>
+    <meta name="description" content="学习平均数、中位数、众数、极差等统计量，理解数据分布，掌握直方图的绘制方法，通过交互式工具进行数据分析和可视化。">
+    <meta name="keywords" content="平均数,中位数,众数,极差,数据分布,直方图,统计学,数据分析,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .data-input-area {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .input-methods {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .input-method-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .input-method-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .input-method-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .data-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: monospace;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .data-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stat-card .formula {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            margin: 20px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .chart-wrapper {
+            width: 100%;
+            height: 450px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            color: #555;
+            min-width: 80px;
+        }
+        
+        .control-group input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 200px;
+        }
+        
+        .data-list {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .data-item {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 3px;
+            background: #e9ecef;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .info-panel {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            margin: 10px 0;
+            line-height: 1.8;
+        }
+        
+        .formula-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .formula-text {
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+    
+    <!-- Vue.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                const inputMethod = ref('manual');
+                const dataInput = ref('');
+                const dataPoints = ref([]);
+                const binWidth = ref(5);
+                const binStart = ref(0);
+                
+                // Konva引用
+                const chartStage = ref(null);
+                const chartLayer = ref(null);
+                
+                // 统计数据
+                const statistics = computed(() => {
+                    if (dataPoints.value.length === 0) {
+                        return {
+                            mean: 0,
+                            median: 0,
+                            mode: [],
+                            range: 0,
+                            min: 0,
+                            max: 0,
+                            count: 0
+                        };
+                    }
+                    
+                    const sorted = [...dataPoints.value].sort((a, b) => a - b);
+                    const count = sorted.length;
+                    const sum = sorted.reduce((a, b) => a + b, 0);
+                    const mean = sum / count;
+                    
+                    let median;
+                    if (count % 2 === 0) {
+                        median = (sorted[count / 2 - 1] + sorted[count / 2]) / 2;
+                    } else {
+                        median = sorted[Math.floor(count / 2)];
+                    }
+                    
+                    // 众数
+                    const frequency = {};
+                    sorted.forEach(val => {
+                        frequency[val] = (frequency[val] || 0) + 1;
+                    });
+                    const maxFreq = Math.max(...Object.values(frequency));
+                    const mode = Object.keys(frequency)
+                        .filter(key => frequency[key] === maxFreq)
+                        .map(Number)
+                        .sort((a, b) => a - b);
+                    
+                    const min = Math.min(...sorted);
+                    const max = Math.max(...sorted);
+                    const range = max - min;
+                    
+                    return {
+                        mean,
+                        median,
+                        mode,
+                        range,
+                        min,
+                        max,
+                        count
+                    };
+                });
+                
+                // 解析数据
+                function parseData() {
+                    if (!dataInput.value.trim()) {
+                        dataPoints.value = [];
+                        return;
+                    }
+                    
+                    let numbers = [];
+                    
+                    if (inputMethod.value === 'manual') {
+                        // 手动输入：支持逗号、空格、换行分隔
+                        numbers = dataInput.value
+                            .split(/[,，\s\n]+/)
+                            .map(s => s.trim())
+                            .filter(s => s)
+                            .map(s => parseFloat(s))
+                            .filter(n => !isNaN(n));
+                    } else if (inputMethod.value === 'random') {
+                        // 随机生成
+                        const parts = dataInput.value.trim().split(/[\s,，]+/);
+                        if (parts.length >= 2) {
+                            const count = parseInt(parts[0]);
+                            const min = parseFloat(parts[1]);
+                            const max = parseFloat(parts[2] || parts[1]);
+                            numbers = Array.from({ length: count }, () => 
+                                Math.random() * (max - min) + min
+                            ).map(n => Math.round(n * 10) / 10);
+                        }
+                    }
+                    
+                    dataPoints.value = numbers;
+                    
+                    // 自动设置起始值为最小值，并调整柱宽
+                    if (numbers.length > 0) {
+                        const min = Math.min(...numbers);
+                        const max = Math.max(...numbers);
+                        binStart.value = Math.floor(min / binWidth.value) * binWidth.value; // 向下取整到柱宽的倍数
+                        // 如果数据范围很大，自动调整柱宽
+                        const range = max - min;
+                        if (range > 0 && range / binWidth.value > 50) {
+                            binWidth.value = Math.ceil(range / 30);
+                        }
+                    }
+                    
+                    nextTick(() => {
+                        if (chartLayer.value && chartStage.value) {
+                            drawHistogram();
+                        }
+                    });
+                }
+                
+                // 计算直方图数据
+                const histogramData = computed(() => {
+                    if (dataPoints.value.length === 0) return [];
+                    
+                    const min = statistics.value.min;
+                    const max = statistics.value.max;
+                    let adjustedStart = binStart.value;
+                    const width = Math.max(binWidth.value, 0.1); // 确保柱宽大于0
+                    
+                    // 如果起始值设置不合理，自动调整到最小值以下的一个柱宽
+                    if (adjustedStart > min) {
+                        adjustedStart = Math.floor(min / width) * width;
+                    }
+                    
+                    // 计算区间：从adjustedStart开始，到max + width结束
+                    const bins = [];
+                    let currentStart = adjustedStart;
+                    
+                    // 确保覆盖所有数据
+                    while (currentStart < max + width) {
+                        bins.push({
+                            start: currentStart,
+                            end: currentStart + width,
+                            count: 0
+                        });
+                        currentStart += width;
+                    }
+                    
+                    // 统计每个区间的数据点
+                    dataPoints.value.forEach(value => {
+                        let assigned = false;
+                        for (let i = 0; i < bins.length; i++) {
+                            // 每个区间的规则：[start, end)，最后一个区间包含end
+                            if (value >= bins[i].start && value < bins[i].end) {
+                                bins[i].count++;
+                                assigned = true;
+                                break;
+                            }
+                        }
+                        // 如果数据点大于等于最后一个区间的end，分配到最后一个区间
+                        if (!assigned && bins.length > 0) {
+                            const lastBin = bins[bins.length - 1];
+                            if (value >= lastBin.start && value <= lastBin.end) {
+                                lastBin.count++;
+                            }
+                        }
+                    });
+                    
+                    return bins;
+                });
+                
+                // 绘制直方图
+                function drawHistogram() {
+                    if (!chartLayer.value || !chartStage.value) {
+                        return;
+                    }
+                    
+                    // 如果没有数据，显示提示并返回
+                    if (histogramData.value.length === 0 || dataPoints.value.length === 0) {
+                        chartLayer.value.destroyChildren();
+                        const width = chartStage.value.width();
+                        const height = chartStage.value.height();
+                        const noDataText = new Konva.Text({
+                            x: width / 2,
+                            y: height / 2,
+                            text: '请先录入数据以显示直方图',
+                            fontSize: 18,
+                            fill: '#999',
+                            align: 'center',
+                            offsetX: 100
+                        });
+                        chartLayer.value.add(noDataText);
+                        chartLayer.value.draw();
+                        return;
+                    }
+                    
+                    chartLayer.value.destroyChildren();
+                    
+                    const width = chartStage.value.width();
+                    const height = chartStage.value.height();
+                    const padding = 60;
+                    const chartWidth = width - padding * 2;
+                    const chartHeight = height - padding * 2;
+                    
+                    const bins = histogramData.value;
+                    if (bins.length === 0) {
+                        chartLayer.value.draw();
+                        return;
+                    }
+                    
+                    const counts = bins.map(b => b.count);
+                    const maxCount = Math.max(...counts, 1);
+                    
+                    // 检查是否有数据被分配到区间
+                    if (maxCount === 0) {
+                        // 所有区间的count都是0，说明数据没有分配到任何区间
+                        const noDataText = new Konva.Text({
+                            x: width / 2,
+                            y: height / 2,
+                            text: '数据未分配到区间，请调整起始值或柱宽',
+                            fontSize: 16,
+                            fill: '#ff9800',
+                            align: 'center',
+                            offsetX: 150
+                        });
+                        chartLayer.value.add(noDataText);
+                        chartLayer.value.draw();
+                        return;
+                    }
+                    
+                    // 计算每个柱子的宽度和间距
+                    const barSpacing = chartWidth / bins.length;
+                    const barWidth = barSpacing * 0.9; // 柱子占据90%的空间，留10%作为间距
+                    
+                    // 绘制坐标轴
+                    const xAxis = new Konva.Line({
+                        points: [padding, height - padding, width - padding, height - padding],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    chartLayer.value.add(xAxis);
+                    
+                    const yAxis = new Konva.Line({
+                        points: [padding, padding, padding, height - padding],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    chartLayer.value.add(yAxis);
+                    
+                    // Y轴标签
+                    const ySteps = 10;
+                    for (let i = 0; i <= ySteps; i++) {
+                        const value = (maxCount / ySteps) * i;
+                        const y = padding + chartHeight - (value / maxCount) * chartHeight;
+                        
+                        const label = new Konva.Text({
+                            x: padding - 50,
+                            y: y - 8,
+                            text: Math.round(value).toString(),
+                            fontSize: 12,
+                            fill: '#666',
+                            align: 'right'
+                        });
+                        chartLayer.value.add(label);
+                        
+                        // 网格线
+                        if (i > 0) {
+                            const gridLine = new Konva.Line({
+                                points: [padding, y, width - padding, y],
+                                stroke: '#e0e0e0',
+                                strokeWidth: 1,
+                                dash: [5, 5]
+                            });
+                            chartLayer.value.add(gridLine);
+                        }
+                    }
+                    
+                    // 绘制柱状图
+                    bins.forEach((bin, index) => {
+                        // 计算柱子的x位置：居中在每个间距内
+                        const x = padding + index * barSpacing + (barSpacing - barWidth) / 2;
+                        const barHeight = bin.count > 0 ? (bin.count / maxCount) * chartHeight : 0;
+                        
+                        // 绘制柱子
+                        if (barHeight > 0) {
+                            const bar = new Konva.Rect({
+                                x: x,
+                                y: height - padding - barHeight,
+                                width: barWidth,
+                                height: barHeight,
+                                fill: '#667eea',
+                                opacity: 0.8,
+                                cornerRadius: [3, 3, 0, 0]
+                            });
+                            chartLayer.value.add(bar);
+                        }
+                        
+                        // 数量标签
+                        if (bin.count > 0) {
+                            const countLabel = new Konva.Text({
+                                x: x + barWidth / 2,
+                                y: height - padding - barHeight - 20,
+                                text: bin.count.toString(),
+                                fontSize: 12,
+                                fill: '#333',
+                                fontStyle: 'bold',
+                                align: 'center',
+                                offsetX: 15
+                            });
+                            chartLayer.value.add(countLabel);
+                        }
+                        
+                        // X轴标签（区间）- 每隔几个显示一个以避免重叠
+                        if (bin.count > 0 || index % Math.max(1, Math.floor(bins.length / 10)) === 0 || bins.length <= 10) {
+                            const binLabel = new Konva.Text({
+                                x: x + barWidth / 2,
+                                y: height - padding + 10,
+                                text: `${bin.start.toFixed(1)}-${bin.end.toFixed(1)}`,
+                                fontSize: bins.length > 20 ? 9 : 11,
+                                fill: '#666',
+                                align: 'center',
+                                offsetX: bins.length > 20 ? 20 : 30
+                            });
+                            chartLayer.value.add(binLabel);
+                        }
+                    });
+                    
+                    // 标题
+                    const title = new Konva.Text({
+                        x: width / 2,
+                        y: 15,
+                        text: '数据分布直方图',
+                        fontSize: 16,
+                        fill: '#333',
+                        fontStyle: 'bold',
+                        align: 'center',
+                        offsetX: 50
+                    });
+                    chartLayer.value.add(title);
+                    
+                    chartLayer.value.draw();
+                }
+                
+                // 初始化图表
+                function initChart() {
+                    if (chartStage.value) {
+                        return; // 已初始化
+                    }
+                    const container = document.getElementById('chart-canvas');
+                    if (!container) {
+                        console.warn('图表容器不存在');
+                        return;
+                    }
+                    if (typeof Konva === 'undefined') {
+                        console.warn('Konva未加载');
+                        return;
+                    }
+                    
+                    const containerWidth = container.clientWidth || 800;
+                    const containerHeight = 450;
+                    
+                    chartStage.value = new Konva.Stage({
+                        container: 'chart-canvas',
+                        width: containerWidth,
+                        height: containerHeight
+                    });
+                    
+                    chartLayer.value = new Konva.Layer();
+                    chartStage.value.add(chartLayer.value);
+                    
+                    // 初始绘制（可能没有数据）
+                    drawHistogram();
+                }
+                
+                // 加载示例数据
+                function loadExample() {
+                    const examples = [
+                        '65, 70, 72, 68, 75, 69, 73, 71, 74, 67, 70, 72, 69, 71, 73, 68, 70, 72, 74, 69',
+                        '45, 52, 48, 56, 50, 53, 49, 51, 54, 47, 50, 52, 48, 51, 53, 49, 50, 52, 54, 48',
+                        '12, 15, 18, 14, 16, 20, 13, 17, 19, 15, 16, 18, 14, 17, 19, 15, 16, 18, 20, 14'
+                    ];
+                    inputMethod.value = 'manual';
+                    dataInput.value = examples[Math.floor(Math.random() * examples.length)];
+                    parseData();
+                }
+                
+                // 清空数据
+                function clearData() {
+                    dataInput.value = '';
+                    dataPoints.value = [];
+                    drawHistogram();
+                }
+                
+                // 渲染KaTeX
+                function renderKaTeX() {
+                    if (typeof katex !== 'undefined') {
+                        setTimeout(() => {
+                            document.querySelectorAll('.katex-static').forEach(el => {
+                                const formula = el.getAttribute('data-formula');
+                                if (formula && !el.querySelector('.katex-html')) {
+                                    try {
+                                        katex.render(formula, el, { throwOnError: false });
+                                    } catch(e) {
+                                        console.warn('KaTeX渲染失败:', e);
+                                    }
+                                }
+                            });
+                        }, 100);
+                    }
+                }
+                
+                // 监听数据变化
+                watch([binWidth, binStart], () => {
+                    if (dataPoints.value.length > 0 && chartLayer.value && chartStage.value) {
+                        nextTick(() => {
+                            drawHistogram();
+                        });
+                    }
+                });
+                
+                watch(dataPoints, () => {
+                    nextTick(() => {
+                        if (chartLayer.value && chartStage.value) {
+                            drawHistogram();
+                        }
+                        renderKaTeX();
+                    });
+                }, { deep: true });
+                
+                // 监听直方图数据变化
+                watch(histogramData, () => {
+                    if (dataPoints.value.length > 0 && chartLayer.value && chartStage.value) {
+                        nextTick(() => {
+                            drawHistogram();
+                        });
+                    }
+                }, { deep: true });
+                
+                onMounted(() => {
+                    setTimeout(() => {
+                        initChart();
+                        renderKaTeX();
+                        // 延迟加载示例，确保图表已初始化
+                        setTimeout(() => {
+                            loadExample();
+                        }, 300);
+                        
+                        // 窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (chartStage.value) {
+                                const container = document.getElementById('chart-canvas');
+                                if (container) {
+                                    chartStage.value.width(container.clientWidth);
+                                    if (chartLayer.value) {
+                                        drawHistogram();
+                                    }
+                                }
+                            }
+                        });
+                    }, 200);
+                });
+                
+                return {
+                    inputMethod,
+                    dataInput,
+                    dataPoints,
+                    binWidth,
+                    binStart,
+                    statistics,
+                    histogramData,
+                    parseData,
+                    loadExample,
+                    clearData
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>统计学基础</h1>
+                    
+                    <div class="section">
+                        <h2>基本概念</h2>
+                        <div class="info-panel">
+                            <div class="info-item">
+                                <strong>平均数（均值）：</strong>所有数据的和除以数据的个数，表示数据的平均水平。
+                            </div>
+                            <div class="info-item">
+                                <strong>中位数：</strong>将数据按大小排列后，位于中间位置的数。如果数据个数为偶数，则取中间两个数的平均值。
+                            </div>
+                            <div class="info-item">
+                                <strong>众数：</strong>数据中出现次数最多的数。一个数据集可能有多个众数，也可能没有众数。
+                            </div>
+                            <div class="info-item">
+                                <strong>极差：</strong>数据中最大值与最小值的差，反映数据的分散程度。
+                            </div>
+                            <div class="info-item">
+                                <strong>数据分布：</strong>数据在不同数值范围内的分布情况，可以通过直方图直观展示。
+                            </div>
+                        </div>
+                        
+                        <div class="formula-card">
+                            <h3>计算公式</h3>
+                            <div class="formula-text">
+                                <span class="katex-static" data-formula="\\text{平均数} = \\frac{\\text{所有数据的和}}{\\text{数据的个数}} = \\frac{x_1 + x_2 + \\cdots + x_n}{n}"></span>
+                            </div>
+                            <div class="formula-text" style="margin-top: 10px;">
+                                <span class="katex-static" data-formula="\\text{极差} = \\text{最大值} - \\text{最小值}"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>数据录入</h2>
+                        <div class="data-input-area">
+                            <div class="input-methods">
+                                <button class="input-method-btn" :class="{ active: inputMethod === 'manual' }" 
+                                        @click="inputMethod = 'manual'">手动输入</button>
+                                <button class="input-method-btn" :class="{ active: inputMethod === 'random' }" 
+                                        @click="inputMethod = 'random'">随机生成</button>
+                            </div>
+                            
+                            <div v-if="inputMethod === 'manual'">
+                                <div class="info-panel" style="margin-bottom: 15px;">
+                                    <div class="info-item">
+                                        <strong>手动输入说明：</strong>在文本框中输入你的数据，可以用逗号、空格或换行符分隔不同的数据。例如：输入 "65, 70, 72, 68, 75" 或 "65 70 72 68 75" 或每行一个数字。点击"解析数据"按钮后，系统会自动识别数字并计算统计量。
+                                    </div>
+                                    <div class="info-item">
+                                        <strong>使用场景：</strong>当你已经有了具体的数据，比如考试成绩、身高体重等实际测量数据时，使用手动输入方式。
+                                    </div>
+                                </div>
+                                <textarea class="data-input" v-model="dataInput" 
+                                          placeholder="请输入数据，用逗号、空格或换行分隔。例如：65, 70, 72, 68, 75"></textarea>
+                                <div style="margin-top: 10px;">
+                                    <button class="btn" @click="parseData">解析数据</button>
+                                    <button class="btn btn-secondary" @click="loadExample">加载示例</button>
+                                    <button class="btn btn-secondary" @click="clearData">清空</button>
+                                </div>
+                            </div>
+                            
+                            <div v-if="inputMethod === 'random'">
+                                <div class="info-panel" style="margin-bottom: 15px;">
+                                    <div class="info-item">
+                                        <strong>随机生成说明：</strong>在文本框中输入三个数字，用空格分隔：第一个数字是要生成的数据个数，第二个数字是最小值，第三个数字是最大值。例如：输入 "20 50 80" 表示生成20个数据，这些数据的值在50到80之间随机分布。
+                                    </div>
+                                    <div class="info-item">
+                                        <strong>使用场景：</strong>当你想要快速生成一些测试数据，或者想要观察随机数据的分布规律时，使用随机生成方式。这对于理解统计概念很有帮助。
+                                    </div>
+                                    <div class="info-item">
+                                        <strong>示例：</strong>
+                                        <ul style="margin-left: 20px; margin-top: 5px;">
+                                            <li>"20 50 80" - 生成20个50到80之间的随机数</li>
+                                            <li>"100 0 100" - 生成100个0到100之间的随机数</li>
+                                            <li>"30 60 90" - 生成30个60到90之间的随机数</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <textarea class="data-input" v-model="dataInput" 
+                                          placeholder="格式：数量 最小值 最大值（用空格分隔）。例如：20 50 80"></textarea>
+                                <div style="margin-top: 10px;">
+                                    <button class="btn" @click="parseData">生成随机数据</button>
+                                    <button class="btn btn-secondary" @click="clearData">清空</button>
+                                </div>
+                            </div>
+                            
+                            <div v-if="dataPoints.length > 0" class="data-list">
+                                <div style="margin-bottom: 10px; font-weight: bold; color: #667eea;">
+                                    已录入 {{ dataPoints.length }} 个数据点：
+                                </div>
+                                <div>
+                                    <span v-for="(point, index) in dataPoints" :key="index" class="data-item">
+                                        {{ point }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>统计量</h2>
+                        <div class="stats-display">
+                            <div class="stat-card">
+                                <h3>数据个数</h3>
+                                <div class="value">{{ statistics.count }}</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>平均数</h3>
+                                <div class="value">{{ statistics.mean.toFixed(2) }}</div>
+                                <div class="formula">所有数据之和 ÷ 个数</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>中位数</h3>
+                                <div class="value">{{ statistics.median.toFixed(2) }}</div>
+                                <div class="formula">中间位置的数</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>众数</h3>
+                                <div class="value">{{ statistics.mode.length > 0 ? statistics.mode.join(', ') : '无' }}</div>
+                                <div class="formula">出现次数最多的数</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>最小值</h3>
+                                <div class="value">{{ statistics.min.toFixed(2) }}</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>最大值</h3>
+                                <div class="value">{{ statistics.max.toFixed(2) }}</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>极差</h3>
+                                <div class="value">{{ statistics.range.toFixed(2) }}</div>
+                                <div class="formula">最大值 - 最小值</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>直方图</h2>
+                        <div class="chart-controls">
+                            <div class="control-group">
+                                <label>柱宽：</label>
+                                <input type="number" v-model.number="binWidth" min="0.1" max="50" step="0.1">
+                            </div>
+                            <div class="control-group">
+                                <label>起始值：</label>
+                                <input type="number" v-model.number="binStart" step="0.1">
+                            </div>
+                            <div class="control-group">
+                                <label>柱宽调整：</label>
+                                <input type="range" v-model.number="binWidth" min="0.5" max="20" step="0.5">
+                                <span>{{ binWidth.toFixed(1) }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container" style="position: relative;">
+                            <div id="chart-canvas" class="chart-wrapper"></div>
+                            <div v-if="dataPoints.length === 0" class="warning" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.6);">
+                                请先录入数据以显示直方图
+                            </div>
+                        </div>
+                        
+                        <div class="info-panel" style="margin-top: 20px;">
+                            <div class="info-item">
+                                <strong>直方图说明：</strong>直方图用柱状图展示数据在不同区间内的分布情况。每个柱子的高度表示该区间内数据点的个数。
+                            </div>
+                            <div class="info-item">
+                                <strong>柱宽：</strong>控制每个区间的宽度。柱宽越小，区间越细，直方图越详细；柱宽越大，区间越宽，直方图越概括。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+        
+        // KaTeX渲染（全局）
+        function renderKaTeXGlobal() {
+            if (typeof katex !== 'undefined') {
+                setTimeout(() => {
+                    document.querySelectorAll('.katex-static').forEach(el => {
+                        const formula = el.getAttribute('data-formula');
+                        if (formula && !el.querySelector('.katex-html')) {
+                            try {
+                                katex.render(formula, el, { throwOnError: false });
+                            } catch(e) {
+                                console.warn('KaTeX渲染失败:', e);
+                            }
+                        }
+                    });
+                }, 300);
+            }
+        }
+        
+        setTimeout(renderKaTeXGlobal, 500);
+    </script>
+</body>
+</html>
+

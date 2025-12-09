@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>函数入门 - 初中数学教学</title>
+    <meta name="description" content="学习函数的概念，理解函数作为输入到输出的映射关系，掌握函数的对应表、图像和解析式表示方法，通过一次函数理解斜率和截距的几何意义。">
+    <meta name="keywords" content="函数,一次函数,斜率,截距,函数图像,对应关系,输入输出,解析式,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .graph-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .graph-wrapper {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .slider-group {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .slider-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .slider-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            color: #667eea;
+            min-width: 50px;
+        }
+        
+        .mapping-demo {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .mapping-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 40px;
+            min-height: 300px;
+        }
+        
+        .input-box, .output-box {
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        .input-box {
+            background: #fff3e0;
+        }
+        
+        .output-box {
+            background: #e8f5e9;
+        }
+        
+        .arrow {
+            font-size: 40px;
+            color: #667eea;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 500;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .practice-area {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .practice-question.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .practice-question.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 150px;
+            margin: 10px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .highlight {
+            background: yellow;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        createApp({
+            setup() {
+                // 函数参数
+                const m = ref(1);
+                const b = ref(0);
+                const selectedX = ref(null);
+                const animationX = ref(null);
+                const isAnimating = ref(false);
+                
+                // 图形
+                const graphStage = ref(null);
+                const graphLayer = ref(null);
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        question: '函数 y = 2x + 3，当 x = 5 时，y = ?',
+                        answer: '13',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        question: '一次函数 y = kx + b 中，k 表示什么？',
+                        answer: '斜率',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        question: '一次函数 y = -3x + 2 与 y 轴的交点坐标是？',
+                        answer: '(0, 2)',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        question: '斜率 k = 0 的一次函数图像是什么样的？',
+                        answer: '平行于x轴的直线',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        question: '函数 y = 0.5x - 1，当 x = 4 时，y = ?',
+                        answer: '1',
+                        userAnswer: '',
+                        correct: null
+                    }
+                ]);
+                
+                // 计算函数值
+                const functionValue = computed(() => {
+                    if (selectedX.value === null) return null;
+                    return m.value * selectedX.value + b.value;
+                });
+                
+                // 生成对应表
+                const mappingTable = computed(() => {
+                    const table = [];
+                    for (let x = -5; x <= 5; x++) {
+                        table.push({
+                            x: x,
+                            y: m.value * x + b.value
+                        });
+                    }
+                    return table;
+                });
+                
+                // 初始化图形
+                function initGraph() {
+                    const container = document.getElementById('graph-canvas');
+                    if (!container || graphStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 400;
+                    
+                    graphStage.value = new Konva.Stage({
+                        container: 'graph-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    graphLayer.value = new Konva.Layer();
+                    graphStage.value.add(graphLayer.value);
+                    
+                    drawCoordinateSystem();
+                    drawFunction();
+                }
+                
+                // 绘制坐标系
+                function drawCoordinateSystem() {
+                    if (!graphLayer.value) return;
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 30; // 每单位30像素
+                    
+                    graphLayer.value.destroyChildren();
+                    
+                    // 绘制网格
+                    for (let i = -10; i <= 10; i++) {
+                        if (i === 0) continue;
+                        
+                        // 竖线
+                        const vLine = new Konva.Line({
+                            points: [originX + i * scale, 0, originX + i * scale, height],
+                            stroke: '#e0e0e0',
+                            strokeWidth: 1,
+                            listening: false
+                        });
+                        graphLayer.value.add(vLine);
+                        
+                        // 横线
+                        const hLine = new Konva.Line({
+                            points: [0, originY - i * scale, width, originY - i * scale],
+                            stroke: '#e0e0e0',
+                            strokeWidth: 1,
+                            listening: false
+                        });
+                        graphLayer.value.add(hLine);
+                        
+                        // 刻度标签
+                        if (i % 2 === 0 || Math.abs(i) <= 3) {
+                            const xLabel = new Konva.Text({
+                                x: originX + i * scale - 8,
+                                y: originY + 8,
+                                text: i.toString(),
+                                fontSize: 12,
+                                fill: '#666',
+                                listening: false
+                            });
+                            graphLayer.value.add(xLabel);
+                            
+                            if (i !== 0) {
+                                const yLabel = new Konva.Text({
+                                    x: originX + 8,
+                                    y: originY - i * scale - 8,
+                                    text: i.toString(),
+                                    fontSize: 12,
+                                    fill: '#666',
+                                    listening: false
+                                });
+                                graphLayer.value.add(yLabel);
+                            }
+                        }
+                    }
+                    
+                    // 绘制坐标轴
+                    const xAxis = new Konva.Line({
+                        points: [0, originY, width, originY],
+                        stroke: '#333',
+                        strokeWidth: 2,
+                        listening: false
+                    });
+                    graphLayer.value.add(xAxis);
+                    
+                    const yAxis = new Konva.Line({
+                        points: [originX, 0, originX, height],
+                        stroke: '#333',
+                        strokeWidth: 2,
+                        listening: false
+                    });
+                    graphLayer.value.add(yAxis);
+                    
+                    // 原点标记
+                    const originLabel = new Konva.Text({
+                        x: originX + 5,
+                        y: originY + 5,
+                        text: 'O',
+                        fontSize: 14,
+                        fill: '#333',
+                        listening: false
+                    });
+                    graphLayer.value.add(originLabel);
+                    
+                    // 坐标轴标签
+                    const xLabel = new Konva.Text({
+                        x: width - 20,
+                        y: originY - 20,
+                        text: 'x',
+                        fontSize: 16,
+                        fontStyle: 'bold',
+                        fill: '#333',
+                        listening: false
+                    });
+                    graphLayer.value.add(xLabel);
+                    
+                    const yLabel = new Konva.Text({
+                        x: originX + 10,
+                        y: 5,
+                        text: 'y',
+                        fontSize: 16,
+                        fontStyle: 'bold',
+                        fill: '#333',
+                        listening: false
+                    });
+                    graphLayer.value.add(yLabel);
+                }
+                
+                // 绘制函数
+                function drawFunction() {
+                    if (!graphLayer.value) return;
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 30;
+                    
+                    // 移除所有函数相关的图形（包括函数线、截距点、映射点）
+                    const oldElements = graphLayer.value.find(node => {
+                        const name = node.name();
+                        return name && (
+                            name === 'function-line' ||
+                            name === 'intercept-point' ||
+                            name === 'intercept-label' ||
+                            name === 'mapping-point'
+                        );
+                    });
+                    oldElements.forEach(node => node.destroy());
+                    
+                    // 计算函数点
+                    const points = [];
+                    for (let x = -10; x <= 10; x += 0.1) {
+                        const y = m.value * x + b.value;
+                        const screenX = originX + x * scale;
+                        const screenY = originY - y * scale;
+                        
+                        // 只添加在画布范围内的点
+                        if (screenX >= 0 && screenX <= width && screenY >= 0 && screenY <= height) {
+                            points.push(screenX, screenY);
+                        }
+                    }
+                    
+                    // 绘制函数线
+                    if (points.length > 0) {
+                        const functionLine = new Konva.Line({
+                            points: points,
+                            stroke: '#667eea',
+                            strokeWidth: 3,
+                            name: 'function-line',
+                            listening: false
+                        });
+                        graphLayer.value.add(functionLine);
+                    }
+                    
+                    // 标记截距点 (0, b)
+                    if (Math.abs(b.value) <= 10) {
+                        const interceptY = originY - b.value * scale;
+                        if (interceptY >= 0 && interceptY <= height) {
+                            const interceptPoint = new Konva.Circle({
+                                x: originX,
+                                y: interceptY,
+                                radius: 6,
+                                fill: '#f39c12',
+                                stroke: 'white',
+                                strokeWidth: 2,
+                                name: 'intercept-point',
+                                listening: false
+                            });
+                            graphLayer.value.add(interceptPoint);
+                            
+                            const interceptLabel = new Konva.Text({
+                                x: originX + 10,
+                                y: interceptY - 15,
+                                text: `(0, ${b.value.toFixed(1)})`,
+                                fontSize: 12,
+                                fill: '#f39c12',
+                                fontStyle: 'bold',
+                                name: 'intercept-label',
+                                listening: false
+                            });
+                            graphLayer.value.add(interceptLabel);
+                        }
+                    }
+                    
+                    // 如果选中了 x 值，重新绘制对应的点
+                    if (selectedX.value !== null && !isAnimating.value) {
+                        drawMappingPoint(selectedX.value);
+                    }
+                    
+                    graphLayer.value.batchDraw();
+                }
+                
+                // 绘制映射点
+                function drawMappingPoint(x) {
+                    if (!graphLayer.value) return;
+                    
+                    // 清除所有旧的映射点相关元素
+                    const oldMapping = graphLayer.value.find(node => node.name() === 'mapping-point');
+                    oldMapping.forEach(node => node.destroy());
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 30;
+                    
+                    const y = m.value * x + b.value;
+                    const screenX = originX + x * scale;
+                    const screenY = originY - y * scale;
+                    
+                    // 检查点是否在画布范围内
+                    if (screenX < 0 || screenX > width || screenY < 0 || screenY > height) {
+                        graphLayer.value.batchDraw();
+                        return;
+                    }
+                    
+                    // 绘制从 x 轴到点的竖线
+                    const vLine = new Konva.Line({
+                        points: [screenX, originY, screenX, screenY],
+                        stroke: '#28a745',
+                        strokeWidth: 2,
+                        dash: [5, 5],
+                        name: 'mapping-point',
+                        listening: false
+                    });
+                    graphLayer.value.add(vLine);
+                    
+                    // 绘制从 y 轴到点的横线
+                    const hLine = new Konva.Line({
+                        points: [originX, screenY, screenX, screenY],
+                        stroke: '#28a745',
+                        strokeWidth: 2,
+                        dash: [5, 5],
+                        name: 'mapping-point',
+                        listening: false
+                    });
+                    graphLayer.value.add(hLine);
+                    
+                    // 绘制点
+                    const point = new Konva.Circle({
+                        x: screenX,
+                        y: screenY,
+                        radius: 8,
+                        fill: '#28a745',
+                        stroke: 'white',
+                        strokeWidth: 2,
+                        name: 'mapping-point',
+                        listening: false
+                    });
+                    graphLayer.value.add(point);
+                    
+                    // 标签
+                    const label = new Konva.Text({
+                        x: screenX + 12,
+                        y: screenY - 12,
+                        text: `(${x.toFixed(1)}, ${y.toFixed(1)})`,
+                        fontSize: 14,
+                        fill: '#28a745',
+                        fontStyle: 'bold',
+                        name: 'mapping-point',
+                        listening: false
+                    });
+                    graphLayer.value.add(label);
+                    
+                    graphLayer.value.batchDraw();
+                }
+                
+                // 演示输入输出映射
+                function animateMapping(x) {
+                    if (isAnimating.value) return;
+                    
+                    isAnimating.value = true;
+                    selectedX.value = x;
+                    animationX.value = x;
+                    
+                    nextTick(() => {
+                        drawMappingPoint(x);
+                        
+                        // 使用 GSAP 做动画
+                        const point = graphLayer.value.findOne(node => node.name() === 'mapping-point' && node.getClassName() === 'Circle');
+                        if (point) {
+                            gsap.from(point, {
+                                duration: 0.5,
+                                scale: { x: 0, y: 0 },
+                                opacity: 0,
+                                ease: 'back.out(1.7)'
+                            });
+                        }
+                        
+                        setTimeout(() => {
+                            isAnimating.value = false;
+                        }, 1000);
+                    });
+                }
+                
+                // 检查练习答案
+                function checkAnswer(question) {
+                    const userAns = question.userAnswer.trim().toLowerCase();
+                    const correctAns = question.answer.trim().toLowerCase();
+                    
+                    // 标准化答案比较
+                    question.correct = userAns === correctAns || 
+                                     userAns.replace(/\s+/g, '') === correctAns.replace(/\s+/g, '') ||
+                                     userAns.replace(/[()]/g, '') === correctAns.replace(/[()]/g, '');
+                }
+                
+                // 计算得分
+                const score = computed(() => {
+                    const total = practiceQuestions.value.length;
+                    const correct = practiceQuestions.value.filter(q => q.correct === true).length;
+                    return { correct, total };
+                });
+                
+                // 监听 m 和 b 的变化
+                watch([m, b], () => {
+                    // 清除选中的 x 值，避免重影
+                    if (selectedX.value !== null && !isAnimating.value) {
+                        selectedX.value = null;
+                    }
+                    drawFunction();
+                });
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initGraph();
+                        
+                        // 监听窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (graphStage.value) {
+                                const container = document.getElementById('graph-canvas');
+                                if (container) {
+                                    graphStage.value.width(container.offsetWidth);
+                                    drawCoordinateSystem();
+                                    drawFunction();
+                                }
+                            }
+                        });
+                        
+                        // 自动渲染 KaTeX
+                        if (typeof renderMathInElement !== 'undefined') {
+                            renderMathInElement(document.body);
+                        }
+                    });
+                });
+                
+                return {
+                    m,
+                    b,
+                    selectedX,
+                    animationX,
+                    functionValue,
+                    mappingTable,
+                    practiceQuestions,
+                    score,
+                    animateMapping,
+                    checkAnswer
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>函数入门</h1>
+                    <p class="subtitle">理解函数作为输入到输出的映射关系，掌握函数的多种表示方法</p>
+                    
+                    <!-- 基本概念 -->
+                    <div class="section">
+                        <h2>📚 函数的基本概念</h2>
+                        
+                        <div class="concept-grid">
+                            <div class="concept-card">
+                                <h3>函数的定义</h3>
+                                <p>函数是一种特殊的对应关系，对于每一个输入值 x，都有唯一确定的输出值 y 与之对应。</p>
+                                <p style="margin-top: 10px;"><strong>记作：</strong>y = f(x)</p>
+                                <p><strong>x：</strong>自变量（输入）</p>
+                                <p><strong>y：</strong>因变量（输出）</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>函数的表示方法</h3>
+                                <p><strong>1. 对应表：</strong>列出输入输出对应值</p>
+                                <p><strong>2. 图像：</strong>用图形表示函数关系</p>
+                                <p><strong>3. 解析式：</strong>用公式表示函数</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>一次函数</h3>
+                                <p>形如 y = kx + b（k ≠ 0）的函数称为一次函数。</p>
+                                <p><strong>k：</strong>斜率，表示直线的倾斜程度</p>
+                                <p><strong>b：</strong>截距，表示直线与 y 轴的交点</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 输入输出映射演示 -->
+                    <div class="section">
+                        <h2>🔄 输入输出映射关系</h2>
+                        
+                        <div class="mapping-demo">
+                            <h3 style="margin-bottom: 20px;">函数 y = {{ m }}x + {{ b }} 的映射</h3>
+                            
+                            <div class="mapping-container">
+                                <div class="input-box">
+                                    <h4>输入 (x)</h4>
+                                    <div style="margin-top: 20px;">
+                                        <button class="btn" 
+                                                v-for="x in [-3, -2, -1, 0, 1, 2, 3]" 
+                                                :key="x"
+                                                @click="animateMapping(x)"
+                                                style="margin: 5px; padding: 10px 15px;">
+                                            x = {{ x }}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="arrow">→</div>
+                                
+                                <div class="output-box">
+                                    <h4>输出 (y)</h4>
+                                    <div style="margin-top: 20px; font-size: 24px; font-weight: bold; color: #28a745;">
+                                        <span v-if="selectedX !== null">
+                                            y = {{ functionValue.toFixed(1) }}
+                                        </span>
+                                        <span v-else>点击左侧选择 x</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="table-container" style="margin-top: 30px;">
+                                <h4 style="margin-bottom: 15px;">对应表</h4>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>x (输入)</th>
+                                            <th v-for="item in mappingTable" :key="item.x">{{ item.x }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th>y (输出)</th>
+                                            <td v-for="item in mappingTable" 
+                                                :key="item.x"
+                                                :class="{ highlight: selectedX === item.x }">
+                                                {{ item.y.toFixed(1) }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 函数图像 -->
+                    <div class="section">
+                        <h2>📊 函数图像</h2>
+                        
+                        <div class="graph-container">
+                            <h3 style="margin-bottom: 15px;">y = {{ m }}x + {{ b }}</h3>
+                            
+                            <div class="controls">
+                                <div class="slider-group">
+                                    <label>
+                                        斜率 k (m): 
+                                        <span class="slider-value">{{ m }}</span>
+                                    </label>
+                                    <input type="range" 
+                                           v-model.number="m" 
+                                           min="-3" 
+                                           max="3" 
+                                           step="0.1"
+                                           class="slider">
+                                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                        k > 0：直线向右上方倾斜<br>
+                                        k < 0：直线向右下方倾斜<br>
+                                        k = 0：水平线
+                                    </p>
+                                </div>
+                                
+                                <div class="slider-group">
+                                    <label>
+                                        截距 b: 
+                                        <span class="slider-value">{{ b }}</span>
+                                    </label>
+                                    <input type="range" 
+                                           v-model.number="b" 
+                                           min="-5" 
+                                           max="5" 
+                                           step="0.1"
+                                           class="slider">
+                                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                        b 表示直线与 y 轴的交点坐标 (0, b)
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="graph-wrapper">
+                                <div id="graph-canvas"></div>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                                <h4 style="color: #2196f3; margin-bottom: 10px;">几何意义</h4>
+                                <p><strong>斜率 k：</strong>表示直线的倾斜程度。k 的绝对值越大，直线越陡峭。</p>
+                                <p><strong>截距 b：</strong>表示直线与 y 轴的交点。当 x = 0 时，y = b。</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习 -->
+                    <div class="section">
+                        <h2>✏️ 练习</h2>
+                        
+                        <div class="practice-area">
+                            <div v-for="q in practiceQuestions" :key="q.id" 
+                                 class="practice-question"
+                                 :class="{ correct: q.correct === true, incorrect: q.correct === false }">
+                                <p style="font-size: 18px; margin-bottom: 15px; font-weight: 500;">
+                                    {{ q.question }}
+                                </p>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <input type="text" 
+                                           v-model="q.userAnswer" 
+                                           class="answer-input"
+                                           placeholder="请输入答案"
+                                           @keyup.enter="checkAnswer(q)">
+                                    <button class="btn btn-success" @click="checkAnswer(q)">检查</button>
+                                </div>
+                                <div v-if="q.correct === true" class="feedback correct">
+                                    ✓ 正确！
+                                </div>
+                                <div v-else-if="q.correct === false" class="feedback incorrect">
+                                    ✗ 错误，正确答案：{{ q.answer }}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                                <h3 style="color: #2196f3; margin-bottom: 10px;">得分统计</h3>
+                                <p style="font-size: 18px;">
+                                    正确：<strong>{{ score.correct }}</strong> / <strong>{{ score.total }}</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

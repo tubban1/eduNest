@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>问题解决策略：画图、倒推、列表、找规律、分步推理</title>
+  <meta name="description" content="用画图、倒推、列表、找规律、分步推理解题，配合交互式提示和思路反馈，帮助学生循序渐进解决问题。" />
+  <meta name="keywords" content="画图,倒推,列表,找规律,分步推理,解题策略,提示系统,思路反馈" />
+  <script>
+    // 优先 supported-libraries.json，失败回退 libraries_cn.json
+    (function() {
+      const head = document.getElementsByTagName('head')[0];
+      const addScript = (src) => { const s=document.createElement('script'); s.src=src; head.appendChild(s); };
+      const primary = {
+        vue: "https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js",
+        gsap: "https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js",
+        konva: "https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js"
+      };
+      const fallback = {
+        vue: "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js",
+        gsap: "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js",
+        konva: "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js"
+      };
+      addScript(primary.vue);
+      addScript(primary.gsap);
+      addScript(primary.konva);
+      setTimeout(() => {
+        if (!window.Vue) addScript(fallback.vue);
+        if (!window.gsap) addScript(fallback.gsap);
+        if (!window.Konva) addScript(fallback.konva);
+      }, 800);
+    })();
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      margin: 0;
+      font-family: "Inter","PingFang SC","Microsoft YaHei",sans-serif;
+      background: #f7f8fb;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+    h1 { margin: 0 0 12px; font-size: 26px; color: #334155; }
+    .subtitle { color: #475569; margin-bottom: 16px; font-size: 15px; }
+    .section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 6px 14px rgba(15,23,42,0.08);
+      margin-bottom: 16px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      font-size: 12px;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .btn {
+      background: linear-gradient(120deg, #6366f1, #22c55e);
+      border: none;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(99,102,241,0.3); }
+    .btn-ghost {
+      background: #fff;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      padding: 7px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .list { padding-left: 16px; margin: 6px 0 0; color: #475569; }
+    textarea, input, select {
+      font-family: inherit;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .steps { margin-top: 10px; }
+    .step {
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      position: relative;
+    }
+    .hint {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #ecfeff;
+      color: #0891b2;
+      font-size: 12px;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+    .score { font-weight: 700; color: #16a34a; }
+    .animation-container {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 12px;
+      background: #f8fafc;
+      min-height: 300px;
+    }
+    .canvas-wrapper {
+      width: 100%;
+      height: 350px;
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .canvas-wrapper-large {
+      height: 500px;
+    }
+    .animation-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    const waitLibs = (cb, retry = 0) => {
+      if (window.Vue) return cb();
+      if (retry > 30) return console.error('库加载失败');
+      setTimeout(() => waitLibs(cb, retry + 1), 100);
+    };
+
+    waitLibs(() => {
+      const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+      createApp({
+        setup() {
+          const strategies = ref([
+            { name: '画图', desc: '把文字转成图示，关系更直观。适合几何、排列、路线类问题。' },
+            { name: '倒推', desc: '从结果往前推，减少分支。适合“已知结局”或“逆向条件”题。' },
+            { name: '列表', desc: '列出所有可能或步骤，防止遗漏。适合枚举、组合、时间线。' },
+            { name: '找规律', desc: '观察递推、周期、等差/等比、奇偶交替等。适合数列、网格、重复结构。' },
+            { name: '分步推理', desc: '把复杂任务拆成小目标，每步确认后再前进。适合多条件综合题。' }
+          ]);
+
+          const sampleProblem = ref({
+            title: '示例题：一串数字 2, 5, 8, 11, 14, … ，第 20 项是多少？',
+            recommended: ['找规律','分步推理'],
+            steps: [
+              '先观察相邻项差值：5-2=3，8-5=3，…… 似乎是等差数列。',
+              '确定首项 a1=2，公差 d=3。',
+              '通项公式：an = a1 + (n-1)*d。',
+              '带入 n=20：a20 = 2 + 19*3 = 59。'
+            ]
+          });
+
+          const stepVisible = ref(false);
+          const userIdea = ref('');
+          const feedback = ref('');
+
+          const evaluateIdea = () => {
+            const idea = (userIdea.value || '').toLowerCase();
+            if (!idea.trim()) {
+              feedback.value = '先写下你的想法，比如：先找相邻差值，看看是不是等差。';
+              return;
+            }
+            const hits = [];
+            if (idea.includes('差') || idea.includes('等差') || idea.includes('公差')) hits.push('找到公差/差值');
+            if (idea.includes('公式') || idea.includes('通项')) hits.push('写出通项公式');
+            if (idea.includes('代') || idea.includes('n') || idea.includes('20')) hits.push('代入 n=20 计算');
+            if (idea.includes('步骤') || idea.includes('分步')) hits.push('分步推理');
+            if (!hits.length) {
+              feedback.value = '可以试试：1) 观察相邻差值；2) 写通项公式；3) 代入第20项。';
+            } else {
+              feedback.value = '不错，已经提到：' + hits.join('，') + '。继续把计算写完整即可。';
+            }
+          };
+
+          // 动画状态
+          const animating = ref({});
+          const animationStages = ref({});
+
+          // 画图策略动画：具体问题 - 矩形面积问题
+          const initDrawingAnimation = (containerId) => {
+            if (typeof Konva === 'undefined' || !window.gsap) return;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const stage = new Konva.Stage({
+              container: containerId,
+              width: container.offsetWidth || 600,
+              height: 350
+            });
+            const layer = new Konva.Layer();
+            stage.add(layer);
+            
+            animating.value[containerId] = false;
+            animationStages.value[containerId] = { stage, layer };
+            
+            const drawInitial = () => {
+              layer.destroyChildren();
+              const text = new Konva.Text({
+                x: stage.width() / 2,
+                y: stage.height() / 2,
+                text: '问题：一个长方形，长比宽多6米，如果长增加2米，宽减少1米，\n面积不变。求原长方形的长和宽。\n\n点击"播放动画"查看画图策略',
+                fontSize: 13,
+                fill: '#666',
+                align: 'center',
+                offsetX: 250
+              });
+              layer.add(text);
+              layer.draw();
+            };
+            drawInitial();
+          };
+
+          const playDrawingAnimation = (containerId) => {
+            if (animating.value[containerId]) return;
+            const { stage, layer } = animationStages.value[containerId];
+            if (!stage || !layer) return;
+            
+            animating.value[containerId] = true;
+            layer.destroyChildren();
+            
+            const w = stage.width();
+            const h = stage.height();
+            const centerX = w / 2;
+            const startY = 80;
+            
+            const timeline = gsap.timeline({
+              onComplete: () => { animating.value[containerId] = false; }
+            });
+            
+            // 步骤1：画出原长方形（设宽为x，长为x+6）
+            const rect1X = centerX - 150;
+            const rect1Y = startY;
+            const rect1Width = 80;
+            const rect1Height = 60;
+            
+            const rect1 = new Konva.Rect({
+              x: rect1X,
+              y: rect1Y,
+              width: 0,
+              height: 0,
+              fill: 'rgba(102, 126, 234, 0.2)',
+              stroke: '#667eea',
+              strokeWidth: 2,
+              opacity: 0
+            });
+            layer.add(rect1);
+            
+            timeline.to(rect1, { opacity: 1, duration: 0.3 }, 0)
+              .to({ value: 0 }, {
+                value: 1,
+                duration: 0.6,
+                ease: 'power2.out',
+                onUpdate: function() {
+                  const progress = this.targets()[0].value;
+                  rect1.width(rect1Width * progress);
+                  rect1.height(rect1Height * progress);
+                  layer.draw();
+                }
+              });
+            
+            // 标注原长方形
+            const label1a = new Konva.Text({
+              x: rect1X + rect1Width / 2,
+              y: rect1Y - 20,
+              text: '原长方形',
+              fontSize: 12,
+              fill: '#667eea',
+              align: 'center',
+              offsetX: 30,
+              opacity: 0
+            });
+            const label1b = new Konva.Text({
+              x: rect1X + rect1Width + 5,
+              y: rect1Y + rect1Height / 2,
+              text: 'x+6',
+              fontSize: 12,
+              fill: '#4338ca',
+              fontStyle: 'bold',
+              opacity: 0
+            });
+            const label1c = new Konva.Text({
+              x: rect1X + rect1Width / 2,
+              y: rect1Y + rect1Height + 5,
+              text: 'x',
+              fontSize: 12,
+              fill: '#4338ca',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 15,
+              opacity: 0
+            });
+            layer.add(label1a);
+            layer.add(label1b);
+            layer.add(label1c);
+            
+            timeline.to([label1a, label1b, label1c], { opacity: 1, duration: 0.3 }, 0.9);
+            
+            // 步骤2：画出新长方形（长+2，宽-1）
+            const rect2X = centerX + 50;
+            const rect2Y = startY;
+            const rect2Width = 90; // 长增加2（比例上增加）
+            const rect2Height = 50; // 宽减少1（比例上减少）
+            
+            const rect2 = new Konva.Rect({
+              x: rect2X,
+              y: rect2Y,
+              width: 0,
+              height: 0,
+              fill: 'rgba(34, 197, 94, 0.2)',
+              stroke: '#22c55e',
+              strokeWidth: 2,
+              opacity: 0
+            });
+            layer.add(rect2);
+            
+            timeline.to({}, { duration: 0.8 }, 1.5)
+              .to(rect2, { opacity: 1, duration: 0.3 })
+              .to({ value: 0 }, {
+                value: 1,
+                duration: 0.6,
+                ease: 'power2.out',
+                onUpdate: function() {
+                  const progress = this.targets()[0].value;
+                  rect2.width(rect2Width * progress);
+                  rect2.height(rect2Height * progress);
+                  layer.draw();
+                }
+              });
+            
+            // 标注新长方形
+            const label2a = new Konva.Text({
+              x: rect2X + rect2Width / 2,
+              y: rect2Y - 20,
+              text: '新长方形',
+              fontSize: 12,
+              fill: '#22c55e',
+              align: 'center',
+              offsetX: 35,
+              opacity: 0
+            });
+            const label2b = new Konva.Text({
+              x: rect2X + rect2Width + 5,
+              y: rect2Y + rect2Height / 2,
+              text: 'x+6+2',
+              fontSize: 12,
+              fill: '#16a34a',
+              fontStyle: 'bold',
+              opacity: 0
+            });
+            const label2c = new Konva.Text({
+              x: rect2X + rect2Width / 2,
+              y: rect2Y + rect2Height + 5,
+              text: 'x-1',
+              fontSize: 12,
+              fill: '#16a34a',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 20,
+              opacity: 0
+            });
+            layer.add(label2a);
+            layer.add(label2b);
+            layer.add(label2c);
+            
+            timeline.to([label2a, label2b, label2c], { opacity: 1, duration: 0.3 }, 2.9);
+            
+            // 步骤3：列出等式（面积相等）
+            const eqText = new Konva.Text({
+              x: centerX,
+              y: startY + 120,
+              text: '面积相等：x(x+6) = (x-1)(x+8)',
+              fontSize: 14,
+              fill: '#f59e0b',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 140,
+              opacity: 0
+            });
+            layer.add(eqText);
+            
+            timeline.to(eqText, { opacity: 1, duration: 0.5 }, 3.5);
+            
+            // 步骤4：解方程
+            const solveText1 = new Konva.Text({
+              x: centerX,
+              y: startY + 150,
+              text: '展开：x² + 6x = x² + 7x - 8',
+              fontSize: 13,
+              fill: '#666',
+              align: 'center',
+              offsetX: 130,
+              opacity: 0
+            });
+            const solveText2 = new Konva.Text({
+              x: centerX,
+              y: startY + 175,
+              text: '化简：6x = 7x - 8',
+              fontSize: 13,
+              fill: '#666',
+              align: 'center',
+              offsetX: 100,
+              opacity: 0
+            });
+            const solveText3 = new Konva.Text({
+              x: centerX,
+              y: startY + 200,
+              text: '解得：x = 8',
+              fontSize: 13,
+              fill: '#666',
+              align: 'center',
+              offsetX: 50,
+              opacity: 0
+            });
+            layer.add(solveText1);
+            layer.add(solveText2);
+            layer.add(solveText3);
+            
+            timeline.to(solveText1, { opacity: 1, duration: 0.4 }, 4.2)
+              .to(solveText2, { opacity: 1, duration: 0.4 }, 4.6)
+              .to(solveText3, { opacity: 1, duration: 0.4 }, 5.0);
+            
+            // 步骤5：显示答案
+            const answerText = new Konva.Text({
+              x: centerX,
+              y: startY + 235,
+              text: '答案：原长方形长=14米，宽=8米',
+              fontSize: 14,
+              fill: '#16a34a',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 140,
+              opacity: 0
+            });
+            layer.add(answerText);
+            timeline.to(answerText, { opacity: 1, duration: 0.5 }, 5.6);
+            
+            layer.draw();
+          };
+
+          // 倒推策略动画：具体问题 - 年龄倒推
+          const initBackwardAnimation = (containerId) => {
+            if (typeof Konva === 'undefined') return;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const stage = new Konva.Stage({
+              container: containerId,
+              width: container.offsetWidth || 600,
+              height: 350
+            });
+            const layer = new Konva.Layer();
+            stage.add(layer);
+            
+            animating.value[containerId] = false;
+            animationStages.value[containerId] = { stage, layer };
+            
+            const text = new Konva.Text({
+              x: stage.width() / 2,
+              y: stage.height() / 2,
+              text: '问题：小明说："我的年龄加上5，再乘以3，最后减去10，等于20。"\n求小明的年龄。\n\n点击"播放动画"查看倒推策略',
+              fontSize: 13,
+              fill: '#666',
+              align: 'center',
+              offsetX: 250
+            });
+            layer.add(text);
+            layer.draw();
+          };
+
+          const playBackwardAnimation = (containerId) => {
+            if (animating.value[containerId]) return;
+            const { stage, layer } = animationStages.value[containerId];
+            if (!stage || !layer) return;
+            
+            animating.value[containerId] = true;
+            layer.destroyChildren();
+            
+            const w = stage.width();
+            const h = stage.height();
+            const centerY = h / 2;
+            const startX = 60;
+            const stepWidth = 130;
+            
+            const timeline = gsap.timeline({
+              onComplete: () => { animating.value[containerId] = false; }
+            });
+            
+            // 步骤1：显示最终结果 20
+            const result20 = new Konva.Text({
+              x: startX,
+              y: centerY,
+              text: '20',
+              fontSize: 32,
+              fill: '#667eea',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 15,
+              opacity: 0
+            });
+            const label20 = new Konva.Text({
+              x: startX,
+              y: centerY + 35,
+              text: '最终结果',
+              fontSize: 12,
+              fill: '#666',
+              align: 'center',
+              offsetX: 30,
+              opacity: 0
+            });
+            layer.add(result20);
+            layer.add(label20);
+            
+            timeline.to(result20, { opacity: 1, duration: 0.4 }, 0)
+              .to(label20, { opacity: 1, duration: 0.3 }, 0.4);
+            
+            // 步骤2：倒推第一步，+10（原来减10，现在加10）
+            const arrow1 = new Konva.Arrow({
+              x: startX + stepWidth,
+              y: centerY,
+              points: [0, 0, 50, 0],
+              pointerLength: 10,
+              pointerWidth: 10,
+              fill: '#4338ca',
+              stroke: '#4338ca',
+              strokeWidth: 2,
+              opacity: 0
+            });
+            const text1 = new Konva.Text({
+              x: startX + stepWidth + 25,
+              y: centerY - 20,
+              text: '倒推：+10',
+              fontSize: 11,
+              fill: '#4338ca',
+              opacity: 0
+            });
+            const text1Detail = new Konva.Text({
+              x: startX + stepWidth + 25,
+              y: centerY - 8,
+              text: '（原减10，现加10）',
+              fontSize: 10,
+              fill: '#666',
+              opacity: 0
+            });
+            const result30 = new Konva.Text({
+              x: startX + stepWidth * 2,
+              y: centerY,
+              text: '30',
+              fontSize: 32,
+              fill: '#22c55e',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 15,
+              opacity: 0
+            });
+            layer.add(arrow1);
+            layer.add(text1);
+            layer.add(text1Detail);
+            layer.add(result30);
+            
+            timeline.to(arrow1, { opacity: 1, duration: 0.3 }, 1.2)
+              .to([text1, text1Detail], { opacity: 1, duration: 0.3 }, 1.2)
+              .to(result30, { opacity: 1, duration: 0.4 }, 1.5);
+            
+            // 步骤3：倒推第二步，÷3（原乘3，现除3）
+            const arrow2 = new Konva.Arrow({
+              x: startX + stepWidth * 2 + 50,
+              y: centerY,
+              points: [0, 0, 50, 0],
+              pointerLength: 10,
+              pointerWidth: 10,
+              fill: '#16a34a',
+              stroke: '#16a34a',
+              strokeWidth: 2,
+              opacity: 0
+            });
+            const text2 = new Konva.Text({
+              x: startX + stepWidth * 2 + 75,
+              y: centerY - 20,
+              text: '倒推：÷3',
+              fontSize: 11,
+              fill: '#16a34a',
+              opacity: 0
+            });
+            const text2Detail = new Konva.Text({
+              x: startX + stepWidth * 2 + 75,
+              y: centerY - 8,
+              text: '（原乘3，现除3）',
+              fontSize: 10,
+              fill: '#666',
+              opacity: 0
+            });
+            const result10 = new Konva.Text({
+              x: startX + stepWidth * 3,
+              y: centerY,
+              text: '10',
+              fontSize: 32,
+              fill: '#f59e0b',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 15,
+              opacity: 0
+            });
+            layer.add(arrow2);
+            layer.add(text2);
+            layer.add(text2Detail);
+            layer.add(result10);
+            
+            timeline.to(arrow2, { opacity: 1, duration: 0.3 }, 2.5)
+              .to([text2, text2Detail], { opacity: 1, duration: 0.3 }, 2.5)
+              .to(result10, { opacity: 1, duration: 0.4 }, 2.8);
+            
+            // 步骤4：倒推第三步，-5（原加5，现减5）
+            const arrow3 = new Konva.Arrow({
+              x: startX + stepWidth * 3 + 50,
+              y: centerY,
+              points: [0, 0, 50, 0],
+              pointerLength: 10,
+              pointerWidth: 10,
+              fill: '#d97706',
+              stroke: '#d97706',
+              strokeWidth: 2,
+              opacity: 0
+            });
+            const text3 = new Konva.Text({
+              x: startX + stepWidth * 3 + 75,
+              y: centerY - 20,
+              text: '倒推：-5',
+              fontSize: 11,
+              fill: '#d97706',
+              opacity: 0
+            });
+            const text3Detail = new Konva.Text({
+              x: startX + stepWidth * 3 + 75,
+              y: centerY - 8,
+              text: '（原加5，现减5）',
+              fontSize: 10,
+              fill: '#666',
+              opacity: 0
+            });
+            const result5 = new Konva.Text({
+              x: startX + stepWidth * 4,
+              y: centerY,
+              text: '5 ✓',
+              fontSize: 32,
+              fill: '#16a34a',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 20,
+              opacity: 0
+            });
+            layer.add(arrow3);
+            layer.add(text3);
+            layer.add(text3Detail);
+            layer.add(result5);
+            
+            timeline.to(arrow3, { opacity: 1, duration: 0.3 }, 3.8)
+              .to([text3, text3Detail], { opacity: 1, duration: 0.3 }, 3.8)
+              .to(result5, { opacity: 1, duration: 0.4 }, 4.1);
+            
+            // 显示答案
+            const answerText = new Konva.Text({
+              x: w / 2,
+              y: centerY + 60,
+              text: '答案：小明5岁',
+              fontSize: 14,
+              fill: '#16a34a',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 60,
+              opacity: 0
+            });
+            layer.add(answerText);
+            timeline.to(answerText, { opacity: 1, duration: 0.5 }, 4.8);
+            
+            layer.draw();
+          };
+
+          // 列表策略动画：具体问题 - 组合问题
+          const initListAnimation = (containerId) => {
+            if (typeof Konva === 'undefined') return;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const stage = new Konva.Stage({
+              container: containerId,
+              width: container.offsetWidth || 600,
+              height: 350
+            });
+            const layer = new Konva.Layer();
+            stage.add(layer);
+            
+            animating.value[containerId] = false;
+            animationStages.value[containerId] = { stage, layer };
+            
+            const text = new Konva.Text({
+              x: stage.width() / 2,
+              y: stage.height() / 2,
+              text: '问题：从4个不同的球（红、黄、蓝、绿）中选择2个，\n有多少种不同的选法？\n\n点击"播放动画"查看列表策略',
+              fontSize: 13,
+              fill: '#666',
+              align: 'center',
+              offsetX: 220
+            });
+            layer.add(text);
+            layer.draw();
+          };
+
+          const playListAnimation = (containerId) => {
+            if (animating.value[containerId]) return;
+            const { stage, layer } = animationStages.value[containerId];
+            if (!stage || !layer) return;
+            
+            animating.value[containerId] = true;
+            layer.destroyChildren();
+            
+            const w = stage.width();
+            const h = stage.height();
+            const startX = 80;
+            const startY = 80;
+            
+            const timeline = gsap.timeline({
+              onComplete: () => { animating.value[containerId] = false; }
+            });
+            
+            // 先显示4个球
+            const balls = [
+              { name: '红', color: '#ef4444', x: startX, y: startY },
+              { name: '黄', color: '#f59e0b', x: startX + 80, y: startY },
+              { name: '蓝', color: '#3b82f6', x: startX + 160, y: startY },
+              { name: '绿', color: '#22c55e', x: startX + 240, y: startY }
+            ];
+            
+            balls.forEach((ball, idx) => {
+              const circle = new Konva.Circle({
+                x: ball.x,
+                y: ball.y,
+                radius: 0,
+                fill: ball.color,
+                stroke: '#333',
+                strokeWidth: 2,
+                opacity: 0
+              });
+              const label = new Konva.Text({
+                x: ball.x,
+                y: ball.y + 25,
+                text: ball.name,
+                fontSize: 12,
+                fill: '#333',
+                align: 'center',
+                offsetX: 12,
+                opacity: 0
+              });
+              layer.add(circle);
+              layer.add(label);
+              
+              const radiusProps = { r: 0 };
+              timeline.to(circle, { opacity: 1, duration: 0.2 }, idx * 0.2)
+                .to(radiusProps, {
+                  r: 20,
+                  duration: 0.4,
+                  ease: 'back.out',
+                  onUpdate: () => {
+                    circle.radius(radiusProps.r);
+                    layer.draw();
+                  }
+                })
+                .to(label, { opacity: 1, duration: 0.2 }, '-=0.2');
+            });
+            
+            // 列出所有组合
+            const combinations = [
+              { pair: ['红', '黄'], colors: ['#ef4444', '#f59e0b'], x: startX, y: startY + 80 },
+              { pair: ['红', '蓝'], colors: ['#ef4444', '#3b82f6'], x: startX + 120, y: startY + 80 },
+              { pair: ['红', '绿'], colors: ['#ef4444', '#22c55e'], x: startX + 240, y: startY + 80 },
+              { pair: ['黄', '蓝'], colors: ['#f59e0b', '#3b82f6'], x: startX, y: startY + 140 },
+              { pair: ['黄', '绿'], colors: ['#f59e0b', '#22c55e'], x: startX + 120, y: startY + 140 },
+              { pair: ['蓝', '绿'], colors: ['#3b82f6', '#22c55e'], x: startX + 240, y: startY + 140 }
+            ];
+            
+            timeline.to({}, { duration: 0.5 }, balls.length * 0.2 + 0.5);
+            
+            const comboStartTime = balls.length * 0.2 + 1.0;
+            combinations.forEach((combo, idx) => {
+              const comboGroup = new Konva.Group({
+                x: combo.x,
+                y: combo.y,
+                opacity: 0,
+                scaleX: 0,
+                scaleY: 0
+              });
+              
+              combo.pair.forEach((name, i) => {
+                const circle = new Konva.Circle({
+                  x: i * 35,
+                  y: 0,
+                  radius: 15,
+                  fill: combo.colors[i],
+                  stroke: '#333',
+                  strokeWidth: 2
+                });
+                const label = new Konva.Text({
+                  x: i * 35,
+                  y: 20,
+                  text: name,
+                  fontSize: 11,
+                  fill: '#333',
+                  align: 'center',
+                  offsetX: 8
+                });
+                comboGroup.add(circle);
+                comboGroup.add(label);
+              });
+              
+              const connector = new Konva.Line({
+                points: [15, 0, 50, 0],
+                stroke: '#999',
+                strokeWidth: 1,
+                opacity: 0.5
+              });
+              comboGroup.add(connector);
+              
+              layer.add(comboGroup);
+              
+              timeline.to(comboGroup, { opacity: 1, duration: 0.2 }, comboStartTime + idx * 0.15)
+                .to({ scale: 0 }, {
+                  scale: 1,
+                  duration: 0.3,
+                  ease: 'back.out',
+                  onUpdate: function() {
+                    const s = this.targets()[0].scale;
+                    comboGroup.scaleX(s);
+                    comboGroup.scaleY(s);
+                    layer.draw();
+                  }
+                }, `-=${0.1}`);
+            });
+            
+            // 显示答案
+            const answerText = new Konva.Text({
+              x: w / 2,
+              y: startY + 220,
+              text: '答案：共 6 种不同的选法',
+              fontSize: 14,
+              fill: '#16a34a',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 100,
+              opacity: 0
+            });
+            layer.add(answerText);
+            timeline.to(answerText, { opacity: 1, duration: 0.5 }, comboStartTime + combinations.length * 0.15 + 0.3);
+            
+            layer.draw();
+          };
+
+          // 找规律策略动画：具体问题 - 图形规律
+          const initPatternAnimation = (containerId) => {
+            if (typeof Konva === 'undefined') return;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const stage = new Konva.Stage({
+              container: containerId,
+              width: container.offsetWidth || 600,
+              height: 350
+            });
+            const layer = new Konva.Layer();
+            stage.add(layer);
+            
+            animating.value[containerId] = false;
+            animationStages.value[containerId] = { stage, layer };
+            
+            const text = new Konva.Text({
+              x: stage.width() / 2,
+              y: stage.height() / 2,
+              text: '问题：观察图形序列，第1个有1个点，第2个有4个点，\n第3个有9个点，第4个有16个点...第10个有多少个点？\n\n点击"播放动画"查看找规律策略',
+              fontSize: 13,
+              fill: '#666',
+              align: 'center',
+              offsetX: 250
+            });
+            layer.add(text);
+            layer.draw();
+          };
+
+          const playPatternAnimation = (containerId) => {
+            if (animating.value[containerId]) return;
+            const { stage, layer } = animationStages.value[containerId];
+            if (!stage || !layer) return;
+            
+            animating.value[containerId] = true;
+            layer.destroyChildren();
+            
+            const w = stage.width();
+            const h = stage.height();
+            const startX = 60;
+            const startY = 80;
+            
+            const timeline = gsap.timeline({
+              onComplete: () => { animating.value[containerId] = false; }
+            });
+            
+            // 显示前4个图形和点的数量
+            const patterns = [
+              { n: 1, dots: 1, label: '第1个' },
+              { n: 2, dots: 4, label: '第2个' },
+              { n: 3, dots: 9, label: '第3个' },
+              { n: 4, dots: 16, label: '第4个' }
+            ];
+            
+            patterns.forEach((pattern, idx) => {
+              const x = startX + idx * 120;
+              const dotSize = 4;
+              const spacing = 12;
+              const side = Math.sqrt(pattern.dots);
+              
+              // 绘制点阵（简化显示为数字）
+              const rect = new Konva.Rect({
+                x: x,
+                y: startY,
+                width: 80,
+                height: 60,
+                fill: '#f0f9ff',
+                stroke: '#667eea',
+                strokeWidth: 2,
+                cornerRadius: 8,
+                opacity: 0
+              });
+              const dotText = new Konva.Text({
+                x: x + 40,
+                y: startY + 20,
+                text: `${pattern.dots}个点`,
+                fontSize: 14,
+                fill: '#4338ca',
+                fontStyle: 'bold',
+                align: 'center',
+                offsetX: 30,
+                opacity: 0
+              });
+              const label = new Konva.Text({
+                x: x + 40,
+                y: startY - 20,
+                text: pattern.label,
+                fontSize: 11,
+                fill: '#666',
+                align: 'center',
+                offsetX: 25,
+                opacity: 0
+              });
+              
+              layer.add(rect);
+              layer.add(dotText);
+              layer.add(label);
+              
+              timeline.to(rect, { opacity: 1, duration: 0.3 }, idx * 0.25)
+                .to([dotText, label], { opacity: 1, duration: 0.3 }, `-=${0.2}`);
+            });
+            
+            // 显示规律发现过程
+            timeline.to({}, { duration: 0.5 }, patterns.length * 0.25 + 0.5);
+            
+            const patternText1 = new Konva.Text({
+              x: w / 2,
+              y: startY + 90,
+              text: '观察：1 = 1²，4 = 2²，9 = 3²，16 = 4²',
+              fontSize: 13,
+              fill: '#f59e0b',
+              align: 'center',
+              offsetX: 150,
+              opacity: 0
+            });
+            layer.add(patternText1);
+            
+            timeline.to(patternText1, { opacity: 1, duration: 0.5 }, patterns.length * 0.25 + 1.2);
+            
+            const patternText2 = new Konva.Text({
+              x: w / 2,
+              y: startY + 120,
+              text: '规律：第n个图形的点数 = n²',
+              fontSize: 14,
+              fill: '#22c55e',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 120,
+              opacity: 0
+            });
+            layer.add(patternText2);
+            
+            timeline.to(patternText2, { opacity: 1, duration: 0.5 }, patterns.length * 0.25 + 1.9);
+            
+            const answerText = new Konva.Text({
+              x: w / 2,
+              y: startY + 160,
+              text: '答案：第10个图形有 10² = 100 个点',
+              fontSize: 15,
+              fill: '#16a34a',
+              fontStyle: 'bold',
+              align: 'center',
+              offsetX: 140,
+              opacity: 0
+            });
+            layer.add(answerText);
+            
+            timeline.to(answerText, { opacity: 1, duration: 0.5 }, patterns.length * 0.25 + 2.6);
+            
+            layer.draw();
+          };
+
+          // 分步推理动画：具体问题 - 工作问题
+          const initStepwiseAnimation = (containerId) => {
+            if (typeof Konva === 'undefined') return;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const stage = new Konva.Stage({
+              container: containerId,
+              width: container.offsetWidth || 600,
+              height: 500
+            });
+            const layer = new Konva.Layer();
+            stage.add(layer);
+            
+            animating.value[containerId] = false;
+            animationStages.value[containerId] = { stage, layer };
+            
+            const text = new Konva.Text({
+              x: stage.width() / 2,
+              y: stage.height() / 2,
+              text: '问题：甲单独完成一项工作需要12天，乙单独完成需要18天。\n如果两人合作，多少天可以完成？\n\n点击"播放动画"查看分步推理策略',
+              fontSize: 13,
+              fill: '#666',
+              align: 'center',
+              offsetX: 250
+            });
+            layer.add(text);
+            layer.draw();
+          };
+
+          const playStepwiseAnimation = (containerId) => {
+            if (animating.value[containerId]) return;
+            const { stage, layer } = animationStages.value[containerId];
+            if (!stage || !layer) return;
+            
+            animating.value[containerId] = true;
+            layer.destroyChildren();
+            
+            const w = stage.width();
+            const h = stage.height();
+            
+            const timeline = gsap.timeline({
+              onComplete: () => { animating.value[containerId] = false; }
+            });
+            
+            const steps = [
+              { 
+                label: '步骤1：求工作效率', 
+                calc: '甲：1÷12 = 1/12（每天）\n乙：1÷18 = 1/18（每天）', 
+                result: '', 
+                y: 20,
+                height: 85
+              },
+              { 
+                label: '步骤2：求合作效率', 
+                calc: '1/12 + 1/18 = 3/36 + 2/36 = 5/36', 
+                result: '合作每天完成 5/36', 
+                y: 120,
+                height: 85
+              },
+              { 
+                label: '步骤3：求完成时间', 
+                calc: '1 ÷ (5/36) = 36/5 = 7.2天', 
+                result: '', 
+                y: 220,
+                height: 75
+              },
+              { 
+                label: '答案', 
+                calc: '', 
+                result: '两人合作需要 7.2 天（或 7又1/5 天）', 
+                y: 310,
+                height: 65
+              }
+            ];
+            
+            steps.forEach((step, idx) => {
+              const stepRect = new Konva.Rect({
+                x: 50,
+                y: step.y,
+                width: w - 100,
+                height: step.height,
+                fill: idx === steps.length - 1 ? '#ecfdf5' : '#f0f9ff',
+                stroke: idx === steps.length - 1 ? '#16a34a' : '#667eea',
+                strokeWidth: 2,
+                cornerRadius: 8,
+                opacity: 0,
+                scaleY: 0
+              });
+              const stepLabel = new Konva.Text({
+                x: 60,
+                y: step.y + 12,
+                text: step.label,
+                fontSize: 14,
+                fill: idx === steps.length - 1 ? '#16a34a' : '#4338ca',
+                fontStyle: 'bold',
+                opacity: 0
+              });
+              
+              layer.add(stepRect);
+              layer.add(stepLabel);
+              
+              const textElements = [stepLabel];
+              
+              if (step.calc) {
+                const calcLines = step.calc.split('\n');
+                if (calcLines.length > 1) {
+                  // 多行计算过程
+                  calcLines.forEach((line, lineIdx) => {
+                    const stepCalc = new Konva.Text({
+                      x: 60,
+                      y: step.y + 35 + lineIdx * 20,
+                      text: line,
+                      fontSize: 13,
+                      fill: '#333',
+                      opacity: 0
+                    });
+                    layer.add(stepCalc);
+                    textElements.push(stepCalc);
+                  });
+                } else {
+                  const stepCalc = new Konva.Text({
+                    x: 60,
+                    y: step.y + 38,
+                    text: step.calc,
+                    fontSize: 13,
+                    fill: '#333',
+                    opacity: 0
+                  });
+                  layer.add(stepCalc);
+                  textElements.push(stepCalc);
+                }
+              }
+              
+              if (step.result) {
+                const resultY = idx === steps.length - 1 ? 
+                  (step.calc && step.calc.includes('\n') ? step.y + 65 : step.y + 45) : 
+                  (step.calc && step.calc.includes('\n') ? step.y + 72 : step.y + 58);
+                const stepResult = new Konva.Text({
+                  x: 60,
+                  y: resultY,
+                  text: step.result,
+                  fontSize: idx === steps.length - 1 ? 15 : 13,
+                  fill: idx === steps.length - 1 ? '#16a34a' : '#667eea',
+                  fontStyle: 'bold',
+                  opacity: 0
+                });
+                layer.add(stepResult);
+                textElements.push(stepResult);
+              }
+              
+              const rectScaleY = { scaleY: 0 };
+              timeline.to(stepRect, { opacity: 1, duration: 0.1 }, idx * 1.0)
+              .to(rectScaleY, {
+                scaleY: 1,
+                duration: 0.4,
+                ease: 'power2.out',
+                onUpdate: () => {
+                  stepRect.scaleY(rectScaleY.scaleY);
+                  layer.draw();
+                }
+              }, `-=${0.1}`)
+              .to(textElements, {
+                opacity: 1,
+                duration: 0.3
+              }, idx * 1.0 + 0.3);
+            });
+            
+            layer.draw();
+          };
+
+          const quiz = ref([
+            {
+              id: 1,
+              q: '遇到“已知最终状态，要求反推初始”时，优先哪种策略？',
+              type: 'single',
+              options: ['画图','倒推','列表','找规律'],
+              ans: '倒推',
+              user: ''
+            },
+            {
+              id: 2,
+              q: '一个周期为 4 的规律，第 13 项与第几项相同？',
+              type: 'number',
+              ans: 1, // 13 mod 4 =1
+              user: ''
+            },
+            {
+              id: 3,
+              q: '在“座位排列/分组”容易遗漏的情形，哪种策略能防止漏数？',
+              type: 'single',
+              options: ['找规律','倒推','列表','分步推理'],
+              ans: '列表',
+              user: ''
+            }
+          ]);
+          const score = ref(null);
+
+          const grade = () => {
+            let c = 0;
+            quiz.value.forEach(item => {
+              if (item.type === 'single' && item.user === item.ans) c++;
+              if (item.type === 'number' && Number(item.user) === item.ans) c++;
+            });
+            score.value = `${c}/${quiz.value.length}`;
+          };
+
+          onMounted(() => {
+            // 轻微动效
+            if (window.gsap) {
+              gsap.from('.section', { opacity: 0, y: 20, duration: 0.6, stagger: 0.1 });
+            }
+            
+            // 初始化动画容器
+            nextTick(() => {
+              setTimeout(() => {
+                ['drawing-demo', 'backward-demo', 'list-demo', 'pattern-demo', 'stepwise-demo'].forEach(id => {
+                  if (id === 'drawing-demo') initDrawingAnimation(id);
+                  else if (id === 'backward-demo') initBackwardAnimation(id);
+                  else if (id === 'list-demo') initListAnimation(id);
+                  else if (id === 'pattern-demo') initPatternAnimation(id);
+                  else if (id === 'stepwise-demo') initStepwiseAnimation(id);
+                });
+              }, 500);
+            });
+          });
+
+          return {
+            strategies,
+            sampleProblem,
+            stepVisible,
+            userIdea,
+            feedback,
+            quiz,
+            score,
+            evaluateIdea,
+            grade,
+            animating,
+            playDrawingAnimation,
+            playBackwardAnimation,
+            playListAnimation,
+            playPatternAnimation,
+            playStepwiseAnimation
+          };
+        },
+        template: `
+          <div class="container">
+            <h1>问题解决策略</h1>
+            <div class="subtitle">画图 · 倒推 · 列表 · 找规律 · 分步推理 —— 把思路拆开、看清、走稳。</div>
+
+            <div class="section">
+              <h3>核心策略</h3>
+              <div class="grid-2">
+                <div class="card">
+                  <strong>策略说明</strong>
+                  <div style="margin-top: 8px;">
+                    <div v-for="s in strategies" :key="s.name" style="margin-bottom:8px;">
+                      <span class="tag">{{ s.name }}</span>
+                      <div class="hint">{{ s.desc }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card">
+                  <strong>快速选择</strong>
+                  <div class="hint" style="margin-top:8px;">根据题型挑选策略：</div>
+                  <div class="pill">几何/路线：画图</div>
+                  <div class="pill">已知结局：倒推</div>
+                  <div class="pill">枚举/分组：列表</div>
+                  <div class="pill">数列/周期：找规律</div>
+                  <div class="pill">条件多、易乱：分步推理</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>策略动画演示</h3>
+              
+              <div style="margin-bottom: 20px;">
+                <h4>1. 画图策略</h4>
+                <div class="hint"><strong>具体问题：</strong>一个长方形，长比宽多6米，如果长增加2米，宽减少1米，面积不变。求原长方形的长和宽。</div>
+                <div class="hint">把抽象问题转化为直观的图形，帮助理解关系</div>
+                <div class="animation-container">
+                  <div id="drawing-demo" class="canvas-wrapper"></div>
+                  <div class="animation-controls">
+                    <button class="btn btn-small" @click="playDrawingAnimation('drawing-demo')" :disabled="animating['drawing-demo']">
+                      {{ animating['drawing-demo'] ? '播放中...' : '播放动画' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h4>2. 倒推策略</h4>
+                <div class="hint"><strong>具体问题：</strong>小明说："我的年龄加上5，再乘以3，最后减去10，等于20。"求小明的年龄。</div>
+                <div class="hint">从最终结果出发，逆向推导初始条件</div>
+                <div class="animation-container">
+                  <div id="backward-demo" class="canvas-wrapper"></div>
+                  <div class="animation-controls">
+                    <button class="btn btn-small" @click="playBackwardAnimation('backward-demo')" :disabled="animating['backward-demo']">
+                      {{ animating['backward-demo'] ? '播放中...' : '播放动画' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h4>3. 列表策略</h4>
+                <div class="hint"><strong>具体问题：</strong>从4个不同的球（红、黄、蓝、绿）中选择2个，有多少种不同的选法？</div>
+                <div class="hint">系统列出所有可能情况，避免遗漏</div>
+                <div class="animation-container">
+                  <div id="list-demo" class="canvas-wrapper"></div>
+                  <div class="animation-controls">
+                    <button class="btn btn-small" @click="playListAnimation('list-demo')" :disabled="animating['list-demo']">
+                      {{ animating['list-demo'] ? '播放中...' : '播放动画' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h4>4. 找规律策略</h4>
+                <div class="hint"><strong>具体问题：</strong>观察图形序列，第1个有1个点，第2个有4个点，第3个有9个点，第4个有16个点...第10个有多少个点？</div>
+                <div class="hint">观察数列、图形等的规律，建立数学模型</div>
+                <div class="animation-container">
+                  <div id="pattern-demo" class="canvas-wrapper"></div>
+                  <div class="animation-controls">
+                    <button class="btn btn-small" @click="playPatternAnimation('pattern-demo')" :disabled="animating['pattern-demo']">
+                      {{ animating['pattern-demo'] ? '播放中...' : '播放动画' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h4>5. 分步推理策略</h4>
+                <div class="hint"><strong>具体问题：</strong>甲单独完成一项工作需要12天，乙单独完成需要18天。如果两人合作，多少天可以完成？</div>
+                <div class="hint">将复杂问题分解为多个简单步骤，逐步解决</div>
+                <div class="animation-container">
+                  <div id="stepwise-demo" class="canvas-wrapper canvas-wrapper-large"></div>
+                  <div class="animation-controls">
+                    <button class="btn btn-small" @click="playStepwiseAnimation('stepwise-demo')" :disabled="animating['stepwise-demo']">
+                      {{ animating['stepwise-demo'] ? '播放中...' : '播放动画' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>{{ sampleProblem.title }}</h3>
+              <div class="hint">推荐策略：{{ sampleProblem.recommended.join('、') }}</div>
+              <div class="steps" v-if="stepVisible">
+                <div class="step" v-for="(st, idx) in sampleProblem.steps" :key="idx">
+                  第 {{ idx+1 }} 步：{{ st }}
+                </div>
+              </div>
+              <button class="btn" @click="stepVisible = !stepVisible">
+                {{ stepVisible ? '收起提示' : '显示分步提示' }}
+              </button>
+              <div class="hint" style="margin-top:10px;">交互式提示：按顺序展开，避免一次性剧透。</div>
+            </div>
+
+            <div class="section">
+              <h3>写下你的思路（系统给反馈）</h3>
+              <textarea rows="4" v-model="userIdea" placeholder="例如：先看相邻差值，再写通项公式，代入第20项……"></textarea>
+              <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn" @click="evaluateIdea">提交思路并获取反馈</button>
+                <button class="btn-ghost" @click="userIdea=''; feedback=''">清空</button>
+              </div>
+              <div class="card" v-if="feedback" style="margin-top:10px;">
+                {{ feedback }}
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>练习与自测</h3>
+              <div v-for="item in quiz" :key="item.id" style="margin-bottom:12px;">
+                <div>{{ item.id }}. {{ item.q }}</div>
+                <div v-if="item.type==='single'" style="margin-top:6px;">
+                  <label v-for="op in item.options" :key="op" style="margin-right:12px; font-size:14px; color:#475569;">
+                    <input type="radio" :name="'q'+item.id" :value="op" v-model="item.user" style="margin-right:4px;"/>
+                    {{ op }}
+                  </label>
+                </div>
+                <div v-else-if="item.type==='number'" style="margin-top:6px; max-width:200px;">
+                  <input type="number" v-model.number="item.user" />
+                </div>
+              </div>
+              <button class="btn" @click="grade">提交评分</button>
+              <div v-if="score" style="margin-top:8px;">得分：<span class="score">{{ score }}</span></div>
+            </div>
+          </div>
+        `
+      }).mount('#app');
+    });
+  </script>
+</body>
+</html>
+

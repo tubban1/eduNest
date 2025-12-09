@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二元一次方程组 - 初中数学教学</title>
+    <meta name="description" content="学习二元一次方程组的解法，掌握图像法、代入法和消元法，理解方程组的解、无解和无数解的情况，通过可视化图形和动画理解求解过程。">
+    <meta name="keywords" content="二元一次方程组,图像法,代入法,消元法,方程组解,无解,无数解,线性方程组,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .concept-card p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .concept-card .example {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            color: #333;
+        }
+        
+        .demo-area {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .graph-container {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 2px solid #667eea;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .equation-display {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            border: 2px solid #667eea;
+        }
+        
+        .steps-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #28a745;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .step-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            transition: all 0.3s ease;
+            opacity: 0.7;
+            transform-origin: left center;
+        }
+        
+        .step-item.current {
+            background: linear-gradient(to right, #e3f2fd 0%, #ffffff 100%);
+            border-left-color: #28a745;
+            border-left-width: 5px;
+            opacity: 1;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        
+        .practice-area {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 18px;
+            width: 100px;
+            margin: 10px;
+        }
+        
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .coordinate-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, reactive, onMounted, onBeforeUnmount, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                const concepts = ref([
+                    {
+                        title: '二元一次方程组',
+                        content: '由两个含有两个未知数的一次方程组成的方程组，叫做二元一次方程组。',
+                        example: '例如：{ x + y = 5, 2x - y = 1 }'
+                    },
+                    {
+                        title: '图像法',
+                        content: '将两个方程分别画成两条直线，两直线的交点坐标就是方程组的解。',
+                        example: '两条直线相交于一点 (x, y)，这就是解'
+                    },
+                    {
+                        title: '代入法',
+                        content: '从一个方程中解出一个未知数，代入另一个方程，从而求出另一个未知数的值。',
+                        example: '从 x + y = 5 得 y = 5 - x，代入第二个方程'
+                    },
+                    {
+                        title: '消元法',
+                        content: '通过加减运算，消去一个未知数，将二元一次方程组转化为一元一次方程。',
+                        example: '将两个方程相加或相减，消去 y 或 x'
+                    },
+                    {
+                        title: '无解的情况',
+                        content: '当两条直线平行时，方程组无解。此时两个方程的系数成比例但常数项不成比例。',
+                        example: '{ 2x + y = 3, 2x + y = 5 }'
+                    },
+                    {
+                        title: '无数解的情况',
+                        content: '当两条直线重合时，方程组有无数解。此时两个方程的系数和常数项都成比例。',
+                        example: '{ 2x + y = 3, 4x + 2y = 6 }'
+                    }
+                ]);
+                
+                // 图像法演示
+                const graphStage = ref(null);
+                const graphLayer = ref(null);
+                const line1 = ref({ k: 1, b: 1, color: '#667eea', name: '方程1' });
+                const line2 = ref({ k: -1, b: 3, color: '#f39c12', name: '方程2' });
+                const intersection = ref(null);
+                
+                // 代数法演示
+                const methodType = ref('substitution'); // substitution 或 elimination
+                const currentSystem = ref({ eq1: 'x + y = 5', eq2: '2x - y = 1' });
+                const methodSteps = ref([]);
+                const currentMethodStep = ref(0);
+                const isMethodAnimating = ref(false);
+                const isAutoPlayingMethod = ref(false);
+                const animationSteps = ref([]);
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        eq1: 'x + y = 5',
+                        eq2: 'x - y = 1',
+                        answer: { x: 3, y: 2 },
+                        userAnswer: { x: '', y: '' },
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        eq1: '2x + y = 7',
+                        eq2: 'x + 2y = 8',
+                        answer: { x: 2, y: 3 },
+                        userAnswer: { x: '', y: '' },
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        eq1: '3x - y = 5',
+                        eq2: 'x + y = 3',
+                        answer: { x: 2, y: 1 },
+                        userAnswer: { x: '', y: '' },
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        eq1: '2x + 3y = 12',
+                        eq2: 'x - y = 1',
+                        answer: { x: 3, y: 2 },
+                        userAnswer: { x: '', y: '' },
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        eq1: 'x + 2y = 5',
+                        eq2: '2x - y = 0',
+                        answer: { x: 1, y: 2 },
+                        userAnswer: { x: '', y: '' },
+                        correct: null
+                    }
+                ]);
+                
+                // 初始化图像法图形
+                function initGraph() {
+                    const container = document.getElementById('graph-canvas');
+                    if (!container || graphStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 500;
+                    
+                    graphStage.value = new Konva.Stage({
+                        container: 'graph-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    graphLayer.value = new Konva.Layer();
+                    graphStage.value.add(graphLayer.value);
+                    
+                    drawCoordinateSystem();
+                    drawLines();
+                    calculateIntersection();
+                }
+                
+                // 绘制坐标系
+                function drawCoordinateSystem() {
+                    if (!graphLayer.value || !graphStage.value) return;
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 40; // 每单位40像素
+                    
+                    // 清除旧内容（包括坐标轴、网格线、标签）
+                    const oldElements = graphLayer.value.find(node => {
+                        const name = node.name();
+                        return name && (
+                            name.startsWith('grid') || 
+                            name === 'axis' ||
+                            name === 'xAxis' ||
+                            name === 'yAxis'
+                        );
+                    });
+                    oldElements.forEach(node => {
+                        if (node && node.destroy) {
+                            node.destroy();
+                        }
+                    });
+                    
+                    // 绘制网格线
+                    for (let i = -10; i <= 10; i++) {
+                        if (i === 0) continue;
+                        
+                        // 竖线
+                        const vLine = new Konva.Line({
+                            points: [originX + i * scale, 0, originX + i * scale, height],
+                            stroke: '#e0e0e0',
+                            strokeWidth: 1,
+                            name: 'grid-line'
+                        });
+                        graphLayer.value.add(vLine);
+                        
+                        // 横线
+                        const hLine = new Konva.Line({
+                            points: [0, originY - i * scale, width, originY - i * scale],
+                            stroke: '#e0e0e0',
+                            strokeWidth: 1,
+                            name: 'grid-line'
+                        });
+                        graphLayer.value.add(hLine);
+                        
+                        // x轴刻度
+                        if (i !== 0) {
+                            const xLabel = new Konva.Text({
+                                x: originX + i * scale - 10,
+                                y: originY + 5,
+                                text: i.toString(),
+                                fontSize: 12,
+                                fill: '#666',
+                                name: 'grid-label'
+                            });
+                            graphLayer.value.add(xLabel);
+                        }
+                        
+                        // y轴刻度
+                        if (i !== 0) {
+                            const yLabel = new Konva.Text({
+                                x: originX + 5,
+                                y: originY - i * scale - 10,
+                                text: i.toString(),
+                                fontSize: 12,
+                                fill: '#666',
+                                name: 'grid-label'
+                            });
+                            graphLayer.value.add(yLabel);
+                        }
+                    }
+                    
+                    // 检查是否已存在坐标轴，如果存在就不重复创建
+                    const existingXAxis = graphLayer.value.findOne('.xAxis');
+                    const existingYAxis = graphLayer.value.findOne('.yAxis');
+                    
+                    // 绘制x轴
+                    if (!existingXAxis) {
+                        const xAxis = new Konva.Line({
+                            points: [0, originY, width, originY],
+                            stroke: '#333',
+                            strokeWidth: 2,
+                            name: 'xAxis'
+                        });
+                        graphLayer.value.add(xAxis);
+                    } else {
+                        existingXAxis.points([0, originY, width, originY]);
+                    }
+                    
+                    // 绘制y轴
+                    if (!existingYAxis) {
+                        const yAxis = new Konva.Line({
+                            points: [originX, 0, originX, height],
+                            stroke: '#333',
+                            strokeWidth: 2,
+                            name: 'yAxis'
+                        });
+                        graphLayer.value.add(yAxis);
+                    } else {
+                        existingYAxis.points([originX, 0, originX, height]);
+                    }
+                    
+                    // 原点标记
+                    let originLabel = graphLayer.value.findOne('.originLabel');
+                    if (!originLabel) {
+                        originLabel = new Konva.Text({
+                            x: originX + 5,
+                            y: originY + 5,
+                            text: 'O',
+                            fontSize: 14,
+                            fill: '#333',
+                            name: 'originLabel'
+                        });
+                        graphLayer.value.add(originLabel);
+                    } else {
+                        originLabel.x(originX + 5);
+                        originLabel.y(originY + 5);
+                    }
+                    
+                    // x轴箭头
+                    let xArrow = graphLayer.value.findOne('.xArrow');
+                    if (!xArrow) {
+                        xArrow = new Konva.Line({
+                            points: [width - 15, originY - 5, width, originY, width - 15, originY + 5],
+                            stroke: '#333',
+                            strokeWidth: 2,
+                            closed: true,
+                            fill: '#333',
+                            name: 'xArrow'
+                        });
+                        graphLayer.value.add(xArrow);
+                    } else {
+                        xArrow.points([width - 15, originY - 5, width, originY, width - 15, originY + 5]);
+                    }
+                    
+                    // y轴箭头
+                    let yArrow = graphLayer.value.findOne('.yArrow');
+                    if (!yArrow) {
+                        yArrow = new Konva.Line({
+                            points: [originX - 5, 15, originX, 0, originX + 5, 15],
+                            stroke: '#333',
+                            strokeWidth: 2,
+                            closed: true,
+                            fill: '#333',
+                            name: 'yArrow'
+                        });
+                        graphLayer.value.add(yArrow);
+                    } else {
+                        yArrow.points([originX - 5, 15, originX, 0, originX + 5, 15]);
+                    }
+                    
+                    // 坐标轴标签
+                    let xLabel = graphLayer.value.findOne('.xLabel');
+                    if (!xLabel) {
+                        xLabel = new Konva.Text({
+                            x: width - 20,
+                            y: originY - 20,
+                            text: 'x',
+                            fontSize: 16,
+                            fontStyle: 'bold',
+                            fill: '#333',
+                            name: 'xLabel'
+                        });
+                        graphLayer.value.add(xLabel);
+                    } else {
+                        xLabel.x(width - 20);
+                        xLabel.y(originY - 20);
+                    }
+                    
+                    let yLabel = graphLayer.value.findOne('.yLabel');
+                    if (!yLabel) {
+                        yLabel = new Konva.Text({
+                            x: originX + 10,
+                            y: 5,
+                            text: 'y',
+                            fontSize: 16,
+                            fontStyle: 'bold',
+                            fill: '#333',
+                            name: 'yLabel'
+                        });
+                        graphLayer.value.add(yLabel);
+                    } else {
+                        yLabel.x(originX + 10);
+                        yLabel.y(5);
+                    }
+                }
+                
+                // 绘制直线
+                function drawLines(skipControls = false) {
+                    if (!graphLayer.value) return;
+                    
+                    // 清除旧的直线和交点，但保留控制点
+                    const oldLines = graphLayer.value.find(node => {
+                        const name = node.name();
+                        return name && (
+                            (name.startsWith('line') && !name.includes('control')) || 
+                            name === 'intersection'
+                        );
+                    });
+                    oldLines.forEach(node => {
+                        if (node && node.destroy) {
+                            node.destroy();
+                        }
+                    });
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 40;
+                    
+                    // 绘制第一条直线
+                    drawLine(line1.value, '#667eea', 'line1');
+                    
+                    // 绘制第二条直线
+                    drawLine(line2.value, '#f39c12', 'line2');
+                }
+                
+                // 绘制单条直线
+                function drawLine(line, color, name) {
+                    if (!graphLayer.value) return;
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 40;
+                    
+                    // 计算直线与边界的交点，确保直线充满整个画布
+                    let x1, y1, x2, y2;
+                    
+                    // 计算直线与左右边界的交点
+                    const leftX = -width / (2 * scale);
+                    const rightX = width / (2 * scale);
+                    const topY = height / (2 * scale);
+                    const bottomY = -height / (2 * scale);
+                    
+                    // 计算直线与四个边界的交点
+                    const intersections = [];
+                    
+                    // 与左边界
+                    const leftY = line.k * leftX + line.b;
+                    if (leftY >= bottomY && leftY <= topY) {
+                        intersections.push({ x: leftX, y: leftY });
+                    }
+                    
+                    // 与右边界
+                    const rightY = line.k * rightX + line.b;
+                    if (rightY >= bottomY && rightY <= topY) {
+                        intersections.push({ x: rightX, y: rightY });
+                    }
+                    
+                    // 与上边界
+                    const topX = (topY - line.b) / line.k;
+                    if (!isNaN(topX) && isFinite(topX) && topX >= leftX && topX <= rightX) {
+                        intersections.push({ x: topX, y: topY });
+                    }
+                    
+                    // 与下边界
+                    const bottomX = (bottomY - line.b) / line.k;
+                    if (!isNaN(bottomX) && isFinite(bottomX) && bottomX >= leftX && bottomX <= rightX) {
+                        intersections.push({ x: bottomX, y: bottomY });
+                    }
+                    
+                    if (intersections.length >= 2) {
+                        x1 = intersections[0].x;
+                        y1 = intersections[0].y;
+                        x2 = intersections[1].x;
+                        y2 = intersections[1].y;
+                    } else {
+                        // 备用方案
+                        x1 = -10;
+                        y1 = line.k * x1 + line.b;
+                        x2 = 10;
+                        y2 = line.k * x2 + line.b;
+                    }
+                    
+                    // 转换为屏幕坐标
+                    const screenX1 = originX + x1 * scale;
+                    const screenY1 = originY - y1 * scale;
+                    const screenX2 = originX + x2 * scale;
+                    const screenY2 = originY - y2 * scale;
+                    
+                    // 检查是否已存在该直线，如果存在则更新，否则创建
+                    let konvaLine = graphLayer.value.find(node => node.name() === name && node.getClassName() === 'Line')[0];
+                    if (konvaLine) {
+                        // 更新现有直线
+                        konvaLine.points([screenX1, screenY1, screenX2, screenY2]);
+                    } else {
+                        // 创建新直线
+                        konvaLine = new Konva.Line({
+                            points: [screenX1, screenY1, screenX2, screenY2],
+                            stroke: color,
+                            strokeWidth: 3,
+                            name: name,
+                            draggable: false
+                        });
+                        graphLayer.value.add(konvaLine);
+                    }
+                    
+                    // 添加两个控制点（可拖动改变直线）- 只在首次创建时添加
+                    const existingControl1 = graphLayer.value.find(node => node.name() === name + '-control1')[0];
+                    const existingControl2 = graphLayer.value.find(node => node.name() === name + '-control2')[0];
+                    
+                    if (existingControl1 && existingControl2) {
+                        // 更新现有控制点位置
+                        const midX = (screenX1 + screenX2) / 2;
+                        const midY = (screenY1 + screenY2) / 2;
+                        
+                        // 更新控制点1位置（垂直方向）
+                        existingControl1.x(midX + 35);
+                        existingControl1.y(midY);
+                        existingControl1.originalX = midX + 35;
+                        existingControl1.originalY = midY;
+                        
+                        // 更新控制点2位置（水平方向）
+                        existingControl2.x(screenX2);
+                        existingControl2.y(screenY2);
+                        existingControl2.originalX = screenX2;
+                        existingControl2.originalY = screenY2;
+                        
+                        return; // 不创建新控制点
+                    }
+                    
+                    // 创建新控制点
+                    // 控制点1：在直线中点附近，垂直方向拖动（改变截距）
+                    const midX = (screenX1 + screenX2) / 2;
+                    const midY = (screenY1 + screenY2) / 2;
+                    
+                    const controlPoint1 = new Konva.Group({
+                        x: midX + 35,
+                        y: midY,
+                        draggable: true,
+                        name: name + '-control1'
+                    });
+                    
+                    const circle1 = new Konva.Circle({
+                        radius: 12,
+                        fill: color,
+                        stroke: 'white',
+                        strokeWidth: 2,
+                        opacity: 0.9
+                    });
+                    
+                    // 添加方向指示器（垂直箭头）
+                    const arrow1 = new Konva.Arrow({
+                        points: [0, -20, 0, 20],
+                        pointerLength: 8,
+                        pointerWidth: 8,
+                        fill: color,
+                        stroke: color,
+                        strokeWidth: 2,
+                        opacity: 0.6
+                    });
+                    
+                    controlPoint1.add(arrow1);
+                    controlPoint1.add(circle1);
+                    
+                    controlPoint1.lineData = line;
+                    controlPoint1.originalY = midY;
+                    controlPoint1.originalX = midX + 35;
+                    controlPoint1.originalB = line.b;
+                    controlPoint1.circle = circle1;
+                    
+                    controlPoint1.on('dragstart', function() {
+                        this.setAttr('_isDragging', true);
+                        this.originalY = this.y();
+                        this.originalX = this.x();
+                        this.originalB = line.b;
+                        document.body.style.cursor = 'ns-resize';
+                        if (this.circle) {
+                            gsap.to(this.circle, { duration: 0.2, scale: { x: 1.3, y: 1.3 } });
+                        }
+                    });
+                    
+                    controlPoint1.on('dragmove', function() {
+                        // 只允许垂直方向拖动
+                        const newY = this.y();
+                        const newX = this.x();
+                        
+                        // 计算移动方向，如果主要是水平移动，则忽略
+                        const deltaX = Math.abs(newX - this.originalX);
+                        const deltaY = Math.abs(newY - this.originalY);
+                        
+                        if (deltaX > deltaY) {
+                            // 如果水平移动更多，恢复x坐标
+                            this.x(this.originalX);
+                        } else {
+                            // 垂直移动，保持x坐标不变
+                            this.x(this.originalX);
+                            updateLineFromControl(this, 'vertical');
+                        }
+                    });
+                    
+                    controlPoint1.on('dragend', function() {
+                        this.setAttr('_isDragging', false);
+                        document.body.style.cursor = 'default';
+                        this.originalY = this.y();
+                        this.originalB = line.b;
+                        if (this.circle) {
+                            gsap.to(this.circle, { duration: 0.2, scale: { x: 1, y: 1 } });
+                        }
+                    });
+                    
+                    controlPoint1.on('mouseenter', function() {
+                        document.body.style.cursor = 'ns-resize';
+                        gsap.to(this, { duration: 0.2, scale: { x: 1.2, y: 1.2 } });
+                    });
+                    
+                    controlPoint1.on('mouseleave', function() {
+                        document.body.style.cursor = 'default';
+                        gsap.to(this, { duration: 0.2, scale: { x: 1, y: 1 } });
+                    });
+                    
+                    graphLayer.value.add(controlPoint1);
+                    
+                    // 控制点2：水平方向拖动（改变斜率）
+                    const controlPoint2 = new Konva.Group({
+                        x: screenX2,
+                        y: screenY2,
+                        draggable: true,
+                        name: name + '-control2'
+                    });
+                    
+                    const circle2 = new Konva.Circle({
+                        radius: 12,
+                        fill: color,
+                        stroke: 'white',
+                        strokeWidth: 2,
+                        opacity: 0.9
+                    });
+                    
+                    // 添加方向指示器（水平箭头）
+                    const arrow2 = new Konva.Arrow({
+                        points: [-20, 0, 20, 0],
+                        pointerLength: 8,
+                        pointerWidth: 8,
+                        fill: color,
+                        stroke: color,
+                        strokeWidth: 2,
+                        opacity: 0.6
+                    });
+                    
+                    controlPoint2.add(arrow2);
+                    controlPoint2.add(circle2);
+                    
+                    controlPoint2.lineData = line;
+                    controlPoint2.originalX = screenX2;
+                    controlPoint2.originalY = screenY2;
+                    controlPoint2.originalK = line.k;
+                    controlPoint2.circle = circle2;
+                    
+                    controlPoint2.on('dragstart', function() {
+                        this.setAttr('_isDragging', true);
+                        this.originalX = this.x();
+                        this.originalY = this.y();
+                        this.originalK = line.k;
+                        document.body.style.cursor = 'ew-resize';
+                        if (this.circle) {
+                            gsap.to(this.circle, { duration: 0.2, scale: { x: 1.3, y: 1.3 } });
+                        }
+                    });
+                    
+                    controlPoint2.on('dragmove', function() {
+                        // 计算拖动方向
+                        const newX = this.x();
+                        const newY = this.y();
+                        const deltaX = newX - this.originalX;
+                        const deltaY = newY - this.originalY;
+                        
+                        // 判断主要移动方向
+                        if (Math.abs(deltaY) > Math.abs(deltaX)) {
+                            // 垂直移动：改变截距，保持x不变
+                            this.x(this.originalX);
+                            document.body.style.cursor = 'ns-resize';
+                            updateLineFromControl(this, 'vertical');
+                        } else {
+                            // 水平移动：改变斜率
+                            document.body.style.cursor = 'ew-resize';
+                            // 保持y坐标在直线上
+                            const width = graphStage.value.width();
+                            const height = graphStage.value.height();
+                            const originX = width / 2;
+                            const originY = height / 2;
+                            const scale = 40;
+                            
+                            // 计算当前x对应的y值
+                            const mathX = (this.x() - originX) / scale;
+                            const currentY = line.k * mathX + line.b;
+                            this.y(originY - currentY * scale);
+                            
+                            updateLineFromControl(this, 'horizontal');
+                        }
+                    });
+                    
+                    controlPoint2.on('dragend', function() {
+                        this.setAttr('_isDragging', false);
+                        document.body.style.cursor = 'default';
+                        this.originalX = this.x();
+                        this.originalY = this.y();
+                        this.originalK = line.k;
+                        if (this.circle) {
+                            gsap.to(this.circle, { duration: 0.2, scale: { x: 1, y: 1 } });
+                        }
+                    });
+                    
+                    controlPoint2.on('mouseenter', function() {
+                        document.body.style.cursor = 'ew-resize';
+                        gsap.to(this, { duration: 0.2, scale: { x: 1.2, y: 1.2 } });
+                    });
+                    
+                    controlPoint2.on('mouseleave', function() {
+                        document.body.style.cursor = 'default';
+                        gsap.to(this, { duration: 0.2, scale: { x: 1, y: 1 } });
+                    });
+                    
+                    graphLayer.value.add(controlPoint2);
+                }
+                
+                // 从控制点更新直线（平滑移动）
+                function updateLineFromControl(controlPoint, direction) {
+                    if (!controlPoint || !graphLayer.value) return;
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 40;
+                    
+                    const lineName = controlPoint.name();
+                    if (!lineName) return;
+                    
+                    const lineObj = lineName.startsWith('line1') ? line1.value : line2.value;
+                    if (!lineObj) return;
+                    
+                    if (direction === 'vertical') {
+                        // 垂直拖动：只改变截距 b
+                        const deltaY = controlPoint.y() - (controlPoint.originalY || 0);
+                        const deltaB = -deltaY / scale; // 注意y轴方向反转
+                        
+                        // 平滑更新，使用原始值加增量
+                        lineObj.b = (controlPoint.originalB || 0) + deltaB;
+                    } else if (direction === 'horizontal') {
+                        // 水平拖动：改变斜率 k
+                        const deltaX = controlPoint.x() - (controlPoint.originalX || 0);
+                        // 使用更小的缩放因子使移动更平滑和精确
+                        const deltaK = deltaX / (scale * 2);
+                        
+                        // 平滑更新斜率
+                        lineObj.k = (controlPoint.originalK || 0) + deltaK;
+                        
+                        // 重新计算 b 以保持直线通过控制点
+                        const screenX = controlPoint.x();
+                        const screenY = controlPoint.y();
+                        const mathX = (screenX - originX) / scale;
+                        const mathY = (originY - screenY) / scale;
+                        lineObj.b = mathY - lineObj.k * mathX;
+                    }
+                    
+                    // 立即更新直线
+                    try {
+                        updateLineOnly(lineObj, lineName);
+                        calculateIntersection();
+                    } catch (e) {
+                        // 如果更新失败，重新绘制
+                        drawLines();
+                        calculateIntersection();
+                    }
+                }
+                
+                // 只更新直线，不重新绘制整个图形
+                function updateLineOnly(line, lineName) {
+                    if (!graphLayer.value) return;
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 40;
+                    
+                    // 计算直线与边界的交点
+                    const leftX = -width / (2 * scale);
+                    const rightX = width / (2 * scale);
+                    const topY = height / (2 * scale);
+                    const bottomY = -height / (2 * scale);
+                    
+                    const intersections = [];
+                    
+                    const leftY = line.k * leftX + line.b;
+                    if (leftY >= bottomY && leftY <= topY) {
+                        intersections.push({ x: leftX, y: leftY });
+                    }
+                    
+                    const rightY = line.k * rightX + line.b;
+                    if (rightY >= bottomY && rightY <= topY) {
+                        intersections.push({ x: rightX, y: rightY });
+                    }
+                    
+                    const topX = line.k !== 0 ? (topY - line.b) / line.k : null;
+                    if (topX !== null && !isNaN(topX) && isFinite(topX) && topX >= leftX && topX <= rightX) {
+                        intersections.push({ x: topX, y: topY });
+                    }
+                    
+                    const bottomX = line.k !== 0 ? (bottomY - line.b) / line.k : null;
+                    if (bottomX !== null && !isNaN(bottomX) && isFinite(bottomX) && bottomX >= leftX && bottomX <= rightX) {
+                        intersections.push({ x: bottomX, y: bottomY });
+                    }
+                    
+                    if (intersections.length >= 2) {
+                        const x1 = intersections[0].x;
+                        const y1 = intersections[0].y;
+                        const x2 = intersections[1].x;
+                        const y2 = intersections[1].y;
+                        
+                        const screenX1 = originX + x1 * scale;
+                        const screenY1 = originY - y1 * scale;
+                        const screenX2 = originX + x2 * scale;
+                        const screenY2 = originY - y2 * scale;
+                        
+                        // 找到并更新现有直线
+                        const allNodes = graphLayer.value.getChildren();
+                        let konvaLine = null;
+                        for (let i = 0; i < allNodes.length; i++) {
+                            const node = allNodes[i];
+                            if (node && node.name() === lineName && node.className === 'Line') {
+                                konvaLine = node;
+                                break;
+                            }
+                        }
+                        
+                        if (konvaLine) {
+                            // 直接更新直线坐标
+                            konvaLine.points([screenX1, screenY1, screenX2, screenY2]);
+                            
+                            // 更新控制点位置（但不更新正在拖动的控制点）
+                            const midX = (screenX1 + screenX2) / 2;
+                            const midY = (screenY1 + screenY2) / 2;
+                            
+                            const control1 = graphLayer.value.find(node => node.name() === lineName + '-control1')[0];
+                            if (control1) {
+                                const isDragging = control1.getAttr('_isDragging');
+                                if (isDragging !== true) {
+                                    control1.x(midX + 35);
+                                    control1.y(midY);
+                                }
+                            }
+                            
+                            const control2 = graphLayer.value.find(node => node.name() === lineName + '-control2')[0];
+                            if (control2) {
+                                const isDragging = control2.getAttr('_isDragging');
+                                if (isDragging !== true) {
+                                    control2.x(screenX2);
+                                    control2.y(screenY2);
+                                }
+                            }
+                            
+                            // 强制重绘
+                            graphLayer.value.batchDraw();
+                        } else {
+                            // 如果找不到直线，重新绘制
+                            drawLines();
+                            calculateIntersection();
+                        }
+                    }
+                }
+                
+                // 计算交点
+                function calculateIntersection() {
+                    if (!graphLayer.value) return;
+                    
+                    const k1 = line1.value.k;
+                    const b1 = line1.value.b;
+                    const k2 = line2.value.k;
+                    const b2 = line2.value.b;
+                    
+                    // 解方程组
+                    // k1 * x + b1 = k2 * x + b2
+                    // (k1 - k2) * x = b2 - b1
+                    
+                    if (Math.abs(k1 - k2) < 0.001) {
+                        // 平行线
+                        if (Math.abs(b1 - b2) < 0.001) {
+                            intersection.value = { type: 'infinite', message: '两条直线重合，方程组有无数解' };
+                        } else {
+                            intersection.value = { type: 'none', message: '两条直线平行，方程组无解' };
+                        }
+                    } else {
+                        const x = (b2 - b1) / (k1 - k2);
+                        const y = k1 * x + b1;
+                        intersection.value = { type: 'point', x: x, y: y };
+                        
+                        // 绘制交点
+                        drawIntersection(x, y);
+                    }
+                }
+                
+                // 绘制交点
+                function drawIntersection(x, y) {
+                    if (!graphLayer.value || !intersection.value || intersection.value.type !== 'point') return;
+                    
+                    // 清除所有旧交点元素（包括Circle和Text）
+                    const oldIntersections = graphLayer.value.find(node => {
+                        const name = node.name();
+                        return name && name === 'intersection';
+                    });
+                    oldIntersections.forEach(node => {
+                        if (node && node.destroy) {
+                            node.destroy();
+                        }
+                    });
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const originX = width / 2;
+                    const originY = height / 2;
+                    const scale = 40;
+                    
+                    const screenX = originX + x * scale;
+                    const screenY = originY - y * scale;
+                    
+                    // 创建交点组
+                    const intersectionGroup = new Konva.Group({
+                        x: screenX,
+                        y: screenY,
+                        name: 'intersection'
+                    });
+                    
+                    const intersectionPoint = new Konva.Circle({
+                        x: 0,
+                        y: 0,
+                        radius: 6,
+                        fill: '#28a745',
+                        stroke: 'white',
+                        strokeWidth: 2
+                    });
+                    
+                    const label = new Konva.Text({
+                        x: 10,
+                        y: -10,
+                        text: `(${x.toFixed(2)}, ${y.toFixed(2)})`,
+                        fontSize: 14,
+                        fontStyle: 'bold',
+                        fill: '#28a745'
+                    });
+                    
+                    intersectionGroup.add(intersectionPoint);
+                    intersectionGroup.add(label);
+                    graphLayer.value.add(intersectionGroup);
+                    
+                    graphLayer.value.draw();
+                }
+                
+                // 初始化代数法演示
+                function initMethodDemo() {
+                    solveByMethod();
+                }
+                
+                // 使用代入法或消元法求解
+                function solveByMethod() {
+                    methodSteps.value = [];
+                    currentMethodStep.value = 0;
+                    
+                    if (methodType.value === 'substitution') {
+                        solveBySubstitution();
+                    } else {
+                        solveByElimination();
+                    }
+                }
+                
+                // 代入法求解
+                function solveBySubstitution() {
+                    const eq1 = parseEquation(currentSystem.value.eq1);
+                    const eq2 = parseEquation(currentSystem.value.eq2);
+                    
+                    if (!eq1 || !eq2) return;
+                    
+                    methodSteps.value = [];
+                    animationSteps.value = [];
+                    
+                    const a1 = eq1.coeffX;
+                    const b1 = eq1.coeffY;
+                    const c1 = eq1.constant;
+                    
+                    const a2 = eq2.coeffX;
+                    const b2 = eq2.coeffY;
+                    const c2 = eq2.constant;
+                    
+                    // 步骤1：显示原方程组
+                    methodSteps.value.push({
+                        text: '原方程组',
+                        equation: `{ ${currentSystem.value.eq1}, ${currentSystem.value.eq2} }`
+                    });
+                    
+                    // 从第一个方程解出 y 或 x
+                    if (Math.abs(b1) >= Math.abs(a1) && b1 !== 0) {
+                        // 解出 y
+                        const k = -a1 / b1;
+                        const b = c1 / b1;
+                        
+                        methodSteps.value.push({
+                            text: '从第一个方程解出 y',
+                            equation: `y = ${formatCoeff(k)}x ${b >= 0 ? '+' : ''} ${b.toFixed(2)}`
+                        });
+                        
+                        // 代入第二个方程
+                        const subEq = `${a2}x + ${b2}(${formatCoeff(k)}x ${b >= 0 ? '+' : ''} ${b.toFixed(2)}) = ${c2}`;
+                        methodSteps.value.push({
+                            text: '代入第二个方程',
+                            equation: subEq
+                        });
+                        
+                        // 展开
+                        const expandedEq = `${a2}x ${formatCoeff(b2 * k)}x ${b2 * b >= 0 ? '+' : ''} ${(b2 * b).toFixed(2)} = ${c2}`;
+                        methodSteps.value.push({
+                            text: '展开并合并同类项',
+                            equation: expandedEq
+                        });
+                        
+                        // 求解 x
+                        const x = (c2 - b2 * b) / (a2 + b2 * k);
+                        methodSteps.value.push({
+                            text: '求解 x',
+                            equation: `x = ${x.toFixed(2)}`
+                        });
+                        
+                        // 求 y
+                        const y = k * x + b;
+                        methodSteps.value.push({
+                            text: '代入求 y',
+                            equation: `y = ${y.toFixed(2)}`
+                        });
+                        
+                        methodSteps.value.push({
+                            text: '方程组的解',
+                            equation: `{ x = ${x.toFixed(2)}, y = ${y.toFixed(2)} }`
+                        });
+                    } else if (a1 !== 0) {
+                        // 解出 x
+                        const k = -b1 / a1;
+                        const b = c1 / a1;
+                        
+                        methodSteps.value.push({
+                            text: '从第一个方程解出 x',
+                            equation: `x = ${formatCoeff(k)}y ${b >= 0 ? '+' : ''} ${b.toFixed(2)}`
+                        });
+                        
+                        const subEq = `${a2}(${formatCoeff(k)}y ${b >= 0 ? '+' : ''} ${b.toFixed(2)}) + ${b2}y = ${c2}`;
+                        methodSteps.value.push({
+                            text: '代入第二个方程',
+                            equation: subEq
+                        });
+                        
+                        const expandedEq = `${formatCoeff(a2 * k)}y ${a2 * b >= 0 ? '+' : ''} ${(a2 * b).toFixed(2)} ${formatCoeff(b2)}y = ${c2}`;
+                        methodSteps.value.push({
+                            text: '展开并合并同类项',
+                            equation: expandedEq
+                        });
+                        
+                        const y = (c2 - a2 * b) / (a2 * k + b2);
+                        methodSteps.value.push({
+                            text: '求解 y',
+                            equation: `y = ${y.toFixed(2)}`
+                        });
+                        
+                        const x = k * y + b;
+                        methodSteps.value.push({
+                            text: '代入求 x',
+                            equation: `x = ${x.toFixed(2)}`
+                        });
+                        
+                        methodSteps.value.push({
+                            text: '方程组的解',
+                            equation: `{ x = ${x.toFixed(2)}, y = ${y.toFixed(2)} }`
+                        });
+                    }
+                }
+                
+                // 格式化系数显示
+                function formatCoeff(coeff) {
+                    if (Math.abs(coeff - 1) < 0.001) return '';
+                    if (Math.abs(coeff + 1) < 0.001) return '-';
+                    return coeff.toFixed(2);
+                }
+                
+                // 消元法求解
+                function solveByElimination() {
+                    const eq1 = parseEquation(currentSystem.value.eq1);
+                    const eq2 = parseEquation(currentSystem.value.eq2);
+                    
+                    if (!eq1 || !eq2) return;
+                    
+                    methodSteps.value = [];
+                    animationSteps.value = [];
+                    
+                    const a1 = eq1.coeffX;
+                    const b1 = eq1.coeffY;
+                    const c1 = eq1.constant;
+                    
+                    const a2 = eq2.coeffX;
+                    const b2 = eq2.coeffY;
+                    const c2 = eq2.constant;
+                    
+                    methodSteps.value.push({
+                        text: '原方程组',
+                        equation: `{ ${currentSystem.value.eq1}, ${currentSystem.value.eq2} }`
+                    });
+                    
+                    // 选择消去 y 还是 x（选择系数绝对值较小的）
+                    if (Math.abs(b1) <= Math.abs(a1) && b1 !== 0 && b2 !== 0) {
+                        // 消去 y
+                        const lcm = Math.abs(b1 * b2 / gcd(Math.abs(b1), Math.abs(b2)));
+                        const mult1 = lcm / b1;
+                        const mult2 = lcm / b2;
+                        
+                        methodSteps.value.push({
+                            text: '调整系数使 y 的系数相等',
+                            equation: `第一个方程乘以${mult2}，第二个方程乘以${mult1}`
+                        });
+                        
+                        const newA1 = a1 * mult2;
+                        const newC1 = c1 * mult2;
+                        const newA2 = a2 * mult1;
+                        const newC2 = c2 * mult1;
+                        
+                        methodSteps.value.push({
+                            text: '两方程相减消去 y',
+                            equation: `${formatCoeff(newA1)}x ${formatCoeff(-newA2)}x = ${newC1.toFixed(2)} ${newC2 >= 0 ? '-' : '+'} ${Math.abs(newC2).toFixed(2)}`
+                        });
+                        
+                        const x = (newC1 - newC2) / (newA1 - newA2);
+                        methodSteps.value.push({
+                            text: '合并同类项并求解 x',
+                            equation: `x = ${x.toFixed(2)}`
+                        });
+                        
+                        const y = (c1 - a1 * x) / b1;
+                        methodSteps.value.push({
+                            text: '代入第一个方程求 y',
+                            equation: `y = ${y.toFixed(2)}`
+                        });
+                        
+                        methodSteps.value.push({
+                            text: '方程组的解',
+                            equation: `{ x = ${x.toFixed(2)}, y = ${y.toFixed(2)} }`
+                        });
+                    } else if (a1 !== 0 && a2 !== 0) {
+                        // 消去 x
+                        const lcm = Math.abs(a1 * a2 / gcd(Math.abs(a1), Math.abs(a2)));
+                        const mult1 = lcm / a1;
+                        const mult2 = lcm / a2;
+                        
+                        methodSteps.value.push({
+                            text: '调整系数使 x 的系数相等',
+                            equation: `第一个方程乘以${mult2}，第二个方程乘以${mult1}`
+                        });
+                        
+                        const newB1 = b1 * mult2;
+                        const newC1 = c1 * mult2;
+                        const newB2 = b2 * mult1;
+                        const newC2 = c2 * mult1;
+                        
+                        methodSteps.value.push({
+                            text: '两方程相减消去 x',
+                            equation: `${formatCoeff(newB1)}y ${formatCoeff(-newB2)}y = ${newC1.toFixed(2)} ${newC2 >= 0 ? '-' : '+'} ${Math.abs(newC2).toFixed(2)}`
+                        });
+                        
+                        const y = (newC1 - newC2) / (newB1 - newB2);
+                        methodSteps.value.push({
+                            text: '合并同类项并求解 y',
+                            equation: `y = ${y.toFixed(2)}`
+                        });
+                        
+                        const x = (c1 - b1 * y) / a1;
+                        methodSteps.value.push({
+                            text: '代入第一个方程求 x',
+                            equation: `x = ${x.toFixed(2)}`
+                        });
+                        
+                        methodSteps.value.push({
+                            text: '方程组的解',
+                            equation: `{ x = ${x.toFixed(2)}, y = ${y.toFixed(2)} }`
+                        });
+                    }
+                }
+                
+                // 自动播放步骤（带动画）
+                function autoPlayMethodSteps() {
+                    if (isAutoPlayingMethod.value) {
+                        isAutoPlayingMethod.value = false;
+                        return;
+                    }
+                    
+                    if (methodSteps.value.length === 0) return;
+                    
+                    isAutoPlayingMethod.value = true;
+                    currentMethodStep.value = 0;
+                    isMethodAnimating.value = true;
+                    
+                    // 重置到第一步
+                    animateStepTransition(0);
+                    
+                    // 执行后续步骤
+                    for (let index = 1; index < methodSteps.value.length; index++) {
+                        setTimeout(() => {
+                            if (!isAutoPlayingMethod.value) return;
+                            animateStepTransition(index);
+                        }, index * 2500);
+                    }
+                    
+                    setTimeout(() => {
+                        isAutoPlayingMethod.value = false;
+                        isMethodAnimating.value = false;
+                    }, methodSteps.value.length * 2500);
+                }
+                
+                // 步骤切换动画
+                function animateStepTransition(stepIndex) {
+                    if (stepIndex >= methodSteps.value.length) return;
+                    
+                    currentMethodStep.value = stepIndex;
+                    isMethodAnimating.value = true;
+                    
+                    // 滚动到当前步骤并添加动画
+                    nextTick(() => {
+                        const stepsPanel = document.querySelector('.steps-panel');
+                        if (stepsPanel) {
+                            const stepElements = stepsPanel.querySelectorAll('.step-item');
+                            if (stepElements[stepIndex]) {
+                                stepElements[stepIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                
+                                // 添加高亮动画
+                                const stepElement = stepElements[stepIndex];
+                                
+                                // 使用GSAP动画
+                                const timeline = gsap.timeline();
+                                
+                                // 先恢复所有步骤
+                                stepElements.forEach((el, idx) => {
+                                    if (idx !== stepIndex) {
+                                        gsap.to(el, { duration: 0.3, opacity: 0.6, scale: 0.98 });
+                                    }
+                                });
+                                
+                                // 高亮当前步骤
+                                timeline.to(stepElement, {
+                                    duration: 0.4,
+                                    scale: 1.05,
+                                    opacity: 1,
+                                    ease: 'back.out(1.7)'
+                                });
+                                
+                                timeline.to(stepElement, {
+                                    duration: 0.3,
+                                    scale: 1,
+                                    delay: 0.5
+                                });
+                                
+                                setTimeout(() => {
+                                    isMethodAnimating.value = false;
+                                }, 1200);
+                            } else {
+                                isMethodAnimating.value = false;
+                            }
+                        } else {
+                            isMethodAnimating.value = false;
+                        }
+                    });
+                }
+                
+                // 下一步
+                function nextMethodStep() {
+                    if (currentMethodStep.value < methodSteps.value.length - 1 && !isMethodAnimating.value) {
+                        animateStepTransition(currentMethodStep.value + 1);
+                    }
+                }
+                
+                // 上一步
+                function prevMethodStep() {
+                    if (currentMethodStep.value > 0 && !isMethodAnimating.value) {
+                        animateStepTransition(currentMethodStep.value - 1);
+                    }
+                }
+                
+                // 最大公约数
+                function gcd(a, b) {
+                    return b === 0 ? a : gcd(b, a % b);
+                }
+                
+                // 解析方程
+                function parseEquation(eq) {
+                    // 简单解析，例如 "x + y = 5" 或 "2x - y = 1"
+                    const parts = eq.split('=');
+                    if (parts.length !== 2) return null;
+                    
+                    const left = parts[0].trim();
+                    const right = parseFloat(parts[1].trim());
+                    
+                    // 提取 x 和 y 的系数
+                    let coeffX = 0;
+                    let coeffY = 0;
+                    
+                    // 匹配 x 项
+                    const xMatch = left.match(/([+-]?\d*)x/);
+                    if (xMatch) {
+                        const coeff = xMatch[1];
+                        if (coeff === '' || coeff === '+') coeffX = 1;
+                        else if (coeff === '-') coeffX = -1;
+                        else coeffX = parseFloat(coeff);
+                    }
+                    
+                    // 匹配 y 项
+                    const yMatch = left.match(/([+-]?\d*)y/);
+                    if (yMatch) {
+                        const coeff = yMatch[1];
+                        if (coeff === '' || coeff === '+') coeffY = 1;
+                        else if (coeff === '-') coeffY = -1;
+                        else coeffY = parseFloat(coeff);
+                    }
+                    
+                    return {
+                        coeffX: coeffX,
+                        coeffY: coeffY,
+                        constant: right
+                    };
+                }
+                
+                // 检查练习答案
+                function checkPracticeAnswer(question) {
+                    if (!question.userAnswer.x || !question.userAnswer.y) return;
+                    
+                    const userX = parseFloat(question.userAnswer.x);
+                    const userY = parseFloat(question.userAnswer.y);
+                    
+                    const correctX = question.answer.x;
+                    const correctY = question.answer.y;
+                    
+                    question.correct = Math.abs(userX - correctX) < 0.01 && Math.abs(userY - correctY) < 0.01;
+                }
+                
+                // 加载方程组到图形
+                function loadSystemToGraph(eq1, eq2) {
+                    const parsed1 = parseEquation(eq1);
+                    const parsed2 = parseEquation(eq2);
+                    
+                    if (!parsed1 || !parsed2) return;
+                    
+                    // 转换为 y = kx + b 的形式
+                    if (parsed1.coeffY !== 0) {
+                        line1.value.k = -parsed1.coeffX / parsed1.coeffY;
+                        line1.value.b = parsed1.constant / parsed1.coeffY;
+                    }
+                    
+                    if (parsed2.coeffY !== 0) {
+                        line2.value.k = -parsed2.coeffX / parsed2.coeffY;
+                        line2.value.b = parsed2.constant / parsed2.coeffY;
+                    }
+                    
+                    drawLines();
+                    calculateIntersection();
+                }
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initGraph();
+                        initMethodDemo();
+                        
+                        // 窗口调整（使用防抖避免频繁重绘）
+                        let resizeTimer = null;
+                        window.addEventListener('resize', () => {
+                            if (graphStage.value) {
+                                clearTimeout(resizeTimer);
+                                resizeTimer = setTimeout(() => {
+                                    const container = document.getElementById('graph-canvas');
+                                    if (container) {
+                                        graphStage.value.width(container.offsetWidth);
+                                        drawCoordinateSystem();
+                                        drawLines();
+                                        calculateIntersection();
+                                    }
+                                }, 100);
+                            }
+                        });
+                        
+                        // 渲染 KaTeX
+                        if (window.renderMathInElement) {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    {left: '$$', right: '$$', display: true},
+                                    {left: '$', right: '$', display: false},
+                                    {left: '\\[', right: '\\]', display: true},
+                                    {left: '\\(', right: '\\)', display: false}
+                                ]
+                            });
+                        }
+                    });
+                });
+                
+                onBeforeUnmount(() => {
+                    if (graphStage.value) {
+                        graphStage.value.destroy();
+                    }
+                });
+                
+                return {
+                    concepts,
+                    line1,
+                    line2,
+                    intersection,
+                    methodType,
+                    currentSystem,
+                    methodSteps,
+                    currentMethodStep,
+                    isAutoPlayingMethod,
+                    practiceQuestions,
+                    loadSystemToGraph,
+                    solveByMethod,
+                    autoPlayMethodSteps,
+                    nextMethodStep,
+                    prevMethodStep,
+                    checkPracticeAnswer
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>二元一次方程组</h1>
+                    <p class="subtitle">学习图像法、代入法和消元法求解方程组</p>
+                    
+                    <!-- 概念讲解 -->
+                    <div class="section">
+                        <h2>基本概念</h2>
+                        <div class="concept-grid">
+                            <div class="concept-card" v-for="concept in concepts" :key="concept.title">
+                                <h3>{{ concept.title }}</h3>
+                                <p>{{ concept.content }}</p>
+                                <div class="example">{{ concept.example }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 图像法演示 -->
+                    <div class="section">
+                        <h2>图像法</h2>
+                        <div class="demo-area">
+                            <div class="equation-display">
+                                方程1: y = {{ line1.k.toFixed(2) }}x + {{ line1.b.toFixed(2) }}<br>
+                                方程2: y = {{ line2.k.toFixed(2) }}x + {{ line2.b.toFixed(2) }}
+                            </div>
+                            
+                            <div class="controls">
+                                <button class="btn btn-primary" @click="loadSystemToGraph('x + y = 5', '2x - y = 1')">示例1</button>
+                                <button class="btn btn-primary" @click="loadSystemToGraph('x - y = 1', 'x + y = 3')">示例2</button>
+                                <button class="btn btn-primary" @click="loadSystemToGraph('2x + y = 4', 'x - y = -1')">示例3</button>
+                                <button class="btn btn-secondary" @click="loadSystemToGraph('2x + y = 3', '2x + y = 5')">无解示例</button>
+                                <button class="btn btn-secondary" @click="loadSystemToGraph('2x + y = 3', '4x + 2y = 6')">无数解示例</button>
+                            </div>
+                            
+                            <div class="graph-container">
+                                <div id="graph-canvas"></div>
+                                <div class="coordinate-info" v-if="intersection">
+                                    <div v-if="intersection.type === 'point'">
+                                        <strong>交点：</strong><br>
+                                        x = {{ intersection.x.toFixed(2) }}<br>
+                                        y = {{ intersection.y.toFixed(2) }}
+                                    </div>
+                                    <div v-else>
+                                        <strong>{{ intersection.message }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="padding: 20px; background: #e9ecef; border-radius: 8px; margin-top: 20px;">
+                                <p><strong>操作说明：</strong></p>
+                                <p>拖动直线上的蓝色或橙色控制点可以调整直线的位置，观察交点的变化。交点坐标就是方程组的解。</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 代数法演示 -->
+                    <div class="section">
+                        <h2>代数法求解</h2>
+                        <div class="demo-area">
+                            <div class="controls">
+                                <button class="btn btn-primary" @click="methodType = 'substitution'; solveByMethod()">代入法</button>
+                                <button class="btn btn-primary" @click="methodType = 'elimination'; solveByMethod()">消元法</button>
+                                <button class="btn btn-success" @click="autoPlayMethodSteps" v-if="methodSteps.length > 0">
+                                    {{ isAutoPlayingMethod ? '停止播放' : '自动播放' }}
+                                </button>
+                                <button class="btn btn-secondary" @click="prevMethodStep" :disabled="currentMethodStep <= 0">上一步</button>
+                                <button class="btn btn-secondary" @click="nextMethodStep" :disabled="currentMethodStep >= methodSteps.length - 1">下一步</button>
+                            </div>
+                            
+                            <div class="equation-display">
+                                {{ currentSystem.eq1 }}<br>
+                                {{ currentSystem.eq2 }}
+                            </div>
+                            
+                            <div class="steps-panel" v-if="methodSteps.length > 0">
+                                <div v-for="(step, index) in methodSteps" :key="index" 
+                                     :class="['step-item', { current: index === currentMethodStep }]">
+                                    <div style="font-weight: bold; color: #667eea; margin-bottom: 5px;">
+                                        步骤 {{ index + 1 }}：
+                                    </div>
+                                    <div>{{ step.text }}</div>
+                                    <div style="margin-top: 5px; color: #666;">{{ step.equation }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习区域 -->
+                    <div class="section">
+                        <h2>小练习</h2>
+                        <p style="margin-bottom: 20px; color: #666;">求解下列方程组，输入答案并提交。共5道题。</p>
+                        
+                        <div v-for="question in practiceQuestions" :key="question.id" class="practice-question">
+                            <h4>题目 {{ question.id }}：</h4>
+                            <div style="font-size: 18px; margin: 15px 0;">
+                                {{ question.eq1 }}<br>
+                                {{ question.eq2 }}
+                            </div>
+                            
+                            <div style="margin: 20px 0;">
+                                <label style="font-weight: bold; font-size: 18px;">x = </label>
+                                <input 
+                                    type="number" 
+                                    v-model="question.userAnswer.x" 
+                                    class="answer-input"
+                                    placeholder="x"
+                                    step="0.01"
+                                />
+                                <label style="font-weight: bold; font-size: 18px; margin-left: 20px;">y = </label>
+                                <input 
+                                    type="number" 
+                                    v-model="question.userAnswer.y" 
+                                    class="answer-input"
+                                    placeholder="y"
+                                    step="0.01"
+                                />
+                                <button class="btn btn-success" @click="checkPracticeAnswer(question)" style="margin-left: 10px;">提交答案</button>
+                            </div>
+                            
+                            <div v-if="question.correct === true" class="feedback correct">
+                                ✓ 回答正确！x = {{ question.answer.x }}, y = {{ question.answer.y }}
+                            </div>
+                            <div v-if="question.correct === false" class="feedback incorrect">
+                                ✗ 回答错误。正确答案是：x = {{ question.answer.x }}, y = {{ question.answer.y }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

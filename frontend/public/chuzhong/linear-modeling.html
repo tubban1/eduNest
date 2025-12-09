@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>线性建模 - 初中数学教学</title>
+    <meta name="description" content="学习线性建模，理解散点图和趋势线的关系，掌握斜率含义和预测方法，通过拖动数据点观察趋势线变化，理解残差概念。">
+    <meta name="keywords" content="线性建模,散点图,趋势线,斜率,预测,残差,数据拟合,线性关系,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .graph-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .graph-wrapper {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .info-panel {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-panel h4 {
+            color: #2196f3;
+            margin-bottom: 10px;
+        }
+        
+        .info-item {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+        
+        .info-item strong {
+            color: #667eea;
+        }
+        
+        .predictor {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid #667eea;
+        }
+        
+        .predictor h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .input-group label {
+            font-weight: 500;
+            min-width: 100px;
+        }
+        
+        .input-group input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 150px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .residual-line {
+            stroke: #dc3545;
+            stroke-width: 1;
+            stroke-dasharray: 3, 3;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        createApp({
+            setup() {
+                // 数据点
+                const dataPoints = ref([
+                    { x: 1, y: 2, id: 1 },
+                    { x: 2, y: 3, id: 2 },
+                    { x: 3, y: 5, id: 3 },
+                    { x: 4, y: 4, id: 4 },
+                    { x: 5, y: 6, id: 5 }
+                ]);
+                
+                // 拟合直线参数
+                const fittedSlope = ref(0);
+                const fittedIntercept = ref(0);
+                const showResiduals = ref(true);
+                
+                // 预测器
+                const predictX = ref(6);
+                const predictedY = ref(0);
+                
+                // 图形
+                const graphStage = ref(null);
+                const graphLayer = ref(null);
+                const pointGroups = ref([]);
+                
+                // 最小二乘法拟合直线
+                function fitLine() {
+                    if (dataPoints.value.length < 2) return;
+                    
+                    const n = dataPoints.value.length;
+                    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+                    
+                    dataPoints.value.forEach(point => {
+                        sumX += point.x;
+                        sumY += point.y;
+                        sumXY += point.x * point.y;
+                        sumX2 += point.x * point.x;
+                    });
+                    
+                    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+                    const intercept = (sumY - slope * sumX) / n;
+                    
+                    fittedSlope.value = slope;
+                    fittedIntercept.value = intercept;
+                    
+                    // 更新预测值
+                    updatePrediction();
+                    
+                    // 重绘图形
+                    drawGraph();
+                }
+                
+                // 更新预测值
+                function updatePrediction() {
+                    predictedY.value = fittedSlope.value * predictX.value + fittedIntercept.value;
+                }
+                
+                // 初始化图形
+                function initGraph() {
+                    const container = document.getElementById('graph-canvas');
+                    if (!container || graphStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 500;
+                    
+                    graphStage.value = new Konva.Stage({
+                        container: 'graph-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    graphLayer.value = new Konva.Layer();
+                    graphStage.value.add(graphLayer.value);
+                    
+                    drawGraph();
+                }
+                
+                // 绘制图形
+                function drawGraph() {
+                    if (!graphLayer.value) return;
+                    
+                    const width = graphStage.value.width();
+                    const height = graphStage.value.height();
+                    const padding = 60;
+                    const scale = 30;
+                    
+                    // 清除所有元素
+                    graphLayer.value.destroyChildren();
+                    pointGroups.value = [];
+                    
+                    // 计算坐标范围
+                    const allX = dataPoints.value.map(p => p.x);
+                    const allY = dataPoints.value.map(p => p.y);
+                    const minX = Math.min(...allX, 0) - 1;
+                    const maxX = Math.max(...allX, 10) + 1;
+                    const minY = Math.min(...allY, 0) - 1;
+                    const maxY = Math.max(...allY, 10) + 1;
+                    
+                    const rangeX = maxX - minX;
+                    const rangeY = maxY - minY;
+                    const scaleX = (width - 2 * padding) / rangeX;
+                    const scaleY = (height - 2 * padding) / rangeY;
+                    const originX = padding - minX * scaleX;
+                    const originY = height - padding + minY * scaleY;
+                    
+                    // 绘制网格
+                    for (let i = Math.floor(minX); i <= Math.ceil(maxX); i++) {
+                        if (i === 0) continue;
+                        const x = originX + i * scaleX;
+                        const gridLine = new Konva.Line({
+                            points: [x, padding, x, height - padding],
+                            stroke: '#e0e0e0',
+                            strokeWidth: 1,
+                            listening: false
+                        });
+                        graphLayer.value.add(gridLine);
+                    }
+                    
+                    for (let i = Math.floor(minY); i <= Math.ceil(maxY); i++) {
+                        if (i === 0) continue;
+                        const y = originY - i * scaleY;
+                        const gridLine = new Konva.Line({
+                            points: [padding, y, width - padding, y],
+                            stroke: '#e0e0e0',
+                            strokeWidth: 1,
+                            listening: false
+                        });
+                        graphLayer.value.add(gridLine);
+                    }
+                    
+                    // 绘制坐标轴
+                    const xAxis = new Konva.Line({
+                        points: [padding, originY, width - padding, originY],
+                        stroke: '#333',
+                        strokeWidth: 2,
+                        listening: false
+                    });
+                    graphLayer.value.add(xAxis);
+                    
+                    const yAxis = new Konva.Line({
+                        points: [originX, padding, originX, height - padding],
+                        stroke: '#333',
+                        strokeWidth: 2,
+                        listening: false
+                    });
+                    graphLayer.value.add(yAxis);
+                    
+                    // 绘制拟合直线
+                    if (dataPoints.value.length >= 2) {
+                        const lineX1 = minX;
+                        const lineY1 = fittedSlope.value * lineX1 + fittedIntercept.value;
+                        const lineX2 = maxX;
+                        const lineY2 = fittedSlope.value * lineX2 + fittedIntercept.value;
+                        
+                        const screenX1 = originX + lineX1 * scaleX;
+                        const screenY1 = originY - lineY1 * scaleY;
+                        const screenX2 = originX + lineX2 * scaleX;
+                        const screenY2 = originY - lineY2 * scaleY;
+                        
+                        const trendLine = new Konva.Line({
+                            points: [screenX1, screenY1, screenX2, screenY2],
+                            stroke: '#667eea',
+                            strokeWidth: 3,
+                            name: 'trend-line',
+                            listening: false
+                        });
+                        graphLayer.value.add(trendLine);
+                    }
+                    
+                    // 绘制数据点和残差
+                    dataPoints.value.forEach((point, index) => {
+                        const screenX = originX + point.x * scaleX;
+                        const screenY = originY - point.y * scaleY;
+                        const predictedY = fittedSlope.value * point.x + fittedIntercept.value;
+                        const predictedScreenY = originY - predictedY * scaleY;
+                        
+                        // 绘制残差线
+                        if (showResiduals.value && dataPoints.value.length >= 2) {
+                            const residualLine = new Konva.Line({
+                                points: [screenX, screenY, screenX, predictedScreenY],
+                                stroke: '#dc3545',
+                                strokeWidth: 2,
+                                dash: [5, 5],
+                                name: 'residual',
+                                listening: false
+                            });
+                            graphLayer.value.add(residualLine);
+                        }
+                        
+                        // 创建可拖动的点组
+                        const pointGroup = new Konva.Group({
+                            x: screenX,
+                            y: screenY,
+                            draggable: true,
+                            name: 'data-point-' + point.id
+                        });
+                        
+                        const circle = new Konva.Circle({
+                            radius: 8,
+                            fill: '#28a745',
+                            stroke: 'white',
+                            strokeWidth: 2
+                        });
+                        
+                        const label = new Konva.Text({
+                            x: -15,
+                            y: -25,
+                            text: `(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`,
+                            fontSize: 12,
+                            fill: '#28a745',
+                            fontStyle: 'bold'
+                        });
+                        
+                        pointGroup.add(circle);
+                        pointGroup.add(label);
+                        
+                        // 拖动事件
+                        pointGroup.on('dragmove', function() {
+                            const newX = (this.x() - originX) / scaleX;
+                            const newY = (originY - this.y()) / scaleY;
+                            
+                            point.x = Math.max(0, Math.min(20, Math.round(newX * 10) / 10));
+                            point.y = Math.max(0, Math.min(20, Math.round(newY * 10) / 10));
+                            
+                            label.text(`(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`);
+                            
+                            // 重新拟合
+                            fitLine();
+                        });
+                        
+                        pointGroup.on('mouseenter', function() {
+                            document.body.style.cursor = 'move';
+                            gsap.to(circle, { duration: 0.2, scale: { x: 1.3, y: 1.3 } });
+                        });
+                        
+                        pointGroup.on('mouseleave', function() {
+                            document.body.style.cursor = 'default';
+                            gsap.to(circle, { duration: 0.2, scale: { x: 1, y: 1 } });
+                        });
+                        
+                        graphLayer.value.add(pointGroup);
+                        pointGroups.value.push(pointGroup);
+                    });
+                    
+                    // 绘制预测点
+                    if (predictX.value >= minX && predictX.value <= maxX) {
+                        const predScreenX = originX + predictX.value * scaleX;
+                        const predScreenY = originY - predictedY.value * scaleY;
+                        
+                        const predPoint = new Konva.Circle({
+                            x: predScreenX,
+                            y: predScreenY,
+                            radius: 10,
+                            fill: '#f39c12',
+                            stroke: 'white',
+                            strokeWidth: 3,
+                            name: 'prediction-point',
+                            listening: false
+                        });
+                        graphLayer.value.add(predPoint);
+                        
+                        const predLabel = new Konva.Text({
+                            x: predScreenX + 15,
+                            y: predScreenY - 15,
+                            text: `预测: (${predictX.value}, ${predictedY.value.toFixed(2)})`,
+                            fontSize: 14,
+                            fill: '#f39c12',
+                            fontStyle: 'bold',
+                            listening: false
+                        });
+                        graphLayer.value.add(predLabel);
+                    }
+                    
+                    graphLayer.value.draw();
+                }
+                
+                // 添加数据点
+                function addDataPoint() {
+                    const newX = Math.random() * 10 + 5;
+                    const newY = Math.random() * 5 + 3;
+                    const newId = Math.max(...dataPoints.value.map(p => p.id), 0) + 1;
+                    dataPoints.value.push({ x: newX, y: newY, id: newId });
+                    fitLine();
+                }
+                
+                // 重置数据点
+                function resetDataPoints() {
+                    dataPoints.value = [
+                        { x: 1, y: 2, id: 1 },
+                        { x: 2, y: 3, id: 2 },
+                        { x: 3, y: 5, id: 3 },
+                        { x: 4, y: 4, id: 4 },
+                        { x: 5, y: 6, id: 5 }
+                    ];
+                    fitLine();
+                }
+                
+                // 计算残差平方和
+                const residualSum = computed(() => {
+                    if (dataPoints.value.length < 2) return 0;
+                    let sum = 0;
+                    dataPoints.value.forEach(point => {
+                        const predicted = fittedSlope.value * point.x + fittedIntercept.value;
+                        const residual = point.y - predicted;
+                        sum += residual * residual;
+                    });
+                    return sum;
+                });
+                
+                // 监听预测X值变化
+                watch(predictX, () => {
+                    updatePrediction();
+                    drawGraph();
+                });
+                
+                // 监听显示残差开关
+                watch(showResiduals, () => {
+                    drawGraph();
+                });
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initGraph();
+                        fitLine();
+                        
+                        // 监听窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (graphStage.value) {
+                                const container = document.getElementById('graph-canvas');
+                                if (container) {
+                                    graphStage.value.width(container.offsetWidth);
+                                    drawGraph();
+                                }
+                            }
+                        });
+                        
+                        // 自动渲染 KaTeX
+                        if (typeof renderMathInElement !== 'undefined') {
+                            renderMathInElement(document.body);
+                        }
+                    });
+                });
+                
+                return {
+                    dataPoints,
+                    fittedSlope,
+                    fittedIntercept,
+                    showResiduals,
+                    predictX,
+                    predictedY,
+                    residualSum,
+                    addDataPoint,
+                    resetDataPoints,
+                    updatePrediction
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>线性建模</h1>
+                    <p class="subtitle">通过散点图和趋势线理解数据关系，掌握预测方法</p>
+                    
+                    <!-- 基本概念 -->
+                    <div class="section">
+                        <h2>📚 基本概念</h2>
+                        
+                        <div class="concept-grid">
+                            <div class="concept-card">
+                                <h3>散点图</h3>
+                                <p>用点的位置表示两个变量之间的关系。每个点代表一个数据对 (x, y)。</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>趋势线</h3>
+                                <p>通过数据点拟合出的直线，用来描述数据的整体趋势。通常使用最小二乘法拟合。</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>斜率含义</h3>
+                                <p>斜率表示 x 每增加 1 个单位，y 平均增加多少个单位。斜率越大，变化越快。</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>残差</h3>
+                                <p>残差 = 实际值 - 预测值。残差越小，拟合效果越好。残差线显示每个点与趋势线的距离。</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>预测</h3>
+                                <p>根据趋势线，可以预测新的 x 值对应的 y 值。预测值 = 斜率 × x + 截距。</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 交互式散点图 -->
+                    <div class="section">
+                        <h2>📊 交互式散点图与趋势线</h2>
+                        
+                        <div class="graph-container">
+                            <div class="controls">
+                                <button class="btn btn-secondary" @click="addDataPoint">添加数据点</button>
+                                <button class="btn btn-secondary" @click="resetDataPoints">重置数据</button>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" v-model="showResiduals">
+                                    <span>显示残差线</span>
+                                </label>
+                            </div>
+                            
+                            <div class="graph-wrapper">
+                                <div id="graph-canvas"></div>
+                            </div>
+                            
+                            <div class="info-panel">
+                                <h4>拟合直线信息</h4>
+                                <div class="info-item">
+                                    <strong>方程：</strong>y = {{ fittedSlope.toFixed(3) }}x + {{ fittedIntercept.toFixed(3) }}
+                                </div>
+                                <div class="info-item">
+                                    <strong>斜率：</strong>{{ fittedSlope.toFixed(3) }}（x 每增加 1，y 平均增加 {{ fittedSlope.toFixed(3) }}）
+                                </div>
+                                <div class="info-item">
+                                    <strong>截距：</strong>{{ fittedIntercept.toFixed(3) }}（当 x = 0 时，y = {{ fittedIntercept.toFixed(3) }}）
+                                </div>
+                                <div class="info-item">
+                                    <strong>残差平方和：</strong>{{ residualSum.toFixed(3) }}（越小越好）
+                                </div>
+                                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                                    💡 提示：可以拖动绿色的数据点来改变位置，趋势线会自动更新
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 预测器 -->
+                    <div class="section">
+                        <h2>🔮 交互式预测器</h2>
+                        
+                        <div class="predictor">
+                            <h3>根据趋势线进行预测</h3>
+                            <div class="input-group">
+                                <label>输入 x 值：</label>
+                                <input type="number" 
+                                       v-model.number="predictX" 
+                                       step="0.1"
+                                       min="0"
+                                       max="20">
+                                <span style="font-size: 18px; color: #667eea;">→</span>
+                                <span style="font-size: 20px; font-weight: bold; color: #f39c12;">
+                                    预测 y = {{ predictedY.toFixed(2) }}
+                                </span>
+                            </div>
+                            <p style="margin-top: 15px; color: #666;">
+                                预测公式：y = {{ fittedSlope.toFixed(3) }} × {{ predictX }} + {{ fittedIntercept.toFixed(3) }} = {{ predictedY.toFixed(2) }}
+                            </p>
+                            <p style="margin-top: 10px; font-size: 14px; color: #999;">
+                                💡 橙色圆点表示预测值在图像上的位置
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- 应用示例 -->
+                    <div class="section">
+                        <h2>💡 应用示例</h2>
+                        
+                        <div class="concept-card">
+                            <h3>示例：身高与体重的关系</h3>
+                            <p>假设我们收集了一些人的身高（x，单位：米）和体重（y，单位：公斤）数据：</p>
+                            <ul style="margin: 15px 0; padding-left: 30px;">
+                                <li>身高 1.6m，体重 55kg</li>
+                                <li>身高 1.7m，体重 65kg</li>
+                                <li>身高 1.8m，体重 75kg</li>
+                            </ul>
+                            <p>通过拟合趋势线，我们可以：</p>
+                            <ul style="margin: 15px 0; padding-left: 30px;">
+                                <li>了解身高和体重的线性关系</li>
+                                <li>预测某个身高对应的体重范围</li>
+                                <li>判断某个数据点是否偏离正常范围（通过残差）</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

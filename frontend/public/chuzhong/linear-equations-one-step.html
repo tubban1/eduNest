@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一元一次方程 - 初中数学教学</title>
+    <meta name="description" content="学习一元一次方程的解法，理解方程平衡思想，掌握加减乘除逆运算，通过可视化天平理解方程两边同时加减乘除保持平衡的原理，学会验证方程的解。">
+    <meta name="keywords" content="一元一次方程,方程解法,逆运算,方程平衡,等式性质,移项,方程验证,解方程,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .concept-card p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .concept-card .example {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            color: #333;
+        }
+        
+        .demo-area {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .balance-container {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(to bottom, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .balance-scale {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .equation-display {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            border: 2px solid #667eea;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .term-item {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: move;
+            user-select: none;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .term-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .term-item.dragging {
+            opacity: 0.5;
+            transform: scale(1.1);
+        }
+        
+        .term-item.variable {
+            background: #f39c12;
+        }
+        
+        .term-item.number {
+            background: #28a745;
+        }
+        
+        .steps-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #28a745;
+        }
+        
+        .step-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .step-item.current {
+            background: #e3f2fd;
+            border-left-color: #28a745;
+        }
+        
+        .practice-area {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 18px;
+            width: 200px;
+            margin: 10px;
+        }
+        
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, reactive, onMounted, onBeforeUnmount, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                const concepts = ref([
+                    {
+                        title: '一元一次方程',
+                        content: '只含有一个未知数，且未知数的次数是1的方程叫做一元一次方程。',
+                        example: '例如：x + 3 = 5, 2x - 7 = 3'
+                    },
+                    {
+                        title: '方程平衡思想',
+                        content: '方程就像一个天平，左右两边必须保持平衡。如果对一边进行操作，必须对另一边进行相同的操作，才能保持平衡。',
+                        example: '如果 x + 3 = 5，那么 x + 3 - 3 = 5 - 3'
+                    },
+                    {
+                        title: '加减逆运算',
+                        content: '方程两边同时加上或减去同一个数，方程仍然成立。这是解方程的基础。',
+                        example: 'x + 5 = 8，两边同时减5：x = 3'
+                    },
+                    {
+                        title: '乘除逆运算',
+                        content: '方程两边同时乘以或除以同一个不为0的数，方程仍然成立。',
+                        example: '3x = 12，两边同时除以3：x = 4'
+                    },
+                    {
+                        title: '移项',
+                        content: '把方程中的项从一边移到另一边，同时改变符号，这个过程叫做移项。',
+                        example: 'x + 5 = 8，移项得 x = 8 - 5'
+                    },
+                    {
+                        title: '方程验证',
+                        content: '将求得的解代入原方程，检查两边是否相等，如果相等则解正确。',
+                        example: 'x = 3，验证：3 + 5 = 8 ✓'
+                    }
+                ]);
+                
+                // 天平演示
+                const balanceStage = ref(null);
+                const balanceLayer = ref(null);
+                const currentEquation = ref('x + 3 = 7');
+                const leftTerms = ref([]);
+                const rightTerms = ref([]);
+                const steps = ref([]);
+                const currentStep = ref(0);
+                const isAnimating = ref(false);
+                const solution = ref(null);
+                const originalEquation = ref('x + 3 = 7');
+                const isAutoPlaying = ref(false);
+                const animationSteps = ref([]);
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        equation: 'x + 5 = 12',
+                        answer: 7,
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        equation: 'x - 3 = 8',
+                        answer: 11,
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        equation: '2x = 14',
+                        answer: 7,
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        equation: 'x / 3 = 4',
+                        answer: 12,
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        equation: '3x + 2 = 14',
+                        answer: 4,
+                        userAnswer: '',
+                        correct: null
+                    }
+                ]);
+                
+                // 解析方程
+                function parseEquation(eq) {
+                    const parts = eq.split('=');
+                    if (parts.length !== 2) return null;
+                    
+                    const left = parts[0].trim();
+                    const right = parts[1].trim();
+                    
+                    return {
+                        left: parseSide(left),
+                        right: parseSide(right)
+                    };
+                }
+                
+                // 解析方程的一边
+                function parseSide(side) {
+                    const terms = [];
+                    let current = '';
+                    let sign = 1;
+                    
+                    for (let i = 0; i < side.length; i++) {
+                        const char = side[i];
+                        if (char === '+') {
+                            if (current) {
+                                terms.push(parseTerm(current, sign));
+                                current = '';
+                            }
+                            sign = 1;
+                        } else if (char === '-') {
+                            if (current) {
+                                terms.push(parseTerm(current, sign));
+                                current = '';
+                            }
+                            sign = -1;
+                        } else if (char !== ' ') {
+                            current += char;
+                        }
+                    }
+                    
+                    if (current) {
+                        terms.push(parseTerm(current, sign));
+                    }
+                    
+                    return terms;
+                }
+                
+                // 解析项
+                function parseTerm(termStr, sign) {
+                    const term = termStr.trim();
+                    const hasX = term.includes('x');
+                    
+                    if (hasX) {
+                        const coeffStr = term.replace('x', '').trim();
+                        const coefficient = coeffStr === '' || coeffStr === '+' ? 1 : 
+                                          coeffStr === '-' ? -1 : parseInt(coeffStr);
+                        return {
+                            type: 'variable',
+                            coefficient: coefficient * sign,
+                            text: formatTerm(coefficient * sign, 'x')
+                        };
+                    } else {
+                        const num = parseInt(term);
+                        return {
+                            type: 'number',
+                            coefficient: num * sign,
+                            text: (num * sign >= 0 ? '+' : '') + (num * sign)
+                        };
+                    }
+                }
+                
+                // 格式化项
+                function formatTerm(coeff, variable) {
+                    if (coeff === 0) return '0';
+                    if (coeff === 1 && variable) return variable;
+                    if (coeff === -1 && variable) return '-' + variable;
+                    return coeff + variable;
+                }
+                
+                // 初始化天平
+                function initBalance() {
+                    const container = document.getElementById('balance-scale');
+                    if (!container || balanceStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 500;
+                    
+                    balanceStage.value = new Konva.Stage({
+                        container: 'balance-scale',
+                        width: width,
+                        height: height
+                    });
+                    
+                    balanceLayer.value = new Konva.Layer();
+                    balanceStage.value.add(balanceLayer.value);
+                    
+                    drawBalance();
+                    loadEquation(currentEquation.value);
+                }
+                
+                // 绘制天平
+                function drawBalance() {
+                    if (!balanceLayer.value) return;
+                    
+                    const width = balanceStage.value.width();
+                    const height = balanceStage.value.height();
+                    const centerX = width / 2;
+                    const beamY = height / 3;
+                    const beamLength = width * 0.8;
+                    const leftX = centerX - beamLength / 2;
+                    const rightX = centerX + beamLength / 2;
+                    
+                    // 绘制天平底座
+                    const base = new Konva.Rect({
+                        x: centerX - 30,
+                        y: height - 50,
+                        width: 60,
+                        height: 30,
+                        fill: '#8b4513',
+                        cornerRadius: 5
+                    });
+                    balanceLayer.value.add(base);
+                    
+                    // 绘制支撑柱
+                    const pillar = new Konva.Line({
+                        points: [centerX, height - 50, centerX, beamY],
+                        stroke: '#654321',
+                        strokeWidth: 8,
+                        lineCap: 'round'
+                    });
+                    balanceLayer.value.add(pillar);
+                    
+                    // 绘制横梁
+                    const beam = new Konva.Line({
+                        points: [leftX, beamY, rightX, beamY],
+                        stroke: '#654321',
+                        strokeWidth: 6,
+                        lineCap: 'round'
+                    });
+                    beam.name('beam');
+                    balanceLayer.value.add(beam);
+                    
+                    // 绘制左托盘
+                    const leftTray = new Konva.Group({
+                        x: leftX,
+                        y: beamY + 20
+                    });
+                    const leftTrayRect = new Konva.Rect({
+                        x: -40,
+                        y: 0,
+                        width: 80,
+                        height: 15,
+                        fill: '#c0c0c0',
+                        cornerRadius: 3
+                    });
+                    const leftTrayLine = new Konva.Line({
+                        points: [0, 0, 0, -20],
+                        stroke: '#808080',
+                        strokeWidth: 3
+                    });
+                    leftTray.add(leftTrayRect);
+                    leftTray.add(leftTrayLine);
+                    leftTray.name('leftTray');
+                    balanceLayer.value.add(leftTray);
+                    
+                    // 绘制右托盘
+                    const rightTray = new Konva.Group({
+                        x: rightX,
+                        y: beamY + 20
+                    });
+                    const rightTrayRect = new Konva.Rect({
+                        x: -40,
+                        y: 0,
+                        width: 80,
+                        height: 15,
+                        fill: '#c0c0c0',
+                        cornerRadius: 3
+                    });
+                    const rightTrayLine = new Konva.Line({
+                        points: [0, 0, 0, -20],
+                        stroke: '#808080',
+                        strokeWidth: 3
+                    });
+                    rightTray.add(rightTrayRect);
+                    rightTray.add(rightTrayLine);
+                    rightTray.name('rightTray');
+                    balanceLayer.value.add(rightTray);
+                    
+                    balanceLayer.value.draw();
+                }
+                
+                // 加载方程
+                function loadEquation(eq) {
+                    originalEquation.value = eq;
+                    currentEquation.value = eq;
+                    steps.value = [];
+                    currentStep.value = 0;
+                    solution.value = null;
+                    
+                    const parsed = parseEquation(eq);
+                    if (!parsed) return;
+                    
+                    leftTerms.value = parsed.left;
+                    rightTerms.value = parsed.right;
+                    
+                    drawTerms();
+                    solveEquation(parsed);
+                }
+                
+                // 绘制项
+                function drawTerms() {
+                    if (!balanceLayer.value) return;
+                    
+                    // 清除旧的项
+                    balanceLayer.value.find('Group').forEach(group => {
+                        if (group.name() && group.name().startsWith('term')) {
+                            group.destroy();
+                        }
+                    });
+                    
+                    const beam = balanceLayer.value.findOne('.beam');
+                    const leftTray = balanceLayer.value.findOne('.leftTray');
+                    const rightTray = balanceLayer.value.findOne('.rightTray');
+                    
+                    if (!beam || !leftTray || !rightTray) return;
+                    
+                    const leftX = leftTray.x();
+                    const rightX = rightTray.x();
+                    const trayY = leftTray.y();
+                    
+                    // 绘制左侧项
+                    let leftOffset = -40;
+                    leftTerms.value.forEach((term, index) => {
+                        const termGroup = createTermGroup(term, leftX + leftOffset, trayY - 30, 'left', index);
+                        balanceLayer.value.add(termGroup);
+                        leftOffset += 70;
+                    });
+                    
+                    // 绘制右侧项
+                    let rightOffset = -40;
+                    rightTerms.value.forEach((term, index) => {
+                        const termGroup = createTermGroup(term, rightX + rightOffset, trayY - 30, 'right', index);
+                        balanceLayer.value.add(termGroup);
+                        rightOffset += 70;
+                    });
+                    
+                    balanceLayer.value.draw();
+                }
+                
+                // 创建项组
+                function createTermGroup(term, x, y, side, index) {
+                    const group = new Konva.Group({
+                        x: x,
+                        y: y,
+                        draggable: true,
+                        name: 'term-' + side + '-' + index
+                    });
+                    
+                    const color = term.type === 'variable' ? '#f39c12' : '#28a745';
+                    const width = 60;
+                    const height = 40;
+                    
+                    const rect = new Konva.Rect({
+                        width: width,
+                        height: height,
+                        fill: color,
+                        cornerRadius: 8,
+                        stroke: '#333',
+                        strokeWidth: 2,
+                        shadowColor: 'black',
+                        shadowBlur: 5,
+                        shadowOpacity: 0.3
+                    });
+                    
+                    const text = new Konva.Text({
+                        text: term.text,
+                        fontSize: 18,
+                        fontStyle: 'bold',
+                        fill: 'white',
+                        width: width,
+                        height: height,
+                        align: 'center',
+                        verticalAlign: 'middle'
+                    });
+                    
+                    group.add(rect);
+                    group.add(text);
+                    group.termData = term;
+                    group.side = side;
+                    
+                    // 拖拽事件
+                    group.on('dragstart', () => {
+                        group.opacity(0.7);
+                        group.zIndex(100);
+                    });
+                    
+                    group.on('dragend', () => {
+                        group.opacity(1);
+                        handleTermMove(group);
+                    });
+                    
+                    return group;
+                }
+                
+                // 处理项移动
+                function handleTermMove(termGroup) {
+                    if (!termGroup || isAnimating.value) return;
+                    
+                    const beam = balanceLayer.value.findOne('.beam');
+                    const leftTray = balanceLayer.value.findOne('.leftTray');
+                    const rightTray = balanceLayer.value.findOne('.rightTray');
+                    
+                    if (!beam || !leftTray || !rightTray) return;
+                    
+                    const centerX = balanceStage.value.width() / 2;
+                    const currentX = termGroup.x();
+                    
+                    // 判断移动到哪一边
+                    if (termGroup.side === 'left' && currentX > centerX) {
+                        // 从左移到右
+                        moveTermToOtherSide(termGroup, 'left', 'right');
+                    } else if (termGroup.side === 'right' && currentX < centerX) {
+                        // 从右移到左
+                        moveTermToOtherSide(termGroup, 'right', 'left');
+                    } else {
+                        // 回到原位置
+                        drawTerms();
+                    }
+                }
+                
+                // 移动项到另一边（移项）
+                function moveTermToOtherSide(termGroup, fromSide, toSide) {
+                    isAnimating.value = true;
+                    
+                    const term = termGroup.termData;
+                    const newTerm = {
+                        ...term,
+                        coefficient: -term.coefficient,
+                        text: formatTerm(-term.coefficient, term.type === 'variable' ? 'x' : '')
+                    };
+                    
+                    // 更新数据
+                    if (fromSide === 'left') {
+                        leftTerms.value = leftTerms.value.filter(t => t !== term);
+                        rightTerms.value.push(newTerm);
+                    } else {
+                        rightTerms.value = rightTerms.value.filter(t => t !== term);
+                        leftTerms.value.push(newTerm);
+                    }
+                    
+                    // 添加步骤
+                    const operation = term.coefficient > 0 ? '减去' : '加上';
+                    const absValue = Math.abs(term.coefficient);
+                    steps.value.push({
+                        text: `移项：${operation}${term.text}，改变符号`,
+                        equation: getCurrentEquationString()
+                    });
+                    
+                    // 动画移动
+                    const targetTray = balanceLayer.value.findOne('.' + toSide + 'Tray');
+                    if (targetTray) {
+                        gsap.to(termGroup, {
+                            duration: 0.8,
+                            x: targetTray.x(),
+                            y: targetTray.y() - 30,
+                            ease: 'power2.inOut',
+                            onComplete: () => {
+                                drawTerms();
+                                updateEquationDisplay();
+                                isAnimating.value = false;
+                            }
+                        });
+                    } else {
+                        drawTerms();
+                        updateEquationDisplay();
+                        isAnimating.value = false;
+                    }
+                }
+                
+                // 获取当前方程字符串
+                function getCurrentEquationString() {
+                    const leftStr = formatSide(leftTerms.value);
+                    const rightStr = formatSide(rightTerms.value);
+                    return leftStr + ' = ' + rightStr;
+                }
+                
+                // 格式化一边
+                function formatSide(terms) {
+                    if (terms.length === 0) return '0';
+                    return terms.map(term => term.text).join(' ').replace(/^\+/, '').replace(/\s\+/g, ' + ').replace(/\s-/g, ' - ');
+                }
+                
+                // 更新方程显示
+                function updateEquationDisplay() {
+                    currentEquation.value = getCurrentEquationString();
+                }
+                
+                // 自动求解方程（生成动画步骤）
+                function solveEquation(parsed) {
+                    steps.value = [];
+                    animationSteps.value = [];
+                    currentStep.value = 0;
+                    const originalEq = currentEquation.value;
+                    
+                    let left = JSON.parse(JSON.stringify(parsed.left));
+                    let right = JSON.parse(JSON.stringify(parsed.right));
+                    
+                    // 合并同类项
+                    const simplifySide = (side) => {
+                        const vars = side.filter(t => t.type === 'variable');
+                        const nums = side.filter(t => t.type === 'number');
+                        
+                        const varSum = vars.reduce((sum, t) => sum + t.coefficient, 0);
+                        const numSum = nums.reduce((sum, t) => sum + t.coefficient, 0);
+                        
+                        const result = [];
+                        if (varSum !== 0) {
+                            result.push({
+                                type: 'variable',
+                                coefficient: varSum,
+                                text: formatTerm(varSum, 'x')
+                            });
+                        }
+                        if (numSum !== 0) {
+                            result.push({
+                                type: 'number',
+                                coefficient: numSum,
+                                text: formatTerm(numSum, '')
+                            });
+                        }
+                        return result.length > 0 ? result : [{ type: 'number', coefficient: 0, text: '0' }];
+                    };
+                    
+                    left = simplifySide(left);
+                    right = simplifySide(right);
+                    
+                    // 步骤1：显示原方程
+                    animationSteps.value.push({
+                        type: 'display',
+                        text: '原方程',
+                        equation: originalEq,
+                        left: JSON.parse(JSON.stringify(left)),
+                        right: JSON.parse(JSON.stringify(right))
+                    });
+                    
+                    // 确保x在左边
+                    const leftHasX = left.some(t => t.type === 'variable');
+                    const rightHasX = right.some(t => t.type === 'variable');
+                    
+                    if (rightHasX && !leftHasX) {
+                        // 交换左右两边
+                        [left, right] = [right, left];
+                        animationSteps.value.push({
+                            type: 'swap',
+                            text: '交换等式两边',
+                            equation: formatSide(left) + ' = ' + formatSide(right),
+                            left: JSON.parse(JSON.stringify(left)),
+                            right: JSON.parse(JSON.stringify(right))
+                        });
+                    }
+                    
+                    // 移项：把常数项移到右边
+                    const leftConstants = left.filter(t => t.type === 'number');
+                    if (leftConstants.length > 0) {
+                        const constantSum = leftConstants.reduce((sum, t) => sum + t.coefficient, 0);
+                        if (constantSum !== 0) {
+                            const constantsToMove = leftConstants.map(c => JSON.parse(JSON.stringify(c)));
+                            
+                            left = left.filter(t => t.type === 'variable');
+                            const rightNum = right.find(t => t.type === 'number');
+                            const rightNumValue = rightNum ? rightNum.coefficient : 0;
+                            
+                            right = right.filter(t => t.type !== 'number');
+                            right.push({
+                                type: 'number',
+                                coefficient: rightNumValue - constantSum,
+                                text: formatTerm(rightNumValue - constantSum, '')
+                            });
+                            
+                            const operation = constantSum > 0 ? '减去' : '加上';
+                            animationSteps.value.push({
+                                type: 'move',
+                                text: `移项：两边同时${operation}${Math.abs(constantSum)}`,
+                                equation: formatSide(left) + ' = ' + formatSide(right),
+                                left: JSON.parse(JSON.stringify(left)),
+                                right: JSON.parse(JSON.stringify(right)),
+                                termsToMove: constantsToMove,
+                                fromSide: 'left',
+                                toSide: 'right'
+                            });
+                        }
+                    }
+                    
+                    // 如果x的系数不是1，需要除以系数
+                    const xTerm = left.find(t => t.type === 'variable');
+                    if (xTerm && Math.abs(xTerm.coefficient) !== 1) {
+                        const coeff = xTerm.coefficient;
+                        const rightNum = right.find(t => t.type === 'number');
+                        
+                        if (rightNum) {
+                            const newValue = rightNum.coefficient / coeff;
+                            
+                            left = [{
+                                type: 'variable',
+                                coefficient: 1,
+                                text: 'x'
+                            }];
+                            right = [{
+                                type: 'number',
+                                coefficient: newValue,
+                                text: newValue.toString()
+                            }];
+                            
+                            animationSteps.value.push({
+                                type: 'divide',
+                                text: `两边同时除以${coeff}`,
+                                equation: 'x = ' + newValue,
+                                left: JSON.parse(JSON.stringify(left)),
+                                right: JSON.parse(JSON.stringify(right)),
+                                divisor: coeff
+                            });
+                            
+                            solution.value = newValue;
+                        }
+                    } else if (xTerm) {
+                        const rightNum = right.find(t => t.type === 'number');
+                        if (rightNum) {
+                            solution.value = rightNum.coefficient;
+                            animationSteps.value.push({
+                                type: 'display',
+                                text: '得到解',
+                                equation: 'x = ' + rightNum.coefficient,
+                                left: JSON.parse(JSON.stringify(left)),
+                                right: JSON.parse(JSON.stringify(right))
+                            });
+                        }
+                    }
+                    
+                    // 如果没有设置解，尝试从最终状态获取
+                    if (solution.value === null || solution.value === undefined) {
+                        const finalXTerm = left.find(t => t.type === 'variable');
+                        const finalNum = right.find(t => t.type === 'number');
+                        if (finalXTerm && finalNum && Math.abs(finalXTerm.coefficient) === 1) {
+                            solution.value = finalNum.coefficient;
+                        }
+                    }
+                    
+                    // 生成步骤显示
+                    animationSteps.value.forEach((step, index) => {
+                        steps.value.push({
+                            text: step.text,
+                            equation: step.equation
+                        });
+                    });
+                }
+                
+                // 执行下一步（带动画）
+                function executeNextStep() {
+                    if (currentStep.value >= animationSteps.value.length) return;
+                    if (isAnimating.value) return;
+                    
+                    const step = animationSteps.value[currentStep.value];
+                    if (!step) return;
+                    
+                    isAnimating.value = true;
+                    
+                    // 根据步骤类型执行不同的动画
+                    if (step.type === 'display' || step.type === 'swap') {
+                        // 直接更新显示
+                        leftTerms.value = step.left;
+                        rightTerms.value = step.right;
+                        drawTerms();
+                        updateEquationDisplay();
+                        
+                        setTimeout(() => {
+                            currentStep.value++;
+                            isAnimating.value = false;
+                        }, 800);
+                    } else if (step.type === 'move') {
+                        // 移项动画
+                        animateMoveTerms(step);
+                    } else if (step.type === 'divide') {
+                        // 除法动画
+                        animateDivide(step);
+                    }
+                }
+                
+                // 动画移项
+                function animateMoveTerms(step) {
+                    // 先更新数据
+                    const oldLeft = [...leftTerms.value];
+                    const oldRight = [...rightTerms.value];
+                    
+                    leftTerms.value = step.left;
+                    rightTerms.value = step.right;
+                    
+                    // 找到需要移动的项并动画
+                    const termsToAnimate = [];
+                    step.termsToMove.forEach(termToMove => {
+                        // 在旧数据中找到对应的项
+                        const oldTerm = oldLeft.find(t => 
+                            t.type === termToMove.type && 
+                            Math.abs(t.coefficient - termToMove.coefficient) < 0.001
+                        );
+                        
+                        if (oldTerm) {
+                            const termGroup = balanceLayer.value.find(node => {
+                                return node.termData && 
+                                       node.termData.type === oldTerm.type &&
+                                       Math.abs(node.termData.coefficient - oldTerm.coefficient) < 0.001 &&
+                                       node.side === step.fromSide;
+                            })[0];
+                            
+                            if (termGroup) {
+                                termsToAnimate.push(termGroup);
+                            }
+                        }
+                    });
+                    
+                    if (termsToAnimate.length > 0) {
+                        const targetTray = balanceLayer.value.findOne('.' + step.toSide + 'Tray');
+                        if (targetTray) {
+                            let completed = 0;
+                            termsToAnimate.forEach((termGroup, index) => {
+                                const newTerm = {
+                                    ...termGroup.termData,
+                                    coefficient: -termGroup.termData.coefficient,
+                                    text: formatTerm(-termGroup.termData.coefficient, termGroup.termData.type === 'variable' ? 'x' : '')
+                                };
+                                
+                                gsap.to(termGroup, {
+                                    duration: 1,
+                                    x: targetTray.x() + index * 70 - 40,
+                                    y: targetTray.y() - 30,
+                                    ease: 'power2.inOut',
+                                    onComplete: () => {
+                                        termGroup.termData = newTerm;
+                                        termGroup.side = step.toSide;
+                                        completed++;
+                                        if (completed === termsToAnimate.length) {
+                                            drawTerms();
+                                            updateEquationDisplay();
+                                            currentStep.value++;
+                                            isAnimating.value = false;
+                                        }
+                                    }
+                                });
+                            });
+                        } else {
+                            drawTerms();
+                            updateEquationDisplay();
+                            currentStep.value++;
+                            isAnimating.value = false;
+                        }
+                    } else {
+                        drawTerms();
+                        updateEquationDisplay();
+                        currentStep.value++;
+                        isAnimating.value = false;
+                    }
+                }
+                
+                // 动画除法
+                function animateDivide(step) {
+                    // 显示除法操作
+                    const beam = balanceLayer.value.findOne('.beam');
+                    if (beam) {
+                        const dividerText = new Konva.Text({
+                            x: balanceStage.value.width() / 2 - 50,
+                            y: beam.y() - 40,
+                            text: '÷ ' + step.divisor,
+                            fontSize: 24,
+                            fontStyle: 'bold',
+                            fill: '#667eea',
+                            opacity: 0
+                        });
+                        balanceLayer.value.add(dividerText);
+                        
+                        gsap.to(dividerText, {
+                            duration: 0.5,
+                            opacity: 1,
+                            y: beam.y() - 60,
+                            onComplete: () => {
+                                gsap.to(dividerText, {
+                                    duration: 0.5,
+                                    opacity: 0,
+                                    delay: 1,
+                                    onComplete: () => {
+                                        dividerText.destroy();
+                                        leftTerms.value = step.left;
+                                        rightTerms.value = step.right;
+                                        drawTerms();
+                                        updateEquationDisplay();
+                                        currentStep.value++;
+                                        isAnimating.value = false;
+                                    }
+                                });
+                            }
+                        });
+                    } else {
+                        leftTerms.value = step.left;
+                        rightTerms.value = step.right;
+                        drawTerms();
+                        updateEquationDisplay();
+                        currentStep.value++;
+                        isAnimating.value = false;
+                    }
+                }
+                
+                // 自动播放所有步骤
+                function autoPlaySteps() {
+                    if (isAutoPlaying.value) {
+                        isAutoPlaying.value = false;
+                        return;
+                    }
+                    
+                    if (animationSteps.value.length === 0) return;
+                    
+                    isAutoPlaying.value = true;
+                    currentStep.value = 0;
+                    
+                    // 重置到初始状态
+                    const firstStep = animationSteps.value[0];
+                    leftTerms.value = firstStep.left;
+                    rightTerms.value = firstStep.right;
+                    drawTerms();
+                    updateEquationDisplay();
+                    
+                    // 执行所有步骤
+                    let stepIndex = 0;
+                    const executeStepWithDelay = () => {
+                        if (!isAutoPlaying.value || stepIndex >= animationSteps.value.length) {
+                            isAutoPlaying.value = false;
+                            return;
+                        }
+                        
+                        currentStep.value = stepIndex;
+                        executeNextStep();
+                        
+                        // 等待动画完成后再执行下一步
+                        const checkComplete = setInterval(() => {
+                            if (!isAnimating.value) {
+                                clearInterval(checkComplete);
+                                stepIndex++;
+                                if (stepIndex < animationSteps.value.length) {
+                                    setTimeout(executeStepWithDelay, 500);
+                                } else {
+                                    isAutoPlaying.value = false;
+                                }
+                            }
+                        }, 100);
+                    };
+                    
+                    setTimeout(executeStepWithDelay, 500);
+                }
+                
+                // 上一步
+                function executePrevStep() {
+                    if (currentStep.value <= 0) return;
+                    if (isAnimating.value) return;
+                    
+                    currentStep.value--;
+                    const step = animationSteps.value[currentStep.value];
+                    if (step) {
+                        leftTerms.value = step.left;
+                        rightTerms.value = step.right;
+                        drawTerms();
+                        updateEquationDisplay();
+                    }
+                }
+                
+                // 重置方程
+                function resetEquation() {
+                    loadEquation('x + 3 = 7');
+                }
+                
+                // 验证方程
+                function verifySolution() {
+                    if (solution.value === null || solution.value === undefined) {
+                        alert('请先求解方程');
+                        return;
+                    }
+                    
+                    const originalEq = originalEquation.value;
+                    const parts = originalEq.split('=');
+                    if (parts.length !== 2) {
+                        alert('方程格式错误');
+                        return;
+                    }
+                    
+                    const leftExpr = parts[0].trim();
+                    const rightExpr = parts[1].trim();
+                    
+                    // 计算左边的值
+                    const leftValue = evaluateExpression(leftExpr, solution.value);
+                    // 计算右边的值
+                    const rightValue = evaluateExpression(rightExpr, solution.value);
+                    
+                    const isValid = Math.abs(leftValue - rightValue) < 0.001;
+                    
+                    // 格式化显示
+                    const leftDisplay = formatExpressionForDisplay(leftExpr, solution.value);
+                    const rightDisplay = formatExpressionForDisplay(rightExpr, solution.value);
+                    
+                    steps.value.push({
+                        text: `验证：将 x = ${solution.value} 代入原方程 ${originalEq}`,
+                        equation: `左边 = ${leftDisplay} = ${leftValue}，右边 = ${rightDisplay} = ${rightValue}`
+                    });
+                    
+                    steps.value.push({
+                        text: isValid ? `✓ 左边 = 右边，验证通过！` : `✗ 左边 ≠ 右边，验证失败`,
+                        equation: ''
+                    });
+                    
+                    // 滚动到验证步骤
+                    nextTick(() => {
+                        const stepsPanel = document.querySelector('.steps-panel');
+                        if (stepsPanel) {
+                            stepsPanel.scrollTop = stepsPanel.scrollHeight;
+                        }
+                    });
+                }
+                
+                // 格式化表达式用于显示
+                function formatExpressionForDisplay(expr, xValue) {
+                    // 将 2x 转换为 2*4 这样的格式用于显示
+                    let display = expr.replace(/(\d+)x/g, (match, num) => {
+                        return num + '*' + xValue;
+                    });
+                    display = display.replace(/x/g, xValue.toString());
+                    return display;
+                }
+                
+                // 计算表达式的值
+                function evaluateExpression(expr, xValue) {
+                    try {
+                        // 处理 2x 这样的表达式，转换为 2*x
+                        let processedExpr = expr.replace(/(\d+)x/g, '$1*x');
+                        // 处理单独的 x
+                        processedExpr = processedExpr.replace(/([+\-])x/g, '$1' + xValue);
+                        processedExpr = processedExpr.replace(/^x([+\-])/, xValue + '$1');
+                        // 如果表达式以 x 开头
+                        if (processedExpr.trim().startsWith('x') && !processedExpr.trim().match(/^\d/)) {
+                            processedExpr = xValue + processedExpr.substring(1);
+                        }
+                        // 替换剩余的 x
+                        processedExpr = processedExpr.replace(/x/g, '*' + xValue);
+                        // 清理多余的 * 号
+                        processedExpr = processedExpr.replace(/\*\*/g, '*');
+                        processedExpr = processedExpr.replace(/([+\-])\*/g, '$1');
+                        
+                        // 如果表达式只是数字，直接返回
+                        if (!isNaN(parseFloat(processedExpr)) && isFinite(processedExpr)) {
+                            return parseFloat(processedExpr);
+                        }
+                        
+                        return eval(processedExpr);
+                    } catch (e) {
+                        // 如果 eval 失败，尝试手动计算
+                        return manualEvaluate(expr, xValue);
+                    }
+                }
+                
+                // 手动计算表达式（更安全的方法）
+                function manualEvaluate(expr, xValue) {
+                    // 解析表达式并计算
+                    const terms = parseSide(expr);
+                    let result = 0;
+                    
+                    terms.forEach(term => {
+                        if (term.type === 'variable') {
+                            result += term.coefficient * xValue;
+                        } else {
+                            result += term.coefficient;
+                        }
+                    });
+                    
+                    return result;
+                }
+                
+                // 检查练习答案
+                function checkPracticeAnswer(question) {
+                    if (!question.userAnswer) return;
+                    
+                    const userAns = parseFloat(question.userAnswer);
+                    question.correct = Math.abs(userAns - question.answer) < 0.001;
+                }
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initBalance();
+                        
+                        // 窗口调整
+                        window.addEventListener('resize', () => {
+                            if (balanceStage.value) {
+                                const container = document.getElementById('balance-scale');
+                                if (container) {
+                                    balanceStage.value.width(container.offsetWidth);
+                                    drawBalance();
+                                    drawTerms();
+                                }
+                            }
+                        });
+                        
+                        // 渲染 KaTeX
+                        if (window.renderMathInElement) {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    {left: '$$', right: '$$', display: true},
+                                    {left: '$', right: '$', display: false},
+                                    {left: '\\[', right: '\\]', display: true},
+                                    {left: '\\(', right: '\\)', display: false}
+                                ]
+                            });
+                        }
+                    });
+                });
+                
+                onBeforeUnmount(() => {
+                    if (balanceStage.value) {
+                        balanceStage.value.destroy();
+                    }
+                });
+                
+                return {
+                    concepts,
+                    currentEquation,
+                    leftTerms,
+                    rightTerms,
+                    steps,
+                    currentStep,
+                    solution,
+                    isAutoPlaying,
+                    animationSteps,
+                    practiceQuestions,
+                    loadEquation,
+                    resetEquation,
+                    verifySolution,
+                    executeNextStep,
+                    executePrevStep,
+                    autoPlaySteps,
+                    checkPracticeAnswer
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>一元一次方程</h1>
+                    <p class="subtitle">理解方程平衡思想，掌握解方程的方法</p>
+                    
+                    <!-- 概念讲解 -->
+                    <div class="section">
+                        <h2>基本概念</h2>
+                        <div class="concept-grid">
+                            <div class="concept-card" v-for="concept in concepts" :key="concept.title">
+                                <h3>{{ concept.title }}</h3>
+                                <p>{{ concept.content }}</p>
+                                <div class="example">{{ concept.example }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 天平演示 -->
+                    <div class="section">
+                        <h2>天平演示</h2>
+                        <div class="demo-area">
+                            <div class="equation-display">
+                                {{ currentEquation }}
+                            </div>
+                            
+                            <div class="controls">
+                                <button class="btn btn-primary" @click="loadEquation('x + 3 = 7')">示例1: x + 3 = 7</button>
+                                <button class="btn btn-primary" @click="loadEquation('x - 5 = 2')">示例2: x - 5 = 2</button>
+                                <button class="btn btn-primary" @click="loadEquation('2x = 10')">示例3: 2x = 10</button>
+                                <button class="btn btn-secondary" @click="resetEquation">重置</button>
+                                <button class="btn btn-success" @click="autoPlaySteps" v-if="animationSteps.length > 0">
+                                    {{ isAutoPlaying ? '停止播放' : '自动播放' }}
+                                </button>
+                                <button class="btn btn-secondary" @click="executePrevStep" :disabled="currentStep <= 0">上一步</button>
+                                <button class="btn btn-secondary" @click="executeNextStep" :disabled="currentStep >= animationSteps.length">下一步</button>
+                                <button class="btn btn-success" @click="verifySolution" v-if="solution">验证解</button>
+                            </div>
+                            
+                            <div class="balance-container">
+                                <div id="balance-scale" class="balance-scale"></div>
+                            </div>
+                            
+                            <div style="padding: 20px; background: #e9ecef; border-radius: 8px; margin-top: 20px;">
+                                <p><strong>操作说明：</strong></p>
+                                <p>拖动天平上的项从一边到另一边，观察方程的平衡变化。拖动数字项可以实现移项操作。</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 求解步骤 -->
+                    <div class="section" v-if="steps.length > 0">
+                        <h2>求解步骤</h2>
+                        <div class="steps-panel">
+                            <div v-for="(step, index) in steps" :key="index" 
+                                 :class="['step-item', { current: index === currentStep }]">
+                                <div style="font-weight: bold; color: #667eea; margin-bottom: 5px;">
+                                    步骤 {{ index + 1 }}：
+                                </div>
+                                <div>{{ step.text }}</div>
+                                <div style="margin-top: 5px; color: #666;">{{ step.equation }}</div>
+                            </div>
+                            <div v-if="solution" style="padding: 15px; background: #d4edda; border-radius: 8px; margin-top: 15px;">
+                                <strong style="color: #155724;">解：x = {{ solution }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习区域 -->
+                    <div class="section">
+                        <h2>小练习</h2>
+                        <p style="margin-bottom: 20px; color: #666;">求解下列方程，输入答案并提交。共5道题。</p>
+                        
+                        <div v-for="question in practiceQuestions" :key="question.id" class="practice-question">
+                            <h4>题目 {{ question.id }}：解方程 {{ question.equation }}</h4>
+                            
+                            <div style="margin: 20px 0;">
+                                <label style="font-weight: bold; font-size: 18px;">x = </label>
+                                <input 
+                                    type="number" 
+                                    v-model="question.userAnswer" 
+                                    class="answer-input"
+                                    placeholder="输入答案"
+                                    @keyup.enter="checkPracticeAnswer(question)"
+                                />
+                                <button class="btn btn-success" @click="checkPracticeAnswer(question)">提交答案</button>
+                            </div>
+                            
+                            <div v-if="question.correct === true" class="feedback correct">
+                                ✓ 回答正确！x = {{ question.answer }}
+                            </div>
+                            <div v-if="question.correct === false" class="feedback incorrect">
+                                ✗ 回答错误。正确答案是：x = {{ question.answer }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

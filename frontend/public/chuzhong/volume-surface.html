@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体积与表面积 - 初中数学教学</title>
+    <meta name="description" content="学习立方体、长方体、棱柱、圆柱、圆锥、球体的体积和表面积计算方法，通过切片理解体积概念，掌握立体图形的计算公式。">
+    <meta name="keywords" content="体积,表面积,立方体,长方体,圆柱,圆锥,球体,立体图形,体积公式,表面积公式,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .shape-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .shape-btn {
+            padding: 12px 24px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .shape-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .shape-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .canvas-container {
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            position: relative;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            color: #555;
+            min-width: 60px;
+        }
+        
+        .control-group input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 150px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .formula-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .formula-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .formula-text {
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .calc-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .calc-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .calc-input {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .calc-input label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .calc-input input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .calc-result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e8f5e9;
+            border-radius: 10px;
+            border-left: 5px solid #4caf50;
+        }
+        
+        .calc-result h4 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        
+        .practice-section {
+            background: #fff3e0;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+        }
+        
+        .practice-input {
+            width: 100px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 0 10px;
+        }
+        
+        .score-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .info-panel {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            margin: 10px 0;
+            line-height: 1.8;
+        }
+        
+        .slice-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .slice-slider {
+            flex: 1;
+        }
+    </style>
+    
+    <!-- Vue.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    
+    <!-- Three.js OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                const shapeType = ref('cube');
+                const container3D = ref(null);
+                let scene, camera, renderer, controls;
+                let currentMesh = null;
+                let slicePlane = null;
+                let sliceHelper = null;
+                let isAnimating = ref(false);
+                
+                // 尺寸参数
+                const cubeLength = ref(2);
+                const rectLength = ref(3);
+                const rectWidth = ref(2);
+                const rectHeight = ref(4);
+                const prismBase = ref(2);
+                const prismHeight = ref(5);
+                const cylinderRadius = ref(1.5);
+                const cylinderHeight = ref(4);
+                const coneRadius = ref(2);
+                const coneHeight = ref(4);
+                const sphereRadius = ref(2);
+                
+                // 切片控制
+                const slicePosition = ref(0.5);
+                const showSlice = ref(false);
+                
+                // 计算结果
+                const volume = ref(0);
+                const surfaceArea = ref(0);
+                
+                // 公式
+                const volumeFormula = computed(() => {
+                    switch(shapeType.value) {
+                        case 'cube':
+                            return `V = a^3 = ${cubeLength.value}^3 = ${volume.value.toFixed(2)}`;
+                        case 'rectangular':
+                            return `V = l \\times w \\times h = ${rectLength.value} \\times ${rectWidth.value} \\times ${rectHeight.value} = ${volume.value.toFixed(2)}`;
+                        case 'prism':
+                            return `V = S_\\text{底} \\times h = ${(Math.PI * prismBase.value * prismBase.value / 4).toFixed(2)} \\times ${prismHeight.value} = ${volume.value.toFixed(2)}`;
+                        case 'cylinder':
+                            return `V = \\pi r^2 h = \\pi \\times ${cylinderRadius.value}^2 \\times ${cylinderHeight.value} = ${volume.value.toFixed(2)}`;
+                        case 'cone':
+                            return `V = \\frac{1}{3}\\pi r^2 h = \\frac{1}{3} \\times \\pi \\times ${coneRadius.value}^2 \\times ${coneHeight.value} = ${volume.value.toFixed(2)}`;
+                        case 'sphere':
+                            return `V = \\frac{4}{3}\\pi r^3 = \\frac{4}{3} \\times \\pi \\times ${sphereRadius.value}^3 = ${volume.value.toFixed(2)}`;
+                        default:
+                            return '';
+                    }
+                });
+                
+                const surfaceAreaFormula = computed(() => {
+                    switch(shapeType.value) {
+                        case 'cube':
+                            return `S = 6a^2 = 6 \\times ${cubeLength.value}^2 = ${surfaceArea.value.toFixed(2)}`;
+                        case 'rectangular':
+                            return `S = 2(lw + lh + wh) = 2(${rectLength.value} \\times ${rectWidth.value} + ${rectLength.value} \\times ${rectHeight.value} + ${rectWidth.value} \\times ${rectHeight.value}) = ${surfaceArea.value.toFixed(2)}`;
+                        case 'prism':
+                            const baseArea = Math.PI * prismBase.value * prismBase.value / 4;
+                            const sideArea = Math.PI * prismBase.value * prismHeight.value;
+                            return `S = 2S_\\text{底} + S_\\text{侧} = 2 \\times ${baseArea.toFixed(2)} + ${sideArea.toFixed(2)} = ${surfaceArea.value.toFixed(2)}`;
+                        case 'cylinder':
+                            return `S = 2\\pi r^2 + 2\\pi rh = 2\\pi \\times ${cylinderRadius.value}^2 + 2\\pi \\times ${cylinderRadius.value} \\times ${cylinderHeight.value} = ${surfaceArea.value.toFixed(2)}`;
+                        case 'cone':
+                            const slant = Math.sqrt(coneRadius.value * coneRadius.value + coneHeight.value * coneHeight.value);
+                            return `S = \\pi r^2 + \\pi rl = \\pi \\times ${coneRadius.value}^2 + \\pi \\times ${coneRadius.value} \\times ${slant.toFixed(2)} = ${surfaceArea.value.toFixed(2)}`;
+                        case 'sphere':
+                            return `S = 4\\pi r^2 = 4 \\times \\pi \\times ${sphereRadius.value}^2 = ${surfaceArea.value.toFixed(2)}`;
+                        default:
+                            return '';
+                    }
+                });
+                
+                // 计算体积和表面积
+                function calculateValues() {
+                    switch(shapeType.value) {
+                        case 'cube':
+                            volume.value = Math.pow(cubeLength.value, 3);
+                            surfaceArea.value = 6 * Math.pow(cubeLength.value, 2);
+                            break;
+                        case 'rectangular':
+                            volume.value = rectLength.value * rectWidth.value * rectHeight.value;
+                            surfaceArea.value = 2 * (rectLength.value * rectWidth.value + 
+                                                    rectLength.value * rectHeight.value + 
+                                                    rectWidth.value * rectHeight.value);
+                            break;
+                        case 'prism':
+                            const baseArea = Math.PI * Math.pow(prismBase.value, 2) / 4;
+                            volume.value = baseArea * prismHeight.value;
+                            surfaceArea.value = 2 * baseArea + Math.PI * prismBase.value * prismHeight.value;
+                            break;
+                        case 'cylinder':
+                            volume.value = Math.PI * Math.pow(cylinderRadius.value, 2) * cylinderHeight.value;
+                            surfaceArea.value = 2 * Math.PI * Math.pow(cylinderRadius.value, 2) + 
+                                              2 * Math.PI * cylinderRadius.value * cylinderHeight.value;
+                            break;
+                        case 'cone':
+                            volume.value = (1/3) * Math.PI * Math.pow(coneRadius.value, 2) * coneHeight.value;
+                            const slant = Math.sqrt(Math.pow(coneRadius.value, 2) + Math.pow(coneHeight.value, 2));
+                            surfaceArea.value = Math.PI * Math.pow(coneRadius.value, 2) + 
+                                              Math.PI * coneRadius.value * slant;
+                            break;
+                        case 'sphere':
+                            volume.value = (4/3) * Math.PI * Math.pow(sphereRadius.value, 3);
+                            surfaceArea.value = 4 * Math.PI * Math.pow(sphereRadius.value, 2);
+                            break;
+                    }
+                }
+                
+                // 初始化3D场景
+                function init3DScene() {
+                    if (typeof THREE === 'undefined') {
+                        console.warn('Three.js未加载');
+                        return;
+                    }
+                    
+                    const container = document.getElementById('canvas-3d');
+                    if (!container) return;
+                    
+                    const width = container.clientWidth;
+                    const height = container.clientHeight || 500;
+                    
+                    // 场景
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xf5f7fa);
+                    
+                    // 相机
+                    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+                    camera.position.set(5, 5, 5);
+                    camera.lookAt(0, 0, 0);
+                    
+                    // 渲染器
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(width, height);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    container.innerHTML = '';
+                    container.appendChild(renderer.domElement);
+                    
+                    // 控制器
+                    if (typeof THREE.OrbitControls !== 'undefined') {
+                        controls = new THREE.OrbitControls(camera, renderer.domElement);
+                        controls.enableDamping = true;
+                        controls.dampingFactor = 0.05;
+                    }
+                    
+                    // 光源
+                    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                    scene.add(ambientLight);
+                    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                    directionalLight.position.set(5, 10, 5);
+                    scene.add(directionalLight);
+                    
+                    // 坐标轴
+                    const axesHelper = new THREE.AxesHelper(3);
+                    scene.add(axesHelper);
+                    
+                    // 网格
+                    const gridHelper = new THREE.GridHelper(10, 10);
+                    scene.add(gridHelper);
+                    
+                    drawShape();
+                    animate();
+                }
+                
+                // 绘制当前形状
+                function drawShape() {
+                    if (!scene) return;
+                    
+                    // 清除旧对象
+                    if (currentMesh) {
+                        scene.remove(currentMesh);
+                    }
+                    if (sliceHelper) {
+                        scene.remove(sliceHelper);
+                    }
+                    
+                    let geometry, material, mesh;
+                    
+                    switch(shapeType.value) {
+                        case 'cube':
+                            geometry = new THREE.BoxGeometry(cubeLength.value, cubeLength.value, cubeLength.value);
+                            break;
+                        case 'rectangular':
+                            geometry = new THREE.BoxGeometry(rectLength.value, rectHeight.value, rectWidth.value);
+                            break;
+                        case 'prism':
+                            // 圆柱体作为棱柱
+                            geometry = new THREE.CylinderGeometry(prismBase.value/2, prismBase.value/2, prismHeight.value, 8);
+                            break;
+                        case 'cylinder':
+                            geometry = new THREE.CylinderGeometry(cylinderRadius.value, cylinderRadius.value, cylinderHeight.value, 32);
+                            break;
+                        case 'cone':
+                            geometry = new THREE.ConeGeometry(coneRadius.value, coneHeight.value, 32);
+                            break;
+                        case 'sphere':
+                            geometry = new THREE.SphereGeometry(sphereRadius.value, 32, 32);
+                            break;
+                    }
+                    
+                    material = new THREE.MeshPhongMaterial({
+                        color: 0x667eea,
+                        transparent: true,
+                        opacity: 0.8,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    mesh = new THREE.Mesh(geometry, material);
+                    currentMesh = mesh;
+                    scene.add(mesh);
+                    
+                    // 更新切片平面
+                    updateSlice();
+                    calculateValues();
+                }
+                
+                // 更新切片
+                function updateSlice() {
+                    if (!showSlice.value || !currentMesh || !scene) return;
+                    
+                    // 移除旧切片辅助对象
+                    if (sliceHelper) {
+                        scene.remove(sliceHelper);
+                    }
+                    
+                    // 创建切片平面
+                    const normal = new THREE.Vector3(0, 1, 0);
+                    const constant = -(slicePosition.value - 0.5) * 10;
+                    
+                    slicePlane = new THREE.Plane(normal, constant);
+                    
+                    // 创建切片可视化（使用辅助平面）
+                    const planeHelper = new THREE.PlaneHelper(slicePlane, 5, 0xff0000);
+                    sliceHelper = planeHelper;
+                    scene.add(planeHelper);
+                    
+                    // 应用切片到网格（使用clipping planes）
+                    if (currentMesh.material) {
+                        currentMesh.material.clippingPlanes = [slicePlane];
+                        renderer.localClippingEnabled = true;
+                    }
+                }
+                
+                // 动画循环
+                function animate() {
+                    requestAnimationFrame(animate);
+                    if (controls) controls.update();
+                    if (renderer && scene && camera) {
+                        renderer.render(scene, camera);
+                    }
+                }
+                
+                // 切片动画
+                function animateSlice() {
+                    if (isAnimating.value || typeof gsap === 'undefined') return;
+                    isAnimating.value = true;
+                    showSlice.value = true;
+                    
+                    const timeline = gsap.timeline({
+                        onComplete: () => {
+                            isAnimating.value = false;
+                        }
+                    });
+                    
+                    timeline.to(slicePosition, {
+                        value: 1,
+                        duration: 2,
+                        ease: 'power2.inOut',
+                        onUpdate: () => {
+                            updateSlice();
+                        }
+                    });
+                    
+                    timeline.to(slicePosition, {
+                        value: 0,
+                        duration: 2,
+                        ease: 'power2.inOut',
+                        onUpdate: () => {
+                            updateSlice();
+                        }
+                    });
+                    
+                    timeline.call(() => {
+                        showSlice.value = false;
+                        updateSlice();
+                    });
+                }
+                
+                // 监听形状变化
+                watch(shapeType, () => {
+                    nextTick(() => {
+                        drawShape();
+                    });
+                });
+                
+                // 监听尺寸变化
+                watch([cubeLength, rectLength, rectWidth, rectHeight, prismBase, prismHeight, 
+                       cylinderRadius, cylinderHeight, coneRadius, coneHeight, sphereRadius], () => {
+                    drawShape();
+                });
+                
+                // 监听切片位置
+                watch([slicePosition, showSlice], () => {
+                    updateSlice();
+                });
+                
+                // 监听公式变化，重新渲染KaTeX
+                watch([volumeFormula, surfaceAreaFormula], () => {
+                    nextTick(() => {
+                        renderKaTeX();
+                    });
+                });
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        type: 'cube',
+                        question: '一个立方体的边长是3，它的体积是多少？',
+                        answer: 27,
+                        userAnswer: null,
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        type: 'cylinder',
+                        question: '一个圆柱体的底面半径是2，高是5，它的体积是多少？（保留2位小数）',
+                        answer: 62.83,
+                        userAnswer: null,
+                        correct: null,
+                        tolerance: 0.5
+                    },
+                    {
+                        id: 3,
+                        type: 'sphere',
+                        question: '一个球体的半径是3，它的表面积是多少？（保留2位小数）',
+                        answer: 113.10,
+                        userAnswer: null,
+                        correct: null,
+                        tolerance: 0.5
+                    }
+                ]);
+                
+                const score = computed(() => {
+                    const total = practiceQuestions.value.length;
+                    const correct = practiceQuestions.value.filter(q => q.correct === true).length;
+                    return { correct, total };
+                });
+                
+                function checkAnswer(question) {
+                    if (question.userAnswer === null || question.userAnswer === '') return;
+                    const answer = parseFloat(question.userAnswer);
+                    const correct = question.tolerance 
+                        ? Math.abs(answer - question.answer) <= question.tolerance
+                        : Math.abs(answer - question.answer) < 0.01;
+                    question.correct = correct;
+                }
+                
+                // KaTeX渲染函数
+                function renderKaTeX() {
+                    if (typeof katex !== 'undefined') {
+                        setTimeout(() => {
+                            document.querySelectorAll('.katex-static').forEach(el => {
+                                const formula = el.getAttribute('data-formula');
+                                if (formula && !el.querySelector('.katex-html')) {
+                                    try {
+                                        katex.render(formula, el, { throwOnError: false });
+                                    } catch(e) {
+                                        console.warn('KaTeX渲染失败:', e);
+                                    }
+                                }
+                            });
+                        }, 100);
+                    }
+                }
+                
+                onMounted(() => {
+                    // 等待DOM完全渲染
+                    setTimeout(() => {
+                        init3DScene();
+                        calculateValues();
+                        renderKaTeX();
+                        
+                        // 窗口大小变化时重新初始化
+                        window.addEventListener('resize', () => {
+                            if (camera && renderer) {
+                                const container = document.getElementById('canvas-3d');
+                                if (container) {
+                                    camera.aspect = container.clientWidth / container.clientHeight;
+                                    camera.updateProjectionMatrix();
+                                    renderer.setSize(container.clientWidth, container.clientHeight);
+                                }
+                            }
+                        });
+                    }, 200);
+                });
+                
+                return {
+                    shapeType,
+                    cubeLength,
+                    rectLength,
+                    rectWidth,
+                    rectHeight,
+                    prismBase,
+                    prismHeight,
+                    cylinderRadius,
+                    cylinderHeight,
+                    coneRadius,
+                    coneHeight,
+                    sphereRadius,
+                    slicePosition,
+                    showSlice,
+                    volume,
+                    surfaceArea,
+                    volumeFormula,
+                    surfaceAreaFormula,
+                    practiceQuestions,
+                    score,
+                    calculateValues,
+                    animateSlice,
+                    checkAnswer,
+                    isAnimating
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>体积与表面积</h1>
+                    
+                    <div class="section">
+                        <h2>基本概念</h2>
+                        <div class="info-panel">
+                            <div class="info-item">
+                                <strong>体积：</strong>物体所占空间的大小，常用单位有立方厘米、立方米等。
+                            </div>
+                            <div class="info-item">
+                                <strong>表面积：</strong>立体图形所有面的面积之和。
+                            </div>
+                            <div class="info-item">
+                                <strong>切片理解：</strong>通过截面理解体积，体积 = 底面积 × 高（对于柱体）。
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>形状选择</h2>
+                        <div class="shape-selector">
+                            <button class="shape-btn" :class="{ active: shapeType === 'cube' }" 
+                                    @click="shapeType = 'cube'">立方体</button>
+                            <button class="shape-btn" :class="{ active: shapeType === 'rectangular' }" 
+                                    @click="shapeType = 'rectangular'">长方体</button>
+                            <button class="shape-btn" :class="{ active: shapeType === 'prism' }" 
+                                    @click="shapeType = 'prism'">棱柱</button>
+                            <button class="shape-btn" :class="{ active: shapeType === 'cylinder' }" 
+                                    @click="shapeType = 'cylinder'">圆柱</button>
+                            <button class="shape-btn" :class="{ active: shapeType === 'cone' }" 
+                                    @click="shapeType = 'cone'">圆锥</button>
+                            <button class="shape-btn" :class="{ active: shapeType === 'sphere' }" 
+                                    @click="shapeType = 'sphere'">球体</button>
+                        </div>
+                        
+                        <!-- 3D显示区域 -->
+                        <div class="canvas-container">
+                            <div id="canvas-3d" class="canvas-wrapper"></div>
+                        </div>
+                        
+                        <!-- 切片控制 -->
+                        <div class="slice-controls">
+                            <label>
+                                <input type="checkbox" v-model="showSlice"> 显示切片
+                            </label>
+                            <input type="range" v-model.number="slicePosition" min="0" max="1" step="0.01" 
+                                   class="slice-slider" :disabled="!showSlice">
+                            <button class="btn" @click="animateSlice" :disabled="isAnimating">
+                                {{ isAnimating ? '动画中...' : '播放切片动画' }}
+                            </button>
+                        </div>
+                        
+                        <!-- 尺寸控制 -->
+                        <div class="controls" v-if="shapeType === 'cube'">
+                            <div class="control-group">
+                                <label>边长:</label>
+                                <input type="number" v-model.number="cubeLength" min="0.5" max="5" step="0.1">
+                            </div>
+                        </div>
+                        <div class="controls" v-if="shapeType === 'rectangular'">
+                            <div class="control-group">
+                                <label>长:</label>
+                                <input type="number" v-model.number="rectLength" min="0.5" max="5" step="0.1">
+                            </div>
+                            <div class="control-group">
+                                <label>宽:</label>
+                                <input type="number" v-model.number="rectWidth" min="0.5" max="5" step="0.1">
+                            </div>
+                            <div class="control-group">
+                                <label>高:</label>
+                                <input type="number" v-model.number="rectHeight" min="0.5" max="5" step="0.1">
+                            </div>
+                        </div>
+                        <div class="controls" v-if="shapeType === 'prism'">
+                            <div class="control-group">
+                                <label>底面直径:</label>
+                                <input type="number" v-model.number="prismBase" min="0.5" max="5" step="0.1">
+                            </div>
+                            <div class="control-group">
+                                <label>高:</label>
+                                <input type="number" v-model.number="prismHeight" min="0.5" max="5" step="0.1">
+                            </div>
+                        </div>
+                        <div class="controls" v-if="shapeType === 'cylinder'">
+                            <div class="control-group">
+                                <label>半径:</label>
+                                <input type="number" v-model.number="cylinderRadius" min="0.5" max="3" step="0.1">
+                            </div>
+                            <div class="control-group">
+                                <label>高:</label>
+                                <input type="number" v-model.number="cylinderHeight" min="0.5" max="5" step="0.1">
+                            </div>
+                        </div>
+                        <div class="controls" v-if="shapeType === 'cone'">
+                            <div class="control-group">
+                                <label>半径:</label>
+                                <input type="number" v-model.number="coneRadius" min="0.5" max="3" step="0.1">
+                            </div>
+                            <div class="control-group">
+                                <label>高:</label>
+                                <input type="number" v-model.number="coneHeight" min="0.5" max="5" step="0.1">
+                            </div>
+                        </div>
+                        <div class="controls" v-if="shapeType === 'sphere'">
+                            <div class="control-group">
+                                <label>半径:</label>
+                                <input type="number" v-model.number="sphereRadius" min="0.5" max="3" step="0.1">
+                            </div>
+                        </div>
+                        
+                        <!-- 公式显示 -->
+                        <div class="formula-card">
+                            <h3>体积公式</h3>
+                            <div class="formula-text">
+                                <span class="katex-static" :data-formula="volumeFormula"></span>
+                            </div>
+                        </div>
+                        <div class="formula-card">
+                            <h3>表面积公式</h3>
+                            <div class="formula-text">
+                                <span class="katex-static" :data-formula="surfaceAreaFormula"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习区域 -->
+                    <div class="section">
+                        <h2>练习</h2>
+                        <div class="practice-section">
+                            <div v-for="question in practiceQuestions" :key="question.id" class="practice-question">
+                                <p>{{ question.question }}</p>
+                                <div style="margin-top: 10px;">
+                                    <input type="number" v-model.number="question.userAnswer" 
+                                           class="practice-input" step="0.01" placeholder="输入答案">
+                                    <button class="btn" @click="checkAnswer(question)">提交答案</button>
+                                    <span v-if="question.correct === true" style="color: #4caf50; margin-left: 10px;">✓ 正确</span>
+                                    <span v-if="question.correct === false" style="color: #f44336; margin-left: 10px;">✗ 错误，正确答案是 {{ question.answer }}</span>
+                                </div>
+                            </div>
+                            <div class="score-display">
+                                得分: {{ score.correct }}/{{ score.total }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+        
+        // KaTeX渲染函数（全局）
+        function renderKaTeXGlobal() {
+            if (typeof katex !== 'undefined') {
+                document.querySelectorAll('.katex-static').forEach(el => {
+                    const formula = el.getAttribute('data-formula');
+                    if (formula && !el.querySelector('.katex-html')) {
+                        try {
+                            katex.render(formula, el, { throwOnError: false });
+                        } catch(e) {
+                            console.warn('KaTeX渲染失败:', e);
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 初始渲染和监听DOM变化
+        setTimeout(() => {
+            renderKaTeXGlobal();
+            // 使用MutationObserver监听DOM变化
+            const observer = new MutationObserver(() => {
+                renderKaTeXGlobal();
+            });
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }, 500);
+    </script>
+</body>
+</html>
+

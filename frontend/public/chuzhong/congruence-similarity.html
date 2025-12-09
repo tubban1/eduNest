@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全等与相似 - 初中数学教学</title>
+    <meta name="description" content="学习全等变换的概念，理解平移、旋转、翻折三种全等变换方式，掌握三角形相似判定方法，学会利用比例关系求边长。">
+    <meta name="keywords" content="全等,相似,平移,旋转,翻折,三角形相似,AA判定,比例求边,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .canvas-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 250px;
+        }
+        
+        .slider-group label {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 60px;
+        }
+        
+        .slider-group input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .slider-group input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .slider-value {
+            min-width: 80px;
+            text-align: center;
+            padding: 5px 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .info-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .info-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .info-item strong {
+            color: #667eea;
+            margin-right: 10px;
+        }
+        
+        .practice-area {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .practice-question.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .practice-question.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+            margin: 10px;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        createApp({
+            setup() {
+                // 全等变换
+                const transformStage = ref(null);
+                const transformLayer = ref(null);
+                const trianglePosition = ref({ x: 200, y: 300 });
+                const triangleRotation = ref(0);
+                const transformType = ref('translate'); // translate, rotate, reflect
+                
+                // 相似
+                const similarityStage = ref(null);
+                const similarityLayer = ref(null);
+                const similarityRatio = ref(1.5);
+                const angle1 = ref(45);
+                const angle2 = ref(60);
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        question: '两个三角形全等的判定方法有哪些？',
+                        answer: 'SSS,SAS,ASA,AAS',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        question: '如果两个三角形的两个角分别相等，这两个三角形相似吗？',
+                        answer: '相似',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        question: '相似比为 2 的两个三角形，对应边的比例是多少？',
+                        answer: '2:1',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        question: '平移、旋转、翻折会改变图形的什么？',
+                        answer: '位置和方向',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        question: '全等变换会改变图形的大小吗？',
+                        answer: '不会',
+                        userAnswer: '',
+                        correct: null
+                    }
+                ]);
+                
+                // 保存变换后的三角形对象，用于动画
+                let transformedTriangleGroup = null;
+                let originalGroup = null;
+                let originalPoints = null;
+                let originalCenter = null;
+                let triangleSize = 0;
+                
+                // 绘制全等变换画布
+                function drawTransformCanvas(animate = false) {
+                    if (!transformLayer.value) return;
+                    
+                    const width = transformStage.value.width();
+                    const height = transformStage.value.height();
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    
+                    // 确保不超出canvas的边距
+                    const margin = 60;
+                    const spacing = 80; // 两个图形之间的间距
+                    
+                    // 计算三角形大小：确保两个三角形都能在canvas内
+                    // 可用宽度 = 总宽度 - 左margin - 右margin - 间距
+                    // 需要容纳：左三角形 + 间距 + 右三角形
+                    const availableWidth = width - 2 * margin - spacing;
+                    triangleSize = Math.min(100, availableWidth / 2.5, (height - 2 * margin) * 0.3);
+                    
+                    // 原图形位置（左侧，水平居中）
+                    const originalX = margin + triangleSize;
+                    const originalY = centerY; // 水平居中
+                    
+                    // 目标位置（原图形右侧，相同的Y坐标）
+                    // 目标图形中心X = 原图形中心X + 原图形右半部分 + 间距 + 目标图形左半部分
+                    // = originalX + triangleSize/2 + spacing + triangleSize/2
+                    let targetX = originalX + triangleSize + spacing;
+                    const targetY = centerY; // 与原图形相同的Y坐标
+                    
+                    // 检查并调整：确保目标位置不超出canvas右边界
+                    const rightBound = targetX + triangleSize / 2; // 目标图形的右边界
+                    let finalTargetX = targetX;
+                    
+                    if (rightBound > width - margin) {
+                        // 超出边界，调整目标位置
+                        finalTargetX = width - margin - triangleSize / 2;
+                    }
+                    
+                    // 清除所有内容
+                    transformLayer.value.destroyChildren();
+                    
+                    // 绘制原图形
+                    originalGroup = new Konva.Group({ name: 'original-group' });
+                    
+                    const originalTriangle = new Konva.Line({
+                        points: [
+                            originalX - triangleSize / 2, originalY + triangleSize / 2,
+                            originalX + triangleSize / 2, originalY + triangleSize / 2,
+                            originalX, originalY - triangleSize / 2,
+                            originalX - triangleSize / 2, originalY + triangleSize / 2
+                        ],
+                        closed: true,
+                        fill: 'rgba(102, 126, 234, 0.3)',
+                        stroke: '#667eea',
+                        strokeWidth: 3,
+                        name: 'original'
+                    });
+                    originalGroup.add(originalTriangle);
+                    
+                    const originalLabel = new Konva.Text({
+                        x: originalX - triangleSize / 2,
+                        y: originalY + triangleSize / 2 + 25,
+                        text: '原图形',
+                        fontSize: 14,
+                        fill: '#667eea',
+                        fontStyle: 'bold'
+                    });
+                    originalGroup.add(originalLabel);
+                    
+                    transformLayer.value.add(originalGroup);
+                    
+                    // 保存原始三角形的中心点
+                    originalCenter = {
+                        x: originalX,
+                        y: originalY
+                    };
+                    
+                    // 创建变换后的三角形组（从原图形位置开始，准备移动到右侧）
+                    transformedTriangleGroup = new Konva.Group({ 
+                        name: 'transformed-group',
+                        x: originalCenter.x,
+                        y: originalCenter.y,
+                        offsetX: 0,
+                        offsetY: 0
+                    });
+                    
+                    // 创建三角形（相对于组中心）
+                    const triangleOffset = [
+                        { x: -triangleSize / 2, y: triangleSize / 2 },
+                        { x: triangleSize / 2, y: triangleSize / 2 },
+                        { x: 0, y: -triangleSize / 2 }
+                    ];
+                    
+                    const transformedTriangle = new Konva.Line({
+                        points: [
+                            triangleOffset[0].x, triangleOffset[0].y,
+                            triangleOffset[1].x, triangleOffset[1].y,
+                            triangleOffset[2].x, triangleOffset[2].y,
+                            triangleOffset[0].x, triangleOffset[0].y
+                        ],
+                        closed: true,
+                        fill: 'rgba(76, 175, 80, 0.3)',
+                        stroke: '#4caf50',
+                        strokeWidth: 3,
+                        name: 'transformed'
+                    });
+                    transformedTriangleGroup.add(transformedTriangle);
+                    
+                    // 变换后三角形标签
+                    const transformedLabel = new Konva.Text({
+                        x: -triangleSize / 2,
+                        y: triangleSize / 2 + 25,
+                        text: '变换后',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    transformedTriangleGroup.add(transformedLabel);
+                    
+                    transformLayer.value.add(transformedTriangleGroup);
+                    
+                    // 根据变换类型执行动画
+                    if (animate && typeof gsap !== 'undefined') {
+                        if (transformType.value === 'translate') {
+                            // 平移动画：从原位置移动到目标位置（右侧，相同Y坐标）
+                            transformedTriangleGroup.opacity(0);
+                            gsap.to(transformedTriangleGroup, {
+                                opacity: 1,
+                                x: finalTargetX,
+                                y: targetY,
+                                duration: 1.5,
+                                ease: 'power2.inOut',
+                                onUpdate: () => {
+                                    transformLayer.value.draw();
+                                }
+                            });
+                            
+                            // 添加控制点
+                            setTimeout(() => {
+                                const controlY = targetY;
+                                const maxHeight = height - 2 * margin;
+                                const minY = centerY - maxHeight / 2 + triangleSize + 30;
+                                const maxY = centerY + maxHeight / 2 - triangleSize - 30;
+                                
+                                const controlPoint = new Konva.Circle({
+                                    x: finalTargetX,
+                                    y: controlY,
+                                    radius: 10,
+                                    fill: '#ff5722',
+                                    stroke: '#fff',
+                                    strokeWidth: 2,
+                                    draggable: true,
+                                    name: 'control'
+                                });
+                                
+                                controlPoint.on('dragmove', function() {
+                                    const newY = Math.max(minY, Math.min(maxY, this.y()));
+                                    this.y(newY);
+                                    trianglePosition.value = { x: finalTargetX, y: newY - originalY };
+                                    transformedTriangleGroup.y(newY);
+                                    transformLayer.value.draw();
+                                });
+                                
+                                transformLayer.value.add(controlPoint);
+                                transformLayer.value.draw();
+                            }, 1500);
+                        } else if (transformType.value === 'rotate') {
+                            // 旋转动画：从原位置移动到目标位置，同时旋转
+                            transformedTriangleGroup.opacity(0);
+                            transformedTriangleGroup.rotation(0);
+                            
+                            gsap.to(transformedTriangleGroup, {
+                                opacity: 1,
+                                x: finalTargetX,
+                                y: targetY,
+                                duration: 1.2,
+                                ease: 'power2.out',
+                                onUpdate: () => {
+                                    transformLayer.value.draw();
+                                }
+                            });
+                            
+                            // 同时旋转
+                            gsap.to(transformedTriangleGroup, {
+                                rotation: triangleRotation.value,
+                                duration: 1.5,
+                                ease: 'power2.inOut',
+                                onUpdate: () => {
+                                    transformLayer.value.draw();
+                                }
+                            });
+                        } else if (transformType.value === 'reflect') {
+                            // 翻折动画：从原位置移动到对称轴，然后翻折到目标位置
+                            transformedTriangleGroup.opacity(0);
+                            transformedTriangleGroup.scaleX(1);
+                            
+                            // 对称轴位置（在原图形和目标位置之间）
+                            const reflectX = (originalCenter.x + finalTargetX) / 2;
+                            const maxHeight = height - 2 * margin;
+                            
+                            // 先移动到对称轴
+                            gsap.to(transformedTriangleGroup, {
+                                opacity: 1,
+                                x: reflectX,
+                                y: targetY,
+                                duration: 0.8,
+                                ease: 'power2.out',
+                                onUpdate: () => {
+                                    transformLayer.value.draw();
+                                },
+                                onComplete: () => {
+                                    // 翻折（缩放X）
+                                    gsap.to(transformedTriangleGroup, {
+                                        scaleX: -1,
+                                        duration: 0.6,
+                                        ease: 'power2.inOut',
+                                        onUpdate: () => {
+                                            transformLayer.value.draw();
+                                        },
+                                        onComplete: () => {
+                                            // 移动到目标位置
+                                            gsap.to(transformedTriangleGroup, {
+                                                x: finalTargetX,
+                                                duration: 0.8,
+                                                ease: 'power2.out',
+                                                onUpdate: () => {
+                                                    transformLayer.value.draw();
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                            
+                            // 显示对称轴
+                            const axisLine = new Konva.Line({
+                                points: [reflectX, centerY - maxHeight / 2 + 20, reflectX, centerY + maxHeight / 2 - 20],
+                                stroke: '#9e9e9e',
+                                strokeWidth: 2,
+                                dash: [5, 5],
+                                name: 'axis'
+                            });
+                            transformLayer.value.add(axisLine);
+                            
+                            const axisLabel = new Konva.Text({
+                                x: reflectX + 10,
+                                y: centerY - maxHeight / 2 + 10,
+                                text: '对称轴',
+                                fontSize: 12,
+                                fill: '#9e9e9e',
+                                fontStyle: 'bold'
+                            });
+                            transformLayer.value.add(axisLabel);
+                        }
+                    } else {
+                        // 不动画，直接显示最终位置
+                        if (transformType.value === 'translate') {
+                            transformedTriangleGroup.x(finalTargetX);
+                            transformedTriangleGroup.y(targetY);
+                        } else if (transformType.value === 'rotate') {
+                            transformedTriangleGroup.x(finalTargetX);
+                            transformedTriangleGroup.y(targetY);
+                            transformedTriangleGroup.rotation(triangleRotation.value);
+                        } else if (transformType.value === 'reflect') {
+                            transformedTriangleGroup.x(finalTargetX);
+                            transformedTriangleGroup.y(targetY);
+                            transformedTriangleGroup.scaleX(-1);
+                            
+                            // 显示对称轴
+                            const reflectX = (originalCenter.x + finalTargetX) / 2;
+                            const maxHeight = height - 2 * margin;
+                            const axisLine = new Konva.Line({
+                                points: [reflectX, centerY - maxHeight / 2 + 20, reflectX, centerY + maxHeight / 2 - 20],
+                                stroke: '#9e9e9e',
+                                strokeWidth: 2,
+                                dash: [5, 5],
+                                name: 'axis'
+                            });
+                            transformLayer.value.add(axisLine);
+                            
+                            const axisLabel = new Konva.Text({
+                                x: reflectX + 10,
+                                y: centerY - maxHeight / 2 + 10,
+                                text: '对称轴',
+                                fontSize: 12,
+                                fill: '#9e9e9e',
+                                fontStyle: 'bold'
+                            });
+                            transformLayer.value.add(axisLabel);
+                        }
+                        transformLayer.value.draw();
+                    }
+                }
+                
+                // 绘制相似画布
+                function drawSimilarityCanvas() {
+                    if (!similarityLayer.value) return;
+                    
+                    similarityLayer.value.destroyChildren();
+                    
+                    const width = similarityStage.value.width();
+                    const height = similarityStage.value.height();
+                    
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    
+                    // 第一个三角形（左侧）
+                    const baseSize = 80;
+                    const tri1X = centerX - 200;
+                    const tri1Y = centerY;
+                    
+                    // 根据角度计算三角形顶点
+                    const angle1Rad = (angle1.value * Math.PI) / 180;
+                    const angle2Rad = (angle2.value * Math.PI) / 180;
+                    const angle3Rad = Math.PI - angle1Rad - angle2Rad;
+                    
+                    // 使用正弦定理计算边长
+                    const a1 = baseSize;
+                    const b1 = (a1 * Math.sin(angle2Rad)) / Math.sin(angle3Rad);
+                    const c1 = (a1 * Math.sin(angle1Rad)) / Math.sin(angle3Rad);
+                    
+                    // 三角形1的顶点
+                    const tri1P1 = { x: tri1X, y: tri1Y };
+                    const tri1P2 = { x: tri1X + a1, y: tri1Y };
+                    const tri1P3 = {
+                        x: tri1X + c1 * Math.cos(angle1Rad),
+                        y: tri1Y - c1 * Math.sin(angle1Rad)
+                    };
+                    
+                    const triangle1 = new Konva.Line({
+                        points: [tri1P1.x, tri1P1.y, tri1P2.x, tri1P2.y, tri1P3.x, tri1P3.y, tri1P1.x, tri1P1.y],
+                        closed: true,
+                        fill: 'rgba(102, 126, 234, 0.3)',
+                        stroke: '#667eea',
+                        strokeWidth: 3,
+                        name: 'triangle1'
+                    });
+                    similarityLayer.value.add(triangle1);
+                    
+                    // 三角形1的角标注
+                    const angle1Label1 = new Konva.Text({
+                        x: tri1P1.x - 20,
+                        y: tri1P1.y - 30,
+                        text: angle1.value + '°',
+                        fontSize: 14,
+                        fill: '#667eea',
+                        fontStyle: 'bold'
+                    });
+                    similarityLayer.value.add(angle1Label1);
+                    
+                    const angle2Label1 = new Konva.Text({
+                        x: tri1P2.x + 10,
+                        y: tri1P2.y - 30,
+                        text: angle2.value + '°',
+                        fontSize: 14,
+                        fill: '#667eea',
+                        fontStyle: 'bold'
+                    });
+                    similarityLayer.value.add(angle2Label1);
+                    
+                    const angle3Label1 = new Konva.Text({
+                        x: tri1P3.x,
+                        y: tri1P3.y - 25,
+                        text: (180 - angle1.value - angle2.value).toFixed(1) + '°',
+                        fontSize: 14,
+                        fill: '#667eea',
+                        fontStyle: 'bold'
+                    });
+                    similarityLayer.value.add(angle3Label1);
+                    
+                    // 第二个三角形（右侧，相似）
+                    const ratio = similarityRatio.value;
+                    const tri2X = centerX + 100;
+                    const tri2Y = centerY;
+                    
+                    // 相似三角形的对应边长
+                    const a2 = a1 * ratio;
+                    const b2 = b1 * ratio;
+                    const c2 = c1 * ratio;
+                    
+                    // 三角形2的顶点
+                    const tri2P1 = { x: tri2X, y: tri2Y };
+                    const tri2P2 = { x: tri2X + a2, y: tri2Y };
+                    const tri2P3 = {
+                        x: tri2X + c2 * Math.cos(angle1Rad),
+                        y: tri2Y - c2 * Math.sin(angle1Rad)
+                    };
+                    
+                    const triangle2 = new Konva.Line({
+                        points: [tri2P1.x, tri2P1.y, tri2P2.x, tri2P2.y, tri2P3.x, tri2P3.y, tri2P1.x, tri2P1.y],
+                        closed: true,
+                        fill: 'rgba(76, 175, 80, 0.3)',
+                        stroke: '#4caf50',
+                        strokeWidth: 3,
+                        name: 'triangle2'
+                    });
+                    similarityLayer.value.add(triangle2);
+                    
+                    // 三角形2的角标注
+                    const angle1Label2 = new Konva.Text({
+                        x: tri2P1.x - 20,
+                        y: tri2P1.y - 30,
+                        text: angle1.value + '°',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    similarityLayer.value.add(angle1Label2);
+                    
+                    const angle2Label2 = new Konva.Text({
+                        x: tri2P2.x + 10,
+                        y: tri2P2.y - 30,
+                        text: angle2.value + '°',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold'
+                    });
+                    similarityLayer.value.add(angle2Label2);
+                    
+                    // 相似比标签
+                    const ratioLabel = new Konva.Text({
+                        x: centerX - 50,
+                        y: centerY - 100,
+                        text: '相似比 = ' + ratio.toFixed(2),
+                        fontSize: 18,
+                        fill: '#ff5722',
+                        fontStyle: 'bold',
+                        padding: 10,
+                        background: 'rgba(255,255,255,0.95)',
+                        cornerRadius: 5
+                    });
+                    similarityLayer.value.add(ratioLabel);
+                    
+                    // 边长标注
+                    const side1Label = new Konva.Text({
+                        x: (tri1P1.x + tri1P2.x) / 2,
+                        y: tri1P1.y + 20,
+                        text: 'a₁ = ' + a1.toFixed(1),
+                        fontSize: 12,
+                        fill: '#333'
+                    });
+                    similarityLayer.value.add(side1Label);
+                    
+                    const side2Label = new Konva.Text({
+                        x: (tri2P1.x + tri2P2.x) / 2,
+                        y: tri2P1.y + 20,
+                        text: 'a₂ = ' + a2.toFixed(1),
+                        fontSize: 12,
+                        fill: '#333'
+                    });
+                    similarityLayer.value.add(side2Label);
+                    
+                    similarityLayer.value.draw();
+                }
+                
+                // 初始化全等变换画布
+                function initTransformCanvas() {
+                    const container = document.getElementById('transform-canvas');
+                    if (!container || transformStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 600;
+                    
+                    transformStage.value = new Konva.Stage({
+                        container: 'transform-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    transformLayer.value = new Konva.Layer();
+                    transformStage.value.add(transformLayer.value);
+                    
+                    drawTransformCanvas();
+                }
+                
+                // 初始化相似画布
+                function initSimilarityCanvas() {
+                    const container = document.getElementById('similarity-canvas');
+                    if (!container || similarityStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 600;
+                    
+                    similarityStage.value = new Konva.Stage({
+                        container: 'similarity-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    similarityLayer.value = new Konva.Layer();
+                    similarityStage.value.add(similarityLayer.value);
+                    
+                    drawSimilarityCanvas();
+                }
+                
+                // 切换到平移（带动画）
+                function setTranslate() {
+                    transformType.value = 'translate';
+                    trianglePosition.value = { x: 0, y: 0 };
+                    drawTransformCanvas(true);
+                }
+                
+                // 切换到旋转（带动画）
+                function setRotate() {
+                    transformType.value = 'rotate';
+                    triangleRotation.value = 90;
+                    drawTransformCanvas(true);
+                }
+                
+                // 切换到翻折（带动画）
+                function setReflect() {
+                    transformType.value = 'reflect';
+                    drawTransformCanvas(true);
+                }
+                
+                // 重置变换
+                function resetTransform() {
+                    trianglePosition.value = { x: 0, y: 0 };
+                    triangleRotation.value = 0;
+                    drawTransformCanvas(false);
+                }
+                
+                // 检查练习答案
+                function checkAnswer(question) {
+                    const userAns = question.userAnswer.trim().toLowerCase().replace(/\s+/g, '');
+                    const correctAns = question.answer.trim().toLowerCase().replace(/\s+/g, '');
+                    question.correct = userAns === correctAns;
+                }
+                
+                // 计算得分
+                const score = computed(() => {
+                    if (!practiceQuestions.value || practiceQuestions.value.length === 0) {
+                        return { correct: 0, total: 0 };
+                    }
+                    const total = practiceQuestions.value.length;
+                    const correct = practiceQuestions.value.filter(q => q.correct === true).length;
+                    return { correct, total };
+                });
+                
+                // 监听旋转角度变化（实时更新，不重新动画）
+                Vue.watch(triangleRotation, () => {
+                    if (transformLayer.value && transformedTriangleGroup && transformType.value === 'rotate') {
+                        transformedTriangleGroup.rotation(triangleRotation.value);
+                        transformLayer.value.draw();
+                    }
+                });
+                
+                Vue.watch([similarityRatio, angle1, angle2], () => {
+                    if (similarityLayer.value) {
+                        drawSimilarityCanvas();
+                    }
+                });
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initTransformCanvas();
+                        initSimilarityCanvas();
+                        
+                        // 监听窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (transformStage.value) {
+                                const container = document.getElementById('transform-canvas');
+                                if (container) {
+                                    transformStage.value.width(container.offsetWidth);
+                                    drawTransformCanvas();
+                                }
+                            }
+                            if (similarityStage.value) {
+                                const container = document.getElementById('similarity-canvas');
+                                if (container) {
+                                    similarityStage.value.width(container.offsetWidth);
+                                    drawSimilarityCanvas();
+                                }
+                            }
+                        });
+                        
+                        // 自动渲染 KaTeX
+                        nextTick(() => {
+                            setTimeout(() => {
+                                if (typeof renderMathInElement !== 'undefined') {
+                                    try {
+                                        renderMathInElement(document.body, {
+                                            delimiters: [
+                                                {left: '$$', right: '$$', display: true},
+                                                {left: '$', right: '$', display: false},
+                                                {left: '\\[', right: '\\]', display: true},
+                                                {left: '\\(', right: '\\)', display: false}
+                                            ],
+                                            throwOnError: false
+                                        });
+                                    } catch (e) {
+                                        console.error('KaTeX 渲染错误:', e);
+                                    }
+                                }
+                            }, 100);
+                        });
+                    });
+                });
+                
+                return {
+                    transformType,
+                    trianglePosition,
+                    triangleRotation,
+                    similarityRatio,
+                    angle1,
+                    angle2,
+                    practiceQuestions,
+                    score,
+                    setTranslate,
+                    setRotate,
+                    setReflect,
+                    resetTransform,
+                    checkAnswer
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>🔷 全等与相似</h1>
+                    <p class="subtitle">探索图形的变换与相似关系</p>
+                    
+                    <!-- 基本概念 -->
+                    <div class="section">
+                        <h2>📚 基本概念</h2>
+                        <div class="concept-grid">
+                            <div class="concept-card">
+                                <h3>全等</h3>
+                                <p>两个图形完全重合，形状和大小完全相同</p>
+                                <p style="margin-top: 10px; color: #666;">符号：≅</p>
+                                <p style="color: #666;">全等变换不改变图形的大小和形状</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>平移</h3>
+                                <p>图形沿着某个方向移动一定距离</p>
+                                <p style="margin-top: 10px; color: #666;">不改变图形的形状、大小和方向</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>旋转</h3>
+                                <p>图形绕某个点旋转一定角度</p>
+                                <p style="margin-top: 10px; color: #666;">不改变图形的形状和大小</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>翻折</h3>
+                                <p>图形关于某条直线对称</p>
+                                <p style="margin-top: 10px; color: #666;">不改变图形的形状和大小</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>相似</h3>
+                                <p>两个图形形状相同，但大小可以不同</p>
+                                <p style="margin-top: 10px; color: #666;">对应角相等，对应边成比例</p>
+                                <p style="color: #666;">符号：∽</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>AA 相似判定</h3>
+                                <p>如果两个三角形的两个角分别相等，则这两个三角形相似</p>
+                                <p style="margin-top: 10px; color: #667eea; font-weight: bold;">
+                                    <span class="katex-static" data-formula="\\angle A = \\angle A', \\angle B = \\angle B' \\Rightarrow \\triangle ABC \\sim \\triangle A'B'C'"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 全等变换 -->
+                    <div class="section">
+                        <h2>🔄 全等变换</h2>
+                        <div class="canvas-container">
+                            <div class="controls">
+                                <button class="btn" :class="{ 'btn-secondary': transformType !== 'translate' }" @click="setTranslate()">平移</button>
+                                <button class="btn" :class="{ 'btn-secondary': transformType !== 'rotate' }" @click="setRotate()">旋转</button>
+                                <button class="btn" :class="{ 'btn-secondary': transformType !== 'reflect' }" @click="setReflect()">翻折</button>
+                                <button class="btn btn-secondary" @click="resetTransform()">重置</button>
+                            </div>
+                            
+                            <div id="transform-canvas" class="canvas-wrapper"></div>
+                            
+                            <div class="info-panel">
+                                <div class="info-item">
+                                    <strong>当前变换：</strong>{{ transformType === 'translate' ? '平移' : transformType === 'rotate' ? '旋转' : '翻折' }}
+                                </div>
+                                <div class="info-item" v-if="transformType === 'translate'">
+                                    <strong>说明：</strong>拖拽红色控制点可以平移三角形
+                                </div>
+                                <div class="info-item" v-if="transformType === 'rotate'">
+                                    <strong>旋转角度：</strong>{{ triangleRotation.toFixed(1) }}°
+                                    <div class="slider-group" style="margin-top: 10px;">
+                                        <label>角度：</label>
+                                        <input type="range" v-model.number="triangleRotation" min="0" max="360" step="1">
+                                        <span class="slider-value">{{ triangleRotation }}°</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 相似判定 -->
+                    <div class="section">
+                        <h2>📐 相似判定（AA）</h2>
+                        <div class="canvas-container">
+                            <div class="controls">
+                                <div class="slider-group">
+                                    <label>相似比：</label>
+                                    <input type="range" v-model.number="similarityRatio" min="0.5" max="3" step="0.1">
+                                    <span class="slider-value">{{ similarityRatio.toFixed(2) }}</span>
+                                </div>
+                                <div class="slider-group">
+                                    <label>角1：</label>
+                                    <input type="range" v-model.number="angle1" min="20" max="80" step="5">
+                                    <span class="slider-value">{{ angle1 }}°</span>
+                                </div>
+                                <div class="slider-group">
+                                    <label>角2：</label>
+                                    <input type="range" v-model.number="angle2" min="20" max="80" step="5">
+                                    <span class="slider-value">{{ angle2 }}°</span>
+                                </div>
+                            </div>
+                            
+                            <div id="similarity-canvas" class="canvas-wrapper"></div>
+                            
+                            <div class="info-panel">
+                                <div class="info-item">
+                                    <strong>相似判定：</strong>两个三角形有两个角分别相等（AA相似）
+                                </div>
+                                <div class="info-item">
+                                    <strong>对应边比例：</strong>所有对应边的比例都等于相似比 {{ similarityRatio.toFixed(2) }}
+                                </div>
+                                <div class="info-item">
+                                    <strong>对应角：</strong>三个角分别相等
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习 -->
+                    <div class="section">
+                        <h2>✏️ 练习</h2>
+                        <div class="practice-area">
+                            <div v-for="question in practiceQuestions" :key="question.id" 
+                                 :class="['practice-question', question.correct === true ? 'correct' : question.correct === false ? 'incorrect' : '']">
+                                <h3>{{ question.question }}</h3>
+                                <div class="controls">
+                                    <input type="text" v-model="question.userAnswer" class="answer-input" placeholder="输入答案">
+                                    <button class="btn" @click="checkAnswer(question)">检查</button>
+                                </div>
+                                <div v-if="question.correct === true" class="feedback correct">
+                                    ✓ 正确！
+                                </div>
+                                <div v-if="question.correct === false" class="feedback incorrect">
+                                    ✗ 错误，正确答案是：{{ question.answer }}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                                <h3 style="color: #1976d2;">得分：{{ score.correct }} / {{ score.total }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

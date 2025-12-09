@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>坐标平面 - 初中数学教学</title>
+    <meta name="description" content="学习坐标平面的基本概念，掌握点的坐标表示方法，理解距离公式、中点公式和斜率的概念，学会判断直线平行和垂直的方法。">
+    <meta name="keywords" content="坐标平面,直角坐标系,点坐标,距离公式,中点公式,斜率,平行,垂直,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .canvas-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .info-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .info-item {
+            margin: 10px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .info-item strong {
+            color: #667eea;
+            margin-right: 10px;
+        }
+        
+        .formula-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .formula-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .formula-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .coordinate-display {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #2196f3;
+            font-weight: bold;
+            padding: 5px 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 5px;
+        }
+        
+        .result-box {
+            margin: 15px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .result-box strong {
+            color: #1976d2;
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                // 画布引用
+                const coordStage = ref(null);
+                const coordLayer = ref(null);
+                
+                // 两个点的坐标（逻辑坐标）
+                const pointA = ref({ x: -3, y: 2 }); // 逻辑坐标，初始位置在可见范围内
+                const pointB = ref({ x: 3, y: -2 });   // 逻辑坐标，初始位置在可见范围内
+                
+                // 坐标系统参数
+                const originX = ref(250);
+                const originY = ref(250);
+                const scale = ref(50); // 每单位对应的像素数（50像素=1单位）
+                
+                // 转换函数：逻辑坐标 -> 像素坐标
+                function logicToPixel(logicX, logicY) {
+                    return {
+                        x: originX.value + logicX * scale.value,
+                        y: originY.value - logicY * scale.value // Y轴翻转
+                    };
+                }
+                
+                // 转换函数：像素坐标 -> 逻辑坐标
+                function pixelToLogic(pixelX, pixelY) {
+                    return {
+                        x: (pixelX - originX.value) / scale.value,
+                        y: (originY.value - pixelY) / scale.value // Y轴翻转
+                    };
+                }
+                
+                // 计算距离
+                const distance = computed(() => {
+                    const dx = pointB.value.x - pointA.value.x;
+                    const dy = pointB.value.y - pointA.value.y;
+                    return Math.sqrt(dx * dx + dy * dy);
+                });
+                
+                // 计算中点
+                const midpoint = computed(() => {
+                    return {
+                        x: (pointA.value.x + pointB.value.x) / 2,
+                        y: (pointA.value.y + pointB.value.y) / 2
+                    };
+                });
+                
+                // 计算斜率
+                const slope = computed(() => {
+                    const dx = pointB.value.x - pointA.value.x;
+                    if (Math.abs(dx) < 0.001) {
+                        return null; // 垂直线，斜率不存在
+                    }
+                    return (pointB.value.y - pointA.value.y) / dx;
+                });
+                
+                
+                // 绘制坐标平面
+                function drawCoordinatePlane() {
+                    if (!coordLayer.value) return;
+                    
+                    coordLayer.value.destroyChildren();
+                    
+                    const width = coordStage.value.width();
+                    const height = coordStage.value.height();
+                    
+                    // 重新计算原点位置
+                    originX.value = width / 2;
+                    originY.value = height / 2;
+                    
+                    // 绘制网格
+                    const gridSpacing = 50;
+                    for (let i = -width / 2; i <= width / 2; i += gridSpacing) {
+                        // 垂直线
+                        const lineX = originX.value + i;
+                        if (lineX >= 0 && lineX <= width) {
+                            const gridLine = new Konva.Line({
+                                points: [lineX, 0, lineX, height],
+                                stroke: '#e0e0e0',
+                                strokeWidth: 1,
+                                dash: [2, 2]
+                            });
+                            coordLayer.value.add(gridLine);
+                        }
+                    }
+                    
+                    for (let i = -height / 2; i <= height / 2; i += gridSpacing) {
+                        // 水平线
+                        const lineY = originY.value + i;
+                        if (lineY >= 0 && lineY <= height) {
+                            const gridLine = new Konva.Line({
+                                points: [0, lineY, width, lineY],
+                                stroke: '#e0e0e0',
+                                strokeWidth: 1,
+                                dash: [2, 2]
+                            });
+                            coordLayer.value.add(gridLine);
+                        }
+                    }
+                    
+                    // 绘制坐标轴
+                    const xAxis = new Konva.Line({
+                        points: [0, originY.value, width, originY.value],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    coordLayer.value.add(xAxis);
+                    
+                    const yAxis = new Konva.Line({
+                        points: [originX.value, 0, originX.value, height],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    coordLayer.value.add(yAxis);
+                    
+                    // 绘制坐标轴箭头
+                    const arrowSize = 10;
+                    // X轴箭头
+                    const xArrow = new Konva.Line({
+                        points: [
+                            width - arrowSize, originY.value - arrowSize / 2,
+                            width, originY.value,
+                            width - arrowSize, originY.value + arrowSize / 2
+                        ],
+                        stroke: '#333',
+                        strokeWidth: 2,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    });
+                    coordLayer.value.add(xArrow);
+                    
+                    // Y轴箭头
+                    const yArrow = new Konva.Line({
+                        points: [
+                            originX.value - arrowSize / 2, arrowSize,
+                            originX.value, 0,
+                            originX.value + arrowSize / 2, arrowSize
+                        ],
+                        stroke: '#333',
+                        strokeWidth: 2,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    });
+                    coordLayer.value.add(yArrow);
+                    
+                    // 标注坐标轴
+                    const xLabel = new Konva.Text({
+                        x: width - 30,
+                        y: originY.value + 10,
+                        text: 'x',
+                        fontSize: 18,
+                        fill: '#333',
+                        fontStyle: 'bold'
+                    });
+                    coordLayer.value.add(xLabel);
+                    
+                    const yLabel = new Konva.Text({
+                        x: originX.value + 10,
+                        y: 10,
+                        text: 'y',
+                        fontSize: 18,
+                        fill: '#333',
+                        fontStyle: 'bold'
+                    });
+                    coordLayer.value.add(yLabel);
+                    
+                    // 标注原点
+                    const originLabel = new Konva.Text({
+                        x: originX.value - 15,
+                        y: originY.value + 15,
+                        text: 'O',
+                        fontSize: 16,
+                        fill: '#666',
+                        fontStyle: 'bold'
+                    });
+                    coordLayer.value.add(originLabel);
+                    
+                    // 绘制刻度（使用scale.value作为单位）
+                    const tickSize = 5;
+                    const maxTick = Math.floor(Math.min(width, height) / (2 * scale.value));
+                    for (let i = -maxTick; i <= maxTick; i++) {
+                        if (i === 0) continue;
+                        
+                        // X轴刻度
+                        const tickX = originX.value + i * scale.value;
+                        if (tickX >= 0 && tickX <= width) {
+                            const tick = new Konva.Line({
+                                points: [tickX, originY.value - tickSize, tickX, originY.value + tickSize],
+                                stroke: '#333',
+                                strokeWidth: 2
+                            });
+                            coordLayer.value.add(tick);
+                            
+                            const tickLabel = new Konva.Text({
+                                x: tickX - 8,
+                                y: originY.value + 12,
+                                text: i.toString(),
+                                fontSize: 12,
+                                fill: '#666'
+                            });
+                            coordLayer.value.add(tickLabel);
+                        }
+                        
+                        // Y轴刻度
+                        const tickY = originY.value - i * scale.value;
+                        if (tickY >= 0 && tickY <= height) {
+                            const tick = new Konva.Line({
+                                points: [originX.value - tickSize, tickY, originX.value + tickSize, tickY],
+                                stroke: '#333',
+                                strokeWidth: 2
+                            });
+                            coordLayer.value.add(tick);
+                            
+                            const tickLabel = new Konva.Text({
+                                x: originX.value - 20,
+                                y: tickY - 8,
+                                text: i.toString(),
+                                fontSize: 12,
+                                fill: '#666'
+                            });
+                            coordLayer.value.add(tickLabel);
+                        }
+                    }
+                    
+                    // 绘制线 AB
+                    drawLineWithPoints(pointA.value, pointB.value, '#2196f3', 'A', 'B', true);
+                }
+                
+                // 保存元素引用，用于快速更新
+                let lineAB = null;
+                let dotA = null, dotB = null;
+                let labelA = null, labelB = null;
+                
+                // 只更新点和线的位置（不重新绘制整个画布）
+                function updatePointsOnly() {
+                    if (!coordLayer.value) return;
+                    
+                    // 更新点A
+                    if (dotA && labelA) {
+                        const pixelA = logicToPixel(pointA.value.x, pointA.value.y);
+                        dotA.position({ x: pixelA.x, y: pixelA.y });
+                        labelA.position({ x: pixelA.x + 15, y: pixelA.y - 20 });
+                        labelA.text(`A(${pointA.value.x.toFixed(1)}, ${pointA.value.y.toFixed(1)})`);
+                    }
+                    
+                    // 更新点B
+                    if (dotB && labelB) {
+                        const pixelB = logicToPixel(pointB.value.x, pointB.value.y);
+                        dotB.position({ x: pixelB.x, y: pixelB.y });
+                        labelB.position({ x: pixelB.x + 15, y: pixelB.y - 20 });
+                        labelB.text(`B(${pointB.value.x.toFixed(1)}, ${pointB.value.y.toFixed(1)})`);
+                    }
+                    
+                    // 更新线段AB
+                    if (lineAB) {
+                        const pixelA = logicToPixel(pointA.value.x, pointA.value.y);
+                        const pixelB = logicToPixel(pointB.value.x, pointB.value.y);
+                        lineAB.points([pixelA.x, pixelA.y, pixelB.x, pixelB.y]);
+                    }
+                    
+                    coordLayer.value.batchDraw();
+                }
+                
+                // 绘制点和线
+                function drawLineWithPoints(p1, p2, color, label1, label2) {
+                    const pixel1 = logicToPixel(p1.x, p1.y);
+                    const pixel2 = logicToPixel(p2.x, p2.y);
+                    
+                    // 绘制线段
+                    const line = new Konva.Line({
+                        points: [pixel1.x, pixel1.y, pixel2.x, pixel2.y],
+                        stroke: color,
+                        strokeWidth: 3,
+                        name: 'lineAB'
+                    });
+                    coordLayer.value.add(line);
+                    lineAB = line;
+                    
+                    // 绘制点1（更大更明显）
+                    const dot1 = new Konva.Circle({
+                        x: pixel1.x,
+                        y: pixel1.y,
+                        radius: 10,
+                        fill: color,
+                        stroke: '#fff',
+                        strokeWidth: 3,
+                        draggable: true,
+                        name: label1.toLowerCase()
+                    });
+                    coordLayer.value.add(dot1);
+                    
+                    const label1Text = new Konva.Text({
+                        x: pixel1.x + 15,
+                        y: pixel1.y - 20,
+                        text: label1 + `(${p1.x.toFixed(1)}, ${p1.y.toFixed(1)})`,
+                        fontSize: 16,
+                        fill: color,
+                        fontStyle: 'bold',
+                        padding: 6,
+                        background: 'rgba(255,255,255,0.95)',
+                        cornerRadius: 5,
+                        shadowColor: 'rgba(0,0,0,0.2)',
+                        shadowBlur: 5,
+                        shadowOffset: { x: 2, y: 2 }
+                    });
+                    coordLayer.value.add(label1Text);
+                    
+                    // 保存引用
+                    if (label1 === 'A') {
+                        dotA = dot1;
+                        labelA = label1Text;
+                    }
+                    
+                    // 绘制点2（更大更明显）
+                    const dot2 = new Konva.Circle({
+                        x: pixel2.x,
+                        y: pixel2.y,
+                        radius: 10,
+                        fill: color,
+                        stroke: '#fff',
+                        strokeWidth: 3,
+                        draggable: true,
+                        name: label2.toLowerCase()
+                    });
+                    coordLayer.value.add(dot2);
+                    
+                    const label2Text = new Konva.Text({
+                        x: pixel2.x + 15,
+                        y: pixel2.y - 20,
+                        text: label2 + `(${p2.x.toFixed(1)}, ${p2.y.toFixed(1)})`,
+                        fontSize: 16,
+                        fill: color,
+                        fontStyle: 'bold',
+                        padding: 6,
+                        background: 'rgba(255,255,255,0.95)',
+                        cornerRadius: 5,
+                        shadowColor: 'rgba(0,0,0,0.2)',
+                        shadowBlur: 5,
+                        shadowOffset: { x: 2, y: 2 }
+                    });
+                    coordLayer.value.add(label2Text);
+                    
+                    // 保存引用
+                    if (label2 === 'B') {
+                        dotB = dot2;
+                        labelB = label2Text;
+                    }
+                    
+                    // 拖拽事件（优化性能 - 只更新必要元素）
+                    const updatePoint = (dot, label, pointRef) => {
+                        let rafId = null;
+                        let lastUpdateTime = 0;
+                        
+                        dot.on('dragmove', function() {
+                            const pos = this.position();
+                            const logic = pixelToLogic(pos.x, pos.y);
+                            pointRef.value = { x: logic.x, y: logic.y };
+                            
+                            // 限制更新频率（约60fps）
+                            const now = Date.now();
+                            if (now - lastUpdateTime < 16) {
+                                if (rafId) cancelAnimationFrame(rafId);
+                                rafId = requestAnimationFrame(() => {
+                                    lastUpdateTime = Date.now();
+                                    updatePointsOnly();
+                                });
+                            } else {
+                                lastUpdateTime = now;
+                                updatePointsOnly();
+                            }
+                        });
+                        
+                        dot.on('dragend', function() {
+                            // 拖拽结束时确保最终更新
+                            updatePointsOnly();
+                        });
+                        
+                        dot.on('mouseenter', function() {
+                            document.body.style.cursor = 'pointer';
+                            this.scale({ x: 1.3, y: 1.3 });
+                            coordLayer.value.draw();
+                        });
+                        
+                        dot.on('mouseleave', function() {
+                            document.body.style.cursor = 'default';
+                            this.scale({ x: 1, y: 1 });
+                            coordLayer.value.draw();
+                        });
+                    };
+                    
+                    if (label1 === 'A') {
+                        updatePoint(dot1, label1, pointA);
+                    }
+                    
+                    if (label2 === 'B') {
+                        updatePoint(dot2, label2, pointB);
+                    }
+                }
+                
+                // 初始化画布
+                function initCanvas() {
+                    const container = document.getElementById('coord-canvas');
+                    if (!container || coordStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 600;
+                    
+                    coordStage.value = new Konva.Stage({
+                        container: 'coord-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    coordLayer.value = new Konva.Layer();
+                    coordStage.value.add(coordLayer.value);
+                    
+                    drawCoordinatePlane();
+                }
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initCanvas();
+                        
+                        // 监听窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (coordStage.value) {
+                                const container = document.getElementById('coord-canvas');
+                                if (container) {
+                                    coordStage.value.width(container.offsetWidth);
+                                    drawCoordinatePlane();
+                                }
+                            }
+                        });
+                        
+                        // 自动渲染 KaTeX
+                        setTimeout(() => {
+                            if (typeof renderMathInElement !== 'undefined') {
+                                try {
+                                    renderMathInElement(document.body, {
+                                        delimiters: [
+                                            {left: '$$', right: '$$', display: true},
+                                            {left: '$', right: '$', display: false},
+                                            {left: '\\[', right: '\\]', display: true},
+                                            {left: '\\(', right: '\\)', display: false}
+                                        ],
+                                        throwOnError: false
+                                    });
+                                } catch (e) {
+                                    console.error('KaTeX 渲染错误:', e);
+                                }
+                            }
+                            
+                            // 手动渲染静态公式
+                            if (typeof katex !== 'undefined') {
+                                const katexStaticElements = document.querySelectorAll('.katex-static');
+                                katexStaticElements.forEach(el => {
+                                    const formula = el.getAttribute('data-formula');
+                                    if (formula && !el.querySelector('.katex-html')) {
+                                        try {
+                                            katex.render(formula, el, {
+                                                throwOnError: false
+                                            });
+                                        } catch (e) {
+                                            console.error('KaTeX 静态公式渲染错误:', e);
+                                        }
+                                    }
+                                });
+                            }
+                        }, 100);
+                    });
+                });
+                
+                return {
+                    pointA,
+                    pointB,
+                    distance,
+                    midpoint,
+                    slope
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>📍 坐标平面</h1>
+                    <p class="subtitle">探索坐标几何的基本概念和计算方法</p>
+                    
+                    <!-- 基本概念 -->
+                    <div class="section">
+                        <h2>📚 基本概念</h2>
+                        <div class="info-panel">
+                            <div class="info-item">
+                                <strong>坐标平面：</strong>由两条互相垂直的数轴（x轴和y轴）构成的平面
+                            </div>
+                            <div class="info-item">
+                                <strong>点的坐标：</strong>平面内任意一点可以用一对有序实数(x, y)表示
+                            </div>
+                            <div class="info-item">
+                                <strong>原点：</strong>x轴和y轴的交点，坐标为(0, 0)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 交互式坐标平面 -->
+                    <div class="section">
+                        <h2>🔧 交互式坐标平面</h2>
+                        <div class="canvas-container">
+                            <div id="coord-canvas" class="canvas-wrapper"></div>
+                            <div class="info-panel">
+                                <div class="info-item">
+                                    <strong>提示：</strong>拖拽点A和点B可以改变它们的位置，观察计算结果的变化
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 距离公式 -->
+                    <div class="section">
+                        <h2>📏 距离公式</h2>
+                        <div class="formula-grid">
+                            <div class="formula-card">
+                                <h3>公式</h3>
+                                <div class="info-item">
+                                    <span class="katex-static" data-formula="d = \\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}"></span>
+                                </div>
+                                <p style="margin-top: 10px; color: #666;">
+                                    两点A(x₁, y₁)和B(x₂, y₂)之间的距离
+                                </p>
+                            </div>
+                            <div class="formula-card">
+                                <h3>计算</h3>
+                                <div class="result-box">
+                                    <strong>点A坐标：</strong>
+                                    <span class="coordinate-display">({{ pointA.x.toFixed(2) }}, {{ pointA.y.toFixed(2) }})</span>
+                                </div>
+                                <div class="result-box">
+                                    <strong>点B坐标：</strong>
+                                    <span class="coordinate-display">({{ pointB.x.toFixed(2) }}, {{ pointB.y.toFixed(2) }})</span>
+                                </div>
+                                <div class="result-box">
+                                    <strong>距离：</strong>
+                                    <span class="coordinate-display">{{ distance.toFixed(2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 中点公式 -->
+                    <div class="section">
+                        <h2>📍 中点公式</h2>
+                        <div class="formula-grid">
+                            <div class="formula-card">
+                                <h3>公式</h3>
+                                <div class="info-item">
+                                    <span class="katex-static" data-formula="M = \\left(\\frac{x_1+x_2}{2}, \\frac{y_1+y_2}{2}\\right)"></span>
+                                </div>
+                                <p style="margin-top: 10px; color: #666;">
+                                    线段AB的中点M的坐标
+                                </p>
+                            </div>
+                            <div class="formula-card">
+                                <h3>计算</h3>
+                                <div class="result-box">
+                                    <strong>中点坐标：</strong>
+                                    <span class="coordinate-display">({{ midpoint.x.toFixed(2) }}, {{ midpoint.y.toFixed(2) }})</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 斜率 -->
+                    <div class="section">
+                        <h2>📐 斜率</h2>
+                        <div class="formula-grid">
+                            <div class="formula-card">
+                                <h3>公式</h3>
+                                <div class="info-item">
+                                    <span class="katex-static" data-formula="k = \\frac{y_2-y_1}{x_2-x_1}"></span>
+                                </div>
+                                <p style="margin-top: 10px; color: #666;">
+                                    直线AB的斜率，其中x₂ ≠ x₁
+                                </p>
+                                <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; color: #856404;">
+                                    <strong>注意：</strong>当直线垂直时（x₂ = x₁），斜率不存在
+                                </div>
+                            </div>
+                            <div class="formula-card">
+                                <h3>计算</h3>
+                                <div class="result-box">
+                                    <strong>斜率：</strong>
+                                    <span class="coordinate-display" v-if="slope !== null">{{ slope.toFixed(3) }}</span>
+                                    <span v-else style="color: #dc3545; font-weight: bold;">不存在（垂直线）</span>
+                                </div>
+                                <div class="result-box" v-if="slope !== null">
+                                    <strong>含义：</strong>
+                                    <span v-if="slope > 0" style="color: #28a745;">直线向右上方倾斜</span>
+                                    <span v-else-if="slope < 0" style="color: #dc3545;">直线向右下方倾斜</span>
+                                    <span v-else style="color: #6c757d;">水平线</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 平行和垂直 -->
+                    <div class="section">
+                        <h2>🔀 平行和垂直</h2>
+                        <div class="info-panel">
+                            <div class="info-item">
+                                <strong>平行：</strong>两条直线的斜率相等，即 k₁ = k₂
+                            </div>
+                            <div class="info-item">
+                                <strong>垂直：</strong>两条直线的斜率乘积为-1，即 k₁ × k₂ = -1
+                            </div>
+                            <div class="info-item">
+                                <strong>特殊情况：</strong>
+                                <ul style="margin-left: 20px; margin-top: 5px;">
+                                    <li>两条垂直线互相平行</li>
+                                    <li>一条水平线和一条垂直线互相垂直</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="result-box" style="margin-top: 20px;">
+                            <strong>当前直线AB的斜率：</strong>
+                            <div style="margin-top: 10px; font-size: 16px;">
+                                <span v-if="slope !== null" class="coordinate-display">{{ slope.toFixed(3) }}</span>
+                                <span v-else style="color: #dc3545; font-weight: bold;">不存在（垂直线）</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金融素养 - 初中数学教学</title>
+    <meta name="description" content="学习简单利息计算、预算规划、储蓄管理和折扣消费分析，掌握基本的金融知识，通过交互式计算器和模拟器培养理财意识和数学应用能力。">
+    <meta name="keywords" content="简单利息,预算,储蓄,折扣,消费分析,金融素养,理财,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .concept-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .concept-card p {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .demo-panel {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .result-display {
+            background: #f0f9ff;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-item .label {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .result-item .value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #28a745;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .budget-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+        }
+        
+        .budget-item input {
+            width: 150px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .budget-summary {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .discount-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #667eea;
+        }
+        
+        .discount-item h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .formula-display {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        const app = createApp({
+            setup() {
+                // 简单利息计算
+                const principal = ref(10000); // 本金
+                const interestRate = ref(5); // 年利率（%）
+                const timePeriod = ref(3); // 时间（年）
+                const interestResult = ref(null);
+                
+                // 预算管理
+                const monthlyIncome = ref(5000);
+                const budgetItems = ref([
+                    { category: '住房', amount: 1500 },
+                    { category: '食物', amount: 800 },
+                    { category: '交通', amount: 300 },
+                    { category: '娱乐', amount: 200 },
+                    { category: '储蓄', amount: 500 }
+                ]);
+                
+                // 储蓄计划
+                const savingsGoal = ref(50000); // 目标金额
+                const monthlySavings = ref(1000); // 每月储蓄
+                const currentSavings = ref(10000); // 现有储蓄
+                const savingsInterestRate = ref(3); // 年利率
+                const savingsResult = ref(null);
+                
+                // 折扣与消费分析
+                const discountItems = ref([
+                    { name: '商品A', originalPrice: 500, discount: 20, quantity: 1 },
+                    { name: '商品B', originalPrice: 300, discount: 15, quantity: 2 },
+                    { name: '商品C', originalPrice: 200, discount: 10, quantity: 1 }
+                ]);
+                
+                // 计算简单利息
+                const calculateInterest = () => {
+                    const p = principal.value;
+                    const r = interestRate.value / 100;
+                    const t = timePeriod.value;
+                    
+                    const interest = p * r * t;
+                    const total = p + interest;
+                    
+                    interestResult.value = {
+                        principal: p,
+                        interestRate: interestRate.value,
+                        time: t,
+                        interest: interest.toFixed(2),
+                        total: total.toFixed(2)
+                    };
+                    
+                    // 动画效果
+                    if (window.gsap) {
+                        setTimeout(() => {
+                            gsap.from('.result-item', {
+                                opacity: 0,
+                                x: -20,
+                                duration: 0.5,
+                                stagger: 0.1
+                            });
+                        }, 50);
+                    }
+                };
+                
+                // 计算利息公式（显示用）
+                const interestFormula = computed(() => {
+                    if (typeof katex !== 'undefined') {
+                        try {
+                            return katex.renderToString(`利息 = 本金 \\times 利率 \\times 时间 = ${principal.value} \\times \\frac{${interestRate.value}}{100} \\times ${timePeriod.value}`, {
+                                throwOnError: false,
+                                displayMode: false
+                            });
+                        } catch (e) {
+                            return `利息 = ${principal.value} × ${interestRate.value}% × ${timePeriod.value}`;
+                        }
+                    }
+                    return `利息 = ${principal.value} × ${interestRate.value}% × ${timePeriod.value}`;
+                });
+                
+                // 预算总计
+                const budgetTotal = computed(() => {
+                    return budgetItems.value.reduce((sum, item) => sum + (item.amount || 0), 0);
+                });
+                
+                // 预算余额
+                const budgetBalance = computed(() => {
+                    return monthlyIncome.value - budgetTotal.value;
+                });
+                
+                // 预算百分比
+                const budgetPercentages = computed(() => {
+                    return budgetItems.value.map(item => ({
+                        category: item.category,
+                        percentage: monthlyIncome.value > 0 ? 
+                            ((item.amount || 0) / monthlyIncome.value * 100).toFixed(1) : 0
+                    }));
+                });
+                
+                // 添加预算项目
+                const addBudgetItem = () => {
+                    const newItem = { category: '新项目', amount: 0 };
+                    // 使用扩展运算符创建新数组，确保 Vue 响应式系统检测到变化
+                    budgetItems.value = [...budgetItems.value, newItem];
+                    // 强制触发更新
+                    nextTick(() => {
+                        // 确保 DOM 已更新
+                    });
+                };
+                
+                // 删除预算项目
+                const removeBudgetItem = (index) => {
+                    if (budgetItems.value.length > 1) {
+                        const newItems = [...budgetItems.value];
+                        newItems.splice(index, 1);
+                        budgetItems.value = newItems;
+                    } else {
+                        alert('至少需要保留一个预算项目');
+                    }
+                };
+                
+                // 计算储蓄计划
+                const calculateSavings = () => {
+                    const goal = savingsGoal.value;
+                    const monthly = monthlySavings.value;
+                    const current = currentSavings.value;
+                    const rate = savingsInterestRate.value / 100 / 12; // 月利率
+                    
+                    let months = 0;
+                    let balance = current;
+                    
+                    // 计算达到目标所需的月数（考虑复利）
+                    while (balance < goal && months < 600) { // 最多50年
+                        balance = balance * (1 + rate) + monthly;
+                        months++;
+                    }
+                    
+                    const years = Math.floor(months / 12);
+                    const remainingMonths = months % 12;
+                    
+                    // 计算总利息
+                    const totalDeposited = current + monthly * months;
+                    const totalInterest = balance - totalDeposited;
+                    
+                    savingsResult.value = {
+                        months: months,
+                        years: years,
+                        remainingMonths: remainingMonths,
+                        finalBalance: balance.toFixed(2),
+                        totalDeposited: totalDeposited.toFixed(2),
+                        totalInterest: totalInterest.toFixed(2)
+                    };
+                    
+                    // 动画效果
+                    if (window.gsap) {
+                        setTimeout(() => {
+                            gsap.from('.result-item', {
+                                opacity: 0,
+                                x: -20,
+                                duration: 0.5,
+                                stagger: 0.1
+                            });
+                        }, 50);
+                    }
+                };
+                
+                // 折扣项目总计
+                const discountTotal = computed(() => {
+                    let total = 0;
+                    let totalSavings = 0;
+                    discountItems.value.forEach(item => {
+                        const originalTotal = item.originalPrice * item.quantity;
+                        const discountAmount = originalTotal * (item.discount / 100);
+                        const finalPrice = originalTotal - discountAmount;
+                        total += finalPrice;
+                        totalSavings += discountAmount;
+                    });
+                    return {
+                        originalTotal: discountItems.value.reduce((sum, item) => 
+                            sum + item.originalPrice * item.quantity, 0),
+                        discountedTotal: total,
+                        totalSavings: totalSavings,
+                        overallDiscount: discountItems.value.reduce((sum, item) => 
+                            sum + item.originalPrice * item.quantity, 0) > 0 ?
+                            (totalSavings / discountItems.value.reduce((sum, item) => 
+                                sum + item.originalPrice * item.quantity, 0) * 100).toFixed(1) : 0
+                    };
+                });
+                
+                // 计算单个商品的折扣价格
+                const calculateItemPrice = (item) => {
+                    const originalTotal = item.originalPrice * item.quantity;
+                    const discountAmount = originalTotal * (item.discount / 100);
+                    const finalPrice = originalTotal - discountAmount;
+                    return {
+                        originalTotal: originalTotal,
+                        discountAmount: discountAmount,
+                        finalPrice: finalPrice
+                    };
+                };
+                
+                // 添加折扣商品
+                const addDiscountItem = () => {
+                    discountItems.value.push({ name: '', originalPrice: 0, discount: 0, quantity: 1 });
+                };
+                
+                // 删除折扣商品
+                const removeDiscountItem = (index) => {
+                    discountItems.value.splice(index, 1);
+                };
+                
+                // 渲染 KaTeX
+                const renderKaTeX = () => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            if (typeof renderMathInElement !== 'undefined') {
+                                const container = document.getElementById('app');
+                                if (container) {
+                                    renderMathInElement(container, {
+                                        delimiters: [
+                                            { left: '$$', right: '$$', display: true },
+                                            { left: '$', right: '$', display: false },
+                                            { left: '\\[', right: '\\]', display: true },
+                                            { left: '\\(', right: '\\)', display: false }
+                                        ],
+                                        throwOnError: false
+                                    });
+                                }
+                            }
+                        }, 100);
+                    });
+                };
+                
+                // 监听变化
+                watch([principal, interestRate, timePeriod], () => {
+                    interestResult.value = null;
+                });
+                
+                watch([monthlyIncome, budgetItems], () => {
+                    // 预算变化时自动更新
+                }, { deep: true });
+                
+                watch([savingsGoal, monthlySavings, currentSavings, savingsInterestRate], () => {
+                    savingsResult.value = null;
+                });
+                
+                onMounted(() => {
+                    setTimeout(() => {
+                        renderKaTeX();
+                        
+                        if (window.gsap) {
+                            gsap.from('.section', { opacity: 0, y: 20, duration: 0.6, stagger: 0.1 });
+                        }
+                    }, 200);
+                });
+                
+                return {
+                    principal,
+                    interestRate,
+                    timePeriod,
+                    interestResult,
+                    interestFormula,
+                    monthlyIncome,
+                    budgetItems,
+                    budgetTotal,
+                    budgetBalance,
+                    budgetPercentages,
+                    savingsGoal,
+                    monthlySavings,
+                    currentSavings,
+                    savingsInterestRate,
+                    savingsResult,
+                    discountItems,
+                    discountTotal,
+                    calculateInterest,
+                    addBudgetItem,
+                    removeBudgetItem,
+                    calculateSavings,
+                    calculateItemPrice,
+                    addDiscountItem,
+                    removeDiscountItem
+                };
+            },
+            template: `
+            <div class="container">
+                <h1>金融素养</h1>
+                <p class="subtitle">学习简单利息、预算规划、储蓄管理和折扣消费分析，培养理财意识</p>
+                
+                <div class="section">
+                    <h2>一、基本概念</h2>
+                    <div class="concept-grid">
+                        <div class="concept-card">
+                            <h3>简单利息</h3>
+                            <p>简单利息是按照原始本金计算的利息，不考虑之前的利息。</p>
+                            <p><strong>公式：</strong>$I = P \\times r \\times t$</p>
+                            <p>其中：</p>
+                            <ul style="margin-left: 20px; line-height: 2;">
+                                <li>$P$ 是本金（Principal）</li>
+                                <li>$r$ 是利率（Rate）</li>
+                                <li>$t$ 是时间（Time）</li>
+                                <li>$I$ 是利息（Interest）</li>
+                            </ul>
+                            <p><strong>总金额：</strong>$A = P + I = P(1 + rt)$</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>预算管理</h3>
+                            <p>预算是计划和管理收入和支出的工具。</p>
+                            <p><strong>原则：</strong></p>
+                            <ul style="margin-left: 20px; line-height: 2;">
+                                <li>收入 - 支出 = 储蓄</li>
+                                <li>合理分配各项支出</li>
+                                <li>预留应急资金</li>
+                            </ul>
+                            <p>建议将收入的 20-30% 用于储蓄。</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>储蓄规划</h3>
+                            <p>制定储蓄计划，逐步实现财务目标。</p>
+                            <p><strong>关键因素：</strong></p>
+                            <ul style="margin-left: 20px; line-height: 2;">
+                                <li>目标金额</li>
+                                <li>每月储蓄额</li>
+                                <li>利率影响</li>
+                                <li>时间周期</li>
+                            </ul>
+                        </div>
+                        <div class="concept-card">
+                            <h3>折扣与消费</h3>
+                            <p>理解折扣的真正含义，做出明智的消费决策。</p>
+                            <p><strong>折扣计算：</strong></p>
+                            <p>折扣后价格 $= 原价 \\times (1 - \\frac{折扣率}{100})$</p>
+                            <p>节省金额 $= 原价 \\times \\frac{折扣率}{100}$</p>
+                            <p>比较不同折扣方案，选择最划算的。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>二、简单利息计算器</h2>
+                    <div class="demo-panel">
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">参数设置</h3>
+                            
+                            <div class="control-group">
+                                <label>本金 (P)</label>
+                                <input type="number" v-model.number="principal" min="0" step="100" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>年利率 (%) (r)</label>
+                                <input type="number" v-model.number="interestRate" min="0" max="100" step="0.1" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>时间 (年) (t)</label>
+                                <input type="number" v-model.number="timePeriod" min="0" max="50" step="0.5" />
+                            </div>
+                            
+                            <button class="btn" @click="calculateInterest">计算利息</button>
+                            
+                            <div class="formula-display" style="margin-top: 20px;">
+                                <strong>计算公式：</strong><br>
+                                <span v-html="interestFormula"></span>
+                            </div>
+                        </div>
+                        
+                        <div v-if="interestResult" class="result-display">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">计算结果</h3>
+                            <div class="result-item">
+                                <span class="label">本金：</span>
+                                <span class="value">¥{{ interestResult.principal.toLocaleString() }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">年利率：</span>
+                                <span class="value">{{ interestResult.interestRate }}%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">时间：</span>
+                                <span class="value">{{ interestResult.time }} 年</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">利息：</span>
+                                <span class="value">¥{{ parseFloat(interestResult.interest).toLocaleString() }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">总金额：</span>
+                                <span class="value">¥{{ parseFloat(interestResult.total).toLocaleString() }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>三、预算模拟器</h2>
+                    <div class="demo-panel">
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">月度预算</h3>
+                            
+                            <div class="control-group">
+                                <label>月收入</label>
+                                <input type="number" v-model.number="monthlyIncome" min="0" step="100" />
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <h4 style="color: #667eea; margin-bottom: 15px;">支出项目</h4>
+                                <div v-for="(item, index) in budgetItems" :key="'budget-' + index" class="budget-item">
+                                    <input type="text" v-model="item.category" placeholder="项目名称" style="flex: 1; margin-right: 10px;" />
+                                    <input type="number" v-model.number="item.amount" placeholder="金额" min="0" step="10" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="budget-summary">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">预算总结</h3>
+                            <div class="result-item">
+                                <span class="label">总收入：</span>
+                                <span class="value">¥{{ monthlyIncome.toLocaleString() }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">总支出：</span>
+                                <span class="value">¥{{ budgetTotal.toLocaleString() }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">余额：</span>
+                                <span class="value" :style="{ color: budgetBalance >= 0 ? '#28a745' : '#dc3545' }">
+                                    ¥{{ budgetBalance.toLocaleString() }}
+                                </span>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <h4 style="color: #667eea; margin-bottom: 10px;">各项支出占比：</h4>
+                                <div v-for="(item, index) in budgetPercentages" :key="index" style="margin-bottom: 8px;">
+                                    <span>{{ item.category }}：{{ item.percentage }}%</span>
+                                </div>
+                            </div>
+                            
+                            <div v-if="budgetBalance < 0" class="warning">
+                                警告：支出超过收入，需要调整预算！
+                            </div>
+                            <div v-else-if="budgetBalance >= monthlyIncome * 0.2" class="success">
+                                良好：有足够的余额用于储蓄和应急。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>四、储蓄计划计算器</h2>
+                    <div class="demo-panel">
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">储蓄参数</h3>
+                            
+                            <div class="control-group">
+                                <label>储蓄目标</label>
+                                <input type="number" v-model.number="savingsGoal" min="0" step="1000" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>现有储蓄</label>
+                                <input type="number" v-model.number="currentSavings" min="0" step="100" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>每月储蓄额</label>
+                                <input type="number" v-model.number="monthlySavings" min="0" step="100" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>年利率 (%)</label>
+                                <input type="number" v-model.number="savingsInterestRate" min="0" max="20" step="0.1" />
+                            </div>
+                            
+                            <button class="btn" @click="calculateSavings">计算储蓄计划</button>
+                        </div>
+                        
+                        <div v-if="savingsResult" class="result-display">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">计算结果</h3>
+                            <div class="result-item">
+                                <span class="label">达到目标需要时间：</span>
+                                <span class="value">{{ savingsResult.years }} 年 {{ savingsResult.remainingMonths }} 个月</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">总月数：</span>
+                                <span class="value">{{ savingsResult.months }} 个月</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">最终金额：</span>
+                                <span class="value">¥{{ parseFloat(savingsResult.finalBalance).toLocaleString() }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">总存入：</span>
+                                <span class="value">¥{{ parseFloat(savingsResult.totalDeposited).toLocaleString() }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">总利息：</span>
+                                <span class="value">¥{{ parseFloat(savingsResult.totalInterest).toLocaleString() }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>五、折扣与消费分析</h2>
+                    <div class="demo-panel">
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">商品信息</h3>
+                            
+                            <div v-for="(item, index) in discountItems" :key="index" class="discount-item">
+                                <h4>商品 {{ index + 1 }}</h4>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                                    <div class="control-group" style="margin-bottom: 0;">
+                                        <label>商品名称</label>
+                                        <input type="text" v-model="item.name" />
+                                    </div>
+                                    <div class="control-group" style="margin-bottom: 0;">
+                                        <label>原价</label>
+                                        <input type="number" v-model.number="item.originalPrice" min="0" step="10" />
+                                    </div>
+                                    <div class="control-group" style="margin-bottom: 0;">
+                                        <label>折扣 (%)</label>
+                                        <input type="number" v-model.number="item.discount" min="0" max="100" step="1" />
+                                    </div>
+                                    <div class="control-group" style="margin-bottom: 0;">
+                                        <label>数量</label>
+                                        <input type="number" v-model.number="item.quantity" min="1" step="1" />
+                                    </div>
+                                </div>
+                                
+                                <div v-if="item.originalPrice > 0" style="background: #f0f9ff; padding: 15px; border-radius: 8px;">
+                                    <div class="result-item">
+                                        <span class="label">原价总额：</span>
+                                        <span class="value">¥{{ calculateItemPrice(item).originalTotal.toLocaleString() }}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">折扣金额：</span>
+                                        <span class="value">¥{{ calculateItemPrice(item).discountAmount.toFixed(2) }}</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span class="label">折扣后价格：</span>
+                                        <span class="value">¥{{ calculateItemPrice(item).finalPrice.toFixed(2) }}</span>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="result-display">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">消费总计</h3>
+                            <div class="result-item">
+                                <span class="label">原价总额：</span>
+                                <span class="value">¥{{ discountTotal.originalTotal.toLocaleString() }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">折扣后总额：</span>
+                                <span class="value">¥{{ discountTotal.discountedTotal.toFixed(2) }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">节省金额：</span>
+                                <span class="value">¥{{ discountTotal.totalSavings.toFixed(2) }}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">总体折扣率：</span>
+                                <span class="value">{{ discountTotal.overallDiscount }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

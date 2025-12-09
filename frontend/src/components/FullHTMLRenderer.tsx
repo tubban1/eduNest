@@ -435,6 +435,8 @@ export default function FullHTMLRenderer({
     WebkitOverflowScrolling: 'touch',
   };
 
+  const iframeScrolling = fixedHeight ? 'auto' : 'no';
+
   // Debug log
   console.log('[FullHTMLRenderer] Render state:', {
     fixedHeight,
@@ -555,7 +557,7 @@ export default function FullHTMLRenderer({
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
           className="w-full h-full border-0 bg-white"
           style={iframeStyle}
-          scrolling="no"
+            scrolling={iframeScrolling}
           onLoad={handleIframeLoad}
           onError={handleIframeError}
         />
@@ -568,7 +570,7 @@ export default function FullHTMLRenderer({
           sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
           className="w-full h-full border-0 bg-white"
           style={iframeStyle}
-          scrolling="no"
+          scrolling={iframeScrolling}
           onLoad={handleIframeLoad}
           onError={handleIframeError}
         />

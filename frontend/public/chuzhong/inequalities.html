@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不等式解法 - 初中数学教学</title>
+    <meta name="description" content="学习不等式的解法，掌握乘除负数时符号翻转的规律，理解复合不等式，通过数轴可视化理解不等式的解集，通过拖拽和动画理解开闭区间。">
+    <meta name="keywords" content="不等式,不等式解法,符号翻转,复合不等式,数轴,开闭区间,解集,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .example-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .example-box h4 {
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        
+        .number-line-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .number-line-wrapper {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group label {
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .input-group input {
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100px;
+        }
+        
+        .inequality-input {
+            font-size: 18px;
+            padding: 10px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 400px;
+            margin: 10px 0;
+        }
+        
+        .solution-display {
+            background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #2196f3;
+        }
+        
+        .practice-area {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .practice-question.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .practice-question.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 18px;
+            width: 150px;
+            margin: 10px;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                // 数轴可视化
+                const numberLineStage = ref(null);
+                const numberLineLayer = ref(null);
+                const currentInequality = ref('x > 3');
+                const solutionStart = ref(null);
+                const solutionEnd = ref(null);
+                const solutionClosed = ref({ start: false, end: false });
+                const isAnimating = ref(false);
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        question: '解不等式：2x + 5 > 13',
+                        answer: 'x > 4',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        question: '解不等式：-3x ≤ 9',
+                        answer: 'x ≥ -3',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        question: '解不等式：4x - 7 < 5',
+                        answer: 'x < 3',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        question: '解不等式：-2x + 10 ≥ 4',
+                        answer: 'x ≤ 3',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        question: '解不等式组：2x + 1 > 5 且 x < 4',
+                        answer: '2 < x < 4',
+                        userAnswer: '',
+                        correct: null
+                    }
+                ]);
+                
+                // 初始化数轴
+                function initNumberLine() {
+                    const container = document.getElementById('number-line-canvas');
+                    if (!container || numberLineStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 150;
+                    
+                    numberLineStage.value = new Konva.Stage({
+                        container: 'number-line-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    numberLineLayer.value = new Konva.Layer();
+                    numberLineStage.value.add(numberLineLayer.value);
+                    
+                    drawNumberLine();
+                    solveAndDisplay(currentInequality.value);
+                }
+                
+                // 绘制数轴
+                function drawNumberLine() {
+                    if (!numberLineLayer.value) return;
+                    
+                    numberLineLayer.value.destroyChildren();
+                    
+                    const width = numberLineStage.value.width();
+                    const height = numberLineStage.value.height();
+                    const padding = 60;
+                    const scale = (width - 2 * padding) / 20; // -10 到 10
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    
+                    // 绘制数轴主线
+                    const line = new Konva.Line({
+                        points: [padding, centerY, width - padding, centerY],
+                        stroke: '#333',
+                        strokeWidth: 3,
+                        name: 'number-line'
+                    });
+                    numberLineLayer.value.add(line);
+                    
+                    // 绘制刻度和数字
+                    for (let i = -10; i <= 10; i++) {
+                        const x = centerX + i * scale;
+                        
+                        // 刻度线
+                        const tick = new Konva.Line({
+                            points: [x, centerY - 8, x, centerY + 8],
+                            stroke: '#333',
+                            strokeWidth: 2,
+                            name: 'tick'
+                        });
+                        numberLineLayer.value.add(tick);
+                        
+                        // 数字标签
+                        if (i % 2 === 0 || Math.abs(i) <= 3) {
+                            const label = new Konva.Text({
+                                x: x - 10,
+                                y: centerY + 15,
+                                text: i.toString(),
+                                fontSize: 14,
+                                fill: '#333',
+                                name: 'label'
+                            });
+                            numberLineLayer.value.add(label);
+                        }
+                    }
+                    
+                    // 原点标记
+                    const originLabel = new Konva.Text({
+                        x: centerX - 5,
+                        y: centerY + 35,
+                        text: '0',
+                        fontSize: 16,
+                        fill: '#667eea',
+                        fontStyle: 'bold',
+                        name: 'origin'
+                    });
+                    numberLineLayer.value.add(originLabel);
+                    
+                    numberLineLayer.value.draw();
+                }
+                
+                // 绘制解集区间
+                function drawSolution(start, end, closedStart, closedEnd) {
+                    if (!numberLineLayer.value) return;
+                    
+                    // 清除旧的解集元素
+                    const oldSolution = numberLineLayer.value.find(node => 
+                        node.name() && node.name().startsWith('solution')
+                    );
+                    oldSolution.forEach(node => node.destroy());
+                    
+                    if (start === null || end === null) return;
+                    
+                    const width = numberLineStage.value.width();
+                    const height = numberLineStage.value.height();
+                    const padding = 60;
+                    const scale = (width - 2 * padding) / 20;
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    
+                    const startX = centerX + start * scale;
+                    const endX = centerX + end * scale;
+                    
+                    // 绘制区间线段
+                    const solutionLine = new Konva.Line({
+                        points: [startX, centerY, endX, centerY],
+                        stroke: '#28a745',
+                        strokeWidth: 6,
+                        name: 'solution-line',
+                        listening: false
+                    });
+                    numberLineLayer.value.add(solutionLine);
+                    
+                    // 绘制起点
+                    const startPoint = new Konva.Circle({
+                        x: startX,
+                        y: centerY,
+                        radius: closedStart ? 8 : 10,
+                        fill: closedStart ? '#28a745' : 'white',
+                        stroke: '#28a745',
+                        strokeWidth: 3,
+                        name: 'solution-start',
+                        draggable: true
+                    });
+                    let startPointRaf = null;
+                    startPoint.on('dragmove', function() {
+                        if (startPointRaf) return;
+                        
+                        startPointRaf = requestAnimationFrame(() => {
+                            const newX = Math.max(padding, Math.min(width - padding, this.x()));
+                            const newVal = (newX - centerX) / scale;
+                            solutionStart.value = Math.round(newVal * 10) / 10;
+                            
+                            // 直接更新，不重新创建
+                            updateSolutionOnly();
+                            startPointRaf = null;
+                        });
+                    });
+                    
+                    startPoint.on('dragend', function() {
+                        if (startPointRaf) {
+                            cancelAnimationFrame(startPointRaf);
+                            startPointRaf = null;
+                        }
+                    });
+                    startPoint.on('click', function(e) {
+                        e.cancelBubble = true;
+                        solutionClosed.value.start = !solutionClosed.value.start;
+                        this.radius(solutionClosed.value.start ? 8 : 10);
+                        this.fill(solutionClosed.value.start ? '#28a745' : 'white');
+                        numberLineLayer.value.batchDraw();
+                    });
+                    numberLineLayer.value.add(startPoint);
+                    
+                    // 绘制终点
+                    const endPoint = new Konva.Circle({
+                        x: endX,
+                        y: centerY,
+                        radius: closedEnd ? 8 : 10,
+                        fill: closedEnd ? '#28a745' : 'white',
+                        stroke: '#28a745',
+                        strokeWidth: 3,
+                        name: 'solution-end',
+                        draggable: true
+                    });
+                    let endPointRaf = null;
+                    endPoint.on('dragmove', function() {
+                        if (endPointRaf) return;
+                        
+                        endPointRaf = requestAnimationFrame(() => {
+                            const newX = Math.max(padding, Math.min(width - padding, this.x()));
+                            const newVal = (newX - centerX) / scale;
+                            solutionEnd.value = Math.round(newVal * 10) / 10;
+                            
+                            // 直接更新，不重新创建
+                            updateSolutionOnly();
+                            endPointRaf = null;
+                        });
+                    });
+                    
+                    endPoint.on('dragend', function() {
+                        if (endPointRaf) {
+                            cancelAnimationFrame(endPointRaf);
+                            endPointRaf = null;
+                        }
+                    });
+                    endPoint.on('click', function(e) {
+                        e.cancelBubble = true;
+                        solutionClosed.value.end = !solutionClosed.value.end;
+                        this.radius(solutionClosed.value.end ? 8 : 10);
+                        this.fill(solutionClosed.value.end ? '#28a745' : 'white');
+                        numberLineLayer.value.batchDraw();
+                    });
+                    numberLineLayer.value.add(endPoint);
+                    
+                    // 添加动画效果
+                    if (isAnimating.value) {
+                        gsap.from([solutionLine, startPoint, endPoint], {
+                            duration: 1,
+                            opacity: 0,
+                            scale: 0.5,
+                            ease: 'back.out(1.7)'
+                        });
+                    }
+                    
+                    numberLineLayer.value.batchDraw();
+                }
+                
+                // 仅更新解集（拖动时的高性能更新）
+                function updateSolutionOnly() {
+                    if (!numberLineLayer.value) return;
+                    
+                    const width = numberLineStage.value.width();
+                    const height = numberLineStage.value.height();
+                    const padding = 60;
+                    const scale = (width - 2 * padding) / 20;
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    
+                    const startX = centerX + solutionStart.value * scale;
+                    const endX = centerX + solutionEnd.value * scale;
+                    
+                    const solutionLine = numberLineLayer.value.findOne('.solution-line');
+                    const startPoint = numberLineLayer.value.findOne('.solution-start');
+                    const endPoint = numberLineLayer.value.findOne('.solution-end');
+                    
+                    if (solutionLine) {
+                        solutionLine.points([startX, centerY, endX, centerY]);
+                    }
+                    
+                    if (startPoint) {
+                        startPoint.x(startX);
+                    }
+                    
+                    if (endPoint) {
+                        endPoint.x(endX);
+                    }
+                    
+                    numberLineLayer.value.batchDraw();
+                }
+                
+                // 解析不等式
+                function parseInequality(ineq) {
+                    // 简单的解析逻辑
+                    const trimmed = ineq.trim();
+                    let match;
+                    
+                    // 匹配 x > a, x >= a, x < a, x <= a
+                    if (match = trimmed.match(/x\s*([<>]=?)\s*(-?\d+\.?\d*)/)) {
+                        const op = match[1];
+                        const val = parseFloat(match[2]);
+                        
+                        if (op === '>') {
+                            return { start: val, end: 10, closedStart: false, closedEnd: false };
+                        } else if (op === '>=') {
+                            return { start: val, end: 10, closedStart: true, closedEnd: false };
+                        } else if (op === '<') {
+                            return { start: -10, end: val, closedStart: false, closedEnd: false };
+                        } else if (op === '<=') {
+                            return { start: -10, end: val, closedStart: false, closedEnd: true };
+                        }
+                    }
+                    
+                    // 匹配 a < x < b
+                    if (match = trimmed.match(/(-?\d+\.?\d*)\s*([<>]=?)\s*x\s*([<>]=?)\s*(-?\d+\.?\d*)/)) {
+                        const startVal = parseFloat(match[1]);
+                        const startOp = match[2];
+                        const endVal = parseFloat(match[4]);
+                        const endOp = match[3];
+                        
+                        return {
+                            start: startVal,
+                            end: endVal,
+                            closedStart: startOp.includes('='),
+                            closedEnd: endOp.includes('=')
+                        };
+                    }
+                    
+                    return null;
+                }
+                
+                // 求解并显示
+                function solveAndDisplay(ineq) {
+                    isAnimating.value = true;
+                    const solution = parseInequality(ineq);
+                    
+                    if (solution) {
+                        solutionStart.value = solution.start;
+                        solutionEnd.value = solution.end;
+                        solutionClosed.value = {
+                            start: solution.closedStart,
+                            end: solution.closedEnd
+                        };
+                        
+                        nextTick(() => {
+                            drawSolution(solution.start, solution.end, solution.closedStart, solution.closedEnd);
+                            setTimeout(() => {
+                                isAnimating.value = false;
+                            }, 1000);
+                        });
+                    }
+                }
+                
+                // 更新解集
+                function updateSolution() {
+                    drawSolution(solutionStart.value, solutionEnd.value, solutionClosed.value.start, solutionClosed.value.end, true);
+                }
+                
+                // 检查练习答案
+                function checkAnswer(question) {
+                    const userAns = question.userAnswer.trim().replace(/\s+/g, '').toLowerCase();
+                    const correctAns = question.answer.trim().replace(/\s+/g, '').toLowerCase();
+                    
+                    // 标准化答案格式（允许不同的等价形式）
+                    const normalizeAns = (ans) => {
+                        return ans
+                            .replace(/≥/g, '>=')
+                            .replace(/≤/g, '<=')
+                            .replace(/x\s*>\s*(-?\d+)/g, 'x>$1')
+                            .replace(/x\s*<\s*(-?\d+)/g, 'x<$1')
+                            .replace(/x\s*>=\s*(-?\d+)/g, 'x>=$1')
+                            .replace(/x\s*<=\s*(-?\d+)/g, 'x<=$1');
+                    };
+                    
+                    const normalizedUser = normalizeAns(userAns);
+                    const normalizedCorrect = normalizeAns(correctAns);
+                    
+                    question.correct = normalizedUser === normalizedCorrect;
+                }
+                
+                // 计算得分
+                const score = computed(() => {
+                    const total = practiceQuestions.value.length;
+                    const correct = practiceQuestions.value.filter(q => q.correct === true).length;
+                    return { correct, total };
+                });
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initNumberLine();
+                        
+                        // 监听窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (numberLineStage.value) {
+                                const container = document.getElementById('number-line-canvas');
+                                if (container) {
+                                    numberLineStage.value.width(container.offsetWidth);
+                                    drawNumberLine();
+                                    if (solutionStart.value !== null && solutionEnd.value !== null) {
+                                        drawSolution(solutionStart.value, solutionEnd.value, 
+                                                   solutionClosed.value.start, solutionClosed.value.end);
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // 自动渲染 KaTeX
+                        if (typeof renderMathInElement !== 'undefined') {
+                            renderMathInElement(document.body);
+                        }
+                    });
+                });
+                
+                return {
+                    currentInequality,
+                    solutionStart,
+                    solutionEnd,
+                    solutionClosed,
+                    practiceQuestions,
+                    score,
+                    solveAndDisplay,
+                    checkAnswer
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>不等式解法</h1>
+                    <p class="subtitle">学习不等式的解法，掌握符号翻转规律，理解数轴表示</p>
+                    
+                    <!-- 基本概念 -->
+                    <div class="section">
+                        <h2>📚 基本概念</h2>
+                        
+                        <div class="concept-grid">
+                            <div class="concept-card">
+                                <h3>不等式的性质</h3>
+                                <p><strong>性质1：</strong>如果 a > b，那么 a + c > b + c</p>
+                                <p><strong>性质2：</strong>如果 a > b 且 c > 0，那么 ac > bc</p>
+                                <p><strong>性质3：</strong>如果 a > b 且 c < 0，那么 ac < bc（符号翻转）</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>符号翻转</h3>
+                                <p>当不等式两边同时乘以或除以负数时，不等号方向必须改变。</p>
+                                <div class="example-box">
+                                    <p>例如：-2x > 6</p>
+                                    <p>两边除以 -2：x < -3</p>
+                                    <p>注意：> 变成了 <</p>
+                                </div>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>开闭区间</h3>
+                                <p><strong>开区间 (a, b)：</strong>不包含端点 a 和 b，用空心圆表示</p>
+                                <p><strong>闭区间 [a, b]：</strong>包含端点 a 和 b，用实心圆表示</p>
+                                <p><strong>半开区间：</strong>一端开一端闭，如 [a, b) 或 (a, b]</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 数轴可视化 -->
+                    <div class="section">
+                        <h2>📊 数轴可视化</h2>
+                        
+                        <div class="number-line-container">
+                            <div class="controls">
+                                <div class="input-group">
+                                    <label>不等式：</label>
+                                    <input type="text" v-model="currentInequality" 
+                                           class="inequality-input" 
+                                           placeholder="例如：x > 3 或 -2 < x < 5"
+                                           @keyup.enter="solveAndDisplay(currentInequality)">
+                                </div>
+                                <button class="btn btn-primary" @click="solveAndDisplay(currentInequality)">
+                                    求解并显示
+                                </button>
+                                <button class="btn btn-secondary" @click="solveAndDisplay('x > 3')">
+                                    示例1：x > 3
+                                </button>
+                                <button class="btn btn-secondary" @click="solveAndDisplay('x <= -2')">
+                                    示例2：x ≤ -2
+                                </button>
+                                <button class="btn btn-secondary" @click="solveAndDisplay('-1 < x < 4')">
+                                    示例3：-1 < x < 4
+                                </button>
+                            </div>
+                            
+                            <div class="solution-display" v-if="solutionStart !== null">
+                                <h4>解集：</h4>
+                                <p v-if="solutionStart === -10 && solutionEnd !== 10">
+                                    x {{ solutionClosed.end ? '≤' : '<' }} {{ solutionEnd }}
+                                </p>
+                                <p v-else-if="solutionStart !== -10 && solutionEnd === 10">
+                                    x {{ solutionClosed.start ? '≥' : '>' }} {{ solutionStart }}
+                                </p>
+                                <p v-else>
+                                    {{ solutionClosed.start ? '[' : '(' }}{{ solutionStart }}, {{ solutionEnd }}{{ solutionClosed.end ? ']' : ')' }}
+                                </p>
+                                <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                                    提示：可以拖拽圆点调整区间范围，点击圆点切换开闭状态
+                                </p>
+                            </div>
+                            
+                            <div class="number-line-wrapper">
+                                <div id="number-line-canvas"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-box">
+                            <h4>解题示例</h4>
+                            <p><strong>例1：</strong>解不等式 2x + 5 > 13</p>
+                            <p>解：2x > 13 - 5</p>
+                            <p>2x > 8</p>
+                            <p>x > 4</p>
+                            
+                            <p style="margin-top: 15px;"><strong>例2：</strong>解不等式 -3x ≤ 9</p>
+                            <p>解：两边除以 -3（注意符号翻转）</p>
+                            <p>x ≥ -3</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 复合不等式 -->
+                    <div class="section">
+                        <h2>🔗 复合不等式</h2>
+                        
+                        <div class="concept-card">
+                            <h3>不等式组</h3>
+                            <p>由多个不等式组成的复合不等式，需要同时满足所有条件。</p>
+                            
+                            <div class="example-box">
+                                <h4>例：解不等式组</h4>
+                                <p>2x + 1 > 5 且 x < 4</p>
+                                <p>解：</p>
+                                <p>由 2x + 1 > 5 得：x > 2</p>
+                                <p>所以：2 < x < 4</p>
+                                <p>在数轴上表示：从 2（开）到 4（开）的区间</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习 -->
+                    <div class="section">
+                        <h2>✏️ 练习</h2>
+                        
+                        <div class="practice-area">
+                            <div v-for="q in practiceQuestions" :key="q.id" 
+                                 class="practice-question"
+                                 :class="{ correct: q.correct === true, incorrect: q.correct === false }">
+                                <p style="font-size: 18px; margin-bottom: 15px; font-weight: 500;">
+                                    {{ q.question }}
+                                </p>
+                                <div class="input-group">
+                                    <label>答案：</label>
+                                    <input type="text" 
+                                           v-model="q.userAnswer" 
+                                           class="answer-input"
+                                           placeholder="例如：x > 3"
+                                           @keyup.enter="checkAnswer(q)">
+                                    <button class="btn btn-success" @click="checkAnswer(q)">检查</button>
+                                </div>
+                                <div v-if="q.correct === true" class="feedback correct">
+                                    ✓ 正确！
+                                </div>
+                                <div v-else-if="q.correct === false" class="feedback incorrect">
+                                    ✗ 错误，正确答案：{{ q.answer }}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                                <h3 style="color: #2196f3; margin-bottom: 10px;">得分统计</h3>
+                                <p style="font-size: 18px;">
+                                    正确：<strong>{{ score.correct }}</strong> / <strong>{{ score.total }}</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

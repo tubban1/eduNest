@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>集合与逻辑 - 初中数学教学</title>
+    <meta name="description" content="学习集合的基本概念，掌握交集、并集、补集运算，通过交互式维恩图理解集合关系，学习逻辑连接词与真值表，培养逻辑思维能力。">
+    <meta name="keywords" content="集合,交集,并集,补集,维恩图,逻辑,真值表,逻辑连接词,与或非,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .venn-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .venn-canvas-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+        
+        .venn-canvas {
+            width: 100%;
+            height: 400px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .control-group input[type="text"],
+        .control-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .set-result {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .set-result h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .logic-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .truth-table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .truth-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .truth-table th,
+        .truth-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .truth-table th {
+            background: #667eea;
+            color: white;
+        }
+        
+        .truth-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .truth-table .true {
+            background: #d4edda;
+            color: #155724;
+            font-weight: bold;
+        }
+        
+        .truth-table .false {
+            background: #f8d7da;
+            color: #721c24;
+            font-weight: bold;
+        }
+        
+        .logic-operators {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .operator-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .operator-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .operator-btn.active {
+            background: #764ba2;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+        createApp({
+            setup() {
+                // 集合相关
+                const setA = ref('1,2,3,4,5');
+                const setB = ref('3,4,5,6,7');
+                const operation = ref('intersection'); // intersection, union, complement
+                const complementSet = ref('A'); // A 或 B 的补集
+                const universalSet = ref('1,2,3,4,5,6,7,8,9,10');
+                
+                // 维恩图画布
+                const vennStage = ref(null);
+                const vennLayer = ref(null);
+                
+                // 逻辑相关
+                const logicP = ref(true);
+                const logicQ = ref(true);
+                const logicOperator = ref('and'); // and, or, not, implies
+                
+                // 解析集合字符串
+                const parseSet = (setStr) => {
+                    if (!setStr) return new Set();
+                    return new Set(setStr.split(',').map(s => s.trim()).filter(s => s));
+                };
+                
+                // 集合A
+                const setAData = computed(() => parseSet(setA.value));
+                
+                // 集合B
+                const setBData = computed(() => parseSet(setB.value));
+                
+                // 全集
+                const universalSetData = computed(() => parseSet(universalSet.value));
+                
+                // 交集
+                const intersection = computed(() => {
+                    const a = setAData.value;
+                    const b = setBData.value;
+                    return new Set([...a].filter(x => b.has(x)));
+                });
+                
+                // 并集
+                const union = computed(() => {
+                    return new Set([...setAData.value, ...setBData.value]);
+                });
+                
+                // 补集
+                const complement = computed(() => {
+                    const universal = universalSetData.value;
+                    const target = complementSet.value === 'A' ? setAData.value : setBData.value;
+                    return new Set([...universal].filter(x => !target.has(x)));
+                });
+                
+                // 当前操作结果
+                const currentResult = computed(() => {
+                    if (operation.value === 'intersection') {
+                        return intersection.value;
+                    } else if (operation.value === 'union') {
+                        return union.value;
+                    } else {
+                        return complement.value;
+                    }
+                });
+                
+                // 绘制维恩图
+                const drawVennDiagram = () => {
+                    if (!vennStage.value || !vennLayer.value) return;
+                    
+                    vennLayer.value.destroyChildren();
+                    
+                    const stage = vennStage.value;
+                    const layer = vennLayer.value;
+                    const w = stage.width();
+                    const h = stage.height();
+                    
+                    const centerX = w / 2;
+                    const centerY = h / 2;
+                    const radius = 120;
+                    const offsetX = 80;
+                    
+                    // 集合A的圆心
+                    const centerAX = centerX - offsetX;
+                    const centerAY = centerY;
+                    
+                    // 集合B的圆心
+                    const centerBX = centerX + offsetX;
+                    const centerBY = centerY;
+                    
+                    // 根据操作类型决定绘制顺序
+                    if (operation.value === 'complement') {
+                        // 补集：先绘制全集背景，再绘制目标圆
+                        const universalBg = new Konva.Rect({
+                            x: 10,
+                            y: 10,
+                            width: w - 20,
+                            height: h - 20,
+                            fill: 'rgba(240, 240, 240, 0.3)',
+                            stroke: '#999',
+                            strokeWidth: 2,
+                            cornerRadius: 5
+                        });
+                        layer.add(universalBg);
+                        
+                        const targetCenter = complementSet.value === 'A' 
+                            ? { x: centerAX, y: centerAY }
+                            : { x: centerBX, y: centerBY };
+                        const targetColor = complementSet.value === 'A' 
+                            ? 'rgba(102, 126, 234, 0.3)' 
+                            : 'rgba(118, 75, 162, 0.3)';
+                        const targetStroke = complementSet.value === 'A' ? '#667eea' : '#764ba2';
+                        
+                        // 绘制目标集合的圆
+                        const targetCircle = new Konva.Circle({
+                            x: targetCenter.x,
+                            y: targetCenter.y,
+                            radius: radius,
+                            fill: targetColor,
+                            stroke: targetStroke,
+                            strokeWidth: 3
+                        });
+                        layer.add(targetCircle);
+                        
+                        // 绘制补集区域（使用遮罩）
+                        const complementShape = new Konva.Shape({
+                            sceneFunc: (ctx) => {
+                                // 绘制整个矩形区域
+                                ctx.beginPath();
+                                ctx.rect(10, 10, w - 20, h - 20);
+                                ctx.fillStyle = 'rgba(255, 193, 7, 0.3)';
+                                ctx.fill();
+                                
+                                // 使用 destination-out 模式减去目标圆
+                                ctx.globalCompositeOperation = 'destination-out';
+                                ctx.beginPath();
+                                ctx.arc(targetCenter.x, targetCenter.y, radius, 0, 2 * Math.PI);
+                                ctx.fill();
+                                ctx.globalCompositeOperation = 'source-over';
+                                
+                                // 绘制边框
+                                ctx.strokeStyle = '#ffc107';
+                                ctx.lineWidth = 2;
+                                ctx.strokeRect(10, 10, w - 20, h - 20);
+                            }
+                        });
+                        layer.add(complementShape);
+                    } else {
+                        // 交集和并集：正常绘制两个圆
+                        const circleA = new Konva.Circle({
+                            x: centerAX,
+                            y: centerAY,
+                            radius: radius,
+                            fill: 'rgba(102, 126, 234, 0.3)',
+                            stroke: '#667eea',
+                            strokeWidth: 3
+                        });
+                        layer.add(circleA);
+                        
+                        const circleB = new Konva.Circle({
+                            x: centerBX,
+                            y: centerBY,
+                            radius: radius,
+                            fill: 'rgba(118, 75, 162, 0.3)',
+                            stroke: '#764ba2',
+                            strokeWidth: 3
+                        });
+                        layer.add(circleB);
+                        
+                        // 根据操作类型高亮区域
+                        if (operation.value === 'intersection') {
+                        // 交集：只高亮重叠部分（使用路径绘制）
+                        const intersectionPath = new Konva.Shape({
+                            sceneFunc: (ctx) => {
+                                ctx.beginPath();
+                                ctx.arc(centerAX, centerAY, radius, -Math.PI/3, Math.PI/3);
+                                ctx.arc(centerBX, centerBY, radius, 2*Math.PI/3, 4*Math.PI/3);
+                                ctx.closePath();
+                                ctx.fillStyle = 'rgba(255, 193, 7, 0.5)';
+                                ctx.fill();
+                                ctx.strokeStyle = '#ffc107';
+                                ctx.lineWidth = 3;
+                                ctx.stroke();
+                            }
+                        });
+                        layer.add(intersectionPath);
+                        } else if (operation.value === 'union') {
+                            // 并集：高亮两个圆
+                            circleA.fill('rgba(102, 126, 234, 0.4)');
+                            circleB.fill('rgba(118, 75, 162, 0.4)');
+                        }
+                    }
+                    
+                    // 标签 - 只在非补集模式下显示两个集合标签
+                    if (operation.value !== 'complement') {
+                        const labelA = new Konva.Text({
+                            x: centerAX - 30,
+                            y: centerAY - radius - 30,
+                            text: `A = {${setA.value}}`,
+                            fontSize: 14,
+                            fill: '#667eea',
+                            fontStyle: 'bold'
+                        });
+                        layer.add(labelA);
+                        
+                        const labelB = new Konva.Text({
+                            x: centerBX - 30,
+                            y: centerBY - radius - 30,
+                            text: `B = {${setB.value}}`,
+                            fontSize: 14,
+                            fill: '#764ba2',
+                            fontStyle: 'bold'
+                        });
+                        layer.add(labelB);
+                    } else {
+                        // 补集模式下显示全集和目标集合
+                        const universalLabel = new Konva.Text({
+                            x: centerX - 80,
+                            y: 30,
+                            text: `全集 U = {${universalSet.value}}`,
+                            fontSize: 14,
+                            fill: '#666',
+                            fontStyle: 'bold'
+                        });
+                        layer.add(universalLabel);
+                        
+                        const targetLabel = new Konva.Text({
+                            x: complementSet.value === 'A' ? centerAX - 30 : centerBX - 30,
+                            y: complementSet.value === 'A' ? centerAY - radius - 30 : centerBY - radius - 30,
+                            text: `${complementSet.value} = {${complementSet.value === 'A' ? setA.value : setB.value}}`,
+                            fontSize: 14,
+                            fill: complementSet.value === 'A' ? '#667eea' : '#764ba2',
+                            fontStyle: 'bold'
+                        });
+                        layer.add(targetLabel);
+                    }
+                    
+                    // 结果显示
+                    const resultText = Array.from(currentResult.value).sort((a, b) => {
+                        const numA = Number(a);
+                        const numB = Number(b);
+                        if (!isNaN(numA) && !isNaN(numB)) {
+                            return numA - numB;
+                        }
+                        return String(a).localeCompare(String(b));
+                    }).join(', ');
+                    
+                    const resultLabel = new Konva.Text({
+                        x: centerX,
+                        y: h - 40,
+                        text: `${operation.value === 'intersection' ? 'A∩B' : operation.value === 'union' ? 'A∪B' : (complementSet.value === 'A' ? 'A' : 'B') + 'ᶜ'} = {${resultText || '∅'}}`,
+                        fontSize: 16,
+                        fill: '#333',
+                        fontStyle: 'bold',
+                        align: 'center',
+                        offsetX: 150
+                    });
+                    layer.add(resultLabel);
+                    
+                    layer.draw();
+                };
+                
+                // 真值表
+                const truthTable = computed(() => {
+                    const table = [];
+                    const pValues = [true, false];
+                    const qValues = [true, false];
+                    
+                    if (logicOperator.value === 'not') {
+                        // 非运算只需要一个变量
+                        table.push({
+                            p: true,
+                            q: null,
+                            result: !logicP.value
+                        });
+                        table.push({
+                            p: false,
+                            q: null,
+                            result: !logicP.value
+                        });
+                    } else {
+                        // 二元运算
+                        for (const p of pValues) {
+                            for (const q of qValues) {
+                                let result = false;
+                                if (logicOperator.value === 'and') {
+                                    result = p && q;
+                                } else if (logicOperator.value === 'or') {
+                                    result = p || q;
+                                } else if (logicOperator.value === 'implies') {
+                                    result = !p || q; // p → q 等价于 ¬p ∨ q
+                                }
+                                table.push({ p, q, result });
+                            }
+                        }
+                    }
+                    
+                    return table;
+                });
+                
+                // 当前逻辑结果
+                const currentLogicResult = computed(() => {
+                    if (logicOperator.value === 'not') {
+                        return !logicP.value;
+                    } else if (logicOperator.value === 'and') {
+                        return logicP.value && logicQ.value;
+                    } else if (logicOperator.value === 'or') {
+                        return logicP.value || logicQ.value;
+                    } else if (logicOperator.value === 'implies') {
+                        return !logicP.value || logicQ.value;
+                    }
+                    return false;
+                });
+                
+                // 初始化维恩图
+                const initVennDiagram = () => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            const container = document.getElementById('venn-canvas');
+                            if (container && typeof Konva !== 'undefined') {
+                                vennStage.value = new Konva.Stage({
+                                    container: 'venn-canvas',
+                                    width: container.offsetWidth,
+                                    height: 400
+                                });
+                                vennLayer.value = new Konva.Layer();
+                                vennStage.value.add(vennLayer.value);
+                                drawVennDiagram();
+                            }
+                        }, 100);
+                    });
+                };
+                
+                // 渲染 KaTeX
+                const renderKaTeX = () => {
+                    nextTick(() => {
+                        if (typeof renderMathInElement !== 'undefined') {
+                            const container = document.getElementById('app');
+                            if (container) {
+                                renderMathInElement(container, {
+                                    delimiters: [
+                                        { left: '$$', right: '$$', display: true },
+                                        { left: '$', right: '$', display: false },
+                                        { left: '\\[', right: '\\]', display: true },
+                                        { left: '\\(', right: '\\)', display: false }
+                                    ],
+                                    throwOnError: false
+                                });
+                            }
+                        }
+                    });
+                };
+                
+                // 监听变化
+                watch([setA, setB, operation, complementSet, universalSet], () => {
+                    nextTick(() => {
+                        drawVennDiagram();
+                        renderKaTeX();
+                    });
+                });
+                
+                watch([logicP, logicQ, logicOperator], () => {
+                    nextTick(() => {
+                        renderKaTeX();
+                    });
+                });
+                
+                onMounted(() => {
+                    initVennDiagram();
+                    renderKaTeX();
+                    
+                    // 窗口调整
+                    window.addEventListener('resize', () => {
+                        setTimeout(() => {
+                            if (vennStage.value && vennLayer.value) {
+                                const container = document.getElementById('venn-canvas');
+                                if (container) {
+                                    vennStage.value.width(container.offsetWidth);
+                                    drawVennDiagram();
+                                }
+                            }
+                        }, 100);
+                    });
+                    
+                    if (window.gsap) {
+                        gsap.from('.section', { opacity: 0, y: 20, duration: 0.6, stagger: 0.1 });
+                    }
+                });
+                
+                return {
+                    setA,
+                    setB,
+                    operation,
+                    complementSet,
+                    universalSet,
+                    intersection,
+                    union,
+                    complement,
+                    currentResult,
+                    logicP,
+                    logicQ,
+                    logicOperator,
+                    truthTable,
+                    currentLogicResult,
+                    drawVennDiagram
+                };
+            },
+            template: `
+            <div class="container">
+                <h1>集合与逻辑</h1>
+                <p class="subtitle">学习集合运算、维恩图和逻辑真值表</p>
+                
+                <div class="section">
+                    <h2>一、集合的基本概念</h2>
+                    <div class="concept-grid">
+                        <div class="concept-card">
+                            <h3>集合的定义</h3>
+                            <p>由确定的、互不相同的对象组成的整体称为集合。集合中的每个对象称为元素。</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>集合的表示</h3>
+                            <p>常用大写字母表示集合，如 A、B、C。用花括号表示集合，如 A = {1, 2, 3}。</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>空集</h3>
+                            <p>不包含任何元素的集合称为空集，记作 ∅ 或 { }。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>二、集合的运算</h2>
+                    
+                    <div class="venn-container">
+                        <div class="venn-canvas-wrapper">
+                            <h3 style="color: #667eea; margin-bottom: 15px;">维恩图</h3>
+                            <div id="venn-canvas" class="venn-canvas"></div>
+                        </div>
+                        
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">集合设置</h3>
+                            
+                            <div class="control-group">
+                                <label>集合 A（用逗号分隔）</label>
+                                <input type="text" v-model="setA" placeholder="例如：1,2,3,4,5" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>集合 B（用逗号分隔）</label>
+                                <input type="text" v-model="setB" placeholder="例如：3,4,5,6,7" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>运算类型</label>
+                                <select v-model="operation">
+                                    <option value="intersection">交集 (A∩B)</option>
+                                    <option value="union">并集 (A∪B)</option>
+                                    <option value="complement">补集</option>
+                                </select>
+                            </div>
+                            
+                            <div class="control-group" v-if="operation === 'complement'">
+                                <label>求哪个集合的补集</label>
+                                <select v-model="complementSet">
+                                    <option value="A">A 的补集 (Aᶜ)</option>
+                                    <option value="B">B 的补集 (Bᶜ)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="control-group" v-if="operation === 'complement'">
+                                <label>全集（用逗号分隔）</label>
+                                <input type="text" v-model="universalSet" placeholder="例如：1,2,3,4,5,6,7,8,9,10" />
+                            </div>
+                            
+                            <div class="set-result">
+                                <h4>运算结果</h4>
+                                <p style="font-size: 16px; margin-top: 10px;">
+                                    <strong v-if="operation === 'intersection'">A∩B = </strong>
+                                    <strong v-else-if="operation === 'union'">A∪B = </strong>
+                                    <strong v-else>{{ complementSet === 'A' ? 'A' : 'B' }}ᶜ = </strong>
+                                    { {{ Array.from(currentResult).sort((a,b) => {
+                                        const na = Number(a), nb = Number(b);
+                                        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                                        return String(a).localeCompare(String(b));
+                                    }).join(', ') || '∅' }} }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px;">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">集合运算说明</h3>
+                        <ul style="line-height: 1.8; font-size: 1.05em;">
+                            <li><strong>交集 (A∩B)：</strong>由既属于 A 又属于 B 的所有元素组成的集合</li>
+                            <li><strong>并集 (A∪B)：</strong>由属于 A 或属于 B 的所有元素组成的集合</li>
+                            <li><strong>补集 (Aᶜ)：</strong>在全集中，不属于 A 的所有元素组成的集合</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>三、逻辑连接词与真值表</h2>
+                    
+                    <div class="logic-panel">
+                        <div class="truth-table-container">
+                            <h3 style="color: #667eea; margin-bottom: 15px;">逻辑操作</h3>
+                            
+                            <div class="control-group">
+                                <label>命题 P</label>
+                                <select v-model="logicP">
+                                    <option :value="true">真 (T)</option>
+                                    <option :value="false">假 (F)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="control-group" v-if="logicOperator !== 'not'">
+                                <label>命题 Q</label>
+                                <select v-model="logicQ">
+                                    <option :value="true">真 (T)</option>
+                                    <option :value="false">假 (F)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>逻辑连接词</label>
+                                <select v-model="logicOperator">
+                                    <option value="and">与 (∧)</option>
+                                    <option value="or">或 (∨)</option>
+                                    <option value="not">非 (¬)</option>
+                                    <option value="implies">蕴含 (→)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="set-result" style="margin-top: 20px;">
+                                <h4>当前结果</h4>
+                                <p style="font-size: 18px; margin-top: 10px;">
+                                    <strong v-if="logicOperator === 'and'">P ∧ Q = </strong>
+                                    <strong v-else-if="logicOperator === 'or'">P ∨ Q = </strong>
+                                    <strong v-else-if="logicOperator === 'not'">¬P = </strong>
+                                    <strong v-else>P → Q = </strong>
+                                    <span :class="currentLogicResult ? 'true' : 'false'" style="padding: 5px 15px; border-radius: 4px;">
+                                        {{ currentLogicResult ? '真 (T)' : '假 (F)' }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="truth-table-container">
+                            <h3 style="color: #667eea; margin-bottom: 15px;">真值表</h3>
+                            <table class="truth-table">
+                                <thead>
+                                    <tr>
+                                        <th>P</th>
+                                        <th v-if="logicOperator !== 'not'">Q</th>
+                                        <th>
+                                            <span v-if="logicOperator === 'and'">P ∧ Q</span>
+                                            <span v-else-if="logicOperator === 'or'">P ∨ Q</span>
+                                            <span v-else-if="logicOperator === 'not'">¬P</span>
+                                            <span v-else>P → Q</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(row, index) in truthTable" :key="index">
+                                        <td :class="row.p ? 'true' : 'false'">{{ row.p ? 'T' : 'F' }}</td>
+                                        <td v-if="logicOperator !== 'not'" :class="row.q ? 'true' : 'false'">{{ row.q ? 'T' : 'F' }}</td>
+                                        <td :class="row.result ? 'true' : 'false'">{{ row.result ? 'T' : 'F' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; font-size: 0.95em;">
+                                <strong>逻辑连接词说明：</strong><br>
+                                • <strong>与 (∧)：</strong>P 和 Q 都为真时，结果为真<br>
+                                • <strong>或 (∨)：</strong>P 或 Q 至少一个为真时，结果为真<br>
+                                • <strong>非 (¬)：</strong>P 为真时结果为假，P 为假时结果为真<br>
+                                • <strong>蕴含 (→)：</strong>P 为假或 Q 为真时，结果为真
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

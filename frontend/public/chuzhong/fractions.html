@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分数 - 初中数学教学</title>
+    <meta name="description" content="学习分数的基本概念，理解分子分母的含义，掌握等值分数的规律，通过圆形和矩形面积模型直观理解分数，学习分数的加减乘除运算，包括通分、约分、最小公倍数等计算方法。">
+    <meta name="keywords" content="分数,分子,分母,等值分数,分数运算,通分,约分,最小公倍数,倒数,分数加减法,分数乘除法,面积模型,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .fraction-display {
+            font-size: 2em;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .fraction-display .numerator {
+            border-bottom: 3px solid #333;
+            padding-bottom: 5px;
+            display: block;
+        }
+        
+        .fraction-display .denominator {
+            padding-top: 5px;
+            display: block;
+        }
+        
+        .model-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        #fractionCanvas {
+            width: 100%;
+            min-width: 400px;
+            height: 400px;
+            min-height: 400px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: #f8f9fa;
+            display: block;
+            position: relative;
+        }
+        
+        .model-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 80px;
+        }
+        
+        .control-group input {
+            padding: 8px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.1em;
+            width: 100px;
+            outline: none;
+        }
+        
+        .control-group input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .control-group select {
+            padding: 8px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.1em;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .btn {
+            padding: 10px 25px;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .operation-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .operation-display {
+            font-size: 1.5em;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .step-display {
+            margin: 15px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .step-display h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .addition-model {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .fraction-model {
+            text-align: center;
+        }
+        
+        .fraction-model canvas {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            margin: 10px 0;
+            background: white;
+        }
+        
+        .fraction-label {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #667eea;
+        }
+        
+        .slider-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .slider-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .exercise-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .question-item {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .question-item.correct {
+            border-left-color: #43e97b;
+            background: #e8f5e9;
+        }
+        
+        .question-item.incorrect {
+            border-left-color: #f5576c;
+            background: #ffebee;
+        }
+        
+        .question-text {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.2em;
+            width: 200px;
+            outline: none;
+        }
+        
+        .answer-input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .result-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .result-badge.correct {
+            background: #43e97b;
+            color: white;
+        }
+        
+        .result-badge.incorrect {
+            background: #f5576c;
+            color: white;
+        }
+        
+        .score-display {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .formula {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .katex-display {
+            margin: 20px 0 !important;
+        }
+        
+        .equal-sign {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .model-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .addition-model {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>分数</h1>
+            <p class="subtitle">探索分数的奥秘，掌握分数运算的规律</p>
+            
+            <!-- 一、基本概念 -->
+            <div class="section">
+                <h2>一、分数的基本概念</h2>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>分数的意义</h3>
+                        <p>分数表示一个整体被平均分成若干份，取其中的几份。</p>
+                        <div class="fraction-display">
+                            <span class="numerator">分子</span>
+                            <span class="denominator">分母</span>
+                        </div>
+                        <p>分母表示整体被分成的份数，分子表示取出的份数。</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>分子与分母</h3>
+                        <div class="fraction-display">
+                            <span class="numerator">3</span>
+                            <span class="denominator">4</span>
+                        </div>
+                        <p><strong>分母 4：</strong>表示整体被分成4等份</p>
+                        <p><strong>分子 3：</strong>表示取其中的3份</p>
+                        <p>读作：四分之三</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>等值分数</h3>
+                        <p>数值相等但形式不同的分数</p>
+                        <div class="fraction-display">
+                            <span class="numerator">1</span>
+                            <span class="denominator">2</span>
+                        </div>
+                        <p>=</p>
+                        <div class="fraction-display">
+                            <span class="numerator">2</span>
+                            <span class="denominator">4</span>
+                        </div>
+                        <p>=</p>
+                        <div class="fraction-display">
+                            <span class="numerator">3</span>
+                            <span class="denominator">6</span>
+                        </div>
+                        <p>通过约分或扩分可以得到等值分数</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 二、面积模型 -->
+            <div class="section">
+                <h2>二、面积模型展示</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    通过圆形和矩形的分割，直观理解分数的含义。拖动滑块可以改变分数的分子和分母，观察图形的变化。
+                </p>
+                <div class="model-container">
+                    <div class="model-controls">
+                        <div class="control-group">
+                            <label>形状：</label>
+                            <select v-model="modelShape" @change="updateModel">
+                                <option value="circle">圆形</option>
+                                <option value="rectangle">矩形</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>分子：</label>
+                            <input type="number" v-model.number="modelNumerator" @input="updateModel" min="0" :max="modelDenominator">
+                        </div>
+                        <div class="control-group">
+                            <label>分母：</label>
+                            <input type="number" v-model.number="modelDenominator" @input="updateModel" min="1" max="12">
+                        </div>
+                        <div class="control-group">
+                            <label>分数值：</label>
+                            <span style="font-size: 1.5em; font-weight: bold; color: #667eea;">
+                                {{ modelNumerator }} / {{ modelDenominator }} = {{ fractionValue }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <div id="fractionCanvas"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 三、分数运算 -->
+            <div class="section">
+                <h2>三、分数运算</h2>
+                
+                <!-- 加法 -->
+                <div class="operation-section">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">分数加法</h3>
+                    <div class="model-controls">
+                        <div class="control-group">
+                            <label>分数1：</label>
+                            <input type="number" v-model.number="addFrac1.num" @input="calculateAddition" min="1" max="10" style="width: 60px;">
+                            <span style="font-size: 1.2em; margin: 0 5px;">/</span>
+                            <input type="number" v-model.number="addFrac1.den" @input="calculateAddition" min="1" max="10" style="width: 60px;">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">+</span>
+                        <div class="control-group">
+                            <label>分数2：</label>
+                            <input type="number" v-model.number="addFrac2.num" @input="calculateAddition" min="1" max="10" style="width: 60px;">
+                            <span style="font-size: 1.2em; margin: 0 5px;">/</span>
+                            <input type="number" v-model.number="addFrac2.den" @input="calculateAddition" min="1" max="10" style="width: 60px;">
+                        </div>
+                        <button class="btn" @click="animateAddition">演示动画</button>
+                    </div>
+                    <div v-if="additionResult.show" class="operation-display">
+                        <div class="step-display" v-for="(step, index) in additionResult.steps" :key="index">
+                            <h4>{{ step.title }}</h4>
+                            <p>{{ step.content }}</p>
+                        </div>
+                        <div style="font-size: 1.3em; margin-top: 15px; font-weight: bold; color: #667eea;">
+                            结果：{{ additionResult.expression }} = {{ additionResult.result }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 减法 -->
+                <div class="operation-section">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">分数减法</h3>
+                    <div class="model-controls">
+                        <div class="control-group">
+                            <label>被减数：</label>
+                            <input type="number" v-model.number="subFrac1.num" @input="calculateSubtraction" min="1" max="10" style="width: 60px;">
+                            <span style="font-size: 1.2em; margin: 0 5px;">/</span>
+                            <input type="number" v-model.number="subFrac1.den" @input="calculateSubtraction" min="1" max="10" style="width: 60px;">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">-</span>
+                        <div class="control-group">
+                            <label>减数：</label>
+                            <input type="number" v-model.number="subFrac2.num" @input="calculateSubtraction" min="1" max="10" style="width: 60px;">
+                            <span style="font-size: 1.2em; margin: 0 5px;">/</span>
+                            <input type="number" v-model.number="subFrac2.den" @input="calculateSubtraction" min="1" max="10" style="width: 60px;">
+                        </div>
+                        <button class="btn" @click="calculateSubtraction">计算</button>
+                    </div>
+                    <div v-if="subtractionResult.show" class="operation-display">
+                        <div class="step-display" v-for="(step, index) in subtractionResult.steps" :key="index">
+                            <h4>{{ step.title }}</h4>
+                            <p>{{ step.content }}</p>
+                        </div>
+                        <div style="font-size: 1.3em; margin-top: 15px; font-weight: bold; color: #667eea;">
+                            结果：{{ subtractionResult.expression }} = {{ subtractionResult.result }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 乘法 -->
+                <div class="operation-section">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">分数乘法</h3>
+                    <div class="model-controls">
+                        <div class="control-group">
+                            <label>分数1：</label>
+                            <input type="number" v-model.number="mulFrac1.num" @input="calculateMultiplication" min="1" max="10" style="width: 60px;">
+                            <span style="font-size: 1.2em; margin: 0 5px;">/</span>
+                            <input type="number" v-model.number="mulFrac1.den" @input="calculateMultiplication" min="1" max="10" style="width: 60px;">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">×</span>
+                        <div class="control-group">
+                            <label>分数2：</label>
+                            <input type="number" v-model.number="mulFrac2.num" @input="calculateMultiplication" min="1" max="10" style="width: 60px;">
+                            <span style="font-size: 1.2em; margin: 0 5px;">/</span>
+                            <input type="number" v-model.number="mulFrac2.den" @input="calculateMultiplication" min="1" max="10" style="width: 60px;">
+                        </div>
+                        <button class="btn" @click="calculateMultiplication">计算</button>
+                    </div>
+                    <div v-if="multiplicationResult.show" class="operation-display">
+                        <div class="step-display" v-for="(step, index) in multiplicationResult.steps" :key="index">
+                            <h4>{{ step.title }}</h4>
+                            <p>{{ step.content }}</p>
+                        </div>
+                        <div style="font-size: 1.3em; margin-top: 15px; font-weight: bold; color: #667eea;">
+                            结果：{{ multiplicationResult.expression }} = {{ multiplicationResult.result }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 除法 -->
+                <div class="operation-section">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">分数除法（倒数法）</h3>
+                    <div class="info-box">
+                        <h3>📚 倒数与除法</h3>
+                        <p>除以一个分数等于乘以这个分数的倒数。</p>
+                        <p>倒数：分子和分母互换位置</p>
+                        <p>例如：\(\frac{2}{3}\) 的倒数是 \(\frac{3}{2}\)</p>
+                    </div>
+                    <div class="model-controls">
+                        <div class="control-group">
+                            <label>被除数：</label>
+                            <input type="number" v-model.number="divFrac1.num" @input="calculateDivision" min="1" max="10" style="width: 60px;">
+                            <span style="font-size: 1.2em; margin: 0 5px;">/</span>
+                            <input type="number" v-model.number="divFrac1.den" @input="calculateDivision" min="1" max="10" style="width: 60px;">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">÷</span>
+                        <div class="control-group">
+                            <label>除数：</label>
+                            <input type="number" v-model.number="divFrac2.num" @input="calculateDivision" min="1" max="10" style="width: 60px;">
+                            <span style="font-size: 1.2em; margin: 0 5px;">/</span>
+                            <input type="number" v-model.number="divFrac2.den" @input="calculateDivision" min="1" max="10" style="width: 60px;">
+                        </div>
+                        <button class="btn" @click="calculateDivision">计算</button>
+                    </div>
+                    <div v-if="divisionResult.show" class="operation-display">
+                        <div class="step-display" v-for="(step, index) in divisionResult.steps" :key="index">
+                            <h4>{{ step.title }}</h4>
+                            <p>{{ step.content }}</p>
+                        </div>
+                        <div style="font-size: 1.3em; margin-top: 15px; font-weight: bold; color: #667eea;">
+                            结果：{{ divisionResult.expression }} = {{ divisionResult.result }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 四、拖动验证 -->
+            <div class="section">
+                <h2>四、拖动验证：1/2 + 1/3 = 5/6</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    拖动滑块改变分割数量，观察分数模型的变化，验证分数加法的结果。
+                </p>
+                <div class="addition-model">
+                    <div class="fraction-model">
+                        <div class="fraction-label">1/2</div>
+                        <canvas ref="frac1Canvas" width="200" height="200"></canvas>
+                        <div class="slider-group" style="max-width: 200px;">
+                            <label>分母：{{ addVerify.den1 }}</label>
+                            <input type="range" class="slider" v-model.number="addVerify.den1" min="2" max="12" @input="updateAdditionVerify">
+                        </div>
+                    </div>
+                    <span class="equal-sign">+</span>
+                    <div class="fraction-model">
+                        <div class="fraction-label">1/3</div>
+                        <canvas ref="frac2Canvas" width="200" height="200"></canvas>
+                        <div class="slider-group" style="max-width: 200px;">
+                            <label>分母：{{ addVerify.den2 }}</label>
+                            <input type="range" class="slider" v-model.number="addVerify.den2" min="2" max="12" @input="updateAdditionVerify">
+                        </div>
+                    </div>
+                    <span class="equal-sign">=</span>
+                    <div class="fraction-model">
+                        <div class="fraction-label">{{ addVerify.result }}</div>
+                        <canvas ref="resultCanvas" width="200" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="operation-display" style="margin-top: 20px;">
+                    <p style="font-size: 1.2em;">
+                        <strong>通分计算：</strong>
+                        <span v-html="additionFormulaText"></span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- 五、小练习 -->
+            <div class="section">
+                <h2>五、小练习</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    完成以下5道分数运算题和等值分数判断题，系统会自动评分。
+                </p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn" @click="generateQuestions">生成新题目</button>
+                    <button class="btn btn-secondary" @click="checkAllAnswers" style="margin-left: 10px;">提交答案</button>
+                </div>
+                <div class="exercise-section">
+                    <div v-for="(question, index) in questions" :key="index" class="question-item" :class="question.answered ? (question.correct ? 'correct' : 'incorrect') : ''">
+                        <div class="question-text">
+                            第 {{ index + 1 }} 题：{{ question.text }}
+                        </div>
+                        <div>
+                            <input 
+                                v-if="question.type === 'operation'"
+                                type="text" 
+                                class="answer-input" 
+                                v-model="question.userAnswer"
+                                :disabled="question.answered"
+                                @keypress.enter="checkAnswer(index)"
+                                placeholder="输入分数，如：3/4">
+                            <select 
+                                v-else
+                                class="answer-input"
+                                v-model="question.userAnswer"
+                                :disabled="question.answered"
+                                @change="checkAnswer(index)"
+                                style="width: 150px;">
+                                <option value="">请选择</option>
+                                <option value="true">相等</option>
+                                <option value="false">不相等</option>
+                            </select>
+                            <button class="btn" @click="checkAnswer(index)" :disabled="question.answered" style="margin-left: 10px; padding: 10px 20px;">
+                                提交
+                            </button>
+                            <span v-if="question.answered" class="result-badge" :class="question.correct ? 'correct' : 'incorrect'">
+                                {{ question.correct ? '✓ 正确' : '✗ 错误，正确答案：' + question.answer }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="score.show" class="score-display">
+                    得分：{{ score.correct }}/{{ score.total }} ({{ score.percentage }}%)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 库引用 -->
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva.js -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        // 等待所有库加载完成
+        function waitForLibraries(callback, maxAttempts) {
+            if (maxAttempts === undefined) {
+                maxAttempts = 50;
+            }
+            var attempts = 0;
+            var checkLibraries = function() {
+                attempts++;
+                if (typeof Vue !== 'undefined' && 
+                    typeof Konva !== 'undefined' && 
+                    typeof gsap !== 'undefined') {
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkLibraries, 100);
+                } else {
+                    if (typeof Vue !== 'undefined') {
+                        var app = document.querySelector('#app');
+                        if (app) {
+                            app.innerHTML = '<div class="error-message">库加载超时，请刷新页面重试</div>';
+                        }
+                    }
+                }
+            };
+            checkLibraries();
+        }
+        
+        // 最大公约数
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+        
+        // 最小公倍数
+        function lcm(a, b) {
+            return (a * b) / gcd(a, b);
+        }
+        
+        // 约分
+        function simplifyFraction(num, den) {
+            var g = gcd(num, den);
+            return { num: num / g, den: den / g };
+        }
+        
+        waitForLibraries(function() {
+            if (typeof Vue === 'undefined') {
+                return;
+            }
+            
+            if (!Vue.createApp) {
+                console.error('Vue.createApp 不可用，请确保使用 Vue 3');
+                return;
+            }
+            
+            var app = Vue.createApp({
+                data() {
+                    return {
+                        // 面积模型
+                        modelShape: 'circle',
+                        modelNumerator: 3,
+                        modelDenominator: 4,
+                        modelStage: null,
+                        modelLayer: null,
+                        // 加法
+                        addFrac1: { num: 1, den: 2 },
+                        addFrac2: { num: 1, den: 3 },
+                        additionResult: { show: false, steps: [], expression: '', result: '' },
+                        // 减法
+                        subFrac1: { num: 3, den: 4 },
+                        subFrac2: { num: 1, den: 4 },
+                        subtractionResult: { show: false, steps: [], expression: '', result: '' },
+                        // 乘法
+                        mulFrac1: { num: 2, den: 3 },
+                        mulFrac2: { num: 3, den: 4 },
+                        multiplicationResult: { show: false, steps: [], expression: '', result: '' },
+                        // 除法
+                        divFrac1: { num: 2, den: 3 },
+                        divFrac2: { num: 1, den: 2 },
+                        divisionResult: { show: false, steps: [], expression: '', result: '' },
+                        // 拖动验证
+                        addVerify: {
+                            den1: 2,
+                            den2: 3,
+                            lcm: 6,
+                            result: '5/6'
+                        },
+                        verifyStages: [],
+                        verifyLayers: [],
+                        // 练习
+                        questions: [],
+                        score: {
+                            show: false,
+                            correct: 0,
+                            total: 0,
+                            percentage: 0
+                        }
+                    };
+                },
+                computed: {
+                    fractionValue() {
+                        if (this.modelDenominator === 0) return '0';
+                        var value = this.modelNumerator / this.modelDenominator;
+                        return value.toFixed(3);
+                    },
+                    additionFormulaText() {
+                        var den1 = this.addVerify.den1;
+                        var den2 = this.addVerify.den2;
+                        var lcm = this.addVerify.lcm;
+                        var num1 = Math.floor(lcm / den1);
+                        var num2 = Math.floor(lcm / den2);
+                        var resultNum = num1 + num2;
+                        var result = this.addVerify.result;
+                        // 返回 KaTeX 格式的字符串，使用 v-html 渲染
+                        var formula = '\\frac{1}{' + den1 + '} + \\frac{1}{' + den2 + '} = \\frac{' + num1 + '}{' + lcm + '} + \\frac{' + num2 + '}{' + lcm + '} = \\frac{' + resultNum + '}{' + lcm + '} = ' + result;
+                        // 返回带 $ 的公式字符串，由 renderMathInElement 自动渲染
+                        return '$' + formula + '$';
+                    }
+                },
+                mounted() {
+                    var self = this;
+                    // 等待 DOM 完全渲染
+                    this.$nextTick(function() {
+                        setTimeout(function() {
+                            self.initModels();
+                            self.generateQuestions();
+                            // 初始化后渲染 KaTeX
+                            self.renderKaTeX();
+                        }, 200);
+                    });
+                },
+                updated() {
+                    // DOM 更新后重新渲染 KaTeX
+                    var self = this;
+                    this.$nextTick(function() {
+                        setTimeout(function() {
+                            self.renderKaTeX();
+                        }, 100);
+                    });
+                },
+                methods: {
+                    initModels() {
+                        var self = this;
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                if (typeof Konva === 'undefined') {
+                                    console.error('Konva 未加载');
+                                    return;
+                                }
+                                self.initFractionModel();
+                                self.initAdditionVerify();
+                            }, 100);
+                        });
+                    },
+                    
+                    initFractionModel() {
+                        var self = this;
+                        if (typeof Konva === 'undefined') {
+                            console.error('Konva 未定义');
+                            return;
+                        }
+                        
+                        // 等待元素完全渲染
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                var container = document.getElementById('fractionCanvas');
+                                if (!container) {
+                                    console.error('找不到 fractionCanvas 元素');
+                                    return;
+                                }
+                                
+                                var width = container.offsetWidth || container.clientWidth || 800;
+                                var height = 400;
+                                
+                                // 确保容器有最小尺寸
+                                if (width < 100) width = 800;
+                                if (height < 100) height = 400;
+                                
+                                if (self.modelStage) {
+                                    try {
+                                        self.modelStage.destroy();
+                                    } catch (e) {
+                                        console.error('销毁 stage 错误:', e);
+                                    }
+                                }
+                                
+                                try {
+                                    self.modelStage = new Konva.Stage({
+                                        container: container,
+                                        width: width,
+                                        height: height
+                                    });
+                                    
+                                    self.modelLayer = new Konva.Layer();
+                                    self.modelStage.add(self.modelLayer);
+                                    
+                                    self.updateModel();
+                                } catch (e) {
+                                    console.error('初始化 Konva Stage 错误:', e);
+                                }
+                            }, 150);
+                        });
+                    },
+                    
+                    renderKaTeX() {
+                        if (typeof renderMathInElement === 'undefined') {
+                            return;
+                        }
+                        var self = this;
+                        this.$nextTick(function() {
+                            try {
+                                renderMathInElement(document.body, {
+                                    delimiters: [
+                                        {left: "$$", right: "$$", display: true},
+                                        {left: "\\[", right: "\\]", display: true},
+                                        {left: "$", right: "$", display: false},
+                                        {left: "\\(", right: "\\)", display: false}
+                                    ],
+                                    throwOnError: false
+                                });
+                            } catch (e) {
+                                console.error('KaTeX 渲染错误:', e);
+                            }
+                        });
+                    },
+                    
+                    updateModel() {
+                        if (!this.modelLayer) {
+                            // 如果 layer 不存在，尝试重新初始化
+                            var self = this;
+                            setTimeout(function() {
+                                self.initFractionModel();
+                            }, 100);
+                            return;
+                        }
+                        
+                        if (typeof Konva === 'undefined') {
+                            console.error('Konva 未定义');
+                            return;
+                        }
+                        
+                        if (!this.modelStage) {
+                            console.error('modelStage 未定义');
+                            return;
+                        }
+                        
+                        try {
+                            this.modelLayer.destroyChildren();
+                        } catch (e) {
+                            console.error('销毁 layer 子元素错误:', e);
+                            return;
+                        }
+                        
+                        var width = this.modelStage.width();
+                        var height = this.modelStage.height();
+                        var centerX = width / 2;
+                        var centerY = height / 2;
+                        var size = Math.min(width, height) * 0.4;
+                        
+                        // 确保 size 有效
+                        if (size <= 0 || !isFinite(size)) {
+                            size = Math.min(width, height) * 0.3;
+                        }
+                        
+                        try {
+                            if (this.modelShape === 'circle') {
+                                // 绘制圆形
+                                var circle = new Konva.Circle({
+                                    x: centerX,
+                                    y: centerY,
+                                    radius: size,
+                                    stroke: '#667eea',
+                                    strokeWidth: 3,
+                                    fill: '#f0f0f0'
+                                });
+                                this.modelLayer.add(circle);
+                                
+                                // 分割圆形
+                                var angleStep = (2 * Math.PI) / this.modelDenominator;
+                                for (var i = 0; i < this.modelDenominator; i++) {
+                                    var angle = i * angleStep - Math.PI / 2;
+                                    var line = new Konva.Line({
+                                        points: [
+                                            centerX,
+                                            centerY,
+                                            centerX + size * Math.cos(angle),
+                                            centerY + size * Math.sin(angle)
+                                        ],
+                                        stroke: '#333',
+                                        strokeWidth: 2
+                                    });
+                                    this.modelLayer.add(line);
+                                    
+                                    // 填充已选部分
+                                    if (i < this.modelNumerator) {
+                                        var sector = new Konva.Wedge({
+                                            x: centerX,
+                                            y: centerY,
+                                            radius: size,
+                                            angle: (360 / this.modelDenominator),
+                                            rotation: i * (360 / this.modelDenominator) - 90,
+                                            fill: '#4facfe',
+                                            opacity: 0.6
+                                        });
+                                        this.modelLayer.add(sector);
+                                    }
+                                }
+                            } else {
+                                // 绘制矩形
+                                var rect = new Konva.Rect({
+                                    x: centerX - size,
+                                    y: centerY - size,
+                                    width: size * 2,
+                                    height: size * 2,
+                                    stroke: '#667eea',
+                                    strokeWidth: 3,
+                                    fill: '#f0f0f0'
+                                });
+                                this.modelLayer.add(rect);
+                                
+                                // 分割矩形
+                                var rows = Math.ceil(Math.sqrt(this.modelDenominator));
+                                var cols = Math.ceil(this.modelDenominator / rows);
+                                
+                                for (var i = 0; i < this.modelDenominator; i++) {
+                                    var row = Math.floor(i / cols);
+                                    var col = i % cols;
+                                    var x = centerX - size + col * (size * 2 / cols);
+                                    var y = centerY - size + row * (size * 2 / rows);
+                                    
+                                    var cell = new Konva.Rect({
+                                        x: x,
+                                        y: y,
+                                        width: size * 2 / cols,
+                                        height: size * 2 / rows,
+                                        stroke: '#333',
+                                        strokeWidth: 1,
+                                        fill: i < this.modelNumerator ? '#4facfe' : '#f0f0f0',
+                                        opacity: i < this.modelNumerator ? 0.6 : 1
+                                    });
+                                    this.modelLayer.add(cell);
+                                }
+                            }
+                            
+                            // 强制绘制
+                            this.modelLayer.draw();
+                        } catch (e) {
+                            console.error('绘制模型错误:', e);
+                        }
+                    },
+                    
+                    calculateAddition() {
+                        var lcmVal = lcm(this.addFrac1.den, this.addFrac2.den);
+                        var num1 = (this.addFrac1.num * lcmVal) / this.addFrac1.den;
+                        var num2 = (this.addFrac2.num * lcmVal) / this.addFrac2.den;
+                        var resultNum = num1 + num2;
+                        var simplified = simplifyFraction(resultNum, lcmVal);
+                        var self = this;
+                        
+                        this.additionResult = {
+                            show: true,
+                            steps: [
+                                {
+                                    title: '步骤1：找最小公倍数',
+                                    content: this.addFrac1.den + ' 和 ' + this.addFrac2.den + ' 的最小公倍数是 ' + lcmVal
+                                },
+                                {
+                                    title: '步骤2：通分',
+                                    content: '$\\frac{' + this.addFrac1.num + '}{' + this.addFrac1.den + '} = \\frac{' + num1 + '}{' + lcmVal + '}$，$\\frac{' + this.addFrac2.num + '}{' + this.addFrac2.den + '} = \\frac{' + num2 + '}{' + lcmVal + '}$'
+                                },
+                                {
+                                    title: '步骤3：分子相加',
+                                    content: '$\\frac{' + num1 + '}{' + lcmVal + '} + \\frac{' + num2 + '}{' + lcmVal + '} = \\frac{' + resultNum + '}{' + lcmVal + '}$'
+                                },
+                                {
+                                    title: '步骤4：约分',
+                                    content: simplified.den === 1 ? 
+                                        '结果：' + simplified.num : 
+                                        '$\\frac{' + resultNum + '}{' + lcmVal + '} = \\frac{' + simplified.num + '}{' + simplified.den + '}$'
+                                }
+                            ],
+                            expression: '\\frac{' + this.addFrac1.num + '}{' + this.addFrac1.den + '} + \\frac{' + this.addFrac2.num + '}{' + this.addFrac2.den + '}',
+                            result: simplified.den === 1 ? simplified.num.toString() : '\\frac{' + simplified.num + '}{' + simplified.den + '}'
+                        };
+                        
+                        // 更新后渲染 KaTeX
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    animateAddition() {
+                        this.calculateAddition();
+                        // 可以添加GSAP动画效果
+                    },
+                    
+                    calculateSubtraction() {
+                        var lcmVal = lcm(this.subFrac1.den, this.subFrac2.den);
+                        var num1 = (this.subFrac1.num * lcmVal) / this.subFrac1.den;
+                        var num2 = (this.subFrac2.num * lcmVal) / this.subFrac2.den;
+                        var resultNum = num1 - num2;
+                        var simplified = simplifyFraction(resultNum, lcmVal);
+                        var self = this;
+                        
+                        this.subtractionResult = {
+                            show: true,
+                            steps: [
+                                {
+                                    title: '步骤1：找最小公倍数',
+                                    content: this.subFrac1.den + ' 和 ' + this.subFrac2.den + ' 的最小公倍数是 ' + lcmVal
+                                },
+                                {
+                                    title: '步骤2：通分',
+                                    content: '$\\frac{' + this.subFrac1.num + '}{' + this.subFrac1.den + '} = \\frac{' + num1 + '}{' + lcmVal + '}$，$\\frac{' + this.subFrac2.num + '}{' + this.subFrac2.den + '} = \\frac{' + num2 + '}{' + lcmVal + '}$'
+                                },
+                                {
+                                    title: '步骤3：分子相减',
+                                    content: '$\\frac{' + num1 + '}{' + lcmVal + '} - \\frac{' + num2 + '}{' + lcmVal + '} = \\frac{' + resultNum + '}{' + lcmVal + '}$'
+                                },
+                                {
+                                    title: '步骤4：约分',
+                                    content: simplified.den === 1 ? 
+                                        '结果：' + simplified.num : 
+                                        '$\\frac{' + resultNum + '}{' + lcmVal + '} = \\frac{' + simplified.num + '}{' + simplified.den + '}$'
+                                }
+                            ],
+                            expression: '\\frac{' + this.subFrac1.num + '}{' + this.subFrac1.den + '} - \\frac{' + this.subFrac2.num + '}{' + this.subFrac2.den + '}',
+                            result: simplified.den === 1 ? simplified.num.toString() : '\\frac{' + simplified.num + '}{' + simplified.den + '}'
+                        };
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    calculateMultiplication() {
+                        var resultNum = this.mulFrac1.num * this.mulFrac2.num;
+                        var resultDen = this.mulFrac1.den * this.mulFrac2.den;
+                        var simplified = simplifyFraction(resultNum, resultDen);
+                        var self = this;
+                        
+                        this.multiplicationResult = {
+                            show: true,
+                            steps: [
+                                {
+                                    title: '步骤1：分子相乘',
+                                    content: '分子：' + this.mulFrac1.num + ' × ' + this.mulFrac2.num + ' = ' + resultNum
+                                },
+                                {
+                                    title: '步骤2：分母相乘',
+                                    content: '分母：' + this.mulFrac1.den + ' × ' + this.mulFrac2.den + ' = ' + resultDen
+                                },
+                                {
+                                    title: '步骤3：约分',
+                                    content: simplified.den === 1 ? 
+                                        '结果：' + simplified.num : 
+                                        '$\\frac{' + resultNum + '}{' + resultDen + '} = \\frac{' + simplified.num + '}{' + simplified.den + '}$'
+                                }
+                            ],
+                            expression: '\\frac{' + this.mulFrac1.num + '}{' + this.mulFrac1.den + '} × \\frac{' + this.mulFrac2.num + '}{' + this.mulFrac2.den + '}',
+                            result: simplified.den === 1 ? simplified.num.toString() : '\\frac{' + simplified.num + '}{' + simplified.den + '}'
+                        };
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    calculateDivision() {
+                        var reciprocalNum = this.divFrac2.den;
+                        var reciprocalDen = this.divFrac2.num;
+                        var resultNum = this.divFrac1.num * reciprocalNum;
+                        var resultDen = this.divFrac1.den * reciprocalDen;
+                        var simplified = simplifyFraction(resultNum, resultDen);
+                        var self = this;
+                        
+                        this.divisionResult = {
+                            show: true,
+                            steps: [
+                                {
+                                    title: '步骤1：求除数的倒数',
+                                    content: '$\\frac{' + this.divFrac2.num + '}{' + this.divFrac2.den + '}$ 的倒数是 $\\frac{' + reciprocalNum + '}{' + reciprocalDen + '}$'
+                                },
+                                {
+                                    title: '步骤2：转换为乘法',
+                                    content: '$\\frac{' + this.divFrac1.num + '}{' + this.divFrac1.den + '} ÷ \\frac{' + this.divFrac2.num + '}{' + this.divFrac2.den + '} = \\frac{' + this.divFrac1.num + '}{' + this.divFrac1.den + '} × \\frac{' + reciprocalNum + '}{' + reciprocalDen + '}$'
+                                },
+                                {
+                                    title: '步骤3：分子分母分别相乘',
+                                    content: '$\\frac{' + resultNum + '}{' + resultDen + '}$'
+                                },
+                                {
+                                    title: '步骤4：约分',
+                                    content: simplified.den === 1 ? 
+                                        '结果：' + simplified.num : 
+                                        '$\\frac{' + resultNum + '}{' + resultDen + '} = \\frac{' + simplified.num + '}{' + simplified.den + '}$'
+                                }
+                            ],
+                            expression: '\\frac{' + this.divFrac1.num + '}{' + this.divFrac1.den + '} ÷ \\frac{' + this.divFrac2.num + '}{' + this.divFrac2.den + '}',
+                            result: simplified.den === 1 ? simplified.num.toString() : '\\frac{' + simplified.num + '}{' + simplified.den + '}'
+                        };
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    initAdditionVerify() {
+                        var self = this;
+                        if (typeof Konva === 'undefined') {
+                            console.error('Konva 未定义');
+                            return;
+                        }
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                var canvases = [
+                                    self.$refs.frac1Canvas,
+                                    self.$refs.frac2Canvas,
+                                    self.$refs.resultCanvas
+                                ];
+                                
+                                // 如果 refs 不存在，尝试通过 ID 获取
+                                if (!canvases[0]) {
+                                    var canvas1 = document.querySelector('canvas[ref="frac1Canvas"]');
+                                    var canvas2 = document.querySelector('canvas[ref="frac2Canvas"]');
+                                    var canvas3 = document.querySelector('canvas[ref="resultCanvas"]');
+                                    if (canvas1) canvases[0] = canvas1;
+                                    if (canvas2) canvases[1] = canvas2;
+                                    if (canvas3) canvases[2] = canvas3;
+                                }
+                                
+                                canvases.forEach(function(canvas, index) {
+                                    if (!canvas) {
+                                        console.error('Canvas ' + index + ' 未找到');
+                                        return;
+                                    }
+                                    
+                                    // 如果 stage 已存在，先销毁
+                                    if (self.verifyStages[index]) {
+                                        self.verifyStages[index].destroy();
+                                    }
+                                    
+                                    var stage = new Konva.Stage({
+                                        container: canvas,
+                                        width: 200,
+                                        height: 200
+                                    });
+                                    
+                                    var layer = new Konva.Layer();
+                                    stage.add(layer);
+                                    
+                                    self.verifyStages[index] = stage;
+                                    self.verifyLayers[index] = layer;
+                                });
+                                
+                                self.updateAdditionVerify();
+                            }, 100);
+                        });
+                    },
+                    
+                    updateAdditionVerify() {
+                        this.addVerify.lcm = lcm(this.addVerify.den1, this.addVerify.den2);
+                        var num1 = this.addVerify.lcm / this.addVerify.den1;
+                        var num2 = this.addVerify.lcm / this.addVerify.den2;
+                        var resultNum = num1 + num2;
+                        var simplified = simplifyFraction(resultNum, this.addVerify.lcm);
+                        this.addVerify.result = simplified.den === 1 ? simplified.num.toString() : simplified.num + '/' + simplified.den;
+                        
+                        // 绘制三个分数模型
+                        var self = this;
+                        this.$nextTick(function() {
+                            self.drawFractionModel(self.verifyLayers[0], 1, self.addVerify.den1, 200, 200);
+                            self.drawFractionModel(self.verifyLayers[1], 1, self.addVerify.den2, 200, 200);
+                            self.drawFractionModel(self.verifyLayers[2], resultNum, self.addVerify.lcm, 200, 200);
+                            // 更新后重新渲染 KaTeX
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    drawFractionModel(layer, numerator, denominator, width, height) {
+                        if (!layer) {
+                            console.error('Layer 未定义');
+                            return;
+                        }
+                        
+                        if (typeof Konva === 'undefined') {
+                            console.error('Konva 未定义');
+                            return;
+                        }
+                        
+                        try {
+                            layer.destroyChildren();
+                            
+                            var centerX = width / 2;
+                            var centerY = height / 2;
+                            var radius = Math.min(width, height) * 0.35;
+                            
+                            var circle = new Konva.Circle({
+                                x: centerX,
+                                y: centerY,
+                                radius: radius,
+                                stroke: '#667eea',
+                                strokeWidth: 2,
+                                fill: '#f0f0f0'
+                            });
+                            layer.add(circle);
+                            
+                            var angleStep = (2 * Math.PI) / denominator;
+                            for (var i = 0; i < denominator; i++) {
+                                var angle = i * angleStep - Math.PI / 2;
+                                var line = new Konva.Line({
+                                    points: [
+                                        centerX,
+                                        centerY,
+                                        centerX + radius * Math.cos(angle),
+                                        centerY + radius * Math.sin(angle)
+                                    ],
+                                    stroke: '#333',
+                                    strokeWidth: 1
+                                });
+                                layer.add(line);
+                                
+                                if (i < numerator) {
+                                    var sector = new Konva.Wedge({
+                                        x: centerX,
+                                        y: centerY,
+                                        radius: radius,
+                                        angle: (360 / denominator),
+                                        rotation: i * (360 / denominator) - 90,
+                                        fill: '#4facfe',
+                                        opacity: 0.6
+                                    });
+                                    layer.add(sector);
+                                }
+                            }
+                            
+                            layer.draw();
+                        } catch (e) {
+                            console.error('绘制分数模型错误:', e);
+                        }
+                    },
+                    
+                    generateQuestions() {
+                        this.questions = [];
+                        this.score.show = false;
+                        
+                        // 生成3道运算题和2道等值分数判断题
+                        for (var i = 0; i < 3; i++) {
+                            var operations = ['+', '-', '×', '÷'];
+                            var op = operations[Math.floor(Math.random() * operations.length)];
+                            var a = { num: Math.floor(Math.random() * 5) + 1, den: Math.floor(Math.random() * 5) + 2 };
+                            var b = { num: Math.floor(Math.random() * 5) + 1, den: Math.floor(Math.random() * 5) + 2 };
+                            var answer, result;
+                            
+                            if (op === '+') {
+                                var lcmVal = lcm(a.den, b.den);
+                                var num1 = (a.num * lcmVal) / a.den;
+                                var num2 = (b.num * lcmVal) / b.den;
+                                result = simplifyFraction(num1 + num2, lcmVal);
+                                answer = result.den === 1 ? result.num.toString() : result.num + '/' + result.den;
+                            } else if (op === '-') {
+                                var lcmVal = lcm(a.den, b.den);
+                                var num1 = (a.num * lcmVal) / a.den;
+                                var num2 = (b.num * lcmVal) / b.den;
+                                result = simplifyFraction(num1 - num2, lcmVal);
+                                answer = result.den === 1 ? result.num.toString() : result.num + '/' + result.den;
+                            } else if (op === '×') {
+                                result = simplifyFraction(a.num * b.num, a.den * b.den);
+                                answer = result.den === 1 ? result.num.toString() : result.num + '/' + result.den;
+                            } else {
+                                result = simplifyFraction(a.num * b.den, a.den * b.num);
+                                answer = result.den === 1 ? result.num.toString() : result.num + '/' + result.den;
+                            }
+                            
+                            this.questions.push({
+                                type: 'operation',
+                                text: a.num + '/' + a.den + ' ' + op + ' ' + b.num + '/' + b.den + ' = ?',
+                                answer: answer,
+                                userAnswer: '',
+                                answered: false,
+                                correct: false
+                            });
+                        }
+                        
+                        // 生成2道等值分数判断题
+                        for (var i = 0; i < 2; i++) {
+                            var num1 = Math.floor(Math.random() * 5) + 1;
+                            var den1 = Math.floor(Math.random() * 5) + 2;
+                            var factor = Math.floor(Math.random() * 3) + 1;
+                            var isEqual = Math.random() > 0.5;
+                            
+                            var num2, den2;
+                            if (isEqual) {
+                                num2 = num1 * factor;
+                                den2 = den1 * factor;
+                            } else {
+                                num2 = num1 * factor + 1;
+                                den2 = den1 * factor;
+                            }
+                            
+                            this.questions.push({
+                                type: 'equivalent',
+                                text: '判断：' + num1 + '/' + den1 + ' 和 ' + num2 + '/' + den2 + ' 是否相等？',
+                                answer: isEqual ? 'true' : 'false',
+                                userAnswer: '',
+                                answered: false,
+                                correct: false
+                            });
+                        }
+                    },
+                    
+                    checkAnswer(index) {
+                        var question = this.questions[index];
+                        if (!question.userAnswer) return;
+                        
+                        question.answered = true;
+                        
+                        if (question.type === 'operation') {
+                            // 解析用户输入的分数
+                            var parts = question.userAnswer.split('/');
+                            if (parts.length === 2) {
+                                var userNum = parseInt(parts[0]);
+                                var userDen = parseInt(parts[1]);
+                                var answerParts = question.answer.split('/');
+                                if (answerParts.length === 2) {
+                                    var ansNum = parseInt(answerParts[0]);
+                                    var ansDen = parseInt(answerParts[1]);
+                                    question.correct = (userNum === ansNum && userDen === ansDen);
+                                } else {
+                                    question.correct = (userNum === parseInt(question.answer) && userDen === 1);
+                                }
+                            } else {
+                                question.correct = question.userAnswer === question.answer;
+                            }
+                        } else {
+                            question.correct = question.userAnswer === question.answer;
+                        }
+                    },
+                    
+                    checkAllAnswers() {
+                        var correct = 0;
+                        var self = this;
+                        this.questions.forEach(function(q) {
+                            if (!q.answered && q.userAnswer) {
+                                self.checkAnswer(self.questions.indexOf(q));
+                            }
+                            if (q.correct) correct++;
+                        });
+                        
+                        this.score = {
+                            show: true,
+                            correct: correct,
+                            total: this.questions.length,
+                            percentage: Math.round((correct / this.questions.length) * 100)
+                        };
+                    }
+                },
+                beforeUnmount() {
+                    if (this.modelStage) {
+                        this.modelStage.destroy();
+                    }
+                    this.verifyStages.forEach(function(stage) {
+                        if (stage) stage.destroy();
+                    });
+                }
+            });
+            
+            app.mount('#app');
+            
+            // KaTeX 渲染将在 Vue 的 mounted 和 updated 钩子中处理
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>平方根与根式 - 初中数学教学</title>
+    <meta name="description" content="学习平方根的基本概念，掌握根式的化简方法，通过面积模型直观理解平方根，学会估计平方根的近似值，通过拖拽动画探索面积与边长的关系。">
+    <meta name="keywords" content="平方根,根式,化简根式,面积模型,近似值,无理数,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .demo-panel {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .animation-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-height: 450px;
+        }
+        
+        .animation-canvas {
+            width: 100%;
+            height: 450px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .control-group input[type="number"],
+        .control-group input[type="text"],
+        .control-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .simplify-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        
+        .simplify-steps {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f9ff;
+            border-radius: 8px;
+        }
+        
+        .step-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 25px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .practice-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        
+        .practice-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .practice-item input {
+            width: 200px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            margin: 0 10px;
+        }
+        
+        .practice-item.correct {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        
+        .practice-item.incorrect {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        
+        .score-display {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 20px;
+        }
+        
+        .formula-display {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        
+        .estimate-display {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+        createApp({
+            setup() {
+                // 面积模型
+                const squareArea = ref(16);
+                const squareStage = ref(null);
+                const squareLayer = ref(null);
+                const isDragging = ref(false);
+                
+                // 根式化简
+                const radicalInput = ref('48');
+                const simplifySteps = ref([]);
+                
+                // 近似值估计
+                const estimateNumber = ref(7);
+                const estimateResult = computed(() => {
+                    const num = estimateNumber.value;
+                    if (num < 0) return null;
+                    
+                    // 找到最接近的完全平方数
+                    const sqrt = Math.sqrt(num);
+                    const lower = Math.floor(sqrt);
+                    const upper = lower + 1;
+                    const lowerSq = lower * lower;
+                    const upperSq = upper * upper;
+                    
+                    return {
+                        lower,
+                        upper,
+                        lowerSq,
+                        upperSq,
+                        sqrt: sqrt.toFixed(6),
+                        error: (sqrt - lower).toFixed(6),
+                        percent: ((sqrt - lower) / (upper - lower) * 100).toFixed(1)
+                    };
+                });
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    { id: 1, q: '化简 $\\sqrt{72}$', ans: '6\\sqrt{2}', user: '', correct: null },
+                    { id: 2, q: '化简 $\\sqrt{50}$', ans: '5\\sqrt{2}', user: '', correct: null },
+                    { id: 3, q: '化简 $\\sqrt{27}$', ans: '3\\sqrt{3}', user: '', correct: null },
+                    { id: 4, q: '估计 $\\sqrt{15}$ 的值', ans: '3.87', user: '', correct: null, type: 'estimate' },
+                    { id: 5, q: '计算 $\\sqrt{64}$', ans: '8', user: '', correct: null }
+                ]);
+                const practiceScore = ref(null);
+                
+                // 计算正方形边长
+                const squareSide = computed(() => Math.sqrt(squareArea.value));
+                
+                // 绘制面积模型
+                const drawSquareModel = () => {
+                    if (!squareStage.value || !squareLayer.value) return;
+                    
+                    squareLayer.value.destroyChildren();
+                    
+                    const stage = squareStage.value;
+                    const layer = squareLayer.value;
+                    const w = stage.width();
+                    const h = stage.height();
+                    
+                    const centerX = w / 2;
+                    const centerY = h / 2;
+                    const maxSize = Math.min(w, h) * 0.4;
+                    const side = Math.min(maxSize, Math.sqrt(squareArea.value) * 10);
+                    
+                    // 绘制正方形
+                    const square = new Konva.Rect({
+                        x: centerX - side / 2,
+                        y: centerY - side / 2,
+                        width: side,
+                        height: side,
+                        fill: 'rgba(102, 126, 234, 0.2)',
+                        stroke: '#667eea',
+                        strokeWidth: 3,
+                        cornerRadius: 5
+                    });
+                    layer.add(square);
+                    
+                    // 标注边长 - 简化显示（公式在HTML中渲染）
+                    const sideLabel = new Konva.Text({
+                        x: centerX - side / 2,
+                        y: centerY - side / 2 - 25,
+                        text: `边长 = ${squareSide.value.toFixed(4)}`,
+                        fontSize: 16,
+                        fill: '#667eea',
+                        fontStyle: 'bold',
+                        align: 'center',
+                        offsetX: side / 2
+                    });
+                    layer.add(sideLabel);
+                    
+                    // 标注面积
+                    const areaLabel = new Konva.Text({
+                        x: centerX,
+                        y: centerY + side / 2 + 25,
+                        text: `面积 = ${squareArea.value}`,
+                        fontSize: 16,
+                        fill: '#16a34a',
+                        fontStyle: 'bold',
+                        align: 'center',
+                        offsetX: 50
+                    });
+                    layer.add(areaLabel);
+                    
+                    // 绘制网格线帮助理解
+                    const gridStep = side / Math.sqrt(squareArea.value);
+                    for (let i = 1; i < Math.sqrt(squareArea.value); i++) {
+                        // 垂直线
+                        const vLine = new Konva.Line({
+                            points: [
+                                centerX - side / 2 + i * gridStep,
+                                centerY - side / 2,
+                                centerX - side / 2 + i * gridStep,
+                                centerY + side / 2
+                            ],
+                            stroke: 'rgba(102, 126, 234, 0.3)',
+                            strokeWidth: 1,
+                            dash: [5, 5]
+                        });
+                        layer.add(vLine);
+                        
+                        // 水平线
+                        const hLine = new Konva.Line({
+                            points: [
+                                centerX - side / 2,
+                                centerY - side / 2 + i * gridStep,
+                                centerX + side / 2,
+                                centerY - side / 2 + i * gridStep
+                            ],
+                            stroke: 'rgba(102, 126, 234, 0.3)',
+                            strokeWidth: 1,
+                            dash: [5, 5]
+                        });
+                        layer.add(hLine);
+                    }
+                    
+                    // 如果是完全平方数，显示单位正方形
+                    const sqrtArea = Math.sqrt(squareArea.value);
+                    if (Math.floor(sqrtArea) === sqrtArea) {
+                        const unitSize = side / sqrtArea;
+                        for (let i = 0; i < sqrtArea; i++) {
+                            for (let j = 0; j < sqrtArea; j++) {
+                                const unit = new Konva.Rect({
+                                    x: centerX - side / 2 + i * unitSize,
+                                    y: centerY - side / 2 + j * unitSize,
+                                    width: unitSize,
+                                    height: unitSize,
+                                    fill: 'rgba(102, 126, 234, 0.1)',
+                                    stroke: '#667eea',
+                                    strokeWidth: 1
+                                });
+                                layer.add(unit);
+                            }
+                        }
+                    }
+                    
+                    layer.draw();
+                };
+                
+                // 根式化简
+                const simplifyRadical = (num) => {
+                    if (num <= 0) return { steps: [], result: '\\sqrt{' + num + '}' };
+                    if (num === 1) return { steps: [], result: '1' };
+                    
+                    const steps = [];
+                    let current = num;
+                    let factor = 2;
+                    const factors = {};
+                    
+                    // 分解质因数
+                    while (factor * factor <= current) {
+                        if (current % factor === 0) {
+                            factors[factor] = (factors[factor] || 0) + 1;
+                            current /= factor;
+                            steps.push({
+                                step: `将 ${current * factor} 分解为 ${factor} × ${current}`,
+                                expression: `\\sqrt{${current * factor}} = \\sqrt{${factor} \\times ${current}}`
+                            });
+                        } else {
+                            factor++;
+                        }
+                    }
+                    if (current > 1) {
+                        factors[current] = (factors[current] || 0) + 1;
+                    }
+                    
+                    // 提取完全平方因子
+                    let outside = 1;
+                    let inside = 1;
+                    
+                    Object.keys(factors).forEach(f => {
+                        const count = factors[f];
+                        const pairs = Math.floor(count / 2);
+                        const remainder = count % 2;
+                        outside *= Math.pow(parseInt(f), pairs);
+                        inside *= Math.pow(parseInt(f), remainder);
+                    });
+                    
+                    // 构建步骤
+                    if (outside > 1 || inside > 1) {
+                        steps.push({
+                            step: '提取完全平方因子',
+                            expression: `\\sqrt{${num}} = \\sqrt{${outside * outside} \\times ${inside}} = ${outside}\\sqrt{${inside}}`
+                        });
+                    }
+                    
+                    let result = '';
+                    if (outside === 1 && inside === 1) {
+                        result = '1';
+                    } else if (outside === 1) {
+                        result = `\\sqrt{${inside}}`;
+                    } else if (inside === 1) {
+                        result = String(outside);
+                    } else {
+                        result = `${outside}\\sqrt{${inside}}`;
+                    }
+                    
+                    return { steps, result };
+                };
+                
+                // 执行化简
+                const performSimplify = () => {
+                    const num = parseInt(radicalInput.value);
+                    if (isNaN(num) || num <= 0) {
+                        simplifySteps.value = [{ step: '请输入有效的正数', expression: '' }];
+                        return;
+                    }
+                    
+                    const result = simplifyRadical(num);
+                    simplifySteps.value = result.steps;
+                    
+                    if (result.steps.length === 0 && num === 1) {
+                        simplifySteps.value = [{ step: '1的平方根等于1', expression: '\\sqrt{1} = 1' }];
+                    } else if (result.steps.length === 0) {
+                        simplifySteps.value = [{ step: '无法进一步化简', expression: `\\sqrt{${num}}` }];
+                    } else {
+                        // 添加最终结果
+                        simplifySteps.value.push({
+                            step: '最终结果',
+                            expression: result.result
+                        });
+                    }
+                    
+                    nextTick(() => {
+                        renderKaTeX();
+                    });
+                };
+                
+                // 计算渲染后的公式 HTML
+                const sideLengthFormula = computed(() => {
+                    if (typeof katex !== 'undefined') {
+                        try {
+                            return katex.renderToString(`边长 = \\sqrt{${squareArea.value}} = ${squareSide.value.toFixed(4)}`, {
+                                throwOnError: false,
+                                displayMode: false
+                            });
+                        } catch (e) {
+                            return `边长 = √${squareArea.value} = ${squareSide.value.toFixed(4)}`;
+                        }
+                    }
+                    return `边长 = √${squareArea.value} = ${squareSide.value.toFixed(4)}`;
+                });
+                
+                // 初始化画布
+                const initSquareCanvas = () => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            const container = document.getElementById('square-canvas');
+                            if (container && typeof Konva !== 'undefined') {
+                                squareStage.value = new Konva.Stage({
+                                    container: 'square-canvas',
+                                    width: container.offsetWidth,
+                                    height: 450
+                                });
+                                squareLayer.value = new Konva.Layer();
+                                squareStage.value.add(squareLayer.value);
+                                
+                                // 添加拖拽滑块
+                                const sliderTrack = new Konva.Line({
+                                    points: [50, 400, container.offsetWidth - 50, 400],
+                                    stroke: '#ddd',
+                                    strokeWidth: 4,
+                                    lineCap: 'round'
+                                });
+                                squareLayer.value.add(sliderTrack);
+                                
+                                // 根据当前面积值计算滑块位置
+                                const sliderRange = container.offsetWidth - 100;
+                                const initialX = 50 + ((squareArea.value - 1) / 99) * sliderRange;
+                                
+                                const areaSlider = new Konva.Group({
+                                    x: initialX,
+                                    y: 400,
+                                    draggable: true,
+                                    dragBoundFunc: (pos) => {
+                                        const minX = 50;
+                                        const maxX = container.offsetWidth - 50;
+                                        return {
+                                            x: Math.max(minX, Math.min(maxX, pos.x)),
+                                            y: 400
+                                        };
+                                    }
+                                });
+                                
+                                const sliderCircle = new Konva.Circle({
+                                    x: 0,
+                                    y: 0,
+                                    radius: 12,
+                                    fill: '#667eea',
+                                    stroke: '#fff',
+                                    strokeWidth: 2
+                                });
+                                areaSlider.add(sliderCircle);
+                                
+                                // 添加滑块标签
+                                const sliderLabel = new Konva.Text({
+                                    x: 0,
+                                    y: -30,
+                                    text: String(squareArea.value),
+                                    fontSize: 14,
+                                    fill: '#667eea',
+                                    fontStyle: 'bold',
+                                    align: 'center',
+                                    offsetX: 15
+                                });
+                                areaSlider.add(sliderLabel);
+                                sliderLabelRef.value = sliderLabel; // 保存标签引用
+                                
+                                areaSlider.on('dragmove', () => {
+                                    const ratio = (areaSlider.x() - 50) / sliderRange;
+                                    const newArea = Math.max(1, Math.min(100, Math.round(ratio * 99 + 1)));
+                                    if (newArea !== squareArea.value) {
+                                        squareArea.value = newArea;
+                                        sliderLabel.text(String(newArea));
+                                        drawSquareModel();
+                                        renderKaTeX();
+                                    }
+                                });
+                                
+                                squareLayer.value.add(areaSlider);
+                                sliderRef.value = areaSlider; // 保存滑块引用
+                                drawSquareModel();
+                            }
+                            
+                            renderKaTeX();
+                        }, 100);
+                    });
+                };
+                
+                // 渲染 KaTeX
+                const renderKaTeX = () => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            if (typeof renderMathInElement !== 'undefined') {
+                                const container = document.getElementById('app');
+                                if (container) {
+                                    renderMathInElement(container, {
+                                        delimiters: [
+                                            { left: '$$', right: '$$', display: true },
+                                            { left: '$', right: '$', display: false },
+                                            { left: '\\[', right: '\\]', display: true },
+                                            { left: '\\(', right: '\\)', display: false }
+                                        ],
+                                        throwOnError: false
+                                    });
+                                }
+                            }
+                            
+                            // 手动渲染所有包含 $ 符号但未渲染的元素
+                            if (typeof katex !== 'undefined') {
+                                // 查找所有包含 $ 但还没有被 KaTeX 渲染的元素
+                                document.querySelectorAll('span, div, p, h3, h4').forEach(el => {
+                                    const html = el.innerHTML;
+                                    // 检查是否包含 $ 符号但还没有 .katex 元素
+                                    if (html && html.includes('$') && !el.querySelector('.katex')) {
+                                        try {
+                                            let newHtml = html;
+                                            const formulaRegex = /\$([^$]+)\$/g;
+                                            let match;
+                                            let hasFormula = false;
+                                            
+                                            // 提取所有公式并渲染
+                                            while ((match = formulaRegex.exec(html)) !== null) {
+                                                try {
+                                                    const formula = match[1];
+                                                    const rendered = katex.renderToString(formula, {
+                                                        throwOnError: false,
+                                                        displayMode: false
+                                                    });
+                                                    newHtml = newHtml.replace(match[0], rendered);
+                                                    hasFormula = true;
+                                                } catch (e) {
+                                                    console.warn('KaTeX 渲染失败:', e);
+                                                }
+                                            }
+                                            
+                                            // 如果有公式被渲染，更新元素内容
+                                            if (hasFormula && newHtml !== html) {
+                                                el.innerHTML = newHtml;
+                                            }
+                                        } catch (e) {
+                                            console.warn('公式渲染错误:', e);
+                                        }
+                                    }
+                                });
+                            }
+                        }, 50);
+                    });
+                };
+                
+                // 提交练习
+                const submitPractice = () => {
+                    let correctCount = 0;
+                    practiceQuestions.value.forEach(q => {
+                        const userAns = q.user.trim();
+                        const correctAns = q.ans.trim();
+                        
+                        if (q.type === 'estimate') {
+                            // 估计值：允许0.1的误差
+                            const userNum = parseFloat(userAns);
+                            const correctNum = parseFloat(correctAns);
+                            q.correct = !isNaN(userNum) && Math.abs(userNum - correctNum) < 0.1;
+                        } else {
+                            // 精确匹配（支持多种输入格式）
+                            let normalizedUser = userAns.trim().toLowerCase().replace(/\s/g, '');
+                            let normalizedAns = correctAns.trim().toLowerCase().replace(/\s/g, '');
+                            
+                            // 统一格式：将各种根式表示法转换为统一格式
+                            // 处理 √数字、\sqrt{数字}、sqrt(数字)、sqrt数字、sqrt{数字} 等格式
+                            // 例如：6√2, 6\sqrt{2}, 6*sqrt(2), 6*sqrt2, 6sqrt2 都转换为 6*sqrt2
+                            normalizedUser = normalizedUser.replace(/√/g, '*sqrt').replace(/\\sqrt\{/g, '*sqrt').replace(/sqrt\{/g, '*sqrt').replace(/sqrt\(/g, '*sqrt').replace(/sqrt/g, '*sqrt');
+                            normalizedAns = normalizedAns.replace(/√/g, '*sqrt').replace(/\\sqrt\{/g, '*sqrt').replace(/sqrt\{/g, '*sqrt').replace(/sqrt\(/g, '*sqrt').replace(/sqrt/g, '*sqrt');
+                            
+                            // 移除大括号和括号
+                            normalizedUser = normalizedUser.replace(/\{/g, '').replace(/\}/g, '').replace(/\(/g, '').replace(/\)/g, '');
+                            normalizedAns = normalizedAns.replace(/\{/g, '').replace(/\}/g, '').replace(/\(/g, '').replace(/\)/g, '');
+                            
+                            // 标准化 * 号（可能有多个连续的 *）
+                            normalizedUser = normalizedUser.replace(/\*+/g, '*').replace(/^\*/g, '').replace(/\*$/g, '');
+                            normalizedAns = normalizedAns.replace(/\*+/g, '*').replace(/^\*/g, '').replace(/\*$/g, '');
+                            
+                            q.correct = normalizedUser === normalizedAns;
+                        }
+                        
+                        if (q.correct) correctCount++;
+                    });
+                    practiceScore.value = `${correctCount} / ${practiceQuestions.value.length}`;
+                };
+                
+                // 重置练习
+                const resetPractice = () => {
+                    practiceQuestions.value.forEach(q => {
+                        q.user = '';
+                        q.correct = null;
+                    });
+                    practiceScore.value = null;
+                };
+                
+                // 存储滑块引用
+                const sliderRef = ref(null);
+                const sliderLabelRef = ref(null);
+                
+                // 监听变化
+                watch([squareArea, squareSide], () => {
+                    nextTick(() => {
+                        drawSquareModel();
+                        // 延迟渲染 KaTeX，确保 DOM 已更新
+                        setTimeout(() => {
+                            renderKaTeX();
+                        }, 100);
+                        // 更新滑块位置
+                        if (sliderRef.value && squareStage.value) {
+                            const container = document.getElementById('square-canvas');
+                            if (container) {
+                                const sliderRange = container.offsetWidth - 100;
+                                const newX = 50 + ((squareArea.value - 1) / 99) * sliderRange;
+                                sliderRef.value.x(newX);
+                                if (sliderLabelRef.value) {
+                                    sliderLabelRef.value.text(String(squareArea.value));
+                                }
+                                squareLayer.value.draw();
+                            }
+                        }
+                    });
+                });
+                
+                watch(radicalInput, () => {
+                    simplifySteps.value = [];
+                });
+                
+                watch(simplifySteps, () => {
+                    nextTick(() => {
+                        renderKaTeX();
+                    });
+                }, { deep: true });
+                
+                // 计算渲染后的近似值估计公式 HTML
+                const estimateTitleFormula = computed(() => {
+                    if (typeof katex !== 'undefined') {
+                        try {
+                            return katex.renderToString(`估计 \\sqrt{${estimateNumber.value}} 的值：`, {
+                                throwOnError: false,
+                                displayMode: false
+                            });
+                        } catch (e) {
+                            return `估计 √${estimateNumber.value} 的值：`;
+                        }
+                    }
+                    return `估计 √${estimateNumber.value} 的值：`;
+                });
+                
+                const estimateInequalityFormula = computed(() => {
+                    if (typeof katex !== 'undefined' && estimateResult.value && estimateResult.value.lower !== undefined) {
+                        try {
+                            return katex.renderToString(`${estimateResult.value.lower} < \\sqrt{${estimateNumber.value}} < ${estimateResult.value.upper}`, {
+                                throwOnError: false,
+                                displayMode: false
+                            });
+                        } catch (e) {
+                            return `${estimateResult.value.lower} < √${estimateNumber.value} < ${estimateResult.value.upper}`;
+                        }
+                    }
+                    return '';
+                });
+                
+                const estimateValueFormula = computed(() => {
+                    if (typeof katex !== 'undefined' && estimateResult.value && estimateResult.value.sqrt) {
+                        try {
+                            return katex.renderToString(`\\sqrt{${estimateNumber.value}} \\approx ${estimateResult.value.sqrt}`, {
+                                throwOnError: false,
+                                displayMode: false
+                            });
+                        } catch (e) {
+                            return `√${estimateNumber.value} ≈ ${estimateResult.value.sqrt}`;
+                        }
+                    }
+                    return '';
+                });
+                
+                watch([estimateNumber, estimateResult], () => {
+                    nextTick(() => {
+                        renderKaTeX();
+                    });
+                });
+                
+                onMounted(() => {
+                    initSquareCanvas();
+                    
+                    // 初始渲染 KaTeX
+                    setTimeout(() => {
+                        renderKaTeX();
+                    }, 300);
+                    
+                    window.addEventListener('resize', () => {
+                        setTimeout(() => {
+                            if (squareStage.value && squareLayer.value) {
+                                const container = document.getElementById('square-canvas');
+                                if (container) {
+                                    squareStage.value.width(container.offsetWidth);
+                                    drawSquareModel();
+                                }
+                            }
+                        }, 100);
+                    });
+                    
+                    if (window.gsap) {
+                        gsap.from('.section', { opacity: 0, y: 20, duration: 0.6, stagger: 0.1 });
+                    }
+                });
+                
+                return {
+                    squareArea,
+                    squareSide,
+                    radicalInput,
+                    simplifySteps,
+                    estimateNumber,
+                    estimateResult,
+                    practiceQuestions,
+                    practiceScore,
+                    sideLengthFormula,
+                    estimateTitleFormula,
+                    estimateInequalityFormula,
+                    estimateValueFormula,
+                    drawSquareModel,
+                    performSimplify,
+                    submitPractice,
+                    resetPractice
+                };
+            },
+            template: `
+            <div class="container">
+                <h1>平方根与根式</h1>
+                <p class="subtitle">学习平方根概念，掌握根式化简，通过面积模型直观理解</p>
+                
+                <div class="section">
+                    <h2>一、平方根的基本概念</h2>
+                    <div class="concept-grid">
+                        <div class="concept-card">
+                            <h3>平方根的定义</h3>
+                            <p>如果 $x^2 = a$（$a \\geq 0$），那么 $x$ 叫做 $a$ 的平方根。$a$ 的平方根记作 $\\sqrt{a}$。</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>算术平方根</h3>
+                            <p>正数 $a$ 的正平方根叫做 $a$ 的算术平方根，记作 $\\sqrt{a}$。</p>
+                            <p>例如：$\\sqrt{9} = 3$，$\\sqrt{16} = 4$</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>完全平方数</h3>
+                            <p>如果一个数是另一个数的平方，那么这个数叫做完全平方数。</p>
+                            <p>例如：1, 4, 9, 16, 25, 36, 49, 64, 81, 100</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>二、面积模型直观理解</h2>
+                    <div class="demo-panel">
+                        <div class="animation-container">
+                            <h3 style="color: #667eea; margin-bottom: 15px;">构造正方形：面积 → 边长</h3>
+                            <div style="margin-bottom: 10px; padding: 10px; background: #f0f9ff; border-radius: 5px; text-align: center;">
+                                <span style="font-size: 1.1em; font-weight: bold;" v-html="sideLengthFormula"></span>
+                            </div>
+                            <div id="square-canvas" class="animation-canvas"></div>
+                            <p style="margin-top: 15px; color: #666; font-size: 0.9em; text-align: center;">
+                                拖动下方的滑块调整面积，观察正方形边长与面积的关系
+                            </p>
+                        </div>
+                        
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">参数控制</h3>
+                            
+                            <div class="control-group">
+                                <label>正方形面积</label>
+                                <input type="number" v-model.number="squareArea" min="1" max="100" step="1" />
+                            </div>
+                            
+                            <div class="formula-display">
+                                <strong>关系式：</strong><br>
+                                <span v-html="sideLengthFormula"></span>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; font-size: 0.95em;">
+                                <strong>观察：</strong><br>
+                                • 面积越大，边长越长<br>
+                                • 边长 $= \\sqrt{面积}$<br>
+                                • 当面积为完全平方数时，边长是整数<br>
+                                • 当面积不是完全平方数时，边长是无理数
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>三、根式化简</h2>
+                    <div class="simplify-panel">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">根式化简工具</h3>
+                        
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <div class="control-group" style="flex: 1;">
+                                <label>输入根式（输入被开方数）</label>
+                                <input type="text" v-model="radicalInput" placeholder="例如：48" />
+                            </div>
+                            <button class="btn" @click="performSimplify">化简</button>
+                        </div>
+                        
+                        <div v-if="simplifySteps.length > 0" class="simplify-steps">
+                            <h4 style="color: #667eea; margin-bottom: 15px;">化简步骤：</h4>
+                            <div v-for="(step, index) in simplifySteps" :key="index" class="step-item">
+                                <span class="step-number">{{ index + 1 }}</span>
+                                <span style="font-weight: 500;">{{ step.step }}</span>
+                                <div style="margin-top: 8px; margin-left: 35px; font-size: 1.1em;">
+                                    <span v-html="'$' + step.expression + '$'"></span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 15px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #16a34a;">
+                                <strong style="color: #16a34a;">最终结果：</strong>
+                                <div style="margin-top: 8px; font-size: 1.2em; font-weight: bold;">
+                                    <span v-html="'$\\sqrt{' + radicalInput + '} = ' + simplifySteps[simplifySteps.length - 1].expression + '$'"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px;">
+                            <strong>化简规则：</strong><br>
+                            • 将被开方数分解质因数<br>
+                            • 提取完全平方因子到根号外<br>
+                            • 例如：$\\sqrt{48} = \\sqrt{16 \\times 3} = 4\\sqrt{3}$
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>四、近似值估计</h2>
+                    <div class="estimate-display">
+                        <div class="control-group">
+                            <label>输入要估计的数</label>
+                            <input type="number" v-model.number="estimateNumber" min="0" max="100" step="1" />
+                        </div>
+                        
+                        <div v-if="estimateResult" style="margin-top: 20px; padding: 20px; background: #f0f9ff; border-radius: 8px;">
+                            <h4 style="color: #667eea; margin-bottom: 15px;" v-html="estimateTitleFormula"></h4>
+                            <div style="line-height: 2; font-size: 1.05em;">
+                                <p>最接近的完全平方数：</p>
+                                <p style="margin-left: 20px;" v-html="'$' + estimateResult.lower + '^2 = ' + estimateResult.lowerSq + '$ 和 $' + estimateResult.upper + '^2 = ' + estimateResult.upperSq + '$'"></p>
+                                <p v-html="'因为 $' + estimateResult.lowerSq + ' < ' + estimateNumber + ' < ' + estimateResult.upperSq + '$'"></p>
+                                <p>所以 <span v-html="estimateInequalityFormula"></span></p>
+                                <p style="margin-top: 15px; font-size: 1.2em; color: #16a34a; font-weight: bold;">
+                                    <span v-html="estimateValueFormula"></span>
+                                </p>
+                                <p style="color: #666; font-size: 0.9em;">
+                                    误差：约 {{ estimateResult.error }}，接近下界 {{ estimateResult.percent }}%
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>五、练习与自测</h2>
+                    <div class="practice-container">
+                        <p style="margin-bottom: 20px; font-size: 1.1em;">完成下列题目：</p>
+                        
+                        <div v-for="q in practiceQuestions" :key="q.id" 
+                             :class="['practice-item', q.correct === true ? 'correct' : q.correct === false ? 'incorrect' : '']">
+                            <span v-html="q.q"></span>
+                            <input type="text" 
+                                   v-model="q.user" 
+                                   :placeholder="q.id <= 3 ? '例如：6√2' : '输入答案'" 
+                                   :disabled="practiceScore !== null" />
+                            <span v-if="q.correct === true" style="color: #28a745; font-weight: bold;">✓ 正确</span>
+                            <span v-else-if="q.correct === false" style="color: #dc3545; font-weight: bold;">
+                                ✗ 错误，正确答案：
+                                <span v-if="q.id <= 3" v-html="'$' + q.ans + '$'"></span>
+                                <span v-else>{{ q.ans }}</span>
+                            </span>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button class="btn" @click="submitPractice" v-if="practiceScore === null">提交答案</button>
+                            <button class="btn btn-secondary" @click="resetPractice" v-if="practiceScore !== null">重新答题</button>
+                        </div>
+                        
+                        <div v-if="practiceScore !== null" class="score-display">
+                            得分：{{ practiceScore }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

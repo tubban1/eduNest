@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多项式基础 - 初中数学教学</title>
+    <meta name="description" content="学习多项式的基本概念，理解项和次数，掌握多项式的加减运算和乘法运算，通过代数积木可视化理解多项式运算，学习 FOIL 展开方法和因式分解。">
+    <meta name="keywords" content="多项式,项,次数,多项式加减,多项式乘法,FOIL,因式分解,代数积木,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .tiles-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tiles-wrapper {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group input {
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .foil-demo {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .foil-steps {
+            margin: 20px 0;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 8px;
+        }
+        
+        .foil-step {
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .practice-area {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .practice-question.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .practice-question.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 300px;
+            margin: 10px;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        createApp({
+            setup() {
+                // 代数积木演示
+                const tilesStage = ref(null);
+                const tilesLayer = ref(null);
+                const polynomialExpr = ref('x² + 3x + 2');
+                
+                // FOIL 演示
+                const foilA = ref(2);
+                const foilB = ref(3);
+                const foilC = ref(1);
+                const foilD = ref(4);
+                const currentFoilStep = ref(0);
+                const isAnimatingFoil = ref(false);
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        question: '多项式 3x² + 2x - 5 的次数是多少？',
+                        answer: '2',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        question: '计算：(x + 2)(x + 3)',
+                        answer: 'x² + 5x + 6',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        question: '因式分解：x² - 4',
+                        answer: '(x + 2)(x - 2)',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        question: '计算：(2x + 1)(x - 3)',
+                        answer: '2x² - 5x - 3',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        question: '多项式 5x³ - 2x² + x - 1 有多少项？',
+                        answer: '4',
+                        userAnswer: '',
+                        correct: null
+                    }
+                ]);
+                
+                // 解析多项式表达式
+                function parsePolynomial(expr) {
+                    const terms = [];
+                    if (!expr || typeof expr !== 'string') return terms;
+                    
+                    const cleaned = expr.trim().replace(/\s+/g, '');
+                    if (!cleaned) return terms;
+                    
+                    // 处理 x² 的特殊写法（x², x^2, x2）
+                    let normalized = cleaned
+                        .replace(/x²/g, 'x^2')
+                        .replace(/x2/g, 'x^2')
+                        .replace(/x\*\*2/g, 'x^2');
+                    
+                    // 在开头添加 + 号（如果没有符号）
+                    if (!normalized.match(/^[+-]/)) {
+                        normalized = '+' + normalized;
+                    }
+                    
+                    // 匹配各项：符号 + (系数) + (x^指数 或 x 或 空)
+                    const termPattern = /([+-])(\d*\.?\d*)(?:x(?:\^(\d+))?)?(?![0-9x])/g;
+                    const matches = [];
+                    let match;
+                    let matchCount = 0;
+                    const maxMatches = 20;
+                    
+                    while ((match = termPattern.exec(normalized)) !== null) {
+                        matchCount++;
+                        if (matchCount > maxMatches) break;
+                        
+                        const sign = match[1] === '+' ? 1 : -1;
+                        const coeffStr = match[2];
+                        const powerStr = match[3];
+                        const hasX = match[0].includes('x');
+                        
+                        // 确定系数
+                        let coeff;
+                        if (coeffStr === '' || coeffStr === undefined) {
+                            coeff = sign * 1;
+                        } else {
+                            const num = parseFloat(coeffStr);
+                            if (isNaN(num)) continue;
+                            coeff = sign * num;
+                        }
+                        
+                        // 确定次数
+                        let power = 0;
+                        if (hasX) {
+                            if (powerStr) {
+                                power = parseInt(powerStr);
+                            } else {
+                                power = 1;
+                            }
+                        }
+                        
+                        if (!isNaN(coeff) && isFinite(coeff) && !isNaN(power)) {
+                            terms.push({
+                                coefficient: coeff,
+                                power: power,
+                                display: formatTerm(coeff, power)
+                            });
+                        }
+                    }
+                    
+                    return terms;
+                }
+                
+                // 格式化项
+                function formatTerm(coeff, power) {
+                    if (power === 0) {
+                        return coeff.toString();
+                    } else if (power === 1) {
+                        if (coeff === 1) return 'x';
+                        if (coeff === -1) return '-x';
+                        return coeff + 'x';
+                    } else {
+                        if (coeff === 1) return 'x²';
+                        if (coeff === -1) return '-x²';
+                        return coeff + 'x²';
+                    }
+                }
+                
+                // 绘制代数积木可视化
+                function drawAlgebraTiles(expr) {
+                    if (!tilesLayer.value) return;
+                    
+                    tilesLayer.value.destroyChildren();
+                    
+                    const terms = parsePolynomial(expr);
+                    if (terms.length === 0) {
+                        const noData = new Konva.Text({
+                            x: 50,
+                            y: 200,
+                            text: '请输入有效的多项式表达式',
+                            fontSize: 18,
+                            fill: '#999'
+                        });
+                        tilesLayer.value.add(noData);
+                        tilesLayer.value.draw();
+                        return;
+                    }
+                    
+                    // 合并同类项
+                    const groupedTerms = {};
+                    terms.forEach(term => {
+                        if (!groupedTerms[term.power]) {
+                            groupedTerms[term.power] = 0;
+                        }
+                        groupedTerms[term.power] += term.coefficient;
+                    });
+                    
+                    // 按次数分组，并记录每组的系数
+                    const x2Coeff = groupedTerms[2] || 0;
+                    const xCoeff = groupedTerms[1] || 0;
+                    const constCoeff = groupedTerms[0] || 0;
+                    
+                    // 获取画布尺寸
+                    const width = tilesStage.value.width();
+                    const height = tilesStage.value.height();
+                    const tileSize = 35;
+                    const spacing = 15;
+                    const startX = 80;
+                    const startY = 80;
+                    
+                    // 颜色定义
+                    const colors = {
+                        x2: { fill: '#2196f3', stroke: '#1976d2', label: 'x²' },
+                        x: { fill: '#4caf50', stroke: '#388e3c', label: 'x' },
+                        constPos: { fill: '#ffc107', stroke: '#f57c00', label: '1' },
+                        constNeg: { fill: '#f44336', stroke: '#c62828', label: '-1' }
+                    };
+                    
+                    let currentY = startY;
+                    
+                    // 绘制 x² 项（蓝色大正方形）
+                    if (Math.abs(x2Coeff) > 0.001) {
+                        const sectionY = currentY;
+                        const count = Math.abs(x2Coeff);
+                        
+                        // 标题
+                        const title = new Konva.Text({
+                            x: 20,
+                            y: sectionY + tileSize,
+                            text: 'x² 项:',
+                            fontSize: 16,
+                            fill: '#666',
+                            fontStyle: 'bold'
+                        });
+                        tilesLayer.value.add(title);
+                        
+                        let tileX = startX;
+                        // 计算每行可以放多少个积木，确保不会超出画布
+                        const maxTilesPerRow = Math.floor((width - startX - 50) / (tileSize * 2 + spacing));
+                        const tilesPerRow = Math.min(Math.max(3, maxTilesPerRow), count);
+                        let rowStartY = currentY;
+                        
+                        for (let i = 0; i < count; i++) {
+                            if (i > 0 && i % tilesPerRow === 0) {
+                                tileX = startX;
+                                rowStartY += tileSize * 2 + spacing;
+                                currentY = rowStartY;
+                            }
+                            
+                            const group = new Konva.Group({
+                                x: tileX,
+                                y: currentY
+                            });
+                            
+                            // 大正方形（x²）
+                            const square = new Konva.Rect({
+                                width: tileSize * 2,
+                                height: tileSize * 2,
+                                fill: colors.x2.fill,
+                                stroke: colors.x2.stroke,
+                                strokeWidth: 2,
+                                cornerRadius: 4
+                            });
+                            
+                            const label = new Konva.Text({
+                                x: tileSize,
+                                y: tileSize,
+                                text: colors.x2.label,
+                                fontSize: 16,
+                                fill: 'white',
+                                fontStyle: 'bold',
+                                align: 'center',
+                                offsetX: 12,
+                                offsetY: 10
+                            });
+                            
+                            group.add(square);
+                            group.add(label);
+                            tilesLayer.value.add(group);
+                            
+                            tileX += tileSize * 2 + spacing;
+                        }
+                        
+                        // 显示系数（在积木右侧，如果空间不够则显示在下一行）
+                        const lastRowTileCount = count % tilesPerRow || tilesPerRow;
+                        const lastRowEndX = startX + lastRowTileCount * (tileSize * 2 + spacing);
+                        const coeffX = lastRowEndX + 20;
+                        const coeffY = rowStartY + tileSize;
+                        
+                        // 如果系数标签会超出画布，则显示在下一行
+                        let finalCoeffY = coeffY;
+                        let finalCoeffX = startX;
+                        if (coeffX + 100 > width) {
+                            finalCoeffY = rowStartY + tileSize * 2 + 20;
+                            finalCoeffX = startX;
+                        } else {
+                            finalCoeffY = coeffY;
+                            finalCoeffX = coeffX;
+                        }
+                        
+                        const coeffLabel = new Konva.Text({
+                            x: finalCoeffX,
+                            y: finalCoeffY,
+                            text: `${x2Coeff > 0 ? '+' : ''}${x2Coeff}x²`,
+                            fontSize: 18,
+                            fill: colors.x2.fill,
+                            fontStyle: 'bold'
+                        });
+                        tilesLayer.value.add(coeffLabel);
+                        
+                        currentY = Math.max(currentY, finalCoeffY) + 40;
+                    }
+                    
+                    // 绘制 x 项（绿色长方形）
+                    if (Math.abs(xCoeff) > 0.001) {
+                        const sectionY = currentY;
+                        const count = Math.abs(xCoeff);
+                        
+                        // 标题
+                        const title = new Konva.Text({
+                            x: 20,
+                            y: sectionY + tileSize / 2,
+                            text: 'x 项:',
+                            fontSize: 16,
+                            fill: '#666',
+                            fontStyle: 'bold'
+                        });
+                        tilesLayer.value.add(title);
+                        
+                        let tileX = startX;
+                        const tilesPerRow = Math.floor((width - startX - 100) / (tileSize * 2 + spacing));
+                        const maxPerRow = Math.max(4, tilesPerRow);
+                        let rowStartY = currentY;
+                        
+                        for (let i = 0; i < count; i++) {
+                            if (i > 0 && i % maxPerRow === 0) {
+                                tileX = startX;
+                                rowStartY += tileSize + spacing;
+                                currentY = rowStartY;
+                            }
+                            
+                            const group = new Konva.Group({
+                                x: tileX,
+                                y: currentY
+                            });
+                            
+                            // 长方形（x）
+                            const rect = new Konva.Rect({
+                                width: tileSize * 2,
+                                height: tileSize,
+                                fill: colors.x.fill,
+                                stroke: colors.x.stroke,
+                                strokeWidth: 2,
+                                cornerRadius: 4
+                            });
+                            
+                            const label = new Konva.Text({
+                                x: tileSize,
+                                y: tileSize / 2,
+                                text: colors.x.label,
+                                fontSize: 14,
+                                fill: 'white',
+                                fontStyle: 'bold',
+                                align: 'center',
+                                offsetX: 6,
+                                offsetY: 7
+                            });
+                            
+                            group.add(rect);
+                            group.add(label);
+                            tilesLayer.value.add(group);
+                            
+                            tileX += tileSize * 2 + spacing;
+                        }
+                        
+                        // 显示系数
+                        const coeffX = Math.max(startX + count * (tileSize * 2 + spacing), startX + maxPerRow * (tileSize * 2 + spacing)) + 20;
+                        const coeffY = rowStartY + tileSize / 2;
+                        
+                        const coeffLabel = new Konva.Text({
+                            x: coeffX,
+                            y: coeffY,
+                            text: `${xCoeff > 0 ? '+' : ''}${xCoeff}x`,
+                            fontSize: 18,
+                            fill: colors.x.fill,
+                            fontStyle: 'bold'
+                        });
+                        tilesLayer.value.add(coeffLabel);
+                        
+                        currentY = rowStartY + tileSize + 40;
+                    }
+                    
+                    // 绘制常数项（黄色/红色小正方形）
+                    if (Math.abs(constCoeff) > 0.001) {
+                        const sectionY = currentY;
+                        const count = Math.abs(constCoeff);
+                        const isPositive = constCoeff > 0;
+                        
+                        // 标题
+                        const title = new Konva.Text({
+                            x: 20,
+                            y: sectionY + tileSize / 2,
+                            text: '常数项:',
+                            fontSize: 16,
+                            fill: '#666',
+                            fontStyle: 'bold'
+                        });
+                        tilesLayer.value.add(title);
+                        
+                        let tileX = startX;
+                        const tilesPerRow = Math.floor((width - startX - 100) / (tileSize + spacing));
+                        const maxPerRow = Math.max(5, tilesPerRow);
+                        let rowStartY = currentY;
+                        const color = isPositive ? colors.constPos : colors.constNeg;
+                        
+                        for (let i = 0; i < count; i++) {
+                            if (i > 0 && i % maxPerRow === 0) {
+                                tileX = startX;
+                                rowStartY += tileSize + spacing;
+                                currentY = rowStartY;
+                            }
+                            
+                            const group = new Konva.Group({
+                                x: tileX,
+                                y: currentY
+                            });
+                            
+                            // 小正方形（1 或 -1）
+                            const square = new Konva.Rect({
+                                width: tileSize,
+                                height: tileSize,
+                                fill: color.fill,
+                                stroke: color.stroke,
+                                strokeWidth: 2,
+                                cornerRadius: 4
+                            });
+                            
+                            const label = new Konva.Text({
+                                x: tileSize / 2,
+                                y: tileSize / 2,
+                                text: color.label,
+                                fontSize: 14,
+                                fill: 'white',
+                                fontStyle: 'bold',
+                                align: 'center',
+                                offsetX: 8,
+                                offsetY: 7
+                            });
+                            
+                            group.add(square);
+                            group.add(label);
+                            tilesLayer.value.add(group);
+                            
+                            tileX += tileSize + spacing;
+                        }
+                        
+                        // 显示系数
+                        const coeffX = Math.max(startX + count * (tileSize + spacing), startX + maxPerRow * (tileSize + spacing)) + 20;
+                        const coeffY = rowStartY + tileSize / 2;
+                        
+                        const coeffLabel = new Konva.Text({
+                            x: coeffX,
+                            y: coeffY,
+                            text: `${constCoeff > 0 ? '+' : ''}${constCoeff}`,
+                            fontSize: 18,
+                            fill: color.fill,
+                            fontStyle: 'bold'
+                        });
+                        tilesLayer.value.add(coeffLabel);
+                        
+                        currentY = rowStartY + tileSize + 30;
+                    }
+                    
+                    // 显示完整多项式表达式
+                    const fullExpr = [2, 1, 0]
+                        .map(power => {
+                            const coeff = groupedTerms[power] || 0;
+                            if (Math.abs(coeff) < 0.001) return '';
+                            return formatTerm(coeff, power);
+                        })
+                        .filter(t => t)
+                        .join(' ')
+                        .replace(/\s+/g, ' ')
+                        .replace(/\+\s-/g, '- ')
+                        .replace(/^\+\s/, '');
+                    
+                    if (fullExpr) {
+                        currentY += 30;
+                        const exprText = new Konva.Text({
+                            x: startX,
+                            y: currentY,
+                            text: '多项式: ' + fullExpr,
+                            fontSize: 22,
+                            fill: '#667eea',
+                            fontStyle: 'bold'
+                        });
+                        tilesLayer.value.add(exprText);
+                        currentY += 40;
+                    }
+                    
+                    // 动态调整画布高度，确保所有内容都能显示
+                    const minHeight = Math.max(600, currentY + 100);
+                    if (tilesStage.value.height() < minHeight) {
+                        tilesStage.value.height(minHeight);
+                        // 重新绘制以确保完整显示
+                        setTimeout(() => {
+                            tilesLayer.value.draw();
+                        }, 0);
+                    }
+                    
+                    tilesLayer.value.draw();
+                }
+                
+                // 初始化代数积木画布
+                function initTilesCanvas() {
+                    const container = document.getElementById('tiles-canvas');
+                    if (!container || tilesStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 400;
+                    
+                    tilesStage.value = new Konva.Stage({
+                        container: 'tiles-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    tilesLayer.value = new Konva.Layer();
+                    tilesStage.value.add(tilesLayer.value);
+                    
+                    drawAlgebraTiles(polynomialExpr.value);
+                }
+                
+                // FOIL 方法展开
+                const foilSteps = computed(() => {
+                    // (ax + b)(cx + d) = acx² + (ad + bc)x + bd
+                    const first = foilA.value * foilC.value;  // x² 项系数
+                    const outer = foilA.value * foilD.value;  // x 项系数（外项）
+                    const inner = foilB.value * foilC.value;  // x 项系数（内项）
+                    const last = foilB.value * foilD.value;   // 常数项
+                    
+                    // 合并同类项
+                    const x2Coeff = first;
+                    const xCoeff = outer + inner;
+                    const constCoeff = last;
+                    
+                    // 格式化系数显示
+                    function formatCoeff(coeff, hasVar) {
+                        if (coeff === 0) return '0';
+                        if (hasVar) {
+                            if (coeff === 1) return 'x';
+                            if (coeff === -1) return '-x';
+                            return `${coeff}x`;
+                        } else {
+                            return `${coeff}`;
+                        }
+                    }
+                    
+                    // 格式化最终结果
+                    function formatResult(x2, x, c) {
+                        const parts = [];
+                        if (x2 !== 0) {
+                            if (x2 === 1) parts.push('x²');
+                            else if (x2 === -1) parts.push('-x²');
+                            else parts.push(`${x2}x²`);
+                        }
+                        if (x !== 0) {
+                            if (x > 0 && parts.length > 0) parts.push(`+ ${x === 1 ? '' : x}x`);
+                            else if (x < 0) parts.push(`${x === -1 ? '-' : x}x`);
+                            else parts.push(`${x === 1 ? '' : x}x`);
+                        }
+                        if (c !== 0) {
+                            if (c > 0 && parts.length > 0) parts.push(`+ ${c}`);
+            else parts.push(`${c}`);
+                        }
+                        return parts.length > 0 ? parts.join(' ').replace(/\s+\+\s+-\s+/g, ' - ').replace(/^\+\s+/, '') : '0';
+                    }
+                    
+                    return [
+                        {
+                            step: 'F - First（首项）',
+                            expression: `${foilA.value}x × ${foilC.value}x = ${formatCoeff(first, false)}x²`,
+                            explanation: '第一个括号的首项 × 第二个括号的首项（x × x = x²）'
+                        },
+                        {
+                            step: 'O - Outer（外项）',
+                            expression: `${foilA.value}x × ${foilD.value} = ${formatCoeff(outer, true)}`,
+                            explanation: '第一个括号的首项 × 第二个括号的末项'
+                        },
+                        {
+                            step: 'I - Inner（内项）',
+                            expression: `${foilB.value} × ${foilC.value}x = ${formatCoeff(inner, true)}`,
+                            explanation: '第一个括号的末项 × 第二个括号的首项'
+                        },
+                        {
+                            step: 'L - Last（末项）',
+                            expression: `${foilB.value} × ${foilD.value} = ${last}`,
+                            explanation: '第一个括号的末项 × 第二个括号的末项（常数项）'
+                        },
+                        {
+                            step: '合并同类项',
+                            expression: `${formatCoeff(first, false)}x² + ${formatCoeff(outer, true)} + ${formatCoeff(inner, true)} + ${last} = ${formatResult(x2Coeff, xCoeff, constCoeff)}`,
+                            explanation: `合并 x 项：${outer}${outer >= 0 ? ' + ' : ' '}${inner} = ${xCoeff}，得到最终结果`
+                        }
+                    ];
+                });
+                
+                // FOIL 动画
+                function animateFoil() {
+                    if (isAnimatingFoil.value) return;
+                    
+                    isAnimatingFoil.value = true;
+                    currentFoilStep.value = 0;
+                    
+                    const animateNext = () => {
+                        if (currentFoilStep.value < foilSteps.value.length) {
+                            setTimeout(() => {
+                                currentFoilStep.value++;
+                                if (currentFoilStep.value < foilSteps.value.length) {
+                                    animateNext();
+                                } else {
+                                    isAnimatingFoil.value = false;
+                                }
+                            }, 1500);
+                        }
+                    };
+                    
+                    animateNext();
+                }
+                
+                // 检查练习答案
+                function checkAnswer(question) {
+                    const userAns = question.userAnswer.trim().toLowerCase().replace(/\s+/g, '');
+                    const correctAns = question.answer.trim().toLowerCase().replace(/\s+/g, '');
+                    
+                    question.correct = userAns === correctAns;
+                }
+                
+                // 计算得分
+                const score = computed(() => {
+                    if (!practiceQuestions.value || practiceQuestions.value.length === 0) {
+                        return { correct: 0, total: 0 };
+                    }
+                    const total = practiceQuestions.value.length;
+                    const correct = practiceQuestions.value.filter(q => q.correct === true).length;
+                    return { correct, total };
+                });
+                
+                // 监听多项式表达式变化
+                Vue.watch(polynomialExpr, () => {
+                    drawAlgebraTiles(polynomialExpr.value);
+                });
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initTilesCanvas();
+                        
+                        // 监听窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (tilesStage.value) {
+                                const container = document.getElementById('tiles-canvas');
+                                if (container) {
+                                    tilesStage.value.width(container.offsetWidth);
+                                    drawAlgebraTiles(polynomialExpr.value);
+                                }
+                            }
+                        });
+                        
+                        // 自动渲染 KaTeX
+                        if (typeof renderMathInElement !== 'undefined') {
+                            renderMathInElement(document.body);
+                        }
+                    });
+                });
+                
+                return {
+                    polynomialExpr,
+                    foilA,
+                    foilB,
+                    foilC,
+                    foilD,
+                    currentFoilStep,
+                    isAnimatingFoil,
+                    foilSteps,
+                    practiceQuestions,
+                    score,
+                    drawAlgebraTiles,
+                    animateFoil,
+                    checkAnswer
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>多项式基础</h1>
+                    <p class="subtitle">理解多项式的概念，掌握运算方法，通过可视化学习多项式</p>
+                    
+                    <!-- 基本概念 -->
+                    <div class="section">
+                        <h2>📚 基本概念</h2>
+                        
+                        <div class="concept-grid">
+                            <div class="concept-card">
+                                <h3>多项式的定义</h3>
+                                <p>由常数和变量的乘积相加（或相减）组成的代数式。</p>
+                                <p style="margin-top: 10px;"><strong>例如：</strong>3x² + 2x - 5</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>项</h3>
+                                <p>多项式中每个被加（减）的部分称为项。</p>
+                                <p style="margin-top: 10px;"><strong>例如：</strong>3x²、2x、-5 都是项</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>次数</h3>
+                                <p>多项式的次数是各项中变量的最高指数。</p>
+                                <p style="margin-top: 10px;"><strong>例如：</strong>3x² + 2x - 5 的次数是 2</p>
+                            </div>
+                            
+                            <div class="concept-card">
+                                <h3>特殊乘法公式</h3>
+                                <p><strong>平方差公式：</strong>(a + b)(a - b) = a² - b²</p>
+                                <p><strong>完全平方公式：</strong>(a ± b)² = a² ± 2ab + b²</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 代数积木演示 -->
+                    <div class="section">
+                        <h2>🧩 代数积木可视化</h2>
+                        
+                        <div class="tiles-container">
+                            <div class="controls">
+                                <div class="input-group">
+                                    <label>多项式表达式：</label>
+                                    <input type="text" 
+                                           v-model="polynomialExpr" 
+                                           placeholder="例如：x² + 3x + 2">
+                                </div>
+                                <button class="btn" @click="drawAlgebraTiles(polynomialExpr)">更新</button>
+                                <button class="btn btn-secondary" @click="polynomialExpr = 'x² + 3x + 2'; drawAlgebraTiles(polynomialExpr)">示例1</button>
+                                <button class="btn btn-secondary" @click="polynomialExpr = '2x² + 4x - 3'; drawAlgebraTiles(polynomialExpr)">示例2</button>
+                            </div>
+                            
+                            <div class="tiles-wrapper">
+                                <div id="tiles-canvas"></div>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                                <h4 style="color: #2196f3; margin-bottom: 10px;">积木说明</h4>
+                                <p>🔵 蓝色大正方形 = x² 项</p>
+                                <p>🟢 绿色长方形 = x 项</p>
+                                <p>🟡 黄色小正方形 = 常数项（正数）</p>
+                                <p>🔴 红色小正方形 = 常数项（负数）</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FOIL 方法演示 -->
+                    <div class="section">
+                        <h2>🔢 FOIL 展开方法</h2>
+                        
+                        <div class="foil-demo">
+                            <h3>展开 ({{ foilA }}x + {{ foilB }})({{ foilC }}x + {{ foilD }})</h3>
+                            
+                            <div class="controls" style="margin: 20px 0;">
+                                <div class="input-group">
+                                    <label>第一个括号：</label>
+                                    <input type="number" v-model.number="foilA" style="width: 80px;">
+                                    <span>x +</span>
+                                    <input type="number" v-model.number="foilB" style="width: 80px;">
+                                </div>
+                                <div class="input-group">
+                                    <label>第二个括号：</label>
+                                    <input type="number" v-model.number="foilC" style="width: 80px;">
+                                    <span>x +</span>
+                                    <input type="number" v-model.number="foilD" style="width: 80px;">
+                                </div>
+                                <button class="btn" @click="animateFoil">播放动画</button>
+                            </div>
+                            
+                            <div class="foil-steps">
+                                <div v-for="(step, index) in foilSteps" 
+                                     :key="index"
+                                     class="foil-step"
+                                     :style="{ opacity: index <= currentFoilStep ? 1 : 0.3 }">
+                                    <h4>{{ step.step }}</h4>
+                                    <p style="font-size: 18px; margin: 8px 0; color: #667eea;">
+                                        {{ step.expression }}
+                                    </p>
+                                    <p style="font-size: 14px; color: #666;">
+                                        {{ step.explanation }}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 8px;">
+                                <h4 style="color: #f57c00; margin-bottom: 10px;">FOIL 记忆法</h4>
+                                <p><strong>F</strong>irst（首项） - 两个首项相乘</p>
+                                <p><strong>O</strong>uter（外项） - 两个外项相乘</p>
+                                <p><strong>I</strong>nner（内项） - 两个内项相乘</p>
+                                <p><strong>L</strong>ast（末项） - 两个末项相乘</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习 -->
+                    <div class="section">
+                        <h2>✏️ 练习</h2>
+                        
+                        <div class="practice-area">
+                            <div v-for="q in practiceQuestions" :key="q.id" 
+                                 class="practice-question"
+                                 :class="{ correct: q.correct === true, incorrect: q.correct === false }">
+                                <p style="font-size: 18px; margin-bottom: 15px; font-weight: 500;">
+                                    {{ q.question }}
+                                </p>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <input type="text" 
+                                           v-model="q.userAnswer" 
+                                           class="answer-input"
+                                           placeholder="请输入答案"
+                                           @keyup.enter="checkAnswer(q)">
+                                    <button class="btn" @click="checkAnswer(q)">检查</button>
+                                </div>
+                                <div v-if="q.correct === true" class="feedback correct">
+                                    ✓ 正确！
+                                </div>
+                                <div v-else-if="q.correct === false" class="feedback incorrect">
+                                    ✗ 错误，正确答案：{{ q.answer }}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                                <h3 style="color: #2196f3; margin-bottom: 10px;">得分统计</h3>
+                                <p style="font-size: 18px;">
+                                    正确：<strong>{{ score ? score.correct : 0 }}</strong> / <strong>{{ score ? score.total : 0 }}</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

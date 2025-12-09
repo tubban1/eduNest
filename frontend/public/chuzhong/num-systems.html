@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数系与数轴 - 初中数学教学</title>
+    <meta name="description" content="学习自然数、整数、有理数的概念和关系，通过交互式数轴理解数的分类和绝对值，掌握数轴的基本用法和对称点的概念。">
+    <meta name="keywords" content="数系,数轴,自然数,整数,有理数,绝对值,对称点,初中数学,数学教学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .number-system-diagram {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .number-set {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+            min-width: 200px;
+            margin: 10px;
+        }
+        
+        .number-set:hover {
+            transform: scale(1.05);
+        }
+        
+        .number-set.natural {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .number-set.integer {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .number-set.rational {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .number-set h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        
+        .number-set p {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .relationship-arrow {
+            font-size: 2em;
+            color: #667eea;
+            margin: 0 20px;
+        }
+        
+        .number-line-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        #numberLineCanvas {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            cursor: crosshair;
+            background: #f8f9fa;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #numberLineCanvas canvas {
+            display: block !important;
+        }
+        
+        .loading-message {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+        
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #f5576c;
+            font-size: 1.1em;
+            background: #fff5f5;
+            border-radius: 8px;
+            border: 2px solid #f5576c;
+        }
+        
+        .input-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 1.2em;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .input-group button {
+            padding: 12px 30px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .input-group button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .input-group button:active {
+            transform: translateY(0);
+        }
+        
+        .result-display {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            font-size: 1.2em;
+        }
+        
+        .result-display.show {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .exercise-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .exercise-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .exercise-info p {
+            margin: 8px 0;
+            font-size: 1.1em;
+        }
+        
+        .exercise-info strong {
+            color: #667eea;
+        }
+        
+        .formula-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .formula {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .katex-display {
+            margin: 20px 0 !important;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .number-system-diagram {
+                flex-direction: column;
+            }
+            
+            .relationship-arrow {
+                transform: rotate(90deg);
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>数系与数轴</h1>
+            <p class="subtitle">探索数的分类和数轴的奥秘</p>
+            
+            <!-- 数系关系图 -->
+            <div class="section">
+                <h2>一、数的分类</h2>
+                <div class="number-system-diagram">
+                    <div class="number-set natural">
+                        <h3>自然数 (N)</h3>
+                        <p>1, 2, 3, 4, 5, ...</p>
+                        <p>从1开始的正整数</p>
+                    </div>
+                    <div class="relationship-arrow">⊂</div>
+                    <div class="number-set integer">
+                        <h3>整数 (Z)</h3>
+                        <p>..., -2, -1, 0, 1, 2, ...</p>
+                        <p>包括负整数、0和正整数</p>
+                    </div>
+                    <div class="relationship-arrow">⊂</div>
+                    <div class="number-set rational">
+                        <h3>有理数 (Q)</h3>
+                        <p>可以表示为分数形式的数</p>
+                        <p>包括整数和分数</p>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <h3>📚 关系说明</h3>
+                    <ul>
+                        <li><strong>自然数</strong>是最基本的数，用于计数</li>
+                        <li><strong>整数</strong>扩展了自然数，加入了0和负数</li>
+                        <li><strong>有理数</strong>包括所有可以写成两个整数之比的数</li>
+                        <li>它们之间的关系是：自然数 ⊂ 整数 ⊂ 有理数</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 数轴绘制 -->
+            <div class="section">
+                <h2>二、数轴</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    数轴是一条直线，上面标有数字。原点（0）在中间，正数在右边，负数在左边。
+                    数轴帮助我们直观地理解数的大小关系和位置。
+                </p>
+                <div class="number-line-container">
+                    <div v-if="loading" class="loading-message">正在加载数轴...</div>
+                    <div v-if="error" class="error-message">{{ error }}</div>
+                    <div 
+                        v-show="!loading && !error"
+                        ref="numberLineCanvas" 
+                        id="numberLineCanvas"
+                        style="width: 100%; height: 300px;"
+                    ></div>
+                </div>
+            </div>
+            
+            <!-- 输入定位 -->
+            <div class="section">
+                <h2>三、数轴定位与绝对值</h2>
+                <div class="input-section">
+                    <div class="input-group">
+                        <label for="numberInput" style="font-size: 1.2em; font-weight: bold;">输入一个整数：</label>
+                        <input 
+                            type="number" 
+                            id="numberInput" 
+                            v-model.number="inputValue"
+                            @keypress.enter="locateNumber"
+                            placeholder="例如：-5, 0, 7" 
+                            step="1">
+                        <button @click="locateNumber">定位</button>
+                    </div>
+                    <div v-if="result.show" class="result-display show">
+                        <p><strong>数值：</strong>{{ result.value }}</p>
+                        <p><strong>绝对值：</strong>|{{ result.value }}| = {{ result.absValue }}</p>
+                        <p><strong>位置：</strong>数轴上距离原点 {{ result.absValue }} 个单位</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 交互练习 -->
+            <div class="section">
+                <h2>四、交互练习</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    点击数轴上的任意位置，查看该点的数值、绝对值和关于原点的对称点。
+                </p>
+                <div class="exercise-section">
+                    <div v-if="exercise.show" class="exercise-info">
+                        <p><strong>点击位置：</strong>({{ exercise.clickedX }}, {{ exercise.clickedY }})</p>
+                        <p><strong>数值：</strong>{{ exercise.value }}</p>
+                        <p><strong>绝对值：</strong>|{{ exercise.value }}| = {{ exercise.absValue }}</p>
+                        <p><strong>对称点：</strong>{{ exercise.symmetricValue }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 公式说明 -->
+            <div class="section">
+                <h2>五、重要公式</h2>
+                <div class="formula-section">
+                    <div class="formula">
+                        <h3>绝对值的定义</h3>
+                        <p>对于任意实数 \(a\)：</p>
+                        <div class="katex-display">
+                            \[|a| = \begin{cases}
+                            a & \text{如果 } a \geq 0 \\
+                            -a & \text{如果 } a < 0
+                            \end{cases}\]
+                        </div>
+                    </div>
+                    
+                    <div class="formula">
+                        <h3>绝对值的几何意义</h3>
+                        <p>数轴上，一个数的绝对值表示该数到原点的距离。</p>
+                        <div class="katex-display">
+                            \[|a| = \text{点 } a \text{ 到原点的距离}\]
+                        </div>
+                    </div>
+                    
+                    <div class="formula">
+                        <h3>对称点</h3>
+                        <p>关于原点对称的两个数互为相反数：</p>
+                        <div class="katex-display">
+                            \[\text{如果 } a \text{ 和 } -a \text{ 关于原点对称，则 } a + (-a) = 0\]
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 库引用 -->
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva.js -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        // 等待所有库加载完成
+        function waitForLibraries(callback, maxAttempts = 50) {
+            let attempts = 0;
+            const checkLibraries = () => {
+                attempts++;
+                if (typeof Vue !== 'undefined' && 
+                    typeof Konva !== 'undefined' && 
+                    typeof gsap !== 'undefined') {
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkLibraries, 100);
+                } else {
+                    if (typeof Vue !== 'undefined') {
+                        const app = document.querySelector('#app');
+                        if (app) {
+                            app.innerHTML = '<div class="error-message">库加载超时，请刷新页面重试</div>';
+                        }
+                    }
+                }
+            };
+            checkLibraries();
+        }
+        
+        waitForLibraries(() => {
+            const { createApp } = Vue;
+            
+            createApp({
+                data() {
+                    return {
+                        loading: true,
+                        error: null,
+                        inputValue: null,
+                        result: {
+                            show: false,
+                            value: null,
+                            absValue: null
+                        },
+                        exercise: {
+                            show: false,
+                            clickedX: null,
+                            clickedY: null,
+                            value: null,
+                            absValue: null,
+                            symmetricValue: null
+                        },
+                        // 数轴配置
+                        stage: null,
+                        layer: null,
+                        canvasWidth: 800,
+                        canvasHeight: 300,
+                        centerX: 400,
+                        centerY: 150,
+                        scale: 40,
+                        minValue: -10,
+                        maxValue: 10,
+                        currentMarker: null,
+                        jumpAnimation: null
+                    };
+                },
+                mounted() {
+                    // 延迟初始化，确保 DOM 完全渲染
+                    setTimeout(() => {
+                        this.initPage();
+                    }, 100);
+                },
+                methods: {
+                    initPage() {
+                        // 检查库是否加载
+                        if (typeof Konva === 'undefined') {
+                            this.error = 'Konva 库未加载，请刷新页面重试';
+                            this.loading = false;
+                            return;
+                        }
+                        if (typeof gsap === 'undefined') {
+                            this.error = 'GSAP 库未加载，请刷新页面重试';
+                            this.loading = false;
+                            return;
+                        }
+                        
+                        // 等待 DOM 更新
+                        this.$nextTick(() => {
+                            setTimeout(() => {
+                                this.initNumberLine();
+                                this.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    initNumberLine() {
+                        // 尝试通过 ref 获取，如果失败则通过 ID 获取
+                        let canvasElement = this.$refs.numberLineCanvas;
+                        if (!canvasElement) {
+                            canvasElement = document.getElementById('numberLineCanvas');
+                        }
+                        
+                        if (!canvasElement) {
+                            this.error = '找不到数轴容器元素，请刷新页面重试';
+                            this.loading = false;
+                            return;
+                        }
+                        
+                        // 确保元素可见
+                        if (canvasElement.style.display === 'none') {
+                            canvasElement.style.display = 'block';
+                        }
+                        
+                        // 获取实际宽度，如果为0则使用默认值
+                        let width = canvasElement.offsetWidth || canvasElement.clientWidth;
+                        if (width === 0) {
+                            // 如果宽度为0，尝试获取父容器宽度
+                            const parent = canvasElement.parentElement;
+                            if (parent) {
+                                width = parent.offsetWidth - 40; // 减去 padding
+                            }
+                            if (width === 0) {
+                                width = 800; // 默认宽度
+                            }
+                        }
+                        
+                        this.canvasWidth = width;
+                        this.centerX = this.canvasWidth / 2;
+                        this.centerY = this.canvasHeight / 2;
+                        
+                        try {
+                            // 初始化 Konva - 传入容器元素或容器ID
+                            const container = canvasElement.id || canvasElement;
+                            this.stage = new Konva.Stage({
+                                container: container,
+                                width: this.canvasWidth,
+                                height: this.canvasHeight
+                            });
+                            
+                            this.layer = new Konva.Layer();
+                            this.stage.add(this.layer);
+                            
+                            // 绘制数轴
+                            this.drawNumberLine();
+                            
+                            // 绑定点击事件
+                            this.stage.on('click', this.handleCanvasClick);
+                            
+                            this.loading = false;
+                        } catch (error) {
+                            this.error = '数轴初始化失败: ' + error.message + '。请打开浏览器控制台查看详细信息。';
+                            this.loading = false;
+                        }
+                    },
+                
+                drawNumberLine() {
+                    if (!this.layer) {
+                        return;
+                    }
+                    
+                    this.layer.destroyChildren();
+                    
+                    // 绘制数轴主线
+                    const line = new Konva.Line({
+                        points: [50, this.centerY, this.canvasWidth - 50, this.centerY],
+                        stroke: '#667eea',
+                        strokeWidth: 3,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    });
+                    this.layer.add(line);
+                    
+                    // 绘制刻度和数字
+                    for (let i = this.minValue; i <= this.maxValue; i++) {
+                        const x = this.centerX + (i * this.scale);
+                        
+                        // 绘制刻度线
+                        const tickLength = i === 0 ? 15 : 10;
+                        const tick = new Konva.Line({
+                            points: [x, this.centerY - tickLength, x, this.centerY + tickLength],
+                            stroke: '#333',
+                            strokeWidth: 2
+                        });
+                        this.layer.add(tick);
+                        
+                        // 绘制数字标签
+                        const text = new Konva.Text({
+                            x: x - 10,
+                            y: this.centerY + 20,
+                            text: i.toString(),
+                            fontSize: 16,
+                            fontFamily: 'Arial',
+                            fill: '#333',
+                            align: 'center'
+                        });
+                        this.layer.add(text);
+                    }
+                    
+                    // 绘制原点箭头
+                    const arrow = new Konva.Arrow({
+                        points: [this.canvasWidth - 50, this.centerY, this.canvasWidth - 30, this.centerY],
+                        pointerLength: 10,
+                        pointerWidth: 10,
+                        fill: '#667eea',
+                        stroke: '#667eea',
+                        strokeWidth: 3
+                    });
+                    this.layer.add(arrow);
+                    
+                    // 添加原点标签
+                    const originLabel = new Konva.Text({
+                        x: this.centerX - 15,
+                        y: this.centerY + 20,
+                        text: '0',
+                        fontSize: 18,
+                        fontFamily: 'Arial',
+                        fill: '#667eea',
+                        fontWeight: 'bold'
+                    });
+                    this.layer.add(originLabel);
+                    
+                    this.layer.draw();
+                },
+                
+                markPoint(value, color = '#f5576c', showAbsolute = false) {
+                    if (!this.layer) return null;
+                    
+                    const x = this.centerX + (value * this.scale);
+                    
+                    // 创建标记点（圆形）
+                    const marker = new Konva.Circle({
+                        x: x,
+                        y: this.centerY,
+                        radius: 12,
+                        fill: color,
+                        stroke: 'white',
+                        strokeWidth: 2,
+                        shadowBlur: 10,
+                        shadowColor: color,
+                        shadowOpacity: 0.8
+                    });
+                    this.layer.add(marker);
+                    
+                    // 创建数值标签
+                    const valueLabel = new Konva.Text({
+                        x: x - 15,
+                        y: this.centerY - 35,
+                        text: value.toString(),
+                        fontSize: 18,
+                        fontFamily: 'Arial',
+                        fill: color,
+                        fontWeight: 'bold',
+                        padding: 5,
+                        align: 'center'
+                    });
+                    this.layer.add(valueLabel);
+                    
+                    // 如果显示绝对值，添加绝对值标签
+                    if (showAbsolute) {
+                        const absValue = Math.abs(value);
+                        const absLabel = new Konva.Text({
+                            x: x - 20,
+                            y: this.centerY + 50,
+                            text: `|${value}| = ${absValue}`,
+                            fontSize: 16,
+                            fontFamily: 'Arial',
+                            fill: '#764ba2',
+                            fontWeight: 'bold',
+                            padding: 5,
+                            align: 'center',
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                        });
+                        this.layer.add(absLabel);
+                    }
+                    
+                    this.layer.draw();
+                    return marker;
+                },
+                
+                animateJump(value) {
+                    if (!this.layer) return;
+                    
+                    if (this.jumpAnimation) {
+                        this.jumpAnimation.kill();
+                    }
+                    
+                    const x = this.centerX + (value * this.scale);
+                    
+                    // 创建跳动的标记点
+                    if (this.currentMarker) {
+                        this.currentMarker.destroy();
+                    }
+                    
+                    this.currentMarker = new Konva.Circle({
+                        x: x,
+                        y: this.centerY - 30,
+                        radius: 15,
+                        fill: '#f5576c',
+                        stroke: 'white',
+                        strokeWidth: 3,
+                        shadowBlur: 15,
+                        shadowColor: '#f5576c',
+                        shadowOpacity: 1
+                    });
+                    this.layer.add(this.currentMarker);
+                    
+                    // 创建数值标签
+                    const valueLabel = new Konva.Text({
+                        x: x - 15,
+                        y: this.centerY - 60,
+                        text: value.toString(),
+                        fontSize: 20,
+                        fontFamily: 'Arial',
+                        fill: '#f5576c',
+                        fontWeight: 'bold'
+                    });
+                    this.layer.add(valueLabel);
+                    
+                    // GSAP 跳动动画
+                    const timeline = gsap.timeline({ repeat: 2 });
+                    timeline.to(this.currentMarker, {
+                        y: this.centerY,
+                        duration: 0.3,
+                        ease: "bounce.out"
+                    });
+                    timeline.to(this.currentMarker, {
+                        y: this.centerY - 10,
+                        duration: 0.2,
+                        ease: "power2.out"
+                    });
+                    timeline.to(this.currentMarker, {
+                        y: this.centerY,
+                        duration: 0.2,
+                        ease: "power2.in"
+                    });
+                    
+                    this.jumpAnimation = timeline;
+                    
+                    // 动画结束后，保持标记
+                    timeline.eventCallback("onComplete", () => {
+                        this.markPoint(value, '#f5576c', true);
+                        if (this.currentMarker) {
+                            this.currentMarker.destroy();
+                        }
+                        if (valueLabel) {
+                            valueLabel.destroy();
+                        }
+                        this.layer.draw();
+                    });
+                    
+                    this.layer.draw();
+                },
+                
+                locateNumber() {
+                    if (!this.stage || !this.layer) {
+                        alert('数轴尚未初始化，请稍候再试！');
+                        return;
+                    }
+                    
+                    const value = parseInt(this.inputValue);
+                    
+                    if (isNaN(value)) {
+                        alert('请输入一个有效的整数！');
+                        return;
+                    }
+                    
+                    if (value < this.minValue || value > this.maxValue) {
+                        alert(`请输入 ${this.minValue} 到 ${this.maxValue} 之间的整数！`);
+                        return;
+                    }
+                    
+                    // 清除之前的标记
+                    this.layer.destroyChildren();
+                    this.drawNumberLine();
+                    
+                    // 执行跳动动画
+                    this.animateJump(value);
+                    
+                    // 显示结果
+                    const absValue = Math.abs(value);
+                    this.result = {
+                        show: true,
+                        value: value,
+                        absValue: absValue
+                    };
+                },
+                
+                handleCanvasClick(e) {
+                    if (!this.stage || !this.layer) return;
+                    
+                    const pointerPos = this.stage.getPointerPosition();
+                    if (!pointerPos) return;
+                    
+                    const clickedX = pointerPos.x;
+                    const clickedY = pointerPos.y;
+                    
+                    // 计算点击位置对应的数值
+                    const value = Math.round((clickedX - this.centerX) / this.scale);
+                    
+                    if (value < this.minValue || value > this.maxValue) {
+                        return;
+                    }
+                    
+                    // 清除之前的标记
+                    this.layer.destroyChildren();
+                    this.drawNumberLine();
+                    
+                    // 标记点击位置
+                    this.markPoint(value, '#4facfe', true);
+                    
+                    // 计算对称点
+                    const symmetricValue = -value;
+                    
+                    // 如果对称点在范围内，也标记出来
+                    if (symmetricValue >= this.minValue && symmetricValue <= this.maxValue && symmetricValue !== value) {
+                        this.markPoint(symmetricValue, '#00f2fe', false);
+                        
+                        // 绘制连接线
+                        const line = new Konva.Line({
+                            points: [
+                                this.centerX + (value * this.scale), this.centerY,
+                                this.centerX + (symmetricValue * this.scale), this.centerY
+                            ],
+                            stroke: '#ccc',
+                            strokeWidth: 2,
+                            dash: [5, 5],
+                            opacity: 0.5
+                        });
+                        this.layer.add(line);
+                    }
+                    
+                    // 显示信息
+                    const absValue = Math.abs(value);
+                    this.exercise = {
+                        show: true,
+                        clickedX: clickedX.toFixed(0),
+                        clickedY: clickedY.toFixed(0),
+                        value: value,
+                        absValue: absValue,
+                        symmetricValue: symmetricValue
+                    };
+                    
+                    this.layer.draw();
+                },
+                
+                renderKaTeX() {
+                    if (typeof renderMathInElement !== 'undefined') {
+                        this.$nextTick(() => {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    {left: "$$", right: "$$", display: true},
+                                    {left: "\\[", right: "\\]", display: true},
+                                    {left: "$", right: "$", display: false},
+                                    {left: "\\(", right: "\\)", display: false}
+                                ]
+                            });
+                        });
+                    }
+                }
+            },
+            beforeUnmount() {
+                // 清理资源
+                if (this.jumpAnimation) {
+                    this.jumpAnimation.kill();
+                }
+                if (this.stage) {
+                    this.stage.destroy();
+                }
+            }
+        }).mount('#app');
+        }); // 闭合 waitForLibraries 回调
+    </script>
+</body>
+</html>

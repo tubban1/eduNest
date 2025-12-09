@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据解读：折线图、条形图、饼图</title>
+  <meta name="description" content="用折线图、条形图、饼图看数据，理解趋势，学会把表格、图形和文字之间互相转换。" />
+  <meta name="keywords" content="折线图,条形图,饼图,趋势分析,数据解读,表格转图形,图形转文字" />
+  <!-- 首选 supported-libraries.json，无法访问时回退 libraries_cn.json -->
+  <script>
+    (function() {
+      const head = document.getElementsByTagName('head')[0];
+      const addScript = (src) => {
+        const s = document.createElement('script');
+        s.src = src;
+        head.appendChild(s);
+      };
+      const addLink = (href) => {
+        const l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = href;
+        head.appendChild(l);
+      };
+      const primary = {
+        vue: "https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js",
+        konva: "https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js",
+        gsap: "https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+      };
+      const fallback = {
+        vue: "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js",
+        konva: "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js",
+        gsap: "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"
+      };
+      addScript(primary.vue);
+      addScript(primary.konva);
+      addScript(primary.gsap);
+      setTimeout(() => {
+        if (!window.Vue) addScript(fallback.vue);
+        if (!window.Konva) addScript(fallback.konva);
+        if (!window.gsap) addScript(fallback.gsap);
+      }, 800);
+    })();
+  </script>
+  <style>
+    body {
+      font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f7f8fb;
+      margin: 0;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+    h1 {
+      font-size: 26px;
+      margin: 0 0 12px 0;
+      color: #334155;
+    }
+    .subtitle {
+      margin-bottom: 16px;
+      color: #475569;
+      font-size: 15px;
+    }
+    .section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 6px 14px rgba(31,41,55,0.08);
+      margin-bottom: 18px;
+    }
+    .flex {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: #475569;
+    }
+    .control input, .control select {
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      min-width: 80px;
+    }
+    .btn {
+      background: linear-gradient(120deg, #6366f1, #22c55e);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      font-size: 14px;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(99,102,241,0.3);}
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .table th, .table td {
+      border: 1px solid #e2e8f0;
+      padding: 8px;
+      text-align: center;
+    }
+    .table th { background: #f1f5f9; }
+    .chart-wrapper {
+      width: 100%;
+      height: 340px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      position: relative;
+    }
+    .hint {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #334155;
+    }
+    .qa-item {
+      margin-bottom: 10px;
+    }
+    .qa-item input[type="number"], .qa-item input[type="text"] {
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      width: 140px;
+    }
+    .score {
+      font-weight: 700;
+      color: #16a34a;
+    }
+    .tooltip {
+      position: absolute;
+      background: rgba(51,65,85,0.95);
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      pointer-events: none;
+      transform: translate(-50%, -120%);
+      white-space: nowrap;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    const waitLibs = (cb, retry = 0) => {
+      if (window.Vue && window.Konva) return cb();
+      if (retry > 20) return console.error('库加载失败');
+      setTimeout(() => waitLibs(cb, retry + 1), 100);
+    };
+
+    waitLibs(() => {
+      const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+
+      createApp({
+        setup() {
+          const dataPoints = ref([
+            { name: '一月', value: 30 },
+            { name: '二月', value: 45 },
+            { name: '三月', value: 50 },
+            { name: '四月', value: 42 },
+            { name: '五月', value: 60 },
+            { name: '六月', value: 72 }
+          ]);
+          const chartType = ref('line'); // line | bar | pie
+          const showTooltip = ref(false);
+          const tooltip = ref({ x: 0, y: 0, text: '' });
+
+          const chartStage = ref(null);
+          const chartLayer = ref(null);
+          const chartContainerId = 'chart-canvas';
+
+          // 文字解读
+          const summary = computed(() => {
+            if (!dataPoints.value.length) return '请先录入数据。';
+            const values = dataPoints.value.map(d => d.value);
+            const max = Math.max(...values);
+            const min = Math.min(...values);
+            const maxItem = dataPoints.value.find(d => d.value === max);
+            const minItem = dataPoints.value.find(d => d.value === min);
+            const trend = values[values.length - 1] - values[0];
+            const trendText = trend > 0 ? '总体上升' : trend < 0 ? '总体下降' : '总体持平';
+            return `最高点在「${maxItem.name}」（${max}），最低点在「${minItem.name}」（${min}），整体呈现${trendText}。`;
+          });
+
+          // 练习
+          const exercises = ref([
+            {
+              id: 1,
+              question: '当前数据中，数值最大的月份是哪一个？',
+              type: 'select',
+              options: ['一月','二月','三月','四月','五月','六月'],
+              answer: '六月',
+              user: ''
+            },
+            {
+              id: 2,
+              question: '请写出一月到六月的平均值（四舍五入取整）。',
+              type: 'number',
+              answer: () => {
+                const vals = dataPoints.value.map(d => d.value);
+                const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+                return Math.round(avg);
+              },
+              user: ''
+            },
+            {
+              id: 3,
+              question: '如果把「三月」和「四月」合并成一个类别，总值是多少？',
+              type: 'number',
+              answer: () => {
+                const m3 = dataPoints.value.find(d=>d.name==='三月')?.value||0;
+                const m4 = dataPoints.value.find(d=>d.name==='四月')?.value||0;
+                return m3 + m4;
+              },
+              user: ''
+            }
+          ]);
+          const score = ref(null);
+
+          // 渲染图表
+          const drawChart = () => {
+            if (!chartStage.value || !chartLayer.value) return;
+            chartLayer.value.destroyChildren();
+            const width = chartStage.value.width();
+            const height = chartStage.value.height();
+            const padding = 60;
+            const vals = dataPoints.value.map(d => d.value);
+            if (!vals.length) {
+              const text = new Konva.Text({
+                x: width/2, y: height/2,
+                text: '暂无数据，请添加或加载示例',
+                fontSize: 16, fill: '#94a3b8',
+                align: 'center', offsetX: 120
+              });
+              chartLayer.value.add(text);
+              chartLayer.value.draw();
+              return;
+            }
+            // 坐标轴通用
+            const xAxis = new Konva.Line({
+              points: [padding, height - padding, width - padding, height - padding],
+              stroke: '#334155', strokeWidth: 2
+            });
+            const yAxis = new Konva.Line({
+              points: [padding, padding, padding, height - padding],
+              stroke: '#334155', strokeWidth: 2
+            });
+            chartLayer.value.add(xAxis);
+            chartLayer.value.add(yAxis);
+
+            const maxVal = Math.max(...vals, 1);
+            const yScale = (val) => {
+              const ratio = val / maxVal;
+              return height - padding - ratio * (height - padding*2);
+            };
+
+            // 刻度
+            for (let i = 0; i <= 5; i++) {
+              const v = (maxVal/5)*i;
+              const y = yScale(v);
+              const line = new Konva.Line({
+                points: [padding, y, width - padding, y],
+                stroke: '#e2e8f0', strokeWidth: 1, dash: [4,4]
+              });
+              const lab = new Konva.Text({
+                x: padding - 40, y: y-8, text: Math.round(v).toString(),
+                fontSize: 12, fill: '#475569'
+              });
+              chartLayer.value.add(line); chartLayer.value.add(lab);
+            }
+
+            const n = dataPoints.value.length;
+            const xStep = (width - padding*2) / (n - 1 || 1);
+
+            if (chartType.value === 'line') {
+              const pts = dataPoints.value.map((d,i) => [padding + xStep*i, yScale(d.value)]).flat();
+              const poly = new Konva.Line({
+                points: pts,
+                stroke: '#6366f1', strokeWidth: 3,
+                lineCap: 'round', lineJoin: 'round'
+              });
+              chartLayer.value.add(poly);
+              dataPoints.value.forEach((d,i) => {
+                const cx = padding + xStep*i;
+                const cy = yScale(d.value);
+                const circle = new Konva.Circle({
+                  x: cx, y: cy, radius: 6,
+                  fill: '#22c55e', stroke: '#fff', strokeWidth: 2
+                });
+                circle.on('mouseenter', () => showTip(cx, cy, `${d.name}: ${d.value}`));
+                circle.on('mouseleave', hideTip);
+                circle.on('click', () => showTip(cx, cy, `${d.name}: ${d.value}`));
+                chartLayer.value.add(circle);
+                const xl = new Konva.Text({
+                  x: cx - 20, y: height - padding + 8,
+                  text: d.name, fontSize: 12, fill: '#475569'
+                });
+                chartLayer.value.add(xl);
+              });
+            } else if (chartType.value === 'bar') {
+              const barWidth = Math.min(60, xStep * 0.5);
+              dataPoints.value.forEach((d,i) => {
+                const x = padding + xStep*i - barWidth/2;
+                const y = yScale(d.value);
+                const rect = new Konva.Rect({
+                  x, y,
+                  width: barWidth,
+                  height: height - padding - y,
+                  fill: '#6366f1',
+                  cornerRadius: 6,
+                  shadowColor: 'rgba(99,102,241,0.35)',
+                  shadowBlur: 8,
+                  shadowOffset: { x: 0, y: 4 }
+                });
+                rect.on('mouseenter', () => showTip(x + barWidth/2, y, `${d.name}: ${d.value}`));
+                rect.on('mouseleave', hideTip);
+                rect.on('click', () => showTip(x + barWidth/2, y, `${d.name}: ${d.value}`));
+                chartLayer.value.add(rect);
+                const xl = new Konva.Text({
+                  x: padding + xStep*i - 20,
+                  y: height - padding + 8,
+                  text: d.name, fontSize: 12, fill: '#475569'
+                });
+                chartLayer.value.add(xl);
+              });
+            } else if (chartType.value === 'pie') {
+              const sum = vals.reduce((a,b)=>a+b,0);
+              let angle = -90;
+              const cx = width/2, cy = height/2, r = Math.min(width, height)/3;
+              dataPoints.value.forEach((d) => {
+                const slice = (d.value / sum) * 360;
+                const wedge = new Konva.Wedge({
+                  x: cx, y: cy, radius: r,
+                  angle: slice, rotation: angle,
+                  fill: Konva.Util.getRandomColor(),
+                  stroke: '#fff', strokeWidth: 2
+                });
+                wedge.on('mouseenter', () => {
+                  showTip(cx + Math.cos((angle+slice/2)*Math.PI/180)*r*0.7,
+                          cy + Math.sin((angle+slice/2)*Math.PI/180)*r*0.7,
+                          `${d.name}: ${d.value} (${((d.value/sum)*100).toFixed(1)}%)`);
+                });
+                wedge.on('mouseleave', hideTip);
+                wedge.on('click', () => {
+                  showTip(cx + Math.cos((angle+slice/2)*Math.PI/180)*r*0.7,
+                          cy + Math.sin((angle+slice/2)*Math.PI/180)*r*0.7,
+                          `${d.name}: ${d.value} (${((d.value/sum)*100).toFixed(1)}%)`);
+                });
+                chartLayer.value.add(wedge);
+                angle += slice;
+              });
+            }
+            chartLayer.value.draw();
+          };
+
+          const showTip = (x,y,text) => {
+            showTooltip.value = true;
+            tooltip.value = { x, y, text };
+          };
+          const hideTip = () => { showTooltip.value = false; };
+
+          // 练习评分
+          const grade = () => {
+            let correct = 0;
+            exercises.value.forEach(q => {
+              if (q.type === 'select') {
+                if (q.user === q.answer) correct++;
+              } else if (q.type === 'number') {
+                const expect = typeof q.answer === 'function' ? q.answer() : q.answer;
+                if (Number(q.user) === expect) correct++;
+              }
+            });
+            score.value = `${correct}/${exercises.value.length}`;
+          };
+
+          // 按钮：加载示例
+          const loadExample = () => {
+            dataPoints.value = [
+              { name: '一月', value: 28 },
+              { name: '二月', value: 38 },
+              { name: '三月', value: 46 },
+              { name: '四月', value: 52 },
+              { name: '五月', value: 65 },
+              { name: '六月', value: 78 }
+            ];
+            nextTick(drawChart);
+          };
+
+          onMounted(() => {
+            const container = document.getElementById(chartContainerId);
+            if (!container || !window.Konva) return;
+            chartStage.value = new Konva.Stage({
+              container: chartContainerId,
+              width: container.clientWidth,
+              height: 360
+            });
+            chartLayer.value = new Konva.Layer();
+            chartStage.value.add(chartLayer.value);
+            drawChart();
+
+            window.addEventListener('resize', () => {
+              const cont = document.getElementById(chartContainerId);
+              if (cont && chartStage.value) {
+                chartStage.value.width(cont.clientWidth);
+                drawChart();
+              }
+            });
+          });
+
+          watch([chartType, dataPoints], () => nextTick(drawChart), { deep: true });
+
+          return {
+            dataPoints,
+            chartType,
+            summary,
+            exercises,
+            score,
+            chartContainerId,
+            showTooltip,
+            tooltip,
+            loadExample,
+            grade,
+            drawChart
+          };
+        },
+        template: `
+          <div class="container">
+            <h1>数据解读：折线图、条形图、饼图</h1>
+            <div class="subtitle">看趋势、比较差异、读比例，并把表格、图形和文字互相转换。</div>
+
+            <div class="section">
+              <div class="controls">
+                <div class="control">
+                  图类型：
+                  <select v-model="chartType">
+                    <option value="line">折线图（看趋势）</option>
+                    <option value="bar">条形图（看对比）</option>
+                    <option value="pie">饼图（看占比）</option>
+                  </select>
+                </div>
+                <button class="btn" @click="loadExample">加载示例数据</button>
+              </div>
+              <div class="grid-2">
+                <div class="card">
+                  <strong>数据表</strong>
+                  <table class="table" style="margin-top:8px;">
+                    <thead><tr><th>类别/月</th><th>数值</th></tr></thead>
+                    <tbody>
+                      <tr v-for="(d,i) in dataPoints" :key="i">
+                        <td>{{ d.name }}</td>
+                        <td>{{ d.value }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="hint">表格 → 图形：用图形展示表格中的趋势、对比、占比。</div>
+                </div>
+                <div class="card">
+                  <strong>文字解读</strong>
+                  <div style="margin-top:8px;">{{ summary }}</div>
+                  <div class="hint" style="margin-top:6px;">图形 → 文字：用一句话描述最高、最低、总体趋势。</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>图形展示（可点击查看数值）</h3>
+              <div class="chart-wrapper" :id="chartContainerId">
+                <div v-if="showTooltip" class="tooltip" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">{{ tooltip.text }}</div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>练习（自动评分）</h3>
+              <div class="qa-item" v-for="q in exercises" :key="q.id">
+                <div>{{ q.id }}. {{ q.question }}</div>
+                <div v-if="q.type==='select'">
+                  <select v-model="q.user">
+                    <option value="">请选择</option>
+                    <option v-for="op in q.options" :key="op" :value="op">{{ op }}</option>
+                  </select>
+                </div>
+                <div v-else-if="q.type==='number'">
+                  <input type="number" v-model.number="q.user" />
+                </div>
+              </div>
+              <button class="btn" @click="grade">提交评分</button>
+              <div v-if="score" style="margin-top:8px;">得分：<span class="score">{{ score }}</span></div>
+            </div>
+          </div>
+        `
+      }).mount('#app');
+    });
+  </script>
+</body>
+</html>
+

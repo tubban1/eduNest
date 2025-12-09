@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>总体与样本 - 初中数学教学</title>
+    <meta name="description" content="学习总体与样本的基本概念，掌握不同抽样方法的特点，理解抽样偏差和样本变异性的影响，通过交互式抽样模拟器对比不同抽样方式的统计差异。">
+    <meta name="keywords" content="总体,样本,抽样方法,简单随机抽样,系统抽样,分层抽样,抽样偏差,样本变异性,统计调查">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .concept-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .concept-card p {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .demo-panel {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .sample-display {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+            min-height: 150px;
+        }
+        
+        .sample-item {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            animation: popIn 0.3s ease-out;
+        }
+        
+        .sample-item.selected {
+            background: #28a745;
+        }
+        
+        @keyframes popIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .comparison-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .stat-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #17a2b8;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        const app = createApp({
+            setup() {
+                // 总体数据
+                const populationSize = ref(100);
+                const population = ref([]);
+                
+                // 抽样参数
+                const sampleSize = ref(20);
+                const samplingMethod = ref('simple'); // simple, systematic, stratified, cluster
+                const numStrata = ref(4); // 分层数量
+                const clusterSize = ref(5); // 整群大小
+                
+                // 样本数据
+                const currentSample = ref([]);
+                const sampleResults = ref([]); // 多次抽样结果
+                const numSimulations = ref(10);
+                
+                // Konva 引用
+                const chartStage = ref(null);
+                const chartLayer = ref(null);
+                
+                // 生成总体数据
+                const generatePopulation = () => {
+                    const data = [];
+                    // 生成一个模拟总体，包含不同的特征值
+                    for (let i = 0; i < populationSize.value; i++) {
+                        // 模拟不同组的特征值（例如：年龄、身高、成绩等）
+                        const group = Math.floor(i / (populationSize.value / 4));
+                        const baseValue = 50 + group * 15; // 不同组的基础值
+                        const randomVariation = (Math.random() - 0.5) * 20; // 随机变化
+                        data.push({
+                            id: i + 1,
+                            value: Math.round(baseValue + randomVariation),
+                            group: group + 1
+                        });
+                    }
+                    population.value = data;
+                    currentSample.value = [];
+                    sampleResults.value = [];
+                };
+                
+                // 计算总体统计量
+                const populationStats = computed(() => {
+                    if (population.value.length === 0) {
+                        return { mean: 0, stdDev: 0, min: 0, max: 0 };
+                    }
+                    const values = population.value.map(p => p.value);
+                    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+                    const stdDev = Math.sqrt(variance);
+                    return {
+                        mean: mean.toFixed(2),
+                        stdDev: stdDev.toFixed(2),
+                        min: Math.min(...values),
+                        max: Math.max(...values)
+                    };
+                });
+                
+                // 简单随机抽样
+                const simpleRandomSampling = () => {
+                    const sample = [];
+                    const available = [...population.value];
+                    for (let i = 0; i < Math.min(sampleSize.value, available.length); i++) {
+                        const randomIndex = Math.floor(Math.random() * available.length);
+                        sample.push(available[randomIndex]);
+                        available.splice(randomIndex, 1);
+                    }
+                    return sample;
+                };
+                
+                // 系统抽样
+                const systematicSampling = () => {
+                    const sample = [];
+                    const interval = Math.floor(populationSize.value / sampleSize.value);
+                    const start = Math.floor(Math.random() * interval);
+                    for (let i = 0; i < sampleSize.value && (start + i * interval) < populationSize.value; i++) {
+                        const index = start + i * interval;
+                        sample.push(population.value[index]);
+                    }
+                    return sample;
+                };
+                
+                // 分层抽样
+                const stratifiedSampling = () => {
+                    const sample = [];
+                    const samplesPerStratum = Math.floor(sampleSize.value / numStrata.value);
+                    
+                    // 按组分层
+                    for (let group = 1; group <= numStrata.value; group++) {
+                        const stratum = population.value.filter(p => p.group === group);
+                        const stratumSampleSize = group === numStrata.value ? 
+                            sampleSize.value - sample.length : samplesPerStratum;
+                        
+                        const available = [...stratum];
+                        for (let i = 0; i < Math.min(stratumSampleSize, available.length); i++) {
+                            const randomIndex = Math.floor(Math.random() * available.length);
+                            sample.push(available[randomIndex]);
+                            available.splice(randomIndex, 1);
+                        }
+                    }
+                    return sample;
+                };
+                
+                // 整群抽样
+                const clusterSampling = () => {
+                    const sample = [];
+                    const numClusters = Math.floor(populationSize.value / clusterSize.value);
+                    const clustersToSelect = Math.ceil(sampleSize.value / clusterSize.value);
+                    
+                    // 随机选择几个群
+                    const selectedClusters = [];
+                    for (let i = 0; i < clustersToSelect; i++) {
+                        let clusterIndex;
+                        do {
+                            clusterIndex = Math.floor(Math.random() * numClusters);
+                        } while (selectedClusters.includes(clusterIndex));
+                        selectedClusters.push(clusterIndex);
+                    }
+                    
+                    // 从选中的群中抽取所有元素
+                    selectedClusters.forEach(clusterIndex => {
+                        const start = clusterIndex * clusterSize.value;
+                        for (let i = 0; i < clusterSize.value && (start + i) < populationSize.value; i++) {
+                            if (sample.length < sampleSize.value) {
+                                sample.push(population.value[start + i]);
+                            }
+                        }
+                    });
+                    
+                    return sample;
+                };
+                
+                // 执行抽样
+                const performSampling = () => {
+                    if (population.value.length === 0) {
+                        generatePopulation();
+                    }
+                    
+                    let sample = [];
+                    switch (samplingMethod.value) {
+                        case 'simple':
+                            sample = simpleRandomSampling();
+                            break;
+                        case 'systematic':
+                            sample = systematicSampling();
+                            break;
+                        case 'stratified':
+                            sample = stratifiedSampling();
+                            break;
+                        case 'cluster':
+                            sample = clusterSampling();
+                            break;
+                    }
+                    
+                    currentSample.value = sample;
+                    
+                    // 使用 GSAP 动画
+                    if (window.gsap) {
+                        setTimeout(() => {
+                            const items = document.querySelectorAll('.sample-item');
+                            items.forEach((item, index) => {
+                                gsap.from(item, {
+                                    opacity: 0,
+                                    scale: 0,
+                                    duration: 0.3,
+                                    delay: index * 0.05
+                                });
+                            });
+                        }, 50);
+                    }
+                };
+                
+                // 计算样本统计量
+                const sampleStats = computed(() => {
+                    if (currentSample.value.length === 0) {
+                        return { mean: 0, stdDev: 0, bias: 0, min: 0, max: 0 };
+                    }
+                    const values = currentSample.value.map(s => s.value);
+                    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+                    const stdDev = Math.sqrt(variance);
+                    const popMean = parseFloat(populationStats.value.mean);
+                    const bias = mean - popMean;
+                    
+                    return {
+                        mean: mean.toFixed(2),
+                        stdDev: stdDev.toFixed(2),
+                        bias: bias.toFixed(2),
+                        min: Math.min(...values),
+                        max: Math.max(...values)
+                    };
+                });
+                
+                // 多次模拟抽样
+                const runSimulations = () => {
+                    if (population.value.length === 0) {
+                        generatePopulation();
+                    }
+                    
+                    sampleResults.value = [];
+                    for (let i = 0; i < numSimulations.value; i++) {
+                        let sample = [];
+                        switch (samplingMethod.value) {
+                            case 'simple':
+                                sample = simpleRandomSampling();
+                                break;
+                            case 'systematic':
+                                sample = systematicSampling();
+                                break;
+                            case 'stratified':
+                                sample = stratifiedSampling();
+                                break;
+                            case 'cluster':
+                                sample = clusterSampling();
+                                break;
+                        }
+                        
+                        const values = sample.map(s => s.value);
+                        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                        const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+                        const stdDev = Math.sqrt(variance);
+                        const popMean = parseFloat(populationStats.value.mean);
+                        const bias = mean - popMean;
+                        
+                        sampleResults.value.push({
+                            sample: sample,
+                            mean: mean,
+                            stdDev: stdDev,
+                            bias: bias
+                        });
+                    }
+                    
+                    drawComparisonChart();
+                };
+                
+                // 绘制对比图表
+                const drawComparisonChart = () => {
+                    if (!chartStage.value || !chartLayer.value || sampleResults.value.length === 0) return;
+                    
+                    chartLayer.value.destroyChildren();
+                    
+                    const width = chartStage.value.width();
+                    const height = 300;
+                    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+                    const chartWidth = width - margin.left - margin.right;
+                    const chartHeight = height - margin.top - margin.bottom;
+                    
+                    const popMean = parseFloat(populationStats.value.mean);
+                    const means = sampleResults.value.map(r => r.mean);
+                    const minMean = Math.min(...means, popMean - 5);
+                    const maxMean = Math.max(...means, popMean + 5);
+                    const range = maxMean - minMean;
+                    
+                    // 绘制坐标轴
+                    const xAxis = new Konva.Line({
+                        points: [margin.left, height - margin.bottom, width - margin.right, height - margin.bottom],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    chartLayer.value.add(xAxis);
+                    
+                    const yAxis = new Konva.Line({
+                        points: [margin.left, margin.top, margin.left, height - margin.bottom],
+                        stroke: '#333',
+                        strokeWidth: 2
+                    });
+                    chartLayer.value.add(yAxis);
+                    
+                    // 绘制总体均值线
+                    const popMeanY = margin.top + chartHeight - ((popMean - minMean) / range * chartHeight);
+                    const popMeanLine = new Konva.Line({
+                        points: [margin.left, popMeanY, width - margin.right, popMeanY],
+                        stroke: '#dc3545',
+                        strokeWidth: 2,
+                        dash: [5, 5]
+                    });
+                    chartLayer.value.add(popMeanLine);
+                    
+                    const popMeanLabel = new Konva.Text({
+                        x: width - margin.right - 80,
+                        y: popMeanY - 15,
+                        text: '总体均值',
+                        fontSize: 12,
+                        fill: '#dc3545',
+                        fontStyle: 'bold'
+                    });
+                    chartLayer.value.add(popMeanLabel);
+                    
+                    // 绘制样本均值点
+                    sampleResults.value.forEach((result, index) => {
+                        const x = margin.left + (index + 1) / (sampleResults.value.length + 1) * chartWidth;
+                        const y = margin.top + chartHeight - ((result.mean - minMean) / range * chartHeight);
+                        
+                        const dot = new Konva.Circle({
+                            x: x,
+                            y: y,
+                            radius: 5,
+                            fill: '#667eea'
+                        });
+                        chartLayer.value.add(dot);
+                        
+                        // 连接线显示偏差
+                        const line = new Konva.Line({
+                            points: [x, y, x, popMeanY],
+                            stroke: result.bias > 0 ? '#28a745' : '#ffc107',
+                            strokeWidth: 1,
+                            opacity: 0.5
+                        });
+                        chartLayer.value.add(line);
+                    });
+                    
+                    // 标签
+                    const xLabel = new Konva.Text({
+                        x: width / 2,
+                        y: height - 10,
+                        text: '抽样次数',
+                        fontSize: 14,
+                        fill: '#333',
+                        align: 'center',
+                        offsetX: 40
+                    });
+                    chartLayer.value.add(xLabel);
+                    
+                    const yLabel = new Konva.Text({
+                        x: 15,
+                        y: height / 2,
+                        text: '样本均值',
+                        fontSize: 14,
+                        fill: '#333',
+        rotation: -90,
+        offsetY: 40
+                    });
+                    chartLayer.value.add(yLabel);
+                    
+                    chartLayer.value.draw();
+                };
+                
+                // 计算所有抽样方法的统计对比
+                const comparisonStats = computed(() => {
+                    if (population.value.length === 0 || sampleResults.value.length === 0) {
+                        return null;
+                    }
+                    
+                    const means = sampleResults.value.map(r => r.mean);
+                    const biases = sampleResults.value.map(r => r.bias);
+                    const stdDevs = sampleResults.value.map(r => r.stdDev);
+                    
+                    const avgMean = means.reduce((a, b) => a + b, 0) / means.length;
+                    const avgBias = biases.reduce((a, b) => a + b, 0) / biases.length;
+                    const avgStdDev = stdDevs.reduce((a, b) => a + b, 0) / stdDevs.length;
+                    const biasVariability = Math.sqrt(biases.reduce((sum, b) => sum + Math.pow(b - avgBias, 2), 0) / biases.length);
+                    
+                    return {
+                        avgMean: avgMean.toFixed(2),
+                        avgBias: avgBias.toFixed(2),
+                        avgStdDev: avgStdDev.toFixed(2),
+                        biasVariability: biasVariability.toFixed(2)
+                    };
+                });
+                
+                // 渲染 KaTeX
+                const renderKaTeX = () => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            if (typeof renderMathInElement !== 'undefined') {
+                                const container = document.getElementById('app');
+                                if (container) {
+                                    renderMathInElement(container, {
+                                        delimiters: [
+                                            { left: '$$', right: '$$', display: true },
+                                            { left: '$', right: '$', display: false },
+                                            { left: '\\[', right: '\\]', display: true },
+                                            { left: '\\(', right: '\\)', display: false }
+                                        ],
+                                        throwOnError: false
+                                    });
+                                }
+                            }
+                        }, 100);
+                    });
+                };
+                
+                // 监听变化
+                watch([populationSize, sampleSize, samplingMethod, numStrata, clusterSize], () => {
+                    currentSample.value = [];
+                    sampleResults.value = [];
+                });
+                
+                watch([sampleResults], () => {
+                    nextTick(() => {
+                        drawComparisonChart();
+                    });
+                });
+                
+                onMounted(() => {
+                    generatePopulation();
+                    
+                    // 初始化图表
+                    setTimeout(() => {
+                        const container = document.getElementById('comparison-chart');
+                        if (container && typeof Konva !== 'undefined') {
+                            chartStage.value = new Konva.Stage({
+                                container: 'comparison-chart',
+                                width: container.offsetWidth,
+                                height: 300
+                            });
+                            chartLayer.value = new Konva.Layer();
+                            chartStage.value.add(chartLayer.value);
+                        }
+                        
+                        renderKaTeX();
+                        
+                        if (window.gsap) {
+                            gsap.from('.section', { opacity: 0, y: 20, duration: 0.6, stagger: 0.1 });
+                        }
+                    }, 200);
+                });
+                
+                return {
+                    populationSize,
+                    population,
+                    sampleSize,
+                    samplingMethod,
+                    numStrata,
+                    clusterSize,
+                    currentSample,
+                    sampleResults,
+                    numSimulations,
+                    populationStats,
+                    sampleStats,
+                    comparisonStats,
+                    generatePopulation,
+                    performSampling,
+                    runSimulations
+                };
+            },
+            template: `
+            <div class="container">
+                <h1>总体与样本</h1>
+                <p class="subtitle">学习抽样调查的基本概念，掌握不同抽样方法，理解偏差和变异性的影响</p>
+                
+                <div class="section">
+                    <h2>一、基本概念</h2>
+                    <div class="concept-grid">
+                        <div class="concept-card">
+                            <h3>总体</h3>
+                            <p>所要考察对象的全体叫做<strong>总体</strong>。</p>
+                            <p>总体中的每一个考察对象叫做<strong>个体</strong>。</p>
+                            <p>例如：要了解全校1000名学生的平均身高，总体就是这1000名学生。</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>样本</h3>
+                            <p>从总体中抽取的一部分个体叫做总体的一个<strong>样本</strong>。</p>
+                            <p>样本中个体的数目叫做<strong>样本容量</strong>。</p>
+                            <p>例如：从1000名学生中抽取50名进行调查，这50名学生就是一个样本，样本容量是50。</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>抽样偏差</h3>
+                            <p>样本统计量与总体参数之间的差异叫做<strong>抽样偏差</strong>。</p>
+                            <p>偏差越小，样本对总体的代表性越好。</p>
+                            <p>偏差 $= \\bar{x} - \\mu$</p>
+                            <p>其中 $\\bar{x}$ 是样本均值，$\\mu$ 是总体均值。</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>样本变异性</h3>
+                            <p>不同样本得到的统计量之间的差异叫做<strong>样本变异性</strong>。</p>
+                            <p>变异性反映了抽样结果的不确定性。</p>
+                            <p>可以通过多次抽样来观察变异性的影响。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>二、抽样方法</h2>
+                    <div class="concept-grid">
+                        <div class="concept-card">
+                            <h3>简单随机抽样</h3>
+                            <p>每个个体被抽到的概率相等，采用随机方法抽取样本。</p>
+                            <p><strong>优点：</strong>无偏差，实施简单</p>
+                            <p><strong>缺点：</strong>总体较大时成本高</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>系统抽样</h3>
+                            <p>按照固定的间隔从总体中抽取样本。</p>
+                            <p><strong>优点：</strong>操作简单，分布均匀</p>
+                            <p><strong>缺点：</strong>如果总体有周期性，可能产生偏差</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>分层抽样</h3>
+                            <p>将总体分成若干层，从每层中按比例抽取样本。</p>
+                            <p><strong>优点：</strong>能保证各层的代表性</p>
+                            <p><strong>缺点：</strong>需要了解总体的分层情况</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>整群抽样</h3>
+                            <p>将总体分成若干群，随机选择几个群，对选中群的所有个体进行调查。</p>
+                            <p><strong>优点：</strong>实施方便，成本低</p>
+                            <p><strong>缺点：</strong>群内差异小，群间差异大时可能产生偏差</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>三、抽样模拟器</h2>
+                    <div class="demo-panel">
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">总体与抽样设置</h3>
+                            
+                            <div class="control-group">
+                                <label>总体大小</label>
+                                <input type="number" v-model.number="populationSize" min="20" max="200" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>样本容量</label>
+                                <input type="number" v-model.number="sampleSize" min="5" max="50" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>抽样方法</label>
+                                <select v-model="samplingMethod">
+                                    <option value="simple">简单随机抽样</option>
+                                    <option value="systematic">系统抽样</option>
+                                    <option value="stratified">分层抽样</option>
+                                    <option value="cluster">整群抽样</option>
+                                </select>
+                            </div>
+                            
+                            <div v-if="samplingMethod === 'stratified'" class="control-group">
+                                <label>分层数量</label>
+                                <input type="number" v-model.number="numStrata" min="2" max="10" />
+                            </div>
+                            
+                            <div v-if="samplingMethod === 'cluster'" class="control-group">
+                                <label>每群大小</label>
+                                <input type="number" v-model.number="clusterSize" min="3" max="20" />
+                            </div>
+                            
+                            <button class="btn" @click="generatePopulation">生成总体</button>
+                            <button class="btn" @click="performSampling">执行抽样</button>
+                        </div>
+                        
+                        <div class="stat-display">
+                            <div class="stat-card">
+                                <h4>总体均值</h4>
+                                <div class="value">{{ populationStats.mean }}</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>样本均值</h4>
+                                <div class="value">{{ sampleStats.mean }}</div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>抽样偏差</h4>
+                                <div class="value" :style="{ color: Math.abs(parseFloat(sampleStats.bias)) > 2 ? '#dc3545' : '#28a745' }">
+                                    {{ sampleStats.bias }}
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <h4>样本标准差</h4>
+                                <div class="value">{{ sampleStats.stdDev }}</div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="currentSample.length > 0" class="sample-display">
+                            <h4 style="color: #667eea; margin-bottom: 15px;">当前样本（共 {{ currentSample.length }} 个）：</h4>
+                            <div>
+                                <span v-for="(item, index) in currentSample" :key="index" class="sample-item selected">
+                                    ID: {{ item.id }} (值: {{ item.value }})
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>四、抽样方法对比</h2>
+                    <div class="demo-panel">
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">多次模拟对比</h3>
+                            
+                            <div class="control-group">
+                                <label>模拟次数</label>
+                                <input type="number" v-model.number="numSimulations" min="5" max="50" />
+                            </div>
+                            
+                            <button class="btn" @click="runSimulations">运行模拟</button>
+                            
+                            <div class="info-box" style="margin-top: 15px;">
+                                <strong>说明：</strong>运行多次抽样模拟，观察不同抽样方法在偏差和变异性方面的差异。
+                                图表中红色虚线表示总体均值，蓝色点表示每次抽样的样本均值。
+                            </div>
+                        </div>
+                        
+                        <div v-if="sampleResults.length > 0">
+                            <div class="chart-container">
+                                <div id="comparison-chart"></div>
+                            </div>
+                            
+                            <div v-if="comparisonStats" class="stat-display" style="margin-top: 20px;">
+                                <div class="stat-card">
+                                    <h4>平均样本均值</h4>
+                                    <div class="value">{{ comparisonStats.avgMean }}</div>
+                                </div>
+                                <div class="stat-card">
+                                    <h4>平均偏差</h4>
+                                    <div class="value" :style="{ color: Math.abs(parseFloat(comparisonStats.avgBias)) > 1 ? '#dc3545' : '#28a745' }">
+                                        {{ comparisonStats.avgBias }}
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <h4>平均标准差</h4>
+                                    <div class="value">{{ comparisonStats.avgStdDev }}</div>
+                                </div>
+                                <div class="stat-card">
+                                    <h4>偏差变异性</h4>
+                                    <div class="value">{{ comparisonStats.biasVariability }}</div>
+                                </div>
+                            </div>
+                            
+                            <table class="comparison-table" style="margin-top: 20px;">
+                                <thead>
+                                    <tr>
+                                        <th>抽样次数</th>
+                                        <th>样本均值</th>
+                                        <th>标准差</th>
+                                        <th>偏差</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(result, index) in sampleResults" :key="index">
+                                        <td>第 {{ index + 1 }} 次</td>
+                                        <td>{{ result.mean.toFixed(2) }}</td>
+                                        <td>{{ result.stdDev.toFixed(2) }}</td>
+                                        <td :style="{ color: Math.abs(result.bias) > 2 ? '#dc3545' : '#28a745' }">
+                                            {{ result.bias > 0 ? '+' : '' }}{{ result.bias.toFixed(2) }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

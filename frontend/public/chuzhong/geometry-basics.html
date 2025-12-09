@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>几何基础 - 初中数学教学</title>
+    <meta name="description" content="学习几何的基本概念，理解点、线、射线和角的概念，掌握角的分类和测量方法，学习使用量角器测量角度，理解余角和补角的关系。">
+    <meta name="keywords" content="几何,点,线,射线,角,角的分类,量角器,角度测量,余角,补角,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .canvas-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .info-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .info-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .info-item strong {
+            color: #667eea;
+            margin-right: 10px;
+        }
+        
+        .protractor-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .protractor-wrapper {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .practice-area {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .practice-question {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .practice-question.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .practice-question.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+            margin: 10px;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        createApp({
+            setup() {
+                // 角度构建
+                const angleStage = ref(null);
+                const angleLayer = ref(null);
+                const ray1Angle = ref(30);  // 第一条射线的角度（度）
+                const ray2Angle = ref(150); // 第二条射线的角度（度）
+                const measuredAngle = ref(0);
+                
+                // 量角器
+                const protractorStage = ref(null);
+                const protractorLayer = ref(null);
+                const protractorAngle = ref(45); // 量角器测量的角度
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    {
+                        id: 1,
+                        question: '一个角的度数是 30°，它的余角是多少度？',
+                        answer: '60',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 2,
+                        question: '一个角的度数是 120°，它的补角是多少度？',
+                        answer: '60',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        question: '锐角的度数范围是？',
+                        answer: '0°到90°',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        question: '直角的度数是多少？',
+                        answer: '90',
+                        userAnswer: '',
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        question: '平角的度数是多少？',
+                        answer: '180',
+                        userAnswer: '',
+                        correct: null
+                    }
+                ]);
+                
+                // 计算角度
+                const angle = computed(() => {
+                    let diff = Math.abs(ray2Angle.value - ray1Angle.value);
+                    if (diff > 180) {
+                        diff = 360 - diff;
+                    }
+                    return diff;
+                });
+                
+                // 角度分类
+                const angleType = computed(() => {
+                    const a = angle.value;
+                    if (a === 0) return '零角';
+                    if (a < 90) return '锐角';
+                    if (a === 90) return '直角';
+                    if (a < 180) return '钝角';
+                    if (a === 180) return '平角';
+                    if (a < 360) return '优角';
+                    return '周角';
+                });
+                
+                // 余角
+                const complementaryAngle = computed(() => {
+                    if (angle.value < 90) {
+                        return 90 - angle.value;
+                    }
+                    return null;
+                });
+                
+                // 补角
+                const supplementaryAngle = computed(() => {
+                    if (angle.value < 180) {
+                        return 180 - angle.value;
+                    }
+                    return null;
+                });
+                
+                // 绘制角度构建画布
+                function drawAngleCanvas() {
+                    if (!angleLayer.value) return;
+                    
+                    // 清除旧的射线和标签，保留坐标轴
+                    const oldRay1 = angleLayer.value.findOne('.ray1-group');
+                    if (oldRay1) oldRay1.destroy();
+                    const oldRay2 = angleLayer.value.findOne('.ray2-group');
+                    if (oldRay2) oldRay2.destroy();
+                    const oldArc = angleLayer.value.findOne('.arc');
+                    if (oldArc) oldArc.destroy();
+                    const oldAngleLabel = angleLayer.value.findOne('.angleLabel');
+                    if (oldAngleLabel) oldAngleLabel.destroy();
+                    const oldVertex = angleLayer.value.findOne('.vertex');
+                    if (oldVertex) oldVertex.destroy();
+                    
+                    const width = angleStage.value.width();
+                    const height = angleStage.value.height();
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const radius = 200;
+                    
+                    // 绘制坐标轴（只在第一次绘制）
+                    if (!angleLayer.value.findOne('.axis-x')) {
+                        const xAxis = new Konva.Line({
+                            points: [0, centerY, width, centerY],
+                            stroke: '#ccc',
+                            strokeWidth: 1,
+                            dash: [5, 5],
+                            name: 'axis-x'
+                        });
+                        angleLayer.value.add(xAxis);
+                        
+                        const yAxis = new Konva.Line({
+                            points: [centerX, 0, centerX, height],
+                            stroke: '#ccc',
+                            strokeWidth: 1,
+                            dash: [5, 5],
+                            name: 'axis-y'
+                        });
+                        angleLayer.value.add(yAxis);
+                    }
+                    
+                    // 绘制第一条射线（可拖拽的控制点）
+                    const angle1Rad = (ray1Angle.value - 90) * Math.PI / 180;
+                    const ray1EndX = centerX + radius * Math.cos(angle1Rad);
+                    const ray1EndY = centerY + radius * Math.sin(angle1Rad);
+                    
+                    const ray1Group = new Konva.Group({
+                        name: 'ray1-group'
+                    });
+                    
+                    const ray1 = new Konva.Arrow({
+                        points: [centerX, centerY, ray1EndX, ray1EndY],
+                        pointerLength: 15,
+                        pointerWidth: 10,
+                        fill: '#667eea',
+                        stroke: '#667eea',
+                        strokeWidth: 3,
+                        name: 'ray1'
+                    });
+                    ray1Group.add(ray1);
+                    
+                    // 第一条射线的可拖拽控制点
+                    const control1 = new Konva.Circle({
+                        x: ray1EndX,
+                        y: ray1EndY,
+                        radius: 10,
+                        fill: '#667eea',
+                        stroke: '#fff',
+                        strokeWidth: 2,
+                        name: 'control1',
+                        draggable: true,
+                        shadowBlur: 5,
+                        shadowColor: '#667eea'
+                    });
+                    
+                    control1.on('dragmove', function() {
+                        const pos = this.position();
+                        const dx = pos.x - centerX;
+                        const dy = pos.y - centerY;
+                        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                        const normalizedAngle = (angle + 90 + 360) % 360;
+                        ray1Angle.value = normalizedAngle;
+                    });
+                    
+                    control1.on('mouseenter', function() {
+                        document.body.style.cursor = 'pointer';
+                        this.scale({ x: 1.3, y: 1.3 });
+                    });
+                    
+                    control1.on('mouseleave', function() {
+                        document.body.style.cursor = 'default';
+                        this.scale({ x: 1, y: 1 });
+                    });
+                    
+                    ray1Group.add(control1);
+                    
+                    // 第一条射线的标签
+                    const label1X = centerX + (radius + 30) * Math.cos(angle1Rad);
+                    const label1Y = centerY + (radius + 30) * Math.sin(angle1Rad);
+                    const label1 = new Konva.Text({
+                        x: label1X - 20,
+                        y: label1Y - 10,
+                        text: '射线1',
+                        fontSize: 14,
+                        fill: '#667eea',
+                        fontStyle: 'bold',
+                        name: 'label1'
+                    });
+                    ray1Group.add(label1);
+                    
+                    angleLayer.value.add(ray1Group);
+                    
+                    // 绘制第二条射线（可拖拽的控制点）
+                    const angle2Rad = (ray2Angle.value - 90) * Math.PI / 180;
+                    const ray2EndX = centerX + radius * Math.cos(angle2Rad);
+                    const ray2EndY = centerY + radius * Math.sin(angle2Rad);
+                    
+                    const ray2Group = new Konva.Group({
+                        name: 'ray2-group'
+                    });
+                    
+                    const ray2 = new Konva.Arrow({
+                        points: [centerX, centerY, ray2EndX, ray2EndY],
+                        pointerLength: 15,
+                        pointerWidth: 10,
+                        fill: '#4caf50',
+                        stroke: '#4caf50',
+                        strokeWidth: 3,
+                        name: 'ray2'
+                    });
+                    ray2Group.add(ray2);
+                    
+                    // 第二条射线的可拖拽控制点
+                    const control2 = new Konva.Circle({
+                        x: ray2EndX,
+                        y: ray2EndY,
+                        radius: 10,
+                        fill: '#4caf50',
+                        stroke: '#fff',
+                        strokeWidth: 2,
+                        name: 'control2',
+                        draggable: true,
+                        shadowBlur: 5,
+                        shadowColor: '#4caf50'
+                    });
+                    
+                    control2.on('dragmove', function() {
+                        const pos = this.position();
+                        const dx = pos.x - centerX;
+                        const dy = pos.y - centerY;
+                        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                        const normalizedAngle = (angle + 90 + 360) % 360;
+                        ray2Angle.value = normalizedAngle;
+                    });
+                    
+                    control2.on('mouseenter', function() {
+                        document.body.style.cursor = 'pointer';
+                        this.scale({ x: 1.3, y: 1.3 });
+                    });
+                    
+                    control2.on('mouseleave', function() {
+                        document.body.style.cursor = 'default';
+                        this.scale({ x: 1, y: 1 });
+                    });
+                    
+                    ray2Group.add(control2);
+                    
+                    // 第二条射线的标签
+                    const label2X = centerX + (radius + 30) * Math.cos(angle2Rad);
+                    const label2Y = centerY + (radius + 30) * Math.sin(angle2Rad);
+                    const label2 = new Konva.Text({
+                        x: label2X - 20,
+                        y: label2Y - 10,
+                        text: '射线2',
+                        fontSize: 14,
+                        fill: '#4caf50',
+                        fontStyle: 'bold',
+                        name: 'label2'
+                    });
+                    ray2Group.add(label2);
+                    
+                    angleLayer.value.add(ray2Group);
+                    
+                    // 绘制角度弧
+                    const arcRadius = 80;
+                    const startAngle = Math.min(ray1Angle.value, ray2Angle.value);
+                    const endAngle = Math.max(ray1Angle.value, ray2Angle.value);
+                    const angleDiff = endAngle - startAngle;
+                    
+                    // 绘制角度弧线
+                    const arcPoints = [];
+                    const steps = 30;
+                    for (let i = 0; i <= steps; i++) {
+                        const currentAngle = startAngle + (angleDiff * i / steps);
+                        const rad = (currentAngle - 90) * Math.PI / 180;
+                        const x = centerX + arcRadius * Math.cos(rad);
+                        const y = centerY + arcRadius * Math.sin(rad);
+                        arcPoints.push(x, y);
+                    }
+                    
+                    const arc = new Konva.Line({
+                        points: arcPoints,
+                        stroke: '#ff5722',
+                        strokeWidth: 2,
+                        name: 'arc'
+                    });
+                    angleLayer.value.add(arc);
+                    
+                    // 角度标签
+                    const labelAngle = (startAngle + endAngle) / 2;
+                    const labelRad = (labelAngle - 90) * Math.PI / 180;
+                    const labelX = centerX + (arcRadius + 20) * Math.cos(labelRad);
+                    const labelY = centerY + (arcRadius + 20) * Math.sin(labelRad);
+                    
+                    const angleLabel = new Konva.Text({
+                        x: labelX - 30,
+                        y: labelY - 10,
+                        text: angle.value.toFixed(1) + '°',
+                        fontSize: 18,
+                        fill: '#ff5722',
+                        fontStyle: 'bold',
+                        padding: 5,
+                        background: 'rgba(255,255,255,0.9)',
+                        cornerRadius: 5,
+                        name: 'angleLabel'
+                    });
+                    angleLayer.value.add(angleLabel);
+                    
+                    // 顶点标记
+                    const vertex = new Konva.Circle({
+                        x: centerX,
+                        y: centerY,
+                        radius: 6,
+                        fill: '#f57c00',
+                        stroke: '#fff',
+                        strokeWidth: 2,
+                        name: 'vertex'
+                    });
+                    angleLayer.value.add(vertex);
+                    
+                    angleLayer.value.draw();
+                }
+                
+                // 更新射线位置（不重新绘制整个画布）
+                function updateRayOnly() {
+                    if (!angleLayer.value) return;
+                    
+                    const width = angleStage.value.width();
+                    const height = angleStage.value.height();
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const radius = 200;
+                    
+                    // 更新第一条射线
+                    const ray1Group = angleLayer.value.findOne('.ray1-group');
+                    if (ray1Group) {
+                        const angle1Rad = (ray1Angle.value - 90) * Math.PI / 180;
+                        const ray1EndX = centerX + radius * Math.cos(angle1Rad);
+                        const ray1EndY = centerY + radius * Math.sin(angle1Rad);
+                        
+                        const ray1 = ray1Group.findOne('.ray1');
+                        if (ray1) {
+                            ray1.points([centerX, centerY, ray1EndX, ray1EndY]);
+                        }
+                        
+                        const control1 = ray1Group.findOne('.control1');
+                        if (control1) {
+                            control1.position({ x: ray1EndX, y: ray1EndY });
+                        }
+                        
+                        const label1 = ray1Group.findOne('.label1');
+                        if (label1) {
+                            label1.position({
+                                x: centerX + (radius + 30) * Math.cos(angle1Rad) - 20,
+                                y: centerY + (radius + 30) * Math.sin(angle1Rad) - 10
+                            });
+                        }
+                    }
+                    
+                    // 更新第二条射线
+                    const ray2Group = angleLayer.value.findOne('.ray2-group');
+                    if (ray2Group) {
+                        const angle2Rad = (ray2Angle.value - 90) * Math.PI / 180;
+                        const ray2EndX = centerX + radius * Math.cos(angle2Rad);
+                        const ray2EndY = centerY + radius * Math.sin(angle2Rad);
+                        
+                        const ray2 = ray2Group.findOne('.ray2');
+                        if (ray2) {
+                            ray2.points([centerX, centerY, ray2EndX, ray2EndY]);
+                        }
+                        
+                        const control2 = ray2Group.findOne('.control2');
+                        if (control2) {
+                            control2.position({ x: ray2EndX, y: ray2EndY });
+                        }
+                        
+                        const label2 = ray2Group.findOne('.label2');
+                        if (label2) {
+                            label2.position({
+                                x: centerX + (radius + 30) * Math.cos(angle2Rad) - 20,
+                                y: centerY + (radius + 30) * Math.sin(angle2Rad) - 10
+                            });
+                        }
+                    }
+                    
+                    // 更新角度弧
+                    const arc = angleLayer.value.findOne('.arc');
+                    if (arc) {
+                        const arcRadius = 80;
+                        const startAngle = Math.min(ray1Angle.value, ray2Angle.value);
+                        const endAngle = Math.max(ray1Angle.value, ray2Angle.value);
+                        const angleDiff = endAngle - startAngle;
+                        
+                        const arcPoints = [];
+                        const steps = 30;
+                        for (let i = 0; i <= steps; i++) {
+                            const currentAngle = startAngle + (angleDiff * i / steps);
+                            const rad = (currentAngle - 90) * Math.PI / 180;
+                            const x = centerX + arcRadius * Math.cos(rad);
+                            const y = centerY + arcRadius * Math.sin(rad);
+                            arcPoints.push(x, y);
+                        }
+                        arc.points(arcPoints);
+                    }
+                    
+                    // 更新角度标签
+                    const angleLabel = angleLayer.value.findOne('.angleLabel');
+                    if (angleLabel) {
+                        const arcRadius = 80;
+                        const startAngle = Math.min(ray1Angle.value, ray2Angle.value);
+                        const endAngle = Math.max(ray1Angle.value, ray2Angle.value);
+                        const labelAngle = (startAngle + endAngle) / 2;
+                        const labelRad = (labelAngle - 90) * Math.PI / 180;
+                        const labelX = centerX + (arcRadius + 20) * Math.cos(labelRad);
+                        const labelY = centerY + (arcRadius + 20) * Math.sin(labelRad);
+                        
+                        angleLabel.position({ x: labelX - 30, y: labelY - 10 });
+                        angleLabel.text(angle.value.toFixed(1) + '°');
+                    }
+                    
+                    angleLayer.value.batchDraw();
+                }
+                
+                // 绘制量角器
+                function drawProtractor() {
+                    if (!protractorLayer.value) return;
+                    
+                    protractorLayer.value.destroyChildren();
+                    
+                    const width = protractorStage.value.width();
+                    const height = protractorStage.value.height();
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const radius = 180;
+                    
+                    // 绘制半圆形量角器
+                    const protractorPoints = [centerX, centerY];
+                    for (let i = 0; i <= 180; i += 1) {
+                        const rad = (i - 90) * Math.PI / 180;
+                        const x = centerX + radius * Math.cos(rad);
+                        const y = centerY + radius * Math.sin(rad);
+                        protractorPoints.push(x, y);
+                    }
+                    protractorPoints.push(centerX, centerY);
+                    
+                    const protractor = new Konva.Shape({
+                        sceneFunc: function(context) {
+                            context.beginPath();
+                            context.moveTo(centerX, centerY);
+                            context.arc(centerX, centerY, radius, -Math.PI / 2, Math.PI / 2, false);
+                            context.closePath();
+                            context.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                            context.fill();
+                            context.strokeStyle = '#333';
+                            context.lineWidth = 2;
+                            context.stroke();
+                        },
+                        name: 'protractor'
+                    });
+                    protractorLayer.value.add(protractor);
+                    
+                    // 绘制刻度线
+                    for (let i = 0; i <= 180; i += 10) {
+                        const rad = (i - 90) * Math.PI / 180;
+                        const startX = centerX + (radius - 20) * Math.cos(rad);
+                        const startY = centerY + (radius - 20) * Math.sin(rad);
+                        const endX = centerX + radius * Math.cos(rad);
+                        const endY = centerY + radius * Math.sin(rad);
+                        
+                        const tick = new Konva.Line({
+                            points: [startX, startY, endX, endY],
+                            stroke: '#333',
+                            strokeWidth: i % 90 === 0 ? 3 : 1,
+                            name: 'tick'
+                        });
+                        protractorLayer.value.add(tick);
+                        
+                        // 刻度标签
+                        if (i % 10 === 0) {
+                            const labelX = centerX + (radius - 35) * Math.cos(rad);
+                            const labelY = centerY + (radius - 35) * Math.sin(rad);
+                            const label = new Konva.Text({
+                                x: labelX - 10,
+                                y: labelY - 8,
+                                text: i.toString(),
+                                fontSize: 12,
+                                fill: '#333',
+                                name: 'tickLabel'
+                            });
+                            protractorLayer.value.add(label);
+                        }
+                    }
+                    
+                    // 绘制测量线
+                    const measureRad = (protractorAngle.value - 90) * Math.PI / 180;
+                    const measureEndX = centerX + radius * Math.cos(measureRad);
+                    const measureEndY = centerY + radius * Math.sin(measureRad);
+                    
+                    const measureLine = new Konva.Line({
+                        points: [centerX, centerY, measureEndX, measureEndY],
+                        stroke: '#ff5722',
+                        strokeWidth: 3,
+                        dash: [10, 5],
+                        name: 'measureLine'
+                    });
+                    protractorLayer.value.add(measureLine);
+                    
+                    // 角度标签
+                    const labelX = centerX + (radius + 30) * Math.cos(measureRad);
+                    const labelY = centerY + (radius + 30) * Math.sin(measureRad);
+                    const angleLabel = new Konva.Text({
+                        x: labelX - 30,
+                        y: labelY - 10,
+                        text: protractorAngle.value.toFixed(1) + '°',
+                        fontSize: 18,
+                        fill: '#ff5722',
+                        fontStyle: 'bold',
+                        padding: 5,
+                        background: 'rgba(255,255,255,0.9)',
+                        cornerRadius: 5,
+                        name: 'angleLabel'
+                    });
+                    protractorLayer.value.add(angleLabel);
+                    
+                    // 中心点
+                    const center = new Konva.Circle({
+                        x: centerX,
+                        y: centerY,
+                        radius: 5,
+                        fill: '#f57c00',
+                        stroke: '#fff',
+                        strokeWidth: 2,
+                        name: 'center'
+                    });
+                    protractorLayer.value.add(center);
+                    
+                    protractorLayer.value.draw();
+                }
+                
+                // 初始化角度画布
+                function initAngleCanvas() {
+                    const container = document.getElementById('angle-canvas');
+                    if (!container || angleStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 600;
+                    
+                    angleStage.value = new Konva.Stage({
+                        container: 'angle-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    angleLayer.value = new Konva.Layer();
+                    angleStage.value.add(angleLayer.value);
+                    
+                    drawAngleCanvas();
+                }
+                
+                // 初始化量角器画布
+                function initProtractorCanvas() {
+                    const container = document.getElementById('protractor-canvas');
+                    if (!container || protractorStage.value) return;
+                    
+                    const width = container.offsetWidth;
+                    const height = 500;
+                    
+                    protractorStage.value = new Konva.Stage({
+                        container: 'protractor-canvas',
+                        width: width,
+                        height: height
+                    });
+                    
+                    protractorLayer.value = new Konva.Layer();
+                    protractorStage.value.add(protractorLayer.value);
+                    
+                    drawProtractor();
+                }
+                
+                // 检查练习答案
+                function checkAnswer(question) {
+                    const userAns = question.userAnswer.trim().toLowerCase().replace(/\s+/g, '');
+                    const correctAns = question.answer.trim().toLowerCase().replace(/\s+/g, '');
+                    question.correct = userAns === correctAns;
+                }
+                
+                // 计算得分
+                const score = computed(() => {
+                    if (!practiceQuestions.value || practiceQuestions.value.length === 0) {
+                        return { correct: 0, total: 0 };
+                    }
+                    const total = practiceQuestions.value.length;
+                    const correct = practiceQuestions.value.filter(q => q.correct === true).length;
+                    return { correct, total };
+                });
+                
+                // 监听角度变化（使用防抖优化性能）
+                let updateTimer = null;
+                Vue.watch([ray1Angle, ray2Angle], () => {
+                    if (angleLayer.value) {
+                        // 如果已经有射线，只更新位置
+                        if (angleLayer.value.findOne('.ray1-group')) {
+                            if (updateTimer) clearTimeout(updateTimer);
+                            updateTimer = setTimeout(() => {
+                                updateRayOnly();
+                            }, 10);
+                        } else {
+                            drawAngleCanvas();
+                        }
+                    }
+                });
+                
+                Vue.watch(protractorAngle, () => {
+                    if (protractorLayer.value) {
+                        drawProtractor();
+                    }
+                });
+                
+                onMounted(() => {
+                    nextTick(() => {
+                        initAngleCanvas();
+                        initProtractorCanvas();
+                        
+                        // 监听窗口大小变化
+                        window.addEventListener('resize', () => {
+                            if (angleStage.value) {
+                                const container = document.getElementById('angle-canvas');
+                                if (container) {
+                                    angleStage.value.width(container.offsetWidth);
+                                    drawAngleCanvas();
+                                }
+                            }
+                            if (protractorStage.value) {
+                                const container = document.getElementById('protractor-canvas');
+                                if (container) {
+                                    protractorStage.value.width(container.offsetWidth);
+                                    drawProtractor();
+                                }
+                            }
+                        });
+                        
+                        // 自动渲染 KaTeX
+                        nextTick(() => {
+                            setTimeout(() => {
+                                if (typeof renderMathInElement !== 'undefined') {
+                                    try {
+                                        renderMathInElement(document.body, {
+                                            delimiters: [
+                                                {left: '$$', right: '$$', display: true},
+                                                {left: '$', right: '$', display: false},
+                                                {left: '\\[', right: '\\]', display: true},
+                                                {left: '\\(', right: '\\)', display: false}
+                                            ],
+                                            throwOnError: false
+                                        });
+                                    } catch (e) {
+                                        console.error('KaTeX 渲染错误:', e);
+                                    }
+                                }
+                            }, 100);
+                        });
+                    });
+                });
+                
+                return {
+                    ray1Angle,
+                    ray2Angle,
+                    angle,
+                    angleType,
+                    complementaryAngle,
+                    supplementaryAngle,
+                    protractorAngle,
+                    practiceQuestions,
+                    score,
+                    checkAnswer
+                };
+            },
+            template: `
+                <div class="container">
+                    <h1>📐 几何基础</h1>
+                    <p class="subtitle">探索点、线、角和量角器</p>
+                    
+                    <!-- 基本概念 -->
+                    <div class="section">
+                        <h2>📚 基本概念</h2>
+                        <div class="concept-grid">
+                            <div class="concept-card">
+                                <h3>点</h3>
+                                <p>点是最基本的几何元素，没有大小，只有位置</p>
+                                <p style="margin-top: 10px; color: #666;">用大写字母表示，如：点 A、点 B</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>线</h3>
+                                <p>线是由无数个点组成的，没有宽度，只有长度</p>
+                                <p style="margin-top: 10px; color: #666;">直线：两端无限延伸</p>
+                                <p style="color: #666;">线段：有两个端点</p>
+                                <p style="color: #666;">射线：有一个端点，另一端无限延伸</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>角</h3>
+                                <p>角是由两条射线从同一点出发形成的图形</p>
+                                <p style="margin-top: 10px; color: #666;">顶点：两条射线的公共端点</p>
+                                <p style="color: #666;">边：组成角的两条射线</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>角的分类</h3>
+                                <p>锐角：0° < 角 < 90°</p>
+                                <p>直角：角 = 90°</p>
+                                <p>钝角：90° < 角 < 180°</p>
+                                <p>平角：角 = 180°</p>
+                                <p>优角：180° < 角 < 360°</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 角度构建 -->
+                    <div class="section">
+                        <h2>🔧 构建角度</h2>
+                        <div class="canvas-container">
+                            <div class="controls">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <label style="font-weight: bold; color: #667eea;">射线1角度：</label>
+                                    <input type="range" v-model.number="ray1Angle" min="0" max="360" step="1" style="width: 200px;">
+                                    <span style="min-width: 60px; text-align: center; padding: 5px 10px; background: #e3f2fd; border-radius: 5px; font-weight: bold; color: #1976d2;">{{ ray1Angle }}°</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <label style="font-weight: bold; color: #4caf50;">射线2角度：</label>
+                                    <input type="range" v-model.number="ray2Angle" min="0" max="360" step="1" style="width: 200px;">
+                                    <span style="min-width: 60px; text-align: center; padding: 5px 10px; background: #e8f5e9; border-radius: 5px; font-weight: bold; color: #388e3c;">{{ ray2Angle }}°</span>
+                                </div>
+                            </div>
+                            
+                            <div id="angle-canvas" class="canvas-wrapper"></div>
+                            
+                            <div class="info-panel">
+                                <div class="info-item">
+                                    <strong>角度：</strong>{{ angle.toFixed(1) }}°
+                                </div>
+                                <div class="info-item">
+                                    <strong>角度类型：</strong>{{ angleType }}
+                                </div>
+                                <div class="info-item" v-if="complementaryAngle !== null">
+                                    <strong>余角：</strong>{{ complementaryAngle.toFixed(1) }}°
+                                    <small style="color: #666; margin-left: 10px;">（两个角的和为 90°）</small>
+                                </div>
+                                <div class="info-item" v-if="supplementaryAngle !== null">
+                                    <strong>补角：</strong>{{ supplementaryAngle.toFixed(1) }}°
+                                    <small style="color: #666; margin-left: 10px;">（两个角的和为 180°）</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 量角器 -->
+                    <div class="section">
+                        <h2>📏 量角器使用</h2>
+                        <div class="protractor-container">
+                            <h3>交互式量角器</h3>
+                            <p style="margin: 10px 0; color: #666;">拖动滑块调整角度，观察量角器上的刻度</p>
+                            
+                            <div class="controls">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <label style="font-weight: bold; color: #ff5722;">测量角度：</label>
+                                    <input type="range" v-model.number="protractorAngle" min="0" max="180" step="1" style="width: 300px;">
+                                    <span style="min-width: 80px; text-align: center; padding: 5px 15px; background: #fff3e0; border-radius: 5px; font-weight: bold; color: #f57c00; font-size: 18px;">{{ protractorAngle }}°</span>
+                                </div>
+                            </div>
+                            
+                            <div id="protractor-canvas" class="protractor-wrapper"></div>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 8px;">
+                                <h4 style="color: #f57c00; margin-bottom: 10px;">量角器使用步骤</h4>
+                                <ol style="line-height: 1.8; color: #666;">
+                                    <li>将量角器的中心点对准角的顶点</li>
+                                    <li>将量角器的零度刻度线对准角的一条边</li>
+                                    <li>读取另一条边对应的刻度，即为角的度数</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 余角和补角 -->
+                    <div class="section">
+                        <h2>🔗 余角和补角</h2>
+                        <div class="concept-grid">
+                            <div class="concept-card">
+                                <h3>余角</h3>
+                                <p>如果两个角的和等于 90°，那么这两个角互为余角</p>
+                                <p style="margin-top: 10px; color: #667eea; font-weight: bold;">
+                                    <span class="katex-static" data-formula="\\angle A + \\angle B = 90°"></span>
+                                </p>
+                                <p style="margin-top: 10px; color: #666;">例如：30° 和 60° 互为余角</p>
+                            </div>
+                            <div class="concept-card">
+                                <h3>补角</h3>
+                                <p>如果两个角的和等于 180°，那么这两个角互为补角</p>
+                                <p style="margin-top: 10px; color: #667eea; font-weight: bold;">
+                                    <span class="katex-static" data-formula="\\angle A + \\angle B = 180°"></span>
+                                </p>
+                                <p style="margin-top: 10px; color: #666;">例如：120° 和 60° 互为补角</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 练习 -->
+                    <div class="section">
+                        <h2>✏️ 练习</h2>
+                        <div class="practice-area">
+                            <div v-for="question in practiceQuestions" :key="question.id" 
+                                 :class="['practice-question', question.correct === true ? 'correct' : question.correct === false ? 'incorrect' : '']">
+                                <h3>{{ question.question }}</h3>
+                                <div class="controls">
+                                    <input type="text" v-model="question.userAnswer" class="answer-input" placeholder="输入答案">
+                                    <button class="btn" @click="checkAnswer(question)">检查</button>
+                                </div>
+                                <div v-if="question.correct === true" class="feedback correct">
+                                    ✓ 正确！
+                                </div>
+                                <div v-if="question.correct === false" class="feedback incorrect">
+                                    ✗ 错误，正确答案是：{{ question.answer }}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                                <h3 style="color: #1976d2;">得分：{{ score.correct }} / {{ score.total }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

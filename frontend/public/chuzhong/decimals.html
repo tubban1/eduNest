@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小数 - 初中数学教学</title>
+    <meta name="description" content="学习小数的基本概念，理解小数位值和进位规律，掌握小数加减法的对齐方法，学习小数乘除法的错位规律，了解循环小数的特点，理解百分比与小数的关系，通过动画和可视化工具直观理解小数运算。">
+    <meta name="keywords" content="小数,位值,进位,对齐,小数加减法,小数乘除法,循环小数,百分比,小数点,补零,移动小数点,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .decimal-display {
+            font-size: 2em;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .place-value {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .place-value-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 60px;
+        }
+        
+        .place-value-item .digit {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .place-value-item .label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .operation-board {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        #alignmentBoard, #operationBoard, #repeatingDecimalCanvas {
+            width: 100%;
+            min-width: 400px;
+            height: 300px;
+            min-height: 300px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: #f8f9fa;
+            display: block;
+            position: relative;
+        }
+        
+        .control-panel {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 80px;
+        }
+        
+        .control-group input {
+            padding: 8px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.1em;
+            width: 120px;
+            outline: none;
+        }
+        
+        .control-group input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .control-group select {
+            padding: 8px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.1em;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .btn {
+            padding: 10px 25px;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .step-display {
+            margin: 15px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .step-display h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .animation-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .decimal-animation {
+            font-size: 2.5em;
+            text-align: center;
+            padding: 30px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #667eea;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .exercise-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .question-item {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .question-item.correct {
+            border-left-color: #43e97b;
+            background: #e8f5e9;
+        }
+        
+        .question-item.incorrect {
+            border-left-color: #f5576c;
+            background: #ffebee;
+        }
+        
+        .question-text {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.2em;
+            width: 200px;
+            outline: none;
+        }
+        
+        .answer-input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .result-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .result-badge.correct {
+            background: #43e97b;
+            color: white;
+        }
+        
+        .result-badge.incorrect {
+            background: #f5576c;
+            color: white;
+        }
+        
+        .score-display {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .percentage-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .percentage-bar {
+            flex: 1;
+            height: 40px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .percentage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>小数</h1>
+            <p class="subtitle">探索小数的奥秘，掌握小数运算的规律</p>
+            
+            <!-- 一、基本概念 -->
+            <div class="section">
+                <h2>一、小数的基本概念</h2>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>小数位值</h3>
+                        <p>小数点的位置决定了每一位数字的值。</p>
+                        <div class="decimal-display">123.456</div>
+                        <div class="place-value">
+                            <div class="place-value-item">
+                                <div class="digit">1</div>
+                                <div class="label">百位</div>
+                            </div>
+                            <div class="place-value-item">
+                                <div class="digit">2</div>
+                                <div class="label">十位</div>
+                            </div>
+                            <div class="place-value-item">
+                                <div class="digit">3</div>
+                                <div class="label">个位</div>
+                            </div>
+                            <div class="place-value-item" style="background: #e3f2fd;">
+                                <div class="digit">.</div>
+                                <div class="label">小数点</div>
+                            </div>
+                            <div class="place-value-item">
+                                <div class="digit">4</div>
+                                <div class="label">十分位</div>
+                            </div>
+                            <div class="place-value-item">
+                                <div class="digit">5</div>
+                                <div class="label">百分位</div>
+                            </div>
+                            <div class="place-value-item">
+                                <div class="digit">6</div>
+                                <div class="label">千分位</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="concept-card">
+                        <h3>进位规律</h3>
+                        <p>当某一位达到10时，向前一位进1。</p>
+                        <div class="decimal-display">0.9 + 0.1 = 1.0</div>
+                        <p style="margin-top: 15px;">十分位：9 + 1 = 10，向个位进1</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>对齐加减法</h3>
+                        <p>小数加减法需要对齐小数点。</p>
+                        <div class="decimal-display" style="font-size: 1.5em;">
+                            <div>12.34</div>
+                            <div>+ 5.6</div>
+                            <div style="border-top: 2px solid #333; margin-top: 5px; padding-top: 5px;">17.94</div>
+                        </div>
+                        <p style="margin-top: 15px;">对齐小数点后，从右向左逐位计算</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 二、对齐板演示 -->
+            <div class="section">
+                <h2>二、对齐板演示</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    使用对齐板演示小数加减法的对齐过程，观察小数点对齐和补零的操作。
+                </p>
+                <div class="operation-board">
+                    <div class="control-panel">
+                        <div class="control-group">
+                            <label>被加数：</label>
+                            <input type="text" v-model="alignment.num1" @input="updateAlignment" placeholder="例如：12.34">
+                        </div>
+                        <div class="control-group">
+                            <label>加数：</label>
+                            <input type="text" v-model="alignment.num2" @input="updateAlignment" placeholder="例如：5.6">
+                        </div>
+                        <button class="btn" @click="animateAlignment">演示对齐动画</button>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <div id="alignmentBoard"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 三、小数运算 -->
+            <div class="section">
+                <h2>三、小数运算</h2>
+                
+                <!-- 加法 -->
+                <div class="operation-board">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">小数加法</h3>
+                    <div class="control-panel">
+                        <div class="control-group">
+                            <label>被加数：</label>
+                            <input type="text" v-model="addition.num1" @input="calculateAddition" placeholder="例如：12.34">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">+</span>
+                        <div class="control-group">
+                            <label>加数：</label>
+                            <input type="text" v-model="addition.num2" @input="calculateAddition" placeholder="例如：5.6">
+                        </div>
+                        <button class="btn" @click="animateAddition">演示运算</button>
+                    </div>
+                    <div v-if="additionResult.show" class="step-display">
+                        <h4>计算步骤：</h4>
+                        <div v-for="(step, index) in additionResult.steps" :key="index" style="margin: 10px 0;">
+                            <p>{{ step }}</p>
+                        </div>
+                        <div style="font-size: 1.3em; margin-top: 15px; font-weight: bold; color: #667eea;">
+                            结果：{{ additionResult.result }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 减法 -->
+                <div class="operation-board">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">小数减法</h3>
+                    <div class="control-panel">
+                        <div class="control-group">
+                            <label>被减数：</label>
+                            <input type="text" v-model="subtraction.num1" @input="calculateSubtraction" placeholder="例如：12.34">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">-</span>
+                        <div class="control-group">
+                            <label>减数：</label>
+                            <input type="text" v-model="subtraction.num2" @input="calculateSubtraction" placeholder="例如：5.6">
+                        </div>
+                        <button class="btn" @click="calculateSubtraction">计算</button>
+                    </div>
+                    <div v-if="subtractionResult.show" class="step-display">
+                        <h4>计算步骤：</h4>
+                        <div v-for="(step, index) in subtractionResult.steps" :key="index" style="margin: 10px 0;">
+                            <p>{{ step }}</p>
+                        </div>
+                        <div style="font-size: 1.3em; margin-top: 15px; font-weight: bold; color: #667eea;">
+                            结果：{{ subtractionResult.result }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 乘法 -->
+                <div class="operation-board">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">小数乘法（错位规律）</h3>
+                    <div class="info-box">
+                        <h3>📚 错位规律</h3>
+                        <p>小数乘法时，先按整数乘法计算，然后根据两个因数的小数位数之和，确定结果的小数位数。</p>
+                        <p>例如：1.2 × 0.3 = 0.36（1位小数 + 1位小数 = 2位小数）</p>
+                    </div>
+                    <div class="control-panel">
+                        <div class="control-group">
+                            <label>被乘数：</label>
+                            <input type="text" v-model="multiplication.num1" @input="calculateMultiplication" placeholder="例如：1.2">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">×</span>
+                        <div class="control-group">
+                            <label>乘数：</label>
+                            <input type="text" v-model="multiplication.num2" @input="calculateMultiplication" placeholder="例如：0.3">
+                        </div>
+                        <button class="btn" @click="animateMultiplication">演示错位</button>
+                    </div>
+                    <div v-if="multiplicationResult.show" class="step-display">
+                        <h4>计算步骤：</h4>
+                        <div v-for="(step, index) in multiplicationResult.steps" :key="index" style="margin: 10px 0;">
+                            <p>{{ step }}</p>
+                        </div>
+                        <div style="font-size: 1.3em; margin-top: 15px; font-weight: bold; color: #667eea;">
+                            结果：{{ multiplicationResult.result }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 除法 -->
+                <div class="operation-board">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">小数除法（移动小数点）</h3>
+                    <div class="info-box">
+                        <h3>📚 移动小数点规律</h3>
+                        <p>除以小数时，先将被除数和除数同时扩大相同的倍数，使除数变成整数，然后按整数除法计算。</p>
+                        <p>例如：12.6 ÷ 0.3 = 126 ÷ 3 = 42</p>
+                    </div>
+                    <div class="control-panel">
+                        <div class="control-group">
+                            <label>被除数：</label>
+                            <input type="text" v-model="division.num1" @input="calculateDivision" placeholder="例如：12.6">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">÷</span>
+                        <div class="control-group">
+                            <label>除数：</label>
+                            <input type="text" v-model="division.num2" @input="calculateDivision" placeholder="例如：0.3">
+                        </div>
+                        <button class="btn" @click="animateDivision">演示移动</button>
+                    </div>
+                    <div v-if="divisionResult.show" class="step-display">
+                        <h4>计算步骤：</h4>
+                        <div v-for="(step, index) in divisionResult.steps" :key="index" style="margin: 10px 0;">
+                            <p>{{ step }}</p>
+                        </div>
+                        <div style="font-size: 1.3em; margin-top: 15px; font-weight: bold; color: #667eea;">
+                            结果：{{ divisionResult.result }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 四、循环小数可视化 -->
+            <div class="section">
+                <h2>四、循环小数可视化</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    观察循环小数的循环节，理解循环小数的特点。
+                </p>
+                <div class="operation-board">
+                    <div class="control-panel">
+                        <div class="control-group">
+                            <label>分数：</label>
+                            <input type="text" v-model="repeatingDecimal.fraction" @input="updateRepeatingDecimal" placeholder="例如：1/3">
+                        </div>
+                        <button class="btn" @click="calculateRepeatingDecimal">计算循环小数</button>
+                    </div>
+                    <div v-if="repeatingDecimalResult.show" class="step-display">
+                        <h4>循环小数：</h4>
+                        <div class="decimal-display" style="font-size: 2em;">
+                            {{ repeatingDecimalResult.value }}
+                        </div>
+                        <p style="margin-top: 15px;">
+                            <strong>循环节：</strong>{{ repeatingDecimalResult.repeatingPart }}
+                        </p>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <div id="repeatingDecimalCanvas"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 五、百分比关系 -->
+            <div class="section">
+                <h2>五、百分比关系</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    理解小数与百分比的关系，掌握相互转换的方法。
+                </p>
+                <div class="operation-board">
+                    <div class="control-panel">
+                        <div class="control-group">
+                            <label>小数：</label>
+                            <input type="number" v-model.number="percentage.decimal" @input="updatePercentage" step="0.01" min="0" max="1" placeholder="0.0-1.0">
+                        </div>
+                        <span style="font-size: 1.5em; font-weight: bold;">=</span>
+                        <div class="control-group">
+                            <label>百分比：</label>
+                            <input type="number" v-model.number="percentage.percent" @input="updatePercentageFromPercent" step="0.1" min="0" max="100" placeholder="0-100">
+                            <span style="font-size: 1.2em; margin-left: 5px;">%</span>
+                        </div>
+                    </div>
+                    <div class="percentage-display">
+                        <div style="font-size: 1.5em; font-weight: bold; min-width: 150px;">
+                            {{ percentage.decimal }} = {{ percentage.percent }}%
+                        </div>
+                        <div class="percentage-bar">
+                            <div class="percentage-fill" :style="{ width: percentage.percent + '%' }">
+                                {{ percentage.percent }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 六、小练习 -->
+            <div class="section">
+                <h2>六、小练习</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    完成以下5道小数运算题，系统会自动评分。
+                </p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn" @click="generateQuestions">生成新题目</button>
+                    <button class="btn btn-secondary" @click="checkAllAnswers" style="margin-left: 10px;">提交答案</button>
+                </div>
+                <div class="exercise-section">
+                    <div v-for="(question, index) in questions" :key="index" class="question-item" :class="question.answered ? (question.correct ? 'correct' : 'incorrect') : ''">
+                        <div class="question-text">
+                            第 {{ index + 1 }} 题：{{ question.text }}
+                        </div>
+                        <div>
+                            <input 
+                                type="text" 
+                                class="answer-input" 
+                                v-model="question.userAnswer"
+                                :disabled="question.answered"
+                                @keypress.enter="checkAnswer(index)"
+                                placeholder="输入答案">
+                            <button class="btn" @click="checkAnswer(index)" :disabled="question.answered" style="margin-left: 10px; padding: 10px 20px;">
+                                提交
+                            </button>
+                            <span v-if="question.answered" class="result-badge" :class="question.correct ? 'correct' : 'incorrect'">
+                                {{ question.correct ? '✓ 正确' : '✗ 错误，正确答案：' + question.answer }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="score.show" class="score-display">
+                    得分：{{ score.correct }}/{{ score.total }} ({{ score.percentage }}%)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 库引用 -->
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva.js -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        // 等待所有库加载完成
+        function waitForLibraries(callback, maxAttempts) {
+            if (maxAttempts === undefined) {
+                maxAttempts = 50;
+            }
+            var attempts = 0;
+            var checkLibraries = function() {
+                attempts++;
+                if (typeof Vue !== 'undefined' && 
+                    typeof Konva !== 'undefined' && 
+                    typeof gsap !== 'undefined') {
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkLibraries, 100);
+                } else {
+                    if (typeof Vue !== 'undefined') {
+                        var app = document.querySelector('#app');
+                        if (app) {
+                            app.innerHTML = '<div class="error-message">库加载超时，请刷新页面重试</div>';
+                        }
+                    }
+                }
+            };
+            checkLibraries();
+        }
+        
+        // 解析小数
+        function parseDecimal(str) {
+            var num = parseFloat(str);
+            if (isNaN(num)) return null;
+            return num;
+        }
+        
+        // 格式化小数
+        function formatDecimal(num, precision) {
+            if (precision === undefined) {
+                return num.toString();
+            }
+            return num.toFixed(precision);
+        }
+        
+        // 对齐小数
+        function alignDecimals(num1, num2) {
+            var str1 = num1.toString();
+            var str2 = num2.toString();
+            var parts1 = str1.split('.');
+            var parts2 = str2.split('.');
+            
+            var int1 = parts1[0] || '0';
+            var int2 = parts2[0] || '0';
+            var dec1 = parts1[1] || '';
+            var dec2 = parts2[1] || '';
+            
+            var maxDec = Math.max(dec1.length, dec2.length);
+            while (dec1.length < maxDec) dec1 += '0';
+            while (dec2.length < maxDec) dec2 += '0';
+            
+            return {
+                num1: int1 + '.' + dec1,
+                num2: int2 + '.' + dec2,
+                maxDec: maxDec
+            };
+        }
+        
+        waitForLibraries(function() {
+            if (typeof Vue === 'undefined') {
+                return;
+            }
+            
+            if (!Vue.createApp) {
+                console.error('Vue.createApp 不可用，请确保使用 Vue 3');
+                return;
+            }
+            
+            var app = Vue.createApp({
+                data() {
+                    return {
+                        // 对齐板
+                        alignment: {
+                            num1: '12.34',
+                            num2: '5.6'
+                        },
+                        alignmentStage: null,
+                        alignmentLayer: null,
+                        // 加法
+                        addition: {
+                            num1: '12.34',
+                            num2: '5.6'
+                        },
+                        additionResult: { show: false, steps: [], result: '' },
+                        // 减法
+                        subtraction: {
+                            num1: '12.34',
+                            num2: '5.6'
+                        },
+                        subtractionResult: { show: false, steps: [], result: '' },
+                        // 乘法
+                        multiplication: {
+                            num1: '1.2',
+                            num2: '0.3'
+                        },
+                        multiplicationResult: { show: false, steps: [], result: '' },
+                        // 除法
+                        division: {
+                            num1: '12.6',
+                            num2: '0.3'
+                        },
+                        divisionResult: { show: false, steps: [], result: '' },
+                        // 循环小数
+                        repeatingDecimal: {
+                            fraction: '1/3'
+                        },
+                        repeatingDecimalResult: { show: false, value: '', repeatingPart: '' },
+                        repeatingDecimalStage: null,
+                        repeatingDecimalLayer: null,
+                        // 百分比
+                        percentage: {
+                            decimal: 0.5,
+                            percent: 50
+                        },
+                        // 练习
+                        questions: [],
+                        score: {
+                            show: false,
+                            correct: 0,
+                            total: 0,
+                            percentage: 0
+                        }
+                    };
+                },
+                mounted() {
+                    var self = this;
+                    // 等待 DOM 完全渲染
+                    this.$nextTick(function() {
+                        setTimeout(function() {
+                            self.initAlignmentBoard();
+                            self.initRepeatingDecimalCanvas();
+                            self.generateQuestions();
+                            self.renderKaTeX();
+                        }, 200);
+                    });
+                },
+                updated() {
+                    // DOM 更新后重新渲染 KaTeX
+                    var self = this;
+                    this.$nextTick(function() {
+                        setTimeout(function() {
+                            self.renderKaTeX();
+                        }, 100);
+                    });
+                },
+                methods: {
+                    initAlignmentBoard() {
+                        var self = this;
+                        if (typeof Konva === 'undefined') {
+                            return;
+                        }
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                var container = document.getElementById('alignmentBoard');
+                                if (!container) {
+                                    return;
+                                }
+                                
+                                var width = container.offsetWidth || container.clientWidth || 800;
+                                var height = 300;
+                                
+                                if (self.alignmentStage) {
+                                    try {
+                                        self.alignmentStage.destroy();
+                                    } catch (e) {
+                                    }
+                                }
+                                
+                                try {
+                                    self.alignmentStage = new Konva.Stage({
+                                        container: container,
+                                        width: width,
+                                        height: height
+                                    });
+                                    
+                                    self.alignmentLayer = new Konva.Layer();
+                                    self.alignmentStage.add(self.alignmentLayer);
+                                    
+                                    self.updateAlignment();
+                                } catch (e) {
+                                    console.error('初始化对齐板错误:', e);
+                                }
+                            }, 150);
+                        });
+                    },
+                    
+                    updateAlignment() {
+                        if (!this.alignmentLayer) {
+                            this.initAlignmentBoard();
+                            return;
+                        }
+                        
+                        var num1 = parseDecimal(this.alignment.num1);
+                        var num2 = parseDecimal(this.alignment.num2);
+                        
+                        if (num1 === null || num2 === null) {
+                            return;
+                        }
+                        
+                        var aligned = alignDecimals(num1, num2);
+                        // 非动画模式，直接显示结果
+                        this.drawAlignment(aligned.num1, aligned.num2, false);
+                    },
+                    
+                    drawAlignment(str1, str2, animated) {
+                        if (!this.alignmentLayer) return;
+                        
+                        var self = this;
+                        animated = animated || false;
+                        
+                        try {
+                            this.alignmentLayer.destroyChildren();
+                            
+                            var width = this.alignmentStage.width();
+                            var height = this.alignmentStage.height();
+                            var centerY = height / 2;
+                            var fontSize = 28;
+                            var lineHeight = 50;
+                            
+                            // 获取原始数字
+                            var num1 = parseDecimal(this.alignment.num1);
+                            var num2 = parseDecimal(this.alignment.num2);
+                            var original1 = this.alignment.num1;
+                            var original2 = this.alignment.num2;
+                            
+                            if (animated && typeof gsap !== 'undefined') {
+                                // 动画模式：分步骤显示
+                                
+                                // 第一步：显示原始数字（未对齐）
+                                var text1Original = new Konva.Text({
+                                    x: 50,
+                                    y: centerY - lineHeight,
+                                    text: original1,
+                                    fontSize: fontSize,
+                                    fontFamily: 'Courier New',
+                                    fill: '#999',
+                                    fontStyle: 'bold',
+                                    opacity: 0
+                                });
+                                this.alignmentLayer.add(text1Original);
+                                
+                                var plus = new Konva.Text({
+                                    x: 50,
+                                    y: centerY,
+                                    text: '+',
+                                    fontSize: fontSize,
+                                    fontFamily: 'Courier New',
+                                    fill: '#333',
+                                    fontStyle: 'bold',
+                                    opacity: 0
+                                });
+                                this.alignmentLayer.add(plus);
+                                
+                                var text2Original = new Konva.Text({
+                                    x: 50,
+                                    y: centerY + lineHeight,
+                                    text: original2,
+                                    fontSize: fontSize,
+                                    fontFamily: 'Courier New',
+                                    fill: '#999',
+                                    fontStyle: 'bold',
+                                    opacity: 0
+                                });
+                                this.alignmentLayer.add(text2Original);
+                                
+                                // 第二步：显示对齐后的数字
+                                var dot1X = 50 + this.getDecimalPointX(str1, fontSize);
+                                var dot2X = 50 + this.getDecimalPointX(str2, fontSize);
+                                var targetX = Math.max(dot1X, dot2X);
+                                
+                                var text1Aligned = new Konva.Text({
+                                    x: targetX - this.getDecimalPointX(str1, fontSize) + 50,
+                                    y: centerY - lineHeight,
+                                    text: str1,
+                                    fontSize: fontSize,
+                                    fontFamily: 'Courier New',
+                                    fill: '#667eea',
+                                    fontStyle: 'bold',
+                                    opacity: 0
+                                });
+                                this.alignmentLayer.add(text1Aligned);
+                                
+                                var text2Aligned = new Konva.Text({
+                                    x: targetX - this.getDecimalPointX(str2, fontSize) + 50,
+                                    y: centerY + lineHeight,
+                                    text: str2,
+                                    fontSize: fontSize,
+                                    fontFamily: 'Courier New',
+                                    fill: '#667eea',
+                                    fontStyle: 'bold',
+                                    opacity: 0
+                                });
+                                this.alignmentLayer.add(text2Aligned);
+                                
+                                // 绘制对齐线
+                                var line = new Konva.Line({
+                                    points: [40, centerY + lineHeight + 25, width - 50, centerY + lineHeight + 25],
+                                    stroke: '#333',
+                                    strokeWidth: 2,
+                                    opacity: 0
+                                });
+                                this.alignmentLayer.add(line);
+                                
+                                // 高亮小数点对齐
+                                var highlight = new Konva.Line({
+                                    points: [targetX + 40, centerY - lineHeight - 15, targetX + 40, centerY + lineHeight + 15],
+                                    stroke: '#43e97b',
+                                    strokeWidth: 4,
+                                    opacity: 0,
+                                    lineCap: 'round'
+                                });
+                                this.alignmentLayer.add(highlight);
+                                
+                                // 小数点标记
+                                var dot1 = new Konva.Circle({
+                                    x: targetX + 50,
+                                    y: centerY - lineHeight,
+                                    radius: 4,
+                                    fill: '#f5576c',
+                                    opacity: 0
+                                });
+                                this.alignmentLayer.add(dot1);
+                                
+                                var dot2 = new Konva.Circle({
+                                    x: targetX + 50,
+                                    y: centerY + lineHeight,
+                                    radius: 4,
+                                    fill: '#f5576c',
+                                    opacity: 0
+                                });
+                                this.alignmentLayer.add(dot2);
+                                
+                                this.alignmentLayer.draw();
+                                
+                                // 创建动画时间线 - 使用 Konva 动画
+                                var self = this;
+                                
+                                // 步骤1：显示原始数字
+                                var anim1 = new Konva.Tween({
+                                    node: text1Original,
+                                    opacity: 1,
+                                    duration: 0.5,
+                                    easing: Konva.Easings.EaseOut
+                                });
+                                
+                                var anim2 = new Konva.Tween({
+                                    node: plus,
+                                    opacity: 1,
+                                    duration: 0.5,
+                                    easing: Konva.Easings.EaseOut
+                                });
+                                
+                                var anim3 = new Konva.Tween({
+                                    node: text2Original,
+                                    opacity: 1,
+                                    duration: 0.5,
+                                    easing: Konva.Easings.EaseOut
+                                });
+                                
+                                // 步骤2：淡出原始数字，显示对齐后的数字
+                                var anim4 = new Konva.Tween({
+                                    node: text1Original,
+                                    opacity: 0,
+                                    duration: 0.3,
+                                    easing: Konva.Easings.Linear
+                                });
+                                
+                                var anim5 = new Konva.Tween({
+                                    node: text2Original,
+                                    opacity: 0,
+                                    duration: 0.3,
+                                    easing: Konva.Easings.Linear
+                                });
+                                
+                                var anim6 = new Konva.Tween({
+                                    node: text1Aligned,
+                                    opacity: 1,
+                                    duration: 0.5,
+                                    easing: Konva.Easings.EaseOut
+                                });
+                                
+                                var anim7 = new Konva.Tween({
+                                    node: text2Aligned,
+                                    opacity: 1,
+                                    duration: 0.5,
+                                    easing: Konva.Easings.EaseOut
+                                });
+                                
+                                // 步骤3：显示小数点标记
+                                var anim8 = new Konva.Tween({
+                                    node: dot1,
+                                    opacity: 1,
+                                    scaleX: 1.5,
+                                    scaleY: 1.5,
+                                    duration: 0.3,
+                                    easing: Konva.Easings.BackEaseOut,
+                                    yoyo: true
+                                });
+                                
+                                var anim9 = new Konva.Tween({
+                                    node: dot2,
+                                    opacity: 1,
+                                    scaleX: 1.5,
+                                    scaleY: 1.5,
+                                    duration: 0.3,
+                                    easing: Konva.Easings.BackEaseOut,
+                                    yoyo: true
+                                });
+                                
+                                // 步骤4：显示对齐高亮线
+                                var anim10 = new Konva.Tween({
+                                    node: highlight,
+                                    opacity: 0.8,
+                                    duration: 0.5,
+                                    easing: Konva.Easings.EaseOut
+                                });
+                                
+                                // 步骤5：显示对齐线
+                                var anim11 = new Konva.Tween({
+                                    node: line,
+                                    opacity: 1,
+                                    duration: 0.5,
+                                    easing: Konva.Easings.EaseOut
+                                });
+                                
+                                // 步骤6：闪烁高亮线强调对齐
+                                var anim12 = new Konva.Tween({
+                                    node: highlight,
+                                    opacity: 1,
+                                    duration: 0.2,
+                                    easing: Konva.Easings.Linear,
+                                    yoyo: true,
+                                    repeat: 2
+                                });
+                                
+                                // 持续更新图层
+                                var drawInterval = setInterval(function() {
+                                    self.alignmentLayer.draw();
+                                }, 16); // 约60fps
+                                
+                                // 执行动画序列
+                                anim1.play();
+                                setTimeout(function() { anim2.play(); }, 200);
+                                setTimeout(function() { anim3.play(); }, 400);
+                                setTimeout(function() { 
+                                    anim4.play();
+                                    anim5.play();
+                                }, 1500);
+                                setTimeout(function() { 
+                                    anim6.play();
+                                    anim7.play();
+                                }, 1800);
+                                setTimeout(function() { 
+                                    anim8.play();
+                                    anim9.play();
+                                }, 2500);
+                                setTimeout(function() { anim10.play(); }, 3000);
+                                setTimeout(function() { anim11.play(); }, 3500);
+                                setTimeout(function() { anim12.play(); }, 4000);
+                                
+                                // 动画结束后清除定时器
+                                setTimeout(function() {
+                                    clearInterval(drawInterval);
+                                    self.alignmentLayer.draw();
+                                }, 5000);
+                                
+                            } else {
+                                // 非动画模式：直接显示
+                                var dot1X = 50 + this.getDecimalPointX(str1, fontSize);
+                                var dot2X = 50 + this.getDecimalPointX(str2, fontSize);
+                                var targetX = Math.max(dot1X, dot2X);
+                                
+                                // 绘制第一个数
+                                var text1 = new Konva.Text({
+                                    x: targetX - this.getDecimalPointX(str1, fontSize) + 50,
+                                    y: centerY - lineHeight,
+                                    text: str1,
+                                    fontSize: fontSize,
+                                    fontFamily: 'Courier New',
+                                    fill: '#667eea',
+                                    fontStyle: 'bold'
+                                });
+                                this.alignmentLayer.add(text1);
+                                
+                                // 绘制加号
+                                var plus = new Konva.Text({
+                                    x: 50,
+                                    y: centerY,
+                                    text: '+',
+                                    fontSize: fontSize,
+                                    fontFamily: 'Courier New',
+                                    fill: '#333',
+                                    fontStyle: 'bold'
+                                });
+                                this.alignmentLayer.add(plus);
+                                
+                                // 绘制第二个数
+                                var text2 = new Konva.Text({
+                                    x: targetX - this.getDecimalPointX(str2, fontSize) + 50,
+                                    y: centerY + lineHeight,
+                                    text: str2,
+                                    fontSize: fontSize,
+                                    fontFamily: 'Courier New',
+                                    fill: '#667eea',
+                                    fontStyle: 'bold'
+                                });
+                                this.alignmentLayer.add(text2);
+                                
+                                // 绘制对齐线
+                                var line = new Konva.Line({
+                                    points: [40, centerY + lineHeight + 25, width - 50, centerY + lineHeight + 25],
+                                    stroke: '#333',
+                                    strokeWidth: 2
+                                });
+                                this.alignmentLayer.add(line);
+                                
+                                // 高亮小数点对齐
+                                var highlight = new Konva.Line({
+                                    points: [targetX + 40, centerY - lineHeight - 15, targetX + 40, centerY + lineHeight + 15],
+                                    stroke: '#43e97b',
+                                    strokeWidth: 4,
+                                    opacity: 0.7,
+                                    lineCap: 'round'
+                                });
+                                this.alignmentLayer.add(highlight);
+                                
+                                // 小数点标记
+                                var dot1 = new Konva.Circle({
+                                    x: targetX + 50,
+                                    y: centerY - lineHeight,
+                                    radius: 4,
+                                    fill: '#f5576c'
+                                });
+                                this.alignmentLayer.add(dot1);
+                                
+                                var dot2 = new Konva.Circle({
+                                    x: targetX + 50,
+                                    y: centerY + lineHeight,
+                                    radius: 4,
+                                    fill: '#f5576c'
+                                });
+                                this.alignmentLayer.add(dot2);
+                                
+                                this.alignmentLayer.draw();
+                            }
+                        } catch (e) {
+                            console.error('绘制对齐板错误:', e);
+                        }
+                    },
+                    
+                    getDecimalPointX(str, fontSize) {
+                        var index = str.indexOf('.');
+                        if (index === -1) {
+                            return str.length * fontSize * 0.6;
+                        }
+                        return index * fontSize * 0.6;
+                    },
+                    
+                    animateAlignment() {
+                        if (!this.alignmentLayer) {
+                            this.initAlignmentBoard();
+                            var self = this;
+                            setTimeout(function() {
+                                self.animateAlignment();
+                            }, 200);
+                            return;
+                        }
+                        
+                        var num1 = parseDecimal(this.alignment.num1);
+                        var num2 = parseDecimal(this.alignment.num2);
+                        
+                        if (num1 === null || num2 === null) {
+                            return;
+                        }
+                        
+                        var aligned = alignDecimals(num1, num2);
+                        this.drawAlignment(aligned.num1, aligned.num2, true);
+                    },
+                    
+                    calculateAddition() {
+                        var num1 = parseDecimal(this.addition.num1);
+                        var num2 = parseDecimal(this.addition.num2);
+                        
+                        if (num1 === null || num2 === null) {
+                            return;
+                        }
+                        
+                        var aligned = alignDecimals(num1, num2);
+                        var result = num1 + num2;
+                        var self = this;
+                        
+                        this.additionResult = {
+                            show: true,
+                            steps: [
+                                '步骤1：对齐小数点',
+                                aligned.num1 + ' + ' + aligned.num2,
+                                '步骤2：从右向左逐位相加',
+                                '步骤3：处理进位',
+                                '结果：' + formatDecimal(result, aligned.maxDec)
+                            ],
+                            result: formatDecimal(result, aligned.maxDec)
+                        };
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    animateAddition() {
+                        this.calculateAddition();
+                    },
+                    
+                    calculateSubtraction() {
+                        var num1 = parseDecimal(this.subtraction.num1);
+                        var num2 = parseDecimal(this.subtraction.num2);
+                        
+                        if (num1 === null || num2 === null) {
+                            return;
+                        }
+                        
+                        var aligned = alignDecimals(num1, num2);
+                        var result = num1 - num2;
+                        var self = this;
+                        
+                        this.subtractionResult = {
+                            show: true,
+                            steps: [
+                                '步骤1：对齐小数点',
+                                aligned.num1 + ' - ' + aligned.num2,
+                                '步骤2：从右向左逐位相减',
+                                '步骤3：处理借位',
+                                '结果：' + formatDecimal(result, aligned.maxDec)
+                            ],
+                            result: formatDecimal(result, aligned.maxDec)
+                        };
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    calculateMultiplication() {
+                        var num1 = parseDecimal(this.multiplication.num1);
+                        var num2 = parseDecimal(this.multiplication.num2);
+                        
+                        if (num1 === null || num2 === null) {
+                            return;
+                        }
+                        
+                        var str1 = num1.toString();
+                        var str2 = num2.toString();
+                        var dec1 = (str1.split('.')[1] || '').length;
+                        var dec2 = (str2.split('.')[1] || '').length;
+                        var totalDec = dec1 + dec2;
+                        
+                        var int1 = parseInt(str1.replace('.', ''));
+                        var int2 = parseInt(str2.replace('.', ''));
+                        var result = (int1 * int2) / Math.pow(10, totalDec);
+                        var self = this;
+                        
+                        this.multiplicationResult = {
+                            show: true,
+                            steps: [
+                                '步骤1：忽略小数点，按整数乘法计算',
+                                int1 + ' × ' + int2 + ' = ' + (int1 * int2),
+                                '步骤2：确定小数位数',
+                                '被乘数有 ' + dec1 + ' 位小数，乘数有 ' + dec2 + ' 位小数',
+                                '结果应有 ' + totalDec + ' 位小数',
+                                '结果：' + formatDecimal(result, totalDec)
+                            ],
+                            result: formatDecimal(result, totalDec)
+                        };
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    animateMultiplication() {
+                        this.calculateMultiplication();
+                    },
+                    
+                    calculateDivision() {
+                        var num1 = parseDecimal(this.division.num1);
+                        var num2 = parseDecimal(this.division.num2);
+                        
+                        if (num1 === null || num2 === null || num2 === 0) {
+                            return;
+                        }
+                        
+                        var str2 = num2.toString();
+                        var dec2 = (str2.split('.')[1] || '').length;
+                        var multiplier = Math.pow(10, dec2);
+                        
+                        var newNum1 = num1 * multiplier;
+                        var newNum2 = num2 * multiplier;
+                        var result = newNum1 / newNum2;
+                        var self = this;
+                        
+                        this.divisionResult = {
+                            show: true,
+                            steps: [
+                                '步骤1：将除数变为整数',
+                                '除数 ' + num2 + ' 有 ' + dec2 + ' 位小数，需要乘以 ' + multiplier,
+                                '被除数和除数同时乘以 ' + multiplier,
+                                newNum1 + ' ÷ ' + newNum2 + ' = ' + result,
+                                '结果：' + formatDecimal(result, 2)
+                            ],
+                            result: formatDecimal(result, 2)
+                        };
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                self.renderKaTeX();
+                            }, 50);
+                        });
+                    },
+                    
+                    animateDivision() {
+                        this.calculateDivision();
+                    },
+                    
+                    initRepeatingDecimalCanvas() {
+                        var self = this;
+                        if (typeof Konva === 'undefined') {
+                            return;
+                        }
+                        
+                        this.$nextTick(function() {
+                            setTimeout(function() {
+                                var container = document.getElementById('repeatingDecimalCanvas');
+                                if (!container) {
+                                    return;
+                                }
+                                
+                                var width = container.offsetWidth || container.clientWidth || 800;
+                                var height = 300;
+                                
+                                if (self.repeatingDecimalStage) {
+                                    try {
+                                        self.repeatingDecimalStage.destroy();
+                                    } catch (e) {
+                                    }
+                                }
+                                
+                                try {
+                                    self.repeatingDecimalStage = new Konva.Stage({
+                                        container: container,
+                                        width: width,
+                                        height: height
+                                    });
+                                    
+                                    self.repeatingDecimalLayer = new Konva.Layer();
+                                    self.repeatingDecimalStage.add(self.repeatingDecimalLayer);
+                                } catch (e) {
+                                    console.error('初始化循环小数画布错误:', e);
+                                }
+                            }, 150);
+                        });
+                    },
+                    
+                    calculateRepeatingDecimal() {
+                        var fraction = this.repeatingDecimal.fraction;
+                        var parts = fraction.split('/');
+                        if (parts.length !== 2) {
+                            return;
+                        }
+                        
+                        var numerator = parseInt(parts[0]);
+                        var denominator = parseInt(parts[1]);
+                        
+                        if (isNaN(numerator) || isNaN(denominator) || denominator === 0) {
+                            return;
+                        }
+                        
+                        var result = this.findRepeatingDecimal(numerator, denominator);
+                        this.repeatingDecimalResult = {
+                            show: true,
+                            value: result.value,
+                            repeatingPart: result.repeating
+                        };
+                        
+                        this.drawRepeatingDecimal(result);
+                    },
+                    
+                    findRepeatingDecimal(num, den) {
+                        var quotient = Math.floor(num / den);
+                        var remainder = num % den;
+                        var decimals = [];
+                        var remainders = {};
+                        var index = 0;
+                        
+                        while (remainder !== 0 && index < 50) {
+                            if (remainders[remainder] !== undefined) {
+                                var start = remainders[remainder];
+                                var repeating = decimals.slice(start).join('');
+                                var nonRepeating = decimals.slice(0, start).join('');
+                                return {
+                                    value: quotient + '.' + nonRepeating + '(' + repeating + ')',
+                                    repeating: repeating,
+                                    nonRepeating: nonRepeating
+                                };
+                            }
+                            
+                            remainders[remainder] = index;
+                            remainder *= 10;
+                            var digit = Math.floor(remainder / den);
+                            decimals.push(digit);
+                            remainder = remainder % den;
+                            index++;
+                        }
+                        
+                        return {
+                            value: quotient + '.' + decimals.join(''),
+                            repeating: '',
+                            nonRepeating: decimals.join('')
+                        };
+                    },
+                    
+                    drawRepeatingDecimal(result) {
+                        if (!this.repeatingDecimalLayer) return;
+                        
+                        try {
+                            this.repeatingDecimalLayer.destroyChildren();
+                            
+                            var width = this.repeatingDecimalStage.width();
+                            var height = this.repeatingDecimalStage.height();
+                            var centerY = height / 2;
+                            var fontSize = 32;
+                            
+                            var text = new Konva.Text({
+                                x: 50,
+                                y: centerY - fontSize / 2,
+                                text: result.value,
+                                fontSize: fontSize,
+                                fontFamily: 'Courier New',
+                                fill: '#667eea',
+                                fontStyle: 'bold'
+                            });
+                            this.repeatingDecimalLayer.add(text);
+                            
+                            this.repeatingDecimalLayer.draw();
+                        } catch (e) {
+                            console.error('绘制循环小数错误:', e);
+                        }
+                    },
+                    
+                    updateRepeatingDecimal() {
+                        // 可以添加实时更新
+                    },
+                    
+                    updatePercentage() {
+                        this.percentage.percent = Math.round(this.percentage.decimal * 100 * 10) / 10;
+                    },
+                    
+                    updatePercentageFromPercent() {
+                        this.percentage.decimal = Math.round(this.percentage.percent / 100 * 1000) / 1000;
+                    },
+                    
+                    generateQuestions() {
+                        this.questions = [];
+                        this.score.show = false;
+                        
+                        var operations = ['+', '-', '×', '÷'];
+                        for (var i = 0; i < 5; i++) {
+                            var op = operations[Math.floor(Math.random() * operations.length)];
+                            var num1 = Math.round((Math.random() * 100 + 0.1) * 100) / 100;
+                            var num2 = Math.round((Math.random() * 10 + 0.1) * 100) / 100;
+                            var answer, result;
+                            
+                            if (op === '+') {
+                                result = num1 + num2;
+                                answer = formatDecimal(result, 2);
+                            } else if (op === '-') {
+                                result = num1 - num2;
+                                answer = formatDecimal(result, 2);
+                            } else if (op === '×') {
+                                result = num1 * num2;
+                                answer = formatDecimal(result, 4);
+                            } else {
+                                if (num2 === 0) num2 = 0.1;
+                                result = num1 / num2;
+                                answer = formatDecimal(result, 2);
+                            }
+                            
+                            this.questions.push({
+                                text: num1 + ' ' + op + ' ' + num2 + ' = ?',
+                                answer: answer,
+                                userAnswer: '',
+                                answered: false,
+                                correct: false
+                            });
+                        }
+                    },
+                    
+                    checkAnswer(index) {
+                        var question = this.questions[index];
+                        if (!question.userAnswer) return;
+                        
+                        question.answered = true;
+                        var userAnswer = parseFloat(question.userAnswer);
+                        var correctAnswer = parseFloat(question.answer);
+                        
+                        question.correct = Math.abs(userAnswer - correctAnswer) < 0.01;
+                    },
+                    
+                    checkAllAnswers() {
+                        var correct = 0;
+                        var self = this;
+                        this.questions.forEach(function(q) {
+                            if (!q.answered && q.userAnswer) {
+                                self.checkAnswer(self.questions.indexOf(q));
+                            }
+                            if (q.correct) correct++;
+                        });
+                        
+                        this.score = {
+                            show: true,
+                            correct: correct,
+                            total: this.questions.length,
+                            percentage: Math.round((correct / this.questions.length) * 100)
+                        };
+                    },
+                    
+                    renderKaTeX() {
+                        if (typeof renderMathInElement === 'undefined') {
+                            return;
+                        }
+                        var self = this;
+                        this.$nextTick(function() {
+                            try {
+                                renderMathInElement(document.body, {
+                                    delimiters: [
+                                        {left: "$$", right: "$$", display: true},
+                                        {left: "\\[", right: "\\]", display: true},
+                                        {left: "$", right: "$", display: false},
+                                        {left: "\\(", right: "\\)", display: false}
+                                    ],
+                                    throwOnError: false
+                                });
+                            } catch (e) {
+                                console.error('KaTeX 渲染错误:', e);
+                            }
+                        });
+                    }
+                },
+                beforeUnmount() {
+                    if (this.alignmentStage) {
+                        this.alignmentStage.destroy();
+                    }
+                    if (this.repeatingDecimalStage) {
+                        this.repeatingDecimalStage.destroy();
+                    }
+                }
+            });
+            
+            app.mount('#app');
+        });
+    </script>
+</body>
+</html>
+

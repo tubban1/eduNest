@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>整数运算 - 初中数学教学</title>
+    <meta name="description" content="学习正负整数的概念，掌握相反数和绝对值的计算方法，通过数轴动画理解整数加减法，探索乘除法的符号规律，通过温度变化、海拔变化和资产债务等实际情境加深理解。">
+    <meta name="keywords" content="整数,正负数,相反数,绝对值,整数运算,加减法,乘除法,数轴,温度变化,海拔,资产债务,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .concept-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .concept-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .concept-card.positive {
+            border-top: 4px solid #4facfe;
+        }
+        
+        .concept-card.negative {
+            border-top: 4px solid #f5576c;
+        }
+        
+        .concept-card.opposite {
+            border-top: 4px solid #43e97b;
+        }
+        
+        .concept-card.absolute {
+            border-top: 4px solid #fa709a;
+        }
+        
+        .number-line-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        #numberLineCanvas {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            cursor: crosshair;
+            background: #f8f9fa;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #numberLineCanvas canvas {
+            display: block !important;
+        }
+        
+        .operation-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .control-group input {
+            padding: 8px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.1em;
+            width: 80px;
+            outline: none;
+        }
+        
+        .control-group input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn {
+            padding: 10px 25px;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .multiplication-table {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .table-cell {
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: transform 0.3s;
+        }
+        
+        .table-cell:hover {
+            transform: scale(1.1);
+        }
+        
+        .table-cell.header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .table-cell.positive {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .table-cell.negative {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .simulator {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .simulator-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .slider-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .slider-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .value-display {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .value-display.positive {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .value-display.negative {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        }
+        
+        .exercise-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .question-item {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .question-item.correct {
+            border-left-color: #43e97b;
+            background: #e8f5e9;
+        }
+        
+        .question-item.incorrect {
+            border-left-color: #f5576c;
+            background: #ffebee;
+        }
+        
+        .question-text {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1.2em;
+            width: 150px;
+            outline: none;
+        }
+        
+        .answer-input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .result-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .result-badge.correct {
+            background: #43e97b;
+            color: white;
+        }
+        
+        .result-badge.incorrect {
+            background: #f5576c;
+            color: white;
+        }
+        
+        .score-display {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .formula {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .katex-display {
+            margin: 20px 0 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .operation-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .multiplication-table {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>整数运算</h1>
+            <p class="subtitle">探索正负整数的奥秘，掌握整数运算的规律</p>
+            
+            <!-- 一、基本概念 -->
+            <div class="section">
+                <h2>一、基本概念</h2>
+                <div class="concept-grid">
+                    <div class="concept-card positive">
+                        <h3>正整数</h3>
+                        <p>大于0的整数，如：1, 2, 3, 4, 5...</p>
+                        <p>在数轴上位于原点的右侧</p>
+                    </div>
+                    <div class="concept-card negative">
+                        <h3>负整数</h3>
+                        <p>小于0的整数，如：-1, -2, -3, -4, -5...</p>
+                        <p>在数轴上位于原点的左侧</p>
+                    </div>
+                    <div class="concept-card opposite">
+                        <h3>相反数</h3>
+                        <p>只有符号不同的两个数互为相反数</p>
+                        <p>例如：3 和 -3 互为相反数</p>
+                        <p>在数轴上关于原点对称</p>
+                    </div>
+                    <div class="concept-card absolute">
+                        <h3>绝对值</h3>
+                        <p>一个数到原点的距离</p>
+                        <p>正数的绝对值是它本身</p>
+                        <p>负数的绝对值是它的相反数</p>
+                        <p>0的绝对值是0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 二、数轴加减法演示 -->
+            <div class="section">
+                <h2>二、整数加减法 - 数轴跳跃演示</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    在数轴上，加法表示向右移动，减法表示向左移动。正数向右，负数向左。
+                </p>
+                <div class="number-line-container">
+                    <div v-if="loading" class="loading-message">正在加载数轴...</div>
+                    <div v-if="error" class="error-message">{{ error }}</div>
+                    <div 
+                        v-show="!loading && !error"
+                        ref="numberLineCanvas" 
+                        id="numberLineCanvas"
+                        style="width: 100%; height: 300px;"
+                    ></div>
+                </div>
+                <div class="operation-controls">
+                    <div class="control-group">
+                        <label>起始值：</label>
+                        <input type="number" v-model.number="startValue" @change="resetAnimation">
+                    </div>
+                    <div class="control-group">
+                        <label>运算数：</label>
+                        <input type="number" v-model.number="operand" @change="resetAnimation">
+                    </div>
+                    <div class="control-group">
+                        <label>运算：</label>
+                        <select v-model="operation" @change="resetAnimation" style="padding: 8px 15px; border: 2px solid #667eea; border-radius: 8px; font-size: 1.1em; outline: none;">
+                            <option value="add">加法 (+)</option>
+                            <option value="subtract">减法 (-)</option>
+                        </select>
+                    </div>
+                    <button class="btn" @click="animateOperation">开始动画</button>
+                    <button class="btn btn-secondary" @click="resetAnimation">重置</button>
+                </div>
+                <div v-if="result.show" class="value-display" :class="result.value >= 0 ? 'positive' : 'negative'">
+                    {{ result.expression }} = {{ result.value }}
+                </div>
+            </div>
+            
+            <!-- 三、乘除法符号规律 -->
+            <div class="section">
+                <h2>三、整数乘除法符号规律</h2>
+                <div class="info-box">
+                    <h3>📚 符号规律口诀</h3>
+                    <ul>
+                        <li><strong>同号得正：</strong>正数 × 正数 = 正数，负数 × 负数 = 正数</li>
+                        <li><strong>异号得负：</strong>正数 × 负数 = 负数，负数 × 正数 = 负数</li>
+                        <li><strong>除法规律：</strong>与乘法相同</li>
+                        <li><strong>零的特殊性：</strong>任何数乘以0都等于0，0不能作为除数</li>
+                    </ul>
+                </div>
+                <h3 style="margin: 20px 0; color: #667eea;">乘法符号规律表</h3>
+                <div class="multiplication-table">
+                    <div class="table-cell header">×</div>
+                    <div class="table-cell header">正数</div>
+                    <div class="table-cell header">负数</div>
+                    <div class="table-cell header">0</div>
+                    <div class="table-cell header">结果</div>
+                    
+                    <div class="table-cell header">正数</div>
+                    <div class="table-cell positive">正 × 正 = 正</div>
+                    <div class="table-cell negative">正 × 负 = 负</div>
+                    <div class="table-cell">正 × 0 = 0</div>
+                    <div class="table-cell positive">正数</div>
+                    
+                    <div class="table-cell header">负数</div>
+                    <div class="table-cell negative">负 × 正 = 负</div>
+                    <div class="table-cell positive">负 × 负 = 正</div>
+                    <div class="table-cell">负 × 0 = 0</div>
+                    <div class="table-cell negative">负数</div>
+                    
+                    <div class="table-cell header">0</div>
+                    <div class="table-cell">0 × 正 = 0</div>
+                    <div class="table-cell">0 × 负 = 0</div>
+                    <div class="table-cell">0 × 0 = 0</div>
+                    <div class="table-cell">0</div>
+                </div>
+            </div>
+            
+            <!-- 四、情境模拟 -->
+            <div class="section">
+                <h2>四、实际情境模拟</h2>
+                
+                <!-- 温度变化 -->
+                <div class="simulator">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">🌡️ 温度变化模拟</h3>
+                    <div class="simulator-controls">
+                        <div class="slider-group">
+                            <label>初始温度：{{ temperature.initial }}°C</label>
+                            <input type="range" class="slider" v-model.number="temperature.initial" min="-30" max="40" @input="updateTemperature">
+                        </div>
+                        <div class="slider-group">
+                            <label>温度变化：{{ temperature.change }}°C</label>
+                            <input type="range" class="slider" v-model.number="temperature.change" min="-20" max="20" @input="updateTemperature">
+                        </div>
+                    </div>
+                    <div class="value-display" :class="temperature.final >= 0 ? 'positive' : 'negative'">
+                        最终温度：{{ temperature.final }}°C
+                        <div style="font-size: 0.6em; margin-top: 10px;">
+                            {{ temperature.initial }} + ({{ temperature.change }}) = {{ temperature.final }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 海拔变化 -->
+                <div class="simulator">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">⛰️ 海拔变化模拟</h3>
+                    <div class="simulator-controls">
+                        <div class="slider-group">
+                            <label>起始海拔：{{ altitude.start }}米</label>
+                            <input type="range" class="slider" v-model.number="altitude.start" min="-200" max="5000" step="100" @input="updateAltitude">
+                        </div>
+                        <div class="slider-group">
+                            <label>海拔变化：{{ altitude.change }}米</label>
+                            <input type="range" class="slider" v-model.number="altitude.change" min="-1000" max="1000" step="50" @input="updateAltitude">
+                        </div>
+                    </div>
+                    <div class="value-display" :class="altitude.final >= 0 ? 'positive' : 'negative'">
+                        最终海拔：{{ altitude.final }}米
+                        <div style="font-size: 0.6em; margin-top: 10px;">
+                            {{ altitude.start }} + ({{ altitude.change }}) = {{ altitude.final }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 资产与债务 -->
+                <div class="simulator">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">💰 资产与债务模拟</h3>
+                    <div class="simulator-controls">
+                        <div class="slider-group">
+                            <label>初始资产：{{ finance.initial }}元</label>
+                            <input type="range" class="slider" v-model.number="finance.initial" min="-5000" max="10000" step="100" @input="updateFinance">
+                        </div>
+                        <div class="slider-group">
+                            <label>收支变化：{{ finance.change }}元</label>
+                            <input type="range" class="slider" v-model.number="finance.change" min="-2000" max="2000" step="50" @input="updateFinance">
+                        </div>
+                    </div>
+                    <div class="value-display" :class="finance.final >= 0 ? 'positive' : 'negative'">
+                        {{ finance.final >= 0 ? '总资产' : '总债务' }}：{{ Math.abs(finance.final) }}元
+                        <div style="font-size: 0.6em; margin-top: 10px;">
+                            {{ finance.initial }} + ({{ finance.change }}) = {{ finance.final }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 五、小练习 -->
+            <div class="section">
+                <h2>五、小练习</h2>
+                <p style="margin-bottom: 20px; font-size: 1.1em; line-height: 1.8;">
+                    完成以下5道整数运算题，系统会自动评分。
+                </p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn" @click="generateQuestions">生成新题目</button>
+                    <button class="btn btn-secondary" @click="checkAllAnswers" style="margin-left: 10px;">提交答案</button>
+                </div>
+                <div class="exercise-section">
+                    <div v-for="(question, index) in questions" :key="index" class="question-item" :class="question.answered ? (question.correct ? 'correct' : 'incorrect') : ''">
+                        <div class="question-text">
+                            第 {{ index + 1 }} 题：{{ question.expression }} = ?
+                        </div>
+                        <div>
+                            <input 
+                                type="number" 
+                                class="answer-input" 
+                                v-model.number="question.userAnswer"
+                                :disabled="question.answered"
+                                @keypress.enter="checkAnswer(index)"
+                                placeholder="输入答案">
+                            <button class="btn" @click="checkAnswer(index)" :disabled="question.answered" style="margin-left: 10px; padding: 10px 20px;">
+                                提交
+                            </button>
+                            <span v-if="question.answered" class="result-badge" :class="question.correct ? 'correct' : 'incorrect'">
+                                {{ question.correct ? '✓ 正确' : '✗ 错误，正确答案：' + question.answer }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="score.show" class="score-display">
+                    得分：{{ score.correct }}/{{ score.total }} ({{ score.percentage }}%)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 库引用 -->
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- Konva.js -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/konva.min.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        // 等待所有库加载完成
+        function waitForLibraries(callback, maxAttempts = 50) {
+            let attempts = 0;
+            const checkLibraries = () => {
+                attempts++;
+                if (typeof Vue !== 'undefined' && 
+                    typeof Konva !== 'undefined' && 
+                    typeof gsap !== 'undefined') {
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkLibraries, 100);
+                } else {
+                    if (typeof Vue !== 'undefined') {
+                        const app = document.querySelector('#app');
+                        if (app) {
+                            app.innerHTML = '<div class="error-message">库加载超时，请刷新页面重试</div>';
+                        }
+                    }
+                }
+            };
+            checkLibraries();
+        }
+        
+        waitForLibraries(() => {
+            const { createApp } = Vue;
+            
+            createApp({
+                data() {
+                    return {
+                        loading: true,
+                        error: null,
+                        // 数轴配置
+                        stage: null,
+                        layer: null,
+                        canvasWidth: 800,
+                        canvasHeight: 300,
+                        centerX: 400,
+                        centerY: 150,
+                        scale: 40,
+                        minValue: -15,
+                        maxValue: 15,
+                        // 运算演示
+                        startValue: 0,
+                        operand: 5,
+                        operation: 'add',
+                        result: {
+                            show: false,
+                            value: 0,
+                            expression: ''
+                        },
+                        currentMarker: null,
+                        animation: null,
+                        // 情境模拟
+                        temperature: {
+                            initial: 20,
+                            change: -5,
+                            final: 15
+                        },
+                        altitude: {
+                            start: 0,
+                            change: 500,
+                            final: 500
+                        },
+                        finance: {
+                            initial: 1000,
+                            change: -200,
+                            final: 800
+                        },
+                        // 练习
+                        questions: [],
+                        score: {
+                            show: false,
+                            correct: 0,
+                            total: 0,
+                            percentage: 0
+                        }
+                    };
+                },
+                mounted() {
+                    setTimeout(() => {
+                        this.initPage();
+                    }, 100);
+                },
+                methods: {
+                    initPage() {
+                        if (typeof Konva === 'undefined' || typeof gsap === 'undefined') {
+                            this.error = '必要的库未加载，请刷新页面重试';
+                            this.loading = false;
+                            return;
+                        }
+                        
+                        this.$nextTick(() => {
+                            setTimeout(() => {
+                                this.initNumberLine();
+                                this.generateQuestions();
+                            }, 50);
+                        });
+                    },
+                    
+                    initNumberLine() {
+                        let canvasElement = this.$refs.numberLineCanvas;
+                        if (!canvasElement) {
+                            canvasElement = document.getElementById('numberLineCanvas');
+                        }
+                        
+                        if (!canvasElement) {
+                            this.error = '找不到数轴容器元素';
+                            this.loading = false;
+                            return;
+                        }
+                        
+                        if (canvasElement.style.display === 'none') {
+                            canvasElement.style.display = 'block';
+                        }
+                        
+                        let width = canvasElement.offsetWidth || canvasElement.clientWidth;
+                        if (width === 0) {
+                            const parent = canvasElement.parentElement;
+                            if (parent) {
+                                width = parent.offsetWidth - 40;
+                            }
+                            if (width === 0) {
+                                width = 800;
+                            }
+                        }
+                        
+                        this.canvasWidth = width;
+                        this.centerX = this.canvasWidth / 2;
+                        this.centerY = this.canvasHeight / 2;
+                        
+                        try {
+                            const container = canvasElement.id || canvasElement;
+                            this.stage = new Konva.Stage({
+                                container: container,
+                                width: this.canvasWidth,
+                                height: this.canvasHeight
+                            });
+                            
+                            this.layer = new Konva.Layer();
+                            this.stage.add(this.layer);
+                            
+                            this.drawNumberLine();
+                            this.loading = false;
+                        } catch (error) {
+                            this.error = '数轴初始化失败: ' + error.message;
+                            this.loading = false;
+                        }
+                    },
+                    
+                    drawNumberLine() {
+                        if (!this.layer) return;
+                        
+                        this.layer.destroyChildren();
+                        
+                        // 绘制数轴主线
+                        const line = new Konva.Line({
+                            points: [50, this.centerY, this.canvasWidth - 50, this.centerY],
+                            stroke: '#667eea',
+                            strokeWidth: 3,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        });
+                        this.layer.add(line);
+                        
+                        // 绘制刻度和数字
+                        for (let i = this.minValue; i <= this.maxValue; i++) {
+                            const x = this.centerX + (i * this.scale);
+                            
+                            const tickLength = i === 0 ? 15 : 10;
+                            const tick = new Konva.Line({
+                                points: [x, this.centerY - tickLength, x, this.centerY + tickLength],
+                                stroke: '#333',
+                                strokeWidth: 2
+                            });
+                            this.layer.add(tick);
+                            
+                            const text = new Konva.Text({
+                                x: x - 10,
+                                y: this.centerY + 20,
+                                text: i.toString(),
+                                fontSize: 14,
+                                fontFamily: 'Arial',
+                                fill: '#333',
+                                align: 'center'
+                            });
+                            this.layer.add(text);
+                        }
+                        
+                        // 绘制箭头
+                        const arrow = new Konva.Arrow({
+                            points: [this.canvasWidth - 50, this.centerY, this.canvasWidth - 30, this.centerY],
+                            pointerLength: 10,
+                            pointerWidth: 10,
+                            fill: '#667eea',
+                            stroke: '#667eea',
+                            strokeWidth: 3
+                        });
+                        this.layer.add(arrow);
+                        
+                        this.layer.draw();
+                    },
+                    
+                    resetAnimation() {
+                        if (this.animation) {
+                            this.animation.kill();
+                        }
+                        if (this.currentMarker) {
+                            this.currentMarker.destroy();
+                        }
+                        this.result.show = false;
+                        this.drawNumberLine();
+                    },
+                    
+                    animateOperation() {
+                        this.resetAnimation();
+                        
+                        const startX = this.centerX + (this.startValue * this.scale);
+                        let endValue;
+                        let endX;
+                        
+                        if (this.operation === 'add') {
+                            endValue = this.startValue + this.operand;
+                            endX = this.centerX + (endValue * this.scale);
+                        } else {
+                            endValue = this.startValue - this.operand;
+                            endX = this.centerX + (endValue * this.scale);
+                        }
+                        
+                        // 创建起始点
+                        const startMarker = new Konva.Circle({
+                            x: startX,
+                            y: this.centerY,
+                            radius: 10,
+                            fill: '#4facfe',
+                            stroke: 'white',
+                            strokeWidth: 2
+                        });
+                        this.layer.add(startMarker);
+                        
+                        // 创建移动标记
+                        this.currentMarker = new Konva.Circle({
+                            x: startX,
+                            y: this.centerY - 30,
+                            radius: 12,
+                            fill: '#f5576c',
+                            stroke: 'white',
+                            strokeWidth: 3,
+                            shadowBlur: 10,
+                            shadowColor: '#f5576c'
+                        });
+                        this.layer.add(this.currentMarker);
+                        
+                        // 创建箭头
+                        const arrow = new Konva.Arrow({
+                            points: [startX, this.centerY - 30, startX, this.centerY - 30],
+                            pointerLength: 15,
+                            pointerWidth: 12,
+                            fill: this.operand >= 0 ? '#43e97b' : '#f5576c',
+                            stroke: this.operand >= 0 ? '#43e97b' : '#f5576c',
+                            strokeWidth: 3
+                        });
+                        this.layer.add(arrow);
+                        
+                        // GSAP 动画
+                        const timeline = gsap.timeline();
+                        
+                        // 标记点跳动到起始位置
+                        timeline.to(this.currentMarker, {
+                            y: this.centerY,
+                            duration: 0.5,
+                            ease: "bounce.out"
+                        });
+                        
+                        // 箭头和标记点移动
+                        const moveDistance = endX - startX;
+                        timeline.to([this.currentMarker, arrow], {
+                            x: endX,
+                            duration: 1.5,
+                            ease: "power2.inOut",
+                            onUpdate: () => {
+                                const currentX = this.currentMarker.x();
+                                arrow.points([currentX, this.centerY - 30, currentX + (moveDistance > 0 ? 30 : -30), this.centerY - 30]);
+                                this.layer.draw();
+                            }
+                        });
+                        
+                        // 标记点跳动到终点
+                        timeline.to(this.currentMarker, {
+                            y: this.centerY,
+                            duration: 0.3,
+                            ease: "bounce.out"
+                        });
+                        
+                        // 创建终点标记
+                        timeline.call(() => {
+                            const endMarker = new Konva.Circle({
+                                x: endX,
+                                y: this.centerY,
+                                radius: 10,
+                                fill: '#43e97b',
+                                stroke: 'white',
+                                strokeWidth: 2
+                            });
+                            this.layer.add(endMarker);
+                            
+                            const endLabel = new Konva.Text({
+                                x: endX - 15,
+                                y: this.centerY - 35,
+                                text: endValue.toString(),
+                                fontSize: 18,
+                                fontFamily: 'Arial',
+                                fill: '#43e97b',
+                                fontWeight: 'bold'
+                            });
+                            this.layer.add(endLabel);
+                            
+                            this.layer.draw();
+                        });
+                        
+                        this.animation = timeline;
+                        
+                        // 显示结果
+                        const opSymbol = this.operation === 'add' ? '+' : '-';
+                        this.result = {
+                            show: true,
+                            value: endValue,
+                            expression: `${this.startValue} ${opSymbol} ${Math.abs(this.operand)}`
+                        };
+                    },
+                    
+                    updateTemperature() {
+                        this.temperature.final = this.temperature.initial + this.temperature.change;
+                    },
+                    
+                    updateAltitude() {
+                        this.altitude.final = this.altitude.start + this.altitude.change;
+                    },
+                    
+                    updateFinance() {
+                        this.finance.final = this.finance.initial + this.finance.change;
+                    },
+                    
+                    generateQuestions() {
+                        this.questions = [];
+                        this.score.show = false;
+                        
+                        const operations = ['+', '-', '×', '÷'];
+                        
+                        for (let i = 0; i < 5; i++) {
+                            const op = operations[Math.floor(Math.random() * operations.length)];
+                            let a, b, answer, expression;
+                            
+                            if (op === '+' || op === '-') {
+                                a = Math.floor(Math.random() * 21) - 10;
+                                b = Math.floor(Math.random() * 21) - 10;
+                                answer = op === '+' ? a + b : a - b;
+                                expression = `${a} ${op} ${b}`;
+                            } else {
+                                a = Math.floor(Math.random() * 11) - 5;
+                                b = Math.floor(Math.random() * 10) + 1;
+                                if (a === 0) a = Math.floor(Math.random() * 5) + 1;
+                                if (op === '×') {
+                                    answer = a * b;
+                                    expression = `${a} ${op} ${b}`;
+                                } else {
+                                    // 确保能整除
+                                    answer = a;
+                                    const temp = a * b;
+                                    a = temp;
+                                    expression = `${a} ${op} ${b}`;
+                                }
+                            }
+                            
+                            this.questions.push({
+                                expression: expression,
+                                answer: answer,
+                                userAnswer: null,
+                                answered: false,
+                                correct: false
+                            });
+                        }
+                    },
+                    
+                    checkAnswer(index) {
+                        const question = this.questions[index];
+                        if (question.userAnswer === null || question.userAnswer === '') {
+                            return;
+                        }
+                        
+                        question.answered = true;
+                        question.correct = question.userAnswer === question.answer;
+                    },
+                    
+                    checkAllAnswers() {
+                        let correct = 0;
+                        this.questions.forEach(q => {
+                            if (!q.answered && q.userAnswer !== null && q.userAnswer !== '') {
+                                q.answered = true;
+                                q.correct = q.userAnswer === q.answer;
+                            }
+                            if (q.correct) correct++;
+                        });
+                        
+                        this.score = {
+                            show: true,
+                            correct: correct,
+                            total: this.questions.length,
+                            percentage: Math.round((correct / this.questions.length) * 100)
+                        };
+                    }
+                },
+                beforeUnmount() {
+                    if (this.animation) {
+                        this.animation.kill();
+                    }
+                    if (this.stage) {
+                        this.stage.destroy();
+                    }
+                }
+            }).mount('#app');
+        });
+    </script>
+</body>
+</html>
+

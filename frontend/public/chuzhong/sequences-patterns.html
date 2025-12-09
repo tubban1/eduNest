@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>等差与等比数列 - 初中数学教学</title>
+    <meta name="description" content="学习等差数列和等比数列的基本概念，掌握通项公式的推导和应用，通过数列生成器和模式预测器理解数列规律，培养模式识别能力。">
+    <meta name="keywords" content="等差数列,等比数列,通项公式,数列规律,模式识别,初中数学">
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" 
+          onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .concept-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .concept-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .concept-card p {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .demo-panel {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+            margin-top: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .control-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .sequence-display {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+            min-height: 100px;
+        }
+        
+        .sequence-item {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 5px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            animation: popIn 0.3s ease-out;
+        }
+        
+        @keyframes popIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .pattern-predictor {
+            background: #f0f9ff;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        
+        .pattern-sequence {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .sequence-box {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .sequence-box.unknown {
+            background: #ffd700;
+            color: #333;
+            border: 3px dashed #667eea;
+        }
+        
+        .practice-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 30px;
+        }
+        
+        .practice-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .practice-item.correct {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .practice-item.incorrect {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .score-display {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #667eea;
+            margin-top: 20px;
+        }
+        
+        .formula-display {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        
+        .answer-input {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 150px;
+            margin: 10px;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <!-- Vue 3.5.20 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    
+    <!-- KaTeX -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" 
+            onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        const app = createApp({
+            setup() {
+                // 数列生成器
+                const sequenceType = ref('arithmetic'); // 'arithmetic' 或 'geometric'
+                const firstTerm = ref(2);
+                const commonDiff = ref(3); // 公差或公比
+                const numTerms = ref(10);
+                const generatedSequence = ref([]);
+                
+                // 模式预测器
+                const patternSequence = ref([2, 5, 8, 11]);
+                const patternAnswer = ref('');
+                const patternFeedback = ref('');
+                const patternType = ref('arithmetic');
+                
+                // 练习题目
+                const practiceQuestions = ref([
+                    { 
+                        id: 1, 
+                        type: 'arithmetic',
+                        sequence: [3, 7, 11, 15],
+                        q: '找出数列的通项公式：$3, 7, 11, 15, \\ldots$',
+                        ans: '4n-1',
+                        user: '',
+                        correct: null
+                    },
+                    { 
+                        id: 2, 
+                        type: 'geometric',
+                        sequence: [2, 6, 18, 54],
+                        q: '找出数列的通项公式：$2, 6, 18, 54, \\ldots$',
+                        ans: '2×3^(n-1)',
+                        user: '',
+                        correct: null
+                    },
+                    {
+                        id: 3,
+                        type: 'arithmetic',
+                        sequence: [10, 15, 20],
+                        q: '等差数列：首项为 $10$，公差为 $5$，求第 $10$ 项。',
+                        ans: '55',
+                        user: '',
+                        correct: null
+                    },
+                    {
+                        id: 4,
+                        type: 'geometric',
+                        sequence: [5, 10, 20],
+                        q: '等比数列：首项为 $5$，公比为 $2$，求第 $8$ 项。',
+                        ans: '640',
+                        user: '',
+                        correct: null
+                    },
+                    {
+                        id: 5,
+                        type: 'pattern',
+                        sequence: [1, 4, 9, 16],
+                        q: '找出规律并预测下一个数：$1, 4, 9, 16, \\ldots$',
+                        ans: '25',
+                        user: '',
+                        correct: null
+                    }
+                ]);
+                const practiceScore = ref(null);
+                
+                // 生成数列
+                const generateSequence = () => {
+                    const sequence = [];
+                    if (sequenceType.value === 'arithmetic') {
+                        // 等差数列
+                        for (let i = 0; i < numTerms.value; i++) {
+                            sequence.push(firstTerm.value + i * commonDiff.value);
+                        }
+                    } else {
+                        // 等比数列
+                        for (let i = 0; i < numTerms.value; i++) {
+                            sequence.push(firstTerm.value * Math.pow(commonDiff.value, i));
+                        }
+                    }
+                    generatedSequence.value = sequence;
+                    
+                    // 使用 GSAP 动画显示
+                    if (window.gsap) {
+                        setTimeout(() => {
+                            const items = document.querySelectorAll('.sequence-item');
+                            items.forEach((item, index) => {
+                                gsap.from(item, {
+                                    opacity: 0,
+                                    scale: 0,
+                                    duration: 0.3,
+                                    delay: index * 0.05
+                                });
+                            });
+                        }, 50);
+                    }
+                };
+                
+                // 计算通项公式（显示用）
+                const generalTermFormula = computed(() => {
+                    if (sequenceType.value === 'arithmetic') {
+                        // 等差数列：a_n = a_1 + (n-1)d
+                        if (typeof katex !== 'undefined') {
+                            try {
+                                return katex.renderToString(`a_n = a_1 + (n-1)d = ${firstTerm.value} + (n-1) \\times ${commonDiff.value} = ${firstTerm.value} + ${commonDiff.value}(n-1)`, {
+                                    throwOnError: false,
+                                    displayMode: false
+                                });
+                            } catch (e) {
+                                return `a_n = ${firstTerm.value} + (n-1) × ${commonDiff.value}`;
+                            }
+                        }
+                        return `a_n = ${firstTerm.value} + (n-1) × ${commonDiff.value}`;
+                    } else {
+                        // 等比数列：a_n = a_1 × r^(n-1)
+                        if (typeof katex !== 'undefined') {
+                            try {
+                                return katex.renderToString(`a_n = a_1 \\times r^{n-1} = ${firstTerm.value} \\times ${commonDiff.value}^{n-1}`, {
+                                    throwOnError: false,
+                                    displayMode: false
+                                });
+                            } catch (e) {
+                                return `a_n = ${firstTerm.value} × ${commonDiff.value}^(n-1)`;
+                            }
+                        }
+                        return `a_n = ${firstTerm.value} × ${commonDiff.value}^(n-1)`;
+                    }
+                });
+                
+                // 检查模式并预测
+                const checkPattern = () => {
+                    const seq = patternSequence.value;
+                    if (seq.length < 3) {
+                        patternFeedback.value = '至少需要3个数才能识别模式';
+                        return;
+                    }
+                    
+                    // 检查是否为等差数列
+                    const diff = seq[1] - seq[0];
+                    let isArithmetic = true;
+                    for (let i = 1; i < seq.length - 1; i++) {
+                        if (seq[i + 1] - seq[i] !== diff) {
+                            isArithmetic = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isArithmetic) {
+                        patternType.value = 'arithmetic';
+                        const nextTerm = seq[seq.length - 1] + diff;
+                        const userAns = parseFloat(patternAnswer.value);
+                        if (Math.abs(userAns - nextTerm) < 0.01) {
+                            patternFeedback.value = `✓ 正确！这是等差数列，公差为 ${diff}，下一个数是 ${nextTerm}`;
+                            patternFeedback.value = patternFeedback.value.replace(/\d+/g, (m) => m);
+                        } else {
+                            patternFeedback.value = `✗ 错误。这是等差数列，公差为 ${diff}，下一个数应该是 ${nextTerm}`;
+                        }
+                        return;
+                    }
+                    
+                    // 检查是否为等比数列
+                    if (seq[0] !== 0) {
+                        const ratio = seq[1] / seq[0];
+                        let isGeometric = true;
+                        for (let i = 1; i < seq.length - 1; i++) {
+                            if (Math.abs(seq[i + 1] / seq[i] - ratio) > 0.0001) {
+                                isGeometric = false;
+                                break;
+                            }
+                        }
+                        
+                        if (isGeometric) {
+                            patternType.value = 'geometric';
+                            const nextTerm = seq[seq.length - 1] * ratio;
+                            const userAns = parseFloat(patternAnswer.value);
+                            if (Math.abs(userAns - nextTerm) < 0.01) {
+                                patternFeedback.value = `✓ 正确！这是等比数列，公比为 ${ratio}，下一个数是 ${nextTerm}`;
+                            } else {
+                                patternFeedback.value = `✗ 错误。这是等比数列，公比为 ${ratio}，下一个数应该是 ${nextTerm}`;
+                            }
+                            return;
+                        }
+                    }
+                    
+                    // 检查是否为平方数列
+                    let isSquare = true;
+                    for (let i = 0; i < seq.length; i++) {
+                        const sqrt = Math.sqrt(seq[i]);
+                        if (Math.abs(sqrt - Math.round(sqrt)) > 0.0001) {
+                            isSquare = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isSquare) {
+                        patternType.value = 'square';
+                        const nextIndex = seq.length + 1;
+                        const nextTerm = nextIndex * nextIndex;
+                        const userAns = parseFloat(patternAnswer.value);
+                        if (Math.abs(userAns - nextTerm) < 0.01) {
+                            patternFeedback.value = `✓ 正确！这是平方数列，下一个数是 ${nextTerm}`;
+                        } else {
+                            patternFeedback.value = `✗ 错误。这是平方数列，下一个数应该是 ${nextTerm}`;
+                        }
+                        return;
+                    }
+                    
+                    patternFeedback.value = '无法识别的模式，请尝试其他数列';
+                };
+                
+                // 提交练习
+                const submitPractice = () => {
+                    let correctCount = 0;
+                    practiceQuestions.value.forEach(q => {
+                        const userAns = q.user.trim().toLowerCase().replace(/\s/g, '');
+                        const correctAns = q.ans.trim().toLowerCase().replace(/\s/g, '');
+                        
+                        // 标准化答案格式
+                        let normalizedUser = userAns.replace(/\*/g, '×').replace(/\^/g, '^');
+                        let normalizedAns = correctAns.replace(/\*/g, '×').replace(/\^/g, '^');
+                        
+                        if (q.id <= 2) {
+                            // 通项公式题：支持多种格式
+                            normalizedUser = normalizedUser.replace(/×/g, '').replace(/\^/g, '^');
+                            normalizedAns = normalizedAns.replace(/×/g, '').replace(/\^/g, '^');
+                        }
+                        
+                        q.correct = normalizedUser === normalizedAns || 
+                                   parseFloat(userAns) === parseFloat(correctAns);
+                        
+                        if (q.correct) correctCount++;
+                    });
+                    practiceScore.value = `${correctCount} / ${practiceQuestions.value.length}`;
+                };
+                
+                // 重置练习
+                const resetPractice = () => {
+                    practiceQuestions.value.forEach(q => {
+                        q.user = '';
+                        q.correct = null;
+                    });
+                    practiceScore.value = null;
+                };
+                
+                // 渲染 KaTeX
+                const renderKaTeX = () => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            if (typeof renderMathInElement !== 'undefined') {
+                                const container = document.getElementById('app');
+                                if (container) {
+                                    renderMathInElement(container, {
+                                        delimiters: [
+                                            { left: '$$', right: '$$', display: true },
+                                            { left: '$', right: '$', display: false },
+                                            { left: '\\[', right: '\\]', display: true },
+                                            { left: '\\(', right: '\\)', display: false }
+                                        ],
+                                        throwOnError: false
+                                    });
+                                }
+                            }
+                        }, 100);
+                    });
+                };
+                
+                // 监听变化
+                watch([sequenceType, firstTerm, commonDiff, numTerms], () => {
+                    generateSequence();
+                    renderKaTeX();
+                });
+                
+                watch([practiceQuestions], () => {
+                    renderKaTeX();
+                }, { deep: true });
+                
+                onMounted(() => {
+                    generateSequence();
+                    
+                    setTimeout(() => {
+                        renderKaTeX();
+                        
+                        if (window.gsap) {
+                            gsap.from('.section', { opacity: 0, y: 20, duration: 0.6, stagger: 0.1 });
+                        }
+                    }, 200);
+                });
+                
+                return {
+                    sequenceType,
+                    firstTerm,
+                    commonDiff,
+                    numTerms,
+                    generatedSequence,
+                    generalTermFormula,
+                    patternSequence,
+                    patternAnswer,
+                    patternFeedback,
+                    patternType,
+                    practiceQuestions,
+                    practiceScore,
+                    generateSequence,
+                    checkPattern,
+                    submitPractice,
+                    resetPractice
+                };
+            },
+            template: `
+            <div class="container">
+                <h1>等差与等比数列</h1>
+                <p class="subtitle">学习数列的基本概念，掌握通项公式，培养模式识别能力</p>
+                
+                <div class="section">
+                    <h2>一、基本概念</h2>
+                    <div class="concept-grid">
+                        <div class="concept-card">
+                            <h3>等差数列</h3>
+                            <p>从第二项起，每一项与它的前一项的差等于同一个常数的数列，叫做等差数列。</p>
+                            <p>这个常数叫做等差数列的<strong>公差</strong>，通常用字母 $d$ 表示。</p>
+                            <p>例如：$2, 5, 8, 11, 14, \\ldots$（公差 $d = 3$）</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>等比数列</h3>
+                            <p>从第二项起，每一项与它的前一项的比等于同一个常数的数列，叫做等比数列。</p>
+                            <p>这个常数叫做等比数列的<strong>公比</strong>，通常用字母 $r$ 表示。</p>
+                            <p>例如：$2, 6, 18, 54, 162, \\ldots$（公比 $r = 3$）</p>
+                        </div>
+                        <div class="concept-card">
+                            <h3>通项公式</h3>
+                            <p><strong>等差数列：</strong>$a_n = a_1 + (n-1)d$</p>
+                            <p>其中 $a_1$ 是首项，$d$ 是公差，$n$ 是项数。</p>
+                            <p><strong>等比数列：</strong>$a_n = a_1 \\times r^{n-1}$</p>
+                            <p>其中 $a_1$ 是首项，$r$ 是公比，$n$ 是项数。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>二、数列生成器</h2>
+                    <div class="demo-panel">
+                        <div class="control-panel">
+                            <h3 style="color: #667eea; margin-bottom: 20px;">参数设置</h3>
+                            
+                            <div class="control-group">
+                                <label>数列类型</label>
+                                <select v-model="sequenceType" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                                    <option value="arithmetic">等差数列</option>
+                                    <option value="geometric">等比数列</option>
+                                </select>
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>首项 (a₁)</label>
+                                <input type="number" v-model.number="firstTerm" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>{{ sequenceType === 'arithmetic' ? '公差 (d)' : '公比 (r)' }}</label>
+                                <input type="number" v-model.number="commonDiff" step="0.1" />
+                            </div>
+                            
+                            <div class="control-group">
+                                <label>项数 (n)</label>
+                                <input type="number" v-model.number="numTerms" min="1" max="20" />
+                            </div>
+                            
+                            <div class="formula-display">
+                                <strong>通项公式：</strong><br>
+                                <span v-html="generalTermFormula"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="sequence-display">
+                            <h3 style="color: #667eea; margin-bottom: 15px;">生成的数列：</h3>
+                            <div>
+                                <span v-for="(term, index) in generatedSequence" :key="index" class="sequence-item">
+                                    a<sub>{{ index + 1 }}</sub> = {{ term }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>三、模式预测器</h2>
+                    <div class="pattern-predictor">
+                        <h3 style="color: #667eea; margin-bottom: 20px;">观察数列规律，预测下一个数</h3>
+                        
+                        <div class="pattern-sequence">
+                            <div v-for="(num, index) in patternSequence" :key="index" class="sequence-box">
+                                {{ num }}
+                            </div>
+                            <div class="sequence-box unknown">
+                                ?
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 10px;">
+                                你的答案：
+                            </label>
+                            <input type="number" v-model.number="patternAnswer" class="answer-input" />
+                            <button class="btn" @click="checkPattern">检查答案</button>
+                        </div>
+                        
+                        <div v-if="patternFeedback" :class="['feedback', patternFeedback.includes('✓') ? 'correct' : 'incorrect']">
+                            {{ patternFeedback }}
+                        </div>
+                        
+                        <div style="margin-top: 30px; padding: 15px; background: white; border-radius: 8px;">
+                            <strong>提示：</strong>
+                            <ul style="margin-top: 10px; line-height: 1.8;">
+                                <li>观察相邻两项之间的差（等差数列）</li>
+                                <li>观察相邻两项之间的比（等比数列）</li>
+                                <li>观察是否与平方数、立方数等有关</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>四、练习与巩固</h2>
+                    <div class="practice-section">
+                        <h3 style="color: #667eea; margin-bottom: 20px;">完成以下练习</h3>
+                        
+                        <div v-for="q in practiceQuestions" :key="q.id" 
+                             :class="['practice-item', q.correct === true ? 'correct' : q.correct === false ? 'incorrect' : '']">
+                            <p style="margin-bottom: 15px; font-size: 1.1em;" v-html="q.q"></p>
+                            <input type="text" 
+                                   v-model="q.user" 
+                                   placeholder="输入答案" 
+                                   :disabled="practiceScore !== null"
+                                   class="answer-input" />
+                            <span v-if="q.correct === true" style="color: #28a745; font-weight: bold; margin-left: 10px;">✓ 正确</span>
+                            <span v-else-if="q.correct === false" style="color: #dc3545; font-weight: bold; margin-left: 10px;">
+                                ✗ 错误，正确答案：{{ q.ans }}
+                            </span>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button class="btn" @click="submitPractice" v-if="practiceScore === null">提交答案</button>
+                            <button class="btn btn-secondary" @click="resetPractice" v-if="practiceScore !== null">重新答题</button>
+                        </div>
+                        
+                        <div v-if="practiceScore !== null" class="score-display">
+                            得分：{{ practiceScore }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
+
