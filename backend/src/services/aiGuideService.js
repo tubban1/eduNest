@@ -80,6 +80,7 @@ const getOrGenerateMetadata = async (contentId) => {
     ];
 
     const result = await aiProviderFactory.createChatCompletion({
+      provider: 'qenda',
       messages,
       max_tokens: 4000,
       temperature: 0.2
@@ -140,6 +141,7 @@ const initConversation = async (contentId, userId) => {
       ];
 
       result = await aiProviderFactory.createChatCompletion({
+        provider: 'qenda',
         messages,
         max_tokens: 500,
         temperature: 0.7
@@ -249,6 +251,7 @@ const handleChat = async (conversationId, message, uiState, userId) => {
 
     // 4. Call LLM with streaming enabled
     const stream = await aiProviderFactory.createChatCompletion({
+      provider: 'qenda',
       messages: llmMessages,
       max_tokens: 1000,
       temperature: 0.7,

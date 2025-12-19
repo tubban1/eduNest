@@ -16,7 +16,7 @@ router.post('/generate', [
   body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
-  body('provider').optional().isIn(['ark', 'kimi']).withMessage('provider 必须是 ark 或 kimi'),
+  body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
   body('requestId').optional().isUUID().withMessage('requestId 必须是有效的UUID')
 ], async (req, res) => {
   try {
@@ -503,7 +503,7 @@ router.post('/generate-async', [
   body('learning_stage').optional().isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
-  body('provider').optional().isIn(['ark', 'kimi']).withMessage('provider 必须是 ark 或 kimi')
+  body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);

@@ -28,15 +28,27 @@ class AIProviderFactory {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${process.env.KIMI_API_KEY}`
         }
+      },
+      qenda: {
+        name: 'QENDA (Gemini)',
+        apiKey: process.env.QENDA_API_KEY,
+        baseURL: process.env.QENDA_URL || '',
+        model: process.env.QENDA_MODEL || 'gemini-3-flash-preview',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.QENDA_API_KEY}`
+        },
+        // QENDA 使用 Gemini API 格式，不是 OpenAI 兼容格式
+        isGeminiFormat: true
       }
     };
     
-    this.defaultProvider = process.env.DEFAULT_AI_PROVIDER || 'ark';
+    this.defaultProvider = process.env.DEFAULT_AI_PROVIDER || 'qenda';
   }
 
   /**
    * 获取指定的AI提供商配置
-   * @param {string} providerName - 提供商名称 (ark, kimi)
+   * @param {string} providerName - 提供商名称 (ark, kimi, qenda)
    * @returns {Object} 提供商配置
    */
   getProvider(providerName = null) {
@@ -44,14 +56,14 @@ class AIProviderFactory {
     
     
     if (!this.providers[provider]) {
-      throw new Error(`不支持的AI提供商: ${provider}`);
+      throw new Error(`Unsupported AI provider: ${provider}`);
     }
     
     const config = this.providers[provider];
     
     
     if (!config.apiKey || config.apiKey === 'your-api-key-here') {
-      throw new Error(`${config.name} API密钥未配置或使用默认值`);
+      throw new Error(`${config.name} API key not configured or using default value`);
     }
     
     return config;
@@ -111,14 +123,105 @@ class AIProviderFactory {
   }) {
     const providerConfig = this.getProvider(provider);
     const requestModel = model || providerConfig.model;
+    const isQenda = provider === 'qenda' || providerConfig.isGeminiFormat;
     
-    const requestPayload = {
-      model: requestModel,
-      messages,
-      temperature,
-      max_tokens,
-      stream
-    };
+    // 根据提供商格式构建请求负载
+    let requestPayload;
+    let requestURL = providerConfig.baseURL;
+    
+    if (isQenda) {
+      // QENDA 使用 Gemini API 格式
+      // 分离 system 消息和普通消息
+      let systemInstruction = null;
+      const contents = [];
+      
+      for (const msg of messages) {
+        if (msg.role === 'system') {
+          // System 消息使用 systemInstruction 字段
+          if (!systemInstruction) {
+            systemInstruction = {
+              parts: [{ text: msg.content }]
+            };
+          } else {
+            // 如果有多个 system 消息，合并它们
+            systemInstruction.parts[0].text += '\n' + msg.content;
+          }
+        } else {
+          contents.push({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+          });
+        }
+      }
+      
+      requestPayload = {
+        contents: contents,
+        generationConfig: {
+          temperature: temperature,
+          maxOutputTokens: max_tokens,
+          thinkingConfig: {
+            includeThoughts: false,
+            thinkingBudget: 26240
+          }
+        }
+      };
+      
+      // 如果有 system instruction，添加到请求负载
+      if (systemInstruction) {
+        requestPayload.systemInstruction = systemInstruction;
+      }
+      
+      // QENDA URL 格式
+      // 流式: /v1beta/models/{model}:streamGenerateContent?key={apiKey}&alt=sse
+      // 非流式: /v1beta/models/{model}:generateContent?key={apiKey}
+      const baseUrl = providerConfig.baseURL || '';
+      const endpoint = stream ? 'streamGenerateContent' : 'generateContent';
+      const streamParam = stream ? '&alt=sse' : '';
+      
+      if (baseUrl.includes('{{YOUR_API_KEY}}')) {
+        // 如果 URL 包含占位符，替换为实际 API key
+        requestURL = baseUrl.replace('{{YOUR_API_KEY}}', providerConfig.apiKey);
+        // 确保使用正确的端点
+        if (stream) {
+          requestURL = requestURL.replace(':generateContent', ':streamGenerateContent');
+          if (!requestURL.includes('alt=sse')) {
+            requestURL += requestURL.includes('?') ? '&alt=sse' : '?alt=sse';
+          }
+        }
+      } else if (baseUrl.includes('?key=') || baseUrl.includes(':generateContent') || baseUrl.includes(':streamGenerateContent')) {
+        // 如果 URL 已经包含完整路径，确保使用正确的端点
+        if (stream) {
+          requestURL = baseUrl.replace(':generateContent', ':streamGenerateContent');
+          if (!requestURL.includes(':streamGenerateContent')) {
+            requestURL = baseUrl.replace(':streamGenerateContent', ':streamGenerateContent');
+          }
+          if (!requestURL.includes('alt=sse')) {
+            requestURL += requestURL.includes('?') ? '&alt=sse' : '?alt=sse';
+          }
+        } else {
+          requestURL = baseUrl.replace(':streamGenerateContent', ':generateContent');
+          // 移除 alt=sse 参数（如果存在）
+          requestURL = requestURL.replace(/[&?]alt=sse/, '');
+        }
+      } else if (baseUrl) {
+        // 如果提供了 baseURL，拼接完整路径
+        const url = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        requestURL = `${url}/v1beta/models/${requestModel}:${endpoint}?key=${providerConfig.apiKey}${streamParam}`;
+      } else {
+        // 如果没有提供 baseURL，使用默认的 Google Generative AI 端点
+        requestURL = `https://generativelanguage.googleapis.com/v1beta/models/${requestModel}:${endpoint}?key=${providerConfig.apiKey}${streamParam}`;
+      }
+    } else {
+      // OpenAI 兼容格式
+      requestPayload = {
+        model: requestModel,
+        messages,
+        temperature,
+        max_tokens,
+        stream
+      };
+      requestURL = providerConfig.baseURL;
+    }
 
     let lastError = null;
     
@@ -129,7 +232,7 @@ class AIProviderFactory {
         // 如果是流式，不需要设置总超时，而是应该设置 socket 读超时（fetch 不支持直接设置，这里先保持 10 分钟总超时）
         const timeoutId = setTimeout(() => controller.abort(), 600000); 
         
-        const response = await fetch(providerConfig.baseURL, {
+        const response = await fetch(requestURL, {
           method: 'POST',
           headers: providerConfig.headers,
           body: JSON.stringify(requestPayload),
@@ -141,26 +244,74 @@ class AIProviderFactory {
         if (response.ok) {
           if (stream) {
             // 处理流式响应
-            return this.handleStreamResponse(response, provider || this.defaultProvider, requestModel);
+            if (isQenda) {
+              return this.handleQendaStreamResponse(response, provider || this.defaultProvider, requestModel);
+            } else {
+              return this.handleStreamResponse(response, provider || this.defaultProvider, requestModel);
+            }
           } else {
-            const data = await response.json();
+            const responseText = await response.text();
             
-            // 统一响应格式
-            return {
-              provider: provider || this.defaultProvider,
-              model: requestModel,
-              response: data,
-              content: data.choices?.[0]?.message?.content,
-              usage: data.usage,
-              created: data.created,
-              id: data.id
-            };
+            let data;
+            try {
+              data = JSON.parse(responseText);
+            } catch (parseError) {
+              throw new Error(`Failed to parse response: ${parseError.message}`);
+            }
+            
+            // 根据提供商格式解析响应
+            if (isQenda) {
+              // Gemini 格式响应转换为统一格式
+              const candidates = data.candidates || [];
+              
+              // 提取内容：跳过 thought parts，只提取实际的文本内容
+              const parts = candidates[0]?.content?.parts || [];
+              
+              let content = '';
+              for (const part of parts) {
+                // 跳过 thought 部分（思考过程）
+                if (part.thought === true) {
+                  continue;
+                }
+                // 提取文本内容
+                if (part.text) {
+                  content += part.text;
+                }
+              }
+              
+              const usageMetadata = data.usageMetadata || {};
+              
+              return {
+                provider: provider || this.defaultProvider,
+                model: requestModel,
+                response: data,
+                content: content,
+                usage: {
+                  prompt_tokens: usageMetadata.promptTokenCount || 0,
+                  completion_tokens: usageMetadata.candidatesTokenCount || 0,
+                  total_tokens: usageMetadata.totalTokenCount || 0
+                },
+                created: Math.floor(Date.now() / 1000),
+                id: data.modelVersion || `qenda-${Date.now()}`
+              };
+            } else {
+              // OpenAI 兼容格式响应
+              return {
+                provider: provider || this.defaultProvider,
+                model: requestModel,
+                response: data,
+                content: data.choices?.[0]?.message?.content,
+                usage: data.usage,
+                created: data.created,
+                id: data.id
+              };
+            }
           }
         }
 
         // 处理错误响应
         const errorText = await response.text();
-        const errorMessage = `${providerConfig.name} API请求失败: ${response.status} ${response.statusText} - ${errorText}`;
+        const errorMessage = `${providerConfig.name} API request failed: ${response.status} ${response.statusText} - ${errorText}`;
         
         // 检查是否是429错误（并发限制）
         if (response.status === 429) {
@@ -181,7 +332,7 @@ class AIProviderFactory {
           }
           
           if (attempt < maxRetries) {
-            console.log(`${providerConfig.name} API并发限制，等待${waitTime}ms后重试 (${attempt + 1}/${maxRetries})`);
+            console.log(`${providerConfig.name} API rate limited, retrying after ${waitTime}ms (${attempt + 1}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
             continue;
           }
@@ -195,13 +346,13 @@ class AIProviderFactory {
       } catch (error) {
         // 检查是否是超时错误
         if (error.name === 'AbortError') {
-          lastError = new Error('API请求超时(10分钟)');
+          lastError = new Error('API request timeout (10 minutes)');
         } else {
           lastError = error;
         }
         if (attempt < maxRetries) {
           const waitTime = Math.pow(2, attempt) * 1000; // 指数退避
-          console.log(`${providerConfig.name} API请求异常，${waitTime}ms后重试 (${attempt + 1}/${maxRetries}):`, error.message);
+          console.log(`${providerConfig.name} API request error, retrying after ${waitTime}ms (${attempt + 1}/${maxRetries}):`, error.message);
           await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       }
@@ -211,7 +362,69 @@ class AIProviderFactory {
   }
 
   /**
-   * 处理流式响应
+   * 处理 QENDA (Gemini) SSE 流式响应
+   * @param {Response} response - fetch 响应对象
+   * @param {string} provider - 提供商名称
+   * @param {string} model - 模型名称
+   * @returns {AsyncGenerator} 异步生成器，yield 文本片段
+   */
+  async *handleQendaStreamResponse(response, provider, model) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // 保留最后一个可能不完整的行
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine || trimmedLine === 'data: [DONE]') continue;
+          
+          if (trimmedLine.startsWith('data: ')) {
+            try {
+              const jsonStr = trimmedLine.slice(6);
+              const data = JSON.parse(jsonStr);
+              
+              // Gemini SSE 格式：提取 candidates[0].content.parts[0].text
+              const candidates = data.candidates || [];
+              if (candidates.length > 0) {
+                const parts = candidates[0].content?.parts || [];
+                for (const part of parts) {
+                  // 跳过 thought 部分
+                  if (part.thought === true) continue;
+                  
+                  // 提取文本增量
+                  if (part.text) {
+                    yield {
+                      content: part.text,
+                      provider,
+                      model,
+                      id: data.modelVersion || `qenda-${Date.now()}`,
+                      created: Math.floor(Date.now() / 1000),
+                      usage: data.usageMetadata || null
+                    };
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('Failed to parse QENDA stream data:', trimmedLine, e);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /**
+   * 处理流式响应（OpenAI 兼容格式）
    * @param {Response} response - fetch 响应对象
    * @param {string} provider - 提供商名称
    * @param {string} model - 模型名称
@@ -253,7 +466,7 @@ class AIProviderFactory {
                 };
               }
             } catch (e) {
-              console.warn('解析流式数据失败:', trimmedLine, e);
+              console.warn('Failed to parse stream data:', trimmedLine, e);
             }
           }
         }

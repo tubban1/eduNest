@@ -400,7 +400,7 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
 
     // 使用AI提供商工厂发送请求
     const result = await aiProviderFactory.createChatCompletion({
-      provider: provider || 'ark', // 默认使用ARK提供商
+      provider: provider || 'qenda', // 默认使用 QENDA 提供商
       messages: messages,
       max_tokens: 24000,
       temperature: 0.6
@@ -785,7 +785,7 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
 
     // 使用AI提供商工厂发送请求
     const result = await aiProviderFactory.createChatCompletion({
-      provider: provider || 'ark', // 默认使用ARK提供商
+      provider: provider || 'qenda', // 默认使用 QENDA 提供商
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: finalUserPrompt }

@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="对冲套利概念与应用详解：从基础无风险套利到复杂市场偏差套利策略">
+  <meta name="keywords" content="对冲,套利,无风险套利,期权定价,Delta对冲,金融工程">
+  <title>对冲套利概念与应用实验室</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #2c3e50;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    #app {
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      font-size: 1.2em;
+      opacity: 0.9;
+    }
+    
+    .tabs {
+      display: flex;
+      background: #f8f9fa;
+      border-bottom: 3px solid #667eea;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 1.1em;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+      position: relative;
+    }
+    
+    .tab:hover {
+      background: #e9ecef;
+      color: #667eea;
+    }
+    
+    .tab.active {
+      color: #667eea;
+      background: white;
+      border-bottom-color: #667eea;
+    }
+    
+    .tab-content {
+      padding: 40px;
+      min-height: 600px;
+    }
+    
+    .example-section {
+      margin-bottom: 40px;
+    }
+    
+    .example-title {
+      font-size: 1.8em;
+      color: #667eea;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e9ecef;
+    }
+    
+    .description {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      line-height: 1.8;
+    }
+    
+    .formula-box {
+      background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+      padding: 25px;
+      border-radius: 15px;
+      margin: 20px 0;
+      border-left: 5px solid #667eea;
+    }
+    
+    .formula {
+      font-size: 1.3em;
+      font-family: 'Times New Roman', serif;
+      text-align: center;
+      margin: 15px 0;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .input-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .input-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .input-item label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #495057;
+    }
+    
+    .input-item input {
+      padding: 12px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border-color 0.3s;
+    }
+    
+    .input-item input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .result-box {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin: 30px 0;
+      box-shadow: 0 5px 20px rgba(17, 153, 142, 0.3);
+    }
+    
+    .result-title {
+      font-size: 1.3em;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+    
+    .result-item {
+      padding: 10px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      margin: 8px 0;
+      font-size: 1.1em;
+    }
+    
+    .result-value {
+      font-weight: 700;
+      font-size: 1.2em;
+      color: #fff;
+    }
+    
+    .tree-diagram {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 15px;
+      margin: 30px 0;
+      text-align: center;
+    }
+    
+    .tree-node {
+      display: inline-flex;
+      padding: 20px 30px;
+      background: white;
+      border: 3px solid #667eea;
+      border-radius: 10px;
+      margin: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      font-weight: 600;
+      font-size: 1.1em;
+      min-width: 150px;
+      min-height: 80px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #2c3e50; /* 确保文字颜色 */
+    }
+    
+    .tree-arrow {
+      font-size: 2em;
+      color: #667eea;
+      margin: 0 10px;
+    }
+    
+    .tree-branch {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+      min-height: 150px;
+    }
+    
+    .animation-container {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 15px;
+      margin: 30px 0;
+      min-height: 300px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .profit-animation {
+      position: relative;
+      min-height: 400px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 15px;
+      padding: 30px;
+      margin: 30px 0;
+      color: #2c3e50; /* 确保文字颜色是深色 */
+    }
+    
+    .cash-flow-item {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      margin: 10px 0;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      animation: slide-in 0.5s ease-out;
+      color: #2c3e50; /* 确保文字颜色 */
+    }
+    
+    .price-flow {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      margin: 30px 0;
+      position: relative;
+    }
+    
+    .price-box {
+      padding: 20px 30px;
+      border-radius: 15px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.3em;
+      min-width: 150px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    
+    .arrow-flow {
+      font-size: 3em;
+      color: #667eea;
+      animation: pulse-arrow 2s infinite;
+    }
+    
+    @keyframes pulse-arrow {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+    }
+    
+    .cash-flow-item {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      margin: 10px 0;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      animation: slide-in 0.5s ease-out;
+    }
+    
+    @keyframes slide-in {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .profit-badge {
+      display: inline-block;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+      color: white;
+      border-radius: 25px;
+      font-weight: 700;
+      font-size: 1.5em;
+      animation: bounce-in 1s ease-out, pulse-glow 2s infinite;
+      box-shadow: 0 5px 20px rgba(246, 211, 101, 0.5);
+    }
+    
+    @keyframes bounce-in {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.2);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow: 0 5px 20px rgba(246, 211, 101, 0.5);
+      }
+      50% {
+        box-shadow: 0 5px 30px rgba(246, 211, 101, 0.8);
+      }
+    }
+    
+    .hedge-visualization {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .hedge-card {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hedge-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+      animation: sweep 3s infinite;
+    }
+    
+    @keyframes sweep {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    .profit-path {
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      animation: draw-path 2s ease-out forwards;
+    }
+    
+    @keyframes draw-path {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    
+    .value-flow {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin: 20px 0;
+    }
+    
+    .flow-item {
+      text-align: center;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      min-width: 120px;
+    }
+    
+    .flow-arrow {
+      font-size: 2em;
+      color: #667eea;
+    }
+    
+    .comparison-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .price-card {
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: 600;
+    }
+    
+    .price-theoretical {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+    }
+    
+    .price-market {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    
+    .arbitrage-profit {
+      background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: 700;
+      margin: 30px 0;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .step {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 15px 0;
+      border-left: 5px solid #667eea;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      color: #2c3e50; /* 确保文字颜色是深色 */
+    }
+    
+    .result-box .step {
+      background: rgba(255, 255, 255, 0.95); /* 在绿色背景上使用半透明白色 */
+      color: #2c3e50; /* 深色文字 */
+    }
+    
+    .result-box .step p {
+      color: #2c3e50; /* 确保段落文字是深色 */
+    }
+    
+    .result-box .step-title {
+      color: #667eea; /* step-title 使用主题色 */
+    }
+    
+    .step-title {
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 1.2em;
+    }
+    
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    
+    /* 动画相关样式 */
+    .tree-animate,
+    .tree-animate.gsap-animated {
+      opacity: 1 !important; /* 确保始终可见 */
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .tree-animate-up,
+    .tree-animate-up.gsap-animated {
+      opacity: 1 !important; /* 确保始终可见 */
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .tree-animate-down,
+    .tree-animate-down.gsap-animated {
+      opacity: 1 !important; /* 确保始终可见 */
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .portfolio-info-animate,
+    .portfolio-info-animate.gsap-animated {
+      opacity: 1 !important; /* 确保始终可见 */
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    /* 如果 GSAP 加载，这些类会被添加来触发动画 */
+    /* 注意：只有当 body 有 gsap-ready 类且元素未动画化时才会应用这些样式 */
+    body.gsap-ready .tree-animate:not(.gsap-animated):not(.gsap-complete) {
+      opacity: 0 !important;
+    }
+    
+    body.gsap-ready .tree-animate-up:not(.gsap-animated):not(.gsap-complete) {
+      opacity: 0 !important;
+      transform: translateX(-30px);
+    }
+    
+    body.gsap-ready .tree-animate-down:not(.gsap-animated):not(.gsap-complete) {
+      opacity: 0 !important;
+      transform: translateX(30px);
+    }
+    
+    body.gsap-ready .portfolio-info-animate:not(.gsap-animated):not(.gsap-complete) {
+      opacity: 0 !important;
+      transform: translateY(20px);
+    }
+    
+    /* 动画完成后确保可见 */
+    .gsap-animated,
+    .gsap-complete {
+      opacity: 1 !important;
+    }
+    
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+      
+      .tabs {
+        flex-direction: column;
+      }
+      
+      .comparison-box {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="header">
+        <h1>🎯 对冲套利概念与应用实验室</h1>
+        <p>从基础到高级：深入理解无风险套利与对冲策略</p>
+      </div>
+      
+      <div class="tabs">
+        <div class="tab" :class="{ active: activeTab === 'basic' }" @click="activeTab = 'basic'">
+          📚 基础版：无风险套利公式
+        </div>
+        <div class="tab" :class="{ active: activeTab === 'intermediate' }" @click="activeTab = 'intermediate'">
+          🎓 中级版：看跌期权对冲
+        </div>
+        <div class="tab" :class="{ active: activeTab === 'advanced' }" @click="activeTab = 'advanced'">
+          🚀 高级版：市场偏差套利
+        </div>
+      </div>
+      
+      <!-- 基础版 -->
+      <div v-if="activeTab === 'basic'" class="tab-content">
+        <div class="example-section">
+          <h2 class="example-title">一、最简单的示例：无风险套利公式（基础版）</h2>
+          
+          <div class="description">
+            <h3 style="color: #667eea; margin-bottom: 15px; font-size: 1.3em;">🎯 什么是对冲（Hedging）？</h3>
+            <p style="margin-bottom: 15px;"><strong>对冲的核心概念：</strong></p>
+            <ul style="margin-left: 20px; margin-bottom: 15px;">
+              <li><strong>定义：</strong>对冲是一种金融策略，通过构建一个投资组合来抵消另一个投资的风险。</li>
+              <li><strong>目标：</strong>无论市场如何变化，组合的总价值保持稳定，实现"无风险"状态。</li>
+              <li><strong>原理：</strong>如果两个资产的价格变化方向相反或相关，我们可以通过适当的比例组合它们，消除不确定性。</li>
+              <li><strong>应用：</strong>期权定价、风险管理、套利交易等金融工程领域。</li>
+            </ul>
+            
+            <h3 style="color: #667eea; margin: 20px 0 15px 0; font-size: 1.3em;">📚 单期二叉树模型</h3>
+            <p style="margin-bottom: 15px;"><strong>假设场景：</strong></p>
+            <ul style="margin-left: 20px; margin-bottom: 15px;">
+              <li>今天买入某资产价格：<span class="highlight">S₀</span></li>
+              <li>明天资产有两种可能：上涨到 <span class="highlight">Sᵤ</span> 或下跌到 <span class="highlight">S𝒹</span></li>
+              <li>无风险利率：<span class="highlight">r</span></li>
+              <li>如果存在一个衍生品，它在两种状态下的价值分别为：上涨价值 <span class="highlight">Vᵤ</span>，下跌价值 <span class="highlight">V𝒹</span></li>
+            </ul>
+            
+            <h3 style="color: #667eea; margin: 20px 0 15px 0; font-size: 1.3em;">🔑 核心思想：复制组合（Replicating Portfolio）</h3>
+            <p style="margin-bottom: 10px;">我们要构造一个组合（买 Δ 份股票 + 借款 B），使得：</p>
+            <ul style="margin-left: 20px; margin-bottom: 15px;">
+              <li>无论资产上涨还是下跌，这个组合的价值都与衍生品相同</li>
+              <li>如果组合完美复制了衍生品的支付，那么它们的当前价格必须相等（无套利原理）</li>
+              <li>通过求解线性方程组，我们可以找到 Δ 和 B 的值</li>
+            </ul>
+            <p style="background: #e7f3ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+              <strong>💡 关键洞察：</strong>如果我们能够用股票和债券的组合完美复制一个衍生品，那么这个衍生品的价格就等于复制组合的成本。这就是著名的"无套利定价原理"。
+            </p>
+          </div>
+          
+          <div class="formula-box">
+            <h3 style="margin-bottom: 15px; color: #667eea;">🎯 价值公式：</h3>
+            <div class="formula">
+              Δ = (Vᵤ - V𝒹) / (Sᵤ - S𝒹)
+            </div>
+            <div class="formula">
+              B = (Vᵤ - Δ × Sᵤ) / (1 + r)
+            </div>
+            <div class="formula" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; font-weight: 700;">
+              V₀ = Δ × S₀ - B
+            </div>
+            <p style="text-align: center; margin-top: 15px; color: #666;">
+              V₀ 就是衍生品今天的公平价格
+            </p>
+          </div>
+          
+          <div class="input-group">
+            <div class="input-item">
+              <label>当前价格 S₀</label>
+              <input type="number" v-model.number="basic.S0" @input="calculateBasic">
+            </div>
+            <div class="input-item">
+              <label>上涨价格 Sᵤ</label>
+              <input type="number" v-model.number="basic.Su" @input="calculateBasic">
+            </div>
+            <div class="input-item">
+              <label>下跌价格 S𝒹</label>
+              <input type="number" v-model.number="basic.Sd" @input="calculateBasic">
+            </div>
+            <div class="input-item">
+              <label>上涨价值 Vᵤ</label>
+              <input type="number" v-model.number="basic.Vu" @input="calculateBasic">
+            </div>
+            <div class="input-item">
+              <label>下跌价值 V𝒹</label>
+              <input type="number" v-model.number="basic.Vd" @input="calculateBasic">
+            </div>
+            <div class="input-item">
+              <label>无风险利率 r (%)</label>
+              <input type="number" v-model.number="basic.r" step="0.1" @input="calculateBasic">
+            </div>
+          </div>
+          
+          <div v-if="basic.result" class="result-box">
+            <div class="result-title">📊 计算结果：</div>
+            <div class="result-item">
+              Delta (Δ) = <span class="result-value">{{ basic.result.delta.toFixed(4) }}</span>
+              <small style="display: block; opacity: 0.9; margin-top: 5px;">需要买入的股票数量</small>
+            </div>
+            <div class="result-item">
+              借款 B = <span class="result-value">{{ basic.result.B.toFixed(2) }}</span>
+              <small style="display: block; opacity: 0.9; margin-top: 5px;">需要借入的金额</small>
+            </div>
+            <div class="result-item" style="background: rgba(255,255,255,0.3); font-size: 1.3em;">
+              衍生品公平价格 V₀ = <span class="result-value">{{ basic.result.V0.toFixed(2) }}</span>
+            </div>
+          </div>
+          
+          <div class="tree-diagram">
+            <h3 style="margin-bottom: 20px; color: #667eea;">🌳 树状图可视化（单期二叉树模型）</h3>
+            <div style="text-align: center; margin-bottom: 30px;">
+              <div class="tree-node tree-animate" style="margin: 0 auto 20px auto;">
+                S₀ = {{ basic.S0 || 0 }}
+              </div>
+              <div class="tree-branch" style="margin-top: 30px;">
+                <div style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+                  <div class="tree-node tree-animate-up" style="background: #d4edda; border-color: #28a745;">
+                    <div style="font-weight: 700; margin-bottom: 5px; color: #28a745;">上涨路径</div>
+                    <div style="color: #2c3e50;">Sᵤ = {{ basic.Su || 0 }}</div>
+                    <div style="color: #2c3e50;"><small>Vᵤ = {{ basic.Vu || 0 }}</small></div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+                    <span class="tree-arrow tree-animate-up" style="font-size: 2em; color: #28a745; opacity: 1;">↗</span>
+                    <span class="tree-arrow tree-animate-down" style="font-size: 2em; color: #dc3545; opacity: 1;">↘</span>
+                  </div>
+                  <div class="tree-node tree-animate-down" style="background: #f8d7da; border-color: #dc3545;">
+                    <div style="font-weight: 700; margin-bottom: 5px; color: #dc3545;">下跌路径</div>
+                    <div style="color: #2c3e50;">S𝒹 = {{ basic.Sd || 0 }}</div>
+                    <div style="color: #2c3e50;"><small>V𝒹 = {{ basic.Vd || 0 }}</small></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="basic.result" class="portfolio-info-animate" style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px; border: 2px solid #667eea;">
+              <p style="font-size: 1.1em; margin-bottom: 15px;"><strong>🎯 组合构成（复制组合）：</strong></p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div style="padding: 10px; background: #e7f3ff; border-radius: 8px;">
+                  <strong>买入股票：</strong><br>
+                  <span class="highlight" style="font-size: 1.2em;">{{ basic.result.delta.toFixed(4) }}</span> 份
+                </div>
+                <div style="padding: 10px; background: #fff3cd; border-radius: 8px;">
+                  <strong>借入资金：</strong><br>
+                  <span class="highlight" style="font-size: 1.2em;">{{ basic.result.B.toFixed(2) }}</span> 元
+                </div>
+              </div>
+              <p style="padding: 15px; background: linear-gradient(135deg, #11998e15 0%, #38ef7d15 100%); border-radius: 8px; border-left: 4px solid #11998e;">
+                <strong>→ 无论涨跌，组合价值相同 = </strong>
+                <span class="highlight" style="font-size: 1.3em; color: #11998e; font-weight: 700;">
+                  {{ ((basic.result.delta * basic.Su - basic.result.B * (1 + basic.r / 100)).toFixed(2)) }}
+                </span>
+              </p>
+              
+              <div style="margin-top: 25px; padding: 20px; background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); border-radius: 10px; color: white;">
+                <h4 style="font-size: 1.2em; margin-bottom: 15px; font-weight: 700;">💰 如何利用对冲盈利？</h4>
+                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                  <p style="margin-bottom: 10px;"><strong>策略：</strong>如果市场上衍生品的实际交易价格 V_market 与我们计算的公平价格 V₀ 不同，就存在套利机会！</p>
+                  <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>如果 V_market > V₀（衍生品被高估）：</strong>
+                      <ul style="margin-left: 15px; margin-top: 5px;">
+                        <li>卖出衍生品（获得 V_market）</li>
+                        <li>买入复制组合（花费 V₀ = {{ basic.result.V0.toFixed(2) }}）</li>
+                        <li>利润 = V_market - V₀（无风险！）</li>
+                      </ul>
+                    </li>
+                    <li><strong>如果 V_market < V₀（衍生品被低估）：</strong>
+                      <ul style="margin-left: 15px; margin-top: 5px;">
+                        <li>买入衍生品（花费 V_market）</li>
+                        <li>卖空复制组合（获得 V₀ = {{ basic.result.V0.toFixed(2) }}）</li>
+                        <li>利润 = V₀ - V_market（无风险！）</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+                <p style="margin-top: 15px; font-weight: 600; font-size: 1.05em;">
+                  ✨ 关键点：复制组合完美复制了衍生品的支付，所以无论市场如何变化，组合价值总是等于衍生品价值，利润被锁定！
+                </p>
+              </div>
+              
+              <!-- 基础版盈利动画演示 -->
+              <div class="profit-animation">
+                <h3 style="text-align: center; color: #667eea; margin-bottom: 30px; font-size: 1.5em;">🎬 盈利过程动画演示</h3>
+                
+                <div style="margin-bottom: 30px;">
+                  <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #495057;">市场价格 V_market：</label>
+                  <input type="number" v-model.number="basic.Vmarket" step="0.1" 
+                         style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 1.1em;"
+                         placeholder="输入市场价格" @input="updateBasicProfit">
+                </div>
+                
+                <div v-if="basic.Vmarket && basic.result" class="price-flow">
+                  <div class="price-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                    <div style="font-size: 0.9em; opacity: 0.9;">市场价格</div>
+                    <div style="font-size: 1.5em; margin-top: 10px;">{{ basic.Vmarket.toFixed(2) }}</div>
+                  </div>
+                  
+                  <span class="arrow-flow">→</span>
+                  
+                  <div class="price-box" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                    <div style="font-size: 0.9em; opacity: 0.9;">理论价格</div>
+                    <div style="font-size: 1.5em; margin-top: 10px;">{{ basic.result.V0.toFixed(2) }}</div>
+                  </div>
+                  
+                  <span class="arrow-flow">=</span>
+                  
+                  <div class="profit-badge" v-if="basic.profitResult">
+                    {{ basic.profitResult.profit > 0 ? '+' : '' }}{{ basic.profitResult.profit.toFixed(2) }}
+                  </div>
+                </div>
+                
+                <div v-if="basic.Vmarket && basic.result && basic.profitResult" style="margin-top: 40px;">
+                  <div class="hedge-visualization">
+                    <div class="hedge-card">
+                      <div style="font-size: 2em; margin-bottom: 10px;">{{ basic.profitResult.strategy === 'sell' ? '📤' : '📥' }}</div>
+                      <div style="font-weight: 700; margin-bottom: 10px; color: #667eea;">
+                        {{ basic.profitResult.strategy === 'sell' ? '卖出' : '买入' }}衍生品
+                      </div>
+                      <div style="font-size: 1.3em; color: {{ basic.profitResult.strategy === 'sell' ? '#28a745' : '#dc3545' }}; font-weight: 700;">
+                        {{ basic.profitResult.strategy === 'sell' ? '+' : '-' }}{{ basic.Vmarket.toFixed(2) }}
+                      </div>
+                    </div>
+                    
+                    <div class="hedge-card">
+                      <div style="font-size: 2em; margin-bottom: 10px;">{{ basic.profitResult.strategy === 'sell' ? '📥' : '📤' }}</div>
+                      <div style="font-weight: 700; margin-bottom: 10px; color: #667eea;">
+                        {{ basic.profitResult.strategy === 'sell' ? '买入' : '卖空' }}复制组合
+                      </div>
+                      <div style="font-size: 1.3em; color: {{ basic.profitResult.strategy === 'sell' ? '#dc3545' : '#28a745' }}; font-weight: 700;">
+                        {{ basic.profitResult.strategy === 'sell' ? '-' : '+' }}{{ basic.result.V0.toFixed(2) }}
+                      </div>
+                    </div>
+                    
+                    <div class="hedge-card" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: white;">
+                      <div style="font-size: 2em; margin-bottom: 10px;">💰</div>
+                      <div style="font-weight: 700; margin-bottom: 10px;">锁定利润</div>
+                      <div style="font-size: 1.5em; font-weight: 700;">
+                        {{ basic.profitResult.profit.toFixed(2) }}
+                      </div>
+                      <div style="font-size: 0.9em; margin-top: 10px; opacity: 0.9;">无风险！</div>
+                    </div>
+                  </div>
+                  
+                  <div style="margin-top: 30px; padding: 20px; background: #e7f3ff; border-radius: 10px; border-left: 4px solid #667eea;">
+                    <p style="font-weight: 600; color: #667eea; margin-bottom: 10px;">🎯 盈利原理：</p>
+                    <p style="color: #2c3e50; line-height: 1.8;">
+                      通过{{ basic.profitResult.strategy === 'sell' ? '卖出被高估的衍生品并买入复制组合' : '买入被低估的衍生品并卖空复制组合' }}，
+                      我们构造了一个{{ basic.profitResult.strategy === 'sell' ? '空头' : '多头' }}对冲头寸。
+                      无论资产价格上涨还是下跌，复制组合都会完美复制衍生品的支付，
+                      因此利润 <strong>{{ basic.profitResult.profit.toFixed(2) }}</strong> 被完美锁定，完全无风险！
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <p style="margin-top: 15px; padding: 15px; background: #e7f3ff; border-radius: 8px; color: #667eea; font-weight: 600; font-size: 1.05em;">
+                🎯 这就是"无风险套利"的奥秘：通过精确的 Delta 对冲，我们消除了所有不确定性！
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 中级版 -->
+      <div v-if="activeTab === 'intermediate'" class="tab-content">
+        <div class="example-section">
+          <h2 class="example-title">二、中级例子：加入期权（看跌期权）</h2>
+          
+          <div class="description">
+            <h3 style="color: #667eea; margin-bottom: 15px; font-size: 1.3em;">📖 看跌期权（Put Option）基础</h3>
+            <p style="margin-bottom: 15px;"><strong>什么是看跌期权？</strong></p>
+            <ul style="margin-left: 20px; margin-bottom: 15px;">
+              <li><strong>定义：</strong>看跌期权给予持有者在到期日以执行价格 K 卖出标的资产的权利（而非义务）。</li>
+              <li><strong>价值公式：</strong>Put 的价值 = max(K - S, 0)，当资产价格 S 低于执行价格 K 时才有价值。</li>
+              <li><strong>Delta（Δ）：</strong>对于看跌期权，Delta 通常为负值，表示期权价值与资产价格反向变化。</li>
+              <li><strong>对冲策略：</strong>卖出股票来对冲 Put 期权的风险（因为 Delta 为负）。</li>
+            </ul>
+            
+            <h3 style="color: #667eea; margin: 20px 0 15px 0; font-size: 1.3em;">🔍 为什么 Delta 是负数？</h3>
+            <p style="margin-bottom: 10px;">对于看跌期权：</p>
+            <ul style="margin-left: 20px; margin-bottom: 15px;">
+              <li>当资产价格上涨时，Put 价值下降（更不可能被执行）</li>
+              <li>当资产价格下跌时，Put 价值上升（更可能被执行）</li>
+              <li>因此，Δ = ∂V/∂S < 0（负相关）</li>
+              <li>对冲时需要<strong>卖出</strong>股票，而不是买入</li>
+            </ul>
+            
+            <p style="background: #e7f3ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+              <strong>💡 场景：</strong>套利一个欧洲看跌期权（Put Option）<br>
+              <strong>关键特点：</strong>看跌期权的价值 = max(K - S, 0)，其中 K 是执行价格
+            </p>
+          </div>
+          
+          <div class="input-group">
+            <div class="input-item">
+              <label>现价 S₀</label>
+              <input type="number" v-model.number="intermediate.S0" @input="calculateIntermediate">
+            </div>
+            <div class="input-item">
+              <label>上涨价格 Sᵤ</label>
+              <input type="number" v-model.number="intermediate.Su" @input="calculateIntermediate">
+            </div>
+            <div class="input-item">
+              <label>下跌价格 S𝒹</label>
+              <input type="number" v-model.number="intermediate.Sd" @input="calculateIntermediate">
+            </div>
+            <div class="input-item">
+              <label>执行价格 K</label>
+              <input type="number" v-model.number="intermediate.K" @input="calculateIntermediate">
+            </div>
+            <div class="input-item">
+              <label>无风险利率 r (%)</label>
+              <input type="number" v-model.number="intermediate.r" step="0.1" @input="calculateIntermediate">
+            </div>
+          </div>
+          
+          <div v-if="intermediate.result" class="result-box">
+            <div class="result-title">📊 计算结果：</div>
+            
+            <div class="step">
+              <div class="step-title">第一步：计算期权未来价值</div>
+              <p style="color: #2c3e50;">Vᵤ = max(K - Sᵤ, 0) = max({{ intermediate.K }} - {{ intermediate.Su }}, 0) = <strong style="color: #667eea;">{{ intermediate.result.Vu }}</strong></p>
+              <p style="color: #2c3e50;">V𝒹 = max(K - S𝒹, 0) = max({{ intermediate.K }} - {{ intermediate.Sd }}, 0) = <strong style="color: #667eea;">{{ intermediate.result.Vd }}</strong></p>
+            </div>
+            
+            <div class="step">
+              <div class="step-title">第二步：求 Delta (Δ)</div>
+              <p style="color: #2c3e50;">Δ = (Vᵤ - V𝒹) / (Sᵤ - S𝒹)</p>
+              <p style="color: #2c3e50;">= ({{ intermediate.result.Vu }} - {{ intermediate.result.Vd }}) / ({{ intermediate.Su }} - {{ intermediate.Sd }})</p>
+              <p style="color: #2c3e50;">= {{ (intermediate.result.Vu - intermediate.result.Vd).toFixed(2) }} / {{ (intermediate.Su - intermediate.Sd).toFixed(2) }}</p>
+              <p style="font-size: 1.2em; margin-top: 10px; color: #2c3e50;">
+                Δ = <span style="color: #667eea; font-weight: 700;">{{ intermediate.result.delta.toFixed(4) }}</span>
+                <small style="display: block; color: #495057; margin-top: 5px;">
+                  (负值表示需要卖出股票来对冲 Put)
+                </small>
+              </p>
+            </div>
+            
+            <div class="step">
+              <div class="step-title">第三步：求借款 B</div>
+              <p style="color: #2c3e50;">B = (Vᵤ - Δ × Sᵤ) / (1 + r)</p>
+              <p style="color: #2c3e50;">= ({{ intermediate.result.Vu }} - ({{ intermediate.result.delta.toFixed(4) }}) × {{ intermediate.Su }}) / (1 + {{ (intermediate.r / 100).toFixed(2) }})</p>
+              <p style="color: #2c3e50;">= {{ (intermediate.result.Vu - intermediate.result.delta * intermediate.Su).toFixed(2) }} / {{ (1 + intermediate.r / 100).toFixed(2) }}</p>
+              <p style="font-size: 1.2em; margin-top: 10px; color: #2c3e50;">
+                B = <span style="color: #667eea; font-weight: 700;">{{ intermediate.result.B.toFixed(2) }}</span>
+              </p>
+            </div>
+            
+            <div class="step" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; border-left: 5px solid #fff;">
+              <div class="step-title" style="color: white;">第四步：求期权价格（使用风险中性概率）</div>
+              <p style="margin-bottom: 10px; color: white;">或者使用复制组合法：</p>
+              <p style="color: white;">V₀ = Δ × S₀ - B = ({{ intermediate.result.delta.toFixed(4) }}) × {{ intermediate.S0 }} - {{ intermediate.result.B.toFixed(2) }}</p>
+              <p style="color: white;">= {{ (intermediate.result.delta * intermediate.S0).toFixed(2) }} - {{ intermediate.result.B.toFixed(2) }}</p>
+              <p style="color: white;">= {{ intermediate.result.V0.toFixed(2) }}</p>
+              <p style="margin-top: 15px; font-size: 1.1em; color: white;">使用风险中性概率法：</p>
+              <p style="color: white;">q = {{ intermediate.result.q }}（上涨概率）</p>
+              <p style="color: white;">P₀ = [q × Vᵤ + (1-q) × V𝒹] / (1 + r)</p>
+              <p style="color: white;">= [{{ intermediate.result.q }} × {{ intermediate.result.Vu }} + (1-{{ intermediate.result.q }}) × {{ intermediate.result.Vd }}] / {{ (1 + intermediate.r / 100).toFixed(2) }}</p>
+              <p style="font-size: 1.5em; margin-top: 15px; font-weight: 700; color: white;">
+                Put 期权价格 P₀ = <span style="background: rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 5px;">{{ intermediate.result.P0.toFixed(2) }}</span>
+              </p>
+            </div>
+            
+            <div class="step" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: white; border-left: 5px solid #fff; margin-top: 20px;">
+              <div class="step-title" style="color: white; font-size: 1.3em;">💰 如何通过对冲看跌期权盈利？</div>
+              
+              <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <p style="margin-bottom: 15px; font-weight: 600; font-size: 1.1em;">策略一：卖出被高估的 Put 期权 + Delta 对冲</p>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                  <li><strong>卖出 Put 期权：</strong>如果市场价格 P_market > 理论价格 P₀ = {{ intermediate.result.P0.toFixed(2) }}，卖出期权获得收入</li>
+                  <li><strong>构造 Delta 对冲组合：</strong>
+                    <ul style="margin-left: 15px; margin-top: 5px;">
+                      <li>卖出 {{ Math.abs(intermediate.result.delta).toFixed(4) }} 份股票（因为 Δ = {{ intermediate.result.delta.toFixed(4) }} < 0）</li>
+                      <li>借出资金 {{ intermediate.result.B.toFixed(2) }} 元</li>
+                    </ul>
+                  </li>
+                  <li><strong>锁定利润：</strong>无论资产价格上涨还是下跌，对冲组合都会完美复制 Put 的支付</li>
+                  <li><strong>无风险利润：</strong>P_market - P₀ = 利润（被锁定，无风险！）</li>
+                </ol>
+              </div>
+              
+              <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <p style="margin-bottom: 15px; font-weight: 600; font-size: 1.1em;">策略二：买入被低估的 Put 期权 + 反向对冲</p>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                  <li><strong>买入 Put 期权：</strong>如果市场价格 P_market < 理论价格 P₀ = {{ intermediate.result.P0.toFixed(2) }}，买入期权</li>
+                  <li><strong>构造反向对冲：</strong>
+                    <ul style="margin-left: 15px; margin-top: 5px;">
+                      <li>买入 {{ Math.abs(intermediate.result.delta).toFixed(4) }} 份股票（与 Delta 相反）</li>
+                      <li>借入资金 {{ intermediate.result.B.toFixed(2) }} 元</li>
+                    </ul>
+                  </li>
+                  <li><strong>锁定利润：</strong>P₀ - P_market = 利润（无风险！）</li>
+                </ol>
+              </div>
+              
+              <p style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.3); border-radius: 8px; font-weight: 600;">
+                ✨ 关键洞察：Delta 对冲消除了资产价格波动的风险，无论市场涨跌，利润都被完美锁定！这就是期权交易中"市场中性"策略的核心。
+              </p>
+            </div>
+            
+            <!-- 中级版盈利动画演示 -->
+            <div v-if="intermediate.result" class="profit-animation" style="background: #f8f9fa;">
+              <h3 style="text-align: center; color: #667eea; margin-bottom: 30px; font-size: 1.5em;">🎬 Put 期权对冲盈利动画演示</h3>
+              
+              <div style="margin-bottom: 30px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50;">市场价格 P_market：</label>
+                <input type="number" v-model.number="intermediate.Pmarket" step="0.1" 
+                       style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 1.1em; background: white; color: #2c3e50;"
+                       placeholder="输入 Put 期权市场价格" @input="updateIntermediateProfit">
+              </div>
+              
+              <div v-if="intermediate.Pmarket && intermediate.result" class="price-flow">
+                <div class="price-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                  <div style="font-size: 0.9em; opacity: 0.9;">市场价格</div>
+                  <div style="font-size: 1.5em; margin-top: 10px;">{{ intermediate.Pmarket.toFixed(2) }}</div>
+                </div>
+                
+                <span class="arrow-flow">-</span>
+                
+                <div class="price-box" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                  <div style="font-size: 0.9em; opacity: 0.9;">理论价格</div>
+                  <div style="font-size: 1.5em; margin-top: 10px;">{{ intermediate.result.P0.toFixed(2) }}</div>
+                </div>
+                
+                <span class="arrow-flow">=</span>
+                
+                <div class="profit-badge" v-if="intermediate.profitResult">
+                  {{ intermediate.profitResult.profit > 0 ? '+' : '' }}{{ intermediate.profitResult.profit.toFixed(2) }}
+                </div>
+              </div>
+              
+              <div v-if="intermediate.Pmarket && intermediate.result && intermediate.profitResult" style="margin-top: 40px;">
+                <div class="cash-flow-item" style="animation-delay: 0s; background: white; color: #2c3e50;">
+                  <div style="flex: 1;">
+                    <div style="font-size: 1.2em; font-weight: 700; color: #667eea; margin-bottom: 5px;">
+                      {{ intermediate.profitResult.strategy === 'sell' ? '📤 卖出' : '📥 买入' }} Put 期权
+                    </div>
+                    <div :style="{
+                      fontSize: '1.5em',
+                      color: intermediate.profitResult.strategy === 'sell' ? '#28a745' : '#dc3545',
+                      fontWeight: '700'
+                    }">
+                      {{ intermediate.profitResult.strategy === 'sell' ? '+' : '-' }}{{ intermediate.Pmarket.toFixed(2) }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="cash-flow-item" style="animation-delay: 0.2s; background: white; color: #2c3e50;">
+                  <div style="flex: 1;">
+                    <div style="font-size: 1.2em; font-weight: 700; color: #667eea; margin-bottom: 5px;">
+                      {{ intermediate.profitResult.strategy === 'sell' ? '📤 卖出' : '📥 买入' }} {{ Math.abs(intermediate.result.delta).toFixed(4) }} 份股票
+                    </div>
+                    <div :style="{
+                      fontSize: '1.3em',
+                      color: intermediate.profitResult.strategy === 'sell' ? '#28a745' : '#dc3545',
+                      fontWeight: '700'
+                    }">
+                      {{ intermediate.profitResult.strategy === 'sell' ? '+' : '-' }}{{ (Math.abs(intermediate.result.delta) * intermediate.S0).toFixed(2) }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="cash-flow-item" style="animation-delay: 0.4s; background: white; color: #2c3e50;">
+                  <div style="flex: 1;">
+                    <div style="font-size: 1.2em; font-weight: 700; color: #667eea; margin-bottom: 5px;">
+                      {{ intermediate.profitResult.strategy === 'sell' ? '💵 借出' : '💸 借入' }} 资金 B
+                    </div>
+                    <div :style="{
+                      fontSize: '1.3em',
+                      color: intermediate.profitResult.strategy === 'sell' ? '#dc3545' : '#28a745',
+                      fontWeight: '700'
+                    }">
+                      {{ intermediate.profitResult.strategy === 'sell' ? '-' : '+' }}{{ intermediate.result.B.toFixed(2) }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="cash-flow-item" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: white; animation-delay: 0.6s; margin-top: 20px;">
+                  <div style="flex: 1; text-align: center;">
+                    <div style="font-size: 1.5em; font-weight: 700; margin-bottom: 5px; color: white;">💰 锁定利润</div>
+                    <div style="font-size: 2em; font-weight: 700; color: white;">
+                      {{ intermediate.profitResult.profit.toFixed(2) }}
+                    </div>
+                    <div style="font-size: 0.9em; margin-top: 10px; opacity: 0.9; color: white;">无风险！</div>
+                  </div>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #e7f3ff; border-radius: 10px; border-left: 4px solid #667eea;">
+                  <p style="font-weight: 600; color: #667eea; margin-bottom: 10px;">🎯 Delta 对冲原理：</p>
+                  <p style="color: #2c3e50; line-height: 1.8;">
+                    通过{{ intermediate.profitResult.strategy === 'sell' ? '卖出' : '买入' }} Put 期权并构造 Delta 对冲组合（Delta = {{ intermediate.result.delta.toFixed(4) }}），
+                    我们消除了资产价格波动对组合价值的影响。无论资产价格涨到 Sᵤ = {{ intermediate.Su }} 还是跌到 S𝒹 = {{ intermediate.Sd }}，
+                    对冲组合的价值都会完美抵消 Put 期权的支付，因此利润 <strong style="color: #f5576c;">{{ intermediate.profitResult.profit.toFixed(2) }}</strong> 被完美锁定！
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="animation-container">
+            <h3 style="margin-bottom: 20px; color: #667eea;">📈 看跌期权价值折线</h3>
+            <canvas id="put-option-chart" width="800" height="400" style="max-width: 100%; height: auto; background: white; border-radius: 10px;"></canvas>
+          </div>
+          
+          <div class="tree-diagram">
+            <h3 style="margin-bottom: 20px; color: #667eea;">🔄 动态计算 Δ 过程</h3>
+            <div class="value-flow">
+              <div class="flow-item">
+                <div style="font-size: 1.5em; margin-bottom: 10px;">点1</div>
+                <div>(Sᵤ, Vᵤ)</div>
+                <div style="color: #28a745; font-weight: 700;">({{ intermediate.Su }}, {{ intermediate.result?.Vu || 0 }})</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-item" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div style="font-size: 1.5em; margin-bottom: 10px;">斜率</div>
+                <div>Δ = {{ intermediate.result?.delta.toFixed(4) || '-0.5' }}</div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-item">
+                <div style="font-size: 1.5em; margin-bottom: 10px;">点2</div>
+                <div>(S𝒹, V𝒹)</div>
+                <div style="color: #dc3545; font-weight: 700;">({{ intermediate.Sd }}, {{ intermediate.result?.Vd || 0 }})</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 高级版 -->
+      <div v-if="activeTab === 'advanced'" class="tab-content">
+        <div class="example-section">
+          <h2 class="example-title">三、复杂例子：加入市场价格偏差导致套利</h2>
+          
+          <div class="description">
+            <h3 style="color: #667eea; margin-bottom: 15px; font-size: 1.3em;">💰 什么是套利（Arbitrage）？</h3>
+            <p style="margin-bottom: 15px;"><strong>套利的定义：</strong></p>
+            <ul style="margin-left: 20px; margin-bottom: 15px;">
+              <li><strong>定义：</strong>利用同一资产在不同市场或不同形式下的价格差异，通过同时买卖获得无风险利润。</li>
+              <li><strong>核心特征：</strong>无风险、无投入（或净投入为零）、立即盈利。</li>
+              <li><strong>前提条件：</strong>市场存在定价错误或偏差。</li>
+              <li><strong>结果：</strong>套利行为会迅速消除价格差异，使市场回归均衡。</li>
+            </ul>
+            
+            <h3 style="color: #667eea; margin: 20px 0 15px 0; font-size: 1.3em;">🎯 套利策略的核心思想</h3>
+            <p style="margin-bottom: 10px;">当市场价格偏离理论价格时：</p>
+            <ol style="margin-left: 20px; margin-bottom: 15px;">
+              <li><strong>识别偏差：</strong>发现市场价格与理论价格（通过复制组合计算）不一致</li>
+              <li><strong>构造对冲组合：</strong>卖出被高估的资产，同时买入复制组合</li>
+              <li><strong>锁定利润：</strong>由于组合完美复制了资产，无论市场如何变化，都能获得确定的利润</li>
+              <li><strong>风险中性：</strong>通过 Delta 对冲，消除了所有市场风险</li>
+            </ol>
+            
+            <h3 style="color: #667eea; margin: 20px 0 15px 0; font-size: 1.3em;">📊 示例数据说明</h3>
+            <ul style="margin-left: 20px; margin-bottom: 15px;">
+              <li><strong>理论价格 P_fair = 10.71：</strong>通过对冲公式计算得出的公平价格</li>
+              <li><strong>市场价格 P_market = 16：</strong>市场实际交易价格（被高估）</li>
+              <li><strong>套利利润 = 16 - 10.71 = 5.29：</strong>无风险利润！</li>
+            </ul>
+            
+            <p style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+              <strong>⚠️ 重要提示：</strong>在真实市场中，套利机会通常非常短暂。一旦发现，大量套利者会迅速行动，使价格回归均衡。这正是金融市场的效率体现！
+            </p>
+          </div>
+          
+          <div class="input-group">
+            <div class="input-item">
+              <label>理论价格 P_fair</label>
+              <input type="number" v-model.number="advanced.Pfair" step="0.01" @input="calculateAdvanced">
+            </div>
+            <div class="input-item">
+              <label>市场价格 P_market</label>
+              <input type="number" v-model.number="advanced.Pmarket" step="0.01" @input="calculateAdvanced">
+            </div>
+            <div class="input-item">
+              <label>Delta (Δ)</label>
+              <input type="number" v-model.number="advanced.delta" step="0.01" @input="calculateAdvanced">
+            </div>
+            <div class="input-item">
+              <label>借款 B</label>
+              <input type="number" v-model.number="advanced.B" step="0.01" @input="calculateAdvanced">
+            </div>
+            <div class="input-item">
+              <label>现价 S₀</label>
+              <input type="number" v-model.number="advanced.S0" @input="calculateAdvanced">
+            </div>
+          </div>
+          
+          <div v-if="advanced.result" class="comparison-box">
+            <div class="price-card price-theoretical">
+              <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">理论价格</div>
+              <div style="font-size: 2em;">{{ advanced.Pfair.toFixed(2) }}</div>
+            </div>
+            <div class="price-card price-market">
+              <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">市场价格</div>
+              <div style="font-size: 2em;">{{ advanced.Pmarket.toFixed(2) }}</div>
+            </div>
+          </div>
+          
+          <div v-if="advanced.result && advanced.result.profit > 0" class="arbitrage-profit">
+            💰 套利利润 = {{ advanced.result.profit.toFixed(2) }}
+          </div>
+          
+          <div v-if="advanced.result" class="result-box">
+            <div class="result-title">📊 套利策略执行步骤：</div>
+            
+            <div class="step">
+              <div class="step-title">步骤 1：卖出被高估的 Put 期权</div>
+              <p style="color: #2c3e50;">收入：<span style="color: #28a745; font-weight: 700; font-size: 1.2em;">+{{ advanced.Pmarket.toFixed(2) }}</span></p>
+              <p style="color: #495057; margin-top: 5px;">因为市场价格 {{ advanced.Pmarket.toFixed(2) }} > 理论价格 {{ advanced.Pfair.toFixed(2) }}</p>
+            </div>
+            
+            <div class="step">
+              <div class="step-title">步骤 2：卖出 Δ 份股票（因为 Δ = -0.5，所以卖出 0.5 股）</div>
+              <p style="color: #2c3e50;">收入：<span style="color: #28a745; font-weight: 700; font-size: 1.2em;">+{{ (Math.abs(advanced.delta) * advanced.S0).toFixed(2) }}</span></p>
+              <p style="color: #495057; margin-top: 5px;">卖出 {{ Math.abs(advanced.delta).toFixed(4) }} 股，价格 {{ advanced.S0 }}</p>
+            </div>
+            
+            <div class="step">
+              <div class="step-title">步骤 3：借出资金 B</div>
+              <p style="color: #2c3e50;">支出：<span style="color: #dc3545; font-weight: 700; font-size: 1.2em;">-{{ advanced.B.toFixed(2) }}</span></p>
+              <p style="color: #495057; margin-top: 5px;">将资金借出，获得无风险利率收益</p>
+            </div>
+            
+            <div class="step" style="background: #fff3cd; border-left-color: #ffc107;">
+              <div class="step-title" style="color: #856404;">💰 初始现金流：</div>
+              <p style="color: #856404;">收入：{{ advanced.Pmarket.toFixed(2) }} + {{ (Math.abs(advanced.delta) * advanced.S0).toFixed(2) }} = {{ (advanced.Pmarket + Math.abs(advanced.delta) * advanced.S0).toFixed(2) }}</p>
+              <p style="color: #856404;">支出：{{ advanced.B.toFixed(2) }}</p>
+              <p style="font-size: 1.2em; margin-top: 10px; font-weight: 700; color: #856404;">
+                净现金流 = {{ (advanced.Pmarket + Math.abs(advanced.delta) * advanced.S0 - advanced.B).toFixed(2) }}
+              </p>
+            </div>
+            
+            <div class="step" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; border-left-color: #fff;">
+              <div class="step-title" style="color: white;">步骤 4：等待到期</div>
+              <p style="color: white;">无论资产上涨还是下跌，组合价值都会完美复制期权的支付</p>
+              <p style="margin-top: 15px; color: white;">期权的支付由对冲组合完美复制，因此到期时组合价值 = 期权支付</p>
+              <p style="margin-top: 15px; font-weight: 700; color: white; font-size: 1.3em;">
+                套利利润 = 市场价格 - 理论价格 = {{ advanced.result.profit.toFixed(2) }}（无风险！）
+              </p>
+            </div>
+            
+            <div class="step" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: white; border-left-color: #fff; margin-top: 20px;">
+              <div class="step-title" style="color: white; font-size: 1.3em;">💰 对冲盈利机制详解</div>
+              
+              <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 8px; margin-top: 15px;">
+                <p style="margin-bottom: 15px; font-weight: 600; font-size: 1.1em;">🎯 为什么这个策略能盈利？</p>
+                
+                <div style="margin-bottom: 20px;">
+                  <p style="margin-bottom: 10px;"><strong>初始现金流（t=0）：</strong></p>
+                  <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li>卖出 Put 期权：<span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 4px;">+{{ advanced.Pmarket.toFixed(2) }}</span></li>
+                    <li>卖出股票（Δ = {{ advanced.delta.toFixed(2) }}）：<span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 4px;">+{{ (Math.abs(advanced.delta) * advanced.S0).toFixed(2) }}</span></li>
+                    <li>借出资金：<span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 4px;">-{{ advanced.B.toFixed(2) }}</span></li>
+                    <li><strong>净现金流：</strong><span style="background: rgba(255,255,255,0.4); padding: 2px 8px; border-radius: 4px; font-size: 1.2em;">{{ (advanced.Pmarket + Math.abs(advanced.delta) * advanced.S0 - advanced.B).toFixed(2) }}</span></li>
+                  </ul>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <p style="margin-bottom: 10px;"><strong>到期时（t=T）的情况：</strong></p>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">
+                      <p style="font-weight: 600; margin-bottom: 10px;">📈 如果资产上涨到 Sᵤ</p>
+                      <ul style="margin-left: 15px; font-size: 0.95em;">
+                        <li>Put 期权价值：0（不被执行）</li>
+                        <li>对冲组合价值：正好等于 Put 的支付 = 0</li>
+                        <li>净收益：初始现金流（锁定）</li>
+                      </ul>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">
+                      <p style="font-weight: 600; margin-bottom: 10px;">📉 如果资产下跌到 S𝒹</p>
+                      <ul style="margin-left: 15px; font-size: 0.95em;">
+                        <li>Put 期权价值：K - S𝒹</li>
+                        <li>对冲组合价值：正好等于 Put 的支付</li>
+                        <li>净收益：初始现金流（锁定）</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.3); padding: 15px; border-radius: 8px;">
+                  <p style="font-weight: 700; font-size: 1.2em; margin-bottom: 10px;">✨ 关键原理：</p>
+                  <p style="line-height: 1.8;">
+                    通过精确计算 Delta = {{ advanced.delta.toFixed(2) }}，我们构造的对冲组合能够<strong>完美复制</strong> Put 期权在所有可能情况下的支付。
+                    因此，无论市场如何变化，Put 期权的支付都会被对冲组合完全抵消。
+                    我们赚取的利润 = 市场价格与理论价格的差值 = <strong>{{ advanced.result.profit.toFixed(2) }}</strong>，且这个利润是<strong>无风险的</strong>！
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 高级版盈利动画演示 -->
+            <div v-if="advanced.result && advanced.result.profit > 0" class="profit-animation">
+              <h3 style="text-align: center; color: #667eea; margin-bottom: 30px; font-size: 1.5em;">🎬 市场偏差套利盈利动画演示</h3>
+              
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0;">
+                <div class="hedge-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                  <div style="font-size: 2.5em; margin-bottom: 15px;">📤</div>
+                  <div style="font-size: 1.1em; opacity: 0.9; margin-bottom: 10px;">卖出 Put 期权</div>
+                  <div style="font-size: 2em; font-weight: 700;">+{{ advanced.Pmarket.toFixed(2) }}</div>
+                </div>
+                
+                <div class="hedge-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                  <div style="font-size: 2.5em; margin-bottom: 15px;">📊</div>
+                  <div style="font-size: 1.1em; opacity: 0.9; margin-bottom: 10px;">卖出 {{ Math.abs(advanced.delta).toFixed(2) }} 股</div>
+                  <div style="font-size: 2em; font-weight: 700;">+{{ (Math.abs(advanced.delta) * advanced.S0).toFixed(2) }}</div>
+                </div>
+                
+                <div class="hedge-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                  <div style="font-size: 2.5em; margin-bottom: 15px;">💵</div>
+                  <div style="font-size: 1.1em; opacity: 0.9; margin-bottom: 10px;">借出资金</div>
+                  <div style="font-size: 2em; font-weight: 700;">-{{ advanced.B.toFixed(2) }}</div>
+                </div>
+              </div>
+              
+              <div style="text-align: center; margin: 40px 0;">
+                <div style="font-size: 2em; margin-bottom: 20px;">↓</div>
+                <div class="profit-badge" style="font-size: 2em; padding: 20px 40px;">
+                  利润 = {{ advanced.result.profit.toFixed(2) }}
+                </div>
+                <div style="margin-top: 20px; font-size: 1.2em; color: #28a745; font-weight: 600;">✅ 无风险锁定！</div>
+              </div>
+              
+              <div style="margin-top: 40px; padding: 25px; background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
+                <h4 style="color: #667eea; margin-bottom: 20px; font-size: 1.3em;">📈 到期时价值变化可视化</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                  <div style="padding: 20px; background: #d4edda; border-radius: 10px; border: 3px solid #28a745;">
+                    <div style="font-size: 1.3em; font-weight: 700; color: #28a745; margin-bottom: 15px;">📈 资产上涨到 Sᵤ = 120</div>
+                    <div style="line-height: 2;">
+                      <div>Put 支付: <strong>0</strong> (不被执行)</div>
+                      <div>对冲组合价值: <strong>0</strong></div>
+                      <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 5px; color: #28a745; font-weight: 700;">
+                        净收益: {{ advanced.result.profit.toFixed(2) }} ✅
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style="padding: 20px; background: #f8d7da; border-radius: 10px; border: 3px solid #dc3545;">
+                    <div style="font-size: 1.3em; font-weight: 700; color: #dc3545; margin-bottom: 15px;">📉 资产下跌到 S𝒹 = 80</div>
+                    <div style="line-height: 2;">
+                      <div>Put 支付: <strong>K - S𝒹 = 20</strong></div>
+                      <div>对冲组合价值: <strong>20</strong> (完美复制)</div>
+                      <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 5px; color: #dc3545; font-weight: 700;">
+                        净收益: {{ advanced.result.profit.toFixed(2) }} ✅
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%); border-radius: 10px; border-left: 4px solid #667eea;">
+                  <p style="font-weight: 600; color: #667eea; margin-bottom: 10px;">🎯 核心洞察：</p>
+                  <p style="color: #2c3e50; line-height: 1.8;">
+                    无论资产价格上涨还是下跌，Delta 对冲组合都能完美复制 Put 期权的支付。
+                    这意味着 Put 期权的风险被完全对冲掉了，我们赚取的利润 <strong>{{ advanced.result.profit.toFixed(2) }}</strong> 
+                    完全不受市场波动影响，是<strong>100% 无风险的套利利润</strong>！
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="animation-container">
+            <h3 style="margin-bottom: 20px; color: #667eea;">⚖️ 价格对比动画（柱状图）</h3>
+            <div style="display: flex; justify-content: space-around; align-items: flex-end; height: 350px; padding: 20px; background: white; border-radius: 10px; min-height: 350px;">
+              <div style="text-align: center; flex: 1; max-width: 200px;">
+                <div style="position: relative; height: 280px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 10px;">
+                  <div :style="{
+                    background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                    width: '120px',
+                    height: Math.max((advanced.Pfair / Math.max(advanced.Pmarket || 1, advanced.Pfair || 1) * 250), 30) + 'px',
+                    borderRadius: '10px 10px 0 0',
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+                    transition: 'height 0.5s ease',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                    paddingTop: '10px',
+                    color: 'white',
+                    fontWeight: '700',
+                    fontSize: '1.1em'
+                  }">
+                    {{ advanced.Pfair.toFixed(2) }}
+                  </div>
+                </div>
+                <div style="font-weight: 600; color: #11998e; font-size: 1.1em; margin-top: 10px;">理论价格</div>
+                <div style="font-size: 1.3em; font-weight: 700; color: #11998e; margin-top: 5px;">{{ advanced.Pfair.toFixed(2) }}</div>
+              </div>
+              <div style="text-align: center; flex: 1; max-width: 200px;">
+                <div style="position: relative; height: 280px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 10px;">
+                  <div :style="{
+                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                    width: '120px',
+                    height: Math.max((advanced.Pmarket / Math.max(advanced.Pmarket || 1, advanced.Pfair || 1) * 250), 30) + 'px',
+                    borderRadius: '10px 10px 0 0',
+                    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+                    transition: 'height 0.5s ease',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                    paddingTop: '10px',
+                    color: 'white',
+                    fontWeight: '700',
+                    fontSize: '1.1em'
+                  }">
+                    {{ advanced.Pmarket.toFixed(2) }}
+                  </div>
+                </div>
+                <div style="font-weight: 600; color: #f5576c; font-size: 1.1em; margin-top: 10px;">市场价格</div>
+                <div style="font-size: 1.3em; font-weight: 700; color: #f5576c; margin-top: 5px;">{{ advanced.Pmarket.toFixed(2) }}</div>
+              </div>
+            </div>
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                  <strong style="color: #667eea;">价格差异：</strong>
+                  <span style="font-size: 1.2em; font-weight: 700; color: #dc3545;">
+                    {{ Math.abs(advanced.Pmarket - advanced.Pfair).toFixed(2) }}
+                  </span>
+                </div>
+                <div>
+                  <strong style="color: #667eea;">差异百分比：</strong>
+                  <span style="font-size: 1.2em; font-weight: 700; color: #dc3545;">
+                    {{ ((Math.abs(advanced.Pmarket - advanced.Pfair) / advanced.Pfair) * 100).toFixed(1) }}%
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div v-if="advanced.result && advanced.result.profit > 0" style="margin-top: 20px; text-align: center; padding: 20px; background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); border-radius: 15px; color: white; font-size: 1.3em; font-weight: 700; animation: pulse 2s infinite;">
+              💡 套利机会！利润 = {{ advanced.result.profit.toFixed(2) }}
+            </div>
+            <div v-else-if="advanced.result && advanced.result.profit <= 0" style="margin-top: 20px; text-align: center; padding: 15px; background: #e7f3ff; border-radius: 15px; color: #667eea; font-size: 1.1em;">
+              ℹ️ 当前市场价格低于或等于理论价格，无套利机会
+            </div>
+          </div>
+          
+          <div class="tree-diagram">
+            <h3 style="margin-bottom: 20px; color: #667eea;">🌍 平行世界合并动画</h3>
+            <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+              <div style="text-align: center; margin: 20px;">
+                <div style="padding: 20px; background: #d4edda; border-radius: 10px; border: 3px solid #28a745;">
+                  <div style="font-size: 1.3em; font-weight: 700; color: #28a745;">上涨路径</div>
+                  <div style="margin-top: 10px;">资产价值变化</div>
+                  <div style="margin-top: 10px;">→ 组合价值稳定</div>
+                </div>
+              </div>
+              <div style="text-align: center; margin: 20px; align-self: center; font-size: 3em; color: #667eea;">+</div>
+              <div style="text-align: center; margin: 20px;">
+                <div style="padding: 20px; background: #f8d7da; border-radius: 10px; border: 3px solid #dc3545;">
+                  <div style="font-size: 1.3em; font-weight: 700; color: #dc3545;">下跌路径</div>
+                  <div style="margin-top: 10px;">资产价值变化</div>
+                  <div style="margin-top: 10px;">→ 组合价值稳定</div>
+                </div>
+              </div>
+              <div style="text-align: center; margin: 20px; align-self: center; font-size: 3em; color: #667eea;">=</div>
+              <div style="text-align: center; margin: 20px;">
+                <div style="padding: 30px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 15px; color: white;">
+                  <div style="font-size: 1.5em; font-weight: 700; margin-bottom: 10px;">无风险稳态</div>
+                  <div style="font-size: 1.2em;">价值 = 0</div>
+                  <div style="font-size: 1.2em; margin-top: 10px;">利润锁定</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div
+    </div>
+  </div>
+
+  <!-- Vue 3.5.20 with fallback -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <!-- GSAP for animations -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+  <!-- Three.js for 3D visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js" 
+          onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+  
+  <script>
+    const { createApp } = Vue;
+    
+    createApp({
+      data() {
+        return {
+          activeTab: 'basic',
+          basic: {
+            S0: 100,
+            Su: 120,
+            Sd: 80,
+            Vu: 10,
+            Vd: 20,
+            r: 5,
+            Vmarket: null,
+            result: null,
+            profitResult: null
+          },
+          intermediate: {
+            S0: 100,
+            Su: 120,
+            Sd: 80,
+            K: 100,
+            r: 5,
+            Pmarket: null,
+            result: null,
+            profitResult: null
+          },
+          advanced: {
+            Pfair: 10.71,
+            Pmarket: 16,
+            delta: -0.5,
+            B: 57.14,
+            S0: 100,
+            result: {
+              profit: 5.29
+            }
+          }
+        }
+      },
+      mounted() {
+        this.calculateBasic();
+        this.calculateIntermediate();
+        this.calculateAdvanced();
+        
+        // 初始化动画
+        this.$nextTick(() => {
+          this.initAnimations();
+          // 重新绘制图表
+          if (this.activeTab === 'intermediate') {
+            setTimeout(() => {
+              this.drawPutOptionChart();
+            }, 500);
+          }
+        });
+      },
+      watch: {
+        activeTab(newTab) {
+          // Tab 切换时重新初始化动画和绘制图表
+          this.$nextTick(() => {
+            if (newTab === 'intermediate') {
+              setTimeout(() => {
+                this.drawPutOptionChart();
+              }, 300);
+            }
+            if (typeof gsap !== 'undefined') {
+              gsap.from(".tab-content", {
+                opacity: 0,
+                x: 20,
+                duration: 0.4,
+                ease: "power2.out"
+              });
+            }
+          });
+        }
+      },
+      methods: {
+        calculateBasic() {
+          const { S0, Su, Sd, Vu, Vd, r } = this.basic;
+          
+          if (!Su || !Sd || Su === Sd) return;
+          
+          const delta = (Vu - Vd) / (Su - Sd);
+          const B = (Vu - delta * Su) / (1 + r / 100);
+          const V0 = delta * S0 - B;
+          
+          this.basic.result = {
+            delta,
+            B,
+            V0
+          };
+          
+          this.updateBasicProfit();
+        },
+        
+        updateBasicProfit() {
+          if (!this.basic.Vmarket || !this.basic.result) {
+            this.basic.profitResult = null;
+            return;
+          }
+          
+          const Vmarket = this.basic.Vmarket;
+          const V0 = this.basic.result.V0;
+          const profit = Vmarket > V0 ? Vmarket - V0 : V0 - Vmarket;
+          const strategy = Vmarket > V0 ? 'sell' : 'buy';
+          
+          this.basic.profitResult = {
+            profit,
+            strategy
+          };
+        },
+        
+        calculateIntermediate() {
+          const { S0, Su, Sd, K, r } = this.intermediate;
+          
+          if (!Su || !Sd || !K) return;
+          
+          // 计算期权未来价值
+          const Vu = Math.max(K - Su, 0);
+          const Vd = Math.max(K - Sd, 0);
+          
+          // 计算 Delta
+          const delta = (Vu - Vd) / (Su - Sd);
+          
+          // 计算 B
+          const B = (Vu - delta * Su) / (1 + r / 100);
+          
+          // 计算期权价格
+          const V0 = delta * S0 - B;
+          
+          // Put 期权定价的正确方法：
+          // 根据无套利原理，Put 的价格应该等于复制组合的成本
+          // 如果 delta < 0（卖出股票），那么：
+          // Put 价格 = -delta * S0 + B（因为是卖出股票获得现金，加上借出资金）
+          // 但根据用户的示例计算：V0 = -107.14，实际 Put 价格是 10.71
+          // 这个差异可能是因为 Put 是买入期权的成本，而 V0 计算的是组合的净成本
+          // 正确的 Put 价格应该用风险中性概率法或者直接计算：
+          // 根据示例：P0 = (q * Vu + (1-q) * Vd) / (1 + r)，其中 q = (1 + r - d) / (u - d)
+          const u = Su / S0;  // 上涨比例
+          const d = Sd / S0;  // 下跌比例
+          const q = (1 + r / 100 - d) / (u - d);  // 风险中性概率
+          // 使用风险中性概率计算 Put 价格
+          const P0 = (q * Vu + (1 - q) * Vd) / (1 + r / 100);
+          
+          this.intermediate.result = {
+            Vu,
+            Vd,
+            delta,
+            B,
+            V0,
+            P0,
+            q: q.toFixed(4)  // 风险中性概率
+          };
+          
+          // 绘制看跌期权价值图表
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.drawPutOptionChart();
+            }, 100);
+          });
+          
+          this.updateIntermediateProfit();
+        },
+        
+        updateIntermediateProfit() {
+          if (!this.intermediate.Pmarket || !this.intermediate.result) {
+            this.intermediate.profitResult = null;
+            return;
+          }
+          
+          const Pmarket = this.intermediate.Pmarket;
+          const P0 = this.intermediate.result.P0;
+          const profit = Pmarket > P0 ? Pmarket - P0 : P0 - Pmarket;
+          const strategy = Pmarket > P0 ? 'sell' : 'buy';
+          
+          this.intermediate.profitResult = {
+            profit,
+            strategy
+          };
+        },
+        
+        drawPutOptionChart() {
+          const canvas = document.getElementById('put-option-chart');
+          if (!canvas) return;
+          
+          const ctx = canvas.getContext('2d');
+          const { K } = this.intermediate;
+          const width = canvas.width;
+          const height = canvas.height;
+          const padding = 60;
+          
+          // 清空并设置背景
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          
+          // 绘制网格
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 10; i++) {
+            const y = padding + (height - 2 * padding) * i / 10;
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(width - padding, y);
+            ctx.stroke();
+          }
+          for (let i = 0; i <= 10; i++) {
+            const x = padding + (width - 2 * padding) * i / 10;
+            ctx.beginPath();
+            ctx.moveTo(x, padding);
+            ctx.lineTo(x, height - padding);
+            ctx.stroke();
+          }
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(padding, height - padding);
+          ctx.lineTo(width - padding, height - padding);
+          ctx.moveTo(padding, padding);
+          ctx.lineTo(padding, height - padding);
+          ctx.stroke();
+          
+          // 绘制箭头
+          ctx.fillStyle = '#333';
+          // X轴箭头
+          ctx.beginPath();
+          ctx.moveTo(width - padding, height - padding);
+          ctx.lineTo(width - padding - 10, height - padding - 5);
+          ctx.lineTo(width - padding - 10, height - padding + 5);
+          ctx.closePath();
+          ctx.fill();
+          // Y轴箭头
+          ctx.beginPath();
+          ctx.moveTo(padding, padding);
+          ctx.lineTo(padding - 5, padding + 10);
+          ctx.lineTo(padding + 5, padding + 10);
+          ctx.closePath();
+          ctx.fill();
+          
+          // 绘制 Put 期权价值线
+          ctx.strokeStyle = '#f5576c';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          
+          const maxS = Math.max(K * 1.5, 200);
+          const minS = Math.max(K * 0.5, 0);
+          const sRange = maxS - minS;
+          const maxValue = K;
+          
+          for (let s = minS; s <= maxS; s += 1) {
+            const value = Math.max(K - s, 0);
+            const x = padding + (s - minS) / sRange * (width - 2 * padding);
+            const y = height - padding - (value / maxValue) * (height - 2 * padding);
+            
+            if (s === minS) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+          
+          // 填充区域
+          ctx.fillStyle = 'rgba(245, 87, 108, 0.2)';
+          ctx.fill();
+          
+          // 标注执行价格
+          const kX = padding + (K - minS) / sRange * (width - 2 * padding);
+          ctx.strokeStyle = '#667eea';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(kX, padding);
+          ctx.lineTo(kX, height - padding);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 标注文字
+          ctx.fillStyle = '#667eea';
+          ctx.font = 'bold 16px Arial';
+          ctx.fillText('K=' + K, kX + 10, height - padding + 25);
+          ctx.fillText('执行价格', kX - 40, padding - 10);
+          
+          ctx.fillStyle = '#333';
+          ctx.font = 'bold 18px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('S (资产价格)', width / 2, height - 15);
+          ctx.textAlign = 'left';
+          
+          ctx.save();
+          ctx.translate(20, height / 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText('Put 价值', 0, 0);
+          ctx.restore();
+          
+          // 标注关键点
+          ctx.fillStyle = '#f5576c';
+          ctx.beginPath();
+          ctx.arc(kX, height - padding, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        },
+        
+        calculateAdvanced() {
+          const { Pfair, Pmarket, delta, B, S0 } = this.advanced;
+          
+          // 确保有默认值
+          if (Pfair === null || Pfair === undefined || isNaN(Pfair)) {
+            this.advanced.Pfair = 10.71;
+          }
+          if (Pmarket === null || Pmarket === undefined || isNaN(Pmarket)) {
+            this.advanced.Pmarket = 16;
+          }
+          
+          const fair = this.advanced.Pfair || 10.71;
+          const market = this.advanced.Pmarket || 16;
+          
+          const profit = market - fair;
+          
+          this.advanced.result = {
+            profit
+          };
+        },
+        
+        initAnimations() {
+          // 使用 GSAP 添加动画效果
+          if (typeof gsap !== 'undefined') {
+            // 添加 gsap-ready 类来启用动画初始状态
+            document.body.classList.add('gsap-ready');
+            
+            setTimeout(() => {
+              // 树状图动画 - 标记为已动画化，防止样式冲突
+              const treeAnimateEls = document.querySelectorAll('.tree-animate');
+              if (treeAnimateEls.length > 0) {
+                gsap.to(".tree-animate", {
+                  opacity: 1,
+                  scale: 1,
+                  duration: 0.8,
+                  ease: "back.out(1.7)",
+                  onComplete: function() {
+                    document.querySelectorAll('.tree-animate').forEach(el => {
+                      el.classList.add('gsap-animated', 'gsap-complete');
+                      el.style.opacity = '1';
+                    });
+                  }
+                });
+              }
+              
+              const treeUpEls = document.querySelectorAll('.tree-animate-up');
+              if (treeUpEls.length > 0) {
+                gsap.to(".tree-animate-up", {
+                  opacity: 1,
+                  x: 0,
+                  duration: 0.6,
+                  delay: 0.3,
+                  ease: "power2.out",
+                  onComplete: function() {
+                    document.querySelectorAll('.tree-animate-up').forEach(el => {
+                      el.classList.add('gsap-animated', 'gsap-complete');
+                      el.style.opacity = '1';
+                      el.style.transform = 'none';
+                    });
+                  }
+                });
+              }
+              
+              const treeDownEls = document.querySelectorAll('.tree-animate-down');
+              if (treeDownEls.length > 0) {
+                gsap.to(".tree-animate-down", {
+                  opacity: 1,
+                  x: 0,
+                  duration: 0.6,
+                  delay: 0.5,
+                  ease: "power2.out",
+                  onComplete: function() {
+                    document.querySelectorAll('.tree-animate-down').forEach(el => {
+                      el.classList.add('gsap-animated', 'gsap-complete');
+                      el.style.opacity = '1';
+                      el.style.transform = 'none';
+                    });
+                  }
+                });
+              }
+              
+              const portfolioEls = document.querySelectorAll('.portfolio-info-animate');
+              if (portfolioEls.length > 0) {
+                gsap.to(".portfolio-info-animate", {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.6,
+                  delay: 0.8,
+                  ease: "power2.out",
+                  onComplete: function() {
+                    document.querySelectorAll('.portfolio-info-animate').forEach(el => {
+                      el.classList.add('gsap-animated', 'gsap-complete');
+                      el.style.opacity = '1';
+                      el.style.transform = 'none';
+                    });
+                  }
+                });
+              }
+              
+              // 表单输入动画
+              gsap.from(".input-item", {
+                opacity: 0,
+                y: 20,
+                duration: 0.5,
+                stagger: 0.1,
+                delay: 0.2,
+                ease: "power2.out"
+              });
+              
+              // 结果框动画
+              gsap.from(".result-box", {
+                opacity: 0,
+                scale: 0.95,
+                duration: 0.6,
+                delay: 0.3,
+                ease: "power2.out"
+              });
+              
+              // Tab 切换动画
+              gsap.from(".tab-content", {
+                opacity: 0,
+                x: 20,
+                duration: 0.4,
+                ease: "power2.out"
+              });
+            }, 100);
+          } else {
+            // GSAP 未加载时，确保元素可见
+            console.log('GSAP not loaded, showing elements directly');
+            const elements = document.querySelectorAll('.tree-animate, .tree-animate-up, .tree-animate-down, .portfolio-info-animate');
+            elements.forEach(el => {
+              el.style.opacity = '1';
+              el.style.transform = 'none';
+              el.classList.add('gsap-animated', 'gsap-complete'); // 标记为已处理
+            });
+          }
+          
+          // 无论 GSAP 是否加载，都确保树状图在 2 秒后一定可见（安全回退）
+          setTimeout(() => {
+            const elements = document.querySelectorAll('.tree-node, .tree-animate, .tree-animate-up, .tree-animate-down');
+            elements.forEach(el => {
+              el.style.opacity = '1';
+              el.style.transform = 'none';
+              el.classList.add('gsap-complete');
+            });
+          }, 2000);
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
