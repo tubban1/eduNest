@@ -196,17 +196,39 @@ class AsyncGenerationQueue {
         let failed = 0;
         for (const row of data) {
           try {
-            // 直接标记为失败，不进行重试
-            const completedAt = new Date().toISOString();
-            const { data: taskData } = await DatabaseService.supabase
+            // 双重检查：在更新前再次确认任务状态仍为 processing
+            // 防止在查询和更新之间任务已完成的情况
+            const { data: currentTask, error: checkError } = await DatabaseService.supabase
               .from('ai_usage_logs')
-              .select('started_at')
+              .select('id, status, started_at, updated_at')
               .eq('id', row.id)
               .single();
             
+            if (checkError) {
+              logger.error(`Watchdog 检查任务状态失败: ${row.id}`, checkError);
+              continue;
+            }
+            
+            // 如果任务状态已经不是 processing，跳过（可能已经完成或失败）
+            if (!currentTask || currentTask.status !== 'processing') {
+              continue;
+            }
+            
+            // 再次检查 updated_at，确保任务确实超时
+            // 如果 updated_at 已经被更新（例如在流式生成过程中），则不应该标记为超时
+            const updatedAt = new Date(currentTask.updated_at);
+            const thresholdTime = new Date(now - this.taskTimeoutMs);
+            if (updatedAt >= thresholdTime) {
+              // updated_at 已经被更新，说明任务仍在进行中，不应该标记为超时
+              continue;
+            }
+            
+            // 直接标记为失败，不进行重试
+            const completedAt = new Date().toISOString();
+            
             let totalDuration = 0;
-            if (taskData && taskData.started_at) {
-              const startTime = new Date(taskData.started_at);
+            if (currentTask.started_at) {
+              const startTime = new Date(currentTask.started_at);
               const endTime = new Date(completedAt);
               totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
             }
@@ -220,7 +242,8 @@ class AsyncGenerationQueue {
                 total_duration: totalDuration,
                 updated_at: completedAt
               })
-              .eq('id', row.id);
+              .eq('id', row.id)
+              .eq('status', 'processing'); // 只更新仍为 processing 的任务，防止覆盖已完成的任务
             if (updErr) { logger.error('Watchdog 更新失败:', updErr); }
             else { failed++; }
           } catch (e) { logger.error('Watchdog 处理单条记录异常:', e); }
