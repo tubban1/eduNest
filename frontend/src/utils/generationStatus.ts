@@ -161,14 +161,14 @@ export interface QueueStatus {
   max_concurrent: number;
 }
 
-// 状态轮询配置
+// 状态轮询配置（已根据6分钟超时限制调整）
 export const POLLING_CONFIG = {
-  // 渐进式轮询间隔（毫秒）
-  intervals: [32000, 16000, 8000, 4000], // 32s -> 16s -> 8s -> 4s
+  // 渐进式轮询间隔（毫秒）- 调整为更快的间隔
+  intervals: [20000, 10000, 5000, 2000], // 20s -> 10s -> 5s -> 2s
   // 默认轮询间隔（4次后使用）
   defaultInterval: 2000, // 2秒
-  // 最大轮询次数
-  maxAttempts: 300, // 10分钟
+  // 最大轮询次数 - 6分钟超时，平均间隔2秒，约180次
+  maxAttempts: 180, // 6分钟
   // 轮询退避策略
   backoffMultiplier: 1.1,
   // 最大轮询间隔
@@ -180,18 +180,23 @@ export class StatusPollingManager {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
   private callbacks: Map<string, (status: GenerationStatusResponse) => void> = new Map();
   private attemptCounts: Map<string, number> = new Map();
+  // 轮询间隔状态持久化（用于页面刷新后恢复）
+  private pollingIntervals: Map<string, number> = new Map();
 
   startPolling(
     contentId: string, 
     callback: (status: GenerationStatusResponse) => void,
-    apiCall: (id: string) => Promise<{ success: boolean; data: GenerationStatusResponse }>
+    apiCall: (id: string) => Promise<{ success: boolean; data: GenerationStatusResponse }>,
+    restoreAttemptCount?: number // 可选：恢复之前的尝试次数
   ) {
     // 如果已经在轮询，先停止
     this.stopPolling(contentId);
 
     // 设置回调
     this.callbacks.set(contentId, callback);
-    this.attemptCounts.set(contentId, 0);
+    // 如果提供了恢复的尝试次数，使用它；否则从 sessionStorage 恢复
+    const savedAttemptCount = restoreAttemptCount ?? this.restoreAttemptCount(contentId);
+    this.attemptCounts.set(contentId, savedAttemptCount);
 
     // 开始轮询
     const poll = async () => {
@@ -239,7 +244,9 @@ export class StatusPollingManager {
           interval = POLLING_CONFIG.defaultInterval;
         }
         
-        // 不应用退避策略，保持渐进式间隔的清晰性
+        // 保存当前间隔到内存和 sessionStorage（用于页面刷新后恢复）
+        this.pollingIntervals.set(contentId, interval);
+        this.savePollingState(contentId, attemptCount, interval);
 
         // 设置下次轮询
         const timeoutId = setTimeout(poll, interval);
@@ -257,10 +264,12 @@ export class StatusPollingManager {
         // 网络错误使用较短的固定间隔，加快恢复速度
         const interval = 5000; // 5秒
         
-        // 只有在非常长的连续失败后才停止（比如连续失败100次，即500秒后）
+        // 根据6分钟超时限制调整：6分钟 = 360秒，5秒间隔最多72次
+        // 设置为60次（5分钟），留出1分钟缓冲，确保在任务超时前停止无意义的轮询
+        const maxConsecutiveFailures = 60; // 60次 × 5秒 = 300秒（5分钟）
         const consecutiveFailures = this.attemptCounts.get(`failures_${contentId}`) || 0;
-        if (consecutiveFailures > 100) {
-          console.warn(`轮询连续失败次数过多，停止轮询: contentId=${contentId}`);
+        if (consecutiveFailures > maxConsecutiveFailures) {
+          console.warn(`轮询连续失败次数过多（${consecutiveFailures}次），停止轮询: contentId=${contentId}。任务可能已超时（6分钟限制）`);
           this.stopPolling(contentId);
           return;
         }
@@ -286,6 +295,57 @@ export class StatusPollingManager {
     
     this.callbacks.delete(contentId);
     this.attemptCounts.delete(contentId);
+    this.pollingIntervals.delete(contentId);
+    // 清理持久化状态
+    this.clearPollingState(contentId);
+  }
+
+  // 保存轮询状态到 sessionStorage
+  private savePollingState(contentId: string, attemptCount: number, interval: number) {
+    try {
+      if (typeof window !== 'undefined') {
+        const key = `polling_${contentId}`;
+        sessionStorage.setItem(key, JSON.stringify({
+          attemptCount,
+          interval,
+          timestamp: Date.now()
+        }));
+      }
+    } catch (e) {
+      // sessionStorage 可能不可用，忽略错误
+    }
+  }
+
+  // 从 sessionStorage 恢复尝试次数
+  private restoreAttemptCount(contentId: string): number {
+    try {
+      if (typeof window !== 'undefined') {
+        const key = `polling_${contentId}`;
+        const saved = sessionStorage.getItem(key);
+        if (saved) {
+          const state = JSON.parse(saved);
+          // 如果保存的状态超过10分钟，认为已过期，重置为0
+          if (Date.now() - state.timestamp < 10 * 60 * 1000) {
+            return state.attemptCount || 0;
+          }
+        }
+      }
+    } catch (e) {
+      // sessionStorage 可能不可用，忽略错误
+    }
+    return 0;
+  }
+
+  // 清理持久化状态
+  private clearPollingState(contentId: string) {
+    try {
+      if (typeof window !== 'undefined') {
+        const key = `polling_${contentId}`;
+        sessionStorage.removeItem(key);
+      }
+    } catch (e) {
+      // sessionStorage 可能不可用，忽略错误
+    }
   }
 
   stopAllPolling() {
