@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { api, Content } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import ContentAIGenerator from '@/components/ContentAIGenerator';
+import { cache, generateCacheKey } from '@/lib/cache';
 
 function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { lists: any[], refreshLists: () => Promise<void>, userId?: string, refreshKey?: number }) {
   const { t } = useTranslation(['content', 'common']);
@@ -20,37 +21,52 @@ function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { list
   // 刷新内容列表的函数 - 只获取有 full_html 的内容
   // 使用 useCallback 稳定函数引用，避免触发子组件不必要的重新渲染
   const refreshContent = useCallback(async () => {
-    setLoading(true);
-    try {
-      // 如果用户已登录，传递 created_by 参数以获取生成状态
-      // 否则获取所有内容（不限制用户，但不包含生成状态）
-      const filters: any = {};
-      if (userId) {
-        filters.created_by = userId;
-      }
-      const data: any = await api.content.getFiltered(filters);
-      const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
-      
-      // 拆分进行中和已完成内容，进行中内容即使没有 full_html 也保留用于状态卡片展示
+    // 先检查缓存，如果有缓存就不显示 loading
+    const filters: any = {};
+    if (userId) {
+      filters.created_by = userId;
+    }
+    
+    const cacheKey = generateCacheKey('content:filtered', filters);
+    const cached = cache.get<any[]>(cacheKey);
+    
+    // 处理列表数据的辅助函数
+    const processListData = (list: any[]) => {
       const inProgressStatuses = ['pending', 'processing', 'failed'];
       const inProgressContent = list.filter(
         (item: any) => inProgressStatuses.includes(item.generation_status)
       );
-      
       const completedContent = list.filter(
         (item: any) =>
           !inProgressStatuses.includes(item.generation_status) &&
           item.full_html &&
           item.full_html.trim().length > 0
       );
-
-      // 合并后为了避免重复，同一内容可能同时符合两个条件（理论上不会，但做个保险）
       const mergedMap = new Map<string, any>();
       [...inProgressContent, ...completedContent].forEach((item) => {
         mergedMap.set(item.id, item);
       });
-
-      const finalContent = Array.from(mergedMap.values());
+      return Array.from(mergedMap.values());
+    };
+    
+    // 如果有缓存，直接使用，不显示 loading
+    if (cached !== null) {
+      const list = Array.isArray(cached) ? cached : [];
+      const finalContent = processListData(list);
+      setContent(finalContent);
+      setLoading(false);
+      return;
+    }
+    
+    // 没有缓存，显示 loading 并请求数据
+    setLoading(true);
+    try {
+      const data: any = await api.content.getFiltered(filters);
+      // API 返回的已经是数组，不需要再取 data.data
+      const list = Array.isArray(data) ? data : [];
+      
+      // 处理列表数据
+      const finalContent = processListData(list);
       setContent(finalContent);
     } catch (e: any) {
       // 不强制重定向，允许未登录用户查看

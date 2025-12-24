@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { cache, generateCacheKey, CACHE_CONFIG } from './cache';
 
 // 统一的API客户端
 class ApiClient {
@@ -220,6 +221,15 @@ class ApiClient {
       language?: string;
       created_by?: string; // 添加 created_by 支持
     }) => {
+      // 生成缓存键
+      const cacheKey = generateCacheKey('content:filtered', filters);
+      
+      // 尝试从缓存获取
+      const cached = cache.get<any[]>(cacheKey);
+      if (cached !== null) {
+        return cached;
+      }
+
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -232,7 +242,12 @@ class ApiClient {
       });
 
       const data = await this.get(`/content?${params}`);
-      return data.success ? data.data : [];
+      const result = data.success ? data.data : [];
+      
+      // 存入缓存
+      cache.set(cacheKey, result, CACHE_CONFIG.CONTENT_LIST);
+      
+      return result;
     },
 
     getById: async (id: string) => {
@@ -241,22 +256,57 @@ class ApiClient {
     },
 
     getByShortId: async (shortId: string) => {
+      // 生成缓存键
+      const cacheKey = `content:short:${shortId}`;
+      
+      // 尝试从缓存获取
+      const cached = cache.get<any>(cacheKey);
+      if (cached !== null) {
+        return cached;
+      }
+
       const data = await this.get(`/content/short/${shortId}`);
-      return data.success ? data.data : null;
+      const result = data.success ? data.data : null;
+      
+      // 存入缓存
+      if (result) {
+        cache.set(cacheKey, result, CACHE_CONFIG.CONTENT_DETAIL);
+      }
+      
+      return result;
     },
 
     create: async (content: any) => {
       const data = await this.post('/content', content);
+      if (data.success && data.data) {
+        // 清除内容列表缓存
+        cache.deletePattern('content:filtered*');
+        // 如果新内容有 short_id，也清除对应的缓存
+        if (data.data.short_id) {
+          cache.delete(`content:short:${data.data.short_id}`);
+        }
+      }
       return data.success ? data.data : null;
     },
 
     update: async (id: string, updates: any) => {
       const data = await this.put(`/content/${id}`, updates);
+      if (data.success && data.data) {
+        // 清除内容列表缓存
+        cache.deletePattern('content:filtered*');
+        // 清除该内容的缓存
+        if (data.data.short_id) {
+          cache.delete(`content:short:${data.data.short_id}`);
+        }
+        cache.delete(`content:id:${id}`);
+      }
       return data.success ? data.data : null;
     },
 
     delete: async (id: string) => {
       await this.delete(`/content/${id}`);
+      // 清除所有内容相关缓存
+      cache.deletePattern('content:*');
     },
 
     generateThumbnail: async (contentId: string) => {
@@ -366,13 +416,23 @@ class ApiClient {
   }
 
   async addContentToList(contentId: string, listId: string) {
-    return this.post('/user_collections', {
+    const result = await this.post('/user_collections', {
       content_id: contentId, list_id: listId,
     });
+    // 清除收藏相关缓存
+    cache.delete('collection_lists:all');
+    cache.delete(`user_collections:group:${listId}`);
+    cache.delete(`user_collections:content:${contentId}`);
+    return result;
   }
 
   async removeContentFromList(contentId: string, listId: string) {
-    return this.delete(`/user_collections/${contentId}/${listId}`);
+    const result = await this.delete(`/user_collections/${contentId}/${listId}`);
+    // 清除收藏相关缓存
+    cache.delete('collection_lists:all');
+    cache.delete(`user_collections:group:${listId}`);
+    cache.delete(`user_collections:content:${contentId}`);
+    return result;
   }
 
   async getUserCollections(userId: string) {
@@ -380,7 +440,20 @@ class ApiClient {
   }
 
   async getCollectionLists() {
-    return this.get('/collection_lists');
+    const cacheKey = 'collection_lists:all';
+    
+    // 尝试从缓存获取
+    const cached = cache.get<any>(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+
+    const data = await this.get('/collection_lists');
+    
+    // 存入缓存
+    cache.set(cacheKey, data, CACHE_CONFIG.COLLECTION_LIST);
+    
+    return data;
   }
 
   async updateCollectionOrder(orders: { id: string; order: number }[]) {
@@ -403,7 +476,21 @@ class ApiClient {
   }
 
   async getLikedContent() {
-    return this.get('/user_content/liked');
+    const cacheKey = 'user_content:liked';
+    
+    // 尝试从缓存获取
+    const cached = cache.get<any[]>(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+
+    const data = await this.get('/user_content/liked');
+    const result = data.success ? data.data : [];
+    
+    // 存入缓存
+    cache.set(cacheKey, result, CACHE_CONFIG.USER_STATUS);
+    
+    return result;
   }
 
   // Rating API
@@ -526,7 +613,21 @@ class ApiClient {
   }
 
   async getCollectionsByContent(contentId: string) {
-    return this.get(`/user_collections/content/${contentId}`);
+    const cacheKey = `user_collections:content:${contentId}`;
+    
+    // 尝试从缓存获取
+    const cached = cache.get<any[]>(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+
+    const data = await this.get(`/user_collections/content/${contentId}`);
+    const result = data.success ? data.data : [];
+    
+    // 存入缓存
+    cache.set(cacheKey, result, CACHE_CONFIG.USER_STATUS);
+    
+    return result;
   }
 
   // Collection Lists API
@@ -535,6 +636,15 @@ class ApiClient {
      * 根据 short_id 获取 collection_list
      */
     getByShortId: async (shortId: string) => {
+      // 生成缓存键
+      const cacheKey = `collection_list:short:${shortId}`;
+      
+      // 尝试从缓存获取
+      const cached = cache.get<any>(cacheKey);
+      if (cached !== null) {
+        return cached;
+      }
+
       // 获取认证 token
       const token = await this.getLatestToken();
       const headers: Record<string, string> = {
@@ -565,6 +675,9 @@ class ApiClient {
       if (!data.success) {
         throw new Error(data.error || '获取列表失败');
       }
+      
+      // 存入缓存
+      cache.set(cacheKey, data, CACHE_CONFIG.COLLECTION_DETAIL);
       
       return data.data;
     },
