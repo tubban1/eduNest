@@ -1,22 +1,102 @@
-# 数学课程大纲 - 完整 Content Node 列表
+# 数学课程大纲 - Content Node 开发文档
+
+## 📋 目录
+
+1. [数据结构说明](#数据结构说明)
+2. [命名规范](#命名规范)
+3. [完整节点列表](#完整节点列表)
+4. [数据导入指南](#数据导入指南)
+5. [注意事项](#注意事项)
+
+---
 
 ## 数据结构说明
 
-根据 `content_node` 表结构，以下内容适合作为节点：
+### Node Type 层级结构
 
-### Node Type 层级
-- `grade`: 年级
-- `semester`: 学期  
-- `chapter`: 章节
-- `section`: 节（如 1.1、1.2）
-- `subsection`: 小节（如 1.2.1、1.2.2）
-- `topic`: 知识点（可选，用于进一步细分）
+根据 `content_node` 表结构，节点类型按以下层级组织：
+
+| 层级 | node_type | 说明 | 示例 |
+|------|-----------|------|------|
+| 1 | `grade` | 年级 | 7年级、8年级、9年级 |
+| 2 | `semester` | 学期 | 上学期、下学期 |
+| 3 | `chapter` | 章节 | 第一章 有理数、第二章 有理数的运算 |
+| 4 | `section` | 节 | 1.1 正数和负数、1.2 有理数及其大小比较 |
+| 5 | `subsection` | 小节 | 1.2.1 有理数的概念、1.2.2 数轴 |
+| 6 | `topic` | 知识点（可选） | 用于进一步细分知识点 |
+| 特殊 | `exam_scope` | 专题复习 | 专题复习节点 |
 
 ### 通用配置
+
+所有节点共享以下配置：
+
 - **country_code**: `CN`
 - **curriculum_system**: `人教版`
 - **language_code**: `zh-CN`
 - **visibility**: `public`
+
+---
+
+## 命名规范
+
+### 核心原则
+
+1. **title**: 包含章节编号（显示给用户看）
+   - 例如：`第一章 有理数`、`1.1 正数和负数`、`1.2.1 有理数的概念`
+
+2. **key**: **不包含**章节编号，使用内容描述
+   - 例如：`rational_numbers` 而不是 `chapter1_rational_numbers`
+   - 原因：key 是跨语言的规范化标识，章节编号在不同语言/国家可能不同
+
+3. **path**: 使用 key 构建，**不包含**章节编号
+   - 格式：`/cn/gb/math/{grade}/{semester}/{chapter_key}/{section_key}/{subsection_key}`
+   - 例如：`/cn/gb/math/grade7/semester1/rational_numbers`
+   - 而不是：`/cn/gb/math/grade7/semester1/chapter1_rational_numbers`
+
+4. **order_index**: 同一层级的索引（兄弟节点索引）
+   - 所有章节中，第一章 order_index=1，第二章 order_index=2，以此类推
+   - 同一章节内的节，按顺序编号：1, 2, 3...
+
+### 命名示例
+
+#### 章节节点
+
+| title | key | path | order_index |
+|-------|-----|------|-------------|
+| `第一章 有理数` | `rational_numbers` | `/cn/gb/math/grade7/semester1/rational_numbers` | 1 |
+| `第二章 有理数的运算` | `rational_number_operations` | `/cn/gb/math/grade7/semester1/rational_number_operations` | 2 |
+| `第十七章 二次根式` | `quadratic_radicals` | `/cn/gb/math/grade8/semester2/quadratic_radicals` | 17 |
+
+#### 节节点
+
+| title | key | path | order_index |
+|-------|-----|------|-------------|
+| `1.1 正数和负数` | `positive_negative_numbers` | `/cn/gb/math/grade7/semester1/rational_numbers/positive_negative_numbers` | 1 |
+| `1.2 有理数及其大小比较` | `rational_numbers_comparison` | `/cn/gb/math/grade7/semester1/rational_numbers/rational_numbers_comparison` | 2 |
+| `17.1 二次根式` | `quadratic_radicals` | `/cn/gb/math/grade8/semester2/quadratic_radicals/quadratic_radicals` | 1 |
+
+#### 小节节点
+
+| title | key | path | order_index |
+|-------|-----|------|-------------|
+| `1.2.1 有理数的概念` | `rational_number_concept` | `/cn/gb/math/grade7/semester1/rational_numbers/rational_numbers_comparison/rational_number_concept` | 1 |
+| `1.2.2 数轴` | `number_line` | `/cn/gb/math/grade7/semester1/rational_numbers/rational_numbers_comparison/number_line` | 2 |
+
+### Key 命名规则
+
+- 使用英文小写
+- 单词间用下划线分隔
+- **不包含章节编号**（章节编号在不同语言/国家可能不同）
+- 使用内容描述性名称，如 `rational_numbers` 而不是 `chapter1_rational_numbers`
+- 保持简洁但具有描述性
+- 同一层级内唯一
+
+### Path 构建规则
+
+- 格式：`/cn/gb/math/{grade}/{semester}/{chapter_key}/{section_key}/{subsection_key}`
+- 使用 key 构建 path，不使用 title
+- 通过拼接父节点的 path 和当前节点的 key 构建
+- 保持路径唯一性
 
 ---
 
@@ -38,23 +118,23 @@
 1. **1.1 正数和负数**
    - **node_type**: `section`
    - **title**: `1.1 正数和负数`
-- **key**: `positive_negative_numbers`
-- **path**: `/cn/gb/math/grade7/semester1/rational_numbers/positive_negative_numbers`
+   - **key**: `positive_negative_numbers`
+   - **path**: `/cn/gb/math/grade7/semester1/rational_numbers/positive_negative_numbers`
    - **order_index**: 1
 
 2. **1.2 有理数及其大小比较**
    - **node_type**: `section`
    - **title**: `1.2 有理数及其大小比较`
-- **key**: `rational_numbers_comparison`
-- **path**: `/cn/gb/math/grade7/semester1/rational_numbers/rational_numbers_comparison`
+   - **key**: `rational_numbers_comparison`
+   - **path**: `/cn/gb/math/grade7/semester1/rational_numbers/rational_numbers_comparison`
    - **order_index**: 2
 
    **子节点：**
-  - 1.2.1 有理数的概念 (`subsection`, `rational_number_concept`)
-  - 1.2.2 数轴 (`subsection`, `number_line`)
-  - 1.2.3 相反数 (`subsection`, `opposite_numbers`)
-  - 1.2.4 绝对值 (`subsection`, `absolute_value`)
-  - 1.2.5 有理数的大小比较 (`subsection`, `rational_number_comparison`)
+   - 1.2.1 有理数的概念 (`subsection`, `rational_number_concept`)
+   - 1.2.2 数轴 (`subsection`, `number_line`)
+   - 1.2.3 相反数 (`subsection`, `opposite_numbers`)
+   - 1.2.4 绝对值 (`subsection`, `absolute_value`)
+   - 1.2.5 有理数的大小比较 (`subsection`, `rational_number_comparison`)
 
 ##### 第二章 有理数的运算
 - **node_type**: `chapter`
@@ -144,8 +224,6 @@
   - 6.3.1 角的概念 (`subsection`, `angle_concept`)
   - 6.3.2 角的比较与运算 (`subsection`, `angle_comparison_operations`)
   - 6.3.3 余角和补角 (`subsection`, `complementary_supplementary_angles`)
-
----
 
 #### 7年级下学期 (Semester 2)
 
@@ -240,8 +318,6 @@
   - 12.2.2 直方图 (`subsection`, `histogram`)
   - 12.2.3 趋势图 (`subsection`, `trend_chart`)
 
----
-
 ### 8年级 (Grade 8)
 
 #### 8年级上学期 (Semester 1)
@@ -293,8 +369,6 @@
 - 16.1 幂的运算 (`section`, `power_operations`)
 - 16.2 整式的乘法 (`section`, `polynomial_multiplication`)
 - 16.3 乘法公式 (`section`, `multiplication_formulas`)
-
----
 
 #### 8年级下学期 (Semester 2)
 
@@ -386,8 +460,6 @@
   - 方差 (`subsection`, `variance`)
 - 21.3 课题学习 体质健康测试中的数据分析 (`section`, `project_learning_health_data_analysis`)
 
----
-
 ### 9年级 (Grade 9)
 
 #### 9年级上学期 (Semester 1)
@@ -477,8 +549,6 @@
   - 日常生活中的概率问题 (`subsection`, `daily_life_probability`)
 - 26.3 用频率估计概率 (`section`, `frequency_estimate_probability`)
 
----
-
 #### 9年级下学期 (Semester 2)
 
 ##### 第二十七章 反比例函数
@@ -543,8 +613,6 @@
   - 三视图及其画法 (`subsection`, `three_views_drawing`)
   - 例5立体图形、展开图、三视图 (`subsection`, `example5_3d_expansion_views`)
 - 30.3 课题学习 制作立体模型 (`section`, `project_learning_3d_model`)
-
----
 
 ### 专题复习 (Topic Review)
 
@@ -616,6 +684,117 @@
 
 ---
 
+## 数据导入指南
+
+### 1. 导入顺序
+
+必须按照以下顺序导入，确保父节点先于子节点创建：
+
+1. **年级节点**（grade）
+2. **学期节点**（semester）
+3. **章节节点**（chapter）
+4. **节节点**（section）
+5. **小节节点**（subsection）
+6. **知识点节点**（topic，可选）
+7. **专题复习节点**（exam_scope）
+
+### 2. Key 命名规范
+
+- ✅ 使用英文小写
+- ✅ 单词间用下划线分隔
+- ✅ **不包含章节编号**（章节编号在不同语言/国家可能不同）
+- ✅ 使用内容描述性名称，如 `rational_numbers` 而不是 `chapter1_rational_numbers`
+- ✅ 保持简洁但具有描述性
+- ✅ 同一层级内唯一
+
+### 3. Path 构建规则
+
+- 格式：`/cn/gb/math/{grade}/{semester}/{chapter_key}/{section_key}/{subsection_key}`
+- 使用 key 构建 path，不使用 title
+- 通过拼接父节点的 path 和当前节点的 key 构建
+- 保持路径唯一性
+- **不包含章节编号**
+
+### 4. Order Index 规则
+
+- `order_index` 是同一层级内的兄弟节点索引
+- 所有章节中，第一章 order_index=1，第二章 order_index=2，以此类推
+- 同一章节内的节，按顺序编号：1, 2, 3...
+- 专题复习节点的 order_index 设置为 100（确保在所有章节之后）
+
+### 5. Metadata 建议
+
+对于每个节点，可以在 metadata 中存储：
+
+```json
+{
+  "learning_objectives": ["目标1", "目标2"],
+  "estimated_duration": 45,
+  "difficulty_level": "medium",
+  "prerequisites": ["前置知识点key"],
+  "related_exercises": ["练习题ID"],
+  "reading_materials": ["阅读材料"],
+  "math_activities": ["活动内容"],
+  "summary": "章节小结内容",
+  "review_questions": ["复习题"],
+  "info_tech_applications": ["信息技术应用"],
+  "experiments": ["实验与探究"]
+}
+```
+
+### 6. 数据导入脚本示例
+
+```javascript
+// 伪代码示例
+async function importNodes() {
+  // 1. 导入年级节点
+  const grade7 = await createNode({
+    node_type: 'grade',
+    title: '7年级',
+    key: 'grade_7',
+    path: '/cn/gb/math/grade7',
+    country_code: 'CN',
+    curriculum_system: '人教版',
+    language_code: 'zh-CN',
+    order_index: 1
+  });
+
+  // 2. 导入学期节点
+  const semester1 = await createNode({
+    node_type: 'semester',
+    title: '上学期',
+    key: 'semester_1',
+    path: '/cn/gb/math/grade7/semester1',
+    parent_id: grade7.id,
+    order_index: 1
+  });
+
+  // 3. 导入章节节点
+  const chapter1 = await createNode({
+    node_type: 'chapter',
+    title: '第一章 有理数',
+    key: 'rational_numbers',
+    path: '/cn/gb/math/grade7/semester1/rational_numbers',
+    parent_id: semester1.id,
+    order_index: 1
+  });
+
+  // 4. 导入节节点
+  const section1_1 = await createNode({
+    node_type: 'section',
+    title: '1.1 正数和负数',
+    key: 'positive_negative_numbers',
+    path: '/cn/gb/math/grade7/semester1/rational_numbers/positive_negative_numbers',
+    parent_id: chapter1.id,
+    order_index: 1
+  });
+
+  // ... 继续导入其他节点
+}
+```
+
+---
+
 ## 节点统计
 
 ### 按类型统计
@@ -632,51 +811,61 @@
 
 ---
 
-## 数据导入建议
+## 注意事项
 
-### 1. 导入顺序
-1. 年级节点（grade）
-2. 学期节点（semester）
-3. 章节节点（chapter）
-4. 节节点（section）
-5. 小节节点（subsection）
-6. 知识点节点（topic，可选）
-7. 专题复习节点（exam_scope）
+### 1. 章节编号规则
 
-### 2. Key 命名规范
-- 使用英文小写
-- 单词间用下划线分隔
-- **不包含章节编号**（章节编号在不同语言/国家可能不同）
-- 使用内容描述性名称，如 `rational_numbers` 而不是 `rational_numbers`
-- 保持简洁但具有描述性
-- 同一层级内唯一
+- **8年级下学期从第十七章开始**（二次根式），后续所有章节编号依次后移
+- 所有章节的 `order_index` 应该与章节编号对应（第一章=1，第二章=2，...，第三十章=30）
 
-### 3. Path 规范
-- 格式：`/cn/gb/math/{grade}/{semester}/{chapter}/{section}/{subsection}`
-- 使用 key 构建 path
-- 保持路径唯一性
+### 2. 可选内容
 
-### 4. Metadata 建议
-对于每个节点，可以在 metadata 中存储：
-```json
-{
-  "learning_objectives": ["目标1", "目标2"],
-  "estimated_duration": 45,
-  "difficulty_level": "medium",
-  "prerequisites": ["前置知识点key"],
-  "related_exercises": ["练习题ID"],
-  "reading_materials": ["阅读材料"],
-  "math_activities": ["活动内容"],
-  "summary": "章节小结内容"
-}
-```
+- 标记为 `*` 的内容（如 `*10.4 三元一次方程组的解法`、`*22.2.4 一元二次方程的根与系数的关系`）可以作为可选的子节点
+- 导入时可以根据实际需求决定是否包含这些可选节点
+
+### 3. 专题复习
+
+- 专题复习部分适合作为 `exam_scope` 类型的节点
+- 所有专题复习项作为 `topic` 类型的子节点
+- `order_index` 设置为 100，确保在所有章节之后显示
+
+### 4. 多语言支持
+
+- 当前大纲是中文，如需支持多语言，需要为每个节点提供多语言标题
+- `key` 和 `path` 保持英文，不随语言变化
+- `title` 可以根据 `language_code` 提供不同语言的版本
+
+### 5. 数据完整性
+
+- 确保所有节点的 `parent_id` 正确指向父节点
+- 确保所有节点的 `path` 正确构建（通过父节点 path + 当前节点 key）
+- 确保同一层级内的 `order_index` 唯一且连续
+
+### 6. 性能优化
+
+- 导入大量节点时，建议使用批量插入
+- 可以考虑使用事务确保数据一致性
+- 导入后验证所有节点的层级关系是否正确
 
 ---
 
-## 注意事项
+## 开发检查清单
 
-1. **章节编号**: 8年级下学期从第十七章开始（二次根式），后续所有章节编号依次后移
-2. **可选内容**: 标记为 `*` 的内容（如 `*10.4`、`*21.2.4`）可以作为可选的子节点
-3. **专题复习**: 专题复习部分适合作为 `exam_scope` 类型的节点
-4. **多语言支持**: 当前大纲是中文，如需支持多语言，需要为每个节点提供多语言标题
+在导入数据前，请确认：
+
+- [ ] 所有节点的 `key` 不包含章节编号
+- [ ] 所有节点的 `path` 使用 key 构建，不包含章节编号
+- [ ] 所有节点的 `order_index` 在同一层级内唯一且连续
+- [ ] 所有节点的 `parent_id` 正确指向父节点
+- [ ] 章节编号从 1 到 30 连续（8年级下学期从第17章开始）
+- [ ] 专题复习节点的 `order_index` 设置为 100
+- [ ] 所有节点的通用配置（country_code, curriculum_system, language_code, visibility）正确设置
+- [ ] 可选内容（标记为 `*`）已根据需求决定是否导入
+
+---
+
+## 参考文档
+
+- `DATABASE_SETUP.md` - 数据库表结构定义
+- `Math_Curriculum.md` - 原始数学课程大纲
 

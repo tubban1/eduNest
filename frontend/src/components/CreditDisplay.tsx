@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Coins, History } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CreditHistoryItem {
   id: string;
@@ -13,6 +14,7 @@ interface CreditHistoryItem {
 }
 
 export default function CreditDisplay({ className = '' }: { className?: string }) {
+  const { t } = useTranslation(['credits', 'common']);
   const [mounted, setMounted] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,7 +96,9 @@ export default function CreditDisplay({ className = '' }: { className?: string }
             {!error && (
               <ul className="divide-y">
                 {historyLoading && (
-                  <li className="p-3 text-sm text-gray-500">加载中...</li>
+                  <li className="p-3 text-sm text-gray-500">
+                    {mounted ? t('loading', { ns: 'credits', defaultValue: '加载中...' }) : '加载中...'}
+                  </li>
                 )}
                 {!historyLoading && history.length === 0 && (
                   <li className="p-3 text-sm text-gray-500">暂无记录</li>

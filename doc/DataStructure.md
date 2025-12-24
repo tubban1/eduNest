@@ -406,6 +406,27 @@
     "column_default": null
   },
   {
+    "table_name": "content",
+    "column_name": "thumbnail_url",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
+    "column_name": "thumbnail_status",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'pending'::text"
+  },
+  {
+    "table_name": "content",
+    "column_name": "thumbnail_updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "content_likes",
     "column_name": "id",
     "data_type": "uuid",

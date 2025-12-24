@@ -24,11 +24,9 @@ export class TokenMonitor {
    */
   public startMonitoring(intervalMs: number = 5 * 60 * 1000): void {
     if (this.isMonitoring) {
-      console.log('Token监控已在运行中');
       return;
     }
 
-    console.log(`开始Token监控，检查间隔: ${intervalMs / 1000}秒`);
     this.isMonitoring = true;
 
     // 立即检查一次
@@ -49,7 +47,6 @@ export class TokenMonitor {
       this.intervalId = null;
     }
     this.isMonitoring = false;
-    console.log('Token监控已停止');
   }
 
   /**
@@ -60,12 +57,10 @@ export class TokenMonitor {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        console.error('Token状态检查失败:', error);
         return;
       }
 
       if (!session?.access_token) {
-        console.log('Token状态: 无有效session');
         return;
       }
 
@@ -78,11 +73,10 @@ export class TokenMonitor {
       if (timeUntilExpiry < 300 && timeUntilExpiry > 0) {
         await this.refreshToken();
       } else if (timeUntilExpiry <= 0) {
-        console.warn('Token已过期，需要重新登录');
         this.handleTokenExpired();
       }
     } catch (error) {
-      console.error('Token状态检查异常:', error);
+      // Silent error handling
     }
   }
 
@@ -94,7 +88,6 @@ export class TokenMonitor {
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       
       if (refreshError) {
-        console.error('Token自动刷新失败:', refreshError);
         this.handleTokenExpired();
         return false;
       }
@@ -105,7 +98,6 @@ export class TokenMonitor {
 
       return false;
     } catch (error) {
-      console.error('Token刷新异常:', error);
       this.handleTokenExpired();
       return false;
     }
@@ -155,7 +147,6 @@ export class TokenMonitor {
         needsRefresh: timeUntilExpiry < 300
       };
     } catch (error) {
-      console.error('获取token状态失败:', error);
       return { isValid: false };
     }
   }

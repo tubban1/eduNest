@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api, Content } from '@/lib/api';
 import FullHTMLRenderer from './FullHTMLRenderer';
+import { useTranslation } from 'react-i18next';
 
 interface LargeContentCardProps {
   content: Content & {
@@ -15,10 +16,16 @@ interface LargeContentCardProps {
 }
 
 export default function LargeContentCard({ content, onPreview }: LargeContentCardProps) {
+  const { t } = useTranslation(['common']);
+  const [mounted, setMounted] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [thumbnailLoading, setThumbnailLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const generateThumbnail = async () => {
@@ -122,7 +129,7 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
           {/* 质量标签 */}
           {content.quality_score && content.quality_score > 10 && (
             <div className="absolute top-4 right-4 px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm font-semibold shadow-lg">
-              ⭐ 精选
+              {mounted ? t('featured', { ns: 'common', defaultValue: '⭐ 精选' }) : '⭐ 精选'}
             </div>
           )}
         </div>

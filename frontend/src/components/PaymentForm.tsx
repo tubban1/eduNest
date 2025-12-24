@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PaymentFormProps {
   planType: string;
@@ -8,7 +11,13 @@ interface PaymentFormProps {
 }
 
 const PaymentForm: React.FC<PaymentFormProps> = ({ planType, amount, onSuccess, onCancel }) => {
+  const { t } = useTranslation(['common']);
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
@@ -145,7 +154,10 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planType, amount, onSuccess, 
             disabled={loading}
             className="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? '处理中...' : `支付 $${amount}`}
+            {loading 
+              ? (mounted ? t('processing', { ns: 'common', defaultValue: '处理中...' }) : '处理中...')
+              : (mounted ? t('pay', { ns: 'common', defaultValue: `支付 $${amount}`, amount: amount.toString() }) : `支付 $${amount}`)
+            }
           </button>
         </div>
       </form>

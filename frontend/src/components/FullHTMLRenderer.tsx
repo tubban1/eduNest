@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * FullHTMLRenderer - 稳定版
@@ -40,9 +41,15 @@ export default function FullHTMLRenderer({
   codepenMode = false,
   title
 }: FullHTMLRendererProps) {
+  const { t } = useTranslation(['common']);
+  const [mounted, setMounted] = useState(false);
   const [runtimeFullScreen, setRuntimeFullScreen] = useState(false);
   // 运行时检测到内容高度远超视口，覆盖静态全屏检测
   const [runtimeOverrideFullScreen, setRuntimeOverrideFullScreen] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 检测是否为 3D/WebGL 应用或全屏应用
   const isStaticFullScreenApp = useMemo(() => {
@@ -462,8 +469,12 @@ export default function FullHTMLRenderer({
         <div className="absolute inset-0 flex items-center justify-center bg-card bg-opacity-90 z-30">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-foreground">加载中...</p>
-            <p className="text-sm text-muted-foreground mt-2">请稍候，内容正在渲染</p>
+            <p className="text-foreground">
+              {mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : '加载中...'}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {mounted ? t('pleaseWait', { ns: 'common', defaultValue: '请稍候，内容正在渲染' }) : '请稍候，内容正在渲染'}
+            </p>
           </div>
         </div>
       )}

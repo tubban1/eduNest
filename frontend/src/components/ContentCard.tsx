@@ -17,7 +17,6 @@ import {
   isGenerating,
   isFinalStatus
 } from '@/utils/generationStatus';
-import { generateThumbnailFromHTML, extractThumbnailFromHTML } from '@/utils/thumbnailGenerator';
 
 // 发送浏览器通知的辅助函数
 function sendNotification(title: string, body: string) {
@@ -68,6 +67,10 @@ interface ContentCardProps {
     retry_count?: number;
     generation_error?: string;
     user_query?: string;
+    // 缩略图相关字段
+    thumbnail_url?: string;
+    thumbnail_status?: 'pending' | 'generating' | 'ready' | 'failed';
+    thumbnail_updated_at?: string;
   };
   isAuthenticated: boolean;
   editMode: boolean;
@@ -108,55 +111,18 @@ export default function ContentCard({
   const [startedAt, setStartedAt] = useState<string>('');
   const [queuedAt, setQueuedAt] = useState<string>(content.created_at);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [thumbnail, setThumbnail] = useState<string | null>(null);
-  const [thumbnailLoading, setThumbnailLoading] = useState(false);
   const hasAutoRefreshedRef = useRef(false);
   // 记录上一次的状态，用于检测状态变化
   const prevStatusRef = useRef<GenerationStatus | null | undefined>(content.generation_status);
 
   useEffect(() => { setMounted(true); }, []);
 
-  // 生成缩略图
-  useEffect(() => {
-    const generateThumbnail = async () => {
-      if (!content.full_html) {
-        setThumbnail(null);
-        return;
-      }
-
-      setThumbnailLoading(true);
-      try {
-        // 首先尝试快速提取 SVG（不需要渲染）
-        const extracted = extractThumbnailFromHTML(content.full_html);
-        if (extracted.type === 'svg' && extracted.data) {
-          setThumbnail(extracted.data);
-          setThumbnailLoading(false);
-          return;
-        }
-
-        // 如果有 Canvas，需要渲染 HTML 来生成缩略图
-        if (extracted.type === 'canvas' && mounted) {
-          const thumbnailData = await generateThumbnailFromHTML(content.full_html, {
-            width: 400,
-            height: 300,
-            quality: 0.7,
-            timeout: 3000
-          });
-          setThumbnail(thumbnailData);
-        } else {
-          setThumbnail(null);
-        }
-      } catch (error) {
-        setThumbnail(null);
-      } finally {
-        setThumbnailLoading(false);
-      }
-    };
-
-    if (mounted && content.full_html) {
-      generateThumbnail();
-    }
-  }, [content.full_html, content.id, mounted]);
+  // Determine thumbnail display state
+  const thumbnailUrl = content.thumbnail_url;
+  const thumbnailStatus = content.thumbnail_status;
+  const isThumbnailGenerating = thumbnailStatus === 'generating';
+  const isThumbnailReady = thumbnailStatus === 'ready' && thumbnailUrl;
+  const showThumbnailPlaceholder = !thumbnailUrl || thumbnailStatus === 'pending' || thumbnailStatus === 'failed';
 
   // 监听生成状态变化
   useEffect(() => {
@@ -430,31 +396,43 @@ export default function ContentCard({
   return (
     <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-full sm:w-64 sm:min-w-56 sm:max-w-xs mx-auto">
       {/* 缩略图区域 */}
-      <div className="relative w-full h-40 bg-gradient-to-br from-primary/10 to-secondary/10 overflow-hidden">
-        {thumbnailLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <Link href={contentUrl} prefetch={false} className="block">
+        <div className="relative w-full aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 overflow-hidden">
+          {isThumbnailReady ? (
+            <img
+              src={thumbnailUrl}
+              alt={content.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                // 如果图片加载失败，显示占位符
+                (e.target as HTMLImageElement).style.display = 'none';
+                const placeholder = (e.target as HTMLImageElement).nextElementSibling;
+                if (placeholder) {
+                  (placeholder as HTMLElement).classList.remove('hidden');
+                }
+              }}
+            />
+          ) : isThumbnailGenerating ? (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
+              <div className="flex flex-col items-center gap-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="text-xs text-muted-foreground">
+                  {mounted ? t('thumbnailGenerating', { ns: 'content', defaultValue: '生成中...' }) : '生成中...'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
+              <span className="text-4xl">{getEmojiByTags(content.tags)}</span>
+            </div>
+          )}
+          {/* 占位符（图片加载失败时显示） */}
+          <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
+            <span className="text-4xl">{getEmojiByTags(content.tags)}</span>
           </div>
-        ) : thumbnail ? (
-          <img
-            src={thumbnail}
-            alt={content.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              // 如果图片加载失败，显示 emoji
-              (e.target as HTMLImageElement).style.display = 'none';
-              const parent = (e.target as HTMLImageElement).parentElement;
-              if (parent) {
-                parent.innerHTML = `<div class="flex items-center justify-center h-full"><span class="text-6xl">${getEmojiByTags(content.tags)}</span></div>`;
-              }
-            }}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <span className="text-6xl">{getEmojiByTags(content.tags)}</span>
-          </div>
-        )}
-      </div>
+        </div>
+      </Link>
 
       <div className="p-4">
         {/* 标题 - 可点击跳转 */}

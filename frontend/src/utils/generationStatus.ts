@@ -140,6 +140,10 @@ export interface Content {
   generation_progress?: number;
   retry_count?: number;
   generation_error?: string;
+  // 缩略图相关字段
+  thumbnail_url?: string;
+  thumbnail_status?: 'pending' | 'generating' | 'ready' | 'failed';
+  thumbnail_updated_at?: string;
 }
 
 // 批量状态查询结果

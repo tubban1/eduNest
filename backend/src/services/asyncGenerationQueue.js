@@ -515,6 +515,12 @@ class AsyncGenerationQueue {
         // 清理同一 content_id 的其他 pending 任务
         await this.cleanupPendingTasks(contentId, taskId);
         
+        // 触发缩略图生成（异步，不阻塞）
+        this.triggerThumbnailGeneration(contentId).catch(error => {
+          logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
+          // 不抛出错误，避免影响主流程
+        });
+        
       } else {
         // 生成失败，处理重试逻辑
         await this.handleFailure(task, aiResult.error || 'AI生成失败');
@@ -864,6 +870,43 @@ class AsyncGenerationQueue {
     } catch (error) {
       logger.error('手动重试失败:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Trigger thumbnail generation for content (async, non-blocking)
+   * @param {string} contentId - Content ID
+   */
+  async triggerThumbnailGeneration(contentId) {
+    try {
+      // Get content short_id
+      const { data: content, error } = await DatabaseService.supabase
+        .from('content')
+        .select('id, short_id')
+        .eq('id', contentId)
+        .single();
+
+      if (error || !content || !content.short_id) {
+        logger.warn(`[Thumbnail] Cannot trigger thumbnail generation: content not found or missing short_id for ${contentId}`);
+        return;
+      }
+
+      // Get frontend base URL from environment
+      const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+      
+      // Import thumbnail service dynamically to avoid circular dependencies
+      const { generateThumbnail } = require('./thumbnailService');
+      
+      // Trigger thumbnail generation asynchronously (don't await, don't block)
+      generateThumbnail(contentId, content.short_id, baseUrl)
+        .catch(error => {
+          logger.error(`[Thumbnail] Async thumbnail generation failed for content ${contentId}:`, error);
+        });
+      
+      logger.info(`[Thumbnail] Thumbnail generation triggered for content ${contentId} (short_id: ${content.short_id})`);
+    } catch (error) {
+      logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
+      // Don't throw, this is a non-critical operation
     }
   }
 }

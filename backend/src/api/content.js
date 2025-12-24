@@ -295,4 +295,96 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// 手动触发缩略图生成
+router.post('/:id/generate-thumbnail', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get content with short_id
+    const { data: content, error: contentError } = await DatabaseService.supabase
+      .from('content')
+      .select('id, short_id')
+      .eq('id', id)
+      .single();
+
+    if (contentError || !content || !content.short_id) {
+      return res.status(404).json({ success: false, error: 'Content not found or missing short_id' });
+    }
+
+    // Get frontend base URL from environment
+    const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+    
+    // Import thumbnail service
+    const { generateThumbnail } = require('../services/thumbnailService');
+    
+    // Trigger thumbnail generation asynchronously (don't await, return immediately)
+    generateThumbnail(content.id, content.short_id, baseUrl)
+      .catch(error => {
+        console.error(`[Thumbnail] Thumbnail generation failed for content ${content.id}:`, error);
+      });
+
+    res.json({ 
+      success: true, 
+      message: 'Thumbnail generation task started' 
+    });
+  } catch (error) {
+    console.error('[Thumbnail] Failed to trigger thumbnail generation:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 批量重新生成缩略图（仅管理员）
+router.post('/regenerate-thumbnails', authenticateToken, async (req, res) => {
+  try {
+    // Check admin permission
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Admin permission required' });
+    }
+
+    // Find all pending/failed thumbnails
+    const { data, error } = await DatabaseService.supabase
+      .from('content')
+      .select('id, short_id')
+      .in('thumbnail_status', ['pending', 'failed'])
+      .limit(100); // Limit batch size
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    if (!data || data.length === 0) {
+      return res.json({ 
+        success: true, 
+        message: 'No thumbnails to regenerate',
+        count: 0
+      });
+    }
+
+    // Get frontend base URL from environment
+    const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+    
+    // Import thumbnail service
+    const { generateThumbnail } = require('../services/thumbnailService');
+    
+    // Trigger thumbnail generation for all items asynchronously
+    data.forEach(item => {
+      if (item.short_id) {
+        generateThumbnail(item.id, item.short_id, baseUrl)
+          .catch(error => {
+            console.error(`[Thumbnail] Failed to regenerate thumbnail for content ${item.id}:`, error);
+          });
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      message: `Started thumbnail generation for ${data.length} items`,
+      count: data.length
+    });
+  } catch (error) {
+    console.error('[Thumbnail] Failed to batch regenerate thumbnails:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router; 

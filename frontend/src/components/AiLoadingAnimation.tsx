@@ -1,4 +1,7 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // 动画阶段配置
 const LOADING_STAGES = [
@@ -87,6 +90,8 @@ export default function AiLoadingAnimation({
   knowledgePoint, 
   onComplete 
 }: AiLoadingAnimationProps) {
+  const { t } = useTranslation(['common']);
+  const [mounted, setMounted] = useState(false);
   //console.log('AiLoadingAnimation render:', { isActive, knowledgePoint });
   const [currentStage, setCurrentStage] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(0);
@@ -97,6 +102,10 @@ export default function AiLoadingAnimation({
   const stageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 渐隐渐显效果
   const fadeMessage = (message: string) => {
@@ -294,10 +303,10 @@ export default function AiLoadingAnimation({
         {/* 底部提示 */}
         <div className="text-center mt-6">
           <div className="text-sm text-gray-500">
-            🤖 AI正在构建交互式教学项目...
+            {mounted ? t('aiBuilding', { ns: 'common', defaultValue: '🤖 AI正在构建交互式教学项目...' }) : '🤖 AI正在构建交互式教学项目...'}
           </div>
           <div className="text-xs text-gray-400 mt-1">
-            请耐心等待，这可能需要2-3分钟
+            {mounted ? t('pleaseWaitPatiently', { ns: 'common', defaultValue: '请耐心等待，这可能需要2-3分钟' }) : '请耐心等待，这可能需要2-3分钟'}
           </div>
         </div>
 

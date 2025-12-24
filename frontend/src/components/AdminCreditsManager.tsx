@@ -1,14 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, CreditCard, Plus, Check, X } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminCreditsManager() {
+  const { t } = useTranslation(['credits', 'common']);
+  const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [creditsToAdd, setCreditsToAdd] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 增加积分
   const handleAddCredits = async () => {
@@ -99,7 +106,12 @@ export default function AdminCreditsManager() {
           className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           <Plus className="w-4 h-4" />
-          <span>{loading ? '处理中...' : '增加积分'}</span>
+          <span>
+            {loading 
+              ? (mounted ? t('processing', { ns: 'credits', defaultValue: '处理中...' }) : '处理中...')
+              : (mounted ? t('addCredits', { ns: 'credits', defaultValue: '增加积分' }) : '增加积分')
+            }
+          </span>
         </button>
       </div>
 

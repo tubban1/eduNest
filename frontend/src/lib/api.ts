@@ -259,6 +259,16 @@ class ApiClient {
       await this.delete(`/content/${id}`);
     },
 
+    generateThumbnail: async (contentId: string) => {
+      const data = await this.post(`/content/${contentId}/generate-thumbnail`);
+      return data;
+    },
+
+    regenerateAllThumbnails: async () => {
+      const data = await this.post('/content/regenerate-thumbnails');
+      return data;
+    },
+
     fix: async (fixData: any) => {
       // 生成唯一的request_id
       const requestId = crypto.randomUUID();
@@ -694,4 +704,8 @@ export interface Content {
   likes_count?: number;
   collections_count?: number;
   quality_score?: number;
+  // 缩略图相关字段
+  thumbnail_url?: string;
+  thumbnail_status?: 'pending' | 'generating' | 'ready' | 'failed';
+  thumbnail_updated_at?: string;
 } 

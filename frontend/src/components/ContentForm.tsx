@@ -1093,7 +1093,10 @@ export default function ContentForm({
                       disabled={reloading}
                       className="mt-2 px-4 py-2 bg-primary hover:opacity-90 disabled:bg-muted text-primary-foreground rounded-lg transition-colors"
                     >
-                      {reloading ? '重新加载中...' : '重新加载结果'}
+                      {reloading 
+                        ? (mounted ? t('reloading', { ns: 'content', defaultValue: '重新加载中...' }) : '重新加载中...')
+                        : (mounted ? t('reloadResult', { ns: 'content', defaultValue: '重新加载结果' }) : '重新加载结果')
+                      }
                     </button>
                   )}
                 </div>

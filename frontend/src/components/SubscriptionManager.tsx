@@ -1,6 +1,9 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 interface SubscriptionStatus {
   status: string;
@@ -13,9 +16,15 @@ interface SubscriptionStatus {
 
 const SubscriptionManager: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation(['common']);
+  const [mounted, setMounted] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -73,7 +82,7 @@ const SubscriptionManager: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="p-4">加载中...</div>;
+    return <div className="p-4">{mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : '加载中...'}</div>;
   }
 
   const getUpgradeButtonText = () => {
