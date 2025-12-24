@@ -1018,23 +1018,21 @@ export default function ContentForm({
                       />
                     </div>
                   )}
-                  <div>
-                    <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('languageCode', { ns: 'content', defaultValue: 'Language Code' }) : 'Language Code'}</label>
-                    <div className="flex gap-2">
-                      <input
-                        className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
-                        value={aiGeneratedLanguage}
-                        readOnly={isRegularUser}
-                        onChange={!isRegularUser ? (e) => setAiGeneratedLanguage(e.target.value) : undefined}
-                        placeholder={
-                          isRegularUser 
-                            ? (mounted ? t('aiGeneratedLanguagePlaceholder', { ns: 'content', defaultValue: 'AI generated language code (BCP 47) will be filled automatically after generation' }) : 'AI generated language code (BCP 47) will be filled automatically after generation')
-                            : (mounted ? t('languageCodePlaceholder', { ns: 'content', defaultValue: 'Enter language code (BCP 47 format, e.g., zh-CN, en-US)' }) : 'Enter language code (BCP 47 format, e.g., zh-CN, en-US)')
-                        }
-                        disabled={isAiFormDisabled}
-                      />
+                  {/* 语言代码字段 - 仅管理员可见 */}
+                  {user?.role === 'admin' && (
+                    <div>
+                      <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('languageCode', { ns: 'content', defaultValue: 'Language Code' }) : 'Language Code'}</label>
+                      <div className="flex gap-2">
+                        <input
+                          className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-gray-50"
+                          value={aiGeneratedLanguage}
+                          onChange={(e) => setAiGeneratedLanguage(e.target.value)}
+                          placeholder={mounted ? t('languageCodePlaceholder', { ns: 'content', defaultValue: 'Enter language code (BCP 47 format, e.g., zh-CN, en-US)' }) : 'Enter language code (BCP 47 format, e.g., zh-CN, en-US)'}
+                          disabled={isAiFormDisabled}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <div className="mt-2">
                   <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('tags', { ns: 'content', defaultValue: 'Tags (single line input, press Enter or click to add)' }) : 'Tags (single line input, press Enter or click to add)'}</label>
@@ -1066,24 +1064,26 @@ export default function ContentForm({
                   </div>
                 </div>
               </div>
-              {/* 完整 HTML 编辑器 - 所有用户都可以编辑 */}
-              <div className="bg-white/80 rounded-xl shadow border border-gray-100 p-4 flex flex-col">
-                <label className="block font-semibold mb-2 text-gray-700">
-                  {mounted ? t('fullHtml', { ns: 'content', defaultValue: 'Complete HTML' }) : 'Complete HTML'} <span className="text-red-500">*</span>
-                </label>
-                <textarea 
-                  className="w-full border border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" 
-                  value={full_html} 
-                  onChange={e => setFullHtml(e.target.value)} 
-                  placeholder={mounted ? t('enterFullHtml', { ns: 'content', defaultValue: 'Enter complete HTML code (including DOCTYPE, html, head, body tags)' }) : 'Enter complete HTML code (including DOCTYPE, html, head, body tags)'} 
-                  disabled={isAiFormDisabled}
-                  rows={25}
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  {mounted ? t('fullHtmlHint', { ns: 'content', defaultValue: 'Include all CSS in <style> tags and JavaScript in <script> tags. All external libraries should be loaded via CDN links in the HTML.' }) : 'Include all CSS in <style> tags and JavaScript in <script> tags. All external libraries should be loaded via CDN links in the HTML.'}
-                </p>
-              </div>
+              {/* 完整 HTML 编辑器 - 仅管理员可见 */}
+              {user?.role === 'admin' && (
+                <div className="bg-white/80 rounded-xl shadow border border-gray-100 p-4 flex flex-col">
+                  <label className="block font-semibold mb-2 text-gray-700">
+                    {mounted ? t('fullHtml', { ns: 'content', defaultValue: 'Complete HTML' }) : 'Complete HTML'} <span className="text-red-500">*</span>
+                  </label>
+                  <textarea 
+                    className="w-full border border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" 
+                    value={full_html} 
+                    onChange={e => setFullHtml(e.target.value)} 
+                    placeholder={mounted ? t('enterFullHtml', { ns: 'content', defaultValue: 'Enter complete HTML code (including DOCTYPE, html, head, body tags)' }) : 'Enter complete HTML code (including DOCTYPE, html, head, body tags)'} 
+                    disabled={isAiFormDisabled}
+                    rows={25}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    {mounted ? t('fullHtmlHint', { ns: 'content', defaultValue: 'Include all CSS in <style> tags and JavaScript in <script> tags. All external libraries should be loaded via CDN links in the HTML.' }) : 'Include all CSS in <style> tags and JavaScript in <script> tags. All external libraries should be loaded via CDN links in the HTML.'}
+                  </p>
+                </div>
+              )}
               {error && (
                 <div className="text-red-600 text-center mt-2">
                   <div>{error}</div>

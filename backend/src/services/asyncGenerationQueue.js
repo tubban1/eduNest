@@ -840,7 +840,7 @@ class AsyncGenerationQueue {
         learning_stage: failedTask.request_payload?.learning_stage || 'understanding',
         description: failedTask.request_payload?.description || '',
         language_code: failedTask.request_payload?.language_code || 'zh-CN',
-        provider: failedTask.request_payload?.provider || 'ark'
+        provider: failedTask.request_payload?.provider || process.env.DEFAULT_AI_PROVIDER || 'qenda'
       };
 
       // 直接调用 addTask，重新开始整个生成流程

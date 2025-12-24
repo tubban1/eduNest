@@ -27,9 +27,9 @@
 **匿名持久身份（Anon ID）方案（推荐）：**
 
 **前端实现：**
-- 使用 `localStorage` 存储 `anon_user_id`（主要存储）
-- 同时写入 Cookie 作为兜底（防止 localStorage 被清除）
-- Anon ID 格式：UUID（`crypto.randomUUID()`）
+- 使用 `localSte 作为兜底（防止 localStorage 被清除）
+- Anon ID 格式：orage` 存储 `anon_user_id`（主要存储）
+- 同时写入 CookiUUID（`crypto.randomUUID()`）
 - 生命周期：永久有效，直到用户登录后合并
 
 **后端实现：**
