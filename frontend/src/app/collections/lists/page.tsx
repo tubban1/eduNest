@@ -116,10 +116,10 @@ export default function CollectionListsManagementPage() {
   // 渲染加载状态
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">{mounted ? t('verifying', { ns: 'common', defaultValue: '验证中...' }) : 'Verifying...'}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">{mounted ? t('verifying', { ns: 'common', defaultValue: '验证中...' }) : 'Verifying...'}</p>
         </div>
       </div>
     );
@@ -137,7 +137,7 @@ export default function CollectionListsManagementPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       {/* 桌面端侧边栏 */}
       <div className="hidden lg:block h-screen sticky top-0 left-0 z-30">
         <Sidebar variant="desktop" />
@@ -150,9 +150,9 @@ export default function CollectionListsManagementPage() {
         onClose={() => setSidebarOpen(false)} 
       />
       
-      <main className="flex-1 bg-white overflow-y-auto">
+      <main className="flex-1 bg-card overflow-y-auto">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-card border-b border-border">
           <MobileMenuButton onClick={() => setSidebarOpen(true)} />
           <div className="w-10" /> {/* 占位，保持居中 */}
         </div>
@@ -164,19 +164,19 @@ export default function CollectionListsManagementPage() {
           {/* 页面标题 */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('collections:list.myLists')}</h1>
-              <p className="text-gray-600">{t('collections:list.manageLists')}</p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">{t('collections:list.myLists')}</h1>
+              <p className="text-muted-foreground">{t('collections:list.manageLists')}</p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowCreateDialog(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
               >
                 ➕ {t('collections:management.createList')}
               </button>
               <Link
                 href="/collections"
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
               >
                 ← {t('collections:list.backToCollections')}
               </Link>
@@ -185,15 +185,15 @@ export default function CollectionListsManagementPage() {
 
           {/* 错误信息 */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600">{error}</p>
+            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-destructive">{error}</p>
             </div>
           )}
 
           {/* 加载状态 */}
           {loading && (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           )}
 
@@ -203,30 +203,30 @@ export default function CollectionListsManagementPage() {
               {collectionLists.map((list) => (
                 <div
                   key={list.id}
-                  className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4"
+                  className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow p-4"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-gray-900 text-lg line-clamp-2 flex-1">
+                    <h3 className="font-semibold text-foreground text-lg line-clamp-2 flex-1">
                       {list.name}
                     </h3>
                     <div className="flex items-center gap-1 ml-2">
                       {list.visibility === 'public' ? (
-                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">{t('collections:management.public')}</span>
+                        <span className="text-xs px-2 py-0.5 bg-secondary/10 text-secondary rounded-full">{t('collections:management.public')}</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full">{t('collections:management.private')}</span>
+                        <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full">{t('collections:management.private')}</span>
                       )}
                     </div>
                   </div>
                   
                   {list.description && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {list.description}
                     </p>
                   )}
                   
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                     {list.pricing_mode && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                      <span className="px-2 py-0.5 bg-primary/10 text-primary rounded">
                         {list.pricing_mode === 'free' ? t('collections:management.free') : 
                          list.pricing_mode === 'premium' ? t('collections:management.premium') : t('collections:management.preview')}
                       </span>
@@ -241,29 +241,29 @@ export default function CollectionListsManagementPage() {
                     )}
                   </div>
                   
-                  <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2 pt-3 border-t border-border">
                     {list.short_id ? (
                       <Link
                         href={`/list/${list.short_id}`}
-                        className="flex-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors text-center"
+                        className="flex-1 px-3 py-1.5 text-sm bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors text-center"
                       >
                         {t('collections:management.viewList')}
                       </Link>
                     ) : (
-                      <span className="flex-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-500 rounded text-center">
+                      <span className="flex-1 px-3 py-1.5 text-sm bg-muted text-muted-foreground rounded text-center">
                         {t('collections:management.generating')}
                       </span>
                     )}
                     <Link
                       href={list.short_id ? `/list/${list.short_id}/settings` : '#'}
-                      className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                      className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
                       title={t('collections:list.settings')}
                     >
                       ⚙️
                     </Link>
                     <button
                       onClick={() => handleDeleteList(list.id)}
-                      className="px-3 py-1.5 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                      className="px-3 py-1.5 text-sm text-destructive hover:opacity-80 hover:bg-destructive/10 rounded transition-colors"
                       title={t('delete')}
                     >
                       🗑️
@@ -277,16 +277,16 @@ export default function CollectionListsManagementPage() {
           {/* 空状态 */}
           {!loading && collectionLists.length === 0 && (
             <div className="text-center py-16">
-              <div className="text-gray-400 mb-4">
+              <div className="text-muted-foreground mb-4">
                 <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">{t('collections:management.noLists')}</h3>
-              <p className="text-gray-500 mb-6">{t('collections:management.noListsDesc')}</p>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t('collections:management.noLists')}</h3>
+              <p className="text-muted-foreground mb-6">{t('collections:management.noListsDesc')}</p>
               <button
                 onClick={() => setShowCreateDialog(true)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
               >
                 {t('collections:management.createFirstList')}
               </button>
@@ -298,25 +298,25 @@ export default function CollectionListsManagementPage() {
       {/* 创建列表对话框 */}
       {showCreateDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">{t('collections:management.createNewList')}</h2>
+          <div className="bg-card rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-foreground mb-4">{t('collections:management.createNewList')}</h2>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('collections:settings.listNameRequired')} <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                {t('collections:settings.listNameRequired')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 placeholder={t('collections:settings.listNamePlaceholder')}
                 autoFocus
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 {t('collections:settings.visibility')}
               </label>
               <div className="flex gap-4">
@@ -329,7 +329,7 @@ export default function CollectionListsManagementPage() {
                     className="mr-2"
                   />
                   <span>{t('collections:settings.public')}</span>
-                  <span className="ml-2 text-xs text-gray-500">{t('collections:settings.publicDesc')}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{t('collections:settings.publicDesc')}</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -340,7 +340,7 @@ export default function CollectionListsManagementPage() {
                     className="mr-2"
                   />
                   <span>{t('collections:settings.private')}</span>
-                  <span className="ml-2 text-xs text-gray-500">{t('collections:settings.privateDesc')}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{t('collections:settings.privateDesc')}</span>
                 </label>
               </div>
             </div>
@@ -352,7 +352,7 @@ export default function CollectionListsManagementPage() {
                   setNewListName('');
                   setError('');
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-muted transition-colors"
                 disabled={creating}
               >
                 {t('collections:settings.cancel')}
@@ -360,7 +360,7 @@ export default function CollectionListsManagementPage() {
               <button
                 onClick={handleCreateList}
                 disabled={creating || !newListName.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {creating ? t('collections:management.creating') : t('create')}
               </button>

@@ -163,10 +163,10 @@ export default function CollectionsPage() {
   // 渲染加载状态
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">{mounted ? t('verifying', { ns: 'common', defaultValue: '验证中...' }) : 'Verifying...'}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">{mounted ? t('verifying', { ns: 'common', defaultValue: '验证中...' }) : 'Verifying...'}</p>
         </div>
       </div>
     );
@@ -184,7 +184,7 @@ export default function CollectionsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       {/* 桌面端侧边栏 */}
       <div className="hidden lg:block h-screen sticky top-0 left-0 z-30">
         <Sidebar variant="desktop" />
@@ -197,9 +197,9 @@ export default function CollectionsPage() {
         onClose={() => setSidebarOpen(false)} 
       />
       
-      <main className="flex-1 bg-white overflow-y-auto">
+      <main className="flex-1 bg-card overflow-y-auto">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-card border-b border-border">
           <MobileMenuButton onClick={() => setSidebarOpen(true)} />
           <div className="w-10" /> {/* 占位，保持居中 */}
         </div>
@@ -211,14 +211,14 @@ export default function CollectionsPage() {
           {/* 页面标题 */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{mounted ? t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }) : 'My Collections'}</h1>
-              <p className="text-gray-600">{mounted ? t('manageCollections', { ns: 'content', defaultValue: 'Manage all your collected content' }) : 'Manage all your collected content'}</p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">{mounted ? t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }) : 'My Collections'}</h1>
+              <p className="text-muted-foreground">{mounted ? t('manageCollections', { ns: 'content', defaultValue: 'Manage all your collected content' }) : 'Manage all your collected content'}</p>
             </div>
             {/* 列表管理按钮 */}
             <div className="flex gap-2">
               <a
                 href="/collections/lists"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
               >
                 📋 {mounted ? t('collections:list.manageListsButton', { ns: 'collections', defaultValue: 'Manage Lists' }) : 'Manage Lists'}
               </a>
@@ -227,14 +227,14 @@ export default function CollectionsPage() {
           
           {/* 收藏列表选择 */}
           <div className="mb-6">
-            <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm overflow-x-auto">
+            <div className="flex space-x-1 bg-card rounded-lg p-1 shadow-sm overflow-x-auto">
               {/* 全部收藏 Tab */}
               <button
                 onClick={() => setActiveList('all')}
                 className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeList === 'all'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 {mounted ? t('allCollections', { ns: 'navigation', defaultValue: 'All Collections' }) : 'All Collections'}
@@ -244,8 +244,8 @@ export default function CollectionsPage() {
                 onClick={() => setActiveList('liked')}
                 className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeList === 'liked'
-                    ? 'bg-red-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-destructive text-destructive-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 {mounted ? t('myLikes', { ns: 'content', defaultValue: 'My Likes' }) : 'My Likes'}
@@ -257,8 +257,8 @@ export default function CollectionsPage() {
                   onClick={() => setActiveList(list.id)}
                   className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeList === list.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
                   {list.name}
@@ -277,7 +277,7 @@ export default function CollectionsPage() {
           {/* 加载状态 */}
           {loading && (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           )}
 
@@ -285,7 +285,7 @@ export default function CollectionsPage() {
           {!loading && collections.length > 0 && (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {collections.map((item) => (
-                <div key={item.id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 flex flex-col gap-2">
+                <div key={item.id} className="bg-card border border-border shadow-sm rounded-xl p-4 flex flex-col gap-2">
                   <CollectionCard
                     content={item.content}
                     collectionInfo={{
@@ -306,19 +306,19 @@ export default function CollectionsPage() {
           {/* 空状态 */}
           {!loading && collections.length === 0 && activeList && (
             <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
+              <div className="text-muted-foreground mb-4">
                 <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 {activeList === 'all'
                   ? (mounted ? t('noCollections', { ns: 'content', defaultValue: 'No collections yet' }) : 'No collections yet')
                   : activeList === 'liked'
                   ? (mounted ? t('noLikes', { ns: 'content', defaultValue: 'No likes yet' }) : 'No likes yet')
                   : (mounted ? t('noCollectionsListDesc', { ns: 'content', defaultValue: 'This collection list is empty' }) : 'This collection list is empty')}
               </h3>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 {activeList === 'all'
                   ? (mounted ? t('noCollectionsDesc', { ns: 'content', defaultValue: 'You have not collected any content yet, go discover something!' }) : 'You have not collected any content yet, go discover something!')
                   : activeList === 'liked'

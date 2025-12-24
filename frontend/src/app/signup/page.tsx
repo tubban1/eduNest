@@ -191,11 +191,11 @@ function SignupPageInner() {
           
           {/* 倒计时显示 */}
           {autoRedirect && !hasResentEmail && (
-            <div className="mt-3 p-2 bg-blue-50 rounded-lg">
-              <p className="text-blue-600 text-xs">
+            <div className="mt-3 p-2 bg-primary/10 rounded-lg">
+              <p className="text-primary text-xs">
                 ⏰ {t('autoRedirectHint', { ns: 'auth', defaultValue: '页面将在10秒后自动跳转到登录页面' })}
               </p>
-              <p className="text-blue-500 text-xs mt-1">
+              <p className="text-primary/80 text-xs mt-1">
                 {t('resendHint', { ns: 'auth', defaultValue: '如需重发验证邮件，请点击上方按钮' })}
               </p>
             </div>
@@ -210,7 +210,7 @@ function SignupPageInner() {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => router.push('/login')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
                 >
                   {t('backToLogin', { ns: 'auth', defaultValue: '回到登录页面' })}
                 </button>

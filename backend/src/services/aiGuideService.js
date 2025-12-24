@@ -55,7 +55,7 @@ Start by welcoming the student. If learning_objectives are present, briefly ment
 /**
  * Get or generate metadata for a content item
  */
-const getOrGenerateMetadata = async (contentId) => {
+const getOrGenerateMetadata = async (contentId, userId = null) => {
   try {
     // 1. Check if metadata exists
     const { data: content, error: fetchError } = await supabase
@@ -88,16 +88,68 @@ const getOrGenerateMetadata = async (contentId) => {
 
     const aiResponse = result.content;
     let metadata = null;
+    let isJsonValid = false;
     
     // Extract JSON from response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      metadata = JSON.parse(jsonMatch[0]);
+      try {
+        metadata = JSON.parse(jsonMatch[0]);
+        isJsonValid = true;
+      } catch (parseError) {
+        console.error('Failed to parse metadata JSON:', parseError);
+        throw new Error('Failed to parse metadata JSON from AI response');
+      }
     } else {
       throw new Error('Failed to parse metadata JSON from AI response');
     }
 
-    // 3. Save metadata to DB
+    // 3. Log AI usage to ai_usage_logs
+    try {
+      const inputTokens = result.usage?.prompt_tokens || 0;
+      const outputTokens = result.usage?.completion_tokens || 0;
+      const totalTokens = result.usage?.total_tokens || 0;
+      const requestId = uuidv4(); // Generate request_id
+
+      await logAIUsage({
+        user_id: userId,
+        model_name: result.model || 'qenda',
+        user_query: `Analyze HTML page for content_id: ${contentId}`,
+        action_type: 'analyze_html',
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: totalTokens,
+        request_payload: {
+          content_id: contentId,
+          html_length: content.full_html?.length || 0,
+          max_tokens: 4000,
+          temperature: 0.2
+        },
+        generation_params: {
+          content_id: contentId,
+          provider: 'qenda',
+          max_tokens: 4000,
+          temperature: 0.2
+        },
+        response_metadata: {
+          provider: result.provider || 'qenda',
+          model: result.model || 'qenda',
+          raw: result.response || aiResponse,
+          parsed_metadata: metadata
+        },
+        created_at: new Date(result.created ? result.created * 1000 : Date.now()),
+        is_json_valid: isJsonValid,
+        is_render_success: true,
+        error_message: null,
+        request_id: requestId,
+        content_id: contentId
+      });
+    } catch (logError) {
+      // Log error but don't fail the metadata generation
+      console.error('Failed to log AI usage for metadata generation:', logError);
+    }
+
+    // 4. Save metadata to DB
     const now = new Date().toISOString();
     await supabase
       .from('content')
@@ -121,7 +173,7 @@ const getOrGenerateMetadata = async (contentId) => {
 const initConversation = async (contentId, userId) => {
   try {
     // 1. Ensure metadata exists
-    const metadata = await getOrGenerateMetadata(contentId);
+    const metadata = await getOrGenerateMetadata(contentId, userId);
     
     // 2. Generate new conversation ID
     const conversationId = uuidv4();
@@ -143,7 +195,7 @@ const initConversation = async (contentId, userId) => {
       result = await aiProviderFactory.createChatCompletion({
         provider: 'qenda',
         messages,
-        max_tokens: 500,
+        max_tokens: 1500, // 增加到1500，避免初始消息被截断
         temperature: 0.7
       });
 
@@ -165,7 +217,7 @@ const initConversation = async (contentId, userId) => {
           { role: 'system', content: 'SYSTEM_PROMPT_TEMPLATE' },
           { role: 'user', content: 'Start the session.' }
         ],
-        max_tokens: 500,
+        max_tokens: 1500, // 与上面的实际调用保持一致
         temperature: 0.7,
         metadata_summary: {
           title: metadata?.meta?.title || metadata?.title || 'Unknown',
@@ -225,7 +277,7 @@ const handleChat = async (conversationId, message, uiState, userId) => {
     }
 
     // 2. Get metadata
-    const metadata = await getOrGenerateMetadata(contentId);
+    const metadata = await getOrGenerateMetadata(contentId, userId);
 
     // 3. Build messages for LLM
     const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;

@@ -428,12 +428,12 @@ export default function ContentCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-full sm:w-64 sm:min-w-56 sm:max-w-xs mx-auto">
+    <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-full sm:w-64 sm:min-w-56 sm:max-w-xs mx-auto">
       {/* 缩略图区域 */}
-      <div className="relative w-full h-40 bg-gradient-to-br from-blue-100 to-purple-100 overflow-hidden">
+      <div className="relative w-full h-40 bg-gradient-to-br from-primary/10 to-secondary/10 overflow-hidden">
         {thumbnailLoading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : thumbnail ? (
           <img
@@ -459,13 +459,13 @@ export default function ContentCard({
       <div className="p-4">
         {/* 标题 - 可点击跳转 */}
         <Link href={contentUrl} prefetch={false} className="block">
-          <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
+          <h3 className="text-base font-semibold text-foreground mb-2 line-clamp-2 hover:text-primary transition-colors cursor-pointer">
             {content.title}
           </h3>
         </Link>
         
         <div className="flex flex-wrap gap-2 mb-2">
-          <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+          <span className="px-2 py-1 bg-secondary/10 text-secondary text-xs rounded">
             {getLanguageLabel(content.language_code)}
           </span>
         </div>
@@ -475,7 +475,7 @@ export default function ContentCard({
           {(content.tags && content.tags.length > 0 ? content.tags : content.knowledge_point)?.map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
+              className="px-2 py-1 bg-primary/10 text-primary text-xs rounded"
             >
               {tag}
             </span>
@@ -483,14 +483,14 @@ export default function ContentCard({
         </div>
         
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {new Date(content.created_at).toLocaleDateString()}
           </span>
         </div>
         
         {/* 操作按钮区域 */}
         {isAuthenticated && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-center justify-between">
               <ContentActionButtons
                 contentId={content.id}

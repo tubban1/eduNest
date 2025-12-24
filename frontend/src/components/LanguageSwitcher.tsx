@@ -11,7 +11,7 @@ const LanguageSwitcher: React.FC = () => {
         <select
           value={currentLanguage}
           onChange={(e) => setLanguage(e.target.value)}
-          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="block w-full px-3 py-2 text-sm border border-border rounded-md bg-card shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
         >
           {supportedLanguages.map((lang) => (
             <option key={lang.code} value={lang.code}>

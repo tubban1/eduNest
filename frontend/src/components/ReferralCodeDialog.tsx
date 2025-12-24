@@ -54,8 +54,8 @@ export default function ReferralCodeDialog({
         {/* 头部 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Gift className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Gift className="w-6 h-6 text-primary" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900">
               {mounted ? t('referralProgram', { ns: 'referral', defaultValue: '邀请码计划' }) : '邀请码计划'}
@@ -72,18 +72,18 @@ export default function ReferralCodeDialog({
         {/* 内容 */}
         <div className="p-6 space-y-6">
           {/* 邀请码展示 */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
+          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-4">
             <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 {mounted ? t('yourReferralCode', { ns: 'referral', defaultValue: '您的邀请码' }) : '您的邀请码'}
               </h3>
               <div className="flex items-center justify-center gap-3 mb-4">
-                <code className="text-2xl font-mono font-bold text-blue-600 bg-white px-4 py-2 rounded-lg border-2 border-blue-200">
+                <code className="text-2xl font-mono font-bold text-primary bg-card px-4 py-2 rounded-lg border-2 border-primary/20">
                   {referralCode || '---'}
                 </code>
                 <button
                   onClick={handleCopyCode}
-                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="p-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
                   title={mounted ? t('copyCode', { ns: 'referral', defaultValue: '复制邀请码' }) : '复制邀请码'}
                 >
                   {copied ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
@@ -146,7 +146,7 @@ export default function ReferralCodeDialog({
             </h4>
             <div className="space-y-2 text-sm text-gray-700">
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-600" />
+                <Users className="w-4 h-4 text-primary" />
                 <span>{mounted ? t('inviterReward', { ns: 'referral', defaultValue: '邀请者：每邀请1人获得3积分' }) : '邀请者：每邀请1人获得3积分'}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function ReferralCodeDialog({
           <div className="flex gap-3">
             <button
               onClick={handleCopyLink}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
             >
               <Copy className="w-4 h-4" />
               {mounted ? t('copyLink', { ns: 'referral', defaultValue: '复制邀请链接' }) : '复制邀请链接'}

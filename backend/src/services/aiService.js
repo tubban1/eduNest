@@ -328,7 +328,7 @@ Return the result as a single, valid JSON object. Strictly adhere to the specifi
   "description": "What this project teaches and how to interact with it",
   "full_html": "<!DOCTYPE html><html><head>...complete HTML file with all CSS and JS embedded...</head><body>...content...</body></html>",
   "tags": [
-    "3-7 high-quality tags that reflect subject, domain, format, or interaction style"
+    "3-7 high-quality tags that reflect subject, domain. No technical tags such as Vue, React, etc."
   ],
   "content_type": "vue",
   "language_code": "MUST match the language_code input parameter exactly as per Constraint 4"

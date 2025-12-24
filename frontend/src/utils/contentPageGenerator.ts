@@ -114,8 +114,8 @@ export function generateStandaloneContentPage(data: ContentPageData): string {
       -moz-osx-font-smoothing: grayscale;
       font-size: 16px;
       line-height: 1.5;
-      color: #333;
-      background: #fff;
+      color: #2E2E2E; /* Text Main */
+      background: #F7F8FA; /* Background - 非纯白，护眼 */
     }
     
     /* 根元素样式 */

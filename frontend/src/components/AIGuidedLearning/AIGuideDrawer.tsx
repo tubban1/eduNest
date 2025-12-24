@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { AIGuideMessageList } from './AIGuideMessageList';
@@ -18,6 +18,8 @@ interface AIGuideDrawerProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   isLoggedIn: boolean;
+  initFailed?: boolean;
+  onRetryInit?: () => void;
 }
 
 export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
@@ -26,7 +28,9 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
   messages,
   onSendMessage,
   isLoading,
-  isLoggedIn
+  isLoggedIn,
+  initFailed = false,
+  onRetryInit
 }) => {
   const { t } = useTranslation('aiGuide');
   const router = useRouter();
@@ -46,18 +50,18 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
   return (
     <div
       ref={drawerRef}
-      className="fixed right-0 top-0 h-full bg-white shadow-2xl z-50 transition-transform duration-300 flex flex-col border-l border-gray-200 translate-x-0"
+      className="fixed right-0 top-0 h-full bg-card shadow-2xl z-50 transition-transform duration-300 flex flex-col border-l border-border translate-x-0"
       style={{ width: `${width}px` }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
-        <h3 className="font-semibold text-gray-800 flex items-center">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
+        <h3 className="font-semibold text-foreground flex items-center">
           🤖 {t('title')}
         </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-200 rounded text-gray-500"
+            className="p-1 hover:bg-muted rounded text-muted-foreground"
           >
             <X size={18} />
           </button>
@@ -67,23 +71,36 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
         <AIGuideMessageList messages={messages} isLoading={isLoading} />
+        {/* Retry button when init failed */}
+        {initFailed && onRetryInit && (
+          <div className="p-4 border-t border-border bg-card">
+            <button
+              onClick={onRetryInit}
+              disabled={isLoading}
+              className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              {t('retry')}
+            </button>
+          </div>
+        )}
       </div>
       
       {/* Input or Login Buttons */}
-      <div className="p-4 border-t border-gray-100 bg-white">
+      <div className="p-4 border-t border-border bg-card">
         {isLoggedIn ? (
-          <AIGuideInput onSend={onSendMessage} disabled={isLoading} />
+          <AIGuideInput onSend={onSendMessage} disabled={isLoading || initFailed} />
         ) : (
           <div className="space-y-3">
             <button
               onClick={handleLogin}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
               {t('loginButton')}
             </button>
             <button
               onClick={handleRegister}
-              className="w-full py-3 px-4 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all duration-200"
+              className="w-full py-3 px-4 bg-card text-primary border-2 border-primary rounded-lg font-semibold hover:bg-primary/10 transition-all duration-200"
             >
               {t('registerButton')}
             </button>

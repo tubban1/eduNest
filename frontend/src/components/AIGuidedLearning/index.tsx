@@ -26,10 +26,11 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [hasInit, setHasInit] = useState(false);
+  const [initFailed, setInitFailed] = useState(false);
 
   // Initialize conversation when opening for the first time
   const initSession = async () => {
-    if (hasInit) return;
+    if (hasInit && !initFailed) return;
     
     // Check if user is logged in
     if (!user) {
@@ -39,10 +40,12 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
         content: t('loginPrompt')
       }]);
       setHasInit(true);
+      setInitFailed(false);
       return;
     }
     
     setIsLoading(true);
+    setInitFailed(false);
     try {
       const res = await api.aiGuide.init(contentId);
       if (res) {
@@ -51,6 +54,7 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
           setMessages([{ role: 'assistant', content: res.initial_message }]);
         }
         setHasInit(true);
+        setInitFailed(false);
       }
     } catch (error) {
       console.error('Failed to init AI guide:', error);
@@ -60,16 +64,27 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
           role: 'assistant', 
           content: t('loginPrompt')
         }]);
+        setInitFailed(false);
       } else {
         setMessages([{ 
           role: 'assistant', 
           content: t('errorInitializing') + ': ' + errorMsg
         }]);
+        setInitFailed(true);
       }
       setHasInit(true);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Retry initialization
+  const retryInit = async () => {
+    setHasInit(false);
+    setInitFailed(false);
+    setConversationId(null);
+    setMessages([]);
+    await initSession();
   };
 
   const handleToggle = () => {
@@ -153,6 +168,8 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
         isLoggedIn={!!user}
+        initFailed={initFailed}
+        onRetryInit={retryInit}
       />
     </>
   );

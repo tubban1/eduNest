@@ -39,8 +39,8 @@ export default function EditContentPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载中...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">加载中...</p>
         </div>
       </div>
     );
@@ -54,7 +54,7 @@ export default function EditContentPage() {
           <p className="text-gray-600 mb-4">{error || '内容不存在'}</p>
           <button
             onClick={handleSmartBack}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
           >
             {t('back')}
           </button>

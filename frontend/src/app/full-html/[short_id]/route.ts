@@ -51,15 +51,15 @@ function buildErrorHtml(message: string, status: number) {
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: #f5f5f5;
-        color: #1f2937;
+        background: #F7F8FA; /* Background - 非纯白，护眼 */
+        color: #2E2E2E; /* Text Main */
         margin: 0;
         padding: 40px 16px;
       }
       .container {
         max-width: 720px;
         margin: 0 auto;
-        background: #ffffff;
+        background: #FFFFFF; /* Card */
         border-radius: 16px;
         box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
         padding: 40px 32px;
@@ -72,14 +72,14 @@ function buildErrorHtml(message: string, status: number) {
       p {
         font-size: 1rem;
         line-height: 1.7;
-        color: #4b5563;
+        color: #6B7280; /* Text Sub */
       }
       .status {
         display: inline-block;
         padding: 6px 14px;
         border-radius: 999px;
-        background: #eff6ff;
-        color: #1d4ed8;
+        background: rgba(58, 110, 165, 0.1); /* Primary with opacity */
+        color: #3A6EA5; /* Primary */
         font-weight: 600;
         margin-bottom: 20px;
         font-size: 0.95rem;

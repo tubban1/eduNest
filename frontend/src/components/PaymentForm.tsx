@@ -61,12 +61,12 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planType, amount, onSuccess, 
     <div className="bg-white rounded-lg shadow-sm border p-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">支付信息</h2>
       
-      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+      <div className="mb-4 p-3 bg-primary/10 rounded-lg">
         <div className="flex justify-between items-center">
-          <span className="text-blue-900 font-medium">订阅计划</span>
-          <span className="text-blue-900 font-bold">${amount}</span>
+          <span className="text-foreground font-medium">订阅计划</span>
+          <span className="text-foreground font-bold">${amount}</span>
         </div>
-        <p className="text-blue-700 text-sm mt-1">
+        <p className="text-muted-foreground text-sm mt-1">
           {planType === 'pro' ? 'Pro 计划 - $20/月' : 'Lite 计划 - $5'}
         </p>
       </div>
@@ -80,7 +80,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planType, amount, onSuccess, 
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="请输入持卡人姓名"
             required
           />
@@ -94,7 +94,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planType, amount, onSuccess, 
             type="text"
             value={cardNumber}
             onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="1234 5678 9012 3456"
             maxLength={19}
             required
@@ -110,7 +110,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planType, amount, onSuccess, 
               type="text"
               value={expiry}
               onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="MM/YY"
               maxLength={5}
               required
@@ -124,7 +124,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planType, amount, onSuccess, 
               type="text"
               value={cvc}
               onChange={(e) => setCvc(e.target.value.replace(/\D/g, ''))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="123"
               maxLength={4}
               required
@@ -143,7 +143,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planType, amount, onSuccess, 
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? '处理中...' : `支付 $${amount}`}
           </button>

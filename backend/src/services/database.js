@@ -1830,7 +1830,8 @@ const logAIUsage = async (log) => {
         is_render_success: typeof log.is_render_success === 'boolean' ? log.is_render_success : false,
         error_message: log.error_message || null,
         request_id: log.request_id || null,
-        content_id: log.content_id || null
+        content_id: log.content_id || null,
+        generation_params: log.generation_params || null
       })
       .select()
       .single();

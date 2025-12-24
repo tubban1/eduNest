@@ -90,12 +90,12 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
   
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-200">
+      <div className="bg-card rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all border border-border">
         {/* 预览图区域 */}
-        <div className="relative h-64 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 overflow-hidden">
+        <div className="relative h-64 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 overflow-hidden">
           {thumbnailLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : finalThumbnail ? (
             <div className="relative w-full h-full">
@@ -121,7 +121,7 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
           )}
           {/* 质量标签 */}
           {content.quality_score && content.quality_score > 10 && (
-            <div className="absolute top-4 right-4 px-3 py-1 bg-green-500 text-white rounded-full text-sm font-semibold shadow-lg">
+            <div className="absolute top-4 right-4 px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm font-semibold shadow-lg">
               ⭐ 精选
             </div>
           )}
@@ -134,32 +134,32 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
             {content.tags && content.tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
-                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
+                className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
               >
                 {tag}
               </span>
             ))}
             {content.language_code && (
-              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+              <span className="px-3 py-1 bg-muted text-muted-foreground rounded-full text-sm">
                 {content.language_code}
               </span>
             )}
           </div>
           
           {/* 标题 */}
-          <h3 className="text-2xl font-bold text-gray-900 mb-3 line-clamp-2">
+          <h3 className="text-2xl font-bold text-foreground mb-3 line-clamp-2">
             {content.title}
           </h3>
           
           {/* 描述 */}
           {content.description && (
-            <p className="text-gray-600 mb-4 line-clamp-3">
+            <p className="text-muted-foreground mb-4 line-clamp-3">
               {content.description}
             </p>
           )}
           
           {/* 统计数据 */}
-          <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
+          <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
             {content.likes_count && content.likes_count > 0 && (
               <span className="flex items-center gap-1">
                 <span>❤️</span>
@@ -179,13 +179,13 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
           <div className="flex gap-3">
             <Link
               href={`/c/${content.short_id}`}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center font-medium"
+              className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors text-center font-medium"
             >
               开始学习
             </Link>
             <button
               onClick={() => setShowPreview(true)}
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="px-6 py-3 border border-input rounded-lg hover:bg-muted transition-colors font-medium"
             >
               快速预览
             </button>
@@ -200,7 +200,7 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
           onClick={() => setShowPreview(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col"
+            className="bg-card rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 模态框头部 */}
@@ -208,7 +208,7 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
               <h3 className="text-lg font-semibold">{content.title}</h3>
               <button
                 onClick={() => setShowPreview(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-muted-foreground hover:text-foreground text-2xl"
               >
                 ×
               </button>
@@ -226,7 +226,7 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
                   className="w-full h-full"
                 />
               ) : (
-                <div className="p-8 text-center text-gray-500">
+                <div className="p-8 text-center text-muted-foreground">
                   暂无预览内容
                 </div>
               )}
@@ -236,13 +236,13 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
             <div className="p-4 border-t flex justify-end gap-3">
               <button
                 onClick={() => setShowPreview(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-input rounded-lg hover:bg-muted"
               >
                 关闭
               </button>
               <Link
                 href={`/c/${content.short_id}`}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90"
               >
                 查看完整内容
               </Link>

@@ -149,10 +149,10 @@ export default function ShareButton({
             <button onClick={() => handlePlatformShare('whatsapp')}><GridItem><Circle className="bg-green-100"><span className="text-green-600 text-sm font-semibold">WA</span></Circle><span className="text-xs text-gray-700">WhatsApp</span></GridItem></button>
             <button onClick={() => handlePlatformShare('x')}><GridItem><Circle className="bg-black"><Twitter className="w-5 h-5 text-white" /></Circle><span className="text-xs text-gray-700">X</span></GridItem></button>
             <button onClick={() => handlePlatformShare('weibo')}><GridItem><Circle className="bg-red-100"><span className="text-red-600 text-sm font-semibold">WB</span></Circle><span className="text-xs text-gray-700">Weibo</span></GridItem></button>
-            <button onClick={() => handlePlatformShare('facebook')}><GridItem><Circle className="bg-blue-100"><Facebook className="w-5 h-5 text-blue-600" /></Circle><span className="text-xs text-gray-700">Facebook</span></GridItem></button>
+            <button onClick={() => handlePlatformShare('facebook')}><GridItem><Circle className="bg-primary/10"><Facebook className="w-5 h-5 text-primary" /></Circle><span className="text-xs text-foreground">Facebook</span></GridItem></button>
             <button onClick={() => handlePlatformShare('reddit')}><GridItem><Circle className="bg-orange-100"><span className="text-orange-600 text-sm font-semibold">R</span></Circle><span className="text-xs text-gray-700">Reddit</span></GridItem></button>
             <button onClick={() => handlePlatformShare('email')}><GridItem><Circle className="bg-gray-100"><Mail className="w-5 h-5 text-gray-700" /></Circle><span className="text-xs text-gray-700">Email</span></GridItem></button>
-            <button onClick={() => handlePlatformShare('linkedin')}><GridItem><Circle className="bg-blue-100"><Linkedin className="w-5 h-5 text-blue-700" /></Circle><span className="text-xs text-gray-700">LinkedIn</span></GridItem></button>
+            <button onClick={() => handlePlatformShare('linkedin')}><GridItem><Circle className="bg-primary/10"><Linkedin className="w-5 h-5 text-primary" /></Circle><span className="text-xs text-foreground">LinkedIn</span></GridItem></button>
           </div>
 
           <div className="px-3 pb-3">
@@ -160,7 +160,7 @@ export default function ShareButton({
               <div className="px-3 py-2 text-xs text-gray-600 truncate select-all">{url}</div>
               <button
                 onClick={() => copyToClipboard(url)}
-                className="ml-auto px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                className="ml-auto px-3 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
               >
                 {copySuccess ? (mounted ? t('copied', { ns: 'common', defaultValue: 'Copied!' }) : 'Copied!') : (mounted ? t('copy', { ns: 'common', defaultValue: 'Copy' }) : 'Copy')}
               </button>

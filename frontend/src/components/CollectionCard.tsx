@@ -129,7 +129,7 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
       <div className="p-4">
         {/* 标题 - 可点击跳转 */}
         <Link href={`/c/${content.short_id || content.id}`} prefetch={false} className="block">
-          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
+          <h3 className="font-semibold text-foreground mb-2 line-clamp-2 hover:text-primary transition-colors cursor-pointer">
             {content.title}
           </h3>
         </Link>

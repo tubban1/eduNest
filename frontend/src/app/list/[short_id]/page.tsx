@@ -140,11 +140,11 @@ export default function CollectionListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('collections:list.loading')}</p>
-          <p className="text-sm text-gray-400 mt-2">{t('collections:list.loadingListInfo')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">{t('collections:list.loading')}</p>
+          <p className="text-sm text-muted-foreground/70 mt-2">{t('collections:list.loadingListInfo')}</p>
         </div>
       </div>
     );
@@ -152,15 +152,15 @@ export default function CollectionListPage() {
 
   if (error || !listData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-4">
           <div className="text-6xl mb-4">😕</div>
-          <div className="text-red-600 text-xl font-semibold mb-2">{t('collections:list.loadFailed')}</div>
-          <p className="text-gray-600 mb-6">{error || t('collections:list.listNotFound')}</p>
+          <div className="text-destructive text-xl font-semibold mb-2">{t('collections:list.loadFailed')}</div>
+          <p className="text-muted-foreground mb-6">{error || t('collections:list.listNotFound')}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={handleSmartBack}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors"
             >
               {t('back')}
             </button>
@@ -179,7 +179,7 @@ export default function CollectionListPage() {
                     setLoading(false);
                   });
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
             >
               {t('collections:list.retry')}
             </button>
@@ -307,7 +307,7 @@ export default function CollectionListPage() {
 
       {/* 购买/升级提示横幅 */}
       {premium_count > 0 && !user_access.can_access_all && (
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-blue-200">
+        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-primary/20">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -315,15 +315,15 @@ export default function CollectionListPage() {
                 <div>
                   {pricing.mode === 'premium' ? (
                     <>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-foreground">
                         {t('collections:purchase.purchaseList', { count: premium_count })}
                       </p>
                       {pricing.formatted_price && (
-                        <p className="text-sm text-gray-600">{t('collections:purchase.price')}：{pricing.formatted_price}</p>
+                        <p className="text-sm text-muted-foreground">{t('collections:purchase.price')}：{pricing.formatted_price}</p>
                       )}
                     </>
                   ) : (
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-foreground">
                       {t('collections:purchase.upgradePro', { count: premium_count })}
                     </p>
                   )}
@@ -331,7 +331,7 @@ export default function CollectionListPage() {
               </div>
               <button
                 onClick={handlePurchaseClick}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-medium whitespace-nowrap"
               >
                 {pricing.mode === 'premium' ? t('collections:purchase.buyNow') : t('collections:purchase.upgradeNow')}
               </button>
@@ -345,8 +345,8 @@ export default function CollectionListPage() {
         {contents.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📭</div>
-            <p className="text-gray-500 text-lg mb-2">{t('collections:list.emptyList')}</p>
-            <p className="text-gray-400 text-sm">{t('collections:list.emptyListDesc')}</p>
+            <p className="text-muted-foreground text-lg mb-2">{t('collections:list.emptyList')}</p>
+            <p className="text-muted-foreground/70 text-sm">{t('collections:list.emptyListDesc')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -357,12 +357,12 @@ export default function CollectionListPage() {
                 <div
                   key={item.id}
                   onClick={() => handleContentClick(item)}
-                  className={`
-                    relative bg-white rounded-lg shadow-sm border p-4
+                    className={`
+                    relative bg-card rounded-lg shadow-sm border border-border p-4
                     transition-all duration-200
                     ${isDisabled 
                       ? 'opacity-60 cursor-not-allowed filter grayscale-30' 
-                      : 'cursor-pointer hover:shadow-md hover:scale-[1.02] hover:border-blue-300'
+                      : 'cursor-pointer hover:shadow-md hover:scale-[1.02] hover:border-primary/30'
                     }
                   `}
                   title={isDisabled 
@@ -384,11 +384,11 @@ export default function CollectionListPage() {
                   
                   {/* 内容信息 */}
                   <div className="relative z-0">
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="font-semibold text-foreground mb-2 line-clamp-2">
                       {item.content.title}
                     </h3>
                     {item.content.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                         {item.content.description}
                       </p>
                     )}
@@ -397,25 +397,25 @@ export default function CollectionListPage() {
                         {item.content.tags.slice(0, 2).map((tag, idx) => (
                           <span
                             key={idx}
-                            className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
+                            className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full"
                           >
                             {tag}
                           </span>
                         ))}
                         {item.content.tags.length > 2 && (
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                          <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
                             +{item.content.tags.length - 2}
                           </span>
                         )}
                       </div>
                     )}
                     {item.is_free_preview && (
-                      <span className="inline-block mt-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                      <span className="inline-block mt-2 px-2 py-0.5 bg-secondary/10 text-secondary text-xs rounded-full font-medium">
                         ✓ {t('collections:content.freePreview')}
                       </span>
                     )}
                     {!item.is_free_preview && !isDisabled && pricing.mode !== 'free' && (
-                      <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                      <span className="inline-block mt-2 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">
                         💎 {t('collections:content.unlocked')}
                       </span>
                     )}

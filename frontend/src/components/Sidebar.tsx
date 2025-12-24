@@ -186,7 +186,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
           <Link
             href="/subscription"
             onClick={handleItemClick}
-            className="block w-full mb-4 px-4 py-3 rounded-lg bg-blue-600 text-white text-sm font-medium text-center hover:bg-blue-700"
+            className="block w-full mb-4 px-4 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90"
           >
             {mounted ? t('upgrade_to_pro', { ns: 'navigation', defaultValue: '升级到 Pro' }) : '升级到 Pro'}
           </Link>
@@ -198,7 +198,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link key={item.href} href={item.href} onClick={handleItemClick}
-                className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}>
+                className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}>
                 <Icon className="w-5 h-5 mr-3" />
                 {item.label}
               </Link>

@@ -209,22 +209,22 @@ export default function ContentAIGenerator({
   if (!user) return null;
 
   return (
-    <div className={`flex flex-col gap-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl shadow border border-blue-100 p-4 ${className || ''}`}>
-      <h3 className="text-lg font-semibold text-gray-800 mb-1">
+    <div className={`flex flex-col gap-3 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl shadow border border-primary/20 p-4 ${className || ''}`}>
+      <h3 className="text-lg font-semibold text-foreground mb-1">
         {mounted ? t('aiGenerate', { ns: 'content', defaultValue: '🤖 AI Smart Generation' }) : '🤖 AI Smart Generation'}
       </h3>
 
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">{error}</div>
+        <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-2">{error}</div>
       )}
 
       <div className="grid grid-cols-1 gap-4">
         <div>
-          <label className="block font-semibold mb-1 text-gray-700">
-            {mounted ? t('knowledgePoint', { ns: 'content', defaultValue: 'Knowledge Point' }) : 'Knowledge Point'} <span className="text-red-500">*</span>
+          <label className="block font-semibold mb-1 text-foreground">
+            {mounted ? t('knowledgePoint', { ns: 'content', defaultValue: 'Knowledge Point' }) : 'Knowledge Point'} <span className="text-destructive">*</span>
           </label>
           <textarea
-            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-24"
+            className="w-full border border-border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card resize-none h-24"
             value={knowledgePoint}
             onChange={e => setKnowledgePoint(e.target.value)}
             placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
@@ -233,21 +233,21 @@ export default function ContentAIGenerator({
             maxLength={1500}
           />
           <div className="flex justify-between items-center mt-1">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               {mounted ? t('knowledgePointHint', { ns: 'content', defaultValue: 'Describe the knowledge point in detail for better AI generation' }) : 'Describe the knowledge point in detail for better AI generation'}
             </span>
-            <span className={`text-xs ${knowledgePoint.length > 1350 ? 'text-red-500' : knowledgePoint.length > 1200 ? 'text-yellow-500' : 'text-gray-500'}`}>
+            <span className={`text-xs ${knowledgePoint.length > 1350 ? 'text-destructive' : knowledgePoint.length > 1200 ? 'text-warning' : 'text-muted-foreground'}`}>
               {knowledgePoint.length}/1500
             </span>
           </div>
         </div>
 
         <div>
-          <label className="block font-semibold mb-1 text-gray-700">
+          <label className="block font-semibold mb-1 text-foreground">
             {mounted ? t('outputLanguage', { ns: 'content', defaultValue: 'Output Language' }) : 'Output Language'}
           </label>
           <input
-            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer"
+            className="w-full border border-border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card cursor-pointer"
             value={language}
             readOnly
             placeholder={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Click to select output language (BCP 47)' }) : 'Click to select output language (BCP 47)'}
@@ -270,13 +270,13 @@ export default function ContentAIGenerator({
 
       <button
         type="button"
-        className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg shadow hover:from-blue-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg shadow hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         onClick={handleAsyncAiGenerate}
         disabled={isAiFormDisabled || !knowledgePoint.trim() || checking || (creditsBalance !== null && creditsBalance <= 0) || pendingCount >= 3}
       >
         {aiGenerating ? (
           <>
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
             <span>🤖 {t('startingGeneration', { ns: 'content', defaultValue: '正在启动生成...' })}</span>
           </>
         ) : (
@@ -285,48 +285,48 @@ export default function ContentAIGenerator({
       </button>
 
       {(creditsBalance !== null && creditsBalance <= 0) && (
-        <div className="text-sm text-red-600">{t('errors.insufficientCredits', { ns: 'content', defaultValue: '积分不足，无法生成' })}</div>
+        <div className="text-sm text-destructive">{t('errors.insufficientCredits', { ns: 'content', defaultValue: '积分不足，无法生成' })}</div>
       )}
       {(pendingCount >= 3) && (
-        <div className="text-sm text-gray-600">{t('errors.queueLimitReached', { ns: 'content', defaultValue: '队列不能超过3个任务' })}</div>
+        <div className="text-sm text-muted-foreground">{t('errors.queueLimitReached', { ns: 'content', defaultValue: '队列不能超过3个任务' })}</div>
       )}
 
       {showLanguagePicker && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowLanguagePicker(false)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-foreground/30 flex items-center justify-center z-50" onClick={() => setShowLanguagePicker(false)}>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-lg p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">{mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select Output Language' }) : 'Select Output Language'}</h3>
-              <button className="text-gray-500 hover:text-black" onClick={() => setShowLanguagePicker(false)}>✕</button>
+              <h3 className="text-lg font-semibold text-foreground">{mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select Output Language' }) : 'Select Output Language'}</h3>
+              <button className="text-muted-foreground hover:text-foreground" onClick={() => setShowLanguagePicker(false)}>✕</button>
             </div>
             <input
-              className="w-full border border-gray-200 p-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-border p-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary bg-card"
               value={languageSearch}
               onChange={e => setLanguageSearch(e.target.value)}
               placeholder={mounted ? t('searchLanguage', { ns: 'content', defaultValue: 'Search language...' }) : 'Search language...'}
             />
-            <div className="max-h-80 overflow-auto border border-gray-100 rounded-lg">
+            <div className="max-h-80 overflow-auto border border-border rounded-lg">
               {filteredLanguages.map(l => (
                 <div
                   key={l.code}
-                  className={`px-3 py-2 cursor-pointer hover:bg-gray-50 flex items-center justify-between ${language === l.code ? 'bg-blue-50' : ''}`}
+                  className={`px-3 py-2 cursor-pointer hover:bg-muted/50 flex items-center justify-between ${language === l.code ? 'bg-primary/10' : ''}`}
                   onClick={() => handleSelectLanguage(l.code)}
                 >
                   <div>
-                    <div className="font-medium text-gray-900">{l.label}</div>
-                    <div className="text-xs text-gray-500">{l.code}</div>
+                    <div className="font-medium text-foreground">{l.label}</div>
+                    <div className="text-xs text-muted-foreground">{l.code}</div>
                   </div>
-                  {language === l.code && <span className="text-blue-600">✓</span>}
+                  {language === l.code && <span className="text-primary">✓</span>}
                 </div>
               ))}
               {filteredLanguages.length === 0 && (
-                <div className="px-3 py-6 text-center text-gray-500 text-sm">{mounted ? t('noResults', { ns: 'common', defaultValue: '暂无结果' }) : 'No results'}</div>
+                <div className="px-3 py-6 text-center text-muted-foreground text-sm">{mounted ? t('noResults', { ns: 'common', defaultValue: '暂无结果' }) : 'No results'}</div>
               )}
             </div>
             <div className="mt-3 flex gap-2 justify-end">
-              <button className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50" onClick={() => setShowLanguagePicker(false)}>
+              <button className="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground" onClick={() => setShowLanguagePicker(false)}>
                 {mounted ? t('cancel', { ns: 'common', defaultValue: '取消' }) : 'Cancel'}
               </button>
-              <button className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800" onClick={() => setShowLanguagePicker(false)}>
+              <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90" onClick={() => setShowLanguagePicker(false)}>
                 {mounted ? t('confirm', { ns: 'common', defaultValue: '确定' }) : 'Confirm'}
               </button>
             </div>

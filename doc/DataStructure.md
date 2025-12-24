@@ -434,6 +434,146 @@
     "column_default": "now()"
   },
   {
+    "table_name": "content_node",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "node_type",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "key",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "parent_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "path",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "country_code",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "curriculum_system",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "language_code",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "order_index",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": "0"
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "visibility",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'public'::text"
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "metadata",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "content_node",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "content_node_map",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "content_node_map",
+    "column_name": "content_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node_map",
+    "column_name": "node_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node_map",
+    "column_name": "role",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "content_node_map",
+    "column_name": "weight",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": "100"
+  },
+  {
+    "table_name": "content_node_map",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
     "table_name": "content_versions",
     "column_name": "id",
     "data_type": "uuid",

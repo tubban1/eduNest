@@ -64,8 +64,8 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   if (loading) {
     return (
       <div className="p-4 text-center">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-        <p className="text-gray-600">加载支付方式...</p>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+        <p className="text-muted-foreground">加载支付方式...</p>
       </div>
     );
   }
@@ -76,7 +76,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         <p className="text-red-600 mb-2">{error}</p>
         <button
           onClick={fetchPaymentMethods}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
         >
           重试
         </button>
@@ -87,17 +87,17 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   return (
     <div className="space-y-4">
       {/* 地区信息显示 */}
-      <div className="bg-blue-50 p-3 rounded-lg">
+      <div className="bg-primary/10 p-3 rounded-lg">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-blue-900">
+            <p className="text-sm font-medium text-foreground">
               检测到您的地区: {userRegion.name}
             </p>
-            <p className="text-xs text-blue-700">
+            <p className="text-xs text-muted-foreground">
               货币: {userRegion.currency} | 时区: {userRegion.timezone}
             </p>
           </div>
-          <div className="text-xs text-blue-600">
+          <div className="text-xs text-primary">
             自动适配支付方式
           </div>
         </div>
@@ -108,7 +108,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         <div className="flex space-x-2">
           <button
             onClick={handleSelectAll}
-            className="text-sm text-blue-600 hover:text-blue-700"
+            className="text-sm text-primary hover:text-primary/90"
           >
             全选
           </button>
@@ -131,7 +131,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
               type="checkbox"
               checked={selectedMethods.includes(method.id)}
               onChange={() => handleMethodToggle(method.id)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
             />
             <span className="ml-3 text-sm font-medium text-gray-900">
               {method.name}
@@ -150,8 +150,8 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       )}
 
       {selectedMethods.length > 0 && (
-        <div className="p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-800">
+        <div className="p-3 bg-primary/10 rounded-lg">
+          <p className="text-sm text-foreground">
             已选择: {selectedMethods.length} 种支付方式
           </p>
         </div>

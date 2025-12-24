@@ -110,7 +110,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
             {t('cancel', { ns: 'common', defaultValue: '取消' })}
           </button>
           <button
-            className={`flex-1 py-2 rounded-lg text-white ${title.trim() ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'}`}
+            className={`flex-1 py-2 rounded-lg text-primary-foreground ${title.trim() ? 'bg-primary hover:opacity-90' : 'bg-muted cursor-not-allowed'}`}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -141,7 +141,7 @@ function renderCollectionCheckbox(isCollected: boolean, onToggle: () => void) {
         e.preventDefault();
         e.stopPropagation();
       }}
-      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+      className="w-4 h-4 text-primary bg-muted border-border rounded focus:ring-primary focus:ring-2"
     />
   );
 }
@@ -343,7 +343,7 @@ export default function CollectionListDialog({
           </div>
           <div className="p-5 border-t border-gray-200">
             <button 
-              className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium" 
+              className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-medium" 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

@@ -42,7 +42,7 @@ class ErrorBoundary extends Component<Props, State> {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              className="bg-primary hover:opacity-90 text-primary-foreground font-medium py-2 px-4 rounded-lg transition-colors"
             >
               刷新页面
             </button>

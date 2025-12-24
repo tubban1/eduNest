@@ -150,15 +150,15 @@ const SubscriptionManager: React.FC = () => {
       {/* 升级选项 */}
       <div className="mb-6">
         <h3 className="text-lg font-medium text-gray-900 mb-3">升级选项</h3>
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h4 className="font-semibold text-blue-900">Pro 计划</h4>
-              <p className="text-blue-700 text-sm">$20/月（无限使用，订阅制）</p>
+              <h4 className="font-semibold text-foreground">Pro 计划</h4>
+              <p className="text-muted-foreground text-sm">$20/月（无限使用，订阅制）</p>
             </div>
-            <span className="text-2xl font-bold text-blue-900">$20</span>
+            <span className="text-2xl font-bold text-foreground">$20</span>
           </div>
-          <ul className="text-blue-800 text-sm space-y-1 mb-4">
+          <ul className="text-foreground text-sm space-y-1 mb-4">
             <li>• 无限AI内容生成</li>
             <li>• 无限内容创建</li>
             <li>• 优先技术支持</li>
@@ -167,7 +167,7 @@ const SubscriptionManager: React.FC = () => {
           <button
             onClick={getUpgradeButtonAction()}
             disabled={upgrading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {upgrading ? '处理中...' : getUpgradeButtonText()}
           </button>

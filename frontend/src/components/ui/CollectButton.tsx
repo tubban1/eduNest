@@ -116,10 +116,10 @@ export default function CollectButton({
         disabled={isProcessing || disabled}
         className={`flex items-center transition-colors ${
           disabled 
-            ? 'text-gray-400 cursor-not-allowed' 
+            ? 'text-muted-foreground cursor-not-allowed' 
             : isCollected 
-              ? 'text-blue-600 hover:text-blue-700' 
-              : 'text-gray-600 hover:text-gray-700'
+              ? 'text-primary hover:opacity-80' 
+              : 'text-muted-foreground hover:text-foreground'
         } ${sizeClasses[size]} ${className} ${
           isProcessing ? 'opacity-50 cursor-not-allowed' : ''
         }`}

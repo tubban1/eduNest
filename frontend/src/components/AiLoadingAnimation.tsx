@@ -223,13 +223,13 @@ export default function AiLoadingAnimation({
     >
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4 relative overflow-hidden">
         {/* 背景装饰 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-50"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-50"></div>
         
         {/* 进度条 */}
         <div className="relative mb-6">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500 ease-out"
+              className="bg-primary h-2 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             ></div>
           </div>
@@ -240,7 +240,7 @@ export default function AiLoadingAnimation({
 
         {/* 当前阶段标题 */}
         <div className="text-center mb-6">
-          <div className="text-sm text-purple-600 font-medium mb-1">
+          <div className="text-sm text-secondary font-medium mb-1">
             Stage {currentStage + 1} of {LOADING_STAGES.length}
           </div>
           <div className="text-xl font-bold text-gray-800">
@@ -281,7 +281,7 @@ export default function AiLoadingAnimation({
                 key={index}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   index === currentStage 
-                    ? 'bg-purple-600 scale-125' 
+                    ? 'bg-secondary scale-125' 
                     : index < currentStage 
                     ? 'bg-green-500' 
                     : 'bg-gray-300'
@@ -302,8 +302,8 @@ export default function AiLoadingAnimation({
         </div>
 
         {/* 旋转光圈装饰 */}
-        <div className="absolute -top-4 -right-4 w-24 h-24 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin opacity-30"></div>
-        <div className="absolute -bottom-4 -left-4 w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin opacity-30" style={{ animationDirection: 'reverse' }}></div>
+        <div className="absolute -top-4 -right-4 w-24 h-24 border-4 border-secondary/20 border-t-secondary rounded-full animate-spin opacity-30"></div>
+        <div className="absolute -bottom-4 -left-4 w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin opacity-30" style={{ animationDirection: 'reverse' }}></div>
       </div>
     </div>
   );

@@ -92,10 +92,10 @@ export default function LikeButton({
       disabled={isProcessing || disabled}
       className={`flex items-center transition-colors ${
         disabled 
-          ? 'text-gray-400 cursor-not-allowed' 
+          ? 'text-muted-foreground cursor-not-allowed' 
           : isLiked 
-            ? 'text-red-600 hover:text-red-700' 
-            : 'text-gray-600 hover:text-gray-700'
+            ? 'text-destructive hover:opacity-80' 
+            : 'text-muted-foreground hover:text-foreground'
       } ${sizeClasses[size]} ${className} ${
         isProcessing ? 'opacity-50 cursor-not-allowed' : ''
       }`}

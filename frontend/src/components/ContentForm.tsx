@@ -82,7 +82,7 @@ function FixForm({ error, onSubmit, loading, t }: { error: string; onSubmit: (no
         }
         disabled={loading}
       />
-      <button type="submit" className="bg-purple-600 text-white rounded p-2 mt-2 flex items-center justify-center gap-2" disabled={loading}>
+      <button type="submit" className="bg-primary text-primary-foreground rounded p-2 mt-2 flex items-center justify-center gap-2" disabled={loading}>
         {loading ? (
           <>
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -852,7 +852,7 @@ export default function ContentForm({
           <button onClick={() => router.push('/c')} className="text-gray-400 hover:text-black text-sm font-medium transition">{mounted ? t('back', { ns: 'common', defaultValue: '← Back' }) : '← Back'}</button>
           <div className="flex gap-2">
             <button 
-              className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition" 
+              className="px-6 py-2 rounded-full bg-primary text-primary-foreground font-medium shadow hover:opacity-90 transition" 
               onClick={() => {
                   let targetId = null;
                   
@@ -886,7 +886,7 @@ export default function ContentForm({
               {mode === 'create' ? (
                 <>
                   {hasGenerated ? (
-                    <div className="flex flex-col gap-2 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow border border-purple-100 p-4">
+                    <div className="flex flex-col gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl shadow border border-primary/20 p-4">
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">{mounted ? t('aiFixOptimize', { ns: 'content', defaultValue: '🔧 AI Smart Fix/Optimization' }) : '🔧 AI Smart Fix/Optimization'}</h3>
                       {/* 错误信息显示 */}
                       {fixError && (
@@ -906,7 +906,7 @@ export default function ContentForm({
                       <FixForm error={fixError} onSubmit={handleFix} loading={fixLoading} t={t} />
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl shadow border border-blue-100 p-4">
+                    <div className="flex flex-col gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl shadow border border-primary/20 p-4">
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">{mounted ? t('aiGenerate', { ns: 'content', defaultValue: '🤖 AI Smart Generation' }) : '🤖 AI Smart Generation'}</h3>
                       <div className="grid grid-cols-1 gap-4">
                         <div>
@@ -955,7 +955,7 @@ export default function ContentForm({
                       </div>
                       <button
                         type="button"
-                        className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg shadow hover:from-blue-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg shadow hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         onClick={handleAsyncAiGenerate}
                         disabled={isAiFormDisabled || !knowledgePoint.trim()}
                       >
@@ -1050,7 +1050,7 @@ export default function ContentForm({
                     />
                     <button
                       type="button"
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90 transition"
                       onClick={handleAddTag}
                       disabled={isAiFormDisabled}
                     >{mounted ? t('addTag', { ns: 'content', defaultValue: 'Add' }) : 'Add'}</button>
@@ -1058,9 +1058,9 @@ export default function ContentForm({
                   {/* 块状标签实时预览，可删除 */}
                   <div className="flex flex-wrap gap-2 mt-2">
                     {tagList.map((t, i) => (
-                      <span key={i} className="flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                      <span key={i} className="flex items-center px-2 py-1 bg-primary/10 text-primary text-xs rounded">
                         {t}
-                        <button type="button" className="ml-1 text-blue-400 hover:text-red-500" onClick={() => handleRemoveTag(t)} disabled={isAiFormDisabled}>×</button>
+                        <button type="button" className="ml-1 text-primary/60 hover:text-destructive" onClick={() => handleRemoveTag(t)} disabled={isAiFormDisabled}>×</button>
                       </span>
                     ))}
                   </div>
@@ -1091,7 +1091,7 @@ export default function ContentForm({
                     <button
                       onClick={handleReload}
                       disabled={reloading}
-                      className="mt-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                      className="mt-2 px-4 py-2 bg-primary hover:opacity-90 disabled:bg-muted text-primary-foreground rounded-lg transition-colors"
                     >
                       {reloading ? '重新加载中...' : '重新加载结果'}
                     </button>
@@ -1134,7 +1134,7 @@ export default function ContentForm({
               </div>
               {/* AI修复摘要显示 */}
               {fixed && (
-                <div className="px-4 py-3 bg-gradient-to-r from-green-50 to-blue-50 border-t border-gray-200 rounded-b-xl">
+                <div className="px-4 py-3 bg-gradient-to-r from-secondary/10 to-primary/10 border-t border-border rounded-b-xl">
                   <div className="flex items-start gap-2">
                     <div className="text-green-600 text-sm">🔧</div>
                     <div className="flex-1">

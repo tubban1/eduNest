@@ -33,13 +33,13 @@ export const AIGuideInput: React.FC<AIGuideInputProps> = ({ onSend, disabled }) 
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder={t('inputPlaceholder')}
-        className="w-full border border-gray-300 rounded-xl p-3 pr-12 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 focus:bg-white transition-all text-sm"
+        className="w-full border border-input rounded-xl p-3 pr-12 focus:ring-2 focus:ring-primary focus:border-transparent resize-none bg-background focus:bg-card transition-all text-sm"
         rows={2}
       />
       <button
         onClick={handleSend}
         disabled={!text.trim() || disabled}
-        className="absolute right-2 bottom-2.5 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors"
+        className="absolute right-2 bottom-2.5 p-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:hover:opacity-50 transition-colors"
       >
         <Send size={16} />
       </button>

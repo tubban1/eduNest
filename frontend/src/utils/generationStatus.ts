@@ -87,20 +87,23 @@ export const getStatusLabel = (status: GenerationStatus, locale: string = 'zh'):
   return STATUS_LABELS[status] || status;
 };
 
-// 获取状态颜色类名（Tailwind CSS）
+// 获取状态颜色类名（Tailwind CSS）- 使用教育级配色方案
 export const getStatusColorClass = (status: GenerationStatus, type: 'bg' | 'text' | 'border' = 'bg'): string => {
   const color = STATUS_COLORS[status];
   switch (color) {
     case 'gray':
-      return type === 'bg' ? 'bg-gray-100' : type === 'text' ? 'text-gray-600' : 'border-gray-200';
+      return type === 'bg' ? 'bg-muted' : type === 'text' ? 'text-muted-foreground' : 'border-border';
     case 'blue':
-      return type === 'bg' ? 'bg-blue-100' : type === 'text' ? 'text-blue-600' : 'border-blue-200';
+      // 使用 primary 颜色（低饱和蓝）
+      return type === 'bg' ? 'bg-primary/10' : type === 'text' ? 'text-primary' : 'border-primary/20';
     case 'green':
-      return type === 'bg' ? 'bg-green-100' : type === 'text' ? 'text-green-600' : 'border-green-200';
+      // 使用 secondary 颜色（柔和青绿）
+      return type === 'bg' ? 'bg-secondary/10' : type === 'text' ? 'text-secondary' : 'border-secondary/20';
     case 'red':
-      return type === 'bg' ? 'bg-red-100' : type === 'text' ? 'text-red-600' : 'border-red-200';
+      // 使用 destructive 颜色（错误反馈）
+      return type === 'bg' ? 'bg-destructive/10' : type === 'text' ? 'text-destructive' : 'border-destructive/20';
     default:
-      return type === 'bg' ? 'bg-gray-100' : type === 'text' ? 'text-gray-600' : 'border-gray-200';
+      return type === 'bg' ? 'bg-muted' : type === 'text' ? 'text-muted-foreground' : 'border-border';
   }
 };
 

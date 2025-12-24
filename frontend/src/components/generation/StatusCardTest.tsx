@@ -75,10 +75,10 @@ const StatusCardTest: React.FC = () => {
                 {new Date(testContent.created_at).toLocaleDateString()}
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">
+                <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded">
                   已完成
                 </span>
-                <button className="text-blue-600 hover:text-blue-800 text-sm">
+                <button className="text-primary hover:opacity-80 text-sm">
                   查看 →
                 </button>
               </div>
@@ -87,9 +87,9 @@ const StatusCardTest: React.FC = () => {
         </div>
       </div>
       
-      <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-        <h4 className="font-semibold text-blue-800 mb-2">测试说明：</h4>
-        <ul className="text-blue-700 text-sm space-y-1">
+      <div className="mt-8 p-4 bg-primary/10 rounded-lg">
+        <h4 className="font-semibold text-primary mb-2">测试说明：</h4>
+        <ul className="text-foreground text-sm space-y-1">
           <li>• 等待中：显示灰色骨架屏效果</li>
           <li>• 生成中：显示进度条和旋转动画</li>
           <li>• 失败：显示错误信息和重试按钮</li>

@@ -113,8 +113,8 @@ const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
   if (loading) {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-        <span className="text-sm text-gray-600">{t('loading')}</span>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+        <span className="text-sm text-muted-foreground">{t('loading')}</span>
       </div>
     );
   }
@@ -122,10 +122,10 @@ const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-foreground">
           {t('title')}
         </label>
-        <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+        <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
           {t('adminOnly')}
         </span>
       </div>
@@ -137,8 +137,8 @@ const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
             className={`
               relative flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all
               ${selectedProvider === provider.key
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-300 hover:border-gray-400'
+                ? 'border-primary bg-primary/10'
+                : 'border-border hover:border-border/80'
               }
               ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
               ${!provider.configured ? 'opacity-50' : ''}
@@ -149,8 +149,8 @@ const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
               <div className={`
                 w-4 h-4 rounded-full border-2 flex items-center justify-center
                 ${selectedProvider === provider.key
-                  ? 'border-blue-500 bg-blue-500'
-                  : 'border-gray-300'
+                  ? 'border-primary bg-primary'
+                  : 'border-border'
                 }
               `}>
                 {selectedProvider === provider.key && (

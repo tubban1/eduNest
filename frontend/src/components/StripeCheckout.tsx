@@ -103,7 +103,7 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({
           <button
             type="button"
             onClick={() => setShowPaymentSelector(!showPaymentSelector)}
-            className="text-sm text-blue-600 hover:text-blue-700"
+            className="text-sm text-primary hover:text-primary/90"
           >
             {showPaymentSelector ? '隐藏选项' : '选择支付方式'}
           </button>
@@ -143,7 +143,7 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({
         <button
           onClick={handleCheckout}
           disabled={isLoading}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50 transition-colors"
         >
           {isLoading ? (
             <span className="flex items-center justify-center">

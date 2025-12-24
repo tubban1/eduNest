@@ -135,11 +135,11 @@ export default function ListSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('collections:list.loading')}</p>
-          <p className="text-sm text-gray-400 mt-2">{t('collections:list.loadingListInfo')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">{t('collections:list.loading')}</p>
+          <p className="text-sm text-muted-foreground/70 mt-2">{t('collections:list.loadingListInfo')}</p>
         </div>
       </div>
     );
@@ -147,15 +147,15 @@ export default function ListSettingsPage() {
 
   if (error && !listData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-4">
           <div className="text-6xl mb-4">😕</div>
-          <div className="text-red-600 text-xl font-semibold mb-2">{t('collections:list.loadFailed')}</div>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="text-destructive text-xl font-semibold mb-2">{t('collections:list.loadFailed')}</div>
+          <p className="text-muted-foreground mb-6">{error}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={handleSmartBack}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors"
             >
               {t('back')}
             </button>
@@ -187,7 +187,7 @@ export default function ListSettingsPage() {
                     setLoading(false);
                   });
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
             >
               {t('collections:list.retry')}
             </button>
@@ -243,7 +243,7 @@ export default function ListSettingsPage() {
               type="text"
               value={settings.name}
               onChange={(e) => setSettings({ ...settings, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               required
               placeholder={t('collections:settings.listNamePlaceholder')}
             />
@@ -257,7 +257,7 @@ export default function ListSettingsPage() {
             <textarea
               value={settings.description}
               onChange={(e) => setSettings({ ...settings, description: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               rows={4}
               placeholder={t('collections:settings.listDescriptionPlaceholder')}
             />
@@ -335,7 +335,7 @@ export default function ListSettingsPage() {
                           min="0.01"
                           value={settings.price || ''}
                           onChange={(e) => setSettings({ ...settings, price: parseFloat(e.target.value) || undefined })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                           placeholder="0.00"
                           required={settings.pricing_mode === 'premium'}
                         />
@@ -345,7 +345,7 @@ export default function ListSettingsPage() {
                         <select
                           value={settings.currency}
                           onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                         >
                           <option value="USD">USD</option>
                           <option value="CNY">CNY</option>
@@ -378,14 +378,14 @@ export default function ListSettingsPage() {
             <button
               type="button"
               onClick={() => router.push(`/list/${params.short_id}`)}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-6 py-2 border border-input rounded-lg text-foreground hover:bg-muted transition-colors"
             >
               {t('collections:settings.cancel')}
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? t('collections:settings.saving') : t('collections:settings.saveSettings')}
             </button>

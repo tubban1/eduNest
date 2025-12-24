@@ -13,14 +13,14 @@ export const AIGuideButton: React.FC<AIGuideButtonProps> = ({ onClick, hasNewMes
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all hover:scale-105 z-50 flex items-center justify-center group"
+      className="fixed bottom-6 right-6 bg-primary hover:opacity-90 text-primary-foreground p-4 rounded-full shadow-lg transition-all hover:scale-105 z-50 flex items-center justify-center group"
     >
       <MessageCircle className="w-6 h-6" />
       <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap group-hover:ml-2">
         {t('buttonLabel')}
       </span>
       {hasNewMessage && (
-        <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+        <span className="absolute top-0 right-0 w-3 h-3 bg-destructive rounded-full border-2 border-white"></span>
       )}
     </button>
   );

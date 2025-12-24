@@ -459,25 +459,25 @@ export default function FullHTMLRenderer({
     >
       {/* 加载指示器 */}
       {isLoading && !hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-30">
+        <div className="absolute inset-0 flex items-center justify-center bg-card bg-opacity-90 z-30">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">加载中...</p>
-            <p className="text-sm text-gray-500 mt-2">请稍候，内容正在渲染</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-foreground">加载中...</p>
+            <p className="text-sm text-muted-foreground mt-2">请稍候，内容正在渲染</p>
           </div>
         </div>
       )}
 
       {/* 错误显示 */}
       {hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-red-50 z-30">
+        <div className="absolute inset-0 flex items-center justify-center bg-destructive/10 z-30">
           <div className="text-center max-w-md mx-4">
-            <div className="text-red-600 text-4xl mb-4">⚠️</div>
-            <h3 className="text-lg font-semibold text-red-800 mb-2">渲染失败</h3>
-            <p className="text-red-600 mb-4">{errorMessage}</p>
+            <div className="text-destructive text-4xl mb-4">⚠️</div>
+            <h3 className="text-lg font-semibold text-destructive mb-2">渲染失败</h3>
+            <p className="text-destructive mb-4">{errorMessage}</p>
             <button
               onClick={refresh}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              className="px-4 py-2 bg-destructive text-destructive-foreground rounded hover:opacity-90 transition-colors"
             >
               重试
             </button>
@@ -487,7 +487,7 @@ export default function FullHTMLRenderer({
 
       {/* 微信提示 */}
       {forceExternalInWechat && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-yellow-50 border border-yellow-300 text-yellow-700 rounded-md text-sm shadow">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-warning/10 border border-warning/30 text-warning rounded-md text-sm shadow">
           为获得完整体验，请点击右上角菜单并选择"在浏览器中打开"。
         </div>
       )}
@@ -500,7 +500,7 @@ export default function FullHTMLRenderer({
             ref={iframeRef}
             src={externalUrl}
             title={iframeTitle}
-            className="w-full h-full border-0 bg-white"
+            className="w-full h-full border-0 bg-card"
             style={iframeStyle}
             scrolling="auto"
             onLoad={() => {

@@ -29,7 +29,7 @@ export default function LoginRequired({
         <div className="space-y-3">
           <Link
             href="/login"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium w-full"
+            className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:opacity-90 transition-colors font-medium w-full"
           >
             {mounted ? t('login', { ns: 'auth', defaultValue: 'Login' }) : 'Login'}
           </Link>
