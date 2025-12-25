@@ -124,11 +124,18 @@ class AsyncGenerationQueue {
       }
       
       // 创建 ai_usage_logs 记录
+      // 判断是 visitor_id 还是 user_id
+      const { isVisitorId } = require('../utils/visitorId');
+      const userId = generationParams.user_id || null;
+      const visitorId = userId && isVisitorId(userId) ? userId : null;
+      const actualUserId = userId && !isVisitorId(userId) ? userId : null;
+      
       const { data: log, error } = await DatabaseService.supabase
         .from('ai_usage_logs')
         .insert({
           content_id: contentId,
-          user_id: generationParams.user_id,
+          user_id: actualUserId, // 如果是 visitor_id，则设置为 NULL
+          visitor_id: visitorId, // 如果是 visitor_id，则存储在这里
           user_query: generationParams.knowledge_point,
           action_type: 'generate',
           status: 'pending',
@@ -516,6 +523,7 @@ class AsyncGenerationQueue {
         await this.cleanupPendingTasks(contentId, taskId);
         
         // 触发缩略图生成（异步，不阻塞）
+        logger.info(`[Thumbnail] Triggering thumbnail generation for content ${contentId}`);
         this.triggerThumbnailGeneration(contentId).catch(error => {
           logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
           // 不抛出错误，避免影响主流程
@@ -874,33 +882,79 @@ class AsyncGenerationQueue {
   }
 
   /**
+   * 获取重试次数（同一 content_id 的生成记录数 - 1）
+   */
+  async getRetryCount(contentId) {
+    try {
+      const { data: logs, error } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('id')
+        .eq('content_id', contentId)
+        .eq('action_type', 'generate');
+
+      if (error) {
+        logger.error(`获取重试次数失败: contentId=${contentId}`, error);
+        return 0;
+      }
+
+      // 重试次数 = 总次数 - 1（减去第一次尝试）
+      return Math.max(0, (logs?.length || 0) - 1);
+    } catch (error) {
+      logger.error(`获取重试次数异常: contentId=${contentId}`, error);
+      return 0;
+    }
+  }
+
+  /**
    * Trigger thumbnail generation for content (async, non-blocking)
    * @param {string} contentId - Content ID
    */
   async triggerThumbnailGeneration(contentId) {
     try {
+      logger.info(`[Thumbnail] Starting thumbnail generation trigger for content ${contentId}`);
+      
       // Get content short_id
       const { data: content, error } = await DatabaseService.supabase
         .from('content')
-        .select('id, short_id')
+        .select('id, short_id, full_html')
         .eq('id', contentId)
         .single();
 
-      if (error || !content || !content.short_id) {
-        logger.warn(`[Thumbnail] Cannot trigger thumbnail generation: content not found or missing short_id for ${contentId}`);
+      if (error) {
+        logger.error(`[Thumbnail] Database error when fetching content ${contentId}:`, error);
+        return;
+      }
+
+      if (!content) {
+        logger.warn(`[Thumbnail] Content not found: ${contentId}`);
+        return;
+      }
+
+      if (!content.short_id) {
+        logger.warn(`[Thumbnail] Content ${contentId} missing short_id`);
+        return;
+      }
+
+      if (!content.full_html || content.full_html.trim().length === 0) {
+        logger.warn(`[Thumbnail] Content ${contentId} has no full_html, skipping thumbnail generation`);
         return;
       }
 
       // Get frontend base URL from environment
       const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+      logger.info(`[Thumbnail] Using base URL: ${baseUrl}`);
       
       // Import thumbnail service dynamically to avoid circular dependencies
       const { generateThumbnail } = require('./thumbnailService');
       
       // Trigger thumbnail generation asynchronously (don't await, don't block)
+      logger.info(`[Thumbnail] Calling generateThumbnail for content ${contentId} (short_id: ${content.short_id})`);
       generateThumbnail(contentId, content.short_id, baseUrl)
+        .then(() => {
+          logger.info(`[Thumbnail] ✅ Thumbnail generation completed successfully for content ${contentId}`);
+        })
         .catch(error => {
-          logger.error(`[Thumbnail] Async thumbnail generation failed for content ${contentId}:`, error);
+          logger.error(`[Thumbnail] ❌ Async thumbnail generation failed for content ${contentId}:`, error);
         });
       
       logger.info(`[Thumbnail] Thumbnail generation triggered for content ${contentId} (short_id: ${content.short_id})`);

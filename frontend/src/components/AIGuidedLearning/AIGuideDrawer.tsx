@@ -20,6 +20,7 @@ interface AIGuideDrawerProps {
   isLoggedIn: boolean;
   initFailed?: boolean;
   onRetryInit?: () => void;
+  freeTrialUsed?: boolean;
 }
 
 export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
@@ -30,7 +31,8 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
   isLoading,
   isLoggedIn,
   initFailed = false,
-  onRetryInit
+  onRetryInit,
+  freeTrialUsed = false
 }) => {
   const { t } = useTranslation('aiGuide');
   const router = useRouter();
@@ -90,7 +92,8 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
       <div className="p-4 border-t border-border bg-card">
         {isLoggedIn ? (
           <AIGuideInput onSend={onSendMessage} disabled={isLoading || initFailed} />
-        ) : (
+        ) : freeTrialUsed ? (
+          // 免费试用已使用，显示登录/注册按钮
           <div className="space-y-3">
             <button
               onClick={handleLogin}
@@ -105,6 +108,9 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
               {t('registerButton')}
             </button>
           </div>
+        ) : (
+          // 未登录且免费试用未使用，显示输入框（允许第一次对话）
+          <AIGuideInput onSend={onSendMessage} disabled={isLoading || initFailed} />
         )}
       </div>
     </div>

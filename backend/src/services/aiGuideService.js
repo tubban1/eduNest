@@ -256,13 +256,25 @@ const initConversation = async (contentId, userId) => {
  */
 const handleChat = async (conversationId, message, uiState, userId) => {
   try {
+    // 判断是 visitor_id 还是 user_id
+    const { isVisitorId } = require('../utils/visitorId');
+    const isVisitor = isVisitorId(userId);
+    
     // 1. Get conversation history
-    const { data: history, error: historyError } = await supabase
+    let query = supabase
       .from('ai_usage_logs')
       .select('content_id, user_query, response_metadata, created_at')
       .eq('request_id', conversationId)
-      .eq('action_type', 'ai_guide')
-      .order('created_at', { ascending: true });
+      .eq('action_type', 'ai_guide');
+    
+    // 根据是 visitor_id 还是 user_id 来查询
+    if (isVisitor) {
+      query = query.eq('visitor_id', userId);
+    } else {
+      query = query.eq('user_id', userId);
+    }
+    
+    const { data: history, error: historyError } = await query.order('created_at', { ascending: true });
 
     if (historyError) throw historyError;
     if (!history || history.length === 0) {
@@ -424,19 +436,30 @@ const getMessages = async (conversationId) => {
  */
 const getConversations = async (contentId, userId) => {
   try {
+    // 判断是 visitor_id 还是 user_id
+    const { isVisitorId } = require('../utils/visitorId');
+    const isVisitor = isVisitorId(userId);
+    
     // This is tricky because we need to group by request_id.
     // Supabase JS client doesn't support complex GROUP BY well without RPC.
     // We can fetch all logs for the content/user and process in memory (if not too many).
     // Or just fetch distinct request_ids if possible.
     
     // Simpler approach: Fetch most recent logs for this user+content+action_type
-    const { data: logs, error } = await supabase
+    let query = supabase
       .from('ai_usage_logs')
       .select('request_id, created_at, user_query')
-      .eq('user_id', userId)
       .eq('content_id', contentId)
-      .eq('action_type', 'ai_guide')
-      .order('created_at', { ascending: false });
+      .eq('action_type', 'ai_guide');
+    
+    // 根据是 visitor_id 还是 user_id 来查询
+    if (isVisitor) {
+      query = query.eq('visitor_id', userId);
+    } else {
+      query = query.eq('user_id', userId);
+    }
+    
+    const { data: logs, error } = await query.order('created_at', { ascending: false });
 
     if (error) throw error;
 

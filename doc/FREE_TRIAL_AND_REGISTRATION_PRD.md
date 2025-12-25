@@ -9,7 +9,7 @@
 - **降低使用门槛**：无需注册即可体验核心功能
 - **提升转化率**：通过免费体验引导用户注册
 - **优化用户体验**：流畅的试用→注册流程
-- **数据持久化**：匿名用户数据在登录后自动合并，不丢失
+- **数据持久化**：游客数据在登录后自动合并，不丢失
 
 ## 2. 功能需求
 
@@ -17,31 +17,31 @@
 
 #### 2.1.1 功能描述
 - 未登录用户可以在首页生成一次内容
-- 通过匿名持久身份（Anon ID）控制试用次数
+- 通过游客持久身份（Visitor ID）控制试用次数
 - 生成的内容保存到 `content` 表
 - 生成完成后立即要求用户注册
-- 登录后自动合并匿名数据到用户账号
+- 登录后自动合并游客数据到用户账号
 
 #### 2.1.2 技术实现方案
 
-**匿名持久身份（Anon ID）方案（推荐）：**
+**游客持久身份（Visitor ID）方案（推荐）：**
 
 **前端实现：**
-- 使用 `localSte 作为兜底（防止 localStorage 被清除）
-- Anon ID 格式：orage` 存储 `anon_user_id`（主要存储）
-- 同时写入 CookiUUID（`crypto.randomUUID()`）
+- 使用 `localStorage` 存储 `visitor_user_id`（主要存储）
+- 同时写入 Cookie 作为兜底（防止 localStorage 被清除）
+- Visitor ID 格式：`visitor-{uuid}`（`crypto.randomUUID()`）
 - 生命周期：永久有效，直到用户登录后合并
 
 **后端实现：**
-- 创建 `anon_usage` 表记录匿名用户使用情况
-- 通过 `anon_id` 查询和更新使用记录
-- 登录时合并 `anon_id` 关联的数据到 `user_id`
+- 创建 `visitor_usage` 表记录游客使用情况
+- 通过 `visitor_id` 查询和更新使用记录
+- 登录时合并 `visitor_id` 关联的数据到 `user_id`
 
 **Content 表 user_id 处理方案：**
 
-**推荐方案：使用 Anon ID**
-- 未登录用户生成的内容 `created_by` 存储 `anon_id`（格式：`anon-{uuid}`）
-- 用户注册后，通过 `anon_id` 查找所有关联数据，更新 `created_by` 为真实 `user_id`
+**推荐方案：使用 Visitor ID**
+- 未登录用户生成的内容 `created_by` 存储 `visitor_id`（格式：`visitor-{uuid}`）
+- 用户注册后，通过 `visitor_id` 查找所有关联数据，更新 `created_by` 为真实 `user_id`
 - 优点：
   - 数据完整性好，便于后续关联
   - 跨浏览器会话保持
@@ -50,9 +50,9 @@
 
 **数据库修改：**
 ```sql
--- 创建匿名使用记录表
-CREATE TABLE IF NOT EXISTS anon_usage (
-  anon_id TEXT PRIMARY KEY,
+-- 创建游客使用记录表
+CREATE TABLE IF NOT EXISTS visitor_usage (
+  visitor_id TEXT PRIMARY KEY,
   content_generated BOOLEAN DEFAULT false,
   ai_guide_used BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -60,10 +60,10 @@ CREATE TABLE IF NOT EXISTS anon_usage (
   expires_at TIMESTAMP WITH TIME ZONE -- 可选：设置过期时间
 );
 
-CREATE INDEX IF NOT EXISTS idx_anon_usage_created_at ON anon_usage(created_at);
+CREATE INDEX IF NOT EXISTS idx_visitor_usage_created_at ON visitor_usage(created_at);
 
--- content 表无需修改，created_by 支持存储 anon_id
--- ai_usage_logs 表无需修改，user_id 支持存储 anon_id
+-- content 表无需修改，created_by 支持存储 visitor_id
+-- ai_usage_logs 表无需修改，user_id 支持存储 visitor_id
 ```
 
 #### 2.1.3 业务流程
@@ -71,41 +71,41 @@ CREATE INDEX IF NOT EXISTS idx_anon_usage_created_at ON anon_usage(created_at);
 ```
 1. 用户访问首页（未登录）
    ↓
-2. 前端获取或创建 anon_id：
-   - 从 localStorage 读取 anon_user_id
+2. 前端获取或创建 visitor_id：
+   - 从 localStorage 读取 visitor_user_id
    - 如果不存在，生成新的 UUID 并保存到 localStorage 和 Cookie
    ↓
-3. 前端调用后端检查免费试用状态（携带 anon_id）
+3. 前端调用后端检查免费试用状态（携带 visitor_id）
    ↓
-4. 后端查询 anon_usage 表：
+4. 后端查询 visitor_usage 表：
    - 如果 content_generated = true → 返回 403，要求注册
    - 如果 content_generated = false → 允许生成
    ↓
-5. 用户提交生成请求（携带 anon_id）
+5. 用户提交生成请求（携带 visitor_id）
    ↓
 6. 后端执行生成：
-   - 保存 content 记录（created_by = anon_id）
-   - 更新 anon_usage 表：content_generated = true
+   - 保存 content 记录（created_by = visitor_id）
+   - 更新 visitor_usage 表：content_generated = true
    ↓
 7. 生成成功后：
    - 前端显示生成结果 + 注册弹窗/跳转
    - 提示："我们已经帮你保存了刚才的学习进度"
    ↓
 8. 用户注册后：
-   - 前端发送 anon_id 到后端
-   - 后端查找所有 anon_id 关联的数据：
+   - 前端发送 visitor_id 到后端
+   - 后端查找所有 visitor_id 关联的数据：
      * content 表：更新 created_by 为真实 user_id
      * ai_usage_logs 表：更新 user_id 为真实 user_id
-   - 删除 anon_usage 记录（可选）
-   - 清除前端 localStorage 和 Cookie 中的 anon_id
+   - 删除 visitor_usage 记录（可选）
+   - 清除前端 localStorage 和 Cookie 中的 visitor_id
 ```
 
 #### 2.1.4 API 修改
 
 **新增接口：**
-- `POST /api/ai/generate-free` - 免费生成接口（无需认证，需要 anon_id）
-- `GET /api/anon/check-trial` - 检查免费试用状态（需要 anon_id）
-- `POST /api/anon/merge-on-login` - 注册后合并匿名数据（需要认证 + anon_id）
+- `POST /api/ai/generate-free` - 免费生成接口（无需认证，需要 visitor_id）
+- `GET /api/visitor/check-trial` - 检查免费试用状态（需要 visitor_id）
+- `POST /api/visitor/merge-on-login` - 注册后合并游客数据（需要认证 + visitor_id）
 
 **修改接口：**
 - `POST /api/ai/generate` - 保持原有逻辑（需要认证）
@@ -115,62 +115,62 @@ CREATE INDEX IF NOT EXISTS idx_anon_usage_created_at ON anon_usage(created_at);
 #### 2.2.1 功能描述
 - 未登录用户可以启动一次 AI Guide 会话
 - 可以发送一次对话消息
-- 通过 Anon ID 控制试用次数
+- 通过 Visitor ID 控制试用次数
 - 对话完成后立即要求用户注册
 - 登录后自动合并对话记录
 
 #### 2.2.2 技术实现方案
 
-**Anon ID 管理：**
-- 使用相同的 Anon ID 机制（localStorage + Cookie）
-- `anon_usage` 表中存储 `ai_guide_used: true` 标记
+**Visitor ID 管理：**
+- 使用相同的 Visitor ID 机制（localStorage + Cookie）
+- `visitor_usage` 表中存储 `ai_guide_used: true` 标记
 
 **Conversation 关联：**
 - `ai_usage_logs` 表的 `user_id` 字段：
-  - 未登录用户：存储 `anon_id`（格式：`anon-{uuid}`）
+  - 未登录用户：存储 `visitor_id`（格式：`visitor-{uuid}`）
   - 登录用户：存储真实 `user_id`
-- 注册后通过 `anon_id` 查找并更新所有相关记录
+- 注册后通过 `visitor_id` 查找并更新所有相关记录
 
 #### 2.2.3 业务流程
 
 ```
 1. 用户打开内容页面，点击 AI Guide 按钮（未登录）
    ↓
-2. 前端获取或创建 anon_id（从 localStorage）
+2. 前端获取或创建 visitor_id（从 localStorage）
    ↓
-3. 调用后端检查免费试用状态（携带 anon_id）
+3. 调用后端检查免费试用状态（携带 visitor_id）
    ↓
-4. 后端查询 anon_usage 表：
+4. 后端查询 visitor_usage 表：
    - 如果 ai_guide_used = true → 返回 403，要求注册
    - 如果 ai_guide_used = false → 允许启动会话
    ↓
-5. 调用 /api/ai-guide/init-free（无需认证，需要 anon_id）
-   - 使用 anon_id 作为 user_id
+5. 调用 /api/ai-guide/init-free（无需认证，需要 visitor_id）
+   - 使用 visitor_id 作为 user_id
    - 创建 conversation_id
    - 生成初始欢迎消息
    ↓
 6. 用户发送第一条消息
    ↓
-7. 调用 /api/ai-guide/chat-free（无需认证，需要 anon_id）
-   - 检查 anon_usage 表中是否已使用免费对话
-   - 如果未使用，处理对话并更新 anon_usage.ai_guide_used = true
+7. 调用 /api/ai-guide/chat-free（无需认证，需要 visitor_id）
+   - 检查 visitor_usage 表中是否已使用免费对话
+   - 如果未使用，处理对话并更新 visitor_usage.ai_guide_used = true
    - 如果已使用，返回 403，要求注册
    ↓
 8. 对话完成后：
    - 显示注册提示："我们已经帮你保存了刚才的对话记录"
    ↓
 9. 用户注册后：
-   - 前端发送 anon_id 到后端
-   - 后端查找所有 anon_id 关联的对话记录
+   - 前端发送 visitor_id 到后端
+   - 后端查找所有 visitor_id 关联的对话记录
    - 更新 ai_usage_logs.user_id 为真实 user_id
-   - 删除 anon_usage 记录（可选）
+   - 删除 visitor_usage 记录（可选）
 ```
 
 #### 2.2.4 API 修改
 
 **新增接口：**
-- `POST /api/ai-guide/init-free` - 免费初始化会话（无需认证，需要 anon_id）
-- `POST /api/ai-guide/chat-free` - 免费对话接口（无需认证，需要 anon_id）
+- `POST /api/ai-guide/init-free` - 免费初始化会话（无需认证，需要 visitor_id）
+- `POST /api/ai-guide/chat-free` - 免费对话接口（无需认证，需要 visitor_id）
 
 **修改接口：**
 - `POST /api/ai-guide/init` - 保持原有逻辑（需要认证）
@@ -224,35 +224,59 @@ CREATE INDEX IF NOT EXISTS idx_anon_usage_created_at ON anon_usage(created_at);
 
 **流程：**
 1. 用户完成注册，获得真实 `user_id`
-2. 前端获取 localStorage 中的 `anon_id`
-3. 调用 `/api/anon/merge-on-login` 接口（需要认证 + anon_id）
-4. 后端查找所有 `anon_id` 关联的记录：
-   - `content` 表：更新 `created_by` 为真实 `user_id`（WHERE created_by = anon_id）
-   - `ai_usage_logs` 表：更新 `user_id` 为真实 `user_id`（WHERE user_id = anon_id）
-5. 删除 `anon_usage` 记录（可选，建议保留用于统计）
-6. 前端清除 localStorage 和 Cookie 中的 `anon_id`
+2. 前端获取 localStorage 中的 `visitor_id`
+3. 调用 `/api/visitor/merge-on-login` 接口（需要认证 + visitor_id）
+4. 后端查找所有 `visitor_id` 关联的记录：
+   - `content` 表：更新 `created_by` 为真实 `user_id`（WHERE created_by = visitor_id）
+   - `ai_usage_logs` 表：更新 `user_id` 为真实 `user_id`（WHERE user_id = visitor_id）
+5. 删除 `visitor_usage` 记录（可选，建议保留用于统计）
+6. 前端清除 localStorage 和 Cookie 中的 `visitor_id`
 7. 显示提示："我们已经帮你保存了刚才的学习进度"
 
 ## 3. 数据库修改
 
 ### 3.1 Content 表修改
 
-**无需修改**
-- `created_by` 字段支持存储 `anon_id`（格式：`anon-{uuid}`）
-- 注册后通过 `anon_id` 查找并更新为真实 `user_id`
+**无需修改表结构**
+- `created_by` 字段支持存储 `visitor_id`（格式：`visitor-{uuid}`）或 `user_id`（纯 UUID）
+- **ID 区分机制**：通过格式前缀区分
+  - `visitor-{uuid}` → 游客创建的内容
+  - 纯 UUID → 注册用户创建的内容
+- 注册后通过 `visitor_id` 查找并更新为真实 `user_id`
+- **查询示例**：
+  ```sql
+  -- 查找游客创建的内容
+  SELECT * FROM content WHERE created_by LIKE 'visitor-%';
+  
+  -- 查找注册用户创建的内容
+  SELECT * FROM content WHERE created_by NOT LIKE 'visitor-%';
+  ```
+- **代码判断**：使用工具函数 `isVisitorId(created_by)` 判断
 
 ### 3.2 AI Usage Logs 表修改
 
-**无需修改**
-- `user_id` 字段支持存储 `anon_id`（格式：`anon-{uuid}`）
-- 注册后通过 `anon_id` 查找并更新为真实 `user_id`
+**无需修改表结构**
+- `user_id` 字段支持存储 `visitor_id`（格式：`visitor-{uuid}`）或 `user_id`（纯 UUID）
+- **ID 区分机制**：通过格式前缀区分
+  - `visitor-{uuid}` → 游客的对话记录
+  - 纯 UUID → 注册用户的对话记录
+- 注册后通过 `visitor_id` 查找并更新为真实 `user_id`
+- **查询示例**：
+  ```sql
+  -- 查找游客的对话记录
+  SELECT * FROM ai_usage_logs WHERE user_id LIKE 'visitor-%';
+  
+  -- 查找注册用户的对话记录
+  SELECT * FROM ai_usage_logs WHERE user_id NOT LIKE 'visitor-%';
+  ```
+- **代码判断**：使用工具函数 `isVisitorId(user_id)` 判断
 
-### 3.3 新增匿名使用记录表
+### 3.3 新增游客使用记录表
 
-**创建 anon_usage 表：**
+**创建 visitor_usage 表：**
 ```sql
-CREATE TABLE IF NOT EXISTS anon_usage (
-  anon_id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS visitor_usage (
+  visitor_id TEXT PRIMARY KEY,
   content_generated BOOLEAN DEFAULT false,
   ai_guide_used BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -260,69 +284,68 @@ CREATE TABLE IF NOT EXISTS anon_usage (
   expires_at TIMESTAMP WITH TIME ZONE -- 可选：设置过期时间（如 90 天后）
 );
 
-CREATE INDEX IF NOT EXISTS idx_anon_usage_created_at ON anon_usage(created_at);
-CREATE INDEX IF NOT EXISTS idx_anon_usage_expires_at ON anon_usage(expires_at);
+CREATE INDEX IF NOT EXISTS idx_visitor_usage_created_at ON visitor_usage(created_at);
 ```
 
 **说明：**
-- `anon_id`：匿名用户唯一标识（格式：`anon-{uuid}`）
+- `visitor_id`：游客唯一标识（格式：`visitor-{uuid}`）
 - `content_generated`：是否已使用免费内容生成
 - `ai_guide_used`：是否已使用免费 AI Guide 对话
 - `expires_at`：可选，用于定期清理过期记录
 
 ## 4. 后端实现细节
 
-### 4.1 Anon ID 验证中间件
+### 4.1 Visitor ID 验证中间件
 
 ```javascript
-// backend/src/middleware/anonId.js
-const validateAnonId = (req, res, next) => {
-  const anonId = req.headers['x-anon-id'] || req.body.anon_id || req.query.anon_id;
+// backend/src/middleware/visitorId.js
+const validateVisitorId = (req, res, next) => {
+  const visitorId = req.headers['x-visitor-id'] || req.body.visitor_id || req.query.visitor_id;
   
-  if (!anonId) {
+  if (!visitorId) {
     return res.status(400).json({
       success: false,
-      error: 'ANON_ID_REQUIRED',
-      message: '匿名用户ID缺失'
+      error: 'VISITOR_ID_REQUIRED',
+      message: '游客ID缺失'
     });
   }
   
-  // 验证格式：anon-{uuid}
-  if (!/^anon-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anonId)) {
+  // 验证格式：visitor-{uuid}
+  if (!/^visitor-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(visitorId)) {
     return res.status(400).json({
       success: false,
-      error: 'INVALID_ANON_ID',
-      message: '无效的匿名用户ID格式'
+      error: 'INVALID_VISITOR_ID',
+      message: '无效的游客ID格式'
     });
   }
   
-  req.anonId = anonId;
+  req.visitorId = visitorId;
   next();
 };
 
-module.exports = { validateAnonId };
+module.exports = { validateVisitorId };
 ```
 
 ### 4.2 免费试用检查服务
 
 ```javascript
-// backend/src/services/anonUsageService.js
+// backend/src/services/visitorUsageService.js
 const { supabase } = require('./database');
 
-// 获取或创建匿名使用记录
-const getOrCreateAnonUsage = async (anonId) => {
+// 获取或创建游客使用记录
+const getOrCreateVisitorUsage = async (visitorId) => {
   const { data, error } = await supabase
-    .from('anon_usage')
+    .from('visitor_usage')
     .select('*')
-    .eq('anon_id', anonId)
+    .eq('visitor_id', visitorId)
     .single();
   
   if (error && error.code === 'PGRST116') {
     // 记录不存在，创建新记录
     const { data: newRecord, error: createError } = await supabase
-      .from('anon_usage')
+      .from('visitor_usage')
       .insert({
-        anon_id: anonId,
+        visitor_id: visitorId,
         content_generated: false,
         ai_guide_used: false
       })
@@ -338,170 +361,253 @@ const getOrCreateAnonUsage = async (anonId) => {
 };
 
 // 检查是否可以生成内容
-const canGenerateContent = async (anonId) => {
-  const usage = await getOrCreateAnonUsage(anonId);
+const canGenerateContent = async (visitorId) => {
+  const usage = await getOrCreateVisitorUsage(visitorId);
   return !usage.content_generated;
 };
 
 // 标记内容已生成
-const markContentGenerated = async (anonId) => {
+const markContentGenerated = async (visitorId) => {
   const { error } = await supabase
-    .from('anon_usage')
+    .from('visitor_usage')
     .update({ 
       content_generated: true,
       updated_at: new Date().toISOString()
     })
-    .eq('anon_id', anonId);
+    .eq('visitor_id', visitorId);
   
   if (error) throw error;
 };
 
 // 检查是否可以使用 AI Guide
-const canUseAiGuide = async (anonId) => {
-  const usage = await getOrCreateAnonUsage(anonId);
+const canUseAiGuide = async (visitorId) => {
+  const usage = await getOrCreateVisitorUsage(visitorId);
   return !usage.ai_guide_used;
 };
 
 // 标记 AI Guide 已使用
-const markAiGuideUsed = async (anonId) => {
+const markAiGuideUsed = async (visitorId) => {
   const { error } = await supabase
-    .from('anon_usage')
+    .from('visitor_usage')
     .update({ 
       ai_guide_used: true,
       updated_at: new Date().toISOString()
     })
-    .eq('anon_id', anonId);
+    .eq('visitor_id', visitorId);
   
   if (error) throw error;
 };
 
-// 合并匿名数据到用户账号
-const mergeAnonDataToUser = async (anonId, userId) => {
-  // 更新 content 表
+// 合并游客数据到用户账号
+const mergeVisitorDataToUser = async (visitorId, userId) => {
+  // 验证 visitorId 格式
+  if (!isValidVisitorId(visitorId)) {
+    throw new Error('无效的 visitor_id 格式');
+  }
+  
+  // 先查询要合并的数据数量（用于返回统计）
+  const { data: contentData, count: contentCount } = await supabase
+    .from('content')
+    .select('id', { count: 'exact', head: true })
+    .eq('created_by', visitorId);
+  
+  const { data: logsData, count: logsCount } = await supabase
+    .from('ai_usage_logs')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', visitorId);
+  
+  // 更新 content 表：将 visitor_id 替换为真实的 user_id
+  // 注意：使用精确匹配 visitor_id，因为格式是 visitor-{uuid}，不会与 user_id 冲突
   const { error: contentError } = await supabase
     .from('content')
     .update({ created_by: userId })
-    .eq('created_by', anonId);
+    .eq('created_by', visitorId); // 精确匹配 visitor_id
   
-  // 更新 ai_usage_logs 表
+  // 更新 ai_usage_logs 表：将 visitor_id 替换为真实的 user_id
   const { error: logsError } = await supabase
     .from('ai_usage_logs')
     .update({ user_id: userId })
-    .eq('user_id', anonId);
+    .eq('user_id', visitorId); // 精确匹配 visitor_id
   
-  // 可选：删除 anon_usage 记录（建议保留用于统计）
+  // 可选：删除 visitor_usage 记录（建议保留用于统计）
   // const { error: deleteError } = await supabase
-  //   .from('anon_usage')
+  //   .from('visitor_usage')
   //   .delete()
-  //   .eq('anon_id', anonId);
+  //   .eq('visitor_id', visitorId);
   
   if (contentError || logsError) {
-    throw new Error('合并匿名数据失败');
+    throw new Error('合并游客数据失败');
   }
   
   return { 
     success: true,
-    contentCount: contentError ? 0 : 1, // 实际应该查询数量
-    conversationCount: logsError ? 0 : 1 // 实际应该查询数量
+    contentCount: contentCount || 0,
+    conversationCount: logsCount || 0
   };
 };
 
 module.exports = {
-  getOrCreateAnonUsage,
+  getOrCreateVisitorUsage,
   canGenerateContent,
   markContentGenerated,
   canUseAiGuide,
   markAiGuideUsed,
-  mergeAnonDataToUser
+  mergeVisitorDataToUser
 };
 ```
 
-### 4.3 Anon ID 格式工具
+### 4.3 Visitor ID 格式工具
 
 ```javascript
-// backend/src/utils/anonId.js
+// backend/src/utils/visitorId.js
 const { v4: uuidv4 } = require('uuid');
 
-// 生成 Anon ID（前端使用）
-const generateAnonId = () => {
-  return `anon-${uuidv4()}`;
+// 生成 Visitor ID（前端使用）
+const generateVisitorId = () => {
+  return `visitor-${uuidv4()}`;
 };
 
-// 验证 Anon ID 格式
-const isValidAnonId = (anonId) => {
-  return /^anon-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(anonId);
+// 验证 Visitor ID 格式
+const isValidVisitorId = (visitorId) => {
+  return /^visitor-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(visitorId);
 };
 
-// 从 user_id 中提取 anon_id（如果是 anon_id 格式）
-const extractAnonId = (userId) => {
-  if (isValidAnonId(userId)) {
+// 从 user_id 中提取 visitor_id（如果是 visitor_id 格式）
+const extractVisitorId = (userId) => {
+  if (isValidVisitorId(userId)) {
     return userId;
   }
   return null;
 };
 
-module.exports = { generateAnonId, isValidAnonId, extractAnonId };
+/**
+ * 判断一个 ID 是 visitor_id 还是 user_id
+ * @param {string} id - 要判断的 ID
+ * @returns {boolean} - true 表示是 visitor_id，false 表示是 user_id
+ */
+const isVisitorId = (id) => {
+  if (!id || typeof id !== 'string') {
+    return false;
+  }
+  return isValidVisitorId(id);
+};
+
+/**
+ * 判断一个 ID 是 user_id 还是 visitor_id
+ * @param {string} id - 要判断的 ID
+ * @returns {boolean} - true 表示是 user_id，false 表示是 visitor_id
+ */
+const isUserId = (id) => {
+  if (!id || typeof id !== 'string') {
+    return false;
+  }
+  // user_id 通常是纯 UUID 格式（不包含 visitor- 前缀）
+  // 或者 Supabase 的 user_id 格式
+  return !isValidVisitorId(id);
+};
+
+module.exports = { 
+  generateVisitorId, 
+  isValidVisitorId, 
+  extractVisitorId,
+  isVisitorId,
+  isUserId
+};
 ```
+
+**ID 区分机制说明：**
+
+系统通过 **ID 格式前缀** 来区分 visitor_id 和 user_id：
+
+1. **Visitor ID 格式**：`visitor-{uuid}`
+   - 示例：`visitor-550e8400-e29b-41d4-a716-446655440000`
+   - 特点：以 `visitor-` 前缀开头
+   - 使用场景：未登录用户生成的内容和对话记录
+
+2. **User ID 格式**：纯 UUID 或 Supabase 标准格式
+   - 示例：`550e8400-e29b-41d4-a716-446655440000`（纯 UUID）
+   - 特点：不包含 `visitor-` 前缀
+   - 使用场景：已登录用户的数据
+
+3. **判断方法**：
+   ```javascript
+   // 使用工具函数判断
+   if (isVisitorId(created_by)) {
+     // 这是游客创建的内容
+   } else {
+     // 这是注册用户创建的内容
+   }
+   ```
+
+4. **数据合并时的处理**：
+   - 注册后，系统会查找所有 `created_by` 或 `user_id` 字段值为 `visitor-{uuid}` 格式的记录
+   - 将这些记录的 `visitor_id` 更新为真实的 `user_id`
+   - 更新后，这些记录就变成了注册用户的数据
+
+**注意事项：**
+- 确保真实的 `user_id` 不会以 `visitor-` 开头（Supabase 的 user_id 是纯 UUID，不会冲突）
+- 所有涉及 `created_by` 或 `user_id` 的查询，都应该考虑可能是 visitor_id 的情况
+- 使用工具函数 `isVisitorId()` 和 `isUserId()` 来判断，而不是直接字符串比较
 
 ## 5. 前端实现细节
 
-### 5.1 Anon ID 管理
+### 5.1 Visitor ID 管理
 
 ```typescript
-// frontend/src/utils/anonId.ts
-export function getAnonId(): string {
+// frontend/src/utils/visitorId.ts
+export function getVisitorId(): string {
   // 优先从 localStorage 读取
-  let anonId = localStorage.getItem('anon_user_id');
+  let visitorId = localStorage.getItem('visitor_user_id');
   
-  if (!anonId) {
-    // 生成新的 Anon ID
-    anonId = `anon-${crypto.randomUUID()}`;
-    localStorage.setItem('anon_user_id', anonId);
+  if (!visitorId) {
+    // 生成新的 Visitor ID
+    visitorId = `visitor-${crypto.randomUUID()}`;
+    localStorage.setItem('visitor_user_id', visitorId);
     
     // 同时写入 Cookie 作为兜底（防止 localStorage 被清除）
-    document.cookie = `anon_user_id=${anonId}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
+    document.cookie = `visitor_user_id=${visitorId}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
   } else {
     // 如果 localStorage 存在，确保 Cookie 也存在（同步）
-    if (!document.cookie.includes('anon_user_id')) {
-      document.cookie = `anon_user_id=${anonId}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
+    if (!document.cookie.includes('visitor_user_id')) {
+      document.cookie = `visitor_user_id=${visitorId}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
     }
   }
   
-  return anonId;
+  return visitorId;
 }
 
 // 从 Cookie 读取（兜底方案）
-export function getAnonIdFromCookie(): string | null {
-  const match = document.cookie.match(/anon_user_id=([^;]+)/);
+export function getVisitorIdFromCookie(): string | null {
+  const match = document.cookie.match(/visitor_user_id=([^;]+)/);
   return match ? match[1] : null;
 }
 
-// 清除 Anon ID（登录后调用）
-export function clearAnonId() {
-  localStorage.removeItem('anon_user_id');
-  document.cookie = 'anon_user_id=; path=/; max-age=0';
+// 清除 Visitor ID（登录后调用）
+export function clearVisitorId() {
+  localStorage.removeItem('visitor_user_id');
+  document.cookie = 'visitor_user_id=; path=/; max-age=0';
 }
 ```
 
-### 5.2 API 请求中携带 Anon ID
+### 5.2 API 请求中携带 Visitor ID
 
 ```typescript
 // frontend/src/lib/api.ts
-// 在 API 客户端中添加 anon_id 头
-const getAnonId = () => {
+// 在 API 客户端中添加 visitor_id 头
+const getVisitorId = () => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('anon_user_id') || null;
+    return localStorage.getItem('visitor_user_id') || null;
   }
   return null;
 };
 
 // 在请求拦截器中添加
 api.interceptors.request.use((config) => {
-  // 如果未登录，添加 anon_id 头
+  // 如果未登录，添加 visitor_id 头
   if (!config.headers['Authorization']) {
-    const anonId = getAnonId();
-    if (anonId) {
-      config.headers['X-Anon-Id'] = anonId;
+    const visitorId = getVisitorId();
+    if (visitorId) {
+      config.headers['X-Visitor-Id'] = visitorId;
     }
   }
   return config;
@@ -544,14 +650,14 @@ if (error.response?.status === 403 &&
 // 用户注册成功后
 const handleRegistrationSuccess = async (userId: string) => {
   try {
-    const anonId = getAnonId();
-    if (anonId) {
+    const visitorId = getVisitorId();
+    if (visitorId) {
       // 调用合并接口
-      const result = await api.post('/anon/merge-on-login', { anon_id: anonId });
+      const result = await api.post('/visitor/merge-on-login', { visitor_id: visitorId });
       
       if (result.success) {
-        // 清除 Anon ID
-        clearAnonId();
+        // 清除 Visitor ID
+        clearVisitorId();
         
         // 显示提示
         showNotification('我们已经帮你保存了刚才的学习进度！', 'success');
@@ -561,9 +667,9 @@ const handleRegistrationSuccess = async (userId: string) => {
     // 刷新页面或更新状态
     window.location.reload();
   } catch (error) {
-    console.error('合并匿名数据失败:', error);
-    // 即使失败也清除 Anon ID，避免重复合并
-    clearAnonId();
+    console.error('合并游客数据失败:', error);
+    // 即使失败也清除 Visitor ID，避免重复合并
+    clearVisitorId();
   }
 };
 ```
@@ -573,15 +679,15 @@ const handleRegistrationSuccess = async (userId: string) => {
 ### 6.1 免费内容生成接口
 
 **POST /api/ai/generate-free**
-- **认证**：无需认证，但需要 `anon_id`（通过 `X-Anon-Id` 头或请求体）
+- **认证**：无需认证，但需要 `visitor_id`（通过 `X-Visitor-Id` 头或请求体）
 - **请求头**：
 ```
-X-Anon-Id: anon-{uuid}
+X-Visitor-Id: visitor-{uuid}
 ```
 - **请求体**：
 ```json
 {
-  "anon_id": "anon-{uuid}", // 可选，如果头中已提供
+  "visitor_id": "visitor-{uuid}", // 可选，如果头中已提供
   "knowledgePoint": "一元一次方程",
   "learningStage": "understanding",
   "description": "可选描述",
@@ -613,15 +719,15 @@ X-Anon-Id: anon-{uuid}
 ### 6.2 免费 AI Guide 初始化接口
 
 **POST /api/ai-guide/init-free**
-- **认证**：无需认证，但需要 `anon_id`
+- **认证**：无需认证，但需要 `visitor_id`
 - **请求头**：
 ```
-X-Anon-Id: anon-{uuid}
+X-Visitor-Id: visitor-{uuid}
 ```
 - **请求体**：
 ```json
 {
-  "anon_id": "anon-{uuid}", // 可选
+  "visitor_id": "visitor-{uuid}", // 可选
   "content_id": "content-uuid"
 }
 ```
@@ -639,15 +745,15 @@ X-Anon-Id: anon-{uuid}
 ### 6.3 免费 AI Guide 对话接口
 
 **POST /api/ai-guide/chat-free**
-- **认证**：无需认证，但需要 `anon_id`
+- **认证**：无需认证，但需要 `visitor_id`
 - **请求头**：
 ```
-X-Anon-Id: anon-{uuid}
+X-Visitor-Id: visitor-{uuid}
 ```
 - **请求体**：
 ```json
 {
-  "anon_id": "anon-{uuid}", // 可选
+  "visitor_id": "visitor-{uuid}", // 可选
   "conversation_id": "conv-uuid",
   "message": "用户消息"
 }
@@ -657,15 +763,15 @@ X-Anon-Id: anon-{uuid}
 
 ### 6.4 检查免费试用状态接口
 
-**GET /api/anon/check-trial**
-- **认证**：无需认证，但需要 `anon_id`
+**GET /api/visitor/check-trial**
+- **认证**：无需认证，但需要 `visitor_id`
 - **请求头**：
 ```
-X-Anon-Id: anon-{uuid}
+X-Visitor-Id: visitor-{uuid}
 ```
 - **或查询参数**：
 ```
-GET /api/anon/check-trial?anon_id=anon-{uuid}
+GET /api/visitor/check-trial?visitor_id=visitor-{uuid}
 ```
 - **响应**：
 ```json
@@ -678,14 +784,14 @@ GET /api/anon/check-trial?anon_id=anon-{uuid}
 }
 ```
 
-### 6.5 注册后合并匿名数据接口
+### 6.5 注册后合并游客数据接口
 
-**POST /api/anon/merge-on-login**
+**POST /api/visitor/merge-on-login**
 - **认证**：需要认证（用户已注册）
 - **请求体**：
 ```json
 {
-  "anon_id": "anon-{uuid}"
+  "visitor_id": "visitor-{uuid}"
 }
 ```
 - **响应**：
@@ -702,27 +808,27 @@ GET /api/anon/check-trial?anon_id=anon-{uuid}
 
 ## 7. 安全考虑
 
-### 7.1 Anon ID 安全
+### 7.1 Visitor ID 安全
 - 使用 HTTPS（生产环境）
-- Anon ID 格式验证：`anon-{uuid}`
-- 防止 Anon ID 伪造：后端验证格式
+- Visitor ID 格式验证：`visitor-{uuid}`
+- 防止 Visitor ID 伪造：后端验证格式
 - Cookie 设置 `SameSite: 'Lax'`（防止 CSRF）
 
 ### 7.2 防滥用
-- 限制每个 `anon_id` 的免费试用次数（数据库约束）
+- 限制每个 `visitor_id` 的免费试用次数（数据库约束）
 - 使用 Rate Limiting 防止频繁请求
 - IP 限制（可选）：限制同一 IP 的免费试用次数
-- Anon ID 生成使用 `crypto.randomUUID()`，确保唯一性
+- Visitor ID 生成使用 `crypto.randomUUID()`，确保唯一性
 
 ### 7.3 数据隔离
-- Anon ID 格式明确（`anon-{uuid}`），便于识别和清理
-- 定期清理过期的匿名用户数据（可选，通过 `expires_at` 字段）
+- Visitor ID 格式明确（`visitor-{uuid}`），便于识别和清理
+- 定期清理过期的游客数据（可选，通过 `expires_at` 字段）
 - 登录后立即合并数据，减少数据碎片
 
 ### 7.4 隐私保护
-- Anon ID 不包含任何个人信息
+- Visitor ID 不包含任何个人信息
 - 登录后合并数据时，确保数据所有权转移
-- 可选：设置 `expires_at`，自动清理长期未登录的匿名数据
+- 可选：设置 `expires_at`，自动清理长期未登录的游客数据
 
 ## 8. 用户体验优化
 
@@ -756,34 +862,34 @@ GET /api/anon/check-trial?anon_id=anon-{uuid}
 3. ✅ 对话后注册，对话记录正确关联
 4. ✅ 已登录用户不受影响
 
-### 9.3 Anon ID 测试
-1. ✅ Anon ID 跨浏览器会话保持（localStorage）
+### 9.3 Visitor ID 测试
+1. ✅ Visitor ID 跨浏览器会话保持（localStorage）
 2. ✅ 清除 localStorage 后从 Cookie 恢复
-3. ✅ 清除所有存储后重新生成 Anon ID（防滥用）
+3. ✅ 清除所有存储后重新生成 Visitor ID（防滥用）
 4. ✅ 登录后正确合并数据
-5. ✅ 登录后清除 Anon ID
+5. ✅ 登录后清除 Visitor ID
 
 ## 10. 实施计划
 
 ### 10.1 开发阶段
-1. **Phase 1：Anon ID 管理**
-   - 实现前端 Anon ID 生成和存储（localStorage + Cookie）
-   - 创建 `anon_usage` 数据库表
-   - 实现后端 Anon ID 验证中间件
+1. **Phase 1：Visitor ID 管理**
+   - 实现前端 Visitor ID 生成和存储（localStorage + Cookie）
+   - 创建 `visitor_usage` 数据库表
+   - 实现后端 Visitor ID 验证中间件
 
 2. **Phase 2：免费内容生成**
    - 实现 `/api/ai/generate-free` 接口
-   - 实现 `anonUsageService` 服务
-   - 修改前端生成组件（添加 Anon ID）
+   - 实现 `visitorUsageService` 服务
+   - 修改前端生成组件（添加 Visitor ID）
    - 实现注册弹窗
 
 3. **Phase 3：免费 AI Guide**
    - 实现 `/api/ai-guide/init-free` 和 `/chat-free` 接口
-   - 修改前端 AI Guide 组件（添加 Anon ID）
+   - 修改前端 AI Guide 组件（添加 Visitor ID）
    - 实现注册弹窗
 
 4. **Phase 4：数据合并**
-   - 实现 `/api/anon/merge-on-login` 接口
+   - 实现 `/api/visitor/merge-on-login` 接口
    - 实现注册后数据合并逻辑
    - 测试数据迁移
 
@@ -794,10 +900,10 @@ GET /api/anon/check-trial?anon_id=anon-{uuid}
    - 添加数据清理定时任务（可选）
 
 ### 10.2 部署注意事项
-- 确保数据库 `anon_usage` 表已创建
-- 配置定期清理任务（可选，清理过期的 `anon_usage` 记录）
+- 确保数据库 `visitor_usage` 表已创建
+- 配置定期清理任务（可选，清理过期的 `visitor_usage` 记录）
 - 确保 HTTPS 启用（Cookie 安全）
-- 监控 `anon_usage` 表大小
+- 监控 `visitor_usage` 表大小
 
 ## 11. 后续优化方向
 
@@ -833,9 +939,9 @@ GET /api/anon/check-trial?anon_id=anon-{uuid}
 ### 13.1 数据库迁移脚本
 
 ```sql
--- 创建匿名使用记录表
-CREATE TABLE IF NOT EXISTS anon_usage (
-  anon_id TEXT PRIMARY KEY,
+-- 创建游客使用记录表
+CREATE TABLE IF NOT EXISTS visitor_usage (
+  visitor_id TEXT PRIMARY KEY,
   content_generated BOOLEAN DEFAULT false,
   ai_guide_used BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -843,18 +949,26 @@ CREATE TABLE IF NOT EXISTS anon_usage (
   expires_at TIMESTAMP WITH TIME ZONE -- 可选：设置过期时间（如 NOW() + INTERVAL '90 days'）
 );
 
-CREATE INDEX IF NOT EXISTS idx_anon_usage_created_at ON anon_usage(created_at);
-CREATE INDEX IF NOT EXISTS idx_anon_usage_expires_at ON anon_usage(expires_at);
+CREATE INDEX IF NOT EXISTS idx_visitor_usage_created_at ON visitor_usage(created_at);
 
--- content 表和 ai_usage_logs 表无需修改
--- created_by 和 user_id 字段支持存储 anon_id（格式：anon-{uuid}）
+-- content 表和 ai_usage_logs 表无需修改表结构
+-- created_by 和 user_id 字段支持存储 visitor_id（格式：visitor-{uuid}）或 user_id（纯 UUID）
+-- 
+-- ID 区分机制：
+-- 1. visitor_id 格式：visitor-{uuid}（例如：visitor-550e8400-e29b-41d4-a716-446655440000）
+-- 2. user_id 格式：纯 UUID（例如：550e8400-e29b-41d4-a716-446655440000）
+-- 3. 通过格式前缀区分，使用工具函数 isVisitorId() 判断
+-- 
+-- 查询示例：
+-- SELECT * FROM content WHERE created_by LIKE 'visitor-%';  -- 查找游客创建的内容
+-- SELECT * FROM content WHERE created_by NOT LIKE 'visitor-%';  -- 查找注册用户创建的内容
 ```
 
 ### 13.2 环境变量配置
 
 ```bash
 # 无需新增环境变量
-# Anon ID 由前端生成，无需后端配置
+# Visitor ID 由前端生成，无需后端配置
 ```
 
 ### 13.3 依赖包安装
@@ -870,18 +984,18 @@ CREATE INDEX IF NOT EXISTS idx_anon_usage_expires_at ON anon_usage(expires_at);
 ### 13.4 定期清理任务（可选）
 
 ```javascript
-// backend/src/services/anonUsageCleanup.js
-// 定期清理过期的匿名使用记录
-const cleanupExpiredAnonUsage = async () => {
+// backend/src/services/visitorUsageCleanup.js
+// 定期清理过期的游客使用记录
+const cleanupExpiredVisitorUsage = async () => {
   const { error } = await supabase
-    .from('anon_usage')
+    .from('visitor_usage')
     .delete()
     .lt('expires_at', new Date().toISOString());
   
   if (error) {
-    console.error('清理过期匿名使用记录失败:', error);
+    console.error('清理过期游客使用记录失败:', error);
   } else {
-    console.log('已清理过期的匿名使用记录');
+    console.log('已清理过期的游客使用记录');
   }
 };
 
@@ -889,10 +1003,10 @@ const cleanupExpiredAnonUsage = async () => {
 // 例如：每天凌晨 2 点执行
 ```
 
-### 13.5 Anon ID 格式说明
+### 13.5 Visitor ID 格式说明
 
-- **格式**：`anon-{uuid}`
-- **示例**：`anon-550e8400-e29b-41d4-a716-446655440000`
-- **生成方式**：前端使用 `crypto.randomUUID()` 生成 UUID，然后添加 `anon-` 前缀
-- **验证**：后端使用正则表达式验证格式：`/^anon-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`
+- **格式**：`visitor-{uuid}`
+- **示例**：`visitor-550e8400-e29b-41d4-a716-446655440000`
+- **生成方式**：前端使用 `crypto.randomUUID()` 生成 UUID，然后添加 `visitor-` 前缀
+- **验证**：后端使用正则表达式验证格式：`/^visitor-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`
 

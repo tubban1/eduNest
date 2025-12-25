@@ -468,7 +468,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
 
         parsedData.full_html = replaceLibrariesInHtml(parsedData.full_html);
         
-        // 日志：成功解析JSON
+        // 日志：成功解析JSON并验证 full_html
+        // 注意：只有在 full_html 验证通过后才记录成功日志
         if (isAsyncMode && requestId) {
           // 异步模式：更新现有记录
           await updateExistingLog(requestId, {
@@ -491,7 +492,12 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
             error_message: null
           });
         } else {
-          // 同步模式：创建新记录
+          // 同步模式：创建新记录（只有在 full_html 验证通过后才记录）
+          // 注意：同步模式下，content_id 会在调用方创建 content 后更新
+          // 生成 request_id（如果为 null）
+          const { v4: uuidv4 } = require('uuid');
+          const finalRequestId = requestId || uuidv4();
+          
           await logAIUsageWithDefaults({
             user_id: userId,
             model_name: result.model,
@@ -504,8 +510,11 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
             response_metadata: { provider: result.provider, model: result.model, raw: result.response },
             created_at: new Date(result.created ? result.created * 1000 : Date.now()),
             is_json_valid: true,
+            is_render_success: true,
             error_message: null,
-            request_id: requestId
+            request_id: finalRequestId,
+            content_id: null, // 将在调用方创建 content 后更新
+            status: 'done' // 同步模式下，成功生成时状态为 done
           });
         }
     return {
@@ -606,6 +615,9 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     }
   } catch (error) {
     // 捕获主流程异常
+    // 判断错误类型：如果是 full_html 验证失败，说明 JSON 解析成功了
+    const isJsonValid = error.message && (error.message.includes('full_html') || error.message.includes('full_html 字段')) ? true : false;
+    
     if (isAsyncMode && requestId) {
       // 异步模式：更新现有记录
       await updateExistingLog(requestId, {
@@ -617,17 +629,32 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           language_code: languageCode,
           provider: provider
         },
-        is_json_valid: false,
+        is_json_valid: isJsonValid,
         is_render_success: false
       });
     } else {
       // 同步模式：创建新记录
+      // 生成 request_id（如果为 null）
+      const { v4: uuidv4 } = require('uuid');
+      const finalRequestId = requestId || uuidv4();
+      
       await logAIUsageWithDefaults({
         user_id: userId,
+        model_name: result?.model || null,
         user_query: knowledgePoint,
         action_type: actionType,
+        input_tokens: result?.usage?.prompt_tokens || result?.usage?.input_tokens || 0,
+        output_tokens: result?.usage?.completion_tokens || result?.usage?.output_tokens || 0,
+        total_tokens: result?.usage?.total_tokens || 0,
+        request_payload: result ? { messages, max_tokens: 24000, temperature: 0.6 } : null,
+        response_metadata: result ? { provider: result.provider, model: result.model, raw: result.response } : null,
+        created_at: result?.created ? new Date(result.created * 1000) : new Date(),
         error_message: error.message || 'AI生成失败',
-        request_id: requestId
+        is_json_valid: isJsonValid,
+        is_render_success: false,
+        request_id: finalRequestId,
+        content_id: null, // 同步模式下，如果失败，content 还没有创建
+        status: 'failed' // 同步模式下，失败时状态为 failed
       });
     }
     return {

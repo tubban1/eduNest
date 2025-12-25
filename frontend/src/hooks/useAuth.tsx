@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { enforceSingleAccount, detectSessionConflict, clearAllSessions } from '@/utils/sessionManager';
 import { tokenMonitor } from '@/utils/tokenMonitor';
+import { getVisitorId, clearVisitorId } from '@/utils/visitorId';
 
 interface AuthUser {
   id: string;
@@ -106,6 +107,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 静默失败，不影响登录流程
         console.warn('推荐奖励发放失败:', e);
       }
+
+      // 合并游客数据到用户账号（首次登录时）
+      try {
+        const visitorId = getVisitorId();
+        if (visitorId) {
+          const mergeKey = `visitor_merged_${authUser.id}`;
+          const alreadyMerged = localStorage.getItem(mergeKey);
+          if (!alreadyMerged) {
+            const mergeResult = await api.visitor.mergeOnLogin(visitorId);
+            if (mergeResult.success) {
+              // 标记为已合并，避免重复合并
+              localStorage.setItem(mergeKey, '1');
+              // 清除 Visitor ID
+              clearVisitorId();
+              // 显示提示（可选）
+              if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
+                console.log('游客数据已合并:', mergeResult.data);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // 静默失败，不影响登录流程
+        console.warn('合并游客数据失败:', e);
+      }
       setLoading(false);
     } catch (error) {
       console.error('Auth check error:', error);
@@ -187,6 +213,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               };
               setUser(authUser);
               setLoading(false);
+
+              // 合并游客数据到用户账号（首次登录时）
+              try {
+                const visitorId = getVisitorId();
+                if (visitorId) {
+                  const mergeKey = `visitor_merged_${authUser.id}`;
+                  const alreadyMerged = localStorage.getItem(mergeKey);
+                  if (!alreadyMerged) {
+                    const mergeResult = await api.visitor.mergeOnLogin(visitorId);
+                    if (mergeResult.success) {
+                      // 标记为已合并，避免重复合并
+                      localStorage.setItem(mergeKey, '1');
+                      // 清除 Visitor ID
+                      clearVisitorId();
+                      // 显示提示（可选）
+                      if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
+                        console.log('游客数据已合并:', mergeResult.data);
+                      }
+                    }
+                  }
+                }
+              } catch (e) {
+                // 静默失败，不影响登录流程
+                console.warn('合并游客数据失败:', e);
+              }
             }
           } catch (error) {
             console.error('Failed to get user info after auth state change:', error);

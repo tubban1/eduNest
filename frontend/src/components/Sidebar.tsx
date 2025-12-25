@@ -135,6 +135,27 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
           </div>
         )}
         
+        {!user && (
+          <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+            <div className="flex flex-col gap-2">
+              <Link
+                href="/login"
+                onClick={handleItemClick}
+                className="block w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90 transition-colors"
+              >
+                {mounted ? t('login', { ns: 'navigation', defaultValue: '登录' }) : 'Login'}
+              </Link>
+              <Link
+                href="/signup"
+                onClick={handleItemClick}
+                className="block w-full px-4 py-2 rounded-lg bg-card text-primary border border-primary text-sm font-medium text-center hover:bg-primary/10 transition-colors"
+              >
+                {mounted ? t('signup', { ns: 'navigation', defaultValue: '注册' }) : 'Sign Up'}
+              </Link>
+            </div>
+          </div>
+        )}
+
         {user && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center mb-3">

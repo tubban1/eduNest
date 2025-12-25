@@ -137,6 +137,11 @@ export default function ContentCard({
 
   // 同步 content.generation_status 到本地状态
   useEffect(() => {
+    // 调试日志
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[ContentCard] 内容 ${content.id} 的 generation_status:`, content.generation_status, '类型:', typeof content.generation_status);
+    }
+    
     if (content.generation_status !== undefined) {
       const prevStatus = prevStatusRef.current;
       const currentStatus = content.generation_status || null;
@@ -158,6 +163,9 @@ export default function ContentCard({
         hasAutoRefreshedRef.current = true;
         onContentUpdateRef.current();
       }
+    } else {
+      // 如果没有 generation_status 字段，设置为 null
+      setGenerationStatus(null);
     }
   }, [content.generation_status, content.generation_progress, content.retry_count, content.generation_error, content.user_query, content.id]);
 
@@ -354,6 +362,11 @@ export default function ContentCard({
 
   // 如果内容正在生成中，显示对应的状态卡片
   if (generationStatus && generationStatus !== 'done') {
+    // 调试日志
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[ContentCard] 显示状态卡片: ${generationStatus} for content ${content.id}`);
+    }
+    
     switch (generationStatus) {
       case 'pending':
         return <PendingCard content={content} userQuery={userQuery} queuedAt={queuedAt} />;
@@ -379,6 +392,14 @@ export default function ContentCard({
           />
         );
     }
+  } else if (process.env.NODE_ENV === 'development') {
+    // 调试日志：为什么没有显示状态卡片
+    console.log(`[ContentCard] 不显示状态卡片 for content ${content.id}:`, {
+      generationStatus,
+      hasGenerationStatus: !!generationStatus,
+      isNotDone: generationStatus !== 'done',
+      contentGenerationStatus: content.generation_status
+    });
   }
 
   // 根据标签获取 emoji（作为缩略图备用）
@@ -394,7 +415,7 @@ export default function ContentCard({
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-full sm:w-64 sm:min-w-56 sm:max-w-xs mx-auto">
+    <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-full">
       {/* 缩略图区域 */}
       <Link href={contentUrl} prefetch={false} className="block">
         <div className="relative w-full aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 overflow-hidden">
@@ -423,77 +444,62 @@ export default function ContentCard({
               </div>
             </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
-              <span className="text-4xl">{getEmojiByTags(content.tags)}</span>
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
+              <span className="text-4xl z-10">{getEmojiByTags(content.tags)}</span>
+              {/* 水印 */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                <div className="text-6xl font-bold text-primary rotate-[-45deg] select-none pointer-events-none">
+                  EduNest AI
+                </div>
+              </div>
             </div>
           )}
           {/* 占位符（图片加载失败时显示） */}
-          <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
-            <span className="text-4xl">{getEmojiByTags(content.tags)}</span>
+          <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
+            <span className="text-4xl z-10">{getEmojiByTags(content.tags)}</span>
+            {/* 水印 */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-20">
+              <div className="text-6xl font-bold text-primary rotate-[-45deg] select-none pointer-events-none">
+                EduNest AI
+              </div>
+            </div>
           </div>
         </div>
       </Link>
 
-      <div className="p-4">
-        {/* 标题 - 可点击跳转 */}
-        <Link href={contentUrl} prefetch={false} className="block">
-          <h3 className="text-base font-semibold text-foreground mb-2 line-clamp-2 hover:text-primary transition-colors cursor-pointer">
+      <div className="p-5">
+        {/* 标题 - 可点击跳转，限制长度 */}
+        <Link href={contentUrl} prefetch={false} className="block mb-4">
+          <h3 className="text-lg font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors cursor-pointer" title={content.title}>
             {content.title}
           </h3>
         </Link>
         
-        <div className="flex flex-wrap gap-2 mb-2">
-          <span className="px-2 py-1 bg-secondary/10 text-secondary text-xs rounded">
-            {getLanguageLabel(content.language_code)}
-          </span>
+        {/* 操作按钮区域 - 所有用户都可以看到 */}
+        <div className="flex items-center justify-between">
+          <ContentActionButtons
+            contentId={content.id}
+            shortId={content.short_id}
+            title={content.title}
+            initialLiked={false}
+            initialCollected={false}
+            initialLikeCount={0}
+            initialCollectionCount={0}
+            size="md"
+            showCount={false}
+            showText={false}
+            disabled={!isAuthenticated} // 未登录用户禁用点赞和收藏，但可以分享
+            onCollectChange={() => {
+              // 更新父组件的状态
+              if (refreshLists) {
+                refreshLists();
+              }
+            }}
+          />
+          {editMode && (
+            <EditButton contentId={content.id} size="md" />
+          )}
         </div>
-        
-        {/* 标签块状显示，优先显示tags，没有则回退knowledge_point */}
-        <div className="flex flex-wrap gap-1 mb-2">
-          {(content.tags && content.tags.length > 0 ? content.tags : content.knowledge_point)?.map((tag, index) => (
-            <span
-              key={index}
-              className="px-2 py-1 bg-primary/10 text-primary text-xs rounded"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-        
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs text-muted-foreground">
-            {new Date(content.created_at).toLocaleDateString()}
-          </span>
-        </div>
-        
-        {/* 操作按钮区域 */}
-        {isAuthenticated && (
-          <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex items-center justify-between">
-              <ContentActionButtons
-                contentId={content.id}
-                shortId={content.short_id}
-                title={content.title}
-                initialLiked={false}
-                initialCollected={false}
-                initialLikeCount={0}
-                initialCollectionCount={0}
-                size="md"
-                showCount={false}
-                showText={false}
-                onCollectChange={() => {
-                  // 更新父组件的状态
-                  if (refreshLists) {
-                    refreshLists();
-                  }
-                }}
-              />
-              {editMode && (
-                <EditButton contentId={content.id} size="md" />
-              )}
-            </div>
-          </div>
-        )}
       </div>
       
       <CollectionListDialog 

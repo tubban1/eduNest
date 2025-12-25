@@ -243,14 +243,14 @@ export default function AiLoadingAnimation({
             ></div>
           </div>
           <div className="text-xs text-gray-500 mt-2 text-center">
-            {Math.round(progress)}% Complete
+            {mounted ? t('percentComplete', { ns: 'common', percent: Math.round(progress), defaultValue: `${Math.round(progress)}% Complete` }) : `${Math.round(progress)}% Complete`}
           </div>
         </div>
 
         {/* 当前阶段标题 */}
         <div className="text-center mb-6">
           <div className="text-sm text-secondary font-medium mb-1">
-            Stage {currentStage + 1} of {LOADING_STAGES.length}
+            {mounted ? t('stageOf', { ns: 'common', current: currentStage + 1, total: LOADING_STAGES.length, defaultValue: `Stage ${currentStage + 1} of ${LOADING_STAGES.length}` }) : `Stage ${currentStage + 1} of ${LOADING_STAGES.length}`}
           </div>
           <div className="text-xl font-bold text-gray-800">
             {currentStageData.name}
@@ -264,21 +264,23 @@ export default function AiLoadingAnimation({
               {displayedMessage ? displayedMessage.replace(
                 knowledgePoint, 
                 knowledgePoint.length > 1000 ? knowledgePoint.substring(0, 1000) + '...' : knowledgePoint
-              ) : '正在加载...'}
+              ) : (mounted ? t('loading', { ns: 'common', defaultValue: '正在加载...' }) : '正在加载...')}
             </div>
             {/* 字符计数显示 */}
             {knowledgePoint && (
               <div className="text-xs text-gray-500 mt-2">
-                知识点长度: {knowledgePoint.length}/1000 字符
+                {mounted ? t('knowledgePointLength', { ns: 'common', length: knowledgePoint.length, defaultValue: `知识点长度: ${knowledgePoint.length}/1000 字符` }) : `知识点长度: ${knowledgePoint.length}/1000 字符`}
                 {knowledgePoint.length > 900 && (
-                  <span className="text-red-500 ml-2">⚠️ 接近限制</span>
+                  <span className="text-red-500 ml-2">{mounted ? t('approachingLimit', { ns: 'common', defaultValue: '⚠️ 接近限制' }) : '⚠️ 接近限制'}</span>
                 )}
               </div>
             )}
-            {/* 调试信息 */}
-            <div className="text-xs text-gray-500 mt-2">
-              调试: 阶段={currentStage}, 消息={currentMessage}, 显示长度={displayedMessage.length}
-            </div>
+            {/* 调试信息 - 仅在开发环境显示 */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-gray-500 mt-2">
+                {mounted ? t('debugInfo', { ns: 'common', stage: currentStage, message: currentMessage, length: displayedMessage.length, defaultValue: `调试: 阶段=${currentStage}, 消息=${currentMessage}, 显示长度=${displayedMessage.length}` }) : `调试: 阶段=${currentStage}, 消息=${currentMessage}, 显示长度=${displayedMessage.length}`}
+              </div>
+            )}
           </div>
         </div>
 

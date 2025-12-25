@@ -580,24 +580,247 @@ router.post('/generate-async', [
   }
 });
 
-// 获取内容生成状态
-router.get('/generation-status/:contentId', authenticateToken, async (req, res) => {
+// SSE 流式获取内容生成状态（优先使用）
+// 支持已登录用户和游客
+router.get('/generation-status-stream/:contentId', async (req, res) => {
   try {
     const { contentId } = req.params;
-    const userId = req.user?.id;
+    
+    // 尝试获取用户ID（可能为null，如果是游客）
+    let userId = null;
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        const { authenticateToken } = require('../middleware/auth');
+        // 尝试验证token，但不强制要求
+        const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+        userId = decoded.id;
+      }
+    } catch (e) {
+      // Token无效或不存在，继续检查visitor_id
+    }
+
+    // 获取 visitor_id（如果是游客，可以从 URL 参数或 header 获取）
+    const visitorId = req.query.visitor_id || req.headers['x-visitor-id'];
 
     // 验证 content 权限
     const { data: content, error: contentError } = await DatabaseService.supabase
       .from('content')
-      .select('id, created_by')
+      .select('id, created_by, visitor_id')
       .eq('id', contentId)
-      .eq('created_by', userId)
       .single();
 
     if (contentError || !content) {
       return res.status(404).json({
         success: false,
-        error: '内容不存在或无权限访问'
+        error: '内容不存在'
+      });
+    }
+
+    // 验证权限：必须是创建者（支持 user_id 和 visitor_id）
+    const { isVisitorId } = require('../utils/visitorId');
+    const hasPermission = 
+      (userId && content.created_by === userId) ||
+      (visitorId && content.visitor_id === visitorId);
+    
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        error: '无权限访问'
+      });
+    }
+
+    // 设置 SSE 响应头
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // 禁用 Nginx 缓冲
+
+    // 发送初始连接确认
+    res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
+    if (res.flush) res.flush();
+
+    let lastStatus = null;
+    let lastUpdatedAt = null;
+    let checkInterval = null;
+    let isClosed = false;
+
+    // 清理函数
+    const cleanup = () => {
+      isClosed = true;
+      if (checkInterval) {
+        clearInterval(checkInterval);
+        checkInterval = null;
+      }
+    };
+
+    // 客户端断开连接时清理
+    req.on('close', cleanup);
+    req.on('aborted', cleanup);
+
+    // 获取状态并推送的函数
+    const checkAndPushStatus = async () => {
+      if (isClosed) {
+        cleanup();
+        return;
+      }
+
+      try {
+        // 查询最新的生成日志
+        const { data: log, error: logError } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .select('*, started_at')
+          .eq('content_id', contentId)
+          .eq('action_type', 'generate')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (logError || !log) {
+          // 如果找不到日志，发送错误并关闭连接
+          res.write(`event: error\ndata: ${JSON.stringify({ error: '未找到生成记录' })}\n\n`);
+          if (res.flush) res.flush();
+          cleanup();
+          res.end();
+          return;
+        }
+
+        // 检查状态是否变化
+        const statusChanged = 
+          lastStatus !== log.status || 
+          lastUpdatedAt !== log.updated_at;
+
+        if (statusChanged || !lastStatus) {
+          lastStatus = log.status;
+          lastUpdatedAt = log.updated_at;
+
+          // 计算进度
+          let progress = 0;
+          switch (log.status) {
+            case 'pending': progress = 10; break;
+            case 'processing': progress = 50; break;
+            case 'done': progress = 100; break;
+            case 'failed': progress = 0; break;
+            default: progress = 0;
+          }
+
+          // 计算重试次数（同一 content_id 的生成记录数 - 1）
+          const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
+
+          // 推送状态更新
+          const statusData = {
+            type: 'status',
+            status: log.status,
+            progress,
+            retry_count: retryCount || 0,
+            latest_request_id: log.request_id,
+            error_message: log.error_message,
+            user_query: log.user_query,
+            created_at: log.created_at,
+            updated_at: log.updated_at,
+            started_at: log.started_at
+          };
+
+          res.write(`data: ${JSON.stringify(statusData)}\n\n`);
+          if (res.flush) res.flush();
+
+          // 如果是最终状态，关闭连接
+          if (log.status === 'done' || log.status === 'failed') {
+            res.write(`data: ${JSON.stringify({ type: 'complete' })}\n\n`);
+            if (res.flush) res.flush();
+            cleanup();
+            res.end();
+            return;
+          }
+        }
+
+        // 发送心跳（每30秒）
+        res.write(`: heartbeat\n\n`);
+        if (res.flush) res.flush();
+
+      } catch (error) {
+        logger.error('SSE 状态检查失败:', error);
+        if (!isClosed) {
+          res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
+          if (res.flush) res.flush();
+        }
+      }
+    };
+
+    // 立即检查一次
+    await checkAndPushStatus();
+
+    // 设置定期检查（每2秒检查一次，与轮询间隔一致）
+    checkInterval = setInterval(checkAndPushStatus, 2000);
+
+    // 超时保护（6分钟后自动关闭）
+    setTimeout(() => {
+      if (!isClosed) {
+        cleanup();
+        res.write(`event: timeout\ndata: ${JSON.stringify({ error: '连接超时' })}\n\n`);
+        if (res.flush) res.flush();
+        res.end();
+      }
+    }, 6 * 60 * 1000);
+
+  } catch (error) {
+    logger.error('SSE 连接失败:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: error.message || 'SSE 连接失败'
+      });
+    } else {
+      res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
+      res.end();
+    }
+  }
+});
+
+// 获取内容生成状态（轮询备用，支持游客）
+router.get('/generation-status/:contentId', async (req, res) => {
+  try {
+    const { contentId } = req.params;
+    
+    // 尝试获取用户ID（可能为null，如果是游客）
+    let userId = null;
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+        userId = decoded.id;
+      }
+    } catch (e) {
+      // Token无效或不存在，继续检查visitor_id
+    }
+
+    // 获取 visitor_id（如果是游客）
+    const visitorId = req.headers['x-visitor-id'];
+
+    // 验证 content 权限
+    const { data: content, error: contentError } = await DatabaseService.supabase
+      .from('content')
+      .select('id, created_by, visitor_id')
+      .eq('id', contentId)
+      .single();
+
+    if (contentError || !content) {
+      return res.status(404).json({
+        success: false,
+        error: '内容不存在'
+      });
+    }
+
+    // 验证权限：必须是创建者（支持 user_id 和 visitor_id）
+    const { isVisitorId } = require('../utils/visitorId');
+    const hasPermission = 
+      (userId && content.created_by === userId) ||
+      (visitorId && content.visitor_id === visitorId);
+    
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        error: '无权限访问'
       });
     }
 
@@ -621,8 +844,8 @@ router.get('/generation-status/:contentId', authenticateToken, async (req, res) 
       });
     }
 
-    // 不再需要计算重试次数，因为已取消自动重试
-    // const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
+    // 计算重试次数
+    const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
     
     // 计算进度
     let progress = 0;
@@ -639,6 +862,7 @@ router.get('/generation-status/:contentId', authenticateToken, async (req, res) 
       data: {
         status: log.status,
         progress,
+        retry_count: retryCount || 0,
         latest_request_id: log.request_id,
         error_message: log.error_message,
         user_query: log.user_query,
@@ -832,6 +1056,105 @@ router.get('/queue-status', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || '获取队列状态失败'
+    });
+  }
+});
+
+// 免费内容生成接口（无需认证，需要 visitor_id）
+const { validateVisitorId } = require('../middleware/visitorId');
+const visitorUsageService = require('../services/visitorUsageService');
+
+router.post('/generate-free', [
+  validateVisitorId,
+  body('knowledgePoint').isString().isLength({ min: 1, max: 1500 }).withMessage('知识点不能为空且长度不能超过1500字'),
+  body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
+  body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
+  body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
+  body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false,
+        error: '参数验证失败', 
+        details: errors.array() 
+      });
+    }
+
+    const visitorId = req.visitorId;
+    const { knowledgePoint, learningStage, description, language_code, provider } = req.body;
+
+    // 检查免费试用状态
+    const canGenerate = await visitorUsageService.canGenerateContent(visitorId);
+    if (!canGenerate) {
+      return res.status(403).json({
+        success: false,
+        error: 'FREE_TRIAL_USED',
+        message: '请登录后继续使用',
+        requiresRegistration: true
+      });
+    }
+
+    // 验证学习阶段
+    if (!aiService.validateLearningStage(learningStage)) {
+      return res.status(400).json({ 
+        success: false,
+        error: '不支持的学习阶段' 
+      });
+    }
+
+    // 先创建占位的 content 记录，然后异步生成
+    const placeholderContentData = {
+      title: knowledgePoint.substring(0, 50) || '生成中...',
+      full_html: '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>生成中...</title></head><body><p>内容正在生成中，请稍候...</p></body></html>',
+      tags: [],
+      description: description || '',
+      content_type: 'vue',
+      language_code: language_code || 'zh-CN'
+    };
+    
+    const createdContent = await DatabaseService.createContent(placeholderContentData, visitorId);
+    
+    if (!createdContent || !createdContent.id) {
+      return res.status(500).json({
+        success: false,
+        error: '创建内容记录失败'
+      });
+    }
+    
+    // 添加生成任务到队列（异步模式）
+    const { log, requestId } = await asyncGenerationQueue.addTask(createdContent.id, {
+      user_id: visitorId,
+      knowledge_point: knowledgePoint,
+      learning_stage: learningStage || 'understanding',
+      description: description,
+      language_code: language_code,
+      provider: provider
+    });
+    
+    // 标记内容已生成（使用免费试用机会）
+    await visitorUsageService.markContentGenerated(visitorId);
+    
+    res.json({
+      success: true,
+      data: {
+        ...createdContent,
+        generation_status: 'pending'
+      },
+      request_id: requestId,
+      status: 'pending',
+      message: '已加入生成队列',
+      freeTrialUsed: true
+    });
+    
+    // 注意：异步模式下，失败会在队列中处理，前端会通过轮询获取到 failed 状态
+
+  } catch (error) {
+    logger.error('免费AI生成API错误:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'AI生成失败'
     });
   }
 });

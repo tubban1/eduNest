@@ -144,6 +144,7 @@ INSERT INTO content (title, grade, subject, knowledge_point, language, content_t
 CREATE TABLE IF NOT EXISTS ai_usage_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  visitor_id TEXT, -- 用于存储 visitor_id（格式：visitor-{uuid}），当 user_id 为 NULL 时使用
   model_name TEXT,
   user_query TEXT,
   action_type TEXT,

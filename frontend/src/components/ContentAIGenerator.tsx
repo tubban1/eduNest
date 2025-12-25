@@ -2,10 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import AIProviderSelector from '@/components/AIProviderSelector';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
+import { getVisitorId } from '@/utils/visitorId';
+import { RegistrationPrompt } from '@/components/RegistrationPrompt';
+import i18n from '@/i18n/config';
 
 const DEFAULT_FULL_HTML = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -53,6 +57,7 @@ export default function ContentAIGenerator({
 }: ContentAIGeneratorProps) {
   const { t } = useTranslation(['content', 'common', 'aiProvider', 'auth']);
   const { user } = useAuth();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   // 输入与状态
@@ -65,6 +70,8 @@ export default function ContentAIGenerator({
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [creditsBalance, setCreditsBalance] = useState<number | null>(null);
   const [checking, setChecking] = useState<boolean>(false);
+  const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
+  const [trialStatus, setTrialStatus] = useState<{ content_generated: boolean; ai_guide_used: boolean } | null>(null);
 
   // 语言弹窗
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
@@ -74,10 +81,30 @@ export default function ContentAIGenerator({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    
+    // 游客状态：使用系统语言，如果不在支持列表中则使用英语
+    if (!user) {
+      // 获取系统语言（从 i18n 或 navigator）
+      const systemLang = i18n.language || navigator.language || 'en-US';
+      // 标准化语言代码（zh -> zh-CN, en -> en-US 等）
+      const normalizedSystemLang = systemLang === 'zh' || systemLang.startsWith('zh-') ? 'zh-CN' :
+                                   systemLang === 'en' || systemLang.startsWith('en-') ? 'en-US' :
+                                   systemLang === 'de' || systemLang.startsWith('de-') ? 'de-DE' :
+                                   systemLang === 'fr' || systemLang.startsWith('fr-') ? 'fr-FR' :
+                                   systemLang;
+      
+      // 检查系统语言是否在支持列表中
+      const isSupported = SUPPORTED_LANGUAGES.some(l => l.code === normalizedSystemLang);
+      const initial = isSupported ? normalizedSystemLang : 'en-US';
+      setLanguage(initial);
+      return;
+    }
+    
+    // 已登录用户：使用原有逻辑（defaultLanguageCode > localStorage > zh-CN）
     const fromStorage = localStorage.getItem('output_language_last_used') || '';
     const initial = defaultLanguageCode || fromStorage || 'zh-CN';
     setLanguage(initial);
-  }, [defaultLanguageCode]);
+  }, [defaultLanguageCode, user]);
 
   // 拉取用户可用积分与当前待处理任务数
   const fetchPrecheckInfo = async () => {
@@ -99,12 +126,41 @@ export default function ContentAIGenerator({
     }
   };
 
+  // 检查免费试用状态（未登录用户）
+  const fetchTrialStatus = async () => {
+    if (user) return; // 已登录用户不需要检查
+    try {
+      const status = await api.visitor.checkTrial();
+      if (status.success && status.data) {
+        setTrialStatus(status.data);
+        // 如果试用已用完，显示注册提示
+        if (status.data.content_generated) {
+          setShowRegistrationPrompt(true);
+        }
+      }
+    } catch (e) {
+      // 静默失败
+    }
+  };
+
   useEffect(() => {
-    fetchPrecheckInfo();
+    if (user) {
+      fetchPrecheckInfo();
+    } else {
+      fetchTrialStatus();
+    }
   }, [user]);
 
   useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === 'visible') fetchPrecheckInfo(); };
+    const onVisible = () => { 
+      if (document.visibilityState === 'visible') {
+        if (user) {
+          fetchPrecheckInfo();
+        } else {
+          fetchTrialStatus();
+        }
+      }
+    };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [user]);
@@ -134,48 +190,109 @@ export default function ContentAIGenerator({
       setError(t('pleaseEnterKnowledgePoint', { ns: 'content', defaultValue: 'Please enter a knowledge point' }));
       return;
     }
-    // 前置校验：credits 与 pending 队列
-    try {
-      await fetchPrecheckInfo();
-    } catch {}
-    if (creditsBalance !== null && creditsBalance <= 0) {
-      setError(t('errors.insufficientCredits', { ns: 'content', defaultValue: '积分不足，无法生成' }));
-      return;
+
+    // 未登录用户：检查免费试用状态
+    if (!user) {
+      try {
+        await fetchTrialStatus();
+        if (trialStatus?.content_generated) {
+          setShowRegistrationPrompt(true);
+          setError(t('errors.freeTrialUsed', { ns: 'content', defaultValue: '请登录后继续使用' }));
+          return;
+        }
+      } catch (e) {
+        // 静默失败，继续尝试生成
+      }
     }
-    if (pendingCount >= 3) {
-      setError(t('errors.queueLimitReached', { ns: 'content', defaultValue: '队列不能超过3个任务' }));
-      return;
+
+    // 已登录用户：前置校验：credits 与 pending 队列
+    if (user) {
+      try {
+        await fetchPrecheckInfo();
+      } catch {}
+      if (creditsBalance !== null && creditsBalance <= 0) {
+        setError(t('errors.insufficientCredits', { ns: 'content', defaultValue: '积分不足，无法生成' }));
+        return;
+      }
+      if (pendingCount >= 3) {
+        setError(t('errors.queueLimitReached', { ns: 'content', defaultValue: '队列不能超过3个任务' }));
+        return;
+      }
     }
+
     setAiGenerating(true);
     setError('');
     try {
       const rawTitle = knowledgePoint.trim();
       const safeTitle = rawTitle.length > 200 ? (rawTitle.slice(0, 200)) : rawTitle;
-      const contentData = {
-        title: safeTitle,
-        description: description || '',
-        language_code: language,
-        content_type: 'vue',
-        full_html: DEFAULT_FULL_HTML || '',
-        tags: [],
-        created_by: user?.id,
-      } as any;
+      
+      let contentResponse;
+      let generateResponse;
 
-      const contentResponse = await api.content.create(contentData);
-      if (!contentResponse || !contentResponse.id) {
-        throw new Error('创建内容记录失败');
-      }
+      if (!user) {
+        // 未登录用户：使用免费生成接口
+        generateResponse = await api.generateContentFree({
+          knowledgePoint: knowledgePoint.trim(),
+          learningStage: 'understanding',
+          description,
+          language_code: language,
+        });
 
-      const generateResponse = await api.generateContentAsync(contentResponse.id, {
-        knowledge_point: knowledgePoint.trim(),
-        learning_stage: 'understanding',
-        description,
-        language_code: language,
-        provider: user?.role === 'admin' ? aiProvider : undefined,
-      });
+        if (!(generateResponse && (generateResponse as any).success)) {
+          const errorCode = (generateResponse as any)?.error;
+          if (errorCode === 'FREE_TRIAL_USED') {
+            setShowRegistrationPrompt(true);
+            setError(t('errors.freeTrialUsed', { ns: 'content', defaultValue: '请登录后继续使用' }));
+            return;
+          }
+          throw new Error((generateResponse as any)?.error || (generateResponse as any)?.message || '生成失败');
+        }
 
-      if (!(generateResponse && (generateResponse as any).success)) {
-        throw new Error((generateResponse as any)?.error || '启动异步生成失败');
+        // 免费生成接口返回的内容数据
+        contentResponse = (generateResponse as any).data;
+        if (!contentResponse || !contentResponse.id) {
+          throw new Error('生成内容失败');
+        }
+
+        // 标记免费试用已使用
+        if ((generateResponse as any).freeTrialUsed) {
+          setTrialStatus({ content_generated: true, ai_guide_used: trialStatus?.ai_guide_used || false });
+          setShowRegistrationPrompt(true);
+        }
+
+        // 游客生成后，跳转到结果页面
+        if (contentResponse.short_id) {
+          router.push(`/c/${contentResponse.short_id}`);
+          return; // 跳转后直接返回，不执行后续逻辑
+        }
+      } else {
+        // 已登录用户：使用原有流程
+        const contentData = {
+          title: safeTitle,
+          description: description || '',
+          language_code: language,
+          content_type: 'vue',
+          full_html: DEFAULT_FULL_HTML || '',
+          tags: [],
+          created_by: user.id,
+        } as any;
+
+        contentResponse = await api.content.create(contentData);
+        if (!contentResponse || !contentResponse.id) {
+          throw new Error('创建内容记录失败');
+        }
+
+        generateResponse = await api.generateContentAsync(contentResponse.id, {
+          knowledge_point: knowledgePoint.trim(),
+          learning_stage: 'understanding',
+          description,
+          language_code: language,
+          provider: user.role === 'admin' ? aiProvider : undefined,
+        });
+
+        if (!(generateResponse && (generateResponse as any).success)) {
+          throw new Error((generateResponse as any)?.error || '启动异步生成失败');
+        }
       }
 
       // 1) 写入 sessionStorage，供跨页面或刷新后拾取
@@ -186,8 +303,10 @@ export default function ContentAIGenerator({
         }
         // 2) 通过事件通知当前页面即时插入乐观卡片
         window.dispatchEvent(new CustomEvent('NEW_CONTENT_CREATED', { detail: payload }));
-        // 本地 pending 计数 +1
-        setPendingCount(prev => prev + 1);
+        // 本地 pending 计数 +1（仅已登录用户）
+        if (user) {
+          setPendingCount(prev => prev + 1);
+        }
       } catch {}
 
       // 3) 让外部回调进行列表刷新等后续动作（可选）
@@ -198,6 +317,12 @@ export default function ContentAIGenerator({
         window.location.href = '/login';
         return;
       }
+      // 检查是否是免费试用已用完的错误
+      if (msg.includes('FREE_TRIAL_USED') || msg.includes('免费试用已用完')) {
+        setShowRegistrationPrompt(true);
+        setError(t('errors.freeTrialUsed', { ns: 'content', defaultValue: '请登录后继续使用' }));
+        return;
+      }
       // 后端参数验证失败时返回 details
       const detailed = (e?.details && Array.isArray(e.details)) ? e.details.map((d: any) => d.msg || d.message || d.param).join('\n') : '';
       setError(detailed ? `${msg}\n${detailed}` : msg);
@@ -205,8 +330,6 @@ export default function ContentAIGenerator({
       setAiGenerating(false);
     }
   };
-
-  if (!user) return null;
 
   return (
     <div className={`flex flex-col gap-3 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl shadow border border-primary/20 p-4 ${className || ''}`}>
@@ -272,7 +395,7 @@ export default function ContentAIGenerator({
         type="button"
         className="w-full px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg shadow hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         onClick={handleAsyncAiGenerate}
-        disabled={isAiFormDisabled || !knowledgePoint.trim() || checking || (creditsBalance !== null && creditsBalance <= 0) || pendingCount >= 3}
+        disabled={isAiFormDisabled || !knowledgePoint.trim() || checking || (user && creditsBalance !== null && creditsBalance <= 0) || (user && pendingCount >= 3) || (!user && trialStatus?.content_generated)}
       >
         {aiGenerating ? (
           <>
@@ -284,11 +407,16 @@ export default function ContentAIGenerator({
         )}
       </button>
 
-      {(creditsBalance !== null && creditsBalance <= 0) && (
+      {user && (creditsBalance !== null && creditsBalance <= 0) && (
         <div className="text-sm text-destructive">{t('errors.insufficientCredits', { ns: 'content', defaultValue: '积分不足，无法生成' })}</div>
       )}
-      {(pendingCount >= 3) && (
+      {user && (pendingCount >= 3) && (
         <div className="text-sm text-muted-foreground">{t('errors.queueLimitReached', { ns: 'content', defaultValue: '队列不能超过3个任务' })}</div>
+      )}
+      {!user && trialStatus?.content_generated && (
+        <div className="text-sm text-destructive mb-2">
+          {t('errors.freeTrialUsed', { ns: 'content', defaultValue: '请登录后继续使用' })}
+        </div>
       )}
 
       {showLanguagePicker && (
@@ -333,6 +461,13 @@ export default function ContentAIGenerator({
           </div>
         </div>
       )}
+
+      <RegistrationPrompt
+        type={trialStatus?.content_generated ? 'trialUsed' : 'generation'}
+        onRegister={() => setShowRegistrationPrompt(false)}
+        onDismiss={() => setShowRegistrationPrompt(false)}
+        visible={showRegistrationPrompt}
+      />
     </div>
   );
 }

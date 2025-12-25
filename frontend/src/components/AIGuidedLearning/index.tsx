@@ -5,6 +5,7 @@ import { AIGuideButton } from './AIGuideButton';
 import { AIGuideDrawer } from './AIGuideDrawer';
 import { api } from '../../lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { getVisitorId } from '@/utils/visitorId';
 
 interface AIGuidedLearningProps {
   contentId: string;
@@ -27,27 +28,61 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [hasInit, setHasInit] = useState(false);
   const [initFailed, setInitFailed] = useState(false);
+  const [trialStatus, setTrialStatus] = useState<{ content_generated: boolean; ai_guide_used: boolean } | null>(null);
+  const [freeTrialUsed, setFreeTrialUsed] = useState(false);
+
+  // 检查免费试用状态（未登录用户）
+  const fetchTrialStatus = async () => {
+    if (user) return; // 已登录用户不需要检查
+    try {
+      const status = await api.visitor.checkTrial();
+      if (status.success && status.data) {
+        setTrialStatus(status.data);
+        if (status.data.ai_guide_used) {
+          setFreeTrialUsed(true);
+        }
+      }
+    } catch (e) {
+      // 静默失败
+    }
+  };
+
+  useEffect(() => {
+    if (!user) {
+      fetchTrialStatus();
+    }
+  }, [user]);
 
   // Initialize conversation when opening for the first time
   const initSession = async () => {
     if (hasInit && !initFailed) return;
     
-    // Check if user is logged in
-    if (!user) {
-      // Show welcome message for non-logged-in users
-      setMessages([{ 
-        role: 'assistant', 
-        content: t('loginPrompt')
-      }]);
-      setHasInit(true);
-      setInitFailed(false);
-      return;
-    }
-    
     setIsLoading(true);
     setInitFailed(false);
     try {
-      const res = await api.aiGuide.init(contentId);
+      let res;
+      
+      if (!user) {
+        // 未登录用户：检查免费试用状态
+        await fetchTrialStatus();
+        if (trialStatus?.ai_guide_used) {
+          setMessages([{ 
+            role: 'assistant', 
+            content: t('pleaseLoginToContinue', { defaultValue: '请登录后继续免费使用' })
+          }]);
+          setHasInit(true);
+          setInitFailed(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        // 使用免费初始化接口
+        res = await api.aiGuide.initFree(contentId);
+      } else {
+        // 已登录用户：使用原有接口
+        res = await api.aiGuide.init(contentId);
+      }
+      
       if (res) {
         setConversationId(res.conversation_id);
         if (res.initial_message) {
@@ -59,7 +94,18 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
     } catch (error) {
       console.error('Failed to init AI guide:', error);
       const errorMsg = error instanceof Error ? error.message : '';
-      if (errorMsg.includes('认证') || errorMsg.includes('登录') || errorMsg.includes('authentication')) {
+      const errorObj = error as any;
+      
+      // 检查是否是免费试用已用完的错误
+      if (errorMsg.includes('FREE_TRIAL_USED') || errorObj?.error === 'FREE_TRIAL_USED' || errorMsg.includes('免费试用已用完')) {
+        setFreeTrialUsed(true);
+        setTrialStatus(prev => ({ ...prev, ai_guide_used: true } as any));
+        setMessages([{ 
+          role: 'assistant', 
+          content: t('pleaseLoginToContinue', { defaultValue: '请登录后继续免费使用' })
+        }]);
+        setInitFailed(false);
+      } else if (errorMsg.includes('认证') || errorMsg.includes('登录') || errorMsg.includes('authentication')) {
         setMessages([{ 
           role: 'assistant', 
           content: t('loginPrompt')
@@ -96,16 +142,6 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
   };
 
   const handleSendMessage = async (text: string) => {
-    // Check if user is logged in
-    if (!user) {
-      // Redirect to login or show prompt
-      setMessages(prev => [...prev, 
-        { role: 'user', content: text },
-        { role: 'assistant', content: t('loginPrompt') }
-      ]);
-      return;
-    }
-    
     if (!conversationId) {
       setMessages(prev => [...prev, 
         { role: 'user', content: text },
@@ -114,43 +150,102 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
       return;
     }
 
+    // 未登录用户：检查免费试用状态
+    if (!user) {
+      if (freeTrialUsed || trialStatus?.ai_guide_used) {
+        setMessages(prev => [...prev, 
+          { role: 'user', content: text },
+          { role: 'assistant', content: t('pleaseLoginToContinue', { defaultValue: '请登录后继续免费使用' }) }
+        ]);
+        return;
+      }
+    }
+
     // Add user message immediately
     const userMsg: Message = { role: 'user', content: text };
     setMessages(prev => [...prev, userMsg]);
     
     // Add placeholder for AI message
-    const aiMsgId = Date.now().toString();
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
     
     setIsLoading(true);
     try {
       let fullReply = '';
-      await api.aiGuide.chatStream(conversationId, text, null, (chunk) => {
-        fullReply += chunk;
-        setMessages(prev => {
-          const newMessages = [...prev];
-          const lastMsg = newMessages[newMessages.length - 1];
-          if (lastMsg.role === 'assistant') {
-            lastMsg.content = fullReply;
-          }
-          return newMessages;
+      let trialUsedInThisChat = false;
+      
+      if (!user) {
+        // 未登录用户：使用免费对话接口
+        const result = await api.aiGuide.chatStreamFree(conversationId, text, null, (chunk) => {
+          fullReply += chunk;
+          setMessages(prev => {
+            const newMessages = [...prev];
+            const lastMsg = newMessages[newMessages.length - 1];
+            if (lastMsg.role === 'assistant') {
+              lastMsg.content = fullReply;
+            }
+            return newMessages;
+          });
         });
-      });
+        
+        if (result?.freeTrialUsed) {
+          trialUsedInThisChat = true;
+          setFreeTrialUsed(true);
+          setTrialStatus(prev => ({ ...prev, ai_guide_used: true } as any));
+        }
+      } else {
+        // 已登录用户：使用原有接口
+        await api.aiGuide.chatStream(conversationId, text, null, (chunk) => {
+          fullReply += chunk;
+          setMessages(prev => {
+            const newMessages = [...prev];
+            const lastMsg = newMessages[newMessages.length - 1];
+            if (lastMsg.role === 'assistant') {
+              lastMsg.content = fullReply;
+            }
+            return newMessages;
+          });
+        });
+      }
+      
+      // 如果免费试用已使用，在消息中添加提示（不显示弹窗）
+      if (trialUsedInThisChat) {
+        // 在 AI 回复后添加一条提示消息
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: t('pleaseLoginToContinue', { defaultValue: '请登录后继续免费使用' })
+        }]);
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       const errorMsg = error instanceof Error ? error.message : '';
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastMsg = newMessages[newMessages.length - 1];
-        if (lastMsg.role === 'assistant' && !lastMsg.content) {
-          if (errorMsg.includes('认证') || errorMsg.includes('登录') || errorMsg.includes('authentication')) {
-            lastMsg.content = t('loginPrompt');
-          } else {
-            lastMsg.content = t('errorSending') + ': ' + errorMsg;
+      const errorObj = error as any;
+      
+      // 检查是否是免费试用已用完的错误
+      if (errorMsg.includes('FREE_TRIAL_USED') || errorObj?.error === 'FREE_TRIAL_USED' || errorMsg.includes('免费试用已用完')) {
+        setFreeTrialUsed(true);
+        setTrialStatus(prev => ({ ...prev, ai_guide_used: true } as any));
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastMsg = newMessages[newMessages.length - 1];
+          if (lastMsg.role === 'assistant' && !lastMsg.content) {
+            lastMsg.content = t('pleaseLoginToContinue', { defaultValue: '请登录后继续免费使用' });
           }
-        }
-        return newMessages;
-      });
+          return newMessages;
+        });
+      } else {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastMsg = newMessages[newMessages.length - 1];
+          if (lastMsg.role === 'assistant' && !lastMsg.content) {
+            if (errorMsg.includes('认证') || errorMsg.includes('登录') || errorMsg.includes('authentication')) {
+              lastMsg.content = t('loginPrompt');
+            } else {
+              lastMsg.content = t('errorSending') + ': ' + errorMsg;
+            }
+          }
+          return newMessages;
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -170,6 +265,7 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
         isLoggedIn={!!user}
         initFailed={initFailed}
         onRetryInit={retryInit}
+        freeTrialUsed={freeTrialUsed || trialStatus?.ai_guide_used || false}
       />
     </>
   );

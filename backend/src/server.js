@@ -22,6 +22,7 @@ const creditsRoutes = require('./api/credits');
 const referralsRoutes = require('./api/referrals');
 const subscriptionsRoutes = require("./api/subscriptions");
 const paymentsRoutes = require("./api/payments");
+const visitorRoutes = require('./api/visitor');
 const { errorHandler } = require('./utils/errorHandler');
 const logger = require('./utils/logger');
 const { supabase } = require('./services/database');
@@ -50,7 +51,7 @@ app.use(cors({
   origin: config.ALLOWED_ORIGINS,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Visitor-Id']
 }));
 
 // 速率限制
@@ -146,6 +147,7 @@ app.use("/api/payments", paymentsRoutes);
 app.use("/api/ai-guide", aiGuideRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/ai", aiServiceRoutes);
+app.use("/api/visitor", visitorRoutes);
 // 404 处理
 app.use('*', (req, res) => {
   res.status(404).json({ 

@@ -38,9 +38,13 @@ export const clearAllSessions = (): void => {
       }
     });
     
-    // 清除所有可能的cookie
+    // 清除所有可能的cookie（但保留 visitor_user_id）
     document.cookie.split(";").forEach(function(c) { 
-      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      const cookieName = c.replace(/^ +/, "").split("=")[0];
+      // 保留 visitor_user_id，因为它是游客身份标识，不应该被清除
+      if (cookieName !== 'visitor_user_id') {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      }
     });
     
   } catch (error) {

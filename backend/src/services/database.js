@@ -111,7 +111,13 @@ const getContents = async (filters = {}) => {
       query = query.contains('tag', [filters.tag]);
     }
     if (filters.created_by) {
-      query = query.eq('created_by', filters.created_by);
+      // 判断是 visitor_id 还是 user_id
+      const { isVisitorId } = require('../utils/visitorId');
+      if (isVisitorId(filters.created_by)) {
+        query = query.eq('visitor_id', filters.created_by);
+      } else {
+        query = query.eq('created_by', filters.created_by);
+      }
     }
     
     // 添加limit支持
@@ -150,15 +156,18 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
     // 查询每个内容的最新生成状态
     const { data: generationLogs, error: logsError } = await supabase
       .from('ai_usage_logs')
-      .select('content_id, status, error_message, user_query, created_at, updated_at')
+      .select('content_id, status, error_message, user_query, created_at, updated_at, is_render_success, started_at')
       .in('content_id', contentIds)
       .eq('action_type', 'generate')
       .order('created_at', { ascending: false });
 
     if (logsError) {
+      console.error('[getContentsWithGenerationStatus] 查询生成状态失败:', logsError);
       // 如果查询生成状态失败，返回不带状态的内容
       return { data: contents, error: null };
     }
+
+    console.log(`[getContentsWithGenerationStatus] 查询到 ${generationLogs?.length || 0} 条生成日志，内容ID: ${contentIds.length} 个`);
 
     // 为每个内容创建状态映射（只取最新的状态）
     const statusMap = new Map();
@@ -180,11 +189,20 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
       
       // 构建状态映射
       latestLogsByContent.forEach((log, contentId) => {
+        // 如果 status 是 'done' 但 is_render_success 是 false，则应该显示为 'failed'
+        let finalStatus = log.status;
+        if (log.status === 'done' && log.is_render_success === false) {
+          finalStatus = 'failed';
+        }
+        
+        console.log(`[getContentsWithGenerationStatus] 内容 ${contentId} 的状态: ${log.status} -> ${finalStatus}, is_render_success: ${log.is_render_success}`);
+        
         statusMap.set(contentId, {
-          generation_status: log.status,
-          generation_error: log.error_message,
+          generation_status: finalStatus,
+          generation_error: log.error_message || (log.status === 'done' && log.is_render_success === false ? '内容渲染失败' : null),
           generation_updated_at: log.updated_at,
-          user_query: log.user_query
+          user_query: log.user_query,
+          started_at: log.started_at
         });
       });
       
@@ -199,7 +217,7 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
       const status = statusMap.get(content.id);
       const retryCount = retryCountMap.get(content.id) || 0;
       
-      return {
+      const result = {
         ...content,
         generation_status: status?.generation_status || null,
         generation_error: status?.generation_error || null,
@@ -207,8 +225,17 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
         generation_updated_at: status?.generation_updated_at || null,
         user_query: status?.user_query || null
       };
+      
+      // 调试日志：如果内容没有找到状态，记录一下
+      if (!status) {
+        console.log(`[getContentsWithGenerationStatus] 警告: 内容 ${content.id} (${content.title}) 没有找到生成状态记录`);
+      }
+      
+      return result;
     });
 
+    console.log(`[getContentsWithGenerationStatus] 返回 ${contentsWithStatus.length} 条内容，其中 ${contentsWithStatus.filter(c => c.generation_status).length} 条有生成状态`);
+    
     return { data: contentsWithStatus, error: null };
   } catch (error) {
     return { data: null, error };
@@ -238,7 +265,7 @@ const getContentById = async (id) => {
 
 const getContentByShortId = async (shortId) => {
   try {
-    const { data, error } = await supabase
+    const { data: content, error } = await supabase
       .from('content')
       .select('*')
       .eq('short_id', shortId)
@@ -246,7 +273,57 @@ const getContentByShortId = async (shortId) => {
     if (error) {
       throw error;
     }
-    return { data, error: null };
+
+    if (!content) {
+      return { data: null, error: null };
+    }
+
+    // 获取生成状态（如果有）
+    const { data: log, error: logError } = await supabase
+      .from('ai_usage_logs')
+      .select('status, error_message, user_query, created_at, updated_at, is_render_success, started_at')
+      .eq('content_id', content.id)
+      .eq('action_type', 'generate')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!logError && log) {
+      // 计算进度
+      let progress = 0;
+      switch (log.status) {
+        case 'pending': progress = 10; break;
+        case 'processing': progress = 50; break;
+        case 'done': progress = 100; break;
+        case 'failed': progress = 0; break;
+        default: progress = 0;
+      }
+
+      // 计算重试次数（同一 content_id 的生成记录数 - 1）
+      const { data: allLogs } = await supabase
+        .from('ai_usage_logs')
+        .select('id')
+        .eq('content_id', content.id)
+        .eq('action_type', 'generate');
+      const retryCount = Math.max(0, (allLogs?.length || 0) - 1);
+
+      // 如果 status 是 'done' 但 is_render_success 是 false，则应该显示为 'failed'
+      let finalStatus = log.status;
+      if (log.status === 'done' && log.is_render_success === false) {
+        finalStatus = 'failed';
+      }
+
+      // 合并生成状态到内容对象
+      content.generation_status = finalStatus;
+      content.generation_progress = progress;
+      content.retry_count = retryCount;
+      content.generation_error = log.error_message || (log.status === 'done' && log.is_render_success === false ? '内容渲染失败' : null);
+      content.generation_updated_at = log.updated_at;
+      content.user_query = log.user_query;
+      content.generation_started_at = log.started_at;
+    }
+
+    return { data: content, error: null };
   } catch (error) {
     return { data: null, error };
   }
@@ -265,6 +342,12 @@ const createContent = async (contentData, userId) => {
       throw new Error('full_html 不能为空');
     }
     
+    // 判断是 visitor_id 还是 user_id
+    const { isVisitorId } = require('../utils/visitorId');
+    const isVisitor = isVisitorId(userId);
+    const actualUserId = isVisitor ? null : userId;
+    const visitorId = isVisitor ? userId : null;
+    
     const result = await supabase
       .from('content')
       .insert({
@@ -274,7 +357,8 @@ const createContent = async (contentData, userId) => {
         description: description || '',
         content_type: content_type || 'vue',
         language_code: language_code || 'zh-CN',
-        created_by: userId,
+        created_by: actualUserId, // 如果是 visitor_id，则设置为 NULL
+        visitor_id: visitorId, // 如果是 visitor_id，则存储在这里
         short_id: generateShortId(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -1813,10 +1897,17 @@ const getUserLikedContent = async (userId) => {
 // 记录AI使用日志
 const logAIUsage = async (log) => {
   try {
+    // 判断是 visitor_id 还是 user_id
+    const { isVisitorId } = require('../utils/visitorId');
+    const userId = log.user_id || null;
+    const visitorId = userId && isVisitorId(userId) ? userId : null;
+    const actualUserId = userId && !isVisitorId(userId) ? userId : null;
+
     const { data, error } = await supabase
       .from('ai_usage_logs')
       .insert({
-        user_id: log.user_id || null,
+        user_id: actualUserId, // 如果是 visitor_id，则设置为 NULL
+        visitor_id: visitorId, // 如果是 visitor_id，则存储在这里
         model_name: log.model_name || null,
         user_query: log.user_query || null,
         action_type: log.action_type || null,
@@ -1831,7 +1922,8 @@ const logAIUsage = async (log) => {
         error_message: log.error_message || null,
         request_id: log.request_id || null,
         content_id: log.content_id || null,
-        generation_params: log.generation_params || null
+        generation_params: log.generation_params || null,
+        status: log.status || (log.is_render_success ? 'done' : (log.error_message ? 'failed' : 'pending'))
       })
       .select()
       .single();

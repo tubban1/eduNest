@@ -154,6 +154,13 @@
     "column_default": null
   },
   {
+    "table_name": "ai_usage_logs",
+    "column_name": "visitor_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "collection_lists",
     "column_name": "id",
     "data_type": "uuid",
@@ -423,6 +430,13 @@
     "table_name": "content",
     "column_name": "thumbnail_updated_at",
     "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
+    "column_name": "visitor_id",
+    "data_type": "text",
     "is_nullable": "YES",
     "column_default": null
   },
@@ -1109,6 +1123,48 @@
     "table_name": "users",
     "column_name": "referral_code",
     "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "visitor_usage",
+    "column_name": "visitor_id",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "visitor_usage",
+    "column_name": "content_generated",
+    "data_type": "boolean",
+    "is_nullable": "YES",
+    "column_default": "false"
+  },
+  {
+    "table_name": "visitor_usage",
+    "column_name": "ai_guide_used",
+    "data_type": "boolean",
+    "is_nullable": "YES",
+    "column_default": "false"
+  },
+  {
+    "table_name": "visitor_usage",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "visitor_usage",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "visitor_usage",
+    "column_name": "expires_at",
+    "data_type": "timestamp with time zone",
     "is_nullable": "YES",
     "column_default": null
   }

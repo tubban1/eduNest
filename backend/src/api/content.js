@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const DatabaseService = require('../services/database');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -180,28 +180,38 @@ router.get('/collection-list/:listId', async (req, res) => {
   }
 });
 
-// 获取内容列表
-router.get('/', authenticateToken, async (req, res) => {
+// 获取内容列表（支持未登录用户按语言筛选）
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const filters = {};
+    
+    // 如果提供了 created_by，需要认证
     if (req.query.created_by) {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: '需要认证才能查询指定用户的内容' });
+      }
       filters.created_by = req.query.created_by;
     }
     
-    // 如果查询用户自己的内容，包含生成状态
-    const includeGenerationStatus = req.query.created_by && req.query.created_by === req.user.id;
+    // 支持按语言筛选（未登录用户）
+    if (req.query.language_code) {
+      filters.language_code = req.query.language_code;
+    }
+    
+    // 如果查询用户自己的内容，包含生成状态（需要认证）
+    const includeGenerationStatus = req.query.created_by && req.user && req.query.created_by === req.user.id;
     
     const result = includeGenerationStatus 
       ? await DatabaseService.getContentsWithGenerationStatus(filters)
       : await DatabaseService.getContents(filters);
     
     if (result.error) {
-      return res.status(500).json({ error: result.error.message });
+      return res.status(500).json({ success: false, error: result.error.message });
     }
 
     res.json({ success: true, data: result.data });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

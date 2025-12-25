@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { cache, generateCacheKey, CACHE_CONFIG } from './cache';
+import { getVisitorId } from '../utils/visitorId';
 
 // 统一的API客户端
 class ApiClient {
@@ -105,6 +106,18 @@ class ApiClient {
     const token = await this.getLatestToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // 如果未登录，添加 Visitor ID 头
+      if (typeof window !== 'undefined') {
+        try {
+          const visitorId = getVisitorId();
+          if (visitorId) {
+            headers['X-Visitor-Id'] = visitorId;
+          }
+        } catch (error) {
+          // 静默处理 Visitor ID 获取错误
+        }
+      }
     }
 
     const config: RequestInit = {
@@ -219,6 +232,7 @@ class ApiClient {
     getFiltered: async (filters: {
       knowledge_point?: string[];
       language?: string;
+      language_code?: string; // 添加 language_code 支持
       created_by?: string; // 添加 created_by 支持
     }) => {
       // 生成缓存键
@@ -569,6 +583,17 @@ class ApiClient {
     return this.get('/ai/queue-status');
   }
 
+  // 免费内容生成接口（无需认证，需要 visitor_id）
+  async generateContentFree(params: {
+    knowledgePoint: string;
+    learningStage: string;
+    description?: string;
+    language_code?: string;
+    provider?: string;
+  }) {
+    return this.post('/ai/generate-free', params);
+  }
+
   // Payments API
   async getPaymentMethods() {
     return this.get('/payments/payment-methods');
@@ -697,20 +722,54 @@ class ApiClient {
     },
   };
 
+  // Visitor API
+  visitor = {
+    // 检查免费试用状态
+    checkTrial: async () => {
+      return this.get('/visitor/check-trial');
+    },
+    // 注册后合并游客数据
+    mergeOnLogin: async (visitorId: string) => {
+      return this.post('/visitor/merge-on-login', { visitor_id: visitorId });
+    },
+  };
+
   // AI Guided Learning API
   aiGuide = {
     init: async (contentId: string) => {
       const data = await this.post('/ai-guide/init', { content_id: contentId });
       return data.success ? data.data : null;
     },
+    // 免费初始化会话（无需认证，需要 visitor_id）
+    initFree: async (contentId: string) => {
+      const data = await this.post('/ai-guide/init-free', { content_id: contentId });
+      return data.success ? data.data : null;
+    },
     chatStream: async (conversationId: string, message: string, uiState?: any, onChunk?: (text: string) => void) => {
       const token = await new ApiClient().getLatestToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        // 如果未登录，添加 Visitor ID 头
+        if (typeof window !== 'undefined') {
+          try {
+            const visitorId = getVisitorId();
+            if (visitorId) {
+              headers['X-Visitor-Id'] = visitorId;
+            }
+          } catch (error) {
+            // 静默处理 Visitor ID 获取错误
+          }
+        }
+      }
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'}/ai-guide/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers,
         body: JSON.stringify({ conversation_id: conversationId, message, ui_state: uiState }),
       });
 
@@ -765,7 +824,69 @@ class ApiClient {
     getMessages: async (conversationId: string) => {
       const data = await this.get(`/ai-guide/messages?conversation_id=${conversationId}`);
       return data.success ? data.data.messages : [];
-    }
+    },
+    // 免费对话接口（无需认证，需要 visitor_id）
+    chatStreamFree: async (conversationId: string, message: string, uiState?: any, onChunk?: (text: string) => void) => {
+      const visitorId = typeof window !== 'undefined' ? getVisitorId() : null;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'}/ai-guide/chat-free`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(visitorId ? { 'X-Visitor-Id': visitorId } : {}),
+        },
+        body: JSON.stringify({ conversation_id: conversationId, message, ui_state: uiState }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || error.error || 'Failed to send message');
+      }
+
+      if (!response.body) return { freeTrialUsed: false };
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let freeTrialUsed = false;
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Process complete lines from buffer
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') {
+                return { freeTrialUsed };
+              }
+              
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.freeTrialUsed) {
+                  freeTrialUsed = true;
+                }
+                if (parsed.content && onChunk) {
+                  onChunk(parsed.content);
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      return { freeTrialUsed };
+    },
   };
 
   // Admin API

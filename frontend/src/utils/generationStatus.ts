@@ -372,3 +372,152 @@ export class StatusPollingManager {
 
 // 全局轮询管理器实例
 export const statusPollingManager = new StatusPollingManager();
+
+/**
+ * SSE + 轮询混合状态管理器
+ * 优先使用 SSE，失败时自动降级到轮询
+ */
+export class HybridStatusManager {
+  private eventSource: EventSource | null = null;
+  private pollingManager: StatusPollingManager;
+  private contentId: string;
+  private callback: (status: GenerationStatusResponse) => void;
+  private apiCall: (id: string) => Promise<{ success: boolean; data: GenerationStatusResponse }>;
+  private isActive: boolean = false;
+  private visitorId: string | null = null;
+
+  constructor(
+    contentId: string,
+    callback: (status: GenerationStatusResponse) => void,
+    apiCall: (id: string) => Promise<{ success: boolean; data: GenerationStatusResponse }>,
+    visitorId?: string | null
+  ) {
+    this.contentId = contentId;
+    this.callback = callback;
+    this.apiCall = apiCall;
+    this.pollingManager = new StatusPollingManager();
+    this.visitorId = visitorId || null;
+  }
+
+  start() {
+    if (this.isActive) {
+      return; // 已经在运行
+    }
+
+    this.isActive = true;
+
+    // 优先尝试 SSE
+    if (typeof EventSource !== 'undefined') {
+      try {
+        this.startSSE();
+      } catch (e) {
+        console.warn('SSE 不可用，降级到轮询:', e);
+        this.startFallbackPolling();
+      }
+    } else {
+      // 浏览器不支持 SSE，直接使用轮询
+      console.warn('浏览器不支持 EventSource，使用轮询');
+      this.startFallbackPolling();
+    }
+  }
+
+  private startSSE() {
+    // 获取 API base URL
+    const baseUrl = typeof window !== 'undefined' 
+      ? (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api')
+      : 'http://localhost:3001/api';
+    
+    let url = `${baseUrl}/ai/generation-status-stream/${this.contentId}`;
+
+    // 添加 visitor_id 作为 URL 参数（因为 EventSource 不支持自定义 headers）
+    if (this.visitorId) {
+      url += `?visitor_id=${encodeURIComponent(this.visitorId)}`;
+    }
+
+    console.log(`[SSE] 连接 URL: ${url}`);
+    this.eventSource = new EventSource(url);
+
+    this.eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'connected') {
+          console.log(`[SSE] 连接成功: contentId=${this.contentId}`);
+          return;
+        }
+
+        if (data.type === 'status') {
+          // 转换 SSE 数据格式为 GenerationStatusResponse
+          const statusData: GenerationStatusResponse = {
+            status: data.status,
+            progress: data.progress || 0,
+            retry_count: data.retry_count || 0,
+            latest_request_id: data.latest_request_id,
+            error_message: data.error_message,
+            user_query: data.user_query,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            started_at: data.started_at
+          };
+
+          this.callback(statusData);
+
+          // 如果是最终状态，停止
+          if (isFinalStatus(statusData.status)) {
+            this.stop();
+          }
+        }
+
+        if (data.type === 'complete') {
+          console.log(`[SSE] 生成完成: contentId=${this.contentId}`);
+          this.stop();
+        }
+      } catch (e) {
+        console.error('[SSE] 解析消息失败:', e, event.data);
+      }
+    };
+
+    this.eventSource.addEventListener('error', (event: any) => {
+      console.warn(`[SSE] 错误事件: contentId=${this.contentId}`, event);
+      // SSE 连接失败，降级到轮询
+      this.fallbackToPolling();
+    });
+
+    this.eventSource.onerror = () => {
+      console.warn(`[SSE] 连接错误，降级到轮询: contentId=${this.contentId}`);
+      this.fallbackToPolling();
+    };
+  }
+
+  private fallbackToPolling() {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+    this.startFallbackPolling();
+  }
+
+  private startFallbackPolling() {
+    console.log(`[轮询] 开始轮询: contentId=${this.contentId}`);
+    this.pollingManager.startPolling(
+      this.contentId,
+      this.callback,
+      this.apiCall
+    );
+  }
+
+  stop() {
+    this.isActive = false;
+
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+
+    this.pollingManager.stopPolling(this.contentId);
+  }
+
+  isRunning(): boolean {
+    return this.isActive;
+  }
+}

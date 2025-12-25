@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import ContentActionButtons from '@/components/ui/ContentActionButtons';
@@ -12,11 +12,15 @@ import { AIGuidedLearning } from '@/components/AIGuidedLearning';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
+import AiLoadingAnimation from '@/components/AiLoadingAnimation';
+import { HybridStatusManager } from '@/utils/generationStatus';
+import { getVisitorId } from '@/utils/visitorId';
 
 export default function FullHTMLContentPage() {
   const params = useParams();
+  const router = useRouter();
   const { user } = useAuth();
-  const { t } = useTranslation('common');
+  const { t } = useTranslation(['common', 'content']);
   const { handleSmartBack } = useSmartBack();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +29,17 @@ export default function FullHTMLContentPage() {
   const [isCollected, setIsCollected] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [collectionCount, setCollectionCount] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // 生成状态相关
+  const [generationStatus, setGenerationStatus] = useState<'pending' | 'processing' | 'done' | 'failed' | null>(null);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
+  const [userQuery, setUserQuery] = useState<string>('');
+  const [queuedAt, setQueuedAt] = useState<string>('');
+  const [startedAt, setStartedAt] = useState<string>('');
+  const [elapsedTime, setElapsedTime] = useState<number>(0); // 计时器（秒）
+  const hybridStatusManagerRef = useRef<HybridStatusManager | null>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // 保存原始标题，用于组件卸载时恢复
@@ -45,6 +59,70 @@ export default function FullHTMLContentPage() {
         const shortId = params.short_id as string;
         const response = await api.content.getByShortId(shortId);
         setContent(response);
+        
+        // 设置生成状态
+        if (response.generation_status) {
+          // 后端已返回生成状态
+          setGenerationStatus(response.generation_status);
+          setGenerationProgress(response.generation_progress || 0);
+          setRetryCount(response.retry_count || 0);
+          setUserQuery(response.user_query || response.title || '');
+          setQueuedAt(response.created_at || '');
+          setStartedAt(response.generation_started_at || '');
+          // 初始化计时器
+          if (response.created_at) {
+            const startTime = new Date(response.created_at).getTime();
+            const now = Date.now();
+            const initialElapsed = Math.max(0, Math.floor((now - startTime) / 1000));
+            setElapsedTime(initialElapsed);
+          }
+        } else if (response.id && (!response.full_html || response.full_html.trim().length === 0)) {
+          // 如果没有 generation_status，但内容没有 full_html，说明可能正在生成
+          // 主动查询一次状态
+          try {
+            const statusResponse = await api.getContentGenerationStatus(response.id);
+            if (statusResponse.success && statusResponse.data) {
+              const statusData = statusResponse.data;
+              setGenerationStatus(statusData.status);
+              setGenerationProgress(statusData.progress || 0);
+              setRetryCount(statusData.retry_count || 0);
+              setUserQuery(statusData.user_query || response.title || '');
+              setQueuedAt(statusData.created_at || response.created_at || '');
+              setStartedAt(statusData.started_at || '');
+              // 初始化计时器
+              if (statusData.created_at || response.created_at) {
+                const startTime = new Date(statusData.created_at || response.created_at).getTime();
+                const now = Date.now();
+                const initialElapsed = Math.max(0, Math.floor((now - startTime) / 1000));
+                setElapsedTime(initialElapsed);
+              }
+            } else {
+              // 如果查询失败，假设是 pending 状态
+              console.warn('查询生成状态失败，假设为 pending 状态');
+              setGenerationStatus('pending');
+              setUserQuery(response.title || '');
+              setQueuedAt(response.created_at || '');
+              if (response.created_at) {
+                const startTime = new Date(response.created_at).getTime();
+                const now = Date.now();
+                const initialElapsed = Math.max(0, Math.floor((now - startTime) / 1000));
+                setElapsedTime(initialElapsed);
+              }
+            }
+          } catch (err) {
+            console.error('查询生成状态失败:', err);
+            // 查询失败，假设是 pending 状态
+            setGenerationStatus('pending');
+            setUserQuery(response.title || '');
+            setQueuedAt(response.created_at || '');
+            if (response.created_at) {
+              const startTime = new Date(response.created_at).getTime();
+              const now = Date.now();
+              const initialElapsed = Math.max(0, Math.floor((now - startTime) / 1000));
+              setElapsedTime(initialElapsed);
+            }
+          }
+        }
         
         // 动态设置浏览器标题
         if (response.title) {
@@ -68,6 +146,114 @@ export default function FullHTMLContentPage() {
       fetchContent();
     }
   }, [params.short_id]);
+
+  // 计时器逻辑
+  useEffect(() => {
+    if (generationStatus !== 'pending' && generationStatus !== 'processing') {
+      // 停止计时器
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // 启动计时器
+    timerIntervalRef.current = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+
+    // 清理函数
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [generationStatus]);
+
+  // SSE + 轮询混合状态管理逻辑
+  useEffect(() => {
+    if (!content?.id || !generationStatus || (generationStatus !== 'pending' && generationStatus !== 'processing')) {
+      return;
+    }
+
+    // 获取 visitor_id（如果是游客）
+    const visitorId = user ? null : getVisitorId();
+
+    // 初始化混合管理器
+    if (!hybridStatusManagerRef.current) {
+      hybridStatusManagerRef.current = new HybridStatusManager(
+        content.id,
+        (statusData) => {
+          setGenerationStatus(statusData.status);
+          setGenerationProgress(statusData.progress || 0);
+          setRetryCount(statusData.retry_count || 0);
+          if (statusData.user_query) setUserQuery(statusData.user_query);
+          if (statusData.created_at) setQueuedAt(statusData.created_at);
+          if (statusData.started_at) {
+            setStartedAt(statusData.started_at);
+            // 更新计时器起始时间
+            const startTime = new Date(statusData.started_at).getTime();
+            const now = Date.now();
+            const elapsed = Math.max(0, Math.floor((now - startTime) / 1000));
+            setElapsedTime(elapsed);
+          }
+
+          // 如果生成完成，刷新页面内容
+          if (statusData.status === 'done') {
+            hybridStatusManagerRef.current?.stop();
+            // 停止计时器
+            if (timerIntervalRef.current) {
+              clearInterval(timerIntervalRef.current);
+              timerIntervalRef.current = null;
+            }
+            // 立即清除生成状态，停止动画
+            setGenerationStatus(null);
+            // 重新获取内容并刷新页面
+            const refreshContent = async () => {
+              try {
+                const shortId = params.short_id as string;
+                // 清除缓存，确保获取最新内容
+                const cacheKey = `content:short:${shortId}`;
+                const { cache } = await import('@/lib/cache');
+                cache.delete(cacheKey);
+                // 获取最新内容
+                const response = await api.content.getByShortId(shortId);
+                setContent(response);
+                // 使用 router.refresh() 确保页面完全刷新
+                router.refresh();
+              } catch (err) {
+                console.error('Failed to refresh content:', err);
+              }
+            };
+            refreshContent();
+          }
+
+          // 如果生成失败，停止
+          if (statusData.status === 'failed') {
+            hybridStatusManagerRef.current?.stop();
+            if (timerIntervalRef.current) {
+              clearInterval(timerIntervalRef.current);
+              timerIntervalRef.current = null;
+            }
+          }
+        },
+        (contentId: string) => api.getContentGenerationStatus(contentId),
+        visitorId
+      );
+    }
+
+    const hybridManager = hybridStatusManagerRef.current;
+
+    // 开始 SSE + 轮询混合监听
+    hybridManager.start();
+
+    // 清理函数
+    return () => {
+      hybridManager.stop();
+    };
+  }, [content?.id, generationStatus, params.short_id, router, user]);
 
   // 获取点赞和收藏状态（只在用户 ID 变化时执行，避免 user 对象引用变化导致刷新）
   useEffect(() => {
@@ -104,7 +290,7 @@ export default function FullHTMLContentPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">加载中...</p>
+          <p className="text-muted-foreground">{t('generation.loadingContent', { ns: 'content', defaultValue: '加载中...' })}</p>
         </div>
       </div>
     );
@@ -114,8 +300,8 @@ export default function FullHTMLContentPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-destructive text-xl mb-4">加载失败</div>
-          <p className="text-muted-foreground mb-4">{error || '内容不存在'}</p>
+          <div className="text-destructive text-xl mb-4">{t('generation.loadFailed', { ns: 'content', defaultValue: '加载失败' })}</div>
+          <p className="text-muted-foreground mb-4">{error || t('generation.contentNotFound', { ns: 'content', defaultValue: '内容不存在' })}</p>
           <button
             onClick={handleSmartBack}
             className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
@@ -124,6 +310,42 @@ export default function FullHTMLContentPage() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  // 格式化计时器显示
+  const formatElapsedTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // 如果内容正在生成中，显示生成动画
+  if (generationStatus === 'pending' || generationStatus === 'processing') {
+    return (
+      <>
+        {/* 显示生成动画 */}
+        <AiLoadingAnimation
+          isActive={true}
+          knowledgePoint={userQuery || content?.title || t('generation.contentGenerating', { ns: 'content', defaultValue: '内容生成中...' })}
+          onComplete={() => {
+            // 动画完成回调（当生成完成时，会自动刷新页面）
+            console.log('Generation animation completed');
+          }}
+        />
+        
+        {/* 显示计时器（在动画上方，小字显示） */}
+        <div className="fixed top-4 right-4 z-[10000] bg-card/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg border border-border">
+          <div className="text-sm text-muted-foreground">
+            <span className="font-mono text-lg font-bold text-primary">{formatElapsedTime(elapsedTime)}</span>
+            <span className="ml-2 text-xs">
+              {generationStatus === 'pending' 
+                ? t('generation.pending', { ns: 'content', defaultValue: '等待生成中...' })
+                : t('generation.generating', { ns: 'content', defaultValue: '生成中...' })}
+            </span>
+          </div>
+        </div>
+      </>
     );
   }
 
