@@ -137,11 +137,6 @@ export default function ContentCard({
 
   // 同步 content.generation_status 到本地状态
   useEffect(() => {
-    // 调试日志
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[ContentCard] 内容 ${content.id} 的 generation_status:`, content.generation_status, '类型:', typeof content.generation_status);
-    }
-    
     if (content.generation_status !== undefined) {
       const prevStatus = prevStatusRef.current;
       const currentStatus = content.generation_status || null;
@@ -237,7 +232,6 @@ export default function ContentCard({
         if (currentStatus && isGenerating(currentStatus)) {
           // 如果任务仍在进行中但轮询已停止，重新启动
           if (!statusPollingManager.isPolling(content.id)) {
-            console.log(`页面恢复可见，重新启动轮询: ${content.id}`);
             startPollingIfNeeded();
           }
         }
@@ -362,11 +356,6 @@ export default function ContentCard({
 
   // 如果内容正在生成中，显示对应的状态卡片
   if (generationStatus && generationStatus !== 'done') {
-    // 调试日志
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[ContentCard] 显示状态卡片: ${generationStatus} for content ${content.id}`);
-    }
-    
     switch (generationStatus) {
       case 'pending':
         return <PendingCard content={content} userQuery={userQuery} queuedAt={queuedAt} />;
@@ -392,14 +381,6 @@ export default function ContentCard({
           />
         );
     }
-  } else if (process.env.NODE_ENV === 'development') {
-    // 调试日志：为什么没有显示状态卡片
-    console.log(`[ContentCard] 不显示状态卡片 for content ${content.id}:`, {
-      generationStatus,
-      hasGenerationStatus: !!generationStatus,
-      isNotDone: generationStatus !== 'done',
-      contentGenerationStatus: content.generation_status
-    });
   }
 
   // 根据标签获取 emoji（作为缩略图备用）

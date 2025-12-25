@@ -32,18 +32,13 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       try {
         setStatus(t('callback.verifyingLogin', { defaultValue: '正在验证登录状态...' }));
-        console.log('=== Auth Callback Debug ===');
-        console.log('Current URL:', window.location.href);
 
         const url = new URL(window.location.href);
         const code = url.searchParams.get('code');
         const errorDesc = url.searchParams.get('error_description') || url.searchParams.get('error');
 
-        console.log('URL params:', { code: code?.substring(0, 20) + '...', errorDesc });
-
         // 1) 优先处理 PKCE code flow
         if (errorDesc) {
-          console.error('OAuth error:', errorDesc);
           setStatus(t('callback.authFailed', { defaultValue: '认证失败' }) + ': ' + errorDesc);
           setTimeout(() => {
             router.replace('/login?error=oauth_error');
@@ -52,13 +47,10 @@ export default function AuthCallback() {
         }
 
         if (code) {
-          console.log('Processing PKCE code flow...');
           // 通过 Supabase 交换 code 为 session
           const { error, data } = await supabase.auth.exchangeCodeForSession(window.location.href);
-          console.log('exchangeCodeForSession result:', { error, hasData: !!data });
           
           if (error) {
-            console.error('exchangeCodeForSession error:', error);
             setStatus(t('callback.authFailedExchange', { defaultValue: '认证失败: 无法交换会话' }));
             setTimeout(() => {
               router.replace('/login?error=exchange_failed');
@@ -66,16 +58,9 @@ export default function AuthCallback() {
             return;
           }
 
-          console.log('Getting session...');
           const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-          console.log('getSession result:', { 
-            sessionError, 
-            hasSession: !!sessionData?.session,
-            hasAccessToken: !!sessionData?.session?.access_token 
-          });
 
           if (sessionError) {
-            console.error('getSession error:', sessionError);
             setStatus(t('callback.authFailedSession', { defaultValue: '认证失败: 获取会话失败' }));
             setTimeout(() => {
               router.replace('/login?error=session_failed');
@@ -85,7 +70,6 @@ export default function AuthCallback() {
 
           const accessToken = sessionData.session?.access_token || '';
           if (!accessToken) {
-            console.error('No access token in session');
             setStatus(t('callback.authFailedEmptySession', { defaultValue: '认证失败: 会话为空' }));
             setTimeout(() => {
               router.replace('/login?error=no_session');
@@ -93,7 +77,6 @@ export default function AuthCallback() {
             return;
           }
 
-          console.log('Setting API token and dispatching event...');
           // 同步API客户端token
           api.setToken(accessToken);
           window.dispatchEvent(new Event('sessionChanged'));
@@ -106,19 +89,12 @@ export default function AuthCallback() {
         }
 
         // 2) 兼容旧的 hash fragment 流程（#access_token=...）
-        console.log('Falling back to hash fragment flow...');
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const accessToken = params.get('access_token');
         const refreshToken = params.get('refresh_token') || '';
 
-        console.log('Hash params:', { 
-          hasAccessToken: !!accessToken, 
-          hasRefreshToken: !!refreshToken 
-        });
-
         if (!accessToken) {
-          console.error('No access token in hash');
           setStatus(t('callback.authFailedNoToken', { defaultValue: '认证失败: 未找到访问令牌' }));
           setTimeout(() => {
             router.replace('/login?error=no_token');
@@ -128,7 +104,6 @@ export default function AuthCallback() {
 
         // 新增：没有refresh_token则不建立不可续期会话
         if (!refreshToken) {
-          console.error('Missing refresh token in hash');
           setStatus(t('callback.authFailedMissingRefresh', { defaultValue: '认证失败: 缺少刷新令牌' }));
           setTimeout(() => {
             router.replace('/login?error=missing_refresh_token');
@@ -137,13 +112,11 @@ export default function AuthCallback() {
         }
 
         // 设置 Supabase 会话
-        console.log('Setting Supabase session...');
         const { error: setErr } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken
         });
         if (setErr) {
-          console.error('setSession error:', setErr);
           setStatus(t('callback.authFailedSetSession', { defaultValue: '认证失败: 无法建立会话' }));
           setTimeout(() => {
             router.replace('/login?error=set_session_failed');
@@ -153,10 +126,8 @@ export default function AuthCallback() {
 
         // 获取用户信息
         setStatus(t('callback.verifyingLogin', { defaultValue: '正在验证登录状态...' }));
-        console.log('Getting user info...');
         const { data: userRes, error: userErr } = await supabase.auth.getUser();
         if (userErr || !userRes?.user) {
-          console.error('getUser error:', userErr, 'user:', userRes?.user);
           setStatus(t('callback.authFailedUserInfo', { defaultValue: '认证失败: 无法获取用户信息' }));
           setTimeout(() => {
             router.replace('/login?error=user_fetch_failed');
@@ -164,7 +135,6 @@ export default function AuthCallback() {
           return;
         }
 
-        console.log('User info retrieved successfully');
         // 同步设置 API 客户端的 token
         api.setToken(accessToken);
         window.dispatchEvent(new Event('sessionChanged'));
@@ -175,7 +145,6 @@ export default function AuthCallback() {
           router.replace('/c');
         }, 800);
       } catch (error) {
-        console.error('Auth callback error:', error);
         setStatus(t('callback.errorOccurred', { defaultValue: '处理登录时出错' }) + ': ' + (error as Error).message);
         setTimeout(() => {
           router.replace('/login?error=callback_failed');
