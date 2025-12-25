@@ -10,21 +10,6 @@ import ContentCard from '@/components/ContentCard';
 import ContentAIGenerator from '@/components/ContentAIGenerator';
 import { cache, generateCacheKey } from '@/lib/cache';
 
-// 定义内容类型
-interface Content {
-  id: string;
-  short_id: string;
-  title: string;
-  description?: string;
-  tags?: string[];
-  created_at: string;
-  updated_at: string;
-  full_html?: string;
-  language?: string;
-  content_type?: string;
-  created_by?: string;
-}
-
 export default function HomePage() {
   const { t, i18n } = useTranslation(['home', 'common', 'content', 'navigation']);
   const [mounted, setMounted] = useState(false);
