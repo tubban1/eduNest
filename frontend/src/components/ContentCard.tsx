@@ -14,9 +14,12 @@ import {
   GenerationStatus, 
   GenerationStatusResponse,
   statusPollingManager,
+  HybridStatusManager,
   isGenerating,
   isFinalStatus
 } from '@/utils/generationStatus';
+import { getVisitorId } from '@/utils/visitorId';
+import { useAuth } from '@/hooks/useAuth';
 
 // 发送浏览器通知的辅助函数
 function sendNotification(title: string, body: string) {
@@ -71,6 +74,9 @@ interface ContentCardProps {
     thumbnail_url?: string;
     thumbnail_status?: 'pending' | 'generating' | 'ready' | 'failed';
     thumbnail_updated_at?: string;
+    // 权限相关字段
+    visitor_id?: string | null; // 内容的 visitor_id（如果是游客创建的）
+    created_by?: string | null; // 内容的 created_by（如果是用户创建的）
   };
   isAuthenticated: boolean;
   editMode: boolean;
@@ -92,6 +98,7 @@ export default function ContentCard({
   linkPathPrefix = '/c'
 }: ContentCardProps) {
   const { t } = useTranslation(['content', 'common']);
+  const { user } = useAuth();
   // 使用 ref 存储 onContentUpdate，避免函数引用变化导致 effect 重新执行
   const onContentUpdateRef = useRef(onContentUpdate);
   useEffect(() => {
@@ -114,6 +121,8 @@ export default function ContentCard({
   const hasAutoRefreshedRef = useRef(false);
   // 记录上一次的状态，用于检测状态变化
   const prevStatusRef = useRef<GenerationStatus | null | undefined>(content.generation_status);
+  // HybridStatusManager ref
+  const hybridStatusManagerRef = useRef<HybridStatusManager | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -164,75 +173,88 @@ export default function ContentCard({
     }
   }, [content.generation_status, content.generation_progress, content.retry_count, content.generation_error, content.user_query, content.id]);
 
-  // 轮询状态处理
+  // SSE + 轮询混合状态管理逻辑
   useEffect(() => {
     const status = content.generation_status;
     
-    const startPollingIfNeeded = () => {
-      if (status && isGenerating(status)) {
-        hasAutoRefreshedRef.current = false;
-        // 如果已经在轮询，先停止再重新开始，确保状态同步
-        if (statusPollingManager.isPolling(content.id)) {
-          statusPollingManager.stopPolling(content.id);
-        }
-        
-        // 开始轮询状态
-        statusPollingManager.startPolling(
-          content.id,
-          (statusData: GenerationStatusResponse) => {
-            setGenerationStatus(statusData.status);
-            setGenerationProgress(statusData.progress);
-            setRetryCount(statusData.retry_count);
-            setErrorMessage(statusData.error_message || '');
-            setUserQuery(statusData.user_query || '');
-            setQueuedAt((prev) => statusData.created_at || statusData.updated_at || prev);
-            if (statusData.started_at) {
-              setStartedAt(statusData.started_at);
-            }
-
-            if (!isFinalStatus(statusData.status)) {
-              hasAutoRefreshedRef.current = false;
-            }
-
-            // 如果生成完成（done），刷新内容列表并发送通知
-            if (statusData.status === 'done') {
-              statusPollingManager.stopPolling(content.id);
-              if (!hasAutoRefreshedRef.current) {
-                hasAutoRefreshedRef.current = true;
-                if (onContentUpdateRef.current) {
-                  onContentUpdateRef.current();
-                }
-              }
-              // 发送浏览器通知
-              sendNotification('内容生成完成', `"${content.title}" 已生成完成`);
-              return;
-            }
-            
-            // failed 状态停止轮询，但不刷新
-            if (statusData.status === 'failed') {
-              statusPollingManager.stopPolling(content.id);
-              return;
-            }
-          },
-          (contentId: string) => api.getContentGenerationStatus(contentId)
-        );
-      } else if (status && isFinalStatus(status)) {
-        // 最终状态，停止轮询
+    if (!content.id || !status || !isGenerating(status)) {
+      // 如果不是生成中状态，清理 HybridStatusManager
+      if (hybridStatusManagerRef.current) {
+        hybridStatusManagerRef.current.stop();
+        hybridStatusManagerRef.current = null;
+      }
+      // 也停止旧的轮询（向后兼容）
+      if (statusPollingManager.isPolling(content.id)) {
         statusPollingManager.stopPolling(content.id);
       }
-    };
+      return;
+    }
 
-    // 初始启动轮询
-    startPollingIfNeeded();
+    // 获取 visitor_id
+    // 优先使用内容的 visitor_id（如果内容是由游客创建的）
+    // 否则，如果当前用户未登录，使用当前的 visitor_id
+    // 注意：即使用户已登录，如果内容是由游客创建的，也需要使用内容的 visitor_id
+    const visitorId = content.visitor_id || (user ? null : getVisitorId());
 
-    // 页面可见性监听：应用从后台恢复时重新启动轮询
+    // 如果还没有 HybridStatusManager，创建一个新的
+    if (!hybridStatusManagerRef.current) {
+      hasAutoRefreshedRef.current = false;
+      
+      hybridStatusManagerRef.current = new HybridStatusManager(
+        content.id,
+        (statusData: GenerationStatusResponse) => {
+          setGenerationStatus(statusData.status);
+          setGenerationProgress(statusData.progress);
+          setRetryCount(statusData.retry_count);
+          setErrorMessage(statusData.error_message || '');
+          setUserQuery(statusData.user_query || '');
+          setQueuedAt((prev) => statusData.created_at || statusData.updated_at || prev);
+          if (statusData.started_at) {
+            setStartedAt(statusData.started_at);
+          }
+
+          if (!isFinalStatus(statusData.status)) {
+            hasAutoRefreshedRef.current = false;
+          }
+
+          // 如果生成完成（done），刷新内容列表并发送通知
+          if (statusData.status === 'done') {
+            hybridStatusManagerRef.current?.stop();
+            if (!hasAutoRefreshedRef.current) {
+              hasAutoRefreshedRef.current = true;
+              if (onContentUpdateRef.current) {
+                onContentUpdateRef.current();
+              }
+            }
+            // 发送浏览器通知
+            sendNotification('内容生成完成', `"${content.title}" 已生成完成`);
+            return;
+          }
+          
+          // failed 状态停止，但不刷新
+          if (statusData.status === 'failed') {
+            hybridStatusManagerRef.current?.stop();
+            return;
+          }
+        },
+        (contentId: string) => api.getContentGenerationStatus(contentId),
+        visitorId
+      );
+    }
+
+    const hybridManager = hybridStatusManagerRef.current;
+
+    // 开始 SSE + 轮询混合监听
+    hybridManager.start();
+
+    // 页面可见性监听：应用从后台恢复时重新启动
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         const currentStatus = content.generation_status;
         if (currentStatus && isGenerating(currentStatus)) {
-          // 如果任务仍在进行中但轮询已停止，重新启动
-          if (!statusPollingManager.isPolling(content.id)) {
-            startPollingIfNeeded();
+          // 如果任务仍在进行中但管理器已停止，重新启动
+          if (hybridStatusManagerRef.current && !hybridStatusManagerRef.current.isRunning()) {
+            hybridStatusManagerRef.current.start();
           }
         }
       }
@@ -243,20 +265,27 @@ export default function ContentCard({
     // 清理函数
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      // 注意：不在这里停止轮询，因为组件可能只是重新渲染
-      // 轮询的停止由状态变化或组件卸载时处理
+      // 注意：不在这里停止管理器，因为组件可能只是重新渲染
+      // 管理器的停止由状态变化或组件卸载时处理
     };
-  }, [content.id, content.generation_status]); // 移除 onContentUpdate 依赖，使用 ref 来避免不必要的重新执行
+  }, [content.id, content.generation_status, user]); // 移除 onContentUpdate 依赖，使用 ref 来避免不必要的重新执行
 
-  // 重试处理函数 - 基于测试页面的成功逻辑优化
+  // 重试处理函数 - 使用 HybridStatusManager（SSE+轮询混合）
   const handleRetry = async () => {
     setIsRetrying(true);
     try {
       // 使用重试API，后端会自动使用相同的生成参数
       const response = await api.retryFailedTask(content.id);
       if (response.success) {
-        // 先停止现有的轮询
-        statusPollingManager.stopPolling(content.id);
+        // 先停止现有的管理器
+        if (hybridStatusManagerRef.current) {
+          hybridStatusManagerRef.current.stop();
+          hybridStatusManagerRef.current = null;
+        }
+        // 也停止旧的轮询（向后兼容）
+        if (statusPollingManager.isPolling(content.id)) {
+          statusPollingManager.stopPolling(content.id);
+        }
         
         // 重置状态，开始新的生成流程
         setGenerationStatus('pending');
@@ -270,8 +299,13 @@ export default function ContentCard({
         // 等待一小段时间确保后端状态更新
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // 重新开始轮询
-        statusPollingManager.startPolling(
+        // 获取 visitor_id
+        // 优先使用内容的 visitor_id（如果内容是由游客创建的）
+        // 否则，如果当前用户未登录，使用当前的 visitor_id
+        const visitorId = content.visitor_id || (user ? null : getVisitorId());
+        
+        // 创建新的 HybridStatusManager
+        hybridStatusManagerRef.current = new HybridStatusManager(
           content.id,
           (statusData: GenerationStatusResponse) => {
             setGenerationStatus(statusData.status);
@@ -286,7 +320,7 @@ export default function ContentCard({
             
             // 如果生成完成，触发内容更新并发送通知
             if (statusData.status === 'done') {
-              statusPollingManager.stopPolling(content.id);
+              hybridStatusManagerRef.current?.stop();
               if (!hasAutoRefreshedRef.current) {
                 hasAutoRefreshedRef.current = true;
                 if (onContentUpdateRef.current) {
@@ -296,9 +330,19 @@ export default function ContentCard({
               sendNotification('内容生成完成', `"${content.title}" 已生成完成`);
               return;
             }
+            
+            // failed 状态停止，但不刷新
+            if (statusData.status === 'failed') {
+              hybridStatusManagerRef.current?.stop();
+              return;
+            }
           },
-          (contentId: string) => api.getContentGenerationStatus(contentId)
+          (contentId: string) => api.getContentGenerationStatus(contentId),
+          visitorId
         );
+        
+        // 启动 SSE + 轮询混合监听
+        hybridStatusManagerRef.current.start();
       }
     } catch (error) {
       setIsRetrying(false);

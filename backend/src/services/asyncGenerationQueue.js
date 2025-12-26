@@ -523,11 +523,13 @@ class AsyncGenerationQueue {
         await this.cleanupPendingTasks(contentId, taskId);
         
         // 触发缩略图生成（异步，不阻塞）
-        logger.info(`[Thumbnail] Triggering thumbnail generation for content ${contentId}`);
-        this.triggerThumbnailGeneration(contentId).catch(error => {
-          logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
-          // 不抛出错误，避免影响主流程
-        });
+        // 等待一小段时间确保数据库更新完成
+        setTimeout(() => {
+          this.triggerThumbnailGeneration(contentId).catch(error => {
+            logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
+            // 不抛出错误，避免影响主流程
+          });
+        }, 500); // 等待500ms确保数据库更新完成
         
       } else {
         // 生成失败，处理重试逻辑
@@ -913,30 +915,53 @@ class AsyncGenerationQueue {
     try {
       logger.info(`[Thumbnail] Starting thumbnail generation trigger for content ${contentId}`);
       
-      // Get content short_id
-      const { data: content, error } = await DatabaseService.supabase
-        .from('content')
-        .select('id, short_id, full_html')
-        .eq('id', contentId)
-        .single();
+      // Retry logic: try up to 3 times with delays to ensure full_html is saved
+      let content = null;
+      let retries = 3;
+      let delay = 500; // Start with 500ms delay
+      
+      while (retries > 0) {
+        // Get content short_id and full_html
+        const { data, error } = await DatabaseService.supabase
+          .from('content')
+          .select('id, short_id, full_html')
+          .eq('id', contentId)
+          .single();
 
-      if (error) {
-        logger.error(`[Thumbnail] Database error when fetching content ${contentId}:`, error);
-        return;
+        if (error) {
+          logger.error(`[Thumbnail] Database error when fetching content ${contentId}:`, error);
+          return;
+        }
+
+        if (!data) {
+          logger.warn(`[Thumbnail] Content not found: ${contentId}`);
+          return;
+        }
+
+        content = data;
+
+        if (!content.short_id) {
+          logger.warn(`[Thumbnail] Content ${contentId} missing short_id`);
+          return;
+        }
+
+        // Check if full_html is available
+        if (content.full_html && content.full_html.trim().length > 0) {
+          break; // full_html is available, proceed
+        }
+
+        // If full_html is not available and we have retries left, wait and retry
+        retries--;
+        if (retries > 0) {
+          logger.info(`[Thumbnail] Content ${contentId} has no full_html yet, retrying in ${delay}ms (${retries} retries left)`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2; // Exponential backoff: 500ms, 1000ms, 2000ms
+        }
       }
 
-      if (!content) {
-        logger.warn(`[Thumbnail] Content not found: ${contentId}`);
-        return;
-      }
-
-      if (!content.short_id) {
-        logger.warn(`[Thumbnail] Content ${contentId} missing short_id`);
-        return;
-      }
-
+      // Final check after retries
       if (!content.full_html || content.full_html.trim().length === 0) {
-        logger.warn(`[Thumbnail] Content ${contentId} has no full_html, skipping thumbnail generation`);
+        logger.warn(`[Thumbnail] Content ${contentId} has no full_html after retries, skipping thumbnail generation`);
         return;
       }
 

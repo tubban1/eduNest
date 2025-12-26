@@ -106,17 +106,18 @@ class ApiClient {
     const token = await this.getLatestToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-    } else {
-      // 如果未登录，添加 Visitor ID 头
-      if (typeof window !== 'undefined') {
-        try {
-          const visitorId = getVisitorId();
-          if (visitorId) {
-            headers['X-Visitor-Id'] = visitorId;
-          }
-        } catch (error) {
-          // 静默处理 Visitor ID 获取错误
+    }
+    
+    // 无论是否登录，都尝试添加 Visitor ID 头
+    // 这样后端可以根据内容的所有者（user_id 或 visitor_id）来验证权限
+    if (typeof window !== 'undefined') {
+      try {
+        const visitorId = getVisitorId();
+        if (visitorId) {
+          headers['X-Visitor-Id'] = visitorId;
         }
+      } catch (error) {
+        // 静默处理 Visitor ID 获取错误
       }
     }
 

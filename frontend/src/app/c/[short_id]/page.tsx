@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
 import AiLoadingAnimation from '@/components/AiLoadingAnimation';
+import FailedCard from '@/components/generation/FailedCard';
 import { HybridStatusManager } from '@/utils/generationStatus';
 import { getVisitorId } from '@/utils/visitorId';
 
@@ -22,6 +23,7 @@ export default function FullHTMLContentPage() {
   const { user } = useAuth();
   const { t } = useTranslation(['common', 'content']);
   const { handleSmartBack } = useSmartBack();
+  const [mounted, setMounted] = useState(false);
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +40,15 @@ export default function FullHTMLContentPage() {
   const [queuedAt, setQueuedAt] = useState<string>('');
   const [startedAt, setStartedAt] = useState<string>('');
   const [elapsedTime, setElapsedTime] = useState<number>(0); // 计时器（秒）
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isRetrying, setIsRetrying] = useState(false);
   const hybridStatusManagerRef = useRef<HybridStatusManager | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 避免 SSR/CSR 文案不一致的水合报错
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // 保存原始标题，用于组件卸载时恢复
@@ -66,6 +75,7 @@ export default function FullHTMLContentPage() {
           setGenerationStatus(response.generation_status);
           setGenerationProgress(response.generation_progress || 0);
           setRetryCount(response.retry_count || 0);
+          setErrorMessage(response.generation_error || '');
           setUserQuery(response.user_query || response.title || '');
           setQueuedAt(response.created_at || '');
           setStartedAt(response.generation_started_at || '');
@@ -86,6 +96,7 @@ export default function FullHTMLContentPage() {
               setGenerationStatus(statusData.status);
               setGenerationProgress(statusData.progress || 0);
               setRetryCount(statusData.retry_count || 0);
+              setErrorMessage(statusData.error_message || '');
               setUserQuery(statusData.user_query || response.title || '');
               setQueuedAt(statusData.created_at || response.created_at || '');
               setStartedAt(statusData.started_at || '');
@@ -178,8 +189,10 @@ export default function FullHTMLContentPage() {
       return;
     }
 
-    // 获取 visitor_id（如果是游客）
-    const visitorId = user ? null : getVisitorId();
+    // 获取 visitor_id
+    // 优先使用内容的 visitor_id（如果内容是由游客创建的）
+    // 否则，如果当前用户未登录，使用当前的 visitor_id
+    const visitorId = content?.visitor_id || (user ? null : getVisitorId());
 
     // 初始化混合管理器
     if (!hybridStatusManagerRef.current) {
@@ -189,6 +202,7 @@ export default function FullHTMLContentPage() {
           setGenerationStatus(statusData.status);
           setGenerationProgress(statusData.progress || 0);
           setRetryCount(statusData.retry_count || 0);
+          setErrorMessage(statusData.error_message || '');
           if (statusData.user_query) setUserQuery(statusData.user_query);
           if (statusData.created_at) setQueuedAt(statusData.created_at);
           if (statusData.started_at) {
@@ -221,10 +235,18 @@ export default function FullHTMLContentPage() {
                 // 获取最新内容
                 const response = await api.content.getByShortId(shortId);
                 setContent(response);
-                // 使用 router.refresh() 确保页面完全刷新
-                router.refresh();
+                // 使用 router.replace 强制导航到当前页面，确保页面完全刷新
+                router.replace(`/c/${shortId}`);
+                // 如果 router.replace 没有触发刷新，使用 window.location 强制刷新
+                setTimeout(() => {
+                  if (document.visibilityState === 'visible') {
+                    window.location.href = `/c/${shortId}`;
+                  }
+                }, 100);
               } catch (err) {
                 console.error('Failed to refresh content:', err);
+                // 如果刷新失败，尝试重新加载页面
+                window.location.reload();
               }
             };
             refreshContent();
@@ -290,7 +312,9 @@ export default function FullHTMLContentPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t('generation.loadingContent', { ns: 'content', defaultValue: '加载中...' })}</p>
+          <p className="text-muted-foreground">
+            {mounted ? t('generation.loadingContent', { ns: 'content', defaultValue: '加载中...' }) : 'Loading...'}
+          </p>
         </div>
       </div>
     );
@@ -300,13 +324,17 @@ export default function FullHTMLContentPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-destructive text-xl mb-4">{t('generation.loadFailed', { ns: 'content', defaultValue: '加载失败' })}</div>
-          <p className="text-muted-foreground mb-4">{error || t('generation.contentNotFound', { ns: 'content', defaultValue: '内容不存在' })}</p>
+          <div className="text-destructive text-xl mb-4">
+            {mounted ? t('generation.loadFailed', { ns: 'content', defaultValue: '加载失败' }) : 'Load Failed'}
+          </div>
+          <p className="text-muted-foreground mb-4">
+            {error || (mounted ? t('generation.contentNotFound', { ns: 'content', defaultValue: '内容不存在' }) : 'Content not found')}
+          </p>
           <button
             onClick={handleSmartBack}
             className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
           >
-            {t('back')}
+            {mounted ? t('back', { defaultValue: '返回' }) : 'Back'}
           </button>
         </div>
       </div>
@@ -318,6 +346,52 @@ export default function FullHTMLContentPage() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // 重试处理函数 - 让正常的SSE监听effect来处理状态更新
+  const handleRetry = async () => {
+    if (!content?.id) {
+      return;
+    }
+
+    // 检查是否需要登录（retry API目前需要登录）
+    if (!user?.id) {
+      // 游客无法retry，提示登录
+      router.push('/login');
+      return;
+    }
+
+    setIsRetrying(true);
+    try {
+      // 先停止现有的管理器
+      if (hybridStatusManagerRef.current) {
+        hybridStatusManagerRef.current.stop();
+        hybridStatusManagerRef.current = null;
+      }
+      
+      // 使用重试API，后端会自动使用相同的生成参数
+      const response = await api.retryFailedTask(content.id);
+      if (response.success) {
+        // 重置状态，开始新的生成流程
+        // 设置状态为pending会触发正常的SSE监听effect，让它来处理后续的状态更新
+        setGenerationStatus('pending');
+        setGenerationProgress(0);
+        setRetryCount(0);
+        setErrorMessage('');
+        setStartedAt('');
+        setQueuedAt(new Date().toISOString());
+        
+        // 等待一小段时间确保后端状态更新
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 正常的SSE监听effect会在generationStatus变为'pending'时自动启动
+        // 不需要在这里手动创建HybridStatusManager
+      }
+    } catch (error) {
+      setIsRetrying(false);
+    } finally {
+      setIsRetrying(false);
+    }
   };
 
   // 如果内容正在生成中，显示生成动画
@@ -340,8 +414,8 @@ export default function FullHTMLContentPage() {
             <span className="font-mono text-lg font-bold text-primary">{formatElapsedTime(elapsedTime)}</span>
             <span className="ml-2 text-xs">
               {generationStatus === 'pending' 
-                ? t('generation.pending', { ns: 'content', defaultValue: '等待生成中...' })
-                : t('generation.generating', { ns: 'content', defaultValue: '生成中...' })}
+                ? (mounted ? t('generation.pending', { ns: 'content', defaultValue: '等待生成中...' }) : 'Pending...')
+                : (mounted ? t('generation.generating', { ns: 'content', defaultValue: '生成中...' }) : 'Generating...')}
             </span>
           </div>
         </div>
@@ -349,22 +423,48 @@ export default function FullHTMLContentPage() {
     );
   }
 
-  // c 页面只显示 full_html
-  if (!content.full_html || !content.full_html.trim()) {
+  // 如果生成失败，显示失败卡片（带retry按钮）
+  if (generationStatus === 'failed' && content) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-destructive text-xl mb-4">内容不存在</div>
-          <p className="text-muted-foreground mb-4">该内容没有完整的 HTML 内容</p>
-          <button
-            onClick={handleSmartBack}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
-          >
-            {t('back')}
-          </button>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl">
+          <FailedCard
+            content={content}
+            errorMessage={errorMessage}
+            retryCount={retryCount}
+            userQuery={userQuery}
+            onRetry={handleRetry}
+            isRetrying={isRetrying}
+          />
         </div>
       </div>
     );
+  }
+
+  // c 页面只显示 full_html
+  if (!content.full_html || !content.full_html.trim()) {
+    // 如果状态是pending或processing，已经在上面处理了
+    // 这里只处理没有full_html且不是生成中的情况
+    if (generationStatus !== 'pending' && generationStatus !== 'processing') {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-destructive text-xl mb-4">
+              {mounted ? t('generation.contentNotFound', { ns: 'content', defaultValue: '内容不存在' }) : 'Content not found'}
+            </div>
+            <p className="text-muted-foreground mb-4">
+              {mounted ? '该内容没有完整的 HTML 内容' : 'This content does not have complete HTML content'}
+            </p>
+            <button
+              onClick={handleSmartBack}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
+            >
+              {mounted ? t('back', { defaultValue: '返回' }) : 'Back'}
+            </button>
+          </div>
+        </div>
+      );
+    }
   }
 
   const HEADER_HEIGHT = 64;

@@ -591,10 +591,10 @@ router.get('/generation-status-stream/:contentId', async (req, res) => {
     try {
       const token = req.headers.authorization?.replace('Bearer ', '');
       if (token) {
-        const { authenticateToken } = require('../middleware/auth');
-        // 尝试验证token，但不强制要求
-        const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
-        userId = decoded.id;
+        // 使用 verifySupabaseToken 来验证 Supabase token
+        const { verifySupabaseToken } = require('../middleware/auth');
+        const user = await verifySupabaseToken(token);
+        userId = user.id;
       }
     } catch (e) {
       // Token无效或不存在，继续检查visitor_id
@@ -787,8 +787,12 @@ router.get('/generation-status/:contentId', async (req, res) => {
     try {
       const token = req.headers.authorization?.replace('Bearer ', '');
       if (token) {
-        const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
-        userId = decoded.id;
+        // 使用 jwt.decode 来解码 Supabase token（不验证签名，因为 Supabase token 不是用 JWT_SECRET 签名的）
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.decode(token);
+        if (decoded) {
+          userId = decoded.sub || decoded.userId; // Supabase token 使用 sub 字段
+        }
       }
     } catch (e) {
       // Token无效或不存在，继续检查visitor_id

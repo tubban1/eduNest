@@ -406,7 +406,15 @@ export class HybridStatusManager {
 
     this.isActive = true;
 
-    // 优先尝试 SSE
+    // 如果没有 visitor_id，直接使用轮询（因为 SSE 无法传递 Authorization header）
+    // 轮询可以通过 api.getContentGenerationStatus 传递 Authorization header（如果用户已登录）
+    // 或者传递 X-Visitor-Id header（如果用户未登录）
+    if (!this.visitorId) {
+      this.startFallbackPolling();
+      return;
+    }
+
+    // 优先尝试 SSE（仅当有 visitor_id 时）
     if (typeof EventSource !== 'undefined') {
       try {
         this.startSSE();
@@ -434,7 +442,6 @@ export class HybridStatusManager {
       url += `?visitor_id=${encodeURIComponent(this.visitorId)}`;
     }
 
-    console.log(`[SSE] 连接 URL: ${url}`);
     this.eventSource = new EventSource(url);
 
     this.eventSource.onmessage = (event) => {
@@ -442,7 +449,6 @@ export class HybridStatusManager {
         const data = JSON.parse(event.data);
         
         if (data.type === 'connected') {
-          console.log(`[SSE] 连接成功: contentId=${this.contentId}`);
           return;
         }
 
@@ -469,7 +475,6 @@ export class HybridStatusManager {
         }
 
         if (data.type === 'complete') {
-          console.log(`[SSE] 生成完成: contentId=${this.contentId}`);
           this.stop();
         }
       } catch (e) {
@@ -498,11 +503,63 @@ export class HybridStatusManager {
   }
 
   private startFallbackPolling() {
-    console.log(`[轮询] 开始轮询: contentId=${this.contentId}`);
+    // 创建一个包装的 apiCall，确保传递 visitor_id
+    const wrappedApiCall = async (contentId: string) => {
+      // 如果 apiCall 支持传递 visitor_id，使用它
+      // 否则，我们需要手动添加 visitor_id header
+      if (this.visitorId) {
+        // 创建一个新的 API 调用，包含 visitor_id header
+        const baseUrl = typeof window !== 'undefined' 
+          ? (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api')
+          : 'http://localhost:3001/api';
+        
+        const url = `${baseUrl}/ai/generation-status/${contentId}`;
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'X-Visitor-Id': this.visitorId,
+        };
+        
+        // 如果用户已登录，也需要添加 Authorization header
+        // 因为后端需要同时验证 user_id 和 visitor_id
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+          }
+        } catch (e) {
+          // 静默处理，如果无法获取 token，继续使用 visitor_id
+        }
+        
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            headers,
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error(`[轮询] 请求失败: status=${response.status}, error=`, errorData);
+            throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          return data;
+        } catch (error: any) {
+          console.error('[轮询] API调用失败:', error);
+          throw error;
+        }
+      } else {
+        // 如果没有 visitor_id，使用原始的 apiCall
+        // api.getContentGenerationStatus 会自动添加 Authorization header（如果用户已登录）
+        return this.apiCall(contentId);
+      }
+    };
+    
     this.pollingManager.startPolling(
       this.contentId,
       this.callback,
-      this.apiCall
+      wrappedApiCall
     );
   }
 
