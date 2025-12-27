@@ -525,6 +525,7 @@ class AsyncGenerationQueue {
         // 触发缩略图生成（异步，不阻塞）
         // 等待一小段时间确保数据库更新完成
         setTimeout(() => {
+          logger.info(`[Thumbnail] Triggering thumbnail generation for content ${contentId}`);
           this.triggerThumbnailGeneration(contentId).catch(error => {
             logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
             // 不抛出错误，避免影响主流程
