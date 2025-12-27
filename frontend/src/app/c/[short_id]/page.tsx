@@ -444,8 +444,9 @@ export default function FullHTMLContentPage() {
   // c 页面只显示 full_html
   if (!content.full_html || !content.full_html.trim()) {
     // 如果状态是pending或processing，已经在上面处理了
-    // 这里只处理没有full_html且不是生成中的情况
-    if (generationStatus !== 'pending' && generationStatus !== 'processing') {
+    // 如果状态是failed，也已经在上面处理了
+    // 这里只处理没有full_html且状态是done或null的情况
+    if (generationStatus === 'done' || generationStatus === null) {
       return (
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
