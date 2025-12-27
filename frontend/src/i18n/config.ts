@@ -15,6 +15,7 @@ import enUSAiProvider from './locales/en-US/aiProvider.json';
 import enUSAuth from './locales/en-US/auth.json';
 import enUSCollections from './locales/en-US/collections.json';
 import enUSAiGuide from './locales/en-US/aiGuide.json';
+import enUSHelp from './locales/en-US/help.json';
 
 import zhCNCommon from './locales/zh-CN/common.json';
 import zhCNNavigation from './locales/zh-CN/navigation.json';
@@ -27,6 +28,7 @@ import zhCNAiProvider from './locales/zh-CN/aiProvider.json';
 import zhCNAuth from './locales/zh-CN/auth.json';
 import zhCNCollections from './locales/zh-CN/collections.json';
 import zhCNAiGuide from './locales/zh-CN/aiGuide.json';
+import zhCNHelp from './locales/zh-CN/help.json';
 
 import deDECommon from './locales/de-DE/common.json';
 import deDENavigation from './locales/de-DE/navigation.json';
@@ -38,6 +40,7 @@ import deDEAiProvider from './locales/de-DE/aiProvider.json';
 import deDEAuth from './locales/de-DE/auth.json';
 import deDECollections from './locales/de-DE/collections.json';
 import deDEAiGuide from './locales/de-DE/aiGuide.json';
+import deDEHelp from './locales/de-DE/help.json';
 
 import frFRCommon from './locales/fr-FR/common.json';
 import frFRNavigation from './locales/fr-FR/navigation.json';
@@ -49,6 +52,7 @@ import frFRAiProvider from './locales/fr-FR/aiProvider.json';
 import frFRAuth from './locales/fr-FR/auth.json';
 import frFRCollections from './locales/fr-FR/collections.json';
 import frFRAiGuide from './locales/fr-FR/aiGuide.json';
+import frFRHelp from './locales/fr-FR/help.json';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'zh-CN', label: '中文' },
@@ -71,6 +75,7 @@ const resources = {
     auth: enUSAuth,
     collections: enUSCollections,
     aiGuide: enUSAiGuide,
+    help: enUSHelp,
   },
   'zh-CN': {
     common: zhCNCommon,
@@ -84,6 +89,7 @@ const resources = {
     auth: zhCNAuth,
     collections: zhCNCollections,
     aiGuide: zhCNAiGuide,
+    help: zhCNHelp,
   },
   'de-DE': {
     common: deDECommon,
@@ -96,6 +102,7 @@ const resources = {
     auth: deDEAuth,
     collections: deDECollections,
     aiGuide: deDEAiGuide,
+    help: deDEHelp,
   },
   'fr-FR': {
     common: frFRCommon,
@@ -108,6 +115,7 @@ const resources = {
     auth: frFRAuth,
     collections: frFRCollections,
     aiGuide: frFRAiGuide,
+    help: frFRHelp,
   },
 };
 
@@ -120,7 +128,7 @@ i18n
     // 关键修复：不再强制设定 lng，交给 LanguageDetector + localStorage 持久化
     // lng: DEFAULT_LANGUAGE,
     supportedLngs: SUPPORTED_LANGUAGES.map(l => l.code).concat(['zh', 'en', 'de', 'fr']), // 包含别名
-    ns: ['common', 'navigation', 'auth', 'content', 'home', 'referral', 'credits', 'aiProvider', 'collections', 'aiGuide'],
+    ns: ['common', 'navigation', 'auth', 'content', 'home', 'referral', 'credits', 'aiProvider', 'collections', 'aiGuide', 'help'],
     defaultNS: 'common',
     interpolation: { escapeValue: false },
     returnObjects: true,

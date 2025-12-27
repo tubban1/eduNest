@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, Heart, Plus, Settings, LogOut, User, Menu, X, List, Share2 } from 'lucide-react';
+import { Home, BookOpen, Heart, Plus, Settings, LogOut, User, Menu, X, List, Share2, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 import Logo from './Logo';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import CreditsHistoryDialog from './CreditsHistoryDialog';
 import ReferralCodeDialog from './ReferralCodeDialog';
@@ -97,10 +97,23 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
 
   // 分享/邀请与手动刷新已移除，积分自动加载
 
-  const menuItems = [
-    { href: '/c', label: t('myContent', { ns: 'navigation', defaultValue: 'My Creations' }), icon: BookOpen },
-    { href: '/collections', label: t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }), icon: Heart },
-  ];
+  // 使用 useMemo 确保在 mounted 之前使用默认值，避免 hydration 错误
+  const menuItems = useMemo(() => {
+    if (!mounted) {
+      // 服务器端渲染时使用默认英语文本
+      return [
+        { href: '/c', label: 'My Creations', icon: BookOpen },
+        { href: '/collections', label: 'My Collections', icon: Heart },
+        { href: '/help', label: 'Help', icon: HelpCircle },
+      ];
+    }
+    // 客户端挂载后使用翻译
+    return [
+      { href: '/c', label: t('myContent', { ns: 'navigation', defaultValue: 'My Creations' }), icon: BookOpen },
+      { href: '/collections', label: t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }), icon: Heart },
+      { href: '/help', label: t('help', { ns: 'navigation', defaultValue: 'Help' }), icon: HelpCircle },
+    ];
+  }, [mounted, t]);
 
   const handleSignOut = async () => {
     try {

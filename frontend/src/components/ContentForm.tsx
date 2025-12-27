@@ -920,10 +920,7 @@ export default function ContentForm({
                             disabled={isAiFormDisabled}
                             maxLength={1500}
                           />
-                          <div className="flex justify-between items-center mt-1">
-                            <span className="text-xs text-gray-500">
-                              {mounted ? t('knowledgePointHint', { ns: 'content', defaultValue: 'Describe the knowledge point in detail for better AI generation' }) : 'Describe the knowledge point in detail for better AI generation'}
-                            </span>
+                          <div className="flex justify-end items-center mt-1">
                             <span className={`text-xs ${knowledgePoint.length > 1350 ? 'text-red-500' : knowledgePoint.length > 1200 ? 'text-yellow-500' : 'text-gray-500'}`}>
                               {knowledgePoint.length}/1500
                             </span>

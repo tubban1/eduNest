@@ -355,10 +355,7 @@ export default function ContentAIGenerator({
             disabled={isAiFormDisabled}
             maxLength={1500}
           />
-          <div className="flex justify-between items-center mt-1">
-            <span className="text-xs text-muted-foreground">
-              {mounted ? t('knowledgePointHint', { ns: 'content', defaultValue: 'Describe the knowledge point in detail for better AI generation' }) : 'Describe the knowledge point in detail for better AI generation'}
-            </span>
+          <div className="flex justify-end items-center mt-1">
             <span className={`text-xs ${knowledgePoint.length > 1350 ? 'text-destructive' : knowledgePoint.length > 1200 ? 'text-warning' : 'text-muted-foreground'}`}>
               {knowledgePoint.length}/1500
             </span>
