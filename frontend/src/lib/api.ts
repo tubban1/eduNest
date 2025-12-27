@@ -926,6 +926,7 @@ export interface Content {
   language_code?: string;
   content_type?: string;
   created_by?: string;
+  visitor_id?: string; // 游客 ID（未登录用户创建的内容）
   rating?: number;
   user_rating?: number;
   // 生成状态相关字段

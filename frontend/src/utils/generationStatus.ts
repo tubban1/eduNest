@@ -130,6 +130,7 @@ export interface Content {
   language_code: string;
   content_type: string;
   created_by?: string;
+  visitor_id?: string; // 游客 ID（未登录用户创建的内容）
   created_at: string;
   updated_at: string;
   short_id: string;
