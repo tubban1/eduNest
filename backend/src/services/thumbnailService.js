@@ -37,21 +37,41 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
     const url = `${baseUrl}/full-html/${shortId}?thumbnail=1`;
     console.log(`[Thumbnail] Visiting page: ${url}`);
     
-    await page.goto(url, { 
-      waitUntil: 'networkidle',
-      timeout: 30000 
-    });
+    try {
+      await page.goto(url, { 
+        waitUntil: 'domcontentloaded', // Use domcontentloaded instead of networkidle for faster loading
+        timeout: 60000 // Increase timeout to 60 seconds
+      });
+    } catch (error) {
+      console.error(`[Thumbnail] Failed to load page ${url}:`, error.message);
+      throw new Error(`Page load timeout or failed: ${error.message}`);
+    }
 
-    // 4. Wait for page ready
-    await page.waitForFunction(
-      () => window.__PAGE_READY__ === true,
-      { timeout: 10000 }
-    ).catch(() => {
-      console.warn('[Thumbnail] Page did not set __PAGE_READY__, continuing with screenshot');
-    });
+    // 4. Wait for page ready flag (with longer timeout)
+    try {
+      await page.waitForFunction(
+        () => window.__PAGE_READY__ === true,
+        { timeout: 20000 } // Increase to 20 seconds
+      );
+      console.log('[Thumbnail] ✅ Page ready flag detected');
+    } catch (error) {
+      console.warn('[Thumbnail] Page did not set __PAGE_READY__ within timeout, waiting additional time...');
+      // Wait longer for page to fully render
+      await page.waitForTimeout(3000); // Increase to 3 seconds
+    }
 
-    // 5. Additional 1 second wait to ensure animations/rendering complete
-    await page.waitForTimeout(1000);
+    // 5. Additional wait to ensure animations/rendering complete
+    // Check if there are canvas, svg, or video elements that might need more time
+    const hasCanvas = await page.$('canvas').catch(() => null);
+    const hasSvg = await page.$('svg').catch(() => null);
+    const hasVideo = await page.$('video').catch(() => null);
+    
+    if (hasCanvas || hasSvg || hasVideo) {
+      console.log('[Thumbnail] Detected interactive elements (canvas/svg/video), waiting longer...');
+      await page.waitForTimeout(2000); // Wait 2 more seconds for animations
+    } else {
+      await page.waitForTimeout(1000); // Standard 1 second wait
+    }
 
     // 6. Smart detection of best screenshot area (does not depend on HTML structure)
     const screenshotBuffer = await detectAndScreenshot(page);

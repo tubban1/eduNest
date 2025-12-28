@@ -17,16 +17,52 @@ interface ContentApiResponse {
   error?: string;
 }
 
-function ensureDocumentMarkup(html: string, title?: string) {
+function ensureDocumentMarkup(html: string, title?: string, isThumbnail?: boolean) {
   const trimmed = html.trim();
-  if (/<!DOCTYPE/i.test(trimmed) || /<html[\s>]/i.test(trimmed)) {
-    return trimmed;
-  }
-
+  const isFullDocument = /<!DOCTYPE/i.test(trimmed) || /<html[\s>]/i.test(trimmed);
+  
   const safeTitle = (title || 'Edu Content')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+
+  // Thumbnail generation script - set __PAGE_READY__ flag after page loads
+  const thumbnailScript = isThumbnail ? `
+    <script>
+      (function() {
+        // Wait for DOM and resources to load
+        function setPageReady() {
+          window.__PAGE_READY__ = true;
+        }
+        
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          // DOM already loaded
+          setTimeout(setPageReady, 500);
+        } else {
+          // Wait for DOMContentLoaded
+          document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(setPageReady, 500);
+          });
+        }
+        
+        // Fallback: set after window load
+        window.addEventListener('load', function() {
+          setTimeout(setPageReady, 1000);
+        });
+      })();
+    </script>
+  ` : '';
+
+  if (isFullDocument) {
+    // Inject script before </body> or </html>
+    if (trimmed.includes('</body>')) {
+      return trimmed.replace('</body>', `${thumbnailScript}</body>`);
+    } else if (trimmed.includes('</html>')) {
+      return trimmed.replace('</html>', `${thumbnailScript}</html>`);
+    } else {
+      return trimmed + thumbnailScript;
+    }
+  }
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -37,6 +73,7 @@ function ensureDocumentMarkup(html: string, title?: string) {
   </head>
   <body>
     ${trimmed}
+    ${thumbnailScript}
   </body>
 </html>`;
 }
@@ -97,10 +134,12 @@ function buildErrorHtml(message: string, status: number) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { short_id: string } }
 ) {
   const shortId = params.short_id;
+  const url = new URL(request.url);
+  const isThumbnail = url.searchParams.get('thumbnail') === '1';
 
   if (!shortId) {
     return NextResponse.json({ error: '缺少 short_id 参数' }, { status: 400 });
@@ -155,7 +194,8 @@ export async function GET(
 
     const finalHtml = ensureDocumentMarkup(
       content.full_html,
-      content.title || content.description
+      content.title || content.description,
+      isThumbnail
     );
 
     return new Response(finalHtml, {
