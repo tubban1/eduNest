@@ -22,9 +22,19 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
       .eq('id', contentId);
 
     // 2. Launch browser
+    // For Vercel serverless, use chromium with proper args
     browser = await chromium.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process', // Required for serverless environments
+        '--disable-gpu'
+      ]
     });
     
     const context = await browser.newContext({
@@ -38,12 +48,26 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
     console.log(`[Thumbnail] Visiting page: ${url}`);
     
     try {
-      await page.goto(url, { 
+      // Load page and check response status
+      const response = await page.goto(url, { 
         waitUntil: 'domcontentloaded', // Use domcontentloaded instead of networkidle for faster loading
         timeout: 60000 // Increase timeout to 60 seconds
       });
+      
+      // Check if page loaded successfully by checking response status
+      if (response && response.status() >= 400) {
+        const responseText = await response.text().catch(() => '');
+        console.error(`[Thumbnail] Page returned error status ${response.status()}:`, responseText.substring(0, 500));
+        throw new Error(`Page returned error status ${response.status()}: ${responseText.substring(0, 200)}`);
+      }
+      
+      console.log(`[Thumbnail] ✅ Page loaded successfully, status: ${response?.status() || 'unknown'}`);
     } catch (error) {
-      console.error(`[Thumbnail] Failed to load page ${url}:`, error.message);
+      console.error(`[Thumbnail] Failed to load page ${url}:`, {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       throw new Error(`Page load timeout or failed: ${error.message}`);
     }
 
@@ -105,17 +129,37 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
     };
 
   } catch (error) {
-    console.error('[Thumbnail] Generation failed:', error);
+    // Log detailed error information
+    const errorDetails = {
+      contentId,
+      shortId,
+      baseUrl,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorName: error.name,
+      timestamp: new Date().toISOString()
+    };
     
-    // Update status to failed
+    console.error('[Thumbnail] Generation failed:', JSON.stringify(errorDetails, null, 2));
+    
+    // Update status to failed with error message in thumbnail_updated_at or a separate field
     try {
       await DatabaseService.supabase
         .from('content')
         .update({
           thumbnail_status: 'failed',
-          thumbnail_updated_at: new Date().toISOString()
+          thumbnail_updated_at: new Date().toISOString(),
+          // Store error message in a comment or log it separately
+          // Note: We can't store error in thumbnail_url, but we can log it
         })
         .eq('id', contentId);
+      
+      // Log error to a separate table or file for debugging
+      console.error(`[Thumbnail] Error details for content ${contentId} (${shortId}):`, {
+        url: `${baseUrl}/full-html/${shortId}?thumbnail=1`,
+        error: error.message,
+        stack: error.stack
+      });
     } catch (updateError) {
       console.error('[Thumbnail] Failed to update status to failed:', updateError);
     }

@@ -523,15 +523,14 @@ class AsyncGenerationQueue {
         await this.cleanupPendingTasks(contentId, taskId);
         
         // 触发缩略图生成（异步，不阻塞）
-        // 等待更长时间确保数据库更新完成（特别是在生产环境中可能有数据库复制延迟）
-        // 增加延迟时间，确保 full_html 已经真正保存到数据库
+        // 等待一小段时间确保数据库更新完成
         setTimeout(() => {
           logger.info(`[Thumbnail] Triggering thumbnail generation for content ${contentId}`);
           this.triggerThumbnailGeneration(contentId).catch(error => {
             logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
             // 不抛出错误，避免影响主流程
           });
-        }, 2000); // 增加到2000ms（2秒）确保数据库更新完成，特别是在手机端或生产环境中
+        }, 500); // 等待500ms确保数据库更新完成
         
       } else {
         // 生成失败，处理重试逻辑
