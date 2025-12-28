@@ -523,14 +523,15 @@ class AsyncGenerationQueue {
         await this.cleanupPendingTasks(contentId, taskId);
         
         // 触发缩略图生成（异步，不阻塞）
-        // 等待一小段时间确保数据库更新完成
+        // 等待更长时间确保数据库更新完成（特别是在生产环境中可能有数据库复制延迟）
+        // 增加延迟时间，确保 full_html 已经真正保存到数据库
         setTimeout(() => {
           logger.info(`[Thumbnail] Triggering thumbnail generation for content ${contentId}`);
           this.triggerThumbnailGeneration(contentId).catch(error => {
             logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
             // 不抛出错误，避免影响主流程
           });
-        }, 500); // 等待500ms确保数据库更新完成
+        }, 2000); // 增加到2000ms（2秒）确保数据库更新完成，特别是在手机端或生产环境中
         
       } else {
         // 生成失败，处理重试逻辑
@@ -916,10 +917,11 @@ class AsyncGenerationQueue {
     try {
       logger.info(`[Thumbnail] Starting thumbnail generation trigger for content ${contentId}`);
       
-      // Retry logic: try up to 3 times with delays to ensure full_html is saved
+      // Retry logic: try up to 5 times with delays to ensure full_html is saved
+      // 增加重试次数和初始延迟，特别是在手机端或生产环境中可能有数据库复制延迟
       let content = null;
-      let retries = 3;
-      let delay = 500; // Start with 500ms delay
+      let retries = 5; // 从3次增加到5次
+      let delay = 1000; // 从500ms增加到1000ms初始延迟
       
       while (retries > 0) {
         // Get content short_id and full_html
@@ -948,6 +950,7 @@ class AsyncGenerationQueue {
 
         // Check if full_html is available
         if (content.full_html && content.full_html.trim().length > 0) {
+          logger.info(`[Thumbnail] Content ${contentId} has full_html (length: ${content.full_html.length}), proceeding with thumbnail generation`);
           break; // full_html is available, proceed
         }
 
@@ -956,7 +959,7 @@ class AsyncGenerationQueue {
         if (retries > 0) {
           logger.info(`[Thumbnail] Content ${contentId} has no full_html yet, retrying in ${delay}ms (${retries} retries left)`);
           await new Promise(resolve => setTimeout(resolve, delay));
-          delay *= 2; // Exponential backoff: 500ms, 1000ms, 2000ms
+          delay *= 1.5; // Exponential backoff: 1000ms, 1500ms, 2250ms, 3375ms, 5062ms
         }
       }
 
