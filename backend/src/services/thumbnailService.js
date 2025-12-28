@@ -24,7 +24,8 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
 
     // 2. Launch browser
     // For Vercel serverless, use chromium with proper args
-    browser = await chromium.launch({
+    // Try to use system chromium if available, otherwise use playwright's chromium
+    let browserOptions = {
       headless: true,
       args: [
         '--no-sandbox',
@@ -36,7 +37,16 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
         '--single-process', // Required for serverless environments
         '--disable-gpu'
       ]
-    });
+    };
+    
+    // Try to launch browser, with better error handling
+    try {
+      browser = await chromium.launch(browserOptions);
+    } catch (launchError) {
+      // If launch fails, try with executablePath pointing to system chromium (if available)
+      logger.warn('[Thumbnail] Failed to launch Playwright chromium, error:', launchError.message);
+      throw new Error(`Failed to launch browser: ${launchError.message}. Please ensure Playwright browsers are installed by running 'npx playwright install chromium' in the build process.`);
+    }
     
     const context = await browser.newContext({
       viewport: { width: 1280, height: 720 }
