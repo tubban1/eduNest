@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
 const { uploadToFreeimageHost } = require('./freeimage_upload_service');
 const DatabaseService = require('./database');
+const logger = require('../utils/logger');
 
 /**
  * Generate content thumbnail
@@ -45,7 +46,7 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
     // 3. Visit content page (with thumbnail=1 parameter)
     // Note: edu project uses /full-html/[short_id] route to access HTML content
     const url = `${baseUrl}/full-html/${shortId}?thumbnail=1`;
-    console.log(`[Thumbnail] Visiting page: ${url}`);
+    logger.info(`[Thumbnail] Visiting page: ${url}`);
     
     try {
       // Load page and check response status
@@ -57,13 +58,13 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
       // Check if page loaded successfully by checking response status
       if (response && response.status() >= 400) {
         const responseText = await response.text().catch(() => '');
-        console.error(`[Thumbnail] Page returned error status ${response.status()}:`, responseText.substring(0, 500));
+        logger.error(`[Thumbnail] Page returned error status ${response.status()}:`, responseText.substring(0, 500));
         throw new Error(`Page returned error status ${response.status()}: ${responseText.substring(0, 200)}`);
       }
       
-      console.log(`[Thumbnail] ✅ Page loaded successfully, status: ${response?.status() || 'unknown'}`);
+      logger.info(`[Thumbnail] ✅ Page loaded successfully, status: ${response?.status() || 'unknown'}`);
     } catch (error) {
-      console.error(`[Thumbnail] Failed to load page ${url}:`, {
+      logger.error(`[Thumbnail] Failed to load page ${url}:`, {
         message: error.message,
         name: error.name,
         stack: error.stack
@@ -77,9 +78,9 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
         () => window.__PAGE_READY__ === true,
         { timeout: 20000 } // Increase to 20 seconds
       );
-      console.log('[Thumbnail] ✅ Page ready flag detected');
+      logger.info('[Thumbnail] ✅ Page ready flag detected');
     } catch (error) {
-      console.warn('[Thumbnail] Page did not set __PAGE_READY__ within timeout, waiting additional time...');
+      logger.warn('[Thumbnail] Page did not set __PAGE_READY__ within timeout, waiting additional time...');
       // Wait longer for page to fully render
       await page.waitForTimeout(3000); // Increase to 3 seconds
     }
@@ -91,7 +92,7 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
     const hasVideo = await page.$('video').catch(() => null);
     
     if (hasCanvas || hasSvg || hasVideo) {
-      console.log('[Thumbnail] Detected interactive elements (canvas/svg/video), waiting longer...');
+      logger.info('[Thumbnail] Detected interactive elements (canvas/svg/video), waiting longer...');
       await page.waitForTimeout(2000); // Wait 2 more seconds for animations
     } else {
       await page.waitForTimeout(1000); // Standard 1 second wait
@@ -121,7 +122,7 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
       })
       .eq('id', contentId);
 
-    console.log(`[Thumbnail] ✅ Thumbnail generated successfully: ${thumbnailUrl}`);
+    logger.info(`[Thumbnail] ✅ Thumbnail generated successfully: ${thumbnailUrl}`);
     
     return {
       success: true,
@@ -140,7 +141,7 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
       timestamp: new Date().toISOString()
     };
     
-    console.error('[Thumbnail] Generation failed:', JSON.stringify(errorDetails, null, 2));
+    logger.error('[Thumbnail] Generation failed:', JSON.stringify(errorDetails, null, 2));
     
     // Update status to failed with error message in thumbnail_updated_at or a separate field
     try {
@@ -155,13 +156,13 @@ async function generateThumbnail(contentId, shortId, baseUrl) {
         .eq('id', contentId);
       
       // Log error to a separate table or file for debugging
-      console.error(`[Thumbnail] Error details for content ${contentId} (${shortId}):`, {
+      logger.error(`[Thumbnail] Error details for content ${contentId} (${shortId}):`, {
         url: `${baseUrl}/full-html/${shortId}?thumbnail=1`,
         error: error.message,
         stack: error.stack
       });
     } catch (updateError) {
-      console.error('[Thumbnail] Failed to update status to failed:', updateError);
+      logger.error('[Thumbnail] Failed to update status to failed:', updateError);
     }
 
     throw error;
@@ -192,12 +193,12 @@ async function detectAndScreenshot(page) {
     if (canvas) {
       const box = await canvas.boundingBox();
       if (box && box.width > 50 && box.height > 50) {
-        console.log('[Thumbnail] ✅ Detected Canvas element, size:', Math.round(box.width), 'x', Math.round(box.height));
+        logger.info('[Thumbnail] ✅ Detected Canvas element, size:', Math.round(box.width), 'x', Math.round(box.height));
         return await canvas.screenshot({ type: 'png' });
       }
     }
   } catch (error) {
-    console.warn('[Thumbnail] Canvas detection failed:', error.message);
+    logger.warn('[Thumbnail] Canvas detection failed:', error.message);
   }
 
   // Strategy 2: Detect SVG element (vector graphics, charts)
@@ -206,12 +207,12 @@ async function detectAndScreenshot(page) {
     if (svg) {
       const box = await svg.boundingBox();
       if (box && box.width > 50 && box.height > 50) {
-        console.log('[Thumbnail] ✅ Detected SVG element, size:', Math.round(box.width), 'x', Math.round(box.height));
+        logger.info('[Thumbnail] ✅ Detected SVG element, size:', Math.round(box.width), 'x', Math.round(box.height));
         return await svg.screenshot({ type: 'png' });
       }
     }
   } catch (error) {
-    console.warn('[Thumbnail] SVG detection failed:', error.message);
+    logger.warn('[Thumbnail] SVG detection failed:', error.message);
   }
 
   // Strategy 3: Detect Video element
@@ -220,12 +221,12 @@ async function detectAndScreenshot(page) {
     if (video) {
       const box = await video.boundingBox();
       if (box && box.width > 50 && box.height > 50) {
-        console.log('[Thumbnail] ✅ Detected Video element, size:', Math.round(box.width), 'x', Math.round(box.height));
+        logger.info('[Thumbnail] ✅ Detected Video element, size:', Math.round(box.width), 'x', Math.round(box.height));
         return await video.screenshot({ type: 'png' });
       }
     }
   } catch (error) {
-    console.warn('[Thumbnail] Video detection failed:', error.message);
+    logger.warn('[Thumbnail] Video detection failed:', error.message);
   }
 
   // Strategy 4: Detect iframe element (embedded content)
@@ -234,12 +235,12 @@ async function detectAndScreenshot(page) {
     if (iframe) {
       const box = await iframe.boundingBox();
       if (box && box.width > 50 && box.height > 50) {
-        console.log('[Thumbnail] ✅ Detected iframe element, size:', Math.round(box.width), 'x', Math.round(box.height));
+        logger.info('[Thumbnail] ✅ Detected iframe element, size:', Math.round(box.width), 'x', Math.round(box.height));
         return await iframe.screenshot({ type: 'png' });
       }
     }
   } catch (error) {
-    console.warn('[Thumbnail] iframe detection failed:', error.message);
+    logger.warn('[Thumbnail] iframe detection failed:', error.message);
   }
 
   // Strategy 5: Detect largest visible child element under body (smart detection)
@@ -316,21 +317,21 @@ async function detectAndScreenshot(page) {
         if (element) {
           const box = await element.boundingBox();
           if (box && box.width > 0 && box.height > 0) {
-            console.log(`[Thumbnail] ✅ Detected largest visible element: ${elementInfo.tagName} (${elementInfo.selector}), size:`, 
+            logger.info(`[Thumbnail] ✅ Detected largest visible element: ${elementInfo.tagName} (${elementInfo.selector}), size:`, 
               Math.round(box.width), 'x', Math.round(box.height));
             return await element.screenshot({ type: 'png' });
           }
         }
       } catch (error) {
-        console.warn('[Thumbnail] Largest element screenshot failed, falling back to viewport screenshot:', error.message);
+        logger.warn('[Thumbnail] Largest element screenshot failed, falling back to viewport screenshot:', error.message);
       }
     }
   } catch (error) {
-    console.warn('[Thumbnail] Largest element detection failed:', error.message);
+    logger.warn('[Thumbnail] Largest element detection failed:', error.message);
   }
 
   // Strategy 6: Screenshot entire viewport, intelligently crop to 16:9 (final fallback)
-  console.log('[Thumbnail] 📸 Using viewport screenshot, intelligently crop to 16:9');
+  logger.info('[Thumbnail] 📸 Using viewport screenshot, intelligently crop to 16:9');
   const viewportSize = page.viewportSize();
   const viewportWidth = viewportSize?.width || 1280;
   const viewportHeight = viewportSize?.height || 720;
@@ -361,7 +362,7 @@ async function detectAndScreenshot(page) {
   clipX = Math.max(0, Math.min(clipX, viewportWidth - clipWidth));
   clipY = Math.max(0, Math.min(clipY, viewportHeight - clipHeight));
 
-  console.log('[Thumbnail] Viewport crop parameters:', {
+  logger.info('[Thumbnail] Viewport crop parameters:', {
     viewport: `${viewportWidth}x${viewportHeight}`,
     clip: `${Math.round(clipWidth)}x${Math.round(clipHeight)}`,
     offset: `(${Math.round(clipX)}, ${Math.round(clipY)})`
