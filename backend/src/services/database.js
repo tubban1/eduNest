@@ -154,12 +154,14 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
     const contentIds = contents.map(c => c.id);
     
     // 查询每个内容的最新生成状态
+    // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
+    // 如果按 created_at 排序，可能会取到旧的 done 记录而不是新的 processing 记录（或反之）
     const { data: generationLogs, error: logsError } = await supabase
       .from('ai_usage_logs')
       .select('content_id, status, error_message, user_query, created_at, updated_at, is_render_success, started_at')
       .in('content_id', contentIds)
       .eq('action_type', 'generate')
-      .order('created_at', { ascending: false });
+      .order('updated_at', { ascending: false });
 
     if (logsError) {
       console.error('[getContentsWithGenerationStatus] 查询生成状态失败:', logsError);
@@ -279,12 +281,13 @@ const getContentByShortId = async (shortId) => {
     }
 
     // 获取生成状态（如果有）
+    // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
     const { data: log, error: logError } = await supabase
       .from('ai_usage_logs')
       .select('status, error_message, user_query, created_at, updated_at, is_render_success, started_at')
       .eq('content_id', content.id)
       .eq('action_type', 'generate')
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(1)
       .single();
 

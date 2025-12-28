@@ -667,12 +667,13 @@ router.get('/generation-status-stream/:contentId', async (req, res) => {
 
       try {
         // 查询最新的生成日志
+        // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
         const { data: log, error: logError } = await DatabaseService.supabase
           .from('ai_usage_logs')
           .select('*, started_at')
           .eq('content_id', contentId)
           .eq('action_type', 'generate')
-          .order('created_at', { ascending: false })
+          .order('updated_at', { ascending: false })
           .limit(1)
           .single();
 
@@ -832,12 +833,13 @@ router.get('/generation-status/:contentId', async (req, res) => {
     await asyncGenerationQueue.cleanupDuplicateProcessingTasks();
 
     // 查询最新的生成日志
+    // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
     const { data: log, error: logError } = await DatabaseService.supabase
       .from('ai_usage_logs')
       .select('*, started_at')
       .eq('content_id', contentId)
       .eq('action_type', 'generate')
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(1)
       .single();
 
@@ -925,12 +927,13 @@ router.get('/generation-status', authenticateToken, async (req, res) => {
           }
 
           // 获取生成状态
+          // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
           const { data: log } = await DatabaseService.supabase
             .from('ai_usage_logs')
             .select('*, started_at')
             .eq('content_id', contentId)
             .eq('action_type', 'generate')
-            .order('created_at', { ascending: false })
+            .order('updated_at', { ascending: false })
             .limit(1)
             .single();
 
