@@ -324,8 +324,10 @@ class ApiClient {
       cache.deletePattern('content:*');
     },
 
-    generateThumbnail: async (contentId: string) => {
-      const data = await this.post(`/content/${contentId}/generate-thumbnail`);
+    generateThumbnail: async (contentId: string, usePlaywright: boolean = false) => {
+      const data = await this.post(`/content/${contentId}/generate-thumbnail`, {
+        usePlaywright
+      });
       return data;
     },
 
@@ -941,7 +943,8 @@ export interface Content {
   collections_count?: number;
   quality_score?: number;
   // 缩略图相关字段
-  thumbnail_url?: string;
+  svg_thumbnail?: string; // SVG 代码（优先使用）
+  thumbnail_url?: string; // 图片 URL（备用）
   thumbnail_status?: 'pending' | 'generating' | 'ready' | 'failed';
   thumbnail_updated_at?: string;
 } 

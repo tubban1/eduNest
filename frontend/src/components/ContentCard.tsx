@@ -71,7 +71,8 @@ interface ContentCardProps {
     generation_error?: string;
     user_query?: string;
     // 缩略图相关字段
-    thumbnail_url?: string;
+    svg_thumbnail?: string; // SVG 代码（优先使用）
+    thumbnail_url?: string; // 图片 URL（备用）
     thumbnail_status?: 'pending' | 'generating' | 'ready' | 'failed';
     thumbnail_updated_at?: string;
     // 权限相关字段
@@ -127,11 +128,20 @@ export default function ContentCard({
   useEffect(() => { setMounted(true); }, []);
 
   // Determine thumbnail display state
+  // 优先使用 svg_thumbnail，然后使用 thumbnail_url，最后显示默认水印
+  const svgThumbnail = content.svg_thumbnail;
   const thumbnailUrl = content.thumbnail_url;
   const thumbnailStatus = content.thumbnail_status;
   const isThumbnailGenerating = thumbnailStatus === 'generating';
-  const isThumbnailReady = thumbnailStatus === 'ready' && thumbnailUrl;
-  const showThumbnailPlaceholder = !thumbnailUrl || thumbnailStatus === 'pending' || thumbnailStatus === 'failed';
+  
+  // 检查 svg_thumbnail 是否有效（如果存在且有效，直接使用，不依赖 thumbnail_status）
+  const hasValidSvgThumbnail = svgThumbnail && typeof svgThumbnail === 'string' && svgThumbnail.trim().length > 0;
+  
+  // 优先使用 svg_thumbnail，然后使用 thumbnail_url
+  // svg_thumbnail 如果存在且有效，直接显示（不依赖 thumbnail_status）
+  // thumbnail_url 需要 thumbnail_status === 'ready' 才显示
+  const isThumbnailReady = hasValidSvgThumbnail || (thumbnailStatus === 'ready' && thumbnailUrl);
+  const showThumbnailPlaceholder = !hasValidSvgThumbnail && (!thumbnailUrl || thumbnailStatus === 'pending' || thumbnailStatus === 'failed');
 
   // 监听生成状态变化
   useEffect(() => {
@@ -445,20 +455,29 @@ export default function ContentCard({
       <Link href={contentUrl} prefetch={false} className="block">
         <div className="relative w-full aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 overflow-hidden">
           {isThumbnailReady ? (
-            <img
-              src={thumbnailUrl}
-              alt={content.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={(e) => {
-                // 如果图片加载失败，显示占位符
-                (e.target as HTMLImageElement).style.display = 'none';
-                const placeholder = (e.target as HTMLImageElement).nextElementSibling;
-                if (placeholder) {
-                  (placeholder as HTMLElement).classList.remove('hidden');
-                }
-              }}
-            />
+            hasValidSvgThumbnail ? (
+              // 优先显示 SVG（内联渲染，支持动画）
+              <div 
+                className="w-full h-full"
+                dangerouslySetInnerHTML={{ __html: svgThumbnail! }}
+              />
+            ) : (
+              // 备用：显示图片 URL
+              <img
+                src={thumbnailUrl}
+                alt={content.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  // 如果图片加载失败，显示占位符
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  const placeholder = (e.target as HTMLImageElement).nextElementSibling;
+                  if (placeholder) {
+                    (placeholder as HTMLElement).classList.remove('hidden');
+                  }
+                }}
+              />
+            )
           ) : isThumbnailGenerating ? (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
               <div className="flex flex-col items-center gap-2">

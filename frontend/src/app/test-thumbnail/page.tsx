@@ -25,12 +25,51 @@ const TestThumbnailPage: React.FC = () => {
   const [generating, setGenerating] = useState<Set<string>>(new Set());
   const [batchGenerating, setBatchGenerating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [pollingContents, setPollingContents] = useState<Set<string>>(new Set());
 
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // 自动轮询生成中的缩略图状态
+  useEffect(() => {
+    if (pollingContents.size === 0) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        // 只刷新有生成中状态的内容
+        const data = await api.content.getAll();
+        const updatedContents = Array.isArray(data) ? data : [];
+        
+        setContents(prev => {
+          const newContents = prev.map(prevContent => {
+            const updated = updatedContents.find(c => c.id === prevContent.id);
+            if (updated) {
+              // 如果状态变为 ready 或 failed，停止轮询
+              if (updated.thumbnail_status === 'ready' || updated.thumbnail_status === 'failed') {
+                setPollingContents(prev => {
+                  const next = new Set(prev);
+                  next.delete(prevContent.id);
+                  return next;
+                });
+              }
+              return updated;
+            }
+            return prevContent;
+          });
+          return newContents;
+        });
+      } catch (error) {
+        console.error('轮询状态失败:', error);
+      }
+    }, 3000); // 每3秒轮询一次
+
+    return () => clearInterval(interval);
+  }, [pollingContents.size]);
 
   // 加载内容列表
   const loadContents = async () => {
@@ -58,23 +97,35 @@ const TestThumbnailPage: React.FC = () => {
     try {
       setGenerating(prev => new Set(prev).add(contentId));
       setMessage(null);
+      
+      // 立即更新状态为 generating（不等待 API 响应）
+      setContents(prev => prev.map(c => 
+        c.id === contentId 
+          ? { ...c, thumbnail_status: 'generating' as const, thumbnail_url: undefined }
+          : c
+      ));
+      // 开始轮询
+      setPollingContents(prev => new Set(prev).add(contentId));
 
-      const result = await api.content.generateThumbnail(contentId);
+      // Use Playwright for test page to render Canvas content
+      const result = await api.content.generateThumbnail(contentId, true);
       
       if (result.success) {
         setMessage({ type: 'success', text: t('thumbnail.generateStarted', { ns: 'content', defaultValue: '缩略图生成任务已启动' }) });
-        // 更新该内容的状态
-        setContents(prev => prev.map(c => 
-          c.id === contentId 
-            ? { ...c, thumbnail_status: 'generating' as const }
-            : c
-        ));
-        // 3秒后刷新列表
-        setTimeout(() => {
-          loadContents();
-        }, 3000);
+        // 状态已经在点击时更新，这里不需要再次更新
       } else {
         setMessage({ type: 'error', text: result.error || t('thumbnail.generateFailed', { ns: 'content', defaultValue: '生成失败' }) });
+        // 如果失败，恢复状态
+        setContents(prev => prev.map(c => 
+          c.id === contentId 
+            ? { ...c, thumbnail_status: 'failed' as const }
+            : c
+        ));
+        setPollingContents(prev => {
+          const next = new Set(prev);
+          next.delete(contentId);
+          return next;
+        });
       }
     } catch (error: any) {
       console.error('生成缩略图失败:', error);
@@ -98,13 +149,27 @@ const TestThumbnailPage: React.FC = () => {
       return;
     }
 
-    if (!confirm(t('thumbnail.batchConfirm', { ns: 'content', defaultValue: '确定要批量重新生成所有 pending/failed 状态的缩略图吗？' }))) {
-      return;
-    }
-
     try {
       setBatchGenerating(true);
       setMessage(null);
+      
+      // 立即更新所有 pending/failed 状态的内容为 generating
+      setContents(prev => {
+        const updated = prev.map(c => {
+          if (c.thumbnail_status === 'pending' || c.thumbnail_status === 'failed') {
+            return { ...c, thumbnail_status: 'generating' as const, thumbnail_url: undefined };
+          }
+          return c;
+        });
+        
+        // 找到所有 generating 状态的内容，开始轮询
+        const generatingIds = updated
+          .filter(c => c.thumbnail_status === 'generating')
+          .map(c => c.id);
+        setPollingContents(new Set(generatingIds));
+        
+        return updated;
+      });
 
       const result = await api.content.regenerateAllThumbnails();
       
@@ -113,10 +178,7 @@ const TestThumbnailPage: React.FC = () => {
           type: 'success', 
           text: t('thumbnail.batchGenerateStarted', { ns: 'content', defaultValue: '已启动 {{count}} 个缩略图生成任务', count: result.count || 0 })
         });
-        // 3秒后刷新列表
-        setTimeout(() => {
-          loadContents();
-        }, 3000);
+        // 状态已经在点击时更新，这里不需要再次更新
       } else {
         setMessage({ type: 'error', text: result.error || t('thumbnail.batchGenerateFailed', { ns: 'content', defaultValue: '批量生成失败' }) });
       }
@@ -297,13 +359,24 @@ const TestThumbnailPage: React.FC = () => {
                   <button
                     onClick={() => handleGenerateThumbnail(content.id)}
                     disabled={generating.has(content.id)}
-                    className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className={`w-full px-3 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm ${
+                      content.thumbnail_status === 'ready' && content.thumbnail_url
+                        ? 'bg-secondary text-secondary-foreground border border-secondary/20'
+                        : 'bg-primary text-primary-foreground'
+                    }`}
+                    title={
+                      content.thumbnail_status === 'ready' && content.thumbnail_url
+                        ? (mounted ? t('thumbnail.regenerateTooltip', { ns: 'content', defaultValue: '点击重新生成缩略图' }) : '点击重新生成缩略图')
+                        : undefined
+                    }
                   >
                     {generating.has(content.id) ? (
                       <>
                         <span className="inline-block animate-spin mr-2">⏳</span>
                         {mounted ? t('thumbnail.generating', { ns: 'content', defaultValue: '生成中...' }) : '生成中...'}
                       </>
+                    ) : content.thumbnail_status === 'ready' && content.thumbnail_url ? (
+                      mounted ? t('thumbnail.regenerateThumbnail', { ns: 'content', defaultValue: '🔄 重新生成' }) : '🔄 重新生成'
                     ) : (
                       mounted ? t('thumbnail.generateThumbnail', { ns: 'content', defaultValue: '🎨 生成缩略图' }) : '🎨 生成缩略图'
                     )}

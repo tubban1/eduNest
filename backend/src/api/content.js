@@ -327,8 +327,12 @@ router.post('/:id/generate-thumbnail', authenticateToken, async (req, res) => {
     // Import thumbnail service
     const { generateThumbnail } = require('../services/thumbnailService');
     
+    // Check if this is a test request (from test-thumbnail page)
+    // Test page should use Playwright for Canvas rendering
+    const usePlaywright = req.query.usePlaywright === 'true' || req.body?.usePlaywright === true;
+    
     // Trigger thumbnail generation asynchronously (don't await, return immediately)
-    generateThumbnail(content.id, content.short_id, baseUrl)
+    generateThumbnail(content.id, content.short_id, baseUrl, usePlaywright)
       .catch(error => {
         console.error(`[Thumbnail] Thumbnail generation failed for content ${content.id}:`, error);
       });

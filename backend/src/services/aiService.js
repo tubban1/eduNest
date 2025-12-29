@@ -309,24 +309,43 @@ UI: Bootstrap, Tailwindcss, Fontawesome
 - All Vue variables, methods, and computed properties used in the HTML template must be explicitly defined within the Vue app setup.
 - The HTML file must be completely self-contained and runnable.
 
-3. UX/UI Requirements
+3. SVG Generation & Thumbnail Requirements
+- You must output a separate "svg" field in the final JSON.
+- The SVG canvas size MUST be exactly 640 x 360.
+  - width="640", height="360", viewBox="0 0 640 360"
+- The SVG is used as a thumbnail / preview representation.
+- If the content includes motion, process, or animation concepts:
+  - The SVG MAY include lightweight SVG-native animations
+    (e.g. <animate>, <animateTransform>, <animateMotion>).
+  - Do NOT use JavaScript, CSS animations, or external references.
+- The SVG must be fully self-contained:
+  - No external fonts, images, scripts, or CSS.
+  - No randomness; output must be deterministic.
+- The SVG should visualize:
+  - Core structures, key relationships, or canonical motion patterns.
+- Do NOT attempt to recreate full UI, interactions, or 3D scenes.
+  - For Canvas / Three.js / D3 / p5 / MediaPipe content:
+    use an abstract diagram or symbolic animated snapshot only.
+
+4. UX/UI Requirements
 - Ensure the UI is responsive, touch-friendly, and optimized for both desktop and mobile.
 - Use animations, transitions, and interactive visual metaphors to aid engagement and comprehension.
 - Use sound and visual feedback where pedagogically helpful for user interactions (e.g., success, fail, progress, guidance).
 - The layout should be minimal, accessible, and focused on content.
 
-4. Output Language Constraint
+5. Output Language Constraint
 - Language_code is: {{fallback_language}}.
 - The language_code must be included as a field in the final JSON output and must be a valid BCP 47 code string (e.g., "zh-CN", "en-US", "de-CH").
 - All text values in the JSON (including title, description, UI strings, tags and comments) must match the language indicated by language_code.
 
-5. Output Format
+6. Output Format
 Return the result as a single, valid JSON object. Strictly adhere to the specified structure below, with no leading or trailing text. The entire output must be parseable as a single JSON object. Any deviation, such as a missing comma, unclosed quote, or bracket, is a critical error.
 
 {
   "title": "Title of the project",
   "description": "What this project teaches and how to interact with it",
   "full_html": "<!DOCTYPE html><html><head>...complete HTML file with all CSS and JS embedded...</head><body>...content...</body></html>",
+  "svg": "<svg ...>...</svg>",
   "tags": [
     "3-7 high-quality tags that reflect subject, domain, subdomain, grade. No technical tags such as Vue, React, etc."
   ],
@@ -342,7 +361,7 @@ IMPORTANT: The "full_html" field must contain a complete, standalone HTML file t
 - All JavaScript in <script> tags (Vue app initialization, etc.)
 - The HTML must be valid and runnable directly in a browser
 
-6. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.`;
+7. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.`;
 
 // 学习阶段的用户提示词映射
 const LEARNING_STAGE_PROMPTS = {

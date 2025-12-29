@@ -522,15 +522,7 @@ class AsyncGenerationQueue {
         // 清理同一 content_id 的其他 pending 任务
         await this.cleanupPendingTasks(contentId, taskId);
         
-        // 触发缩略图生成（异步，不阻塞）
-        // 等待一小段时间确保数据库更新完成
-        setTimeout(() => {
-          logger.info(`[Thumbnail] Triggering thumbnail generation for content ${contentId}`);
-          this.triggerThumbnailGeneration(contentId).catch(error => {
-            logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
-            // 不抛出错误，避免影响主流程
-          });
-        }, 500); // 等待500ms确保数据库更新完成
+        // 注意：缩略图生成已移除，只在 test-thumbnail 页面手动生成
         
       } else {
         // 生成失败，处理重试逻辑
@@ -668,6 +660,21 @@ class AsyncGenerationQueue {
         language_code: aiData.language_code || 'zh-CN',
         updated_at: new Date().toISOString()
       };
+
+      // 如果 AI 返回了 svg 字段，保存到 svg_thumbnail
+      if (aiData.svg && typeof aiData.svg === 'string' && aiData.svg.trim().length > 0) {
+        // 验证 SVG 格式（基本检查）
+        const svgMatch = aiData.svg.match(/<svg[^>]*>[\s\S]*?<\/svg>/i);
+        if (svgMatch) {
+          updateData.svg_thumbnail = aiData.svg.trim();
+          logger.info(`[Content Update] ✅ 保存 SVG thumbnail (length: ${updateData.svg_thumbnail.length} chars)`);
+          // 如果 SVG 存在，设置 thumbnail_status 为 ready
+          updateData.thumbnail_status = 'ready';
+          updateData.thumbnail_updated_at = new Date().toISOString();
+        } else {
+          logger.warn(`[Content Update] ⚠️ AI 返回的 svg 字段格式无效，跳过保存`);
+        }
+      }
 
       const { error } = await DatabaseService.supabase
         .from('content')
@@ -908,89 +915,6 @@ class AsyncGenerationQueue {
     }
   }
 
-  /**
-   * Trigger thumbnail generation for content (async, non-blocking)
-   * @param {string} contentId - Content ID
-   */
-  async triggerThumbnailGeneration(contentId) {
-    try {
-      logger.info(`[Thumbnail] Starting thumbnail generation trigger for content ${contentId}`);
-      
-      // Retry logic: try up to 5 times with delays to ensure full_html is saved
-      // 增加重试次数和初始延迟，特别是在手机端或生产环境中可能有数据库复制延迟
-      let content = null;
-      let retries = 5; // 从3次增加到5次
-      let delay = 1000; // 从500ms增加到1000ms初始延迟
-      
-      while (retries > 0) {
-        // Get content short_id and full_html
-        const { data, error } = await DatabaseService.supabase
-          .from('content')
-          .select('id, short_id, full_html')
-          .eq('id', contentId)
-          .single();
-
-        if (error) {
-          logger.error(`[Thumbnail] Database error when fetching content ${contentId}:`, error);
-          return;
-        }
-
-        if (!data) {
-          logger.warn(`[Thumbnail] Content not found: ${contentId}`);
-          return;
-        }
-
-        content = data;
-
-        if (!content.short_id) {
-          logger.warn(`[Thumbnail] Content ${contentId} missing short_id`);
-          return;
-        }
-
-        // Check if full_html is available
-        if (content.full_html && content.full_html.trim().length > 0) {
-          logger.info(`[Thumbnail] Content ${contentId} has full_html (length: ${content.full_html.length}), proceeding with thumbnail generation`);
-          break; // full_html is available, proceed
-        }
-
-        // If full_html is not available and we have retries left, wait and retry
-        retries--;
-        if (retries > 0) {
-          logger.info(`[Thumbnail] Content ${contentId} has no full_html yet, retrying in ${delay}ms (${retries} retries left)`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          delay *= 1.5; // Exponential backoff: 1000ms, 1500ms, 2250ms, 3375ms, 5062ms
-        }
-      }
-
-      // Final check after retries
-      if (!content.full_html || content.full_html.trim().length === 0) {
-        logger.warn(`[Thumbnail] Content ${contentId} has no full_html after retries, skipping thumbnail generation`);
-        return;
-      }
-
-      // Get frontend base URL from environment
-      const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
-      logger.info(`[Thumbnail] Using base URL: ${baseUrl}`);
-      
-      // Import thumbnail service dynamically to avoid circular dependencies
-      const { generateThumbnail } = require('./thumbnailService');
-      
-      // Trigger thumbnail generation asynchronously (don't await, don't block)
-      logger.info(`[Thumbnail] Calling generateThumbnail for content ${contentId} (short_id: ${content.short_id})`);
-      generateThumbnail(contentId, content.short_id, baseUrl)
-        .then(() => {
-          logger.info(`[Thumbnail] ✅ Thumbnail generation completed successfully for content ${contentId}`);
-        })
-        .catch(error => {
-          logger.error(`[Thumbnail] ❌ Async thumbnail generation failed for content ${contentId}:`, error);
-        });
-      
-      logger.info(`[Thumbnail] Thumbnail generation triggered for content ${contentId} (short_id: ${content.short_id})`);
-    } catch (error) {
-      logger.error(`[Thumbnail] Failed to trigger thumbnail generation for content ${contentId}:`, error);
-      // Don't throw, this is a non-critical operation
-    }
-  }
 }
 
 // 创建全局队列实例

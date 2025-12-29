@@ -23,6 +23,7 @@ const referralsRoutes = require('./api/referrals');
 const subscriptionsRoutes = require("./api/subscriptions");
 const paymentsRoutes = require("./api/payments");
 const visitorRoutes = require('./api/visitor');
+const testSharpThumbnailRoutes = require('./api/test-sharp-thumbnail');
 const { errorHandler } = require('./utils/errorHandler');
 const logger = require('./utils/logger');
 const { supabase } = require('./services/database');
@@ -148,6 +149,7 @@ app.use("/api/ai-guide", aiGuideRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/ai", aiServiceRoutes);
 app.use("/api/visitor", visitorRoutes);
+app.use("/api/test-sharp-thumbnail", testSharpThumbnailRoutes);
 // 404 处理
 app.use('*', (req, res) => {
   res.status(404).json({ 
