@@ -253,7 +253,8 @@ class ApiClient {
           if (Array.isArray(value)) {
             params.append(key, value.join(','));
           } else {
-            params.append(key, value);
+            // 将 number 类型转换为 string
+            params.append(key, String(value));
           }
         }
       });
