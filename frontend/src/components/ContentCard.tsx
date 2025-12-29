@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import Link from 'next/link';
 import CollectionListDialog from './CollectionListDialog';
 import ContentActionButtons from './ui/ContentActionButtons';
@@ -89,7 +89,7 @@ interface ContentCardProps {
   linkPathPrefix?: string;
 }
 
-export default function ContentCard({ 
+function ContentCard({ 
   content, 
   isAuthenticated, 
   editMode, 
@@ -559,4 +559,20 @@ export default function ContentCard({
       />
     </div>
   );
-} 
+}
+
+// 使用 React.memo 优化，避免不必要的重新渲染
+export default memo(ContentCard, (prevProps, nextProps) => {
+  // 自定义比较逻辑：只比较关键字段
+  return (
+    prevProps.content.id === nextProps.content.id &&
+    prevProps.content.thumbnail_url === nextProps.content.thumbnail_url &&
+    prevProps.content.svg_thumbnail === nextProps.content.svg_thumbnail &&
+    prevProps.content.thumbnail_status === nextProps.content.thumbnail_status &&
+    prevProps.content.generation_status === nextProps.content.generation_status &&
+    prevProps.content.title === nextProps.content.title &&
+    prevProps.isAuthenticated === nextProps.isAuthenticated &&
+    prevProps.editMode === nextProps.editMode &&
+    prevProps.lists.length === nextProps.lists.length
+  );
+}); 

@@ -235,6 +235,8 @@ class ApiClient {
       language?: string;
       language_code?: string; // 添加 language_code 支持
       created_by?: string; // 添加 created_by 支持
+      limit?: number; // 添加 limit 支持
+      offset?: number; // 添加 offset 支持
     }) => {
       // 生成缓存键
       const cacheKey = generateCacheKey('content:filtered', filters);

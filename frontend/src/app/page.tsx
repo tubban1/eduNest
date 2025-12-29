@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { api, Content } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -19,6 +19,12 @@ export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [lists, setLists] = useState<any[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  
+  const ITEMS_PER_PAGE = 18; // 每页加载 18 个卡片
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -43,13 +49,37 @@ export default function HomePage() {
 
   // 刷新内容列表
   const handleContentGenerated = () => {
+    setPage(1);
+    setHasMore(true);
     setRefreshKey(prev => prev + 1);
     fetchLists();
   };
 
-  // 获取内容列表 - 根据登录状态和语言筛选
-  const refreshContent = useCallback(async () => {
-    const filters: any = {};
+  // 处理列表数据的辅助函数
+  const processListData = useCallback((list: any[]) => {
+    const inProgressStatuses = ['pending', 'processing', 'failed'];
+    const inProgressContent = list.filter(
+      (item: any) => inProgressStatuses.includes(item.generation_status)
+    );
+    const completedContent = list.filter(
+      (item: any) =>
+        !inProgressStatuses.includes(item.generation_status) &&
+        item.full_html &&
+        item.full_html.trim().length > 0
+    );
+    const mergedMap = new Map<string, any>();
+    [...inProgressContent, ...completedContent].forEach((item) => {
+      mergedMap.set(item.id, item);
+    });
+    return Array.from(mergedMap.values());
+  }, []);
+
+  // 获取内容列表 - 根据登录状态和语言筛选（支持分页）
+  const refreshContent = useCallback(async (pageNum = 1, append = false) => {
+    const filters: any = {
+      limit: ITEMS_PER_PAGE,
+      offset: (pageNum - 1) * ITEMS_PER_PAGE
+    };
     
     // 未登录用户：按当前语言筛选，只获取有 full_html 的内容
     if (!user) {
@@ -65,57 +95,83 @@ export default function HomePage() {
       filters.created_by = user.id;
     }
     
-    const cacheKey = generateCacheKey('content:filtered', filters);
-    const cached = cache.get<any[]>(cacheKey);
-    
-    // 处理列表数据的辅助函数
-    const processListData = (list: any[]) => {
-      const inProgressStatuses = ['pending', 'processing', 'failed'];
-      const inProgressContent = list.filter(
-        (item: any) => inProgressStatuses.includes(item.generation_status)
-      );
-      const completedContent = list.filter(
-        (item: any) =>
-          !inProgressStatuses.includes(item.generation_status) &&
-          item.full_html &&
-          item.full_html.trim().length > 0
-      );
-      const mergedMap = new Map<string, any>();
-      [...inProgressContent, ...completedContent].forEach((item) => {
-        mergedMap.set(item.id, item);
-      });
-      return Array.from(mergedMap.values());
-    };
-    
-    // 如果有缓存，直接使用
-    if (cached !== null) {
-      const list = Array.isArray(cached) ? cached : [];
-      const finalContent = processListData(list);
-      setContents(finalContent);
-      setIsLoading(false);
-      return;
+    // 如果是第一页，检查缓存
+    if (pageNum === 1 && !append) {
+      const cacheKey = generateCacheKey('content:filtered', filters);
+      const cached = cache.get<any[]>(cacheKey);
+      
+      if (cached !== null) {
+        const list = Array.isArray(cached) ? cached : [];
+        const finalContent = processListData(list);
+        setContents(finalContent);
+        setHasMore(finalContent.length === ITEMS_PER_PAGE);
+        setIsLoading(false);
+        return;
+      }
     }
     
-    // 没有缓存，显示 loading 并请求数据
-    setIsLoading(true);
+    // 没有缓存或加载更多，显示 loading 并请求数据
+    if (!append) {
+      setIsLoading(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+    
     try {
       const data: any = await api.content.getFiltered(filters);
       const list = Array.isArray(data) ? data : [];
       
       // 处理列表数据 - 只保留有 full_html 的内容
       const finalContent = processListData(list);
-      setContents(finalContent);
+      
+      if (append) {
+        setContents(prev => [...prev, ...finalContent]);
+      } else {
+        setContents(finalContent);
+      }
+      
+      // 如果返回的数量少于 limit，说明没有更多了
+      setHasMore(finalContent.length === ITEMS_PER_PAGE);
+      setPage(pageNum);
     } catch (e: any) {
       console.error('Failed to fetch content:', e);
-      setContents([]);
+      if (!append) {
+        setContents([]);
+      }
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [user, i18n.language]);
+  }, [user, i18n.language, processListData]);
+
+  // 加载更多内容
+  const loadMore = useCallback(() => {
+    if (!hasMore || isLoadingMore || isLoading) return;
+    refreshContent(page + 1, true);
+  }, [hasMore, isLoadingMore, isLoading, page, refreshContent]);
+
+  // 无限滚动检测
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore || isLoadingMore || isLoading) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' } // 提前 100px 开始加载
+    );
+    
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, isLoading, loadMore]);
 
   // 监听语言变化和用户变化
   useEffect(() => {
-    refreshContent();
+    setPage(1);
+    setHasMore(true);
+    refreshContent(1, false);
   }, [refreshContent, refreshKey]);
 
   // 为避免 SSR 与客户端语言检测不一致导致的水合错误，使用 loading 状态
@@ -187,23 +243,54 @@ export default function HomePage() {
                 <LoadingSpinner />
               </div>
             ) : contents.length > 0 ? (
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-                {contents.map((content) => (
-                  <ContentCard 
-                    key={content.id}
-                    content={{ 
-                      ...content, 
-                      language_code: content.language_code || i18n.language || 'zh-CN',
-                    }}
-                    isAuthenticated={!!user} 
-                    editMode={!!(user && content.created_by === user.id)} 
-                    lists={lists} 
-                    refreshLists={fetchLists}
-                    linkPathPrefix="/c"
-                    onContentUpdate={refreshContent}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+                  {contents.map((content) => (
+                    <ContentCard 
+                      key={content.id}
+                      content={{ 
+                        ...content, 
+                        language_code: content.language_code || i18n.language || 'zh-CN',
+                      }}
+                      isAuthenticated={!!user} 
+                      editMode={!!(user && content.created_by === user.id)} 
+                      lists={lists} 
+                      refreshLists={fetchLists}
+                      linkPathPrefix="/c"
+                      onContentUpdate={() => {
+                        setPage(1);
+                        setHasMore(true);
+                        refreshContent(1, false);
+                      }}
+                    />
+                  ))}
+                </div>
+                
+                {/* 无限滚动触发器 */}
+                {hasMore && (
+                  <div ref={loadMoreRef} className="flex justify-center items-center py-8">
+                    {isLoadingMore ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <LoadingSpinner />
+                        <span className="text-sm text-muted-foreground">
+                          {mounted ? t('loadingMore', { ns: 'content', defaultValue: '加载更多...' }) : 'Loading more...'}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="h-20" /> // 占位，触发 Intersection Observer
+                    )}
+                  </div>
+                )}
+                
+                {/* 没有更多内容提示 */}
+                {!hasMore && contents.length > 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground">
+                      {mounted ? t('noMoreContent', { ns: 'content', defaultValue: '没有更多内容了' }) : 'No more content'}
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📚</div>

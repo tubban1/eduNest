@@ -198,6 +198,14 @@ router.get('/', optionalAuth, async (req, res) => {
       filters.language_code = req.query.language_code;
     }
     
+    // 支持分页参数
+    if (req.query.limit) {
+      filters.limit = parseInt(req.query.limit, 10);
+    }
+    if (req.query.offset) {
+      filters.offset = parseInt(req.query.offset, 10);
+    }
+    
     // 如果查询用户自己的内容，包含生成状态（需要认证）
     const includeGenerationStatus = req.query.created_by && req.user && req.query.created_by === req.user.id;
     

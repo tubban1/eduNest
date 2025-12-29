@@ -120,10 +120,22 @@ const getContents = async (filters = {}) => {
       }
     }
     
-    // 添加limit支持
-    if (filters.limit) {
-      const limit = Math.max(1, Math.min(parseInt(filters.limit, 10) || 12, 50));
-      query = query.limit(limit);
+    // 添加limit和offset支持
+    const limit = filters.limit ? Math.max(1, Math.min(parseInt(filters.limit, 10) || 12, 50)) : undefined;
+    const offset = filters.offset ? Math.max(0, parseInt(filters.offset, 10) || 0) : undefined;
+    
+    if (limit !== undefined) {
+      if (offset !== undefined) {
+        // 使用 range 方法（包含起始和结束位置）
+        query = query.range(offset, offset + limit - 1);
+      } else {
+        // 只有 limit，没有 offset
+        query = query.limit(limit);
+      }
+    } else if (offset !== undefined) {
+      // 只有 offset，没有 limit，使用默认 limit
+      const defaultLimit = 12;
+      query = query.range(offset, offset + defaultLimit - 1);
     }
     
     const { data, error } = await query.order('created_at', { ascending: false });
