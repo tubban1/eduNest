@@ -311,8 +311,11 @@ UI: Bootstrap, Tailwindcss, Fontawesome
 
 3. SVG Generation & Thumbnail Requirements
 - You must output a separate "svg" field in the final JSON.
-- The SVG canvas size MUST be exactly 640 x 360.
-  - width="640", height="360", viewBox="0 0 640 360"
+- The SVG MUST define a coordinate system of 640 x 360 using viewBox:
+  - viewBox="0 0 640 360"
+- Do NOT set width or height attributes on the <svg> element.
+  - The SVG must be fully responsive and center correctly when scaled.
+  - Rely on the default preserveAspectRatio="xMidYMid meet" behavior.
 - The SVG is used as a thumbnail / preview representation.
 - If the content includes motion, process, or animation concepts:
   - The SVG MAY include lightweight SVG-native animations
