@@ -235,8 +235,15 @@ export default function FullHTMLRenderer({
     handleError(errorMsg);
   }, [useExternalUrl, externalUrl, handleError]);
 
+  // 检测 HTML 中是否有锚点链接
+  const hasAnchorLinks = useMemo(() => {
+    if (!fullHTML) return false;
+    // 检测 <a href="#..."> 格式的链接
+    return /<a[^>]+href=["']#[\w-]+["'][^>]*>/i.test(fullHTML);
+  }, [fullHTML]);
+
   /**
-   * 注入高度检测脚本（使用 ResizeObserver 和 postMessage）
+   * 注入高度检测脚本和锚点跳转处理（使用 ResizeObserver 和 postMessage）
    */
   const processedHTML = useMemo(() => {
     // 始终注入脚本，除非必须使用外部链接
@@ -339,6 +346,54 @@ export default function FullHTMLRenderer({
     is3DApp = !!document.querySelector('canvas');
   }
 
+  // 处理锚点跳转
+  function handleAnchorLinks() {
+    // 拦截所有锚点链接的点击事件
+    document.addEventListener('click', function(e) {
+      var target = e.target;
+      // 向上查找 <a> 标签
+      while (target && target.tagName !== 'A') {
+        target = target.parentElement;
+      }
+      
+      if (target && target.tagName === 'A') {
+        var href = target.getAttribute('href');
+        // 如果是锚点链接（以 # 开头）
+        if (href && href.startsWith('#')) {
+          var id = href.substring(1);
+          var targetElement = document.getElementById(id) || document.querySelector('[name="' + id + '"]');
+          
+          if (targetElement) {
+            e.preventDefault();
+            // 使用 scrollIntoView 平滑滚动到目标元素
+            targetElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+            // 更新 URL hash（不触发页面跳转）
+            if (window.history && window.history.pushState) {
+              window.history.pushState(null, '', '#' + id);
+            }
+          }
+        }
+      }
+    });
+    
+    // 处理页面加载时的 hash（如果 URL 中有 #）
+    if (window.location.hash) {
+      setTimeout(function() {
+        var id = window.location.hash.substring(1);
+        var targetElement = document.getElementById(id) || document.querySelector('[name="' + id + '"]');
+        if (targetElement) {
+          targetElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }, 100);
+    }
+  }
+
   // 初始化：只在页面加载完成后发送一次高度
   function init() {
     checkAppType();
@@ -346,6 +401,9 @@ export default function FullHTMLRenderer({
     setTimeout(function() {
       sendHeight(true); // 强制发送初始高度
     }, 100);
+    
+    // 处理锚点链接
+    handleAnchorLinks();
     
     // 对于 3D 应用，启动 ResizeObserver
     if (is3DApp) {
@@ -420,7 +478,8 @@ export default function FullHTMLRenderer({
     WebkitOverflowScrolling: 'touch',
   };
 
-  const iframeScrolling = fixedHeight ? 'auto' : 'no';
+  // 如果有锚点链接，允许 iframe 滚动以支持锚点跳转
+  const iframeScrolling = fixedHeight || hasAnchorLinks ? 'auto' : 'no';
 
   // 计算容器样式
   const containerMinHeight = (() => {
