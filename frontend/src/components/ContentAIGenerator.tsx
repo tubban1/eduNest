@@ -187,20 +187,13 @@ export default function ContentAIGenerator({
     return l.code.toLowerCase().includes(kw) || (l.label || '').toLowerCase().includes(kw);
   });
 
-  // 处理图片选择
-  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      // 如果没有选择文件，重置输入框以便可以再次选择
-      event.target.value = '';
-      return;
-    }
-
+  // 处理文件（公共逻辑）
+  const processImageFile = (file: File, resetInput?: () => void) => {
     // 验证文件类型
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       setError(t('errors.invalidImageType', { ns: 'content', defaultValue: '不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP' }));
-      event.target.value = ''; // 重置输入框
+      if (resetInput) resetInput();
       return;
     }
 
@@ -208,7 +201,7 @@ export default function ContentAIGenerator({
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       setError(t('errors.imageTooLarge', { ns: 'content', defaultValue: '图片大小不能超过 10MB' }));
-      event.target.value = ''; // 重置输入框
+      if (resetInput) resetInput();
       return;
     }
 
@@ -235,20 +228,33 @@ export default function ContentAIGenerator({
           setError(t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
         }
         setImageUploading(false);
-        // 处理完成后，重置输入框以便可以再次选择同一个文件
-        event.target.value = '';
+        if (resetInput) resetInput();
       };
       reader.onerror = () => {
         setError(t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
         setImageUploading(false);
-        event.target.value = ''; // 重置输入框
+        if (resetInput) resetInput();
       };
       reader.readAsDataURL(file);
     } catch (e: any) {
       setError(e.message || t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
       setImageUploading(false);
-      event.target.value = ''; // 重置输入框
+      if (resetInput) resetInput();
     }
+  };
+
+  // 处理图片选择
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      // 如果没有选择文件，重置输入框以便可以再次选择
+      event.target.value = '';
+      return;
+    }
+
+    processImageFile(file, () => {
+      event.target.value = '';
+    });
   };
 
   // 处理拍照
@@ -269,17 +275,12 @@ export default function ContentAIGenerator({
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        // 创建一个符合 React.ChangeEvent<HTMLInputElement> 格式的事件对象
-        const syntheticEvent = {
-          target: {
-            files: [file],
-            value: ''
-          }
-        } as React.ChangeEvent<HTMLInputElement>;
-        handleImageSelect(syntheticEvent);
+        processImageFile(file, () => {
+          input.value = '';
+        });
+      } else {
+        input.value = '';
       }
-      // 重置动态创建的 input，以便可以再次使用
-      input.value = '';
     };
     input.click();
   };
