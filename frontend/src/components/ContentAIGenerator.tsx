@@ -303,10 +303,15 @@ export default function ContentAIGenerator({
       const imgRect = img.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
       
-      const imgDisplayWidth = imgRect.width;
-      const imgDisplayHeight = imgRect.height;
-      const imgDisplayX = imgRect.left - containerRect.left;
-      const imgDisplayY = imgRect.top - containerRect.top;
+      // 获取图片的实际显示尺寸（不受旋转影响）
+      const imgDisplayWidth = img.clientWidth || imgRect.width;
+      const imgDisplayHeight = img.clientHeight || imgRect.height;
+      
+      // 计算图片在容器中的实际显示位置（考虑旋转）
+      const imgCenterX = imgRect.left + imgRect.width / 2;
+      const imgCenterY = imgRect.top + imgRect.height / 2;
+      const imgDisplayX = imgCenterX - containerRect.left - imgDisplayWidth / 2;
+      const imgDisplayY = imgCenterY - containerRect.top - imgDisplayHeight / 2;
       
       const cropWidth = imgDisplayWidth * 0.8;
       const cropHeight = imgDisplayHeight * 0.8;
@@ -367,11 +372,56 @@ export default function ContentAIGenerator({
     const imgRect = img.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
     
-    // 获取图片在容器中的显示位置
-    const imgDisplayX = imgRect.left - containerRect.left;
-    const imgDisplayY = imgRect.top - containerRect.top;
-    const imgDisplayWidth = imgRect.width;
-    const imgDisplayHeight = imgRect.height;
+    // 获取图片的实际显示尺寸（考虑 object-contain 的缩放）
+    // 当图片使用 object-contain 时，图片会保持原始宽高比
+    const elementWidth = imgRect.width;
+    const elementHeight = imgRect.height;
+    const naturalWidth = img.naturalWidth;
+    const naturalHeight = img.naturalHeight;
+    
+    // 计算图片的原始宽高比
+    const imageAspectRatio = naturalWidth / naturalHeight;
+    const containerAspectRatio = elementWidth / elementHeight;
+    
+    // 根据 object-contain 的逻辑计算实际显示尺寸
+    let imgDisplayWidth: number;
+    let imgDisplayHeight: number;
+    
+    if (imageAspectRatio > containerAspectRatio) {
+      // 图片更宽，按宽度适配
+      imgDisplayWidth = elementWidth;
+      imgDisplayHeight = elementWidth / imageAspectRatio;
+    } else {
+      // 图片更高，按高度适配
+      imgDisplayWidth = elementHeight * imageAspectRatio;
+      imgDisplayHeight = elementHeight;
+    }
+    
+    // 计算图片在容器中的实际显示位置
+    // 当图片使用 object-contain 时，图片内容在元素中是居中的
+    let imgDisplayX: number;
+    let imgDisplayY: number;
+    
+    // 检查图片是否有旋转
+    const hasRotation = imageRotation !== 0;
+    
+    if (!hasRotation) {
+      // 没有旋转时，需要考虑 object-contain 的居中效果
+      // imgRect 是图片元素的边界框，imgDisplayWidth/Height 是图片内容的实际尺寸
+      const elementWidth = imgRect.width;
+      const elementHeight = imgRect.height;
+      const contentOffsetX = (elementWidth - imgDisplayWidth) / 2;
+      const contentOffsetY = (elementHeight - imgDisplayHeight) / 2;
+      
+      imgDisplayX = (imgRect.left - containerRect.left) + contentOffsetX;
+      imgDisplayY = (imgRect.top - containerRect.top) + contentOffsetY;
+    } else {
+      // 有旋转时，通过中心点计算
+      const imgCenterX = imgRect.left + imgRect.width / 2;
+      const imgCenterY = imgRect.top + imgRect.height / 2;
+      imgDisplayX = imgCenterX - containerRect.left - imgDisplayWidth / 2;
+      imgDisplayY = imgCenterY - containerRect.top - imgDisplayHeight / 2;
+    }
     
     // 限制坐标在图片范围内
     const minX = imgDisplayX;
@@ -546,24 +596,94 @@ export default function ContentAIGenerator({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 获取图片的显示尺寸和实际尺寸的比例
-    const displayWidth = img.clientWidth;
-    const displayHeight = img.clientHeight;
-    const scaleX = img.naturalWidth / displayWidth;
-    const scaleY = img.naturalHeight / displayHeight;
+    // 获取图片的实际显示尺寸（不受旋转影响）
+    // 注意：即使图片有 CSS 旋转，naturalWidth 和 naturalHeight 仍然是原始尺寸
+    const naturalWidth = img.naturalWidth;
+    const naturalHeight = img.naturalHeight;
+    
+    // 获取图片在容器中的显示位置和尺寸
+    const imgRect = img.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    // 计算图片的实际显示尺寸（考虑 object-contain 的缩放）
+    // 当图片使用 object-contain 时，图片会保持宽高比，实际显示尺寸可能小于元素尺寸
+    let displayWidth: number;
+    let displayHeight: number;
+    
+    // 获取元素的尺寸
+    const elementWidth = imgRect.width;
+    const elementHeight = imgRect.height;
+    
+    // 计算图片的原始宽高比
+    const imageAspectRatio = naturalWidth / naturalHeight;
+    const containerAspectRatio = elementWidth / elementHeight;
+    
+    // 根据 object-contain 的逻辑计算实际显示尺寸
+    if (imageAspectRatio > containerAspectRatio) {
+      // 图片更宽，按宽度适配
+      displayWidth = elementWidth;
+      displayHeight = elementWidth / imageAspectRatio;
+    } else {
+      // 图片更高，按高度适配
+      displayWidth = elementHeight * imageAspectRatio;
+      displayHeight = elementHeight;
+    }
+    
+    // 计算缩放比例
+    const scaleX = naturalWidth / displayWidth;
+    const scaleY = naturalHeight / displayHeight;
 
     let sourceX = 0;
     let sourceY = 0;
-    let sourceWidth = img.naturalWidth;
-    let sourceHeight = img.naturalHeight;
+    let sourceWidth = naturalWidth;
+    let sourceHeight = naturalHeight;
 
     // 如果有裁剪区域，计算裁剪坐标
     if (cropArea && cropArea.width > 10 && cropArea.height > 10) {
+      // 计算图片在容器中的实际显示位置
+      // 当图片使用 object-contain 时，图片内容在元素中是居中的
+      let imgDisplayX: number;
+      let imgDisplayY: number;
+      
+      if (imageRotation === 0) {
+        // 没有旋转时，需要考虑 object-contain 的居中效果
+        // imgRect 是图片元素的边界框，displayWidth/Height 是图片内容的实际尺寸
+        const elementWidth = imgRect.width;
+        const elementHeight = imgRect.height;
+        const contentOffsetX = (elementWidth - displayWidth) / 2;
+        const contentOffsetY = (elementHeight - displayHeight) / 2;
+        
+        imgDisplayX = (imgRect.left - containerRect.left) + contentOffsetX;
+        imgDisplayY = (imgRect.top - containerRect.top) + contentOffsetY;
+      } else {
+        // 有旋转时，通过中心点计算
+        const imgCenterX = imgRect.left + imgRect.width / 2;
+        const imgCenterY = imgRect.top + imgRect.height / 2;
+        imgDisplayX = imgCenterX - containerRect.left - displayWidth / 2;
+        imgDisplayY = imgCenterY - containerRect.top - displayHeight / 2;
+      }
+      
+      // 将裁剪区域坐标从容器坐标转换为图片显示坐标
+      const cropXRelativeToImage = cropArea.x - imgDisplayX;
+      const cropYRelativeToImage = cropArea.y - imgDisplayY;
+      
+      // 确保裁剪区域在图片范围内
+      const clampedCropX = Math.max(0, Math.min(cropXRelativeToImage, displayWidth));
+      const clampedCropY = Math.max(0, Math.min(cropYRelativeToImage, displayHeight));
+      const clampedCropWidth = Math.max(0, Math.min(cropArea.width, displayWidth - clampedCropX));
+      const clampedCropHeight = Math.max(0, Math.min(cropArea.height, displayHeight - clampedCropY));
+      
       // 将显示坐标转换为实际图片坐标
-      sourceX = Math.max(0, cropArea.x * scaleX);
-      sourceY = Math.max(0, cropArea.y * scaleY);
-      sourceWidth = Math.min(cropArea.width * scaleX, img.naturalWidth - sourceX);
-      sourceHeight = Math.min(cropArea.height * scaleY, img.naturalHeight - sourceY);
+      sourceX = clampedCropX * scaleX;
+      sourceY = clampedCropY * scaleY;
+      sourceWidth = clampedCropWidth * scaleX;
+      sourceHeight = clampedCropHeight * scaleY;
+      
+      // 确保不超出图片边界
+      sourceX = Math.max(0, Math.min(sourceX, naturalWidth));
+      sourceY = Math.max(0, Math.min(sourceY, naturalHeight));
+      sourceWidth = Math.max(0, Math.min(sourceWidth, naturalWidth - sourceX));
+      sourceHeight = Math.max(0, Math.min(sourceHeight, naturalHeight - sourceY));
     }
 
     // 第一步：先应用裁剪（如果有）
