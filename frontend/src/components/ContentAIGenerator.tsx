@@ -257,32 +257,184 @@ export default function ContentAIGenerator({
     });
   };
 
-  // 处理拍照
-  const handleCameraCapture = () => {
-    // 检查是否在移动设备上
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/jpeg,image/jpg,image/png,image/gif,image/webp';
-    
-    // 在移动设备上使用 capture 属性打开相机
-    // capture="environment" 使用后置摄像头，capture="user" 使用前置摄像头
-    if (isMobile) {
-      input.capture = 'environment'; // 使用后置摄像头
+  // 图片裁剪和旋转相关状态
+  const [showImageEditor, setShowImageEditor] = useState(false);
+  const [imageRotation, setImageRotation] = useState(0);
+  const [cropArea, setCropArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [cropMode, setCropMode] = useState(false);
+  const imageRef = React.useRef<HTMLImageElement>(null);
+  const imageContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // 打开图片编辑器
+  const handleEditImage = () => {
+    setShowImageEditor(true);
+    setImageRotation(0);
+    setCropArea(null);
+    setCropMode(false);
+  };
+
+  // 关闭图片编辑器
+  const handleCloseImageEditor = () => {
+    setShowImageEditor(false);
+    setImageRotation(0);
+    setCropArea(null);
+    setCropMode(false);
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  // 旋转图片
+  const handleRotateImage = (degrees: number) => {
+    setImageRotation((prev) => (prev + degrees) % 360);
+    // 旋转时清除裁剪区域
+    setCropArea(null);
+  };
+
+  // 开始裁剪（进入裁剪模式）
+  const handleStartCrop = () => {
+    setCropMode(true);
+    setCropArea(null);
+  };
+
+  // 取消裁剪
+  const handleCancelCrop = () => {
+    setCropMode(false);
+    setCropArea(null);
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  // 开始拖动（用于裁剪）
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!cropMode || !imageContainerRef.current) return;
+    e.preventDefault();
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setDragStart({ x, y });
+    setIsDragging(true);
+    setCropArea({ x, y, width: 0, height: 0 });
+  };
+
+  // 拖动中（更新裁剪区域）
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!cropMode || !isDragging || !dragStart || !imageContainerRef.current) return;
+    e.preventDefault();
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+
+    const x = Math.min(dragStart.x, currentX);
+    const y = Math.min(dragStart.y, currentY);
+    const width = Math.abs(currentX - dragStart.x);
+    const height = Math.abs(currentY - dragStart.y);
+
+    setCropArea({ x, y, width, height });
+  };
+
+  // 结束拖动
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // 应用旋转和裁剪
+  const handleApplyEdit = () => {
+    if (!uploadedImage || !imageRef.current || !imageContainerRef.current) return;
+
+    const img = imageRef.current;
+    const container = imageContainerRef.current;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // 获取图片的显示尺寸和实际尺寸的比例
+    const displayWidth = img.clientWidth;
+    const displayHeight = img.clientHeight;
+    const scaleX = img.naturalWidth / displayWidth;
+    const scaleY = img.naturalHeight / displayHeight;
+
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = img.naturalWidth;
+    let sourceHeight = img.naturalHeight;
+
+    // 如果有裁剪区域，计算裁剪坐标
+    if (cropArea && cropArea.width > 10 && cropArea.height > 10) {
+      // 将显示坐标转换为实际图片坐标
+      sourceX = Math.max(0, cropArea.x * scaleX);
+      sourceY = Math.max(0, cropArea.y * scaleY);
+      sourceWidth = Math.min(cropArea.width * scaleX, img.naturalWidth - sourceX);
+      sourceHeight = Math.min(cropArea.height * scaleY, img.naturalHeight - sourceY);
     }
+
+    // 第一步：先应用裁剪（如果有）
+    let workingCanvas = canvas;
+    let workingCtx = ctx;
     
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        processImageFile(file, () => {
-          input.value = '';
-        });
-      } else {
-        input.value = '';
+    if (cropArea && cropArea.width > 10 && cropArea.height > 10) {
+      workingCanvas.width = sourceWidth;
+      workingCanvas.height = sourceHeight;
+      workingCtx.drawImage(
+        img,
+        sourceX, sourceY, sourceWidth, sourceHeight,
+        0, 0, sourceWidth, sourceHeight
+      );
+    } else {
+      // 没有裁剪，直接使用原图
+      workingCanvas.width = img.naturalWidth;
+      workingCanvas.height = img.naturalHeight;
+      workingCtx.drawImage(img, 0, 0);
+    }
+
+    // 第二步：应用旋转（如果有）
+    if (imageRotation !== 0) {
+      const rad = (imageRotation * Math.PI) / 180;
+      const cos = Math.abs(Math.cos(rad));
+      const sin = Math.abs(Math.sin(rad));
+      const newWidth = workingCanvas.width * cos + workingCanvas.height * sin;
+      const newHeight = workingCanvas.width * sin + workingCanvas.height * cos;
+
+      const rotatedCanvas = document.createElement('canvas');
+      const rotatedCtx = rotatedCanvas.getContext('2d');
+      if (!rotatedCtx) {
+        handleCloseImageEditor();
+        return;
       }
-    };
-    input.click();
+
+      rotatedCanvas.width = newWidth;
+      rotatedCanvas.height = newHeight;
+
+      // 设置背景为白色（透明区域）
+      rotatedCtx.fillStyle = '#FFFFFF';
+      rotatedCtx.fillRect(0, 0, rotatedCanvas.width, rotatedCanvas.height);
+
+      // 移动到中心点
+      rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+      rotatedCtx.rotate(rad);
+      rotatedCtx.translate(-workingCanvas.width / 2, -workingCanvas.height / 2);
+
+      // 绘制图片
+      rotatedCtx.drawImage(workingCanvas, 0, 0);
+      workingCanvas = rotatedCanvas;
+    }
+
+    // 转换为 base64
+    const dataUrl = workingCanvas.toDataURL(uploadedImage.mimeType, 0.9);
+    const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (base64Match) {
+      const mimeType = base64Match[1];
+      const base64 = base64Match[2];
+      setUploadedImage({
+        file: uploadedImage.file,
+        dataUrl,
+        base64,
+        mimeType
+      });
+    }
+
+    handleCloseImageEditor();
   };
 
   // 移除图片
@@ -474,17 +626,30 @@ export default function ContentAIGenerator({
                   alt="Uploaded"
                   className="w-full h-auto max-h-32 object-contain block"
                 />
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  disabled={isAiFormDisabled}
-                  className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition disabled:opacity-50 backdrop-blur-sm shadow-md"
-                  title={mounted ? t('removeImage', { ns: 'content', defaultValue: '移除图片' }) : 'Remove image'}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <button
+                    type="button"
+                    onClick={handleEditImage}
+                    disabled={isAiFormDisabled}
+                    className="bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition disabled:opacity-50 backdrop-blur-sm shadow-md"
+                    title={mounted ? t('editImage', { ns: 'content', defaultValue: '编辑图片' }) : 'Edit Image'}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    disabled={isAiFormDisabled}
+                    className="bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition disabled:opacity-50 backdrop-blur-sm shadow-md"
+                    title={mounted ? t('removeImage', { ns: 'content', defaultValue: '移除图片' }) : 'Remove image'}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -522,18 +687,6 @@ export default function ContentAIGenerator({
                   </svg>
                 )}
               </label>
-              <button
-                type="button"
-                onClick={handleCameraCapture}
-                disabled={isAiFormDisabled || imageUploading}
-                className={`p-1.5 rounded hover:bg-muted/50 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                title={mounted ? t('takePhoto', { ns: 'content', defaultValue: '拍照' }) : 'Take Photo'}
-              >
-                <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
             </div>
           </div>
           <div className="flex justify-end items-center mt-1">
@@ -634,6 +787,175 @@ export default function ContentAIGenerator({
               </button>
               <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90" onClick={() => setShowLanguagePicker(false)}>
                 {mounted ? t('confirm', { ns: 'common', defaultValue: '确定' }) : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 图片编辑器模态框 */}
+      {showImageEditor && uploadedImage && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleCloseImageEditor}>
+          <div className="bg-card rounded-xl shadow-xl w-full max-w-2xl p-4 m-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">
+                {mounted ? t('editImage', { ns: 'content', defaultValue: '编辑图片' }) : 'Edit Image'}
+              </h3>
+              <button
+                className="text-muted-foreground hover:text-foreground"
+                onClick={handleCloseImageEditor}
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* 图片预览区域 */}
+            <div
+              ref={imageContainerRef}
+              className="relative bg-muted/30 rounded-lg overflow-hidden mb-4 cursor-crosshair"
+              style={{ minHeight: '300px' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              <img
+                ref={imageRef}
+                src={uploadedImage.dataUrl}
+                alt="Edit"
+                className="w-full h-auto max-h-96 object-contain block select-none"
+                style={{
+                  transform: `rotate(${imageRotation}deg)`,
+                  transition: 'transform 0.3s ease',
+                  pointerEvents: 'none'
+                }}
+                draggable={false}
+              />
+              {/* 裁剪框 */}
+              {cropMode && cropArea && cropArea.width > 0 && cropArea.height > 0 && (
+                <>
+                  {/* 顶部遮罩 */}
+                  <div
+                    className="absolute bg-black/50"
+                    style={{
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${cropArea.y}px`
+                    }}
+                  />
+                  {/* 底部遮罩 */}
+                  <div
+                    className="absolute bg-black/50"
+                    style={{
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      top: `${cropArea.y + cropArea.height}px`
+                    }}
+                  />
+                  {/* 左侧遮罩 */}
+                  <div
+                    className="absolute bg-black/50"
+                    style={{
+                      top: `${cropArea.y}px`,
+                      left: 0,
+                      width: `${cropArea.x}px`,
+                      height: `${cropArea.height}px`
+                    }}
+                  />
+                  {/* 右侧遮罩 */}
+                  <div
+                    className="absolute bg-black/50"
+                    style={{
+                      top: `${cropArea.y}px`,
+                      right: 0,
+                      left: `${cropArea.x + cropArea.width}px`,
+                      height: `${cropArea.height}px`
+                    }}
+                  />
+                  {/* 裁剪框边框 */}
+                  <div
+                    className="absolute border-2 border-primary pointer-events-none"
+                    style={{
+                      left: `${cropArea.x}px`,
+                      top: `${cropArea.y}px`,
+                      width: `${cropArea.width}px`,
+                      height: `${cropArea.height}px`
+                    }}
+                  />
+                </>
+              )}
+            </div>
+
+            {/* 控制按钮 */}
+            <div className="flex gap-2 justify-center mb-4 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleRotateImage(-90)}
+                className="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground transition flex items-center"
+                title={mounted ? t('rotateLeft', { ns: 'content', defaultValue: '向左旋转' }) : 'Rotate Left'}
+                disabled={cropMode}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" transform="rotate(-90 12 12)" />
+                </svg>
+                {mounted ? t('rotateLeft', { ns: 'content', defaultValue: '向左旋转 90°' }) : 'Rotate Left 90°'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRotateImage(90)}
+                className="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground transition flex items-center"
+                title={mounted ? t('rotateRight', { ns: 'content', defaultValue: '向右旋转' }) : 'Rotate Right'}
+                disabled={cropMode}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {mounted ? t('rotateRight', { ns: 'content', defaultValue: '向右旋转 90°' }) : 'Rotate Right 90°'}
+              </button>
+              {!cropMode ? (
+                <button
+                  type="button"
+                  onClick={handleStartCrop}
+                  className="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground transition flex items-center"
+                  title={mounted ? t('startCrop', { ns: 'content', defaultValue: '开始裁剪' }) : 'Start Crop'}
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                  {mounted ? t('startCrop', { ns: 'content', defaultValue: '开始裁剪' }) : 'Start Crop'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleCancelCrop}
+                  className="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground transition flex items-center"
+                  title={mounted ? t('cancelCrop', { ns: 'content', defaultValue: '取消裁剪' }) : 'Cancel Crop'}
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  {mounted ? t('cancelCrop', { ns: 'content', defaultValue: '取消裁剪' }) : 'Cancel Crop'}
+                </button>
+              )}
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleCloseImageEditor}
+                className="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground transition"
+              >
+                {mounted ? t('cancel', { ns: 'common', defaultValue: '取消' }) : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyEdit}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition"
+              >
+                {mounted ? t('apply', { ns: 'content', defaultValue: '应用' }) : 'Apply'}
               </button>
             </div>
           </div>
