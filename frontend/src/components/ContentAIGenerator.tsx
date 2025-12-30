@@ -187,8 +187,60 @@ export default function ContentAIGenerator({
     return l.code.toLowerCase().includes(kw) || (l.label || '').toLowerCase().includes(kw);
   });
 
+  // 压缩图片
+  const compressImage = (file: File, maxWidth: number = 2048, maxHeight: number = 2048, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // 计算新尺寸（保持宽高比）
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = width * ratio;
+            height = height * ratio;
+          }
+
+          // 创建 canvas 并绘制压缩后的图片
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error('无法创建 canvas 上下文'));
+            return;
+          }
+
+          // 绘制图片
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // 转换为 base64（使用原文件的 MIME 类型，但如果是 PNG/GIF 则转换为 JPEG 以减小体积）
+          let outputMimeType = file.type;
+          if (file.type === 'image/png' || file.type === 'image/gif') {
+            outputMimeType = 'image/jpeg';
+          }
+
+          const dataUrl = canvas.toDataURL(outputMimeType, quality);
+          resolve(dataUrl);
+        };
+        img.onerror = () => {
+          reject(new Error('图片加载失败'));
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        reject(new Error('文件读取失败'));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   // 处理文件（公共逻辑）
-  const processImageFile = (file: File, resetInput?: () => void) => {
+  const processImageFile = async (file: File, resetInput?: () => void) => {
     // 验证文件类型
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
@@ -197,10 +249,10 @@ export default function ContentAIGenerator({
       return;
     }
 
-    // 验证文件大小（最大 10MB）
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // 验证文件大小（最大 20MB，压缩后应该会小很多）
+    const maxSize = 20 * 1024 * 1024; // 20MB
     if (file.size > maxSize) {
-      setError(t('errors.imageTooLarge', { ns: 'content', defaultValue: '图片大小不能超过 10MB' }));
+      setError(t('errors.imageTooLarge', { ns: 'content', defaultValue: '图片大小不能超过 20MB' }));
       if (resetInput) resetInput();
       return;
     }
@@ -209,35 +261,37 @@ export default function ContentAIGenerator({
     setError('');
 
     try {
-      // 读取文件为 base64
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        // dataUrl 格式: data:image/png;base64,iVBORw0KGgo...
-        const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-        if (base64Match) {
-          const mimeType = base64Match[1];
-          const base64 = base64Match[2];
-          setUploadedImage({
-            file,
-            dataUrl,
-            base64,
-            mimeType
-          });
-        } else {
-          setError(t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
+      // 压缩图片并转换为 base64
+      const dataUrl = await compressImage(file, 2048, 2048, 0.8);
+      
+      // dataUrl 格式: data:image/png;base64,iVBORw0KGgo...
+      const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (base64Match) {
+        const mimeType = base64Match[1];
+        const base64 = base64Match[2];
+        
+        // 检查压缩后的 base64 大小（base64 编码会增加约 33% 的大小）
+        const base64Size = (base64.length * 3) / 4; // 估算原始字节大小
+        if (base64Size > 10 * 1024 * 1024) { // 如果压缩后仍超过 10MB
+          setError(t('errors.imageTooLarge', { ns: 'content', defaultValue: '图片太大，请使用更小的图片或降低分辨率' }));
+          setImageUploading(false);
+          if (resetInput) resetInput();
+          return;
         }
-        setImageUploading(false);
-        if (resetInput) resetInput();
-      };
-      reader.onerror = () => {
+
+        setUploadedImage({
+          file,
+          dataUrl,
+          base64,
+          mimeType
+        });
+      } else {
         setError(t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
-        setImageUploading(false);
-        if (resetInput) resetInput();
-      };
-      reader.readAsDataURL(file);
+      }
+      setImageUploading(false);
+      if (resetInput) resetInput();
     } catch (e: any) {
-      setError(e.message || t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
+      setError(e.message || t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片处理失败' }));
       setImageUploading(false);
       if (resetInput) resetInput();
     }
@@ -737,8 +791,14 @@ export default function ContentAIGenerator({
       workingCanvas = rotatedCanvas;
     }
 
-    // 转换为 base64
-    const dataUrl = workingCanvas.toDataURL(uploadedImage.mimeType, 0.9);
+    // 转换为 base64（使用压缩质量 0.8 以减小体积）
+    // 对于 PNG/GIF，如果不需要透明度，转换为 JPEG 以减小体积
+    let outputMimeType = uploadedImage.mimeType;
+    if (uploadedImage.mimeType === 'image/png' || uploadedImage.mimeType === 'image/gif') {
+      // 转换为 JPEG 以减小体积（教育内容通常不需要透明度）
+      outputMimeType = 'image/jpeg';
+    }
+    const dataUrl = workingCanvas.toDataURL(outputMimeType, 0.8);
     const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (base64Match) {
       const mimeType = base64Match[1];
