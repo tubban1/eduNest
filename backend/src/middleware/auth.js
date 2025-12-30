@@ -67,7 +67,52 @@ const verifySupabaseToken = async (token) => {
       const userResult = await DatabaseService.getUserById(userId);
       
       if (!userResult.data) {
-        throw new Error('用户不存在');
+        // 如果users表中不存在，尝试从Supabase Auth获取用户信息并同步
+        try {
+          // 使用listUsers然后过滤，因为getUserById可能不可用
+          const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+          
+          if (authError) {
+            logger.warn('无法从Supabase Auth获取用户列表:', { userId, authError });
+            throw new Error('用户不存在');
+          }
+          
+          // 查找匹配的用户
+          const authUserData = authUsers?.users?.find(u => u.id === userId);
+          
+          if (!authUserData) {
+            logger.warn('Supabase Auth中也不存在用户:', { userId });
+            throw new Error('用户不存在');
+          }
+          
+          // 同步用户信息到users表
+          const { data: syncedUser, error: syncError } = await supabase
+            .from('users')
+            .insert({
+              id: authUserData.id,
+              email: authUserData.email,
+              name: authUserData.user_metadata?.name || authUserData.email?.split('@')[0] || 'User',
+              role: authUserData.user_metadata?.role || 'user',
+              created_at: authUserData.created_at
+            })
+            .select()
+            .single();
+          
+          if (syncError) {
+            // 如果插入失败（可能是并发插入导致的唯一约束冲突），尝试再次查询
+            const retryResult = await DatabaseService.getUserById(userId);
+            if (retryResult.data) {
+              return retryResult.data;
+            }
+            logger.error('同步用户到数据库失败:', { userId, syncError });
+            throw new Error('无法同步用户信息');
+          }
+          
+          return syncedUser;
+        } catch (syncError) {
+          logger.error('从Supabase Auth同步用户失败:', { userId, error: syncError });
+          throw new Error('用户不存在');
+        }
       }
       
       return userResult.data;
