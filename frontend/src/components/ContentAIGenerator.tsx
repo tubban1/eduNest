@@ -263,6 +263,7 @@ export default function ContentAIGenerator({
   const [cropArea, setCropArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [dragType, setDragType] = useState<'move' | 'nw' | 'ne' | 'sw' | 'se' | null>(null); // 拖动类型：移动、西北角、东北角、西南角、东南角
   const [cropMode, setCropMode] = useState(false);
   const imageRef = React.useRef<HTMLImageElement>(null);
   const imageContainerRef = React.useRef<HTMLDivElement>(null);
@@ -295,7 +296,30 @@ export default function ContentAIGenerator({
   // 开始裁剪（进入裁剪模式）
   const handleStartCrop = () => {
     setCropMode(true);
-    setCropArea(null);
+    // 初始化裁剪区域为图片的80%大小，居中显示
+    if (imageRef.current && imageContainerRef.current) {
+      const img = imageRef.current;
+      const container = imageContainerRef.current;
+      const imgRect = img.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      
+      const imgDisplayWidth = imgRect.width;
+      const imgDisplayHeight = imgRect.height;
+      const imgDisplayX = imgRect.left - containerRect.left;
+      const imgDisplayY = imgRect.top - containerRect.top;
+      
+      const cropWidth = imgDisplayWidth * 0.8;
+      const cropHeight = imgDisplayHeight * 0.8;
+      const cropX = imgDisplayX + (imgDisplayWidth - cropWidth) / 2;
+      const cropY = imgDisplayY + (imgDisplayHeight - cropHeight) / 2;
+      
+      setCropArea({
+        x: cropX,
+        y: cropY,
+        width: cropWidth,
+        height: cropHeight
+      });
+    }
   };
 
   // 取消裁剪
@@ -304,39 +328,212 @@ export default function ContentAIGenerator({
     setCropArea(null);
     setIsDragging(false);
     setDragStart(null);
+    setDragType(null);
   };
 
-  // 开始拖动（用于裁剪）
+  // 获取相对于容器的坐标（支持鼠标和触摸）
+  const getRelativeCoordinates = (clientX: number, clientY: number) => {
+    if (!imageContainerRef.current) return null;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  // 检测点击的是哪个角或区域
+  const detectDragType = (x: number, y: number, cropArea: { x: number; y: number; width: number; height: number }): 'move' | 'nw' | 'ne' | 'sw' | 'se' | null => {
+    const handleSize = 20; // 角的大小
+    const { x: cx, y: cy, width, height } = cropArea;
+    
+    // 检测四个角
+    if (Math.abs(x - cx) < handleSize && Math.abs(y - cy) < handleSize) return 'nw'; // 西北角
+    if (Math.abs(x - (cx + width)) < handleSize && Math.abs(y - cy) < handleSize) return 'ne'; // 东北角
+    if (Math.abs(x - cx) < handleSize && Math.abs(y - (cy + height)) < handleSize) return 'sw'; // 西南角
+    if (Math.abs(x - (cx + width)) < handleSize && Math.abs(y - (cy + height)) < handleSize) return 'se'; // 东南角
+    
+    // 检测是否在裁剪区域内（移动）
+    if (x >= cx && x <= cx + width && y >= cy && y <= cy + height) return 'move';
+    
+    return null;
+  };
+
+  // 更新裁剪区域（根据拖动类型）
+  const updateCropArea = (currentX: number, currentY: number, startCoords: { x: number; y: number }, dragType: string, initialCropArea: { x: number; y: number; width: number; height: number }) => {
+    if (!imageRef.current || !imageContainerRef.current) return;
+    
+    const img = imageRef.current;
+    const container = imageContainerRef.current;
+    const imgRect = img.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    // 获取图片在容器中的显示位置
+    const imgDisplayX = imgRect.left - containerRect.left;
+    const imgDisplayY = imgRect.top - containerRect.top;
+    const imgDisplayWidth = imgRect.width;
+    const imgDisplayHeight = imgRect.height;
+    
+    // 限制坐标在图片范围内
+    const minX = imgDisplayX;
+    const maxX = imgDisplayX + imgDisplayWidth;
+    const minY = imgDisplayY;
+    const maxY = imgDisplayY + imgDisplayHeight;
+    
+    const deltaX = currentX - startCoords.x;
+    const deltaY = currentY - startCoords.y;
+    
+    let newCropArea = { ...initialCropArea };
+    const minSize = 50; // 最小裁剪尺寸
+    
+    switch (dragType) {
+      case 'move':
+        // 移动整个裁剪区域
+        newCropArea.x = Math.max(minX, Math.min(maxX - newCropArea.width, initialCropArea.x + deltaX));
+        newCropArea.y = Math.max(minY, Math.min(maxY - newCropArea.height, initialCropArea.y + deltaY));
+        break;
+      case 'nw':
+        // 拖动西北角（左上角）
+        newCropArea.x = Math.max(minX, Math.min(initialCropArea.x + initialCropArea.width - minSize, initialCropArea.x + deltaX));
+        newCropArea.y = Math.max(minY, Math.min(initialCropArea.y + initialCropArea.height - minSize, initialCropArea.y + deltaY));
+        newCropArea.width = (initialCropArea.x + initialCropArea.width) - newCropArea.x;
+        newCropArea.height = (initialCropArea.y + initialCropArea.height) - newCropArea.y;
+        // 确保最小尺寸
+        if (newCropArea.width < minSize) {
+          newCropArea.width = minSize;
+          newCropArea.x = (initialCropArea.x + initialCropArea.width) - minSize;
+        }
+        if (newCropArea.height < minSize) {
+          newCropArea.height = minSize;
+          newCropArea.y = (initialCropArea.y + initialCropArea.height) - minSize;
+        }
+        break;
+      case 'ne':
+        // 拖动东北角（右上角）
+        newCropArea.y = Math.max(minY, Math.min(initialCropArea.y + initialCropArea.height - minSize, initialCropArea.y + deltaY));
+        newCropArea.width = Math.max(minSize, Math.min(maxX - initialCropArea.x, initialCropArea.width + deltaX));
+        newCropArea.height = (initialCropArea.y + initialCropArea.height) - newCropArea.y;
+        // 确保最小尺寸
+        if (newCropArea.width < minSize) {
+          newCropArea.width = minSize;
+        }
+        if (newCropArea.height < minSize) {
+          newCropArea.height = minSize;
+          newCropArea.y = (initialCropArea.y + initialCropArea.height) - minSize;
+        }
+        break;
+      case 'sw':
+        // 拖动西南角（左下角）
+        newCropArea.x = Math.max(minX, Math.min(initialCropArea.x + initialCropArea.width - minSize, initialCropArea.x + deltaX));
+        newCropArea.width = (initialCropArea.x + initialCropArea.width) - newCropArea.x;
+        newCropArea.height = Math.max(minSize, Math.min(maxY - initialCropArea.y, initialCropArea.height + deltaY));
+        // 确保最小尺寸
+        if (newCropArea.width < minSize) {
+          newCropArea.width = minSize;
+          newCropArea.x = (initialCropArea.x + initialCropArea.width) - minSize;
+        }
+        if (newCropArea.height < minSize) {
+          newCropArea.height = minSize;
+        }
+        break;
+      case 'se':
+        // 拖动东南角（右下角）
+        newCropArea.width = Math.max(minSize, Math.min(maxX - initialCropArea.x, initialCropArea.width + deltaX));
+        newCropArea.height = Math.max(minSize, Math.min(maxY - initialCropArea.y, initialCropArea.height + deltaY));
+        break;
+    }
+    
+    // 确保裁剪区域在图片范围内
+    if (newCropArea.x < minX) {
+      newCropArea.width -= (minX - newCropArea.x);
+      newCropArea.x = minX;
+    }
+    if (newCropArea.y < minY) {
+      newCropArea.height -= (minY - newCropArea.y);
+      newCropArea.y = minY;
+    }
+    if (newCropArea.x + newCropArea.width > maxX) {
+      newCropArea.width = maxX - newCropArea.x;
+    }
+    if (newCropArea.y + newCropArea.height > maxY) {
+      newCropArea.height = maxY - newCropArea.y;
+    }
+    
+    setCropArea(newCropArea);
+  };
+
+  // 保存初始裁剪区域（用于拖动计算）
+  const initialCropAreaRef = React.useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  // 开始拖动（用于裁剪）- 鼠标事件
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!cropMode || !imageContainerRef.current) return;
+    if (!cropMode || !imageContainerRef.current || !cropArea) return;
     e.preventDefault();
-    const rect = imageContainerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setDragStart({ x, y });
+    const coords = getRelativeCoordinates(e.clientX, e.clientY);
+    if (!coords) return;
+    
+    const detectedType = detectDragType(coords.x, coords.y, cropArea);
+    if (!detectedType) return;
+    
+    // 保存初始裁剪区域
+    initialCropAreaRef.current = { ...cropArea };
+    setDragType(detectedType);
+    setDragStart(coords);
     setIsDragging(true);
-    setCropArea({ x, y, width: 0, height: 0 });
   };
 
-  // 拖动中（更新裁剪区域）
+  // 拖动中（更新裁剪区域）- 鼠标事件
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cropMode || !isDragging || !dragStart || !imageContainerRef.current) return;
+    if (!cropMode || !isDragging || !dragStart || !dragType || !initialCropAreaRef.current || !imageContainerRef.current) return;
     e.preventDefault();
-    const rect = imageContainerRef.current.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
-
-    const x = Math.min(dragStart.x, currentX);
-    const y = Math.min(dragStart.y, currentY);
-    const width = Math.abs(currentX - dragStart.x);
-    const height = Math.abs(currentY - dragStart.y);
-
-    setCropArea({ x, y, width, height });
+    const coords = getRelativeCoordinates(e.clientX, e.clientY);
+    if (!coords) return;
+    
+    updateCropArea(coords.x, coords.y, dragStart, dragType, initialCropAreaRef.current);
   };
 
-  // 结束拖动
+  // 结束拖动 - 鼠标事件
   const handleMouseUp = () => {
     setIsDragging(false);
+    setDragType(null);
+    initialCropAreaRef.current = null;
+  };
+
+  // 开始触摸（用于裁剪）- 触摸事件
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!cropMode || !imageContainerRef.current || !cropArea) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (!touch) return;
+    const coords = getRelativeCoordinates(touch.clientX, touch.clientY);
+    if (!coords) return;
+    
+    const detectedType = detectDragType(coords.x, coords.y, cropArea);
+    if (!detectedType) return;
+    
+    // 保存初始裁剪区域
+    initialCropAreaRef.current = { ...cropArea };
+    setDragType(detectedType);
+    setDragStart(coords);
+    setIsDragging(true);
+  };
+
+  // 触摸移动（更新裁剪区域）- 触摸事件
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!cropMode || !isDragging || !dragStart || !dragType || !initialCropAreaRef.current || !imageContainerRef.current) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (!touch) return;
+    const coords = getRelativeCoordinates(touch.clientX, touch.clientY);
+    if (!coords) return;
+    
+    updateCropArea(coords.x, coords.y, dragStart, dragType, initialCropAreaRef.current);
+  };
+
+  // 结束触摸 - 触摸事件
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setDragType(null);
+    initialCropAreaRef.current = null;
   };
 
   // 应用旋转和裁剪
@@ -812,12 +1009,16 @@ export default function ContentAIGenerator({
             {/* 图片预览区域 */}
             <div
               ref={imageContainerRef}
-              className="relative bg-muted/30 rounded-lg overflow-hidden mb-4 cursor-crosshair"
-              style={{ minHeight: '300px' }}
+              className="relative bg-muted/30 rounded-lg overflow-hidden mb-4 cursor-crosshair touch-none"
+              style={{ minHeight: '300px', userSelect: 'none', WebkitUserSelect: 'none' }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
             >
               <img
                 ref={imageRef}
@@ -876,12 +1077,58 @@ export default function ContentAIGenerator({
                   />
                   {/* 裁剪框边框 */}
                   <div
-                    className="absolute border-2 border-primary pointer-events-none"
+                    className="absolute border-2 border-primary"
                     style={{
                       left: `${cropArea.x}px`,
                       top: `${cropArea.y}px`,
                       width: `${cropArea.width}px`,
-                      height: `${cropArea.height}px`
+                      height: `${cropArea.height}px`,
+                      cursor: isDragging && dragType === 'move' ? 'grabbing' : 'grab'
+                    }}
+                  />
+                  {/* 四个角的拖动手柄 */}
+                  {/* 西北角 */}
+                  <div
+                    className="absolute bg-primary border-2 border-white rounded-full cursor-nwse-resize"
+                    style={{
+                      left: `${cropArea.x - 10}px`,
+                      top: `${cropArea.y - 10}px`,
+                      width: '20px',
+                      height: '20px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                  />
+                  {/* 东北角 */}
+                  <div
+                    className="absolute bg-primary border-2 border-white rounded-full cursor-nesw-resize"
+                    style={{
+                      left: `${cropArea.x + cropArea.width - 10}px`,
+                      top: `${cropArea.y - 10}px`,
+                      width: '20px',
+                      height: '20px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                  />
+                  {/* 西南角 */}
+                  <div
+                    className="absolute bg-primary border-2 border-white rounded-full cursor-nesw-resize"
+                    style={{
+                      left: `${cropArea.x - 10}px`,
+                      top: `${cropArea.y + cropArea.height - 10}px`,
+                      width: '20px',
+                      height: '20px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                  />
+                  {/* 东南角 */}
+                  <div
+                    className="absolute bg-primary border-2 border-white rounded-full cursor-nwse-resize"
+                    style={{
+                      left: `${cropArea.x + cropArea.width - 10}px`,
+                      top: `${cropArea.y + cropArea.height - 10}px`,
+                      width: '20px',
+                      height: '20px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                   />
                 </>
