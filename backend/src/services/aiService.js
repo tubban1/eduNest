@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('./database');
 const AIProviderFactory = require('./aiProviderFactory');
+const logger = require('../utils/logger');
 
 // loadSupportedLibraries 函数已删除（不再需要，因为已切换到 full_html 模式）
 
@@ -32,28 +33,83 @@ const logAIUsageWithDefaults = async (params) => {
   return await logAIUsage(logParams);
 };
 
-// 更新现有的AI使用日志记录
-const updateExistingLog = async (requestId, updateData) => {
-  try {
-    // 使用已导入的 supabase 客户端
-    const { error } = await supabase
-      .from('ai_usage_logs')
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('request_id', requestId);
+// 更新现有的AI使用日志记录（带重试机制）
+const updateExistingLog = async (requestId, updateData, retries = 3) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      // 使用已导入的 supabase 客户端
+      const { error } = await supabase
+        .from('ai_usage_logs')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('request_id', requestId);
 
-    if (error) {
-      console.error('更新AI使用日志失败:', error);
-      throw error;
+      if (error) {
+        // 如果是网络错误且还有重试次数，则重试
+        const isNetworkError = error.message && (
+          error.message.includes('fetch failed') ||
+          error.message.includes('SocketError') ||
+          error.message.includes('UND_ERR_SOCKET') ||
+          error.message.includes('other side closed')
+        );
+        
+        if (isNetworkError && attempt < retries) {
+          // 等待后重试（指数退避）
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // 非网络错误或重试次数用完，记录错误但不抛出
+        logger.error('更新AI使用日志失败:', {
+          requestId,
+          attempt,
+          error: {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          }
+        });
+        return { success: false, error };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      // 捕获异常错误
+      const isNetworkError = error.message && (
+        error.message.includes('fetch failed') ||
+        error.message.includes('SocketError') ||
+        error.message.includes('UND_ERR_SOCKET') ||
+        error.message.includes('other side closed')
+      );
+      
+      if (isNetworkError && attempt < retries) {
+        // 等待后重试（指数退避）
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // 重试次数用完或非网络错误，记录错误
+      logger.error('更新AI使用日志失败:', {
+        requestId,
+        attempt,
+        error: {
+          message: error.message,
+          details: typeof error.details === 'string' ? error.details : (error.stack || JSON.stringify(error.details)),
+          hint: error.hint,
+          code: error.code
+        }
+      });
+      return { success: false, error };
     }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('更新AI使用日志失败:', error);
-    return { success: false, error };
   }
+  
+  // 所有重试都失败
+  return { success: false, error: { message: '所有重试都失败' } };
 };
 
 // 安全的变量替换函数
