@@ -72,6 +72,9 @@ export default function ContentAIGenerator({
   const [checking, setChecking] = useState<boolean>(false);
   const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
   const [trialStatus, setTrialStatus] = useState<{ content_generated: boolean; ai_guide_used: boolean } | null>(null);
+  // 图片上传相关状态
+  const [uploadedImage, setUploadedImage] = useState<{ file: File; dataUrl: string; base64: string; mimeType: string } | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   // 语言弹窗
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
@@ -184,6 +187,113 @@ export default function ContentAIGenerator({
     return l.code.toLowerCase().includes(kw) || (l.label || '').toLowerCase().includes(kw);
   });
 
+  // 处理图片选择
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      // 如果没有选择文件，重置输入框以便可以再次选择
+      event.target.value = '';
+      return;
+    }
+
+    // 验证文件类型
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError(t('errors.invalidImageType', { ns: 'content', defaultValue: '不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP' }));
+      event.target.value = ''; // 重置输入框
+      return;
+    }
+
+    // 验证文件大小（最大 10MB）
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      setError(t('errors.imageTooLarge', { ns: 'content', defaultValue: '图片大小不能超过 10MB' }));
+      event.target.value = ''; // 重置输入框
+      return;
+    }
+
+    setImageUploading(true);
+    setError('');
+
+    try {
+      // 读取文件为 base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        // dataUrl 格式: data:image/png;base64,iVBORw0KGgo...
+        const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (base64Match) {
+          const mimeType = base64Match[1];
+          const base64 = base64Match[2];
+          setUploadedImage({
+            file,
+            dataUrl,
+            base64,
+            mimeType
+          });
+        } else {
+          setError(t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
+        }
+        setImageUploading(false);
+        // 处理完成后，重置输入框以便可以再次选择同一个文件
+        event.target.value = '';
+      };
+      reader.onerror = () => {
+        setError(t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
+        setImageUploading(false);
+        event.target.value = ''; // 重置输入框
+      };
+      reader.readAsDataURL(file);
+    } catch (e: any) {
+      setError(e.message || t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }));
+      setImageUploading(false);
+      event.target.value = ''; // 重置输入框
+    }
+  };
+
+  // 处理拍照
+  const handleCameraCapture = () => {
+    // 检查是否在移动设备上
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/jpg,image/png,image/gif,image/webp';
+    
+    // 在移动设备上使用 capture 属性打开相机
+    // capture="environment" 使用后置摄像头，capture="user" 使用前置摄像头
+    if (isMobile) {
+      input.capture = 'environment'; // 使用后置摄像头
+    }
+    
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // 创建一个符合 React.ChangeEvent<HTMLInputElement> 格式的事件对象
+        const syntheticEvent = {
+          target: {
+            files: [file],
+            value: ''
+          }
+        } as React.ChangeEvent<HTMLInputElement>;
+        handleImageSelect(syntheticEvent);
+      }
+      // 重置动态创建的 input，以便可以再次使用
+      input.value = '';
+    };
+    input.click();
+  };
+
+  // 移除图片
+  const handleRemoveImage = () => {
+    setUploadedImage(null);
+    // 重置文件输入框，以便可以再次选择同一个文件
+    const fileInput = document.getElementById('image-upload-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   // 提交异步生成
   const handleAsyncAiGenerate = async () => {
     if (!knowledgePoint.trim()) {
@@ -236,6 +346,10 @@ export default function ContentAIGenerator({
           learningStage: 'understanding',
           description,
           language_code: language,
+          image: uploadedImage ? {
+            mime_type: uploadedImage.mimeType,
+            data: uploadedImage.base64
+          } : undefined,
         });
 
         if (!(generateResponse && (generateResponse as any).success)) {
@@ -288,6 +402,10 @@ export default function ContentAIGenerator({
           description,
           language_code: language,
           provider: user.role === 'admin' ? aiProvider : undefined,
+          image: uploadedImage ? {
+            mime_type: uploadedImage.mimeType,
+            data: uploadedImage.base64
+          } : undefined,
         });
 
         if (!(generateResponse && (generateResponse as any).success)) {
@@ -346,15 +464,77 @@ export default function ContentAIGenerator({
           <label className="block font-semibold mb-1 text-foreground">
             {mounted ? t('knowledgePoint', { ns: 'content', defaultValue: 'Knowledge Point' }) : 'Knowledge Point'} <span className="text-destructive">*</span>
           </label>
-          <textarea
-            className="w-full border border-border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card resize-none h-24"
-            value={knowledgePoint}
-            onChange={e => setKnowledgePoint(e.target.value)}
-            placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
-            required
-            disabled={isAiFormDisabled}
-            maxLength={1500}
-          />
+          {/* 图片预览区域（显示在对话框上部） */}
+          {uploadedImage && (
+            <div className="mb-3 border border-border rounded-lg overflow-hidden bg-card shadow-sm">
+              <div className="relative bg-muted/30">
+                <img
+                  src={uploadedImage.dataUrl}
+                  alt="Uploaded"
+                  className="w-full h-auto max-h-32 object-contain block"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  disabled={isAiFormDisabled}
+                  className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition disabled:opacity-50 backdrop-blur-sm shadow-md"
+                  title={mounted ? t('removeImage', { ns: 'content', defaultValue: '移除图片' }) : 'Remove image'}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+          {/* 文字输入区域 */}
+          <div className="relative">
+            <textarea
+              className="w-full border border-border p-2 pr-20 pb-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card resize-none h-24"
+              value={knowledgePoint}
+              onChange={e => setKnowledgePoint(e.target.value)}
+              placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
+              required
+              disabled={isAiFormDisabled}
+              maxLength={1500}
+            />
+            {/* 图标按钮区域（显示在 textarea 右下角） */}
+            <div className="absolute bottom-2 right-2 flex gap-1 z-10">
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleImageSelect}
+                disabled={isAiFormDisabled || imageUploading}
+                className="hidden"
+                id="image-upload-input"
+              />
+              <label
+                htmlFor="image-upload-input"
+                className={`cursor-pointer p-1.5 rounded hover:bg-muted/50 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={mounted ? t('uploadImage', { ns: 'content', defaultValue: '上传图片' }) : 'Upload Image'}
+              >
+                {imageUploading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                ) : (
+                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </label>
+              <button
+                type="button"
+                onClick={handleCameraCapture}
+                disabled={isAiFormDisabled || imageUploading}
+                className={`p-1.5 rounded hover:bg-muted/50 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                title={mounted ? t('takePhoto', { ns: 'content', defaultValue: '拍照' }) : 'Take Photo'}
+              >
+                <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
           <div className="flex justify-end items-center mt-1">
             <span className={`text-xs ${knowledgePoint.length > 1350 ? 'text-destructive' : knowledgePoint.length > 1200 ? 'text-warning' : 'text-muted-foreground'}`}>
               {knowledgePoint.length}/1500

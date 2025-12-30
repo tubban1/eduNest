@@ -147,9 +147,30 @@ class AIProviderFactory {
             systemInstruction.parts[0].text += '\n' + msg.content;
           }
         } else {
+          // 构建 parts 数组，包含文本和可能的图片
+          const parts = [];
+          
+          // 如果有图片，先添加图片
+          if (msg.image && msg.image.mime_type && msg.image.data) {
+            console.log(`[AI Provider Factory] 添加图片到 Gemini parts: mime_type=${msg.image.mime_type}, data_length=${msg.image.data.length}`);
+            parts.push({
+              inline_data: {
+                mime_type: msg.image.mime_type,
+                data: msg.image.data
+              }
+            });
+          } else {
+            console.log(`[AI Provider Factory] 消息中没有图片数据`);
+          }
+          
+          // 添加文本内容
+          if (msg.content) {
+            parts.push({ text: msg.content });
+          }
+          
           contents.push({
             role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
+            parts: parts
           });
         }
       }

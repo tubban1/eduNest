@@ -146,6 +146,7 @@ class AsyncGenerationQueue {
             description: generationParams.description,
             language_code: generationParams.language_code,
             provider: generationParams.provider,
+            image: generationParams.image || null, // 保存图片数据
             // 将幂等键保存在 JSON 里，便于 contains 查询，无需表结构变更
             idempotency_key: idempotencyKey
           },
@@ -155,6 +156,7 @@ class AsyncGenerationQueue {
             description: generationParams.description,
             language_code: generationParams.language_code,
             provider: generationParams.provider,
+            image: generationParams.image || null, // 保存图片数据
             // 将幂等键保存在 JSON 里，便于 contains 查询，无需表结构变更
             idempotency_key: idempotencyKey
           }
@@ -479,6 +481,13 @@ class AsyncGenerationQueue {
         throw new Error(`更新任务状态失败: ${updateError.message}`);
       }
 
+      // 调试日志：检查从数据库读取的图片数据
+      if (task.generation_params && task.generation_params.image) {
+        logger.info(`[Process Task] 从数据库读取到图片数据: mime_type=${task.generation_params.image.mime_type}, data_length=${task.generation_params.image.data ? task.generation_params.image.data.length : 0}`);
+      } else {
+        logger.info(`[Process Task] 从数据库未读取到图片数据`);
+      }
+      
       // 调用 AI 生成服务（异步模式）+ 超时保护
       const aiPromise = aiService.generateEducationalContent(
         task.generation_params.knowledge_point,
@@ -489,7 +498,8 @@ class AsyncGenerationQueue {
         'generate',
         task.generation_params.provider,
         task.request_id,
-        true // isAsyncMode = true
+        true, // isAsyncMode = true
+        task.generation_params.image || null // 传递图片数据
       );
 
       const timeoutPromise = new Promise((_, reject) => {

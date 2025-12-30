@@ -181,8 +181,6 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
       return { data: contents, error: null };
     }
 
-    console.log(`[getContentsWithGenerationStatus] 查询到 ${generationLogs?.length || 0} 条生成日志，内容ID: ${contentIds.length} 个`);
-
     // 为每个内容创建状态映射（只取最新的状态）
     const statusMap = new Map();
     const retryCountMap = new Map();
@@ -208,8 +206,6 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
         if (log.status === 'done' && log.is_render_success === false) {
           finalStatus = 'failed';
         }
-        
-        console.log(`[getContentsWithGenerationStatus] 内容 ${contentId} 的状态: ${log.status} -> ${finalStatus}, is_render_success: ${log.is_render_success}`);
         
         statusMap.set(contentId, {
           generation_status: finalStatus,
@@ -240,15 +236,8 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
         user_query: status?.user_query || null
       };
       
-      // 调试日志：如果内容没有找到状态，记录一下
-      if (!status) {
-        console.log(`[getContentsWithGenerationStatus] 警告: 内容 ${content.id} (${content.title}) 没有找到生成状态记录`);
-      }
-      
       return result;
     });
-
-    console.log(`[getContentsWithGenerationStatus] 返回 ${contentsWithStatus.length} 条内容，其中 ${contentsWithStatus.filter(c => c.generation_status).length} 条有生成状态`);
     
     return { data: contentsWithStatus, error: null };
   } catch (error) {

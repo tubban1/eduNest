@@ -402,7 +402,7 @@ const LEARNING_STAGE_NAMES = {
 };
 
 // 生成教育交互内容
-const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null, isAsyncMode = false) => {
+const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null, isAsyncMode = false, image = null) => {
   let logId = null;
   let logParams = {};
   try {
@@ -415,9 +415,26 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
       systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', 'en-US');
     }
     
+    // 构建用户消息，如果提供了图片，则包含图片数据
+    const userMessage = {
+      role: 'user',
+      content: userPrompt
+    };
+    
+    // 如果有图片，添加到消息中（用于 Gemini 格式）
+    if (image && image.mime_type && image.data) {
+      console.log(`[AI Service] 添加图片到消息: mime_type=${image.mime_type}, data_length=${image.data.length}`);
+      userMessage.image = {
+        mime_type: image.mime_type,
+        data: image.data
+      };
+    } else {
+      console.log(`[AI Service] 未提供图片数据或图片数据无效`);
+    }
+    
     const messages = [
       { role: 'system', content: systemPromptWithKnowledge },
-      { role: 'user', content: userPrompt }
+      userMessage
     ];
 
     // 使用AI提供商工厂发送请求

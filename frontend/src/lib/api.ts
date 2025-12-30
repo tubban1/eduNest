@@ -561,6 +561,10 @@ class ApiClient {
     description?: string;
     language_code?: string;
     provider?: string;
+    image?: {
+      mime_type: string;
+      data: string;
+    };
   }) {
     return this.post('/ai/generate-async', {
       content_id: contentId,
@@ -596,6 +600,10 @@ class ApiClient {
     description?: string;
     language_code?: string;
     provider?: string;
+    image?: {
+      mime_type: string;
+      data: string;
+    };
   }) {
     return this.post('/ai/generate-free', params);
   }

@@ -17,7 +17,23 @@ router.post('/generate', [
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
-  body('requestId').optional().isUUID().withMessage('requestId 必须是有效的UUID')
+  body('requestId').optional().isUUID().withMessage('requestId 必须是有效的UUID'),
+  body('image').optional().custom((value) => {
+    if (value && typeof value === 'object') {
+      if (!value.mime_type || typeof value.mime_type !== 'string') {
+        throw new Error('image.mime_type 必须是字符串');
+      }
+      if (!value.data || typeof value.data !== 'string') {
+        throw new Error('image.data 必须是 base64 字符串');
+      }
+      // 验证 MIME 类型
+      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validMimeTypes.includes(value.mime_type)) {
+        throw new Error('不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP');
+      }
+    }
+    return true;
+  })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -28,7 +44,7 @@ router.post('/generate', [
       });
     }
 
-    const { knowledgePoint, learningStage, description, language_code, provider, requestId } = req.body;
+    const { knowledgePoint, learningStage, description, language_code, provider, requestId, image } = req.body;
 
     // 验证学习阶段
     if (!aiService.validateLearningStage(learningStage)) {
@@ -51,7 +67,7 @@ router.post('/generate', [
       }
     }
 
-    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate', provider, requestId);
+    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate', provider, requestId, false, image || null);
 
     if (result.success) {
       // 在生成成功后扣减积分（仅当需要且用户存在）
@@ -503,7 +519,23 @@ router.post('/generate-async', [
   body('learning_stage').optional().isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
-  body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda')
+  body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
+  body('image').optional().custom((value) => {
+    if (value && typeof value === 'object') {
+      if (!value.mime_type || typeof value.mime_type !== 'string') {
+        throw new Error('image.mime_type 必须是字符串');
+      }
+      if (!value.data || typeof value.data !== 'string') {
+        throw new Error('image.data 必须是 base64 字符串');
+      }
+      // 验证 MIME 类型
+      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validMimeTypes.includes(value.mime_type)) {
+        throw new Error('不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP');
+      }
+    }
+    return true;
+  })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -515,8 +547,15 @@ router.post('/generate-async', [
       });
     }
 
-    const { content_id, knowledge_point, learning_stage, description, language_code, provider } = req.body;
+    const { content_id, knowledge_point, learning_stage, description, language_code, provider, image } = req.body;
     const userId = req.user?.id;
+    
+    // 调试日志：检查图片数据
+    if (image) {
+      logger.info(`[Generate Async] 收到图片数据: mime_type=${image.mime_type}, data_length=${image.data ? image.data.length : 0}`);
+    } else {
+      logger.info(`[Generate Async] 未收到图片数据`);
+    }
 
     // 验证 content 是否存在且属于当前用户
     const { data: content, error: contentError } = await DatabaseService.supabase
@@ -557,7 +596,8 @@ router.post('/generate-async', [
       learning_stage: learning_stage || 'understanding',
       description,
       language_code,
-      provider
+      provider,
+      image: image || undefined
     });
 
 
@@ -1077,7 +1117,23 @@ router.post('/generate-free', [
   body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
-  body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda')
+  body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
+  body('image').optional().custom((value) => {
+    if (value && typeof value === 'object') {
+      if (!value.mime_type || typeof value.mime_type !== 'string') {
+        throw new Error('image.mime_type 必须是字符串');
+      }
+      if (!value.data || typeof value.data !== 'string') {
+        throw new Error('image.data 必须是 base64 字符串');
+      }
+      // 验证 MIME 类型
+      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validMimeTypes.includes(value.mime_type)) {
+        throw new Error('不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP');
+      }
+    }
+    return true;
+  })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -1090,7 +1146,14 @@ router.post('/generate-free', [
     }
 
     const visitorId = req.visitorId;
-    const { knowledgePoint, learningStage, description, language_code, provider } = req.body;
+    const { knowledgePoint, learningStage, description, language_code, provider, image } = req.body;
+    
+    // 调试日志：检查图片数据
+    if (image) {
+      logger.info(`[Generate Free] 收到图片数据: mime_type=${image.mime_type}, data_length=${image.data ? image.data.length : 0}`);
+    } else {
+      logger.info(`[Generate Free] 未收到图片数据`);
+    }
 
     // 检查免费试用状态
     const canGenerate = await visitorUsageService.canGenerateContent(visitorId);
@@ -1137,7 +1200,8 @@ router.post('/generate-free', [
       learning_stage: learningStage || 'understanding',
       description: description,
       language_code: language_code,
-      provider: provider
+      provider: provider,
+      image: image || undefined
     });
     
     // 标记内容已生成（使用免费试用机会）
