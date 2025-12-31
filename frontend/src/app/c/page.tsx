@@ -15,12 +15,13 @@ function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { list
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [pollingContents, setPollingContents] = useState<Set<string>>(new Set());
   
   useEffect(() => { setMounted(true); }, []);
   
   // 刷新内容列表的函数 - 只获取有 full_html 的内容
   // 使用 useCallback 稳定函数引用，避免触发子组件不必要的重新渲染
-  const refreshContent = useCallback(async () => {
+  const refreshContent = useCallback(async (forceRefresh = false) => {
     // 先检查缓存，如果有缓存就不显示 loading
     const filters: any = {};
     if (userId) {
@@ -28,6 +29,12 @@ function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { list
     }
     
     const cacheKey = generateCacheKey('content:filtered', filters);
+    
+    // 如果强制刷新，清除缓存
+    if (forceRefresh) {
+      cache.delete(cacheKey);
+    }
+    
     const cached = cache.get<any[]>(cacheKey);
     
     // 处理列表数据的辅助函数
@@ -107,6 +114,98 @@ function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { list
       isRefreshingRef.current = false;
     });
   }, [refreshKey]); // 只依赖 refreshKey，不依赖 refreshContent
+
+  // 检测需要轮询的内容
+  // 1. thumbnail_status === 'generating' 的内容
+  // 2. 内容生成完成但没有 svg_thumbnail 的内容（等待 AI 生成 SVG）
+  useEffect(() => {
+    const pollingIds = new Set<string>();
+    content.forEach(item => {
+      // 情况1：缩略图正在生成中
+      if (item.thumbnail_status === 'generating') {
+        pollingIds.add(item.id);
+      }
+      // 情况2：内容生成完成（没有生成中状态），但没有 svg_thumbnail 和 thumbnail_url
+      // 且 thumbnail_status 不是 'failed'（失败的不需要轮询）
+      // 注意：即使 thumbnail_status 是 'ready'，如果没有 svg_thumbnail 和 thumbnail_url，也需要轮询
+      else if (
+        !item.generation_status || 
+        (item.generation_status !== 'pending' && item.generation_status !== 'processing')
+      ) {
+        const hasSvgThumbnail = item.svg_thumbnail && typeof item.svg_thumbnail === 'string' && item.svg_thumbnail.trim().length > 0;
+        const hasThumbnailUrl = item.thumbnail_url && typeof item.thumbnail_url === 'string' && item.thumbnail_url.trim().length > 0;
+        const isNotFailed = item.thumbnail_status !== 'failed';
+        
+        // 如果既没有 svg_thumbnail 也没有 thumbnail_url，且状态不是 failed，需要轮询
+        // 即使 thumbnail_status 是 'ready'，如果没有实际的缩略图，也需要继续轮询
+        if (!hasSvgThumbnail && !hasThumbnailUrl && isNotFailed) {
+          pollingIds.add(item.id);
+        }
+      }
+    });
+    
+    // 更新轮询集合
+    setPollingContents(prev => {
+      const next = new Set(prev);
+      // 添加需要轮询的内容
+      pollingIds.forEach(id => next.add(id));
+      // 移除已完成的内容（有 svg_thumbnail 或 thumbnail_url，或状态为 failed）
+      prev.forEach(id => {
+        if (!pollingIds.has(id)) {
+          next.delete(id);
+        }
+      });
+      return next;
+    });
+  }, [content]);
+
+  // 自动轮询生成中的缩略图状态
+  useEffect(() => {
+    if (pollingContents.size === 0) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        // 获取所有内容的最新状态（轮询时清除缓存，确保获取最新数据）
+        const filters: any = {};
+        if (userId) {
+          filters.created_by = userId;
+        }
+        const cacheKey = generateCacheKey('content:filtered', filters);
+        cache.delete(cacheKey); // 清除缓存，确保获取最新数据
+        const data: any = await api.content.getFiltered(filters);
+        const updatedContents = Array.isArray(data) ? data : [];
+        
+        setContent(prev => {
+          const newContents = prev.map(prevContent => {
+            const updated = updatedContents.find((c: any) => c.id === prevContent.id);
+            if (updated) {
+              // 检查是否有 svg_thumbnail 或 thumbnail_url
+              const hasSvgThumbnail = updated.svg_thumbnail && typeof updated.svg_thumbnail === 'string' && updated.svg_thumbnail.trim().length > 0;
+              const hasThumbnailUrl = updated.thumbnail_url && typeof updated.thumbnail_url === 'string' && updated.thumbnail_url.trim().length > 0;
+              
+              // 如果有 svg_thumbnail 或 thumbnail_url，或者状态为 failed，停止轮询
+              if (hasSvgThumbnail || hasThumbnailUrl || updated.thumbnail_status === 'failed') {
+                setPollingContents(prevPolling => {
+                  const next = new Set(prevPolling);
+                  next.delete(prevContent.id);
+                  return next;
+                });
+              }
+              return updated;
+            }
+            return prevContent;
+          });
+          return newContents;
+        });
+      } catch (error) {
+        console.error('轮询缩略图状态失败:', error);
+      }
+    }, 3000); // 每3秒轮询一次
+
+    return () => clearInterval(interval);
+  }, [pollingContents.size, userId]);
   
   if (loading) return <div className="text-gray-400">{mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...'}</div>;
   if (error) return <div className="text-red-600">{error}</div>;
@@ -126,7 +225,7 @@ function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { list
           lists={lists} 
           refreshLists={refreshLists}
           linkPathPrefix="/c"
-          onContentUpdate={refreshContent}
+          onContentUpdate={() => refreshContent(true)}
         />
       ))}
     </div>

@@ -23,6 +23,7 @@ export default function HomePage() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [pollingContents, setPollingContents] = useState<Set<string>>(new Set());
   
   const ITEMS_PER_PAGE = 18; // 每页加载 18 个卡片
 
@@ -75,7 +76,7 @@ export default function HomePage() {
   }, []);
 
   // 获取内容列表 - 根据登录状态和语言筛选（支持分页）
-  const refreshContent = useCallback(async (pageNum = 1, append = false) => {
+  const refreshContent = useCallback(async (pageNum = 1, append = false, forceRefresh = false) => {
     const filters: any = {
       limit: ITEMS_PER_PAGE,
       offset: (pageNum - 1) * ITEMS_PER_PAGE
@@ -98,13 +99,23 @@ export default function HomePage() {
     // 如果是第一页，检查缓存
     if (pageNum === 1 && !append) {
       const cacheKey = generateCacheKey('content:filtered', filters);
+      
+      // 如果强制刷新，清除缓存
+      if (forceRefresh) {
+        cache.delete(cacheKey);
+      }
+      
       const cached = cache.get<any[]>(cacheKey);
       
       if (cached !== null) {
         const list = Array.isArray(cached) ? cached : [];
         const finalContent = processListData(list);
-        setContents(finalContent);
-        setHasMore(finalContent.length === ITEMS_PER_PAGE);
+        // 确保缓存数据也没有重复（双重保险）
+        const uniqueContent = finalContent.filter((item, index, self) => 
+          index === self.findIndex((t) => t.id === item.id)
+        );
+        setContents(uniqueContent);
+        setHasMore(uniqueContent.length === ITEMS_PER_PAGE);
         setIsLoading(false);
         return;
       }
@@ -125,9 +136,18 @@ export default function HomePage() {
       const finalContent = processListData(list);
       
       if (append) {
-        setContents(prev => [...prev, ...finalContent]);
+        // 追加时去重，避免重复的 key
+        setContents(prev => {
+          const existingIds = new Set(prev.map(c => c.id));
+          const newContent = finalContent.filter(c => !existingIds.has(c.id));
+          return [...prev, ...newContent];
+        });
       } else {
-        setContents(finalContent);
+        // 即使不是追加模式，也确保没有重复（双重保险）
+        const uniqueContent = finalContent.filter((item, index, self) => 
+          index === self.findIndex((t) => t.id === item.id)
+        );
+        setContents(uniqueContent);
       }
       
       // 如果返回的数量少于 limit，说明没有更多了
@@ -166,6 +186,106 @@ export default function HomePage() {
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, isLoading, loadMore]);
+
+  // 检测需要轮询的内容
+  // 1. thumbnail_status === 'generating' 的内容
+  // 2. 内容生成完成但没有 svg_thumbnail 的内容（等待 AI 生成 SVG）
+  useEffect(() => {
+    const pollingIds = new Set<string>();
+    contents.forEach(item => {
+      // 情况1：缩略图正在生成中
+      if (item.thumbnail_status === 'generating') {
+        pollingIds.add(item.id);
+      }
+      // 情况2：内容生成完成（没有生成中状态），但没有 svg_thumbnail 和 thumbnail_url
+      // 且 thumbnail_status 不是 'failed'（失败的不需要轮询）
+      else if (
+        !item.generation_status || 
+        (item.generation_status !== 'pending' && item.generation_status !== 'processing')
+      ) {
+        const hasSvgThumbnail = item.svg_thumbnail && typeof item.svg_thumbnail === 'string' && item.svg_thumbnail.trim().length > 0;
+        const hasThumbnailUrl = item.thumbnail_url && typeof item.thumbnail_url === 'string' && item.thumbnail_url.trim().length > 0;
+        const isNotFailed = item.thumbnail_status !== 'failed';
+        
+        // 如果既没有 svg_thumbnail 也没有 thumbnail_url，且状态不是 failed，需要轮询
+        if (!hasSvgThumbnail && !hasThumbnailUrl && isNotFailed) {
+          pollingIds.add(item.id);
+        }
+      }
+    });
+    
+    // 更新轮询集合
+    setPollingContents(prev => {
+      const next = new Set(prev);
+      // 添加需要轮询的内容
+      pollingIds.forEach(id => next.add(id));
+      // 移除已完成的内容（有 svg_thumbnail 或 thumbnail_url，或状态为 failed）
+      prev.forEach(id => {
+        if (!pollingIds.has(id)) {
+          next.delete(id);
+        }
+      });
+      return next;
+    });
+  }, [contents]);
+
+  // 自动轮询生成中的缩略图状态
+  useEffect(() => {
+    if (pollingContents.size === 0) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        // 获取所有内容的最新状态（轮询时清除缓存，确保获取最新数据）
+        const filters: any = {};
+        if (user) {
+          filters.created_by = user.id;
+        } else {
+          const currentLang = i18n.language || 'zh-CN';
+          const normalizedLang = currentLang === 'zh' ? 'zh-CN' : 
+                                currentLang === 'en' ? 'en-US' :
+                                currentLang === 'de' ? 'de-DE' :
+                                currentLang === 'fr' ? 'fr-FR' : currentLang;
+          filters.language_code = normalizedLang;
+        }
+        filters.limit = ITEMS_PER_PAGE;
+        filters.offset = (page - 1) * ITEMS_PER_PAGE;
+        
+        const cacheKey = generateCacheKey('content:filtered', filters);
+        cache.delete(cacheKey); // 清除缓存，确保获取最新数据
+        const data: any = await api.content.getFiltered(filters);
+        const updatedContents = Array.isArray(data) ? data : [];
+        
+        setContents(prev => {
+          const newContents = prev.map(prevContent => {
+            const updated = updatedContents.find((c: any) => c.id === prevContent.id);
+            if (updated) {
+              // 检查是否有 svg_thumbnail 或 thumbnail_url
+              const hasSvgThumbnail = updated.svg_thumbnail && typeof updated.svg_thumbnail === 'string' && updated.svg_thumbnail.trim().length > 0;
+              const hasThumbnailUrl = updated.thumbnail_url && typeof updated.thumbnail_url === 'string' && updated.thumbnail_url.trim().length > 0;
+              
+              // 如果有 svg_thumbnail 或 thumbnail_url，或者状态为 failed，停止轮询
+              if (hasSvgThumbnail || hasThumbnailUrl || updated.thumbnail_status === 'failed') {
+                setPollingContents(prevPolling => {
+                  const next = new Set(prevPolling);
+                  next.delete(prevContent.id);
+                  return next;
+                });
+              }
+              return updated;
+            }
+            return prevContent;
+          });
+          return newContents;
+        });
+      } catch (error) {
+        console.error('轮询缩略图状态失败:', error);
+      }
+    }, 3000); // 每3秒轮询一次
+
+    return () => clearInterval(interval);
+  }, [pollingContents.size, user, i18n.language, page]);
 
   // 监听语言变化和用户变化
   useEffect(() => {
@@ -260,7 +380,7 @@ export default function HomePage() {
                       onContentUpdate={() => {
                         setPage(1);
                         setHasMore(true);
-                        refreshContent(1, false);
+                        refreshContent(1, false, true); // 强制刷新，清除缓存
                       }}
                     />
                   ))}

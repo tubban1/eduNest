@@ -34,7 +34,7 @@ function sendNotification(title: string, body: string) {
   if (Notification.permission === 'granted') {
     new Notification(title, {
       body,
-      icon: '/icon.png',
+      icon: '/favicon.png',
       tag: 'content-generation', // 使用 tag 避免重复通知
     });
   } 
@@ -44,7 +44,7 @@ function sendNotification(title: string, body: string) {
       if (permission === 'granted') {
         new Notification(title, {
           body,
-          icon: '/icon.png',
+          icon: '/favicon.png',
           tag: 'content-generation',
         });
       }
