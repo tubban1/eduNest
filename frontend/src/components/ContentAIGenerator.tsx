@@ -826,6 +826,11 @@ export default function ContentAIGenerator({
 
   // 提交异步生成
   const handleAsyncAiGenerate = async () => {
+    // 防止重复提交
+    if (aiGenerating) {
+      return;
+    }
+    
     if (!knowledgePoint.trim()) {
       setError(t('pleaseEnterKnowledgePoint', { ns: 'content', defaultValue: 'Please enter a knowledge point' }));
       return;
@@ -860,8 +865,14 @@ export default function ContentAIGenerator({
       }
     }
 
+    // 在设置状态之前再次检查，防止竞态条件
+    if (aiGenerating) {
+      return;
+    }
+    
     setAiGenerating(true);
     setError('');
+    
     try {
       const rawTitle = knowledgePoint.trim();
       const safeTitle = rawTitle.length > 200 ? (rawTitle.slice(0, 200)) : rawTitle;
@@ -871,6 +882,7 @@ export default function ContentAIGenerator({
 
       if (!user) {
         // 未登录用户：使用免费生成接口
+        // 注意：这个接口会创建 content 并添加任务，所以只需要调用一次
         generateResponse = await api.generateContentFree({
           knowledgePoint: knowledgePoint.trim(),
           learningStage: 'understanding',
@@ -905,7 +917,11 @@ export default function ContentAIGenerator({
         }
 
         // 游客生成后，跳转到结果页面
+        // 注意：在跳转前先设置状态，避免后续逻辑执行
+        setAiGenerating(false);
         if (contentResponse.short_id) {
+          // 先执行跳转，然后立即返回，不执行后续的 sessionStorage 和事件分发逻辑
+          // 因为这些逻辑应该在目标页面处理，而不是在当前页面
           router.push(`/c/${contentResponse.short_id}`);
           return; // 跳转后直接返回，不执行后续逻辑
         }
@@ -1102,8 +1118,35 @@ export default function ContentAIGenerator({
       <button
         type="button"
         className="w-full px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg shadow hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        onClick={handleAsyncAiGenerate}
-        disabled={isAiFormDisabled || !knowledgePoint.trim() || checking || (user && creditsBalance !== null && creditsBalance <= 0) || (user && pendingCount >= 3) || (!user && trialStatus?.content_generated)}
+        onClick={(e) => {
+          // 移动端：如果已经处理了 touchstart，忽略 click 事件
+          if ((e.target as HTMLElement).hasAttribute('data-touch-handled')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          handleAsyncAiGenerate();
+        }}
+        onTouchStart={(e) => {
+          // 移动端防止双击触发：使用 touchstart 而不是 click，避免 click 事件延迟导致的重复触发
+          if (aiGenerating || isAiFormDisabled || !knowledgePoint.trim()) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          // 标记已处理触摸事件，防止后续 click 事件触发
+          (e.target as HTMLElement).setAttribute('data-touch-handled', 'true');
+          // 阻止后续的 click 事件
+          e.preventDefault();
+          handleAsyncAiGenerate();
+          // 延迟清除标记，确保 click 事件不会触发
+          setTimeout(() => {
+            (e.target as HTMLElement).removeAttribute('data-touch-handled');
+          }, 300);
+        }}
+        disabled={isAiFormDisabled || aiGenerating || !knowledgePoint.trim() || checking || (user && creditsBalance !== null && creditsBalance <= 0) || (user && pendingCount >= 3) || (!user && trialStatus?.content_generated)}
       >
         {aiGenerating ? (
           <>

@@ -186,6 +186,11 @@ class AsyncGenerationQueue {
   startWatchdog() {
     setInterval(async () => {
       try {
+        // 检查 Supabase 连接状态
+        if (DatabaseService.useMockData) {
+          return; // 使用模拟数据时跳过
+        }
+        
         const now = Date.now();
         const thresholdIso = new Date(now - this.taskTimeoutMs).toISOString();
         
@@ -199,7 +204,15 @@ class AsyncGenerationQueue {
             .lt('updated_at', thresholdIso);
         }, 'watchdog_select_timeouts');
         
-        if (error) { logger.error('Watchdog 查询失败:', error); return; }
+        if (error) { 
+          // 如果是网络错误（DNS 解析失败等），只记录警告，不中断服务
+          if (error.message && (error.message.includes('ENOTFOUND') || error.message.includes('fetch failed'))) {
+            logger.warn('Watchdog 查询失败（网络问题，将稍后重试）:', error.message);
+          } else {
+            logger.error('Watchdog 查询失败:', error);
+          }
+          return; 
+        }
         if (!data || data.length === 0) return;
         
         let failed = 0;
@@ -363,6 +376,11 @@ class AsyncGenerationQueue {
       }
 
       // 获取待处理的任务
+      // 检查 Supabase 连接状态
+      if (DatabaseService.useMockData) {
+        return; // 使用模拟数据时跳过
+      }
+
       const { data: pendingTasks, error } = await this.runQueryWithRetry(async () => {
         return await DatabaseService.supabase
           .from('ai_usage_logs')
@@ -375,7 +393,12 @@ class AsyncGenerationQueue {
       }, 'queue_select_pending');
 
       if (error) {
-        logger.error('查询待处理任务失败:', error);
+        // 如果是网络错误（DNS 解析失败等），只记录警告，不中断服务
+        if (error.message && (error.message.includes('ENOTFOUND') || error.message.includes('fetch failed'))) {
+          logger.warn('查询待处理任务失败（网络问题，将稍后重试）:', error.message);
+        } else {
+          logger.error('查询待处理任务失败:', error);
+        }
         return;
       }
 
