@@ -296,8 +296,8 @@ export default function HelpPage() {
                                   </div>
                                 </div>
                                 {/* AI Teacher Demo - 与左侧 icon 对齐 */}
-                                <div className="flex items-start gap-3 mt-3">
-                                  <div className="w+2 flex-shrink-0" /> {/* 占位，与 icon 对齐，更靠左 */}
+                                <div className="flex items-start gap-13 mt-3">
+                                  <div className="w-0 flex-shrink-10" /> {/* 占位，与 icon 对齐，更靠左 */}
                                   <div className="flex-1">
                                     <AITeacherDemo />
                                   </div>
