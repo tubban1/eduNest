@@ -293,9 +293,13 @@ export default function HelpPage() {
                                     <p className="text-sm text-muted-foreground mb-3">
                                       {t('whatIsEduNest.aiTeacher.description', { ns: 'help', defaultValue: 'The AI Teacher button is located in the bottom right corner of each animation page. Click it to start a conversation and learn about any concepts you don\'t understand, or explore extended knowledge. The AI teacher gradually learns your strengths and weaknesses to provide personalized tutoring.' })}
                                     </p>
-                                    <div className="mt-3">
-                                      <AITeacherDemo />
-                                    </div>
+                                  </div>
+                                </div>
+                                {/* AI Teacher Demo - 与左侧 icon 对齐 */}
+                                <div className="flex items-start gap-3 mt-3">
+                                  <div className="w+2 flex-shrink-0" /> {/* 占位，与 icon 对齐，更靠左 */}
+                                  <div className="flex-1">
+                                    <AITeacherDemo />
                                   </div>
                                 </div>
                               </div>

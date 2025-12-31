@@ -207,7 +207,7 @@ export default function IncenterAnimation() {
       const animate = () => {
         setAnimationProgress(prev => {
           // 进一步减慢动画速度，让圆规效果更明显
-          const newProgress = prev + 0.00005;
+          const newProgress = prev + 0.005;
           if (newProgress >= 1) {
             currentBisectorIndex++;
             // 增加每个角平分线之间的暂停时间
