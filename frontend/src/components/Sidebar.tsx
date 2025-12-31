@@ -127,7 +127,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
   };
 
   const sidebarContent = (
-    <div className="w-64 h-screen bg-white shadow-sm border-r border-gray-200 flex flex-col">
+    <div className={`w-64 h-screen bg-white shadow-sm border-r border-gray-200 flex flex-col ${variant === 'mobile' ? 'h-[100dvh]' : ''}`}>
       {variant === 'mobile' && (
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -242,7 +242,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
       </div>
       
       {user && (
-        <div className="p-6 border-t border-gray-200">
+        <div className={`p-6 border-t border-gray-200 ${variant === 'mobile' ? 'pb-[calc(1.5rem+env(safe-area-inset-bottom))]' : ''}`}>
           <button onClick={handleSignOut} className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors">
             <LogOut className="w-5 h-5 mr-3" />
             {mounted ? t('logout', { ns: 'auth', defaultValue: 'Logout' }) : 'Logout'}
