@@ -9,8 +9,8 @@ class AsyncGenerationQueue {
     this.runningTasks = new Set();
     this.runningContent = new Set(); // 按 content_id 互斥
     this.isProcessing = false;
-    // 任务超时（毫秒）：默认 10 分钟
-    this.taskTimeoutMs = 10 * 60 * 1000;
+    // 任务超时（毫秒）：默认 6 分钟
+    this.taskTimeoutMs = 6 * 60 * 1000;
     // 瞬时错误重试配置
     this.retry = { maxAttempts: 3, baseDelayMs: 500, maxDelayMs: 4000 };
     // 网络错误抑制：避免频繁记录相同的网络错误
@@ -275,7 +275,7 @@ class AsyncGenerationQueue {
               .from('ai_usage_logs')
               .update({ 
                 status: 'failed', 
-                error_message: '生成超时(>10min)', 
+                error_message: '生成超时(>6min)', 
                 completed_at: completedAt,
                 total_duration: totalDuration,
                 updated_at: completedAt
@@ -552,22 +552,16 @@ class AsyncGenerationQueue {
       );
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('TASK_TIMEOUT_10MIN')), this.taskTimeoutMs);
+        setTimeout(() => reject(new Error('TASK_TIMEOUT_6MIN')), this.taskTimeoutMs);
       });
 
       const aiResult = await Promise.race([aiPromise, timeoutPromise]);
 
       if (aiResult.success && aiResult.data) {
         // 生成成功，更新 content 表
-        try {
-          await this.updateContentFromAIResult(contentId, aiResult.data);
-        } catch (updateError) {
-          // 如果更新 content 失败，记录错误但继续更新任务状态
-          logger.error(`更新 content 失败，但 AI 生成成功: ${contentId}`, updateError);
-          // 继续执行，更新任务状态为 done
-        }
+        await this.updateContentFromAIResult(contentId, aiResult.data);
         
-        // 计算总时长并更新任务状态为 done（无论 content 更新是否成功）
+        // 计算总时长并更新任务状态为 done
         const completedAt = new Date().toISOString();
         const { data: taskData } = await DatabaseService.supabase
           .from('ai_usage_logs')
@@ -582,38 +576,21 @@ class AsyncGenerationQueue {
           totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
         }
         
-        // 确保任务状态被更新为 done，即使之前的操作失败
-        try {
-          await this.updateTaskStatusWithCompletion(taskId, 'done', completedAt, totalDuration);
-        } catch (statusError) {
-          logger.error(`更新任务状态为 done 失败: ${taskId}`, statusError);
-          // 如果更新失败，尝试使用更简单的方式更新
-          try {
-            await this.updateTaskStatus(taskId, 'done');
-          } catch (fallbackError) {
-            logger.error(`回退更新任务状态失败: ${taskId}`, fallbackError);
-            throw fallbackError; // 如果连回退都失败，抛出异常
-          }
-        }
+        await this.updateTaskStatusWithCompletion(taskId, 'done', completedAt, totalDuration);
         
         // 清理同一 content_id 的其他 pending 任务
-        try {
-          await this.cleanupPendingTasks(contentId, taskId);
-        } catch (cleanupError) {
-          // 清理失败不影响主流程，只记录日志
-          logger.warn(`清理 pending 任务失败: ${contentId}`, cleanupError);
-        }
+        await this.cleanupPendingTasks(contentId, taskId);
         
         // 注意：缩略图生成已移除，只在 test-thumbnail 页面手动生成
         
       } else {
         // 生成失败，处理重试逻辑
-        await this.handleFailure(task, aiResult.error || 'AI生成失败');
+        await this.handleFailure(task, (aiResult && aiResult.error) || 'AI生成失败');
       }
 
     } catch (error) {
       logger.error(`任务处理失败: ${taskId}`, error);
-      const reason = error && error.message === 'TASK_TIMEOUT_10MIN' ? '生成超时(>10min)' : (error?.message || '未知错误');
+      const reason = error && error.message === 'TASK_TIMEOUT_6MIN' ? '生成超时(>6min)' : (error?.message || '未知错误');
       // 确保失败时也更新状态
       try {
         await this.handleFailure(task, reason);
