@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { cache, generateCacheKey, CACHE_CONFIG } from './cache';
 import { getVisitorId } from '../utils/visitorId';
+import i18n from '@/i18n/config';
 
 // 统一的API客户端
 class ApiClient {
@@ -105,7 +106,7 @@ class ApiClient {
     
     // 检查网络状态（仅在浏览器环境）
     if (typeof window !== 'undefined' && 'navigator' in window && !navigator.onLine) {
-      throw new Error('网络连接已断开，请检查网络设置');
+      throw new Error(i18n.t('common:network.offline', { defaultValue: '网络连接已断开，请检查网络设置' }));
     }
     
     const headers: Record<string, string> = {
@@ -141,7 +142,7 @@ class ApiClient {
       // 创建超时 Promise
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          reject(new Error(`请求超时（${timeoutMs / 1000}秒）`));
+          reject(new Error(i18n.t('common:network.requestTimeout', { seconds: timeoutMs / 1000, defaultValue: `请求超时（${timeoutMs / 1000}秒）` })));
         }, timeoutMs);
       });
 
@@ -194,7 +195,13 @@ class ApiClient {
       if (isNetworkError && retryCount < maxRetries) {
         // 指数退避：1秒、2秒、4秒
         const delay = Math.min(1000 * Math.pow(2, retryCount), 4000);
-        console.log(`网络错误，${delay / 1000}秒后自动重试 (${retryCount + 1}/${maxRetries})...`);
+        const delaySeconds = delay / 1000;
+        console.log(i18n.t('common:network.retrying', { 
+          delay: delaySeconds, 
+          current: retryCount + 1, 
+          max: maxRetries,
+          defaultValue: `网络错误，${delaySeconds}秒后自动重试 (${retryCount + 1}/${maxRetries})...`
+        }));
         
         await new Promise(resolve => setTimeout(resolve, delay));
         return await this.request(endpoint, options, retryCount + 1, maxRetries, timeoutMs);
@@ -202,7 +209,7 @@ class ApiClient {
       
       // 提供更详细的错误信息
       if (isNetworkError) {
-        throw new Error(`网络连接失败: ${error.message}。请检查网络连接和后端服务状态。`);
+        throw new Error(i18n.t('common:network.requestFailed', { defaultValue: '请求失败，请检查网络连接和后端服务状态。' }));
       }
       
       throw error;

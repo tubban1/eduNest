@@ -1,4 +1,5 @@
 // 生成状态管理工具函数
+import i18n from '@/i18n/config';
 
 export const GENERATION_STATUS = {
   PENDING: 'pending',
@@ -297,12 +298,21 @@ export class StatusPollingManager {
                 // 检查是否离线
                 const isOffline = 'navigator' in window && !navigator.onLine;
                 if (isOffline) {
-                  toast.warning('网络连接已断开，正在等待网络恢复...', 5000);
+                  toast.warning(
+                    i18n.t('common:network.waitingForRecovery', { defaultValue: '网络连接已断开，正在等待网络恢复...' }),
+                    5000
+                  );
                 } else {
-                  toast.warning('网络连接不稳定，正在重试...', 3000);
+                  toast.warning(
+                    i18n.t('common:network.connectionUnstable', { defaultValue: '网络连接不稳定，正在重试...' }),
+                    3000
+                  );
                 }
               } else {
-                toast.error('获取生成状态失败，正在重试...', 3000);
+                toast.error(
+                  i18n.t('common:network.pollingFailed', { defaultValue: '获取生成状态失败，正在重试...' }),
+                  3000
+                );
               }
             }).catch(() => {
               // 静默处理导入失败
@@ -314,7 +324,10 @@ export class StatusPollingManager {
           console.warn(`轮询连续失败次数过多（${consecutiveFailures}次），停止轮询: contentId=${contentId}。任务可能已超时（6分钟限制）`);
           if (typeof window !== 'undefined') {
             import('./toast').then(({ toast }) => {
-              toast.error('网络连接持续失败，已停止轮询。请检查网络后刷新页面。', 5000);
+              toast.error(
+                i18n.t('common:network.pollingStopped', { defaultValue: '网络连接持续失败，已停止轮询。请检查网络后刷新页面。' }),
+                5000
+              );
             }).catch(() => {
               // 静默处理导入失败
             });

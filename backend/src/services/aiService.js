@@ -202,79 +202,189 @@ const getFallbackLibraryEntries = () => {
   return fallbackLibraryEntriesCache;
 };
 
+// 从 URL 中提取库名和文件名
+const extractLibraryInfo = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  
+  // 特殊处理：tailwindcss.com 等没有文件名的 CDN
+  if (url.includes('cdn.tailwindcss.com')) {
+    return {
+      name: 'tailwindcss',
+      version: null,
+      file: 'tailwindcss.js' // 使用通用文件名
+    };
+  }
+  
+  // 提取文件名（URL 最后一段，去掉查询参数）
+  const fileName = url.split('/').pop()?.split('?')[0];
+  
+  // 如果没有文件名或文件名不是 .js/.css，尝试从 URL 路径推断
+  if (!fileName || (!fileName.endsWith('.js') && !fileName.endsWith('.css'))) {
+    // 尝试从 URL 路径中提取文件名（例如 /dist/katex.min.js）
+    const pathMatch = url.match(/\/([^/]+\.(js|css))(?:\?|$)/i);
+    if (pathMatch) {
+      const inferredFileName = pathMatch[1];
+      return {
+        name: null,
+        version: null,
+        file: inferredFileName
+      };
+    }
+    return null;
+  }
+  
+  // 尝试从 URL 中提取库名和版本
+  // 模式1: package@version/path/file.js 或 @scope/package@version/path/file.js
+  const versionMatch = url.match(/(?:@([^/]+)\/)?([^/@]+)@([^/]+)/);
+  if (versionMatch) {
+    const scope = versionMatch[1];
+    const packageName = versionMatch[2];
+    const version = versionMatch[3];
+    const fullName = scope ? `${scope}/${packageName}` : packageName;
+    return {
+      name: fullName,
+      version: version,
+      file: fileName
+    };
+  }
+  
+  // 模式2: 从文件名推断库名（去掉 .min.js, .js, .min.css, .css 等后缀）
+  // 例如: vue.global.prod.js -> vue, katex.min.js -> katex, auto-render.min.js -> auto-render
+  const nameFromFile = fileName
+    .replace(/\.(min\.)?(js|css)$/i, '')
+    .replace(/\.(global|prod|dev|bundle)/i, '')
+    .split('.')[0]; // 取第一部分（例如 vue.global.prod.js -> vue）
+  
+  return {
+    name: nameFromFile || null,
+    version: null,
+    file: fileName
+  };
+};
+
+// 生成阿里云 OSS fallback URL
+const generateFallbackUrl = (libraryInfo, type) => {
+  if (!libraryInfo || !libraryInfo.file) return null;
+  
+  const baseUrl = 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib';
+  return `${baseUrl}/${libraryInfo.file}`;
+};
+
 const findReplacementUrl = (url, type) => {
   if (!url || typeof url !== 'string') return null;
 
   const matchFromEntries = (entries) => {
     if (!entries || !entries.length) return null;
+    
+    // 优先匹配最精确的 pattern（最长的 pattern 优先）
+    const matches = [];
     for (const entry of entries) {
       if (entry.type !== type) continue;
       if (!entry.patterns || !entry.patterns.length) continue;
-      if (entry.patterns.some(pattern => pattern && url.includes(pattern))) {
-        if (entry.url && entry.url !== url) {
-          return entry.url;
+      
+      // 检查每个 pattern，找到最精确的匹配
+      for (const pattern of entry.patterns) {
+        if (pattern && url.includes(pattern)) {
+          matches.push({
+            entry,
+            pattern,
+            patternLength: pattern.length,
+            url: entry.url
+          });
         }
       }
     }
+    
+    if (matches.length === 0) return null;
+    
+    // 按 pattern 长度降序排序，优先选择最精确的匹配
+    matches.sort((a, b) => b.patternLength - a.patternLength);
+    
+    // 返回最精确匹配的 URL（如果与原始 URL 不同）
+    const bestMatch = matches[0];
+    if (bestMatch.url && bestMatch.url !== url) {
+      return bestMatch.url;
+    }
+    
     return null;
   };
 
-  return (
-    matchFromEntries(getSupportedLibraryEntries()) ||
-    matchFromEntries(getFallbackLibraryEntries())
-  );
+  return matchFromEntries(getSupportedLibraryEntries());
 };
 
 const replaceLibrariesInHtml = (html) => {
   if (typeof html !== 'string' || !html.trim()) return html;
 
   let updatedHtml = html;
+  
+  // 先收集所有 script 标签，用于检测重复和纠正
+  const scriptMatches = [];
+  const scriptPattern = /<script\b([^>]*)\bsrc=["']([^"']+)["']([^>]*)><\/script>/gi;
+  let match;
+  while ((match = scriptPattern.exec(html)) !== null) {
+    scriptMatches.push({
+      fullMatch: match[0],
+      beforeAttrs: match[1],
+      src: match[2],
+      afterAttrs: match[3],
+      index: match.index
+    });
+  }
+  
+  // 检测重复的 katex.min.js，并标记第二个应该替换为 auto-render.min.js
+  const katexMatches = scriptMatches.filter(m => {
+    const fileName = m.src.split('/').pop()?.split('?')[0];
+    return fileName === 'katex.min.js' && !m.src.includes('auto-render');
+  });
+  
+  // 如果发现两个 katex.min.js，第二个应该替换为 auto-render.min.js
+  const duplicateKatexMap = new Map();
+  if (katexMatches.length > 1) {
+    // 从第二个开始，都应该替换为 auto-render.min.js
+    for (let i = 1; i < katexMatches.length; i++) {
+      duplicateKatexMap.set(katexMatches[i].src, true);
+    }
+    logger.warn(`[Library Replacement] 检测到 ${katexMatches.length} 个重复的 katex.min.js，将自动纠正第二个及之后的为 auto-render.min.js`);
+  }
 
-  // 替换 <script src="...">，优先使用 supported-libraries，失败回退到 libraries_cn（通过 onerror）
+  // 替换 <script src="...">，优先使用 supported-libraries，失败回退到阿里云 OSS（通过 onerror）
   updatedHtml = updatedHtml.replace(
     /<script\b([^>]*)\bsrc=["']([^"']+)["']([^>]*)><\/script>/gi,
     (match, beforeAttrs, src, afterAttrs) => {
-      const primary = findReplacementUrl(src, 'js'); // supported
-      const fallback = (() => {
-        // 显式从 fallback 表里匹配
-        const entries = getFallbackLibraryEntries();
-        if (!entries || !entries.length) return null;
-        for (const entry of entries) {
-          if (entry.type !== 'js') continue;
-          if (entry.patterns && entry.patterns.some(p => p && src.includes(p))) {
-            return entry.url;
-          }
-        }
-        // 若 primary 命中了 supported，也尝试用相同库名在 fallback 找到对应 URL（模式匹配不足时）
-        if (primary) {
-          for (const entry of entries) {
-            if (entry.type === 'js' && entry.url) {
-              // 简单启发：同名库（根据 url 最后一段文件名判断）
-              const file = primary.split('/').pop();
-              const fbFile = entry.url.split('/').pop();
-              if (file && fbFile && file.toLowerCase().includes(fbFile.split('?')[0].toLowerCase().replace(/\.min\.js$|\.js$/,''))) {
-                return entry.url;
-              }
-            }
-          }
-        }
-        return null;
-      })();
-
-      // 重建 <script> 标签
-      const leftAttrs = beforeAttrs || '';
-      const rightAttrs = afterAttrs || '';
-
-      if (primary) {
-        if (fallback && !/onerror=/i.test(match)) {
-          return `<script${leftAttrs} src="${primary}" onerror="this.onerror=null; this.src='${fallback}'"${rightAttrs}></script>`;
-        }
-        return `<script${leftAttrs} src="${primary}"${rightAttrs}></script>`;
+      // 如果已经有 onerror，跳过处理（避免重复处理）
+      if (/onerror=/i.test(match)) {
+        return match;
       }
-
-      // 若未匹配到 supported，但能匹配到 fallback，直接使用 fallback
+      
+      // 1. 尝试从 supported-libraries.json 中找到匹配的 URL
+      let primary = findReplacementUrl(src, 'js');
+      
+      // 2. 特殊处理：如果检测到重复的 katex.min.js，第二个及之后的应该替换为 auto-render.min.js
+      if (duplicateKatexMap.has(src)) {
+        const autoRenderUrl = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js';
+        primary = autoRenderUrl;
+        logger.info(`[Library Replacement] 自动纠正重复的 katex.min.js 为 auto-render.min.js: ${src}`);
+      }
+      
+      // 3. 提取库信息用于生成 fallback URL
+      // 如果 primary 存在，使用 primary 的 URL 来提取文件名（更准确）
+      const sourceUrlForExtraction = primary || src;
+      const libraryInfo = extractLibraryInfo(sourceUrlForExtraction);
+      
+      // 4. 生成阿里云 OSS fallback URL（基于实际文件名）
+      const fallback = libraryInfo ? generateFallbackUrl(libraryInfo, 'js') : null;
+      
+      // 如果 primary 存在，使用 primary + fallback
+      if (primary) {
+        if (fallback) {
+          return `<script${beforeAttrs || ''} src="${primary}" onerror="this.onerror=null; this.src='${fallback}'"${afterAttrs || ''}></script>`;
+        }
+        return `<script${beforeAttrs || ''} src="${primary}"${afterAttrs || ''}></script>`;
+      }
+      
+      // 如果 primary 不存在但能生成 fallback，使用原始 URL + fallback
       if (fallback) {
-        return `<script${leftAttrs} src="${fallback}"${rightAttrs}></script>`;
+        return `<script${beforeAttrs || ''} src="${src}" onerror="this.onerror=null; this.src='${fallback}'"${afterAttrs || ''}></script>`;
       }
 
       // 未匹配到任何替换，保持原样
@@ -286,15 +396,34 @@ const replaceLibrariesInHtml = (html) => {
   updatedHtml = updatedHtml.replace(
     /<link\b([^>]*)\bhref=["']([^"']+)["']([^>]*)>/gi,
     (match, beforeAttrs, href, afterAttrs) => {
+      // 如果已经有 onerror，跳过处理（CSS link 标签不支持 onerror，但为了统一处理）
+      if (/onerror=/i.test(match)) {
+        return match;
+      }
+      
       const relMatch = match.match(/\brel=["']([^"']+)["']/i);
       const rel = relMatch ? relMatch[1].toLowerCase() : '';
       if (rel && rel !== 'stylesheet' && rel !== 'preload' && rel !== 'prefetch') {
         return match;
       }
+      
+      // 1. 尝试从 supported-libraries.json 中找到匹配的 URL
       const primary = findReplacementUrl(href, 'css');
+      
+      // 2. 提取库信息用于生成 fallback URL
+      const libraryInfo = extractLibraryInfo(href);
+      
+      // 3. 生成阿里云 OSS fallback URL
+      const fallback = libraryInfo ? generateFallbackUrl(libraryInfo, 'css') : null;
+      
       if (primary) {
+        // CSS link 标签不支持 onerror，但我们可以添加一个备用 link 标签
+        // 或者直接使用 primary（因为 CSS 通常不需要 fallback）
         return `<link${beforeAttrs || ''} href="${primary}"${afterAttrs || ''}>`;
       }
+      
+      // 如果 primary 不存在但能生成 fallback，保持原样（CSS 不支持 onerror）
+      // 或者可以考虑添加一个备用 link 标签，但为了简单，这里保持原样
       return match;
     }
   );
@@ -311,124 +440,184 @@ const ARK_URL = process.env.ARK_URL || 'https://ark.cn-beijing.volces.com/api/v3
 const aiProviderFactory = new AIProviderFactory();
 
 // 系统提示词（来自AI_KNOWLEDGE.md）
-const SYSTEM_PROMPT = `You are an expert Vue 3 educational interaction designer and frontend engineer.
+// System prompt 使用 JSON 结构，但只包含 content 部分（不包含 role）
+// 在使用时会包装成 { role: 'system', content: ... }
+const SYSTEM_PROMPT_CONTENT = {
+  identity: "You are an expert Vue 3 educational interaction designer and senior frontend engineer.",
+  platform_philosophy: {
+    learning_model: "This platform prioritizes interactive, visual, and exploratory learning.",
+    interaction_first: [
+      "When a concept can be better understood through interaction, animation, simulation, or sound effects, you SHOULD implement it.",
+      "Static text-only explanations are NOT sufficient unless interaction adds no educational value.",
+      "Learner agency, experimentation, and feedback loops are core design goals.",
+      "Note: Sound effects (audio cues) are encouraged; speech synthesis (voice narration) MUST be user-triggered only"
+    ],
+    libraries_policy: [
+      "External libraries MAY be used freely when they clearly improve pedagogy, exploration, or feedback.",
+      "Avoid libraries that are purely decorative, redundant, or do not improve understanding."
+    ]
+  },
+  core_objective: "Generate a stable, production-safe, highly interactive Vue 3 educational project that teaches {{knowledge_point}} effectively.",
+  pedagogical_requirements: {
+    depth: "Explain the concept accurately and deeply. Avoid superficial summaries.",
+    structure: [
+      "Core principles and their relationships",
+      "Progressive scaffolding from intuition to formal understanding",
+      "Common misconceptions or edge cases when relevant"
+    ],
+    reinforcement: [
+      "Interactive manipulation",
+      "Visual metaphors or simulations",
+      "Optional sound effects (audio cues) for feedback or guidance",
+      "User-triggered voice narration (speech synthesis) when helpful - MUST be triggered by explicit user interaction only"
+    ]
+  },
+  technical_constraints: {
+    html: {
+      standalone: true,
+      must_include: [
+        "<meta charset=\"UTF-8\">",
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+      ],
+      css_constraints: [
+        "DO NOT use overflow: hidden on body element. Body must allow vertical scrolling when content exceeds viewport height, especially on small screens"
+      ]
+    },
+    vue: {
+      version: "3.5.20",
+      loading: "production CDN only",
+      api_usage: {
+        preferred: "Composition API (ref, reactive, computed, watch, onMounted, nextTick)",
+        allowed: "Options API (data, methods, mounted, watch option, this.$nextTick) is also acceptable"
+      },
+      template_rules: {
+        multi_stage_interfaces: "MUST use v-if only",
+        dom_lifecycle: "Only one stage/page may exist in the DOM at any time",
+        forbidden: ["v-show", "opacity-based hiding", "visibility-based hiding"]
+      }
+    },
+    dom_and_lifecycle_safety: {
+      canvas: [
+        "Canvas access MUST occur only inside lifecycle hooks (onMounted + nextTick for Composition API, or mounted + this.$nextTick for Options API)",
+        "Canvas MUST be initialized only when its stage becomes active",
+        "Do NOT assume canvas persists across v-if stage changes"
+      ],
+      katex: {
+        mandatory_usage: "ALL mathematical formulas MUST be rendered using KaTeX. NEVER use raw LaTeX syntax directly in HTML text.",
+        library_loading: [
+          "Load KaTeX CSS, KaTeX JS, and KaTeX auto-render in correct order",
+          "CRITICAL: Do NOT load katex.min.js twice. The second script MUST be auto-render.min.js."
+        ],
+        formula_marking: [
+          "Inline: <span class=\"math-inline\">$...$</span>",
+          "Display: <div class=\"math-block\">$$...$$</div>"
+        ],
+        persistent_rendering: {
+          requirement: "MUST ensure formulas re-render after every DOM update (v-if, stage changes, dynamic content)",
+          architecture: "MUST define a renderMath helper function that wraps renderMathInElement with error handling",
+          library_loading_check: [
+            "In Vue mounted lifecycle (onMounted or mounted), MUST check if KaTeX library is loaded before rendering",
+            "Use window.onload or poll until typeof renderMathInElement !== 'undefined' before first render",
+            "For async component updates, retry rendering until formulas are fully formatted",
+            "This prevents formula source code from flashing before KaTeX renders"
+          ],
+          layout_stability: [
+            "Set minimum height for math blocks (.math-block) to prevent layout shift during rendering",
+            "Use CSS: .math-block { min-height: 1.5em; } or similar to prevent layout jank",
+            "Inline formulas (.math-inline) should also have min-height to prevent flickering"
+          ],
+          watch_requirements: [
+            "If using multi-stage interface (v-if) or dynamic content that changes DOM structure, use watch() with deep: true (Composition API) or watch option (Options API) to monitor reactive variables (e.g., stage, content)",
+            "After change detected, MUST call nextTick() (Composition API) or this.$nextTick() (Options API), then execute renderMath in the callback",
+            "If using <transition>, MUST bind renderMath to @after-enter hook to prevent rendering failure during animation",
+            "For single-stage static content, initial render in onMounted + nextTick (Composition API) or mounted + this.$nextTick (Options API) is sufficient"
+          ],
+          error_handling: [
+            "renderMath function MUST include try-catch",
+            "MUST verify KaTeX library is loaded (typeof renderMathInElement !== 'undefined') before execution",
+            "Container MUST be document.getElementById('app') or Vue root element, NOT document.body"
+          ],
+          method_signature: "renderMathInElement(container, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false })"
+        },
+        forbidden: [
+          "DO NOT place formulas inside SVG <text> elements",
+          "DO NOT use raw LaTeX without KaTeX rendering",
+          "DO NOT assume formulas render automatically"
+        ]
+      },
+      web_speech_api: {
+        mandatory_rule: "Speech synthesis MUST be triggered only by explicit user interaction (e.g., button click)",
+        forbidden: ["automatic narration on page load", "automatic narration on stage change"]
+      }
+    }
+  },
+  svg_generation_requirements: {
+    output_field: "svg",
+    coordinate_system: "viewBox=\"0 0 640 360\"",
+    size_attributes: {
+      width: "FORBIDDEN",
+      height: "FORBIDDEN"
+    },
+    scaling_behavior: "Use default preserveAspectRatio=\"xMidYMid meet\"",
+    content_rules: [
+      "SVG must be fully self-contained",
+      "No external fonts, images, scripts, or CSS",
+      "No JavaScript inside SVG",
+      "Deterministic output only",
+      "Use abstract diagrams or symbolic representations only"
+    ]
+  },
+  ux_ui_requirements: {
+    responsive: true,
+    touch_friendly: true,
+    mobile_safe: true,
+    design_focus: [
+      "Content clarity over decoration",
+      "Interaction clarity over visual complexity"
+    ],
+    feedback: "Use visual or audio feedback only when it supports learning"
+  },
+  output_format_requirements: {
+    format: "single JSON object only",
+    parsing_rule: "The entire output MUST be valid, strictly parseable JSON. Any missing comma, unclosed quote, or bracket is a critical error."
+  },
+  output_schema: {
+    title: "Concise educational project title in the target language",
+    description: "Clear explanation of what is taught and how the learner interacts",
+    full_html: "A complete, standalone HTML document including all CSS and JS",
+    svg: "A self-contained SVG thumbnail following the SVG rules",
+    tags: {
+      type: "MUST be a JSON array of strings, e.g., [\"数学\", \"几何\", \"三角形\"]",
+      count: "3-7",
+      rules: [
+        "Educational and conceptual only",
+        "Reflect subject, domain, subdomain, and approximate grade",
+        "No technical tags (e.g., Vue, Canvas, JavaScript)"
+      ],
+      format_requirement: "CRITICAL: tags MUST be a valid JSON array. If invalid, return empty array [] instead of breaking the response."
+    },
+    content_type: "vue",
+    language_code: "{{fallback_language}}"
+  },
+  final_instruction: "Return ONLY the final JSON object that exactly matches the schema above. Do not include any additional text."
+};
 
-Your task is to generate an interactive Vue 3 project that visually, audibly, and interactively teaches a specific concept.
-
-Your design must ensure:
-
-1. Educational Quality
-- The input "{{knowledge_point}}" must be accurately and deeply explained, not superficial.
-- Structure the presentation to reflect a clear conceptual breakdown, including:
--- Key principles and their relationships
--- Edge cases or common misunderstandings (where relevant)
--- Gradual progression or scaffolding to support layered understanding
-- Use metaphor, visualization, sound cues, and interaction to reinforce mental models.
-
-2. Technical Constraints
-- You must generate a complete, standalone HTML file that can run directly in a browser or iframe.
-- The HTML file must include:
-  * A complete <!DOCTYPE html> declaration
-  * A <head> section with:
-    - <meta charset="UTF-8">
-    - <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    - <title> tag with the project title
-    - All external CSS and JS libraries loaded via <link> and <script> tags
-    - Internal <style> tags for CSS
-  * A <body> section with:
-    - All HTML content
-    - Internal <script> tags for JavaScript
-  - Use Vue 3.5.20 with <script setup> syntax with ref, reactive, computed, onMounted, and nextTick via production CDN.
-  - Every reactive variable must be defined before use. No undefined references.
-  - Multi-stage interfaces must use v-if. Do NOT use v-show, opacity, or visibility to hide elements.
-  - Only one section/page can exist in the DOM at any time. Remove others completely.
-  -All DOM-dependent logic (Canvas, Three.js, Web Speech, audio) must run only inside onMounted + nextTick.
-  - All v-for must include a stable key.
-  - Hidden elements must use display:none. Avoid flex issues and overlapping containers.
-  - Check for undefined variables, wrong bindings, invalid API calls, or version mismatches before generating output.
-
-- You may autonomously choose one or more additional libraries from the following list if they improve the pedagogical effect:
-Vue ecosystem: Vue, VueRouter, Vuex
-Sound: Tone.js, Howler.js
-Animation: Anime.js, GSAP.js
-3D: Three.js, Babylon.js, OrbitControls, FontLoader, TextGeometry, GLTFLoader, three-mesh-ui
-Charts: Chart.js, ECharts, D3.js
-Tools: Lodash, Moment.js, Day.js
-Forms: VeeValidate, VeeValidate Rules, VeeValidate i18n
-Games: Phaser.js, Matter.js, P5.js
-Graphics: Fabric.js, Rough.js, Konva.js
-Physics/AI/Noise: cannon-es, Yuka, noisejs
-Math: KaTeX.min.js, KaTeX.min.css, auto-render
-UI: Bootstrap, Tailwindcss, Fontawesome
-- Use Web Speech API when appropriate to enhance comprehension through voice narration or speech recognition.
-- All external dependencies must be loaded via production-ready CDN (e.g., unpkg, cdnjs, jsdelivr) directly in the HTML file.
-- All Vue variables, methods, and computed properties used in the HTML template must be explicitly defined within the Vue app setup.
-- The HTML file must be completely self-contained and runnable.
-
-3. SVG Generation & Thumbnail Requirements
-- You must output a separate "svg" field in the final JSON.
-- The SVG MUST define a coordinate system of 640 x 360 using viewBox:
-  - viewBox="0 0 640 360"
-- Do NOT set width or height attributes on the <svg> element.
-  - The SVG must be fully responsive and center correctly when scaled.
-  - Rely on the default preserveAspectRatio="xMidYMid meet" behavior.
-- The SVG is used as a thumbnail / preview representation.
-- If the content includes motion, process, or animation concepts:
-  - The SVG MAY include lightweight SVG-native animations
-    (e.g. <animate>, <animateTransform>, <animateMotion>).
-  - Do NOT use JavaScript, CSS animations, or external references.
-- The SVG must be fully self-contained:
-  - No external fonts, images, scripts, or CSS.
-  - No randomness; output must be deterministic.
-- The SVG should visualize:
-  - Core structures, key relationships, or canonical motion patterns.
-- Do NOT attempt to recreate full UI, interactions, or 3D scenes.
-  - For Canvas / Three.js / D3 / p5 / MediaPipe content:
-    use an abstract diagram or symbolic animated snapshot only.
-
-4. UX/UI Requirements
-- Ensure the UI is responsive, touch-friendly, and optimized for both desktop and mobile.
-- Use animations, transitions, and interactive visual metaphors to aid engagement and comprehension.
-- Use sound and visual feedback where pedagogically helpful for user interactions (e.g., success, fail, progress, guidance).
-- The layout should be minimal, accessible, and focused on content.
-
-5. Output Language Constraint
-- Language_code is: {{fallback_language}}.
-- The language_code must be included as a field in the final JSON output and must be a valid BCP 47 code string (e.g., "zh-CN", "en-US", "de-CH").
-- All text values in the JSON (including title, description, UI strings, tags and comments) must match the language indicated by language_code.
-
-6. Output Format
-Return the result as a single, valid JSON object. Strictly adhere to the specified structure below, with no leading or trailing text. The entire output must be parseable as a single JSON object. Any deviation, such as a missing comma, unclosed quote, or bracket, is a critical error.
-
-{
-  "title": "Title of the project",
-  "description": "What this project teaches and how to interact with it",
-  "full_html": "<!DOCTYPE html><html><head>...complete HTML file with all CSS and JS embedded...</head><body>...content...</body></html>",
-  "svg": "<svg ...>...</svg>",
-  "tags": [
-    "3-7 high-quality tags that reflect subject, domain, subdomain, grade. No technical tags such as Vue, React, etc."
-  ],
-  "content_type": "vue",
-  "language_code": "MUST match the language_code input parameter exactly as per Constraint 4"
-}
-
-IMPORTANT: The "full_html" field must contain a complete, standalone HTML file that includes:
-- DOCTYPE declaration
-- Complete <html>, <head>, and <body> structure
-- All external libraries loaded in <head> or before closing </body>
-- All CSS in <style> tags within <head>
-- All JavaScript in <script> tags (Vue app initialization, etc.)
-- The HTML must be valid and runnable directly in a browser
-
-7. Only return the final JSON. Do not include explanations, instructions, or additional output beyond the required format.`;
+// 将 JSON 对象转换为字符串，并替换占位符
+const getSystemPrompt = (knowledgePoint, languageCode = 'en-US') => {
+  let promptStr = JSON.stringify(SYSTEM_PROMPT_CONTENT, null, 2);
+  promptStr = safeReplace(promptStr, '{{knowledge_point}}', knowledgePoint);
+  promptStr = safeReplace(promptStr, '{{fallback_language}}', languageCode);
+  return promptStr;
+};
 
 // 学习阶段的用户提示词映射
 const LEARNING_STAGE_PROMPTS = {
   understanding: `Create an interactive project that visually and audibly explains the concept of {{knowledge_point}}.
-Ensure users can explore the concept in steps, with each stage accompanied by sound or animation cues.
+Ensure users can explore the concept in steps, with each stage accompanied by sound effects (audio cues) or animation cues.
 Encourage discovery by letting users click, hover, or reveal hidden patterns and connections that show how "{{knowledge_point}}" links to broader ideas.
 Each interaction should feel meaningful — revealing not just information, but relationships and insights that deepen comprehension.
-End with a moment of reflection or synthesis, helping learners see the “big picture” of how "{{knowledge_point}}" fits within a wider knowledge network.`,
+End with a moment of reflection or synthesis, helping learners see the "big picture" of how "{{knowledge_point}}" fits within a wider knowledge network.
+Note: Use sound effects freely, but speech synthesis (voice narration) must be user-triggered only.`,
 
   application: `Build an interactive simulation that lets users apply "{{knowledge_point}}" in a real-world or scenario-based context.
 Use sliders, drag-and-drop, or live input fields to manipulate variables.
@@ -464,12 +653,7 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
   try {
     // 构建完整的提示词
     const userPrompt = safeReplace(LEARNING_STAGE_PROMPTS[learningStage], '{{knowledge_point}}', knowledgePoint);
-    let systemPromptWithKnowledge = safeReplace(SYSTEM_PROMPT, '{{knowledge_point}}', knowledgePoint);
-    if (languageCode) {
-      systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', languageCode);
-    } else {
-      systemPromptWithKnowledge = safeReplace(systemPromptWithKnowledge, '{{fallback_language}}', 'en-US');
-    }
+    const systemPromptWithKnowledge = getSystemPrompt(knowledgePoint, languageCode || 'en-US');
     
     // 构建用户消息，如果提供了图片，则包含图片数据
     const userMessage = {
@@ -550,7 +734,8 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
-        const parsedDataRaw = JSON.parse(jsonMatch[0]);
+        const jsonString = jsonMatch[0];
+        const parsedDataRaw = JSON.parse(jsonString);
         const parsedData = {
           ...parsedDataRaw,
           language_code: parsedDataRaw.language_code || languageCode || 'zh-CN'
@@ -559,6 +744,12 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         // 验证 full_html 是否存在
         if (!parsedData.full_html || typeof parsedData.full_html !== 'string' || parsedData.full_html.trim().length === 0) {
           throw new Error('AI返回的 full_html 字段为空或无效');
+        }
+
+        // 验证 tags 格式，如果不是数组则设为空数组（不影响主体内容）
+        if (parsedData.tags !== undefined && !Array.isArray(parsedData.tags)) {
+          logger.warn(`[generateEducationalContent] tags 字段格式无效，使用空数组`, { tags: parsedData.tags, type: typeof parsedData.tags });
+          parsedData.tags = [];
         }
 
         parsedData.full_html = replaceLibrariesInHtml(parsedData.full_html);
@@ -659,10 +850,12 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
         return {
           success: false,
           error: 'JSON解析失败',
-          details: `解析错误: ${parseError.message}，AI返回内容长度: ${aiResponse.length}`
+          details: `解析错误: ${parseError.message}`
         };
       }
     } else {
+      logger.error(`[generateEducationalContent JSON解析] 未找到JSON格式`);
+      
       if (isAsyncMode && requestId) {
         // 异步模式：更新现有记录
         await updateExistingLog(requestId, {
@@ -777,7 +970,9 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
   "tags": ["测试", "Vue3"],
   "content_type": "vue",
   "language_code": "zh-CN"
-}`, '{{knowledge_point}}', knowledgePoint);
+}
+
+注意：tags 必须是 JSON 数组格式，例如 ["数学", "几何"]。如果格式不正确，请返回空数组 []。`, '{{knowledge_point}}', knowledgePoint);
 
     const finalPrompt = safeReplace(simplePrompt, '{{learning_stage}}', learningStage);
 
@@ -841,11 +1036,18 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       }
       
       if (jsonMatch) {
-        parsedData = JSON.parse(jsonMatch[0]);
+        const jsonString = jsonMatch[0];
+        parsedData = JSON.parse(jsonString);
         
         // 验证 full_html 是否存在
         if (!parsedData.full_html || typeof parsedData.full_html !== 'string' || parsedData.full_html.trim().length === 0) {
           throw new Error('AI返回的 full_html 字段为空或无效');
+        }
+        
+        // 验证 tags 格式，如果不是数组则设为空数组（不影响主体内容）
+        if (parsedData.tags !== undefined && !Array.isArray(parsedData.tags)) {
+          logger.warn(`[generateSimpleContent] tags 字段格式无效，使用空数组`, { tags: parsedData.tags, type: typeof parsedData.tags });
+          parsedData.tags = [];
         }
         
         parsedData.full_html = replaceLibrariesInHtml(parsedData.full_html);
@@ -856,12 +1058,14 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
           learningStage: LEARNING_STAGE_NAMES[learningStage]
         };
       } else {
-        console.error('未找到JSON格式，完整响应:', aiResponse);
+        logger.error(`[generateSimpleContent JSON解析] 未找到JSON格式`);
         throw new Error('无法解析AI返回的JSON，请检查AI返回的格式');
       }
     } catch (parseError) {
-      console.error('AI返回内容解析失败:', parseError);
-      console.error('AI原始响应内容:', aiResponse);
+      logger.error(`[generateSimpleContent JSON解析失败]`, {
+        error_message: parseError.message
+      });
+      
       throw new Error(`AI返回内容格式错误: ${parseError.message}`);
     }
 
@@ -885,6 +1089,7 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
     - full_html: A complete, standalone HTML file that includes DOCTYPE, <html>, <head>, and <body> tags
     - All CSS must be in <style> tags within <head>
     - All JavaScript must be in <script> tags (before closing </body>)
+    - CRITICAL: DO NOT use overflow: hidden on body element. Ensure vertical scrolling is available on small screens.
     - All external libraries must be loaded via CDN in <head> or before </body>
     - fixed: A short non-technical summary of what was changed or fixed (1-2 sentences)
     
@@ -960,7 +1165,8 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
         }
       }
       if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
+        const jsonString = jsonMatch[0];
+        parsed = JSON.parse(jsonString);
         
         // 验证 full_html 是否存在
         if (!parsed.full_html || typeof parsed.full_html !== 'string' || parsed.full_html.trim().length === 0) {
@@ -985,10 +1191,13 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
           request_id: requestId
         });
       } else {
-        console.error('无法找到修复JSON结构，原始内容:', aiResponse);
+        logger.error(`[fixEducationalContent JSON解析] 未找到JSON格式`);
         throw new Error('AI返回内容无法解析，请检查AI返回的格式');
       }
     } catch (e) {
+      logger.error(`[fixEducationalContent JSON解析失败]`, {
+        error_message: e.message
+      });
       await logAIUsage({
         user_id,
         model_name: result.model,
@@ -1004,8 +1213,6 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
         is_render_success: false,
         error_message: `JSON解析失败: ${e.message}`
       });
-      console.error('修复JSON解析错误:', e);
-      console.error('尝试解析的内容:', jsonMatch ? jsonMatch[0] : '未找到JSON');
       return { success: false, error: `AI返回内容格式错误: ${e.message}` };
     }
     return { success: true, data: parsed };
