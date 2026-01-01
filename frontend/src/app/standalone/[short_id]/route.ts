@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { api } from '@/lib/api';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || 'http://localhost:3001/api';
 
 export async function GET(
   request: NextRequest,
@@ -8,7 +9,27 @@ export async function GET(
   try {
     const shortId = params.short_id;
 
-    const content = await api.content.getByShortId(shortId);
+    // 直接调用后端 API，避免使用包含 React 依赖的 api 客户端
+    const response = await fetch(`${API_BASE_URL}/content/short/${encodeURIComponent(shortId)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return NextResponse.json({ error: 'Content not found' }, { status: 404 });
+      }
+      return NextResponse.json(
+        { error: 'Failed to fetch content' },
+        { status: response.status }
+      );
+    }
+
+    const result = await response.json();
+    const content = result?.data;
+
     if (!content) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });
     }
