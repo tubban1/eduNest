@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useNetworkError } from '@/hooks/useNetworkError';
 import { api } from '@/lib/api';
 import AIProviderSelector from '@/components/AIProviderSelector';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
@@ -57,6 +58,7 @@ export default function ContentAIGenerator({
 }: ContentAIGeneratorProps) {
   const { t } = useTranslation(['content', 'common', 'aiProvider', 'auth']);
   const { user } = useAuth();
+  const { handleNetworkError } = useNetworkError();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -987,9 +989,12 @@ export default function ContentAIGenerator({
         setError(t('errors.freeTrialUsed', { ns: 'content', defaultValue: '请登录后继续使用' }));
         return;
       }
+      
+      // 使用统一的网络错误处理
+      const errorMsg = handleNetworkError(e, '提交生成请求失败');
       // 后端参数验证失败时返回 details
       const detailed = (e?.details && Array.isArray(e.details)) ? e.details.map((d: any) => d.msg || d.message || d.param).join('\n') : '';
-      setError(detailed ? `${msg}\n${detailed}` : msg);
+      setError(detailed ? `${errorMsg}\n${detailed}` : errorMsg);
     } finally {
       setAiGenerating(false);
     }

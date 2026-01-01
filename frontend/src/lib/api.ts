@@ -94,8 +94,19 @@ class ApiClient {
     return supabaseToken;
   }
 
-  private async request(endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<any> {
+  private async request(
+    endpoint: string, 
+    options: RequestInit = {}, 
+    retryCount = 0,
+    maxRetries = 3,
+    timeoutMs = 30000
+  ): Promise<any> {
     const url = `${this.baseUrl}${endpoint}`;
+    
+    // 检查网络状态（仅在浏览器环境）
+    if (typeof window !== 'undefined' && 'navigator' in window && !navigator.onLine) {
+      throw new Error('网络连接已断开，请检查网络设置');
+    }
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -127,7 +138,18 @@ class ApiClient {
     };
 
     try {
-      const response = await fetch(url, config);
+      // 创建超时 Promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`请求超时（${timeoutMs / 1000}秒）`));
+        }, timeoutMs);
+      });
+
+      // 创建 fetch Promise
+      const fetchPromise = fetch(url, config);
+
+      // 使用 Promise.race 实现超时控制
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -140,7 +162,7 @@ class ApiClient {
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             
             if (!refreshError && refreshData?.session?.access_token) {
-              return await this.request(endpoint, options, retryCount + 1);
+              return await this.request(endpoint, options, retryCount + 1, maxRetries, timeoutMs);
             }
             console.warn('Token刷新失败，准备下一次尝试或退出', { refreshError, retryCount });
           } catch (e) {
@@ -161,8 +183,25 @@ class ApiClient {
     } catch (error: any) {
       console.error('API请求失败:', { url, error, config, retryCount });
       
+      // 判断是否为网络错误（可重试的错误）
+      const isNetworkError = 
+        error instanceof TypeError && 
+        (error.message?.includes('fetch') || error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) ||
+        error.message?.includes('网络连接') ||
+        error.message?.includes('请求超时');
+      
+      // 如果是网络错误且还有重试次数，进行自动重试
+      if (isNetworkError && retryCount < maxRetries) {
+        // 指数退避：1秒、2秒、4秒
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 4000);
+        console.log(`网络错误，${delay / 1000}秒后自动重试 (${retryCount + 1}/${maxRetries})...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return await this.request(endpoint, options, retryCount + 1, maxRetries, timeoutMs);
+      }
+      
       // 提供更详细的错误信息
-      if (error instanceof TypeError && error.message && error.message.includes('fetch')) {
+      if (isNetworkError) {
         throw new Error(`网络连接失败: ${error.message}。请检查网络连接和后端服务状态。`);
       }
       

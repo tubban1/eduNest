@@ -263,6 +263,17 @@ export class StatusPollingManager {
       } catch (error) {
         console.error(`轮询失败: contentId=${contentId}`, error);
         
+        // 判断是否为网络错误
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isNetworkError = 
+          error instanceof TypeError ||
+          errorMessage.includes('fetch') ||
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('NetworkError') ||
+          errorMessage.includes('网络连接') ||
+          errorMessage.includes('请求超时') ||
+          errorMessage.includes('timeout');
+        
         // 网络错误不计入尝试次数，继续重试
         // 只有在连续失败多次后才考虑停止
         
@@ -276,8 +287,38 @@ export class StatusPollingManager {
         // 设置为60次（5分钟），留出1分钟缓冲，确保在任务超时前停止无意义的轮询
         const maxConsecutiveFailures = 60; // 60次 × 5秒 = 300秒（5分钟）
         const consecutiveFailures = this.attemptCounts.get(`failures_${contentId}`) || 0;
+        
+        // 在第一次失败或每10次失败时显示提示（避免频繁提示）
+        if (consecutiveFailures === 0 || consecutiveFailures % 10 === 0) {
+          // 动态导入 toast，确保只在客户端使用
+          if (typeof window !== 'undefined') {
+            import('./toast').then(({ toast }) => {
+              if (isNetworkError) {
+                // 检查是否离线
+                const isOffline = 'navigator' in window && !navigator.onLine;
+                if (isOffline) {
+                  toast.warning('网络连接已断开，正在等待网络恢复...', 5000);
+                } else {
+                  toast.warning('网络连接不稳定，正在重试...', 3000);
+                }
+              } else {
+                toast.error('获取生成状态失败，正在重试...', 3000);
+              }
+            }).catch(() => {
+              // 静默处理导入失败
+            });
+          }
+        }
+        
         if (consecutiveFailures > maxConsecutiveFailures) {
           console.warn(`轮询连续失败次数过多（${consecutiveFailures}次），停止轮询: contentId=${contentId}。任务可能已超时（6分钟限制）`);
+          if (typeof window !== 'undefined') {
+            import('./toast').then(({ toast }) => {
+              toast.error('网络连接持续失败，已停止轮询。请检查网络后刷新页面。', 5000);
+            }).catch(() => {
+              // 静默处理导入失败
+            });
+          }
           this.stopPolling(contentId);
           return;
         }
