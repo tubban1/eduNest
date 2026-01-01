@@ -559,7 +559,15 @@ class AsyncGenerationQueue {
 
       if (aiResult.success && aiResult.data) {
         // 生成成功，更新 content 表
-        await this.updateContentFromAIResult(contentId, aiResult.data);
+        let contentUpdateSuccess = false;
+        try {
+          await this.updateContentFromAIResult(contentId, aiResult.data);
+          contentUpdateSuccess = true;
+          logger.info(`[Process Task] ✅ 成功更新 content: ${contentId}`);
+        } catch (contentError) {
+          logger.error(`[Process Task] ❌ 更新 content 失败: ${contentId}`, contentError);
+          // 即使 content 更新失败，也要更新任务状态，避免状态卡在 processing
+        }
         
         // 计算总时长并更新任务状态为 done
         const completedAt = new Date().toISOString();
@@ -576,10 +584,42 @@ class AsyncGenerationQueue {
           totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
         }
         
-        await this.updateTaskStatusWithCompletion(taskId, 'done', completedAt, totalDuration);
+        // 无论 content 更新是否成功，都要更新任务状态
+        try {
+          await this.updateTaskStatusWithCompletion(taskId, 'done', completedAt, totalDuration);
+          logger.info(`[Process Task] ✅ 成功更新任务状态为 done: ${taskId}`);
+        } catch (statusError) {
+          logger.error(`[Process Task] ❌ 更新任务状态失败: ${taskId}`, statusError);
+          // 如果更新状态失败，尝试使用更简单的方式
+          try {
+            await DatabaseService.supabase
+              .from('ai_usage_logs')
+              .update({ 
+                status: 'done',
+                completed_at: completedAt,
+                total_duration: totalDuration,
+                updated_at: completedAt
+              })
+              .eq('id', taskId);
+            logger.info(`[Process Task] ✅ 使用回退方式成功更新任务状态: ${taskId}`);
+          } catch (fallbackError) {
+            logger.error(`[Process Task] ❌ 回退更新任务状态也失败: ${taskId}`, fallbackError);
+            throw fallbackError;
+          }
+        }
         
         // 清理同一 content_id 的其他 pending 任务
-        await this.cleanupPendingTasks(contentId, taskId);
+        try {
+          await this.cleanupPendingTasks(contentId, taskId);
+        } catch (cleanupError) {
+          logger.warn(`[Process Task] 清理 pending 任务失败: ${taskId}`, cleanupError);
+          // 清理失败不影响主流程
+        }
+        
+        // 如果 content 更新失败，记录错误但不影响任务状态
+        if (!contentUpdateSuccess) {
+          await this.updateTaskError(taskId, 'AI生成成功但更新content失败');
+        }
         
         // 注意：缩略图生成已移除，只在 test-thumbnail 页面手动生成
         
