@@ -58,17 +58,25 @@ export default function AuthCallback() {
             return;
           }
 
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
-          if (sessionError) {
-            setStatus(t('callback.authFailedSession', { defaultValue: '认证失败: 获取会话失败' }));
-            setTimeout(() => {
-              router.replace('/login?error=session_failed');
-            }, 1500);
-            return;
+          // 优先使用 exchangeCodeForSession 返回的 session
+          let accessToken = data?.session?.access_token || '';
+          
+          // 如果返回的 session 没有 token，等待并重试获取（最多3次，每次等待200ms）
+          if (!accessToken) {
+            let retries = 0;
+            const maxRetries = 3;
+            while (!accessToken && retries < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 200));
+              const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+              
+              if (!sessionError && sessionData?.session?.access_token) {
+                accessToken = sessionData.session.access_token;
+                break;
+              }
+              retries++;
+            }
           }
 
-          const accessToken = sessionData.session?.access_token || '';
           if (!accessToken) {
             setStatus(t('callback.authFailedEmptySession', { defaultValue: '认证失败: 会话为空' }));
             setTimeout(() => {
@@ -80,6 +88,10 @@ export default function AuthCallback() {
           // 同步API客户端token
           api.setToken(accessToken);
           window.dispatchEvent(new Event('sessionChanged'));
+          
+          // 等待一小段时间确保 session 已完全设置
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           setStatus(t('callback.loginSuccessRedirecting', { defaultValue: '登录成功，正在跳转...' }));
           // 使用 router.replace 而不是 window.location.href，更可靠
           setTimeout(() => {
