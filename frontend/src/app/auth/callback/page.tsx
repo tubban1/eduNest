@@ -169,15 +169,38 @@ export default function AuthCallback() {
         }
 
         // 2) 兼容旧的 hash fragment 流程（#access_token=...）
-        await api.logAuth('info', '处理旧的 hash fragment 流程');
+        await api.logAuth('info', '处理旧的 hash fragment 流程', { 
+          hasHash: !!window.location.hash,
+          hashLength: window.location.hash.length,
+          fullUrl: window.location.href 
+        });
+        
+        // 先尝试检查是否已有有效的 session（可能是之前的登录）
+        const { data: existingSession, error: existingError } = await supabase.auth.getSession();
+        if (!existingError && existingSession?.session?.access_token) {
+          await api.logAuth('info', '发现已存在的有效 session，使用现有 session');
+          api.setToken(existingSession.session.access_token);
+          window.dispatchEvent(new Event('sessionChanged'));
+          setStatus(t('callback.loginSuccessRedirecting', { defaultValue: '登录成功，正在跳转...' }));
+          setTimeout(() => {
+            router.replace('/c');
+          }, 800);
+          return;
+        }
+        
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const accessToken = params.get('access_token');
         const refreshToken = params.get('refresh_token') || '';
 
         if (!accessToken) {
-          await api.logAuth('error', 'hash fragment 流程中未找到 access_token');
-          setStatus(t('callback.authFailedNoToken', { defaultValue: '认证失败: 未找到访问令牌' }));
+          await api.logAuth('error', 'hash fragment 流程中未找到 access_token', { 
+            hash: window.location.hash,
+            hashParams: hash,
+            hasExistingSession: !!(existingSession?.session),
+            existingSessionError: existingError?.message
+          });
+          setStatus(t('callback.authFailedNoToken', { defaultValue: '认证失败: 未找到访问令牌，请重新登录' }));
           setTimeout(() => {
             router.replace('/login?error=no_token');
           }, 1500);
