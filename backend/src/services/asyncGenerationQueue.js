@@ -13,6 +13,12 @@ class AsyncGenerationQueue {
     this.taskTimeoutMs = 10 * 60 * 1000;
     // 瞬时错误重试配置
     this.retry = { maxAttempts: 3, baseDelayMs: 500, maxDelayMs: 4000 };
+    // 网络错误抑制：避免频繁记录相同的网络错误
+    this.networkErrorSuppression = {
+      watchdog: { lastLogTime: 0, logCount: 0 },
+      queue: { lastLogTime: 0, logCount: 0 },
+      suppressionWindow: 5 * 60 * 1000 // 5分钟内相同错误只记录一次
+    };
     
     // 启动时清理重复任务
     this.initializeCleanup();
@@ -205,9 +211,19 @@ class AsyncGenerationQueue {
         }, 'watchdog_select_timeouts');
         
         if (error) { 
-          // 如果是网络错误（DNS 解析失败等），只记录警告，不中断服务
+          // 如果是网络错误（DNS 解析失败等），抑制频繁日志
           if (error.message && (error.message.includes('ENOTFOUND') || error.message.includes('fetch failed'))) {
-            logger.warn('Watchdog 查询失败（网络问题，将稍后重试）:', error.message);
+            const now = Date.now();
+            const suppression = this.networkErrorSuppression.watchdog;
+            const shouldLog = now - suppression.lastLogTime > this.networkErrorSuppression.suppressionWindow;
+            
+            if (shouldLog) {
+              suppression.lastLogTime = now;
+              suppression.logCount = 1;
+              logger.warn('Watchdog 查询失败（网络问题，将稍后重试。后续相同错误将静默处理）');
+            } else {
+              suppression.logCount++;
+            }
           } else {
             logger.error('Watchdog 查询失败:', error);
           }
@@ -393,9 +409,19 @@ class AsyncGenerationQueue {
       }, 'queue_select_pending');
 
       if (error) {
-        // 如果是网络错误（DNS 解析失败等），只记录警告，不中断服务
+        // 如果是网络错误（DNS 解析失败等），抑制频繁日志
         if (error.message && (error.message.includes('ENOTFOUND') || error.message.includes('fetch failed'))) {
-          logger.warn('查询待处理任务失败（网络问题，将稍后重试）:', error.message);
+          const now = Date.now();
+          const suppression = this.networkErrorSuppression.queue;
+          const shouldLog = now - suppression.lastLogTime > this.networkErrorSuppression.suppressionWindow;
+          
+          if (shouldLog) {
+            suppression.lastLogTime = now;
+            suppression.logCount = 1;
+            logger.warn('查询待处理任务失败（网络问题，将稍后重试。后续相同错误将静默处理）');
+          } else {
+            suppression.logCount++;
+          }
         } else {
           logger.error('查询待处理任务失败:', error);
         }
@@ -533,9 +559,15 @@ class AsyncGenerationQueue {
 
       if (aiResult.success && aiResult.data) {
         // 生成成功，更新 content 表
-        await this.updateContentFromAIResult(contentId, aiResult.data);
+        try {
+          await this.updateContentFromAIResult(contentId, aiResult.data);
+        } catch (updateError) {
+          // 如果更新 content 失败，记录错误但继续更新任务状态
+          logger.error(`更新 content 失败，但 AI 生成成功: ${contentId}`, updateError);
+          // 继续执行，更新任务状态为 done
+        }
         
-        // 计算总时长并更新任务状态为 done
+        // 计算总时长并更新任务状态为 done（无论 content 更新是否成功）
         const completedAt = new Date().toISOString();
         const { data: taskData } = await DatabaseService.supabase
           .from('ai_usage_logs')
@@ -550,10 +582,27 @@ class AsyncGenerationQueue {
           totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
         }
         
-        await this.updateTaskStatusWithCompletion(taskId, 'done', completedAt, totalDuration);
+        // 确保任务状态被更新为 done，即使之前的操作失败
+        try {
+          await this.updateTaskStatusWithCompletion(taskId, 'done', completedAt, totalDuration);
+        } catch (statusError) {
+          logger.error(`更新任务状态为 done 失败: ${taskId}`, statusError);
+          // 如果更新失败，尝试使用更简单的方式更新
+          try {
+            await this.updateTaskStatus(taskId, 'done');
+          } catch (fallbackError) {
+            logger.error(`回退更新任务状态失败: ${taskId}`, fallbackError);
+            throw fallbackError; // 如果连回退都失败，抛出异常
+          }
+        }
         
         // 清理同一 content_id 的其他 pending 任务
-        await this.cleanupPendingTasks(contentId, taskId);
+        try {
+          await this.cleanupPendingTasks(contentId, taskId);
+        } catch (cleanupError) {
+          // 清理失败不影响主流程，只记录日志
+          logger.warn(`清理 pending 任务失败: ${contentId}`, cleanupError);
+        }
         
         // 注意：缩略图生成已移除，只在 test-thumbnail 页面手动生成
         
@@ -565,7 +614,27 @@ class AsyncGenerationQueue {
     } catch (error) {
       logger.error(`任务处理失败: ${taskId}`, error);
       const reason = error && error.message === 'TASK_TIMEOUT_10MIN' ? '生成超时(>10min)' : (error?.message || '未知错误');
-      await this.handleFailure(task, reason);
+      // 确保失败时也更新状态
+      try {
+        await this.handleFailure(task, reason);
+      } catch (failureError) {
+        logger.error(`处理失败逻辑时出错: ${taskId}`, failureError);
+        // 即使 handleFailure 失败，也要尝试至少更新状态
+        try {
+          const completedAt = new Date().toISOString();
+          await DatabaseService.supabase
+            .from('ai_usage_logs')
+            .update({ 
+              status: 'failed',
+              error_message: reason,
+              completed_at: completedAt,
+              updated_at: completedAt
+            })
+            .eq('id', taskId);
+        } catch (finalError) {
+          logger.error(`最终更新任务状态失败: ${taskId}`, finalError);
+        }
+      }
     } finally {
       // 从运行中任务集合移除
       this.runningTasks.delete(taskId);
@@ -642,6 +711,14 @@ class AsyncGenerationQueue {
       throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
     }
 
+    // 确保 completedAt 和 totalDuration 是有效的
+    if (!completedAt) {
+      completedAt = new Date().toISOString();
+    }
+    if (typeof totalDuration !== 'number' || isNaN(totalDuration)) {
+      totalDuration = 0;
+    }
+
     const { error } = await DatabaseService.supabase
       .from('ai_usage_logs')
       .update({ 
@@ -654,7 +731,24 @@ class AsyncGenerationQueue {
 
     if (error) {
       logger.error(`更新任务状态失败: ${taskId}`, error);
-      throw error;
+      // 如果更新失败，尝试使用更简单的方式更新状态（至少更新状态）
+      try {
+        const { error: fallbackError } = await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .update({ 
+            status: status,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', taskId);
+        if (fallbackError) {
+          logger.error(`回退更新任务状态失败: ${taskId}`, fallbackError);
+          throw error; // 抛出原始错误
+        } else {
+          logger.warn(`更新任务状态时 completed_at/total_duration 失败，但状态已更新: ${taskId}`);
+        }
+      } catch (fallbackErr) {
+        throw error; // 抛出原始错误
+      }
     }
   }
 
@@ -736,11 +830,16 @@ class AsyncGenerationQueue {
     try {
       // 直接标记为失败，不进行任何自动重试
       const completedAt = new Date().toISOString();
-      const { data: taskData } = await DatabaseService.supabase
+      const { data: taskData, error: selectError } = await DatabaseService.supabase
         .from('ai_usage_logs')
         .select('started_at')
         .eq('id', task.id)
         .single();
+      
+      if (selectError) {
+        logger.error(`获取任务数据失败: ${task.id}`, selectError);
+        // 即使获取失败，也尝试更新状态
+      }
       
       let totalDuration = 0;
       if (taskData && taskData.started_at) {
@@ -749,11 +848,52 @@ class AsyncGenerationQueue {
         totalDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
       }
       
-      await this.updateTaskStatusWithCompletion(task.id, 'failed', completedAt, totalDuration);
-      await this.updateTaskError(task.id, errorMessage);
+      // 确保更新状态和完成信息
+      try {
+        await this.updateTaskStatusWithCompletion(task.id, 'failed', completedAt, totalDuration);
+      } catch (statusError) {
+        logger.error(`更新任务状态为 failed 失败: ${task.id}`, statusError);
+        // 如果更新失败，尝试使用更简单的方式更新
+        try {
+          await DatabaseService.supabase
+            .from('ai_usage_logs')
+            .update({ 
+              status: 'failed',
+              error_message: errorMessage,
+              completed_at: completedAt,
+              total_duration: totalDuration,
+              updated_at: completedAt
+            })
+            .eq('id', task.id);
+        } catch (fallbackError) {
+          logger.error(`回退更新任务状态失败: ${task.id}`, fallbackError);
+          throw fallbackError;
+        }
+      }
+      
+      // 更新错误信息（如果还没有设置）
+      try {
+        await this.updateTaskError(task.id, errorMessage);
+      } catch (errorUpdateError) {
+        logger.warn(`更新任务错误信息失败: ${task.id}`, errorUpdateError);
+        // 错误信息更新失败不影响主流程
+      }
       
     } catch (error) {
       logger.error(`处理失败逻辑错误: ${task.id}`, error);
+      // 最后的回退：直接更新状态
+      try {
+        await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .update({ 
+            status: 'failed',
+            error_message: errorMessage || '处理失败',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', task.id);
+      } catch (finalError) {
+        logger.error(`最终更新任务状态失败: ${task.id}`, finalError);
+      }
     }
   }
 
