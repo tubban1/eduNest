@@ -30,6 +30,10 @@ class ApiClient {
     this.token = token;
   }
 
+  getToken(): string | null {
+    return this.token;
+  }
+
   clearToken() {
     this.token = null;
   }
@@ -960,6 +964,28 @@ class ApiClient {
       amount,
       reason,
     });
+  }
+
+  // 记录登录相关日志到后端
+  async logAuth(level: 'error' | 'warn' | 'info' | 'debug', message: string, data?: any) {
+    try {
+      await fetch(`${this.baseUrl}/auth/log`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          level,
+          message,
+          data,
+          timestamp: new Date().toISOString(),
+        }),
+      }).catch(() => {
+        // 静默处理日志发送失败，避免影响登录流程
+      });
+    } catch (error) {
+      // 静默处理日志发送失败
+    }
   }
 }
 

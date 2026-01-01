@@ -211,4 +211,54 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// 登录日志记录端点（用于前端发送登录相关日志）
+router.post('/log', async (req, res) => {
+  try {
+    const { level, message, data, timestamp } = req.body;
+    
+    // 验证必需字段
+    if (!level || !message) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'level 和 message 字段是必需的' 
+      });
+    }
+
+    // 构建日志对象
+    const logData = {
+      message: `[Auth Callback] ${message}`,
+      ...(data && { data }),
+      ...(timestamp && { clientTimestamp: timestamp }),
+      userAgent: req.headers['user-agent'],
+      ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress
+    };
+
+    // 根据日志级别记录
+    switch (level.toLowerCase()) {
+      case 'error':
+        logger.error(logData);
+        break;
+      case 'warn':
+        logger.warn(logData);
+        break;
+      case 'info':
+        logger.info(logData);
+        break;
+      case 'debug':
+        logger.debug(logData);
+        break;
+      default:
+        logger.info(logData);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('记录登录日志失败:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '记录日志失败' 
+    });
+  }
+});
+
 module.exports = router; 
