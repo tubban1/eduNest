@@ -136,6 +136,25 @@ class AsyncGenerationQueue {
       const visitorId = userId && isVisitorId(userId) ? userId : null;
       const actualUserId = userId && !isVisitorId(userId) ? userId : null;
       
+      // 如果有图片，上传到freeimage.host获取URL
+      let imageUrl = null;
+      if (generationParams.image && generationParams.image.data && generationParams.image.mime_type) {
+        try {
+          const { uploadToFreeimageHost } = require('./freeimage_upload_service');
+          const filename = `image_${Date.now()}.${generationParams.image.mime_type.split('/')[1]}`;
+          const uploadResult = await uploadToFreeimageHost(
+            generationParams.image.data,
+            filename,
+            generationParams.image.mime_type
+          );
+          imageUrl = uploadResult.url;
+          logger.info(`[AsyncGenerationQueue] 图片上传成功，URL: ${imageUrl}`);
+        } catch (uploadError) {
+          logger.error('[AsyncGenerationQueue] 图片上传失败:', uploadError);
+          // 上传失败不影响任务创建，只记录错误
+        }
+      }
+      
       const { data: log, error } = await DatabaseService.supabase
         .from('ai_usage_logs')
         .insert({
@@ -146,6 +165,7 @@ class AsyncGenerationQueue {
           action_type: 'generate',
           status: 'pending',
           request_id: requestId,
+          image_url: imageUrl, // 保存图片URL
           generation_params: {
             knowledge_point: generationParams.knowledge_point,
             learning_stage: generationParams.learning_stage,
@@ -531,10 +551,52 @@ class AsyncGenerationQueue {
       }
 
       // 调试日志：检查从数据库读取的图片数据
-      if (task.generation_params && task.generation_params.image) {
-        logger.info(`[Process Task] 从数据库读取到图片数据: mime_type=${task.generation_params.image.mime_type}, data_length=${task.generation_params.image.data ? task.generation_params.image.data.length : 0}`);
+      let imageData = task.generation_params?.image || null;
+      
+      // 如果generation_params中没有图片数据，但image_url存在，则从URL下载并转换为base64
+      if (!imageData && task.image_url) {
+        try {
+          logger.info(`[Process Task] 从image_url下载图片: ${task.image_url}`);
+          const response = await fetch(task.image_url);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const imageArrayBuffer = await response.arrayBuffer();
+          const base64ImageData = Buffer.from(imageArrayBuffer).toString('base64');
+          
+          // 从Content-Type推断mime_type，如果没有则从URL推断
+          let mimeType = response.headers.get('content-type') || 'image/jpeg';
+          if (!mimeType.startsWith('image/')) {
+            // 如果Content-Type不是图片类型，尝试从URL推断
+            const urlLower = task.image_url.toLowerCase();
+            if (urlLower.includes('.png')) {
+              mimeType = 'image/png';
+            } else if (urlLower.includes('.gif')) {
+              mimeType = 'image/gif';
+            } else if (urlLower.includes('.webp')) {
+              mimeType = 'image/webp';
+            } else {
+              mimeType = 'image/jpeg'; // 默认使用jpeg
+            }
+          }
+          
+          imageData = {
+            mime_type: mimeType,
+            data: base64ImageData
+          };
+          
+          logger.info(`[Process Task] 图片下载并转换为base64成功: mime_type=${mimeType}, data_length=${base64ImageData.length}`);
+        } catch (downloadError) {
+          logger.error(`[Process Task] 从image_url下载图片失败: ${task.image_url}`, downloadError);
+          // 下载失败不影响任务执行，只是没有图片数据
+          imageData = null;
+        }
+      }
+      
+      if (imageData) {
+        logger.info(`[Process Task] 将使用图片数据: mime_type=${imageData.mime_type}, data_length=${imageData.data ? imageData.data.length : 0}`);
       } else {
-        logger.info(`[Process Task] 从数据库未读取到图片数据`);
+        logger.info(`[Process Task] 没有图片数据`);
       }
       
       // 调用 AI 生成服务（异步模式）+ 超时保护
@@ -548,7 +610,7 @@ class AsyncGenerationQueue {
         task.generation_params.provider,
         task.request_id,
         true, // isAsyncMode = true
-        task.generation_params.image || null // 传递图片数据
+        imageData // 传递图片数据（可能是从URL下载的）
       );
 
       const timeoutPromise = new Promise((_, reject) => {
@@ -1056,6 +1118,47 @@ class AsyncGenerationQueue {
         language_code: failedTask.request_payload?.language_code || 'zh-CN',
         provider: failedTask.request_payload?.provider || process.env.DEFAULT_AI_PROVIDER || 'qenda'
       };
+      
+      // 如果有image_url但没有image数据，尝试从URL下载并转换为base64
+      if (!generationParams.image && failedTask.image_url) {
+        try {
+          logger.info(`[Retry Failed Task] 从image_url下载图片: ${failedTask.image_url}`);
+          const response = await fetch(failedTask.image_url);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const imageArrayBuffer = await response.arrayBuffer();
+          const base64ImageData = Buffer.from(imageArrayBuffer).toString('base64');
+          
+          // 从Content-Type推断mime_type，如果没有则从URL推断
+          let mimeType = response.headers.get('content-type') || 'image/jpeg';
+          if (!mimeType.startsWith('image/')) {
+            const urlLower = failedTask.image_url.toLowerCase();
+            if (urlLower.includes('.png')) {
+              mimeType = 'image/png';
+            } else if (urlLower.includes('.gif')) {
+              mimeType = 'image/gif';
+            } else if (urlLower.includes('.webp')) {
+              mimeType = 'image/webp';
+            } else {
+              mimeType = 'image/jpeg';
+            }
+          }
+          
+          generationParams.image = {
+            mime_type: mimeType,
+            data: base64ImageData
+          };
+          
+          logger.info(`[Retry Failed Task] 图片下载并转换为base64成功: mime_type=${mimeType}, data_length=${base64ImageData.length}`);
+        } catch (downloadError) {
+          logger.error(`[Retry Failed Task] 从image_url下载图片失败: ${failedTask.image_url}`, downloadError);
+          // 下载失败不影响重试，只是没有图片数据
+        }
+      } else if (failedTask.request_payload?.image) {
+        // 如果request_payload中有图片数据，直接使用
+        generationParams.image = failedTask.request_payload.image;
+      }
 
       // 直接调用 addTask，重新开始整个生成流程
       const result = await this.addTask(contentId, generationParams);

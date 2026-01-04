@@ -170,7 +170,7 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
     // 如果按 created_at 排序，可能会取到旧的 done 记录而不是新的 processing 记录（或反之）
     const { data: generationLogs, error: logsError } = await supabase
       .from('ai_usage_logs')
-      .select('content_id, status, error_message, user_query, created_at, updated_at, is_render_success, started_at')
+      .select('content_id, status, error_message, user_query, image_url, created_at, updated_at, is_render_success, started_at')
       .in('content_id', contentIds)
       .eq('action_type', 'generate')
       .order('updated_at', { ascending: false });
@@ -212,6 +212,7 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
           generation_error: log.error_message || (log.status === 'done' && log.is_render_success === false ? '内容渲染失败' : null),
           generation_updated_at: log.updated_at,
           user_query: log.user_query,
+          image_url: log.image_url || null,
           started_at: log.started_at
         });
       });
@@ -233,7 +234,8 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
         generation_error: status?.generation_error || null,
         retry_count: retryCount,
         generation_updated_at: status?.generation_updated_at || null,
-        user_query: status?.user_query || null
+        user_query: status?.user_query || null,
+        image_url: status?.image_url || null
       };
       
       return result;

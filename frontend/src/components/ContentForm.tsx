@@ -136,6 +136,9 @@ export default function ContentForm({
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null); // 当前AI生成请求的ID
   const [showReloadButton, setShowReloadButton] = useState(false); // 是否显示重新加载按钮
   const [reloading, setReloading] = useState(false); // 重新加载状态
+  // 图片上传相关状态
+  const [uploadedImage, setUploadedImage] = useState<{ file: File; dataUrl: string; base64: string; mimeType: string } | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   // 统一设置“加载失败，可重载”的UI状态，并持久化到 sessionStorage，防止 iOS 后台/切回导致状态丢失
   const markLoadFailed = React.useCallback((message: string) => {
@@ -479,6 +482,126 @@ export default function ContentForm({
     setTagList(tagList.filter(t => t !== removeTag));
   };
 
+  // 压缩图片
+  const compressImage = (file: File, maxWidth: number = 2048, maxHeight: number = 2048, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // 计算新尺寸（保持宽高比）
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = width * ratio;
+            height = height * ratio;
+          }
+
+          // 创建 canvas 并绘制压缩后的图片
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error('无法创建 canvas 上下文'));
+            return;
+          }
+
+          // 绘制图片
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // 转换为 base64（使用原文件的 MIME 类型，但如果是 PNG/GIF 则转换为 JPEG 以减小体积）
+          let outputMimeType = file.type;
+          if (file.type === 'image/png' || file.type === 'image/gif') {
+            outputMimeType = 'image/jpeg';
+          }
+
+          const dataUrl = canvas.toDataURL(outputMimeType, quality);
+          resolve(dataUrl);
+        };
+        img.onerror = () => {
+          reject(new Error('图片加载失败'));
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        reject(new Error('文件读取失败'));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // 处理图片选择
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      event.target.value = '';
+      return;
+    }
+
+    // 验证文件类型
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError(t('errors.invalidImageType', { ns: 'content', defaultValue: '不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP' }) || '不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP');
+      event.target.value = '';
+      return;
+    }
+
+    // 验证文件大小（最大 20MB）
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    if (file.size > maxSize) {
+      setError(t('errors.imageTooLarge', { ns: 'content', defaultValue: '图片大小不能超过 20MB' }) || '图片大小不能超过 20MB');
+      event.target.value = '';
+      return;
+    }
+
+    setImageUploading(true);
+    setError('');
+
+    try {
+      // 压缩图片并转换为 base64
+      const dataUrl = await compressImage(file, 2048, 2048, 0.8);
+      
+      // dataUrl 格式: data:image/png;base64,iVBORw0KGgo...
+      const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (base64Match) {
+        const mimeType = base64Match[1];
+        const base64 = base64Match[2];
+        
+        // 检查压缩后的 base64 大小
+        const base64Size = (base64.length * 3) / 4; // 估算原始字节大小
+        if (base64Size > 10 * 1024 * 1024) { // 如果压缩后仍超过 10MB
+          setError(t('errors.imageTooLarge', { ns: 'content', defaultValue: '图片太大，请使用更小的图片或降低分辨率' }) || '图片太大，请使用更小的图片或降低分辨率');
+          setImageUploading(false);
+          event.target.value = '';
+          return;
+        }
+
+        setUploadedImage({
+          file,
+          dataUrl,
+          base64,
+          mimeType
+        });
+      } else {
+        setError(t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片读取失败' }) || '图片读取失败');
+      }
+      setImageUploading(false);
+      event.target.value = '';
+    } catch (e: any) {
+      setError(e.message || t('errors.imageReadFailed', { ns: 'content', defaultValue: '图片处理失败' }) || '图片处理失败');
+      setImageUploading(false);
+      event.target.value = '';
+    }
+  };
+
+  // 移除图片
+  const handleRemoveImage = () => {
+    setUploadedImage(null);
+  };
 
   // 异步AI生成处理函数
   const handleAsyncAiGenerate = async () => {
@@ -487,6 +610,11 @@ export default function ContentForm({
       return;
     }
 
+    // 保存当前值用于生成
+    const currentKnowledgePoint = knowledgePoint.trim();
+    const currentDescription = description;
+    const currentUploadedImage = uploadedImage;
+
     setAiGenerating(true);
     setError('');
     setShowReloadButton(false);
@@ -494,8 +622,8 @@ export default function ContentForm({
     try {
       // 1. 首先创建一个空的 content 记录
       const contentData = {
-        title: knowledgePoint.trim(),
-        description: description || '',
+        title: currentKnowledgePoint,
+        description: currentDescription || '',
         language_code: language,
         content_type: 'vue',
         full_html: DEFAULT_FULL_HTML,
@@ -511,11 +639,15 @@ export default function ContentForm({
 
       // 2. 调用异步生成 API
       const generateResponse = await api.generateContentAsync(contentResponse.id, {
-        knowledge_point: knowledgePoint.trim(),
+        knowledge_point: currentKnowledgePoint,
         learning_stage: learningStage,
-        description: description,
+        description: currentDescription,
         language_code: language,
-        provider: user?.role === 'admin' ? aiProvider : undefined
+        provider: user?.role === 'admin' ? aiProvider : undefined,
+        image: currentUploadedImage ? {
+          mime_type: currentUploadedImage.mimeType,
+          data: currentUploadedImage.base64
+        } : undefined
       });
 
       if (generateResponse.success) {
@@ -911,20 +1043,69 @@ export default function ContentForm({
                       <div className="grid grid-cols-1 gap-4">
                         <div>
                           <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('knowledgePoint', { ns: 'content', defaultValue: 'Knowledge Point' }) : 'Knowledge Point'} <span className="text-red-500">*</span></label>
-                          <textarea
-                            className="w-full border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-24"
-                            value={knowledgePoint}
-                            onChange={e => setKnowledgePoint(e.target.value)}
-                            placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
-                            required
-                            disabled={isAiFormDisabled}
-                            maxLength={1500}
-                          />
+                          <div className="relative">
+                            <textarea
+                              className="w-full border border-gray-200 p-2 pr-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-24"
+                              value={knowledgePoint}
+                              onChange={e => setKnowledgePoint(e.target.value)}
+                              placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
+                              required
+                              disabled={isAiFormDisabled}
+                              maxLength={1500}
+                            />
+                            {/* 图片上传按钮 */}
+                            <div className="absolute bottom-2 right-2 flex gap-1 z-10">
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                onChange={handleImageSelect}
+                                disabled={isAiFormDisabled || imageUploading}
+                                className="hidden"
+                                id="content-form-image-upload-input"
+                              />
+                              <label
+                                htmlFor="content-form-image-upload-input"
+                                className={`cursor-pointer p-1.5 rounded hover:bg-gray-100 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title={mounted ? t('uploadImage', { ns: 'content', defaultValue: '上传图片' }) : 'Upload Image'}
+                              >
+                                {imageUploading ? (
+                                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                                ) : (
+                                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                )}
+                              </label>
+                            </div>
+                          </div>
                           <div className="flex justify-end items-center mt-1">
                             <span className={`text-xs ${knowledgePoint.length > 1350 ? 'text-red-500' : knowledgePoint.length > 1200 ? 'text-yellow-500' : 'text-gray-500'}`}>
                               {knowledgePoint.length}/1500
                             </span>
                           </div>
+                          {/* 图片预览 */}
+                          {uploadedImage && (
+                            <div className="mt-3 relative inline-block">
+                              <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                                <img 
+                                  src={uploadedImage.dataUrl} 
+                                  alt="Uploaded" 
+                                  className="max-h-32 max-w-full object-contain"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveImage}
+                                  disabled={isAiFormDisabled}
+                                  className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition disabled:opacity-50"
+                                  title={mounted ? t('removeImage', { ns: 'content', defaultValue: '移除图片' }) : 'Remove image'}
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         {/* 学习阶段在 create 页面隐藏，仅后端使用默认 understanding */}
                         <div>

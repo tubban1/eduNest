@@ -9,6 +9,7 @@ import EditButton from './ui/EditButton';
 import PendingCard from './generation/PendingCard';
 import ProcessingCard from './generation/ProcessingCard';
 import FailedCard from './generation/FailedCard';
+import PromptPreviewModal from './PromptPreviewModal';
 import { api } from '@/lib/api';
 import { 
   GenerationStatus, 
@@ -70,6 +71,7 @@ interface ContentCardProps {
     retry_count?: number;
     generation_error?: string;
     user_query?: string;
+    image_url?: string; // AI生成时上传的图片URL
     // 缩略图相关字段
     svg_thumbnail?: string; // SVG 代码（优先使用）
     thumbnail_url?: string; // 图片 URL（备用）
@@ -106,6 +108,7 @@ function ContentCard({
     onContentUpdateRef.current = onContentUpdate;
   }, [onContentUpdate]);
   const [showDialog, setShowDialog] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus | null>(
     content.generation_status || null
@@ -454,6 +457,22 @@ function ContentCard({
       {/* 缩略图区域 */}
       <Link href={contentUrl} prefetch={false} className="block">
         <div className="relative w-full aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 overflow-hidden">
+          {/* 提示详情角标图标 - 只在有 user_query 或 image_url 时显示 */}
+          {(content.user_query || content.image_url) && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowPromptModal(true);
+              }}
+              className="absolute top-2 right-2 z-20 p-2 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors backdrop-blur-sm shadow-lg"
+              title={mounted ? t('generation.viewPromptDetails', { ns: 'content', defaultValue: '查看生成提示详情' }) : '查看生成提示详情'}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          )}
           {isThumbnailReady ? (
             hasValidSvgThumbnail ? (
               // 优先显示 SVG（内联渲染，支持动画）
@@ -556,6 +575,14 @@ function ContentCard({
         onSave={async (lists) => {
           // 这里可以处理保存逻辑
         }}
+      />
+      
+      {/* 提示详情 Modal */}
+      <PromptPreviewModal
+        open={showPromptModal}
+        onClose={() => setShowPromptModal(false)}
+        userQuery={content.user_query}
+        imageUrl={content.image_url}
       />
     </div>
   );

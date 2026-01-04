@@ -161,6 +161,13 @@
     "column_default": null
   },
   {
+    "table_name": "ai_usage_logs",
+    "column_name": "image_url",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "collection_lists",
     "column_name": "id",
     "data_type": "uuid",
@@ -309,27 +316,6 @@
   },
   {
     "table_name": "content",
-    "column_name": "code_html",
-    "data_type": "text",
-    "is_nullable": "YES",
-    "column_default": null
-  },
-  {
-    "table_name": "content",
-    "column_name": "code_css",
-    "data_type": "text",
-    "is_nullable": "YES",
-    "column_default": null
-  },
-  {
-    "table_name": "content",
-    "column_name": "code_js",
-    "data_type": "text",
-    "is_nullable": "YES",
-    "column_default": null
-  },
-  {
-    "table_name": "content",
     "column_name": "short_id",
     "data_type": "text",
     "is_nullable": "NO",
@@ -345,13 +331,6 @@
   {
     "table_name": "content",
     "column_name": "tags",
-    "data_type": "ARRAY",
-    "is_nullable": "YES",
-    "column_default": null
-  },
-  {
-    "table_name": "content",
-    "column_name": "external_links",
     "data_type": "ARRAY",
     "is_nullable": "YES",
     "column_default": null
@@ -444,6 +423,202 @@
     "table_name": "content",
     "column_name": "svg_thumbnail",
     "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "knowledge_points",
+    "data_type": "ARRAY",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "language_code",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "content_type",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "code_html",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "code_css",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "code_js",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "short_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "created_by",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "tags",
+    "data_type": "ARRAY",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "external_links",
+    "data_type": "ARRAY",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "source_content_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "description",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "is_deleted",
+    "data_type": "boolean",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "deleted_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "full_html",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "metadata_json",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "metadata_created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "metadata_updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "thumbnail_url",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "thumbnail_status",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "thumbnail_updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "visitor_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "svg_thumbnail",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content_backup_legacy",
+    "column_name": "backed_up_at",
+    "data_type": "timestamp with time zone",
     "is_nullable": "YES",
     "column_default": null
   },

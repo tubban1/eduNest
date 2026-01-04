@@ -393,10 +393,14 @@ class ApiClient {
       // 生成唯一的request_id
       const requestId = crypto.randomUUID();
       
-      const data = await this.post('/content/fix', {
-        ...fixData,
-        requestId
-      });
+      // AI修复可能需要较长时间，使用90秒超时
+      const data = await this.request('/content/fix', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...fixData,
+          requestId
+        }),
+      }, 0, 3, 90000); // timeoutMs = 90000 (90秒)
       return data.success ? data : null;
     },
 
@@ -1021,6 +1025,7 @@ export interface Content {
   generation_error?: string;
   generation_updated_at?: string;
   user_query?: string;
+  image_url?: string; // AI生成时上传的图片URL
   // 精选内容相关字段（从 admin 账号自动提取）
   likes_count?: number;
   collections_count?: number;

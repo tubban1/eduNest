@@ -872,11 +872,19 @@ export default function ContentAIGenerator({
       return;
     }
     
+    // 保存当前值用于生成
+    const currentKnowledgePoint = knowledgePoint.trim();
+    const currentDescription = description;
+    const currentUploadedImage = uploadedImage;
+    
+    // 立即清空AI生成表单，防止重复点击
+    setKnowledgePoint('');
+    setUploadedImage(null);
     setAiGenerating(true);
     setError('');
     
     try {
-      const rawTitle = knowledgePoint.trim();
+      const rawTitle = currentKnowledgePoint;
       const safeTitle = rawTitle.length > 200 ? (rawTitle.slice(0, 200)) : rawTitle;
       
       let contentResponse;
@@ -886,13 +894,13 @@ export default function ContentAIGenerator({
         // 未登录用户：使用免费生成接口
         // 注意：这个接口会创建 content 并添加任务，所以只需要调用一次
         generateResponse = await api.generateContentFree({
-          knowledgePoint: knowledgePoint.trim(),
+          knowledgePoint: currentKnowledgePoint,
           learningStage: 'understanding',
-          description,
+          description: currentDescription,
           language_code: language,
-          image: uploadedImage ? {
-            mime_type: uploadedImage.mimeType,
-            data: uploadedImage.base64
+          image: currentUploadedImage ? {
+            mime_type: currentUploadedImage.mimeType,
+            data: currentUploadedImage.base64
           } : undefined,
         });
 
@@ -931,7 +939,7 @@ export default function ContentAIGenerator({
         // 已登录用户：使用原有流程
         const contentData = {
           title: safeTitle,
-          description: description || '',
+          description: currentDescription || '',
           language_code: language,
           content_type: 'vue',
           full_html: DEFAULT_FULL_HTML || '',
@@ -945,14 +953,14 @@ export default function ContentAIGenerator({
         }
 
         generateResponse = await api.generateContentAsync(contentResponse.id, {
-          knowledge_point: knowledgePoint.trim(),
+          knowledge_point: currentKnowledgePoint,
           learning_stage: 'understanding',
-          description,
+          description: currentDescription,
           language_code: language,
           provider: user.role === 'admin' ? aiProvider : undefined,
-          image: uploadedImage ? {
-            mime_type: uploadedImage.mimeType,
-            data: uploadedImage.base64
+          image: currentUploadedImage ? {
+            mime_type: currentUploadedImage.mimeType,
+            data: currentUploadedImage.base64
           } : undefined,
         });
 
