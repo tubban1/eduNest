@@ -100,7 +100,7 @@ export default function ContentAIGenerator({
 
     const interval = setInterval(() => {
       setExamplePromptIndex(prev => (prev + 1) % examples.length);
-    }, 3000); // 每 3 秒切换一次
+    }, 5000); // 每 3 秒切换一次
 
     return () => clearInterval(interval);
   }, [knowledgePoint, mounted, t]);
@@ -209,6 +209,12 @@ export default function ContentAIGenerator({
     if (!kw) return true;
     return l.code.toLowerCase().includes(kw) || (l.label || '').toLowerCase().includes(kw);
   });
+
+  // 根据语言代码获取标签显示（中文、English、Deutsch、Français）
+  const getLanguageLabel = (code: string): string => {
+    const lang = SUPPORTED_LANGUAGES.find(l => l.code === code);
+    return lang?.label || code;
+  };
 
   // 压缩图片
   const compressImage = (file: File, maxWidth: number = 2048, maxHeight: number = 2048, quality: number = 0.8): Promise<string> => {
@@ -1083,7 +1089,7 @@ export default function ContentAIGenerator({
           {/* 文字输入区域 */}
           <div className="relative">
             <textarea
-              className="w-full border border-border p-2 pr-20 pb-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card resize-none h-24"
+              className="w-full border border-border p-2 pr-2 pb-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card resize-none h-32"
               value={knowledgePoint}
               onChange={e => setKnowledgePoint(e.target.value)}
               placeholder={(() => {
@@ -1100,8 +1106,19 @@ export default function ContentAIGenerator({
               disabled={isAiFormDisabled}
               maxLength={1500}
             />
-            {/* 图标按钮区域（显示在 textarea 右下角） */}
-            <div className="absolute bottom-2 right-2 flex gap-1 z-10">
+            {/* 底部左侧按钮区域（语言选择和图片上传，并排显示） */}
+            <div className="absolute bottom-2 left-2 flex gap-2 items-center z-10">
+              {/* 语言选择按钮 */}
+              <button
+                type="button"
+                onClick={() => !isAiFormDisabled && setShowLanguagePicker(true)}
+                disabled={isAiFormDisabled}
+                className="px-2 py-1 text-sm border border-border rounded hover:bg-muted/50 transition disabled:opacity-50 disabled:cursor-not-allowed bg-card text-foreground"
+                title={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: '选择输出语言' }) : 'Select Output Language'}
+              >
+                {language ? getLanguageLabel(language) : (mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: '选择语言' }) : 'Select Language')}
+              </button>
+              {/* 图片上传按钮 */}
               <input
                 type="file"
                 accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
@@ -1130,20 +1147,6 @@ export default function ContentAIGenerator({
               {knowledgePoint.length}/1500
             </span>
           </div>
-        </div>
-
-        <div>
-          <label className="block font-semibold mb-1 text-foreground">
-            {mounted ? t('outputLanguage', { ns: 'content', defaultValue: 'Output Language' }) : 'Output Language'}
-          </label>
-          <input
-            className="w-full border border-border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card cursor-pointer"
-            value={language}
-            readOnly
-            placeholder={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Click to select output language (BCP 47)' }) : 'Click to select output language (BCP 47)'}
-            disabled={isAiFormDisabled}
-            onClick={() => !isAiFormDisabled && setShowLanguagePicker(true)}
-          />
         </div>
 
         {user && user.role === 'admin' && (
@@ -1233,10 +1236,7 @@ export default function ContentAIGenerator({
                   className={`px-3 py-2 cursor-pointer hover:bg-muted/50 flex items-center justify-between ${language === l.code ? 'bg-primary/10' : ''}`}
                   onClick={() => handleSelectLanguage(l.code)}
                 >
-                  <div>
-                    <div className="font-medium text-foreground">{l.label}</div>
-                    <div className="text-xs text-muted-foreground">{l.code}</div>
-                  </div>
+                  <div className="font-medium text-foreground">{l.label}</div>
                   {language === l.code && <span className="text-primary">✓</span>}
                 </div>
               ))}
