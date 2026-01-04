@@ -139,6 +139,8 @@ export default function ContentForm({
   // 图片上传相关状态
   const [uploadedImage, setUploadedImage] = useState<{ file: File; dataUrl: string; base64: string; mimeType: string } | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  // 示例提示词轮播状态
+  const [examplePromptIndex, setExamplePromptIndex] = useState(0);
 
   // 统一设置“加载失败，可重载”的UI状态，并持久化到 sessionStorage，防止 iOS 后台/切回导致状态丢失
   const markLoadFailed = React.useCallback((message: string) => {
@@ -152,6 +154,24 @@ export default function ContentForm({
       }
     } catch {}
   }, [currentRequestId]);
+
+  // 示例提示词轮播（只在 create 模式且知识点为空时运行）
+  useEffect(() => {
+    if (mode !== 'create' || knowledgePoint.trim() || !mounted) {
+      return;
+    }
+
+    const examples = t('knowledgePointExamples', { ns: 'content', returnObjects: true }) as string[];
+    if (!Array.isArray(examples) || examples.length === 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setExamplePromptIndex(prev => (prev + 1) % examples.length);
+    }, 3000); // 每 3 秒切换一次
+
+    return () => clearInterval(interval);
+  }, [mode, knowledgePoint, mounted, t]);
 
   // 实时预览：监听代码变化自动更新预览
   useEffect(() => {
@@ -1048,7 +1068,16 @@ export default function ContentForm({
                               className="w-full border border-gray-200 p-2 pr-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-24"
                               value={knowledgePoint}
                               onChange={e => setKnowledgePoint(e.target.value)}
-                              placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
+                              placeholder={(() => {
+                                if (!mounted) return 'For example: Fraction operations, cell structure, Newton\'s laws...';
+                                if (mode === 'create' && !knowledgePoint.trim()) {
+                                  const examples = t('knowledgePointExamples', { ns: 'content', returnObjects: true }) as string[];
+                                  if (Array.isArray(examples) && examples.length > 0) {
+                                    return examples[examplePromptIndex] || t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' });
+                                  }
+                                }
+                                return t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' });
+                              })()}
                               required
                               disabled={isAiFormDisabled}
                               maxLength={1500}

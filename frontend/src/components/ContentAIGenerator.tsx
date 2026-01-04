@@ -81,8 +81,29 @@ export default function ContentAIGenerator({
   // 语言弹窗
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [languageSearch, setLanguageSearch] = useState('');
+  
+  // 示例提示词轮播状态
+  const [examplePromptIndex, setExamplePromptIndex] = useState(0);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // 示例提示词轮播（只在知识点为空时运行）
+  useEffect(() => {
+    if (knowledgePoint.trim() || !mounted) {
+      return;
+    }
+
+    const examples = t('knowledgePointExamples', { ns: 'content', returnObjects: true }) as string[];
+    if (!Array.isArray(examples) || examples.length === 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setExamplePromptIndex(prev => (prev + 1) % examples.length);
+    }, 3000); // 每 3 秒切换一次
+
+    return () => clearInterval(interval);
+  }, [knowledgePoint, mounted, t]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1065,7 +1086,16 @@ export default function ContentAIGenerator({
               className="w-full border border-border p-2 pr-20 pb-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card resize-none h-24"
               value={knowledgePoint}
               onChange={e => setKnowledgePoint(e.target.value)}
-              placeholder={mounted ? t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' }) : 'For example: Fraction operations, cell structure, Newton\'s laws...'}
+              placeholder={(() => {
+                if (!mounted) return 'For example: Fraction operations, cell structure, Newton\'s laws...';
+                if (!knowledgePoint.trim()) {
+                  const examples = t('knowledgePointExamples', { ns: 'content', returnObjects: true }) as string[];
+                  if (Array.isArray(examples) && examples.length > 0) {
+                    return examples[examplePromptIndex] || t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' });
+                  }
+                }
+                return t('knowledgePointPlaceholder', { ns: 'content', defaultValue: 'For example: Fraction operations, cell structure, Newton\'s laws...' });
+              })()}
               required
               disabled={isAiFormDisabled}
               maxLength={1500}
