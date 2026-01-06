@@ -206,12 +206,9 @@ router.get('/', optionalAuth, async (req, res) => {
       filters.offset = parseInt(req.query.offset, 10);
     }
     
-    // 如果查询用户自己的内容，包含生成状态（需要认证）
-    const includeGenerationStatus = req.query.created_by && req.user && req.query.created_by === req.user.id;
-    
-    const result = includeGenerationStatus 
-      ? await DatabaseService.getContentsWithGenerationStatus(filters)
-      : await DatabaseService.getContents(filters);
+    // 首页与公开列表需要显示提示角标所依赖的 user_query/image_url
+    // 为所有列表查询合并最新的生成日志字段（不影响权限控制）
+    const result = await DatabaseService.getContentsWithGenerationStatus(filters);
     
     if (result.error) {
       return res.status(500).json({ success: false, error: result.error.message });
