@@ -22,7 +22,7 @@ const config = {
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ? 
     process.env.ALLOWED_ORIGINS.split(',') : 
     (process.env.NODE_ENV === 'production' ? 
-      ['https://eduNest.app', 'https://www.eduNest.app'] : 
+      ['https://edunest.app', 'https://www.edunest.app', 'https://eduNest.app', 'https://www.eduNest.app'] : 
       ['http://localhost:3000', 'http://127.0.0.1:3000']
     ),
   RATE_LIMIT_WINDOW: 15 * 60 * 1000, // 15分钟
