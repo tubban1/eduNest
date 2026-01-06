@@ -59,21 +59,24 @@ export default function HomePage() {
   // 处理列表数据的辅助函数
   const processListData = useCallback((list: any[]) => {
     const inProgressStatuses = ['pending', 'processing', 'failed'];
-    const inProgressContent = list.filter(
-      (item: any) => inProgressStatuses.includes(item.generation_status)
-    );
     const completedContent = list.filter(
       (item: any) =>
         !inProgressStatuses.includes(item.generation_status) &&
         item.full_html &&
         item.full_html.trim().length > 0
     );
+    if (!user) {
+      return completedContent;
+    }
+    const inProgressContent = list.filter(
+      (item: any) => inProgressStatuses.includes(item.generation_status)
+    );
     const mergedMap = new Map<string, any>();
     [...inProgressContent, ...completedContent].forEach((item) => {
       mergedMap.set(item.id, item);
     });
     return Array.from(mergedMap.values());
-  }, []);
+  }, [user]);
 
   // 获取内容列表 - 根据登录状态和语言筛选（支持分页）
   const refreshContent = useCallback(async (pageNum = 1, append = false, forceRefresh = false) => {
