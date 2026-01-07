@@ -558,7 +558,7 @@ export default function FullHTMLRenderer({
       {/* 微信提示 */}
       {forceExternalInWechat && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-warning/10 border border-warning/30 text-warning rounded-md text-sm shadow">
-          为获得完整体验，请点击右上角菜单并选择"在浏览器中打开"。
+          为获得完整体验，请点击右上角菜单并选择&nbsp;&quot;在浏览器中打开&quot;。
         </div>
       )}
 
@@ -612,5 +612,4 @@ export default function FullHTMLRenderer({
     </div>
   );
 }
-
 

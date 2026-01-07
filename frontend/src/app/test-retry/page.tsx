@@ -529,9 +529,9 @@ export default function TestRetryPage() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <h3 className="text-blue-800 font-semibold mb-2">使用说明</h3>
             <ul className="text-blue-700 text-sm space-y-1">
-              <li>• <strong>模拟卡片重试</strong>: 点击失败卡片的"重试"按钮会创建真实内容并调用AI模型</li>
-              <li>• <strong>真实测试</strong>: 点击"创建真实测试内容"会使用失败卡片的user_query提交到AI模型</li>
-              <li>• <strong>刷新状态</strong>: 点击"刷新状态"按钮可以手动检查所有内容的最新状态</li>
+              <li>• <strong>模拟卡片重试</strong>: 点击失败卡片的&nbsp;&quot;重试&quot;&nbsp;按钮会创建真实内容并调用AI模型</li>
+              <li>• <strong>真实测试</strong>: 点击&nbsp;&quot;创建真实测试内容&quot;&nbsp;会使用失败卡片的user_query提交到AI模型</li>
+              <li>• <strong>刷新状态</strong>: 点击&nbsp;&quot;刷新状态&quot;&nbsp;按钮可以手动检查所有内容的最新状态</li>
               <li>• <strong>AI响应</strong>: 生成完成后会自动获取AI响应内容并更新到卡片中</li>
               <li>• <strong>调试日志</strong>: 页面底部显示所有操作的详细日志，包括AI响应内容</li>
               <li>• <strong>真实API</strong>: 现在所有重试都会调用真实的API接口，不再是模拟</li>
