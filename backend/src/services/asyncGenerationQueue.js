@@ -147,8 +147,8 @@ class AsyncGenerationQueue {
             filename,
             generationParams.image.mime_type
           );
-          imageUrl = uploadResult.url;
-          logger.info(`[AsyncGenerationQueue] 图片上传成功，URL: ${imageUrl}`);
+          imageUrl = uploadResult.displayUrl || uploadResult.url;
+          logger.info(`[AsyncGenerationQueue] 图片上传成功，DisplayURL: ${imageUrl}`);
         } catch (uploadError) {
           logger.error('[AsyncGenerationQueue] 图片上传失败:', uploadError);
           // 上传失败不影响任务创建，只记录错误

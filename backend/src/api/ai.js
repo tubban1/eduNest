@@ -520,6 +520,7 @@ router.post('/generate-async', [
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
+  body('idempotency_key').optional().isString().isLength({ max: 1024 }).withMessage('idempotency_key 不合法'),
   body('image').optional().custom((value) => {
     if (value && typeof value === 'object') {
       if (!value.mime_type || typeof value.mime_type !== 'string') {
@@ -547,7 +548,7 @@ router.post('/generate-async', [
       });
     }
 
-    const { content_id, knowledge_point, learning_stage, description, language_code, provider, image } = req.body;
+    const { content_id, knowledge_point, learning_stage, description, language_code, provider, image, idempotency_key } = req.body;
     const userId = req.user?.id;
     
     // 调试日志：检查图片数据
@@ -597,7 +598,8 @@ router.post('/generate-async', [
       description,
       language_code,
       provider,
-      image: image || undefined
+      image: image || undefined,
+      idempotency_key
     });
 
 
@@ -708,16 +710,15 @@ router.get('/generation-status-stream/:contentId', async (req, res) => {
       try {
         // 查询最新的生成日志
         // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
-        const { data: log, error: logError } = await DatabaseService.supabase
+        const { data: logs, error: logError } = await DatabaseService.supabase
           .from('ai_usage_logs')
           .select('*, started_at')
           .eq('content_id', contentId)
           .eq('action_type', 'generate')
           .order('updated_at', { ascending: false })
-          .limit(1)
-          .single();
+          .limit(5);
 
-        if (logError || !log) {
+        if (logError || !logs || logs.length === 0) {
           // 如果找不到日志，发送错误并关闭连接
           res.write(`event: error\ndata: ${JSON.stringify({ error: '未找到生成记录' })}\n\n`);
           if (res.flush) res.flush();
@@ -725,6 +726,17 @@ router.get('/generation-status-stream/:contentId', async (req, res) => {
           res.end();
           return;
         }
+
+        const pickByPriority = (rows) => {
+          const byStatus = {
+            done: rows.find(r => r.status === 'done'),
+            processing: rows.find(r => r.status === 'processing'),
+            pending: rows.find(r => r.status === 'pending'),
+            failed: rows.find(r => r.status === 'failed'),
+          };
+          return byStatus.done || byStatus.processing || byStatus.pending || byStatus.failed || rows[0];
+        };
+        const log = pickByPriority(logs);
 
         // 检查状态是否变化
         const statusChanged = 
@@ -874,21 +886,31 @@ router.get('/generation-status/:contentId', async (req, res) => {
 
     // 查询最新的生成日志
     // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
-    const { data: log, error: logError } = await DatabaseService.supabase
+    const { data: logs, error: logError } = await DatabaseService.supabase
       .from('ai_usage_logs')
       .select('*, started_at')
       .eq('content_id', contentId)
       .eq('action_type', 'generate')
       .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(5);
 
-    if (logError || !log) {
+    if (logError || !logs || logs.length === 0) {
       return res.status(404).json({
         success: false,
         error: '未找到生成记录'
       });
     }
+
+    const pickByPriority = (rows) => {
+      const byStatus = {
+        done: rows.find(r => r.status === 'done'),
+        processing: rows.find(r => r.status === 'processing'),
+        pending: rows.find(r => r.status === 'pending'),
+        failed: rows.find(r => r.status === 'failed'),
+      };
+      return byStatus.done || byStatus.processing || byStatus.pending || byStatus.failed || rows[0];
+    };
+    const log = pickByPriority(logs);
 
     // 计算重试次数
     const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
@@ -966,18 +988,16 @@ router.get('/generation-status', authenticateToken, async (req, res) => {
             };
           }
 
-          // 获取生成状态
-          // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
-          const { data: log } = await DatabaseService.supabase
+          // 获取生成状态（按优先级选择）
+          const { data: logs } = await DatabaseService.supabase
             .from('ai_usage_logs')
             .select('*, started_at')
             .eq('content_id', contentId)
             .eq('action_type', 'generate')
             .order('updated_at', { ascending: false })
-            .limit(1)
-            .single();
+            .limit(5);
 
-          if (!log) {
+          if (!logs || logs.length === 0) {
             return {
               content_id: contentId,
               status: 'unknown',
@@ -985,6 +1005,17 @@ router.get('/generation-status', authenticateToken, async (req, res) => {
               retry_count: 0
             };
           }
+
+          const pickByPriority = (rows) => {
+            const byStatus = {
+              done: rows.find(r => r.status === 'done'),
+              processing: rows.find(r => r.status === 'processing'),
+              pending: rows.find(r => r.status === 'pending'),
+              failed: rows.find(r => r.status === 'failed'),
+            };
+            return byStatus.done || byStatus.processing || byStatus.pending || byStatus.failed || rows[0];
+          };
+          const log = pickByPriority(logs);
 
           const retryCount = await asyncGenerationQueue.getRetryCount(contentId);
           
@@ -1118,6 +1149,7 @@ router.post('/generate-free', [
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
+  body('idempotency_key').optional().isString().isLength({ max: 1024 }).withMessage('idempotency_key 不合法'),
   body('image').optional().custom((value) => {
     if (value && typeof value === 'object') {
       if (!value.mime_type || typeof value.mime_type !== 'string') {
@@ -1146,7 +1178,7 @@ router.post('/generate-free', [
     }
 
     const visitorId = req.visitorId;
-    const { knowledgePoint, learningStage, description, language_code, provider, image } = req.body;
+    const { knowledgePoint, learningStage, description, language_code, provider, image, idempotency_key } = req.body;
     
     // 调试日志：检查图片数据
     if (image) {
@@ -1201,7 +1233,8 @@ router.post('/generate-free', [
       description: description,
       language_code: language_code,
       provider: provider,
-      image: image || undefined
+      image: image || undefined,
+      idempotency_key
     });
     
     // 标记内容已生成（使用免费试用机会）

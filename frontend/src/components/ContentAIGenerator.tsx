@@ -920,6 +920,14 @@ export default function ContentAIGenerator({
       if (!user) {
         // 未登录用户：使用免费生成接口
         // 注意：这个接口会创建 content 并添加任务，所以只需要调用一次
+        const idempotencyKey = [
+          'free',
+          currentKnowledgePoint,
+          language,
+          currentDescription || '',
+          currentUploadedImage ? currentUploadedImage.mimeType : 'noimg'
+        ].join('|');
+
         generateResponse = await api.generateContentFree({
           knowledgePoint: currentKnowledgePoint,
           learningStage: 'understanding',
@@ -929,6 +937,7 @@ export default function ContentAIGenerator({
             mime_type: currentUploadedImage.mimeType,
             data: currentUploadedImage.base64
           } : undefined,
+          idempotency_key: idempotencyKey
         });
 
         if (!(generateResponse && (generateResponse as any).success)) {
@@ -979,6 +988,15 @@ export default function ContentAIGenerator({
           throw new Error('创建内容记录失败');
         }
 
+        const idempotencyKey = [
+          'gen',
+          contentResponse.id,
+          currentKnowledgePoint,
+          language,
+          currentDescription || '',
+          currentUploadedImage ? currentUploadedImage.mimeType : 'noimg'
+        ].join('|');
+
         generateResponse = await api.generateContentAsync(contentResponse.id, {
           knowledge_point: currentKnowledgePoint,
           learning_stage: 'understanding',
@@ -989,6 +1007,7 @@ export default function ContentAIGenerator({
             mime_type: currentUploadedImage.mimeType,
             data: currentUploadedImage.base64
           } : undefined,
+          idempotency_key: idempotencyKey
         });
 
         if (!(generateResponse && (generateResponse as any).success)) {
@@ -1484,5 +1503,3 @@ export default function ContentAIGenerator({
     </div>
   );
 }
-
-

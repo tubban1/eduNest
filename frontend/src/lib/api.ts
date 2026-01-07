@@ -619,6 +619,7 @@ class ApiClient {
       mime_type: string;
       data: string;
     };
+    idempotency_key?: string;
   }) {
     return this.post('/ai/generate-async', {
       content_id: contentId,
@@ -658,6 +659,7 @@ class ApiClient {
       mime_type: string;
       data: string;
     };
+    idempotency_key?: string;
   }) {
     return this.post('/ai/generate-free', params);
   }
