@@ -191,6 +191,7 @@ export class StatusPollingManager {
   private attemptCounts: Map<string, number> = new Map();
   // 轮询间隔状态持久化（用于页面刷新后恢复）
   private pollingIntervals: Map<string, number> = new Map();
+  private lastStates: Map<string, GenerationStatusResponse> = new Map();
 
   startPolling(
     contentId: string, 
@@ -226,15 +227,16 @@ export class StatusPollingManager {
           this.attemptCounts.set(`failures_${contentId}`, 0);
           
           const status = response.data;
+          const adjusted = this.adjustStatus(contentId, status);
           
           // 调用回调
           const cb = this.callbacks.get(contentId);
           if (cb) {
-            cb(status);
+            cb(adjusted);
           }
 
           // 如果是最终状态，停止轮询
-          if (isFinalStatus(status.status)) {
+          if (isFinalStatus(adjusted.status)) {
             this.stopPolling(contentId);
             return;
           }
@@ -252,6 +254,8 @@ export class StatusPollingManager {
           // 4次后使用默认间隔
           interval = POLLING_CONFIG.defaultInterval;
         }
+        const jitter = 0.8 + Math.random() * 0.7;
+        interval = Math.min(POLLING_CONFIG.maxInterval, Math.floor(interval * jitter));
         
         // 保存当前间隔到内存和 sessionStorage（用于页面刷新后恢复）
         this.pollingIntervals.set(contentId, interval);
@@ -423,6 +427,37 @@ export class StatusPollingManager {
   getPollingCount(): number {
     return this.intervals.size;
   }
+
+  private adjustStatus(contentId: string, incoming: GenerationStatusResponse): GenerationStatusResponse {
+    const prev = this.lastStates.get(contentId);
+    const rank = (s: GenerationStatus) => {
+      switch (s) {
+        case GENERATION_STATUS.PENDING: return 1;
+        case GENERATION_STATUS.PROCESSING: return 2;
+        case GENERATION_STATUS.DONE: return 3;
+        case GENERATION_STATUS.FAILED: return 3;
+        default: return 0;
+      }
+    };
+    let next = { ...incoming };
+    if (prev) {
+      const prevRank = rank(prev.status);
+      const nextRank = rank(incoming.status);
+      if (prevRank > nextRank) {
+        next.status = prev.status;
+      }
+      if (!isFinalStatus(next.status)) {
+        next.progress = Math.max(prev.progress || 0, next.progress || 0);
+      }
+      const prevUpdated = prev.updated_at ? Date.parse(prev.updated_at) : 0;
+      const nextUpdated = next.updated_at ? Date.parse(next.updated_at) : 0;
+      if (prevUpdated && nextUpdated && prevUpdated > nextUpdated) {
+        next = prev;
+      }
+    }
+    this.lastStates.set(contentId, next);
+    return next;
+  }
 }
 
 // 全局轮询管理器实例
@@ -440,6 +475,7 @@ export class HybridStatusManager {
   private apiCall: (id: string) => Promise<{ success: boolean; data: GenerationStatusResponse }>;
   private isActive: boolean = false;
   private visitorId: string | null = null;
+  private lastStatus: GenerationStatusResponse | null = null;
 
   constructor(
     contentId: string,
@@ -521,10 +557,11 @@ export class HybridStatusManager {
             started_at: data.started_at
           };
 
-          this.callback(statusData);
+          const adjusted = this.adjustHybridStatus(statusData);
+          this.callback(adjusted);
 
           // 如果是最终状态，停止
-          if (isFinalStatus(statusData.status)) {
+          if (isFinalStatus(adjusted.status)) {
             this.stop();
           }
         }
@@ -587,10 +624,14 @@ export class HybridStatusManager {
         }
         
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
           const response = await fetch(url, {
             method: 'GET',
             headers,
+            signal: controller.signal,
           });
+          clearTimeout(timeoutId);
           
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -613,7 +654,7 @@ export class HybridStatusManager {
     
     this.pollingManager.startPolling(
       this.contentId,
-      this.callback,
+      (s) => this.callback(this.adjustHybridStatus(s)),
       wrappedApiCall
     );
   }
@@ -631,5 +672,36 @@ export class HybridStatusManager {
 
   isRunning(): boolean {
     return this.isActive;
+  }
+
+  private adjustHybridStatus(incoming: GenerationStatusResponse): GenerationStatusResponse {
+    const prev = this.lastStatus;
+    const rank = (s: GenerationStatus) => {
+      switch (s) {
+        case GENERATION_STATUS.PENDING: return 1;
+        case GENERATION_STATUS.PROCESSING: return 2;
+        case GENERATION_STATUS.DONE: return 3;
+        case GENERATION_STATUS.FAILED: return 3;
+        default: return 0;
+      }
+    };
+    let next = { ...incoming };
+    if (prev) {
+      const prevRank = rank(prev.status);
+      const nextRank = rank(incoming.status);
+      if (prevRank > nextRank) {
+        next.status = prev.status;
+      }
+      if (!isFinalStatus(next.status)) {
+        next.progress = Math.max(prev.progress || 0, next.progress || 0);
+      }
+      const prevUpdated = prev.updated_at ? Date.parse(prev.updated_at) : 0;
+      const nextUpdated = next.updated_at ? Date.parse(next.updated_at) : 0;
+      if (prevUpdated && nextUpdated && prevUpdated > nextUpdated) {
+        next = prev;
+      }
+    }
+    this.lastStatus = next;
+    return next;
   }
 }

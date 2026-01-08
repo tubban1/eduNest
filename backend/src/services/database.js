@@ -181,27 +181,36 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
       return { data: contents, error: null };
     }
 
-    // 为每个内容创建状态映射（只取最新的状态）
     const statusMap = new Map();
     const retryCountMap = new Map();
     
     if (generationLogs) {
-      // 按内容ID分组，每个内容只取最新的状态
-      const latestLogsByContent = new Map();
+      const logsByContent = new Map();
       
       generationLogs.forEach(log => {
-        if (!latestLogsByContent.has(log.content_id)) {
-          latestLogsByContent.set(log.content_id, log);
+        if (!logsByContent.has(log.content_id)) {
+          logsByContent.set(log.content_id, []);
         }
+        logsByContent.get(log.content_id).push(log);
         
-        // 计算每个内容的总重试次数
         const count = retryCountMap.get(log.content_id) || 0;
         retryCountMap.set(log.content_id, count + 1);
       });
       
-      // 构建状态映射
-      latestLogsByContent.forEach((log, contentId) => {
-        // 如果 status 是 'done' 但 is_render_success 是 false，则应该显示为 'failed'
+      logsByContent.forEach((logs, contentId) => {
+        const pickByPriority = (rows) => {
+          const done = rows.find(r => r.status === 'done');
+          if (done) return done;
+          const processing = rows.find(r => r.status === 'processing');
+          if (processing) return processing;
+          const pending = rows.find(r => r.status === 'pending');
+          if (pending) return pending;
+          const failed = rows.find(r => r.status === 'failed');
+          if (failed) return failed;
+          return rows[0];
+        };
+        
+        const log = pickByPriority(logs);
         let finalStatus = log.status;
         if (log.status === 'done' && log.is_render_success === false) {
           finalStatus = 'failed';
@@ -217,7 +226,6 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
         });
       });
       
-      // 重试次数 = 总次数 - 1（减去第一次尝试）
       retryCountMap.forEach((count, contentId) => {
         retryCountMap.set(contentId, Math.max(0, count - 1));
       });
