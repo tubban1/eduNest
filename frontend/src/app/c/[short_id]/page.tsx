@@ -271,8 +271,24 @@ export default function FullHTMLContentPage() {
     // 开始 SSE + 轮询混合监听
     hybridManager.start();
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        hybridManager.stop();
+        return;
+      }
+      if (document.visibilityState === 'visible') {
+        if (generationStatus === 'pending' || generationStatus === 'processing') {
+          hybridManager.stop();
+          hybridManager.start();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // 清理函数
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       hybridManager.stop();
     };
   }, [content?.id, generationStatus, params.short_id, router, user]);
@@ -568,4 +584,3 @@ export default function FullHTMLContentPage() {
     </div>
   );
 }
-

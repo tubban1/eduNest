@@ -262,13 +262,19 @@ function ContentCard({
 
     // 页面可见性监听：应用从后台恢复时重新启动
     const handleVisibilityChange = () => {
+      const manager = hybridStatusManagerRef.current;
+      if (!manager) return;
+
+      if (document.visibilityState === 'hidden') {
+        manager.stop();
+        return;
+      }
+
       if (document.visibilityState === 'visible') {
         const currentStatus = content.generation_status;
         if (currentStatus && isGenerating(currentStatus)) {
-          // 如果任务仍在进行中但管理器已停止，重新启动
-          if (hybridStatusManagerRef.current && !hybridStatusManagerRef.current.isRunning()) {
-            hybridStatusManagerRef.current.start();
-          }
+          manager.stop();
+          manager.start();
         }
       }
     };
@@ -278,8 +284,13 @@ function ContentCard({
     // 清理函数
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      // 注意：不在这里停止管理器，因为组件可能只是重新渲染
-      // 管理器的停止由状态变化或组件卸载时处理
+      if (hybridStatusManagerRef.current) {
+        hybridStatusManagerRef.current.stop();
+        hybridStatusManagerRef.current = null;
+      }
+      if (statusPollingManager.isPolling(content.id)) {
+        statusPollingManager.stopPolling(content.id);
+      }
     };
   }, [content.id, content.generation_status, user]); // 移除 onContentUpdate 依赖，使用 ref 来避免不必要的重新执行
 
