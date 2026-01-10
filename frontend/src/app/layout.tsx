@@ -1,4 +1,5 @@
 import './globals.css'
+import 'katex/dist/katex.min.css';
 import AppClientProviders from '../components/AppClientProviders';
 import ErrorBoundary from '../components/ErrorBoundary';
 

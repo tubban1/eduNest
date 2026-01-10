@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Bot, User } from 'lucide-react';
+import AIGuideMessageRenderer from '../AIGuideMessageRenderer';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -40,7 +41,11 @@ export const AIGuideMessageList: React.FC<AIGuideMessageListProps> = ({ messages
                 : 'bg-card border border-border text-foreground rounded-tl-none'
             }`}
           >
-            <div className="whitespace-pre-wrap">{msg.content}</div>
+            {msg.role === 'assistant' ? (
+              <AIGuideMessageRenderer content={msg.content} messageId={idx.toString()} />
+            ) : (
+              <div className="whitespace-pre-wrap">{msg.content}</div>
+            )}
           </div>
         </div>
       ))}
