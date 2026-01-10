@@ -317,7 +317,7 @@ const handleChat = async (conversationId, message, uiState, userId) => {
     const stream = await aiProviderFactory.createChatCompletion({
       provider: 'qenda',
       messages: llmMessages,
-      max_tokens: 1000,
+      max_tokens: 2000,
       temperature: 0.7,
       stream: true
     });
@@ -363,7 +363,7 @@ const handleChat = async (conversationId, message, uiState, userId) => {
                 role: m.role,
                 content: m.role === 'system' ? 'SYSTEM_PROMPT_WITH_METADATA' : m.content.substring(0, 200) // Truncate for storage
               })),
-              max_tokens: 1000,
+              max_tokens: 2000,
               temperature: 0.7,
               stream: true,
               ui_state: uiState,

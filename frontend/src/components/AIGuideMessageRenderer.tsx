@@ -256,60 +256,12 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
     >
       {(() => {
         const processedContent = preprocessContent(content);
-
-        console.log('[AIGuideMessageRenderer] processed length:', processedContent.length);
-        console.log('[AIGuideMessageRenderer] processed preview:', processedContent.slice(0, 200));
-
-        const debugRemarkPlugin = () => {
-          return (tree: any) => {
-            const mathNodes: Array<{ type: string; value?: string }> = [];
-            const visit = (node: any) => {
-              if (!node) return;
-              if (node.type === 'math' || node.type === 'inlineMath') {
-                mathNodes.push({ type: node.type, value: node.value });
-              }
-              if (Array.isArray(node.children)) {
-                node.children.forEach(visit);
-              }
-            };
-
-            visit(tree);
-            console.log('[AIGuideMessageRenderer] remark math nodes:', mathNodes.length);
-            console.log('[AIGuideMessageRenderer] remark math sample:', mathNodes.slice(0, 3));
-            return tree;
-          };
-        };
-
-        const debugRehypePlugin = () => {
-          return (tree: any) => {
-            const hits: Array<{ tagName?: string; className?: any }> = [];
-            const visit = (node: any) => {
-              if (!node) return;
-              if (node.type === 'element') {
-                const className = node.properties?.className;
-                const classStr = Array.isArray(className) ? className.join(' ') : String(className || '');
-                if (classStr.includes('katex') || classStr.includes('math-')) {
-                  hits.push({ tagName: node.tagName, className });
-                }
-              }
-              if (Array.isArray(node.children)) {
-                node.children.forEach(visit);
-              }
-            };
-
-            visit(tree);
-            console.log('[AIGuideMessageRenderer] rehype katex/math nodes:', hits.length);
-            console.log('[AIGuideMessageRenderer] rehype sample:', hits.slice(0, 6));
-            return tree;
-          };
-        };
         
         return (
           <ReactMarkdown
-            remarkPlugins={[remarkMath, debugRemarkPlugin, remarkGfm]}
+            remarkPlugins={[remarkMath, remarkGfm]}
             rehypePlugins={[
-              rehypeKatex,
-              debugRehypePlugin
+              rehypeKatex
             ]}
             components={components}
           >
