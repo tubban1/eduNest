@@ -216,44 +216,77 @@ export default function ContentAIGenerator({
     return lang?.label || code;
   };
 
-  // 压缩图片
-  const compressImage = (file: File, maxWidth: number = 2048, maxHeight: number = 2048, quality: number = 0.8): Promise<string> => {
+  // 智能压缩图片到目标大小（Vercel限制4.5MB，我们设置为4MB以确保安全）
+  const compressImage = (file: File, targetSizeMB: number = 4): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          // 计算新尺寸（保持宽高比）
-          let width = img.width;
-          let height = img.height;
+          const targetSizeBytes = targetSizeMB * 1024 * 1024;
+          const originalWidth = img.width;
+          const originalHeight = img.height;
           
-          if (width > maxWidth || height > maxHeight) {
-            const ratio = Math.min(maxWidth / width, maxHeight / height);
-            width = width * ratio;
-            height = height * ratio;
-          }
-
-          // 创建 canvas 并绘制压缩后的图片
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
+          // 初始最大尺寸
+          let maxDimension = 2048;
+          let quality = 0.8;
           
-          if (!ctx) {
-            reject(new Error('无法创建 canvas 上下文'));
-            return;
-          }
-
-          // 绘制图片
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // 转换为 base64（使用原文件的 MIME 类型，但如果是 PNG/GIF 则转换为 JPEG 以减小体积）
+          // 如果是PNG/GIF，转换为JPEG以减小体积
           let outputMimeType = file.type;
           if (file.type === 'image/png' || file.type === 'image/gif') {
             outputMimeType = 'image/jpeg';
           }
 
-          const dataUrl = canvas.toDataURL(outputMimeType, quality);
+          // 使用循环而不是递归，逐步降低质量直到达到目标大小
+          let dataUrl = '';
+          let currentQuality = quality;
+          
+          while (currentQuality >= 0.1) {
+            // 计算新尺寸（保持宽高比）
+            let newWidth = originalWidth;
+            let newHeight = originalHeight;
+            
+            if (newWidth > maxDimension || newHeight > maxDimension) {
+              const ratio = Math.min(maxDimension / newWidth, maxDimension / newHeight);
+              newWidth = Math.floor(newWidth * ratio);
+              newHeight = Math.floor(newHeight * ratio);
+            }
+
+            // 创建 canvas 并绘制压缩后的图片
+            const canvas = document.createElement('canvas');
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+              reject(new Error('无法创建 canvas 上下文'));
+              return;
+            }
+
+            // 绘制图片
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+            // 转换为 base64
+            dataUrl = canvas.toDataURL(outputMimeType, currentQuality);
+            
+            // 计算实际大小（base64编码会增加约33%）
+            const base64Match = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+            if (base64Match) {
+              const base64Data = base64Match[1];
+              const actualSize = (base64Data.length * 3) / 4;
+              
+              // 如果达到目标大小或质量已降到最低，返回结果
+              if (actualSize <= targetSizeBytes) {
+                resolve(dataUrl);
+                return;
+              }
+            }
+            
+            // 降低质量重试
+            currentQuality = Math.max(0.1, currentQuality - 0.1);
+          }
+          
+          // 如果循环结束还没有达到目标大小，返回最后一次压缩的结果
           resolve(dataUrl);
         };
         img.onerror = () => {
@@ -290,8 +323,8 @@ export default function ContentAIGenerator({
     setError('');
 
     try {
-      // 压缩图片并转换为 base64
-      const dataUrl = await compressImage(file, 2048, 2048, 0.8);
+      // 压缩图片并转换为 base64（压缩到4MB以下以符合Vercel限制）
+      const dataUrl = await compressImage(file, 4);
       
       // dataUrl 格式: data:image/png;base64,iVBORw0KGgo...
       const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -301,7 +334,8 @@ export default function ContentAIGenerator({
         
         // 检查压缩后的 base64 大小（base64 编码会增加约 33% 的大小）
         const base64Size = (base64.length * 3) / 4; // 估算原始字节大小
-        if (base64Size > 10 * 1024 * 1024) { // 如果压缩后仍超过 10MB
+        const maxSize = 4 * 1024 * 1024; // 4MB (Vercel限制是4.5MB，我们设置为4MB以确保安全)
+        if (base64Size > maxSize) {
           setError(t('errors.imageTooLarge', { ns: 'content', defaultValue: '图片太大，请使用更小的图片或降低分辨率' }));
           setImageUploading(false);
           if (resetInput) resetInput();

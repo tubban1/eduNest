@@ -1037,4 +1037,6 @@ export interface Content {
   thumbnail_url?: string; // 图片 URL（备用）
   thumbnail_status?: 'pending' | 'generating' | 'ready' | 'failed';
   thumbnail_updated_at?: string;
+  // AI Guide 相关字段
+  metadata_json?: any; // 页面元数据（用于 AI Guide 分析）
 } 

@@ -21,6 +21,7 @@ interface AIGuideDrawerProps {
   initFailed?: boolean;
   onRetryInit?: () => void;
   freeTrialUsed?: boolean;
+  hasMetadata?: boolean;
 }
 
 export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
@@ -32,7 +33,8 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
   isLoggedIn,
   initFailed = false,
   onRetryInit,
-  freeTrialUsed = false
+  freeTrialUsed = false,
+  hasMetadata = true
 }) => {
   const { t } = useTranslation('aiGuide');
   const router = useRouter();
@@ -72,7 +74,7 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
 
       {/* Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        <AIGuideMessageList messages={messages} isLoading={isLoading} />
+        <AIGuideMessageList messages={messages} isLoading={isLoading} hasMetadata={hasMetadata} />
         {/* Retry button when init failed */}
         {initFailed && onRetryInit && (
           <div className="p-4 border-t border-border bg-card">

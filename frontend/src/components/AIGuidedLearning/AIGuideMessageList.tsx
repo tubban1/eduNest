@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Bot, User } from 'lucide-react';
 import AIGuideMessageRenderer from '../AIGuideMessageRenderer';
+import { AIGuideAnalyzingPrompt } from './AIGuideAnalyzingPrompt';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -11,17 +12,31 @@ interface Message {
 interface AIGuideMessageListProps {
   messages: Message[];
   isLoading: boolean;
+  hasMetadata?: boolean;
 }
 
-export const AIGuideMessageList: React.FC<AIGuideMessageListProps> = ({ messages, isLoading }) => {
+export const AIGuideMessageList: React.FC<AIGuideMessageListProps> = ({ messages, isLoading, hasMetadata = true }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages.length, isLoading]);
+
+  // 检查是否有 assistant 的回复消息（有内容的消息）
+  const hasAssistantResponse = messages.some(msg => 
+    msg.role === 'assistant' && msg.content && msg.content.trim().length > 0
+  );
+
+  // 显示条件：metadata 不存在 && 没有 assistant 回复（不管是否在加载中）
+  // 一旦有 assistant 回复，动画就消失
+  const shouldShowAnalyzing = !hasMetadata && !hasAssistantResponse;
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
+      {/* 如果 metadata_json 不存在且还没有 assistant 的回复，显示分析提示 */}
+      {shouldShowAnalyzing && (
+        <AIGuideAnalyzingPrompt />
+      )}
       {messages.map((msg, idx) => (
         <div
           key={idx}

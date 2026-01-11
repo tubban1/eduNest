@@ -9,6 +9,7 @@ import { getVisitorId } from '@/utils/visitorId';
 
 interface AIGuidedLearningProps {
   contentId: string;
+  content?: { metadata_json?: any } | null;
   onUIStateChange?: (state: any) => void;
 }
 
@@ -18,7 +19,7 @@ interface Message {
   created_at?: string;
 }
 
-export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, onUIStateChange }) => {
+export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, content, onUIStateChange }) => {
   const { user } = useAuth();
   const router = useRouter();
   const { t } = useTranslation('aiGuide');
@@ -30,6 +31,8 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
   const [initFailed, setInitFailed] = useState(false);
   const [trialStatus, setTrialStatus] = useState<{ content_generated: boolean; ai_guide_used: boolean } | null>(null);
   const [freeTrialUsed, setFreeTrialUsed] = useState(false);
+  // 记录初始化时 metadata 是否存在（用于显示分析动画）
+  const [hadMetadataOnInit, setHadMetadataOnInit] = useState<boolean | null>(null);
 
   // 检查免费试用状态（未登录用户）
   const fetchTrialStatus = async () => {
@@ -56,6 +59,11 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
   // Initialize conversation when opening for the first time
   const initSession = async () => {
     if (hasInit && !initFailed) return;
+    
+    // 记录初始化时的 metadata 状态（如果还没记录）
+    if (hadMetadataOnInit === null) {
+      setHadMetadataOnInit(!!content?.metadata_json);
+    }
     
     setIsLoading(true);
     setInitFailed(false);
@@ -137,6 +145,8 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
     const newState = !isOpen;
     setIsOpen(newState);
     if (newState && !hasInit) {
+      // 记录打开时的 metadata 状态
+      setHadMetadataOnInit(!!content?.metadata_json);
       initSession();
     }
   };
@@ -266,6 +276,7 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, o
         initFailed={initFailed}
         onRetryInit={retryInit}
         freeTrialUsed={freeTrialUsed || trialStatus?.ai_guide_used || false}
+        hasMetadata={hadMetadataOnInit !== null ? hadMetadataOnInit : !!(content?.metadata_json !== undefined && content?.metadata_json !== null)}
       />
     </>
   );
