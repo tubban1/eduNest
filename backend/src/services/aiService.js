@@ -503,9 +503,12 @@ const SYSTEM_PROMPT_CONTENT = {
       ],
 
       "math_rendering": [
-        "ALL mathematical formulas MUST be rendered using KaTeX.",
-        "Raw LaTeX text MUST NOT appear in the final UI.",
-        "The generated code MUST guarantee formulas are correctly rendered after every DOM update or stage change."
+        "ALL mathematical formulas MUST be rendered using KaTeX. Raw LaTeX text MUST NOT appear in the final UI.",
+        "For static HTML text content, wrap formulas in $ for inline formulas (e.g., $x^2 + y^2 = z^2$) and $$ for block formulas (e.g., $$\\int_0^1 x^2 dx$$).",
+        "CRITICAL: When calling renderMathInElement, you MUST configure delimiters to match the delimiters used in HTML. Example: renderMathInElement(container, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false }).",
+        "For the v-katex directive (Vue custom directive), the input string MUST NOT include $ or $$ delimiters. The directive internally calls katex.renderToString automatically. Example: v-katex=\"'x^2 + y^2'\" (not v-katex=\"'$x^2 + y^2$'\"). If implementing v-katex, create it as: app.directive('katex', { mounted(el, binding) { if (typeof katex !== 'undefined') { el.innerHTML = katex.renderToString(binding.value, { throwOnError: false }); } } }).",
+        "CRITICAL: When writing LaTeX formulas in JavaScript strings, ALL backslashes MUST be double-escaped. For example, use \\\\sin instead of \\sin, \\\\frac instead of \\frac, \\\\sqrt instead of \\sqrt.",
+        "The generated code MUST guarantee formulas are correctly rendered after every DOM update or stage change. If the app has multiple stages (e.g., v-if stages), you MUST use nextTick to trigger renderMathInElement after each stage transition. Example: setStage(newStage) { this.currentStage = newStage; this.$nextTick(() => { renderMathInElement(this.$el, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false }); }); }."
       ]
     },
 

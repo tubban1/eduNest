@@ -26,6 +26,7 @@ export default function HomePage() {
   const [pollingContents, setPollingContents] = useState<Set<string>>(new Set());
   
   const ITEMS_PER_PAGE = 18; // 每页加载 18 个卡片
+  const MAX_CONTENT_COUNT = 100; // 最多显示 100 个内容
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -60,22 +61,30 @@ export default function HomePage() {
   const processListData = useCallback((list: any[]) => {
     const inProgressStatuses = ['pending', 'processing', 'failed'];
     const completedContent = list.filter(
-      (item: any) =>
-        !inProgressStatuses.includes(item.generation_status) &&
-        item.full_html &&
-        item.full_html.trim().length > 0
+      (item: any) => {
+        // 必须有 full_html 且不为空
+        const hasFullHtml = item.full_html && typeof item.full_html === 'string' && item.full_html.trim().length > 0;
+        if (!hasFullHtml) {
+          return false;
+        }
+        
+        // 如果 generation_status 存在，则不能是进行中的状态
+        // 如果 generation_status 是 null/undefined，只要有 full_html 就显示（可能是旧数据或手动创建的内容）
+        if (item.generation_status === null || item.generation_status === undefined) {
+          return true; // 有 full_html 但没有状态，认为是已完成的内容
+        }
+        
+        // 有状态时，只显示非进行中的内容
+        return !inProgressStatuses.includes(item.generation_status);
+      }
     );
+    // 未登录用户：只显示已完成的内容
     if (!user) {
       return completedContent;
     }
-    const inProgressContent = list.filter(
-      (item: any) => inProgressStatuses.includes(item.generation_status)
-    );
-    const mergedMap = new Map<string, any>();
-    [...inProgressContent, ...completedContent].forEach((item) => {
-      mergedMap.set(item.id, item);
-    });
-    return Array.from(mergedMap.values());
+    // 登录用户显示所有用户的内容时：只显示已完成的内容
+    // 不显示进行中的内容，因为那些可能是其他用户的
+    return completedContent;
   }, [user]);
 
   // 获取内容列表 - 根据登录状态和语言筛选（支持分页）
@@ -94,10 +103,8 @@ export default function HomePage() {
                             currentLang === 'de' ? 'de-DE' :
                             currentLang === 'fr' ? 'fr-FR' : currentLang;
       filters.language_code = normalizedLang;
-    } else {
-      // 已登录用户：显示自己的内容
-      filters.created_by = user.id;
     }
+    // 已登录用户：不设置 created_by，显示所有用户的内容（按时间排序，最近的在最上面）
     
     // 如果是第一页，检查缓存
     if (pageNum === 1 && !append) {
@@ -117,8 +124,14 @@ export default function HomePage() {
         const uniqueContent = finalContent.filter((item, index, self) => 
           index === self.findIndex((t) => t.id === item.id)
         );
-        setContents(uniqueContent);
-        setHasMore(uniqueContent.length === ITEMS_PER_PAGE);
+        // 限制最多显示 MAX_CONTENT_COUNT 个
+        const limitedContent = uniqueContent.slice(0, MAX_CONTENT_COUNT);
+        setContents(limitedContent);
+        // 检查是否还有更多内容：使用缓存数据的原始长度来判断
+        // 注意：缓存数据可能不是完整的一页，所以这里需要特殊处理
+        // 如果缓存数据刚好是一页，说明可能还有更多
+        const hasMoreContent = list.length === ITEMS_PER_PAGE && limitedContent.length < MAX_CONTENT_COUNT;
+        setHasMore(hasMoreContent);
         setIsLoading(false);
         return;
       }
@@ -143,18 +156,31 @@ export default function HomePage() {
         setContents(prev => {
           const existingIds = new Set(prev.map(c => c.id));
           const newContent = finalContent.filter(c => !existingIds.has(c.id));
-          return [...prev, ...newContent];
+          const combined = [...prev, ...newContent];
+          // 限制最多显示 MAX_CONTENT_COUNT 个
+          const limitedContent = combined.slice(0, MAX_CONTENT_COUNT);
+          // 检查是否还有更多内容：
+          // 1. 后端返回了完整一页（说明可能还有更多数据）
+          // 2. 且未达到最大限制
+          const hasMoreContent = list.length === ITEMS_PER_PAGE && limitedContent.length < MAX_CONTENT_COUNT;
+          setHasMore(hasMoreContent);
+          return limitedContent;
         });
       } else {
         // 即使不是追加模式，也确保没有重复（双重保险）
         const uniqueContent = finalContent.filter((item, index, self) => 
           index === self.findIndex((t) => t.id === item.id)
         );
-        setContents(uniqueContent);
+        // 限制最多显示 MAX_CONTENT_COUNT 个
+        const limitedContent = uniqueContent.slice(0, MAX_CONTENT_COUNT);
+        setContents(limitedContent);
+        // 检查是否还有更多内容：
+        // 1. 后端返回了完整一页（说明可能还有更多数据）
+        // 2. 且未达到最大限制
+        const hasMoreContent = list.length === ITEMS_PER_PAGE && limitedContent.length < MAX_CONTENT_COUNT;
+        setHasMore(hasMoreContent);
       }
       
-      // 如果返回的数量少于 limit，说明没有更多了
-      setHasMore(finalContent.length === ITEMS_PER_PAGE);
       setPage(pageNum);
     } catch (e: any) {
       console.error('Failed to fetch content:', e);
@@ -170,16 +196,26 @@ export default function HomePage() {
   // 加载更多内容
   const loadMore = useCallback(() => {
     if (!hasMore || isLoadingMore || isLoading) return;
+    // 检查是否已达到最大数量限制
+    if (contents.length >= MAX_CONTENT_COUNT) {
+      setHasMore(false);
+      return;
+    }
     refreshContent(page + 1, true);
-  }, [hasMore, isLoadingMore, isLoading, page, refreshContent]);
+  }, [hasMore, isLoadingMore, isLoading, page, refreshContent, contents.length]);
 
   // 无限滚动检测
   useEffect(() => {
     if (!loadMoreRef.current || !hasMore || isLoadingMore || isLoading) return;
+    // 检查是否已达到最大数量限制
+    if (contents.length >= MAX_CONTENT_COUNT) {
+      setHasMore(false);
+      return;
+    }
     
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading && contents.length < MAX_CONTENT_COUNT) {
           loadMore();
         }
       },
@@ -188,7 +224,7 @@ export default function HomePage() {
     
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, isLoading, loadMore]);
+  }, [hasMore, isLoadingMore, isLoading, loadMore, contents.length]);
 
   // 检测需要轮询的内容
   // 1. thumbnail_status === 'generating' 的内容
@@ -242,9 +278,8 @@ export default function HomePage() {
       try {
         // 获取所有内容的最新状态（轮询时清除缓存，确保获取最新数据）
         const filters: any = {};
-        if (user) {
-          filters.created_by = user.id;
-        } else {
+        // 未登录用户：按语言筛选
+        if (!user) {
           const currentLang = i18n.language || 'zh-CN';
           const normalizedLang = currentLang === 'zh' ? 'zh-CN' : 
                                 currentLang === 'en' ? 'en-US' :
@@ -252,6 +287,7 @@ export default function HomePage() {
                                 currentLang === 'fr' ? 'fr-FR' : currentLang;
           filters.language_code = normalizedLang;
         }
+        // 登录用户：不设置 created_by，获取所有用户的内容
         filters.limit = ITEMS_PER_PAGE;
         filters.offset = (page - 1) * ITEMS_PER_PAGE;
         
