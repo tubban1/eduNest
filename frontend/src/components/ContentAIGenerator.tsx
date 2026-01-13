@@ -84,8 +84,29 @@ export default function ContentAIGenerator({
   
   // 示例提示词轮播状态
   const [examplePromptIndex, setExamplePromptIndex] = useState(0);
+  // 上传提示文字显示状态
+  const [showUploadHint, setShowUploadHint] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+  
+  // 上传提示文字动画：页面加载后淡入，停留10秒，然后淡出
+  useEffect(() => {
+    if (!mounted) return;
+    // 延迟一点显示，让页面先渲染
+    const showTimer = setTimeout(() => {
+      setShowUploadHint(true);
+    }, 500);
+    
+    // 10秒后淡出
+    const hideTimer = setTimeout(() => {
+      setShowUploadHint(false);
+    }, 10500);
+    
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [mounted]);
 
   // 示例提示词轮播（只在知识点为空时运行）
   useEffect(() => {
@@ -1091,7 +1112,7 @@ export default function ContentAIGenerator({
   return (
     <div className={`flex flex-col gap-3 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl shadow border border-primary/20 p-4 ${className || ''}`}>
       <h3 className="text-lg font-semibold text-foreground mb-1">
-        {mounted ? t('aiGenerate', { ns: 'content', defaultValue: '🤖 AI Smart Generation' }) : '🤖 AI Smart Generation'}
+        {mounted ? t('aiGenerate', { ns: 'content', defaultValue: '动画解题 · 自动生成课件' }) : '动画解题 · 自动生成课件'}
       </h3>
 
       {error && (
@@ -1100,9 +1121,6 @@ export default function ContentAIGenerator({
 
       <div className="grid grid-cols-1 gap-4">
         <div>
-          <label className="block font-semibold mb-1 text-foreground">
-            {mounted ? t('knowledgePoint', { ns: 'content', defaultValue: 'Knowledge Point' }) : 'Knowledge Point'} <span className="text-destructive">*</span>
-          </label>
           {/* 图片预览区域（显示在对话框上部） */}
           {uploadedImage && (
             <div className="mb-3 border border-border rounded-lg overflow-hidden bg-card shadow-sm">
@@ -1180,19 +1198,46 @@ export default function ContentAIGenerator({
                 className="hidden"
                 id="image-upload-input"
               />
-              <label
-                htmlFor="image-upload-input"
-                className={`cursor-pointer p-1.5 rounded hover:bg-muted/50 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={mounted ? t('uploadImage', { ns: 'content', defaultValue: '上传图片' }) : 'Upload Image'}
+              <div className="relative inline-flex items-center justify-center">
+                {/* 外圈呼吸动画 */}
+                <style jsx>{`
+                  @keyframes breathing {
+                    0%, 100% {
+                      opacity: 0.2;
+                      transform: scale(0.8);
+                    }
+                    50% {
+                      opacity: 0.8;
+                      transform: scale(0.9);
+                    }
+                  }
+                  .breathing-ring {
+                    animation: breathing 2.5s ease-in-out infinite;
+                  }
+                `}</style>
+                <div className="absolute -inset-1 rounded-full border-2 border-primary/70 breathing-ring pointer-events-none"></div>
+                <label
+                  htmlFor="image-upload-input"
+                  className={`relative cursor-pointer p-1.5 rounded hover:bg-muted/50 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={mounted ? t('uploadImage', { ns: 'content', defaultValue: '上传图片' }) : 'Upload Image'}
+                >
+                  {imageUploading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                  ) : (
+                    <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                </label>
+              </div>
+              {/* 提示文字 */}
+              <span 
+                className={`text-xs text-muted-foreground transition-opacity duration-500 whitespace-nowrap ${
+                  showUploadHint ? 'opacity-100' : 'opacity-0'
+                }`}
               >
-                {imageUploading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-                ) : (
-                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                )}
-              </label>
+                {mounted ? t('uploadImageHint', { ns: 'content', defaultValue: '拍题生成动画讲解' }) : '拍题生成动画讲解'}
+              </span>
             </div>
           </div>
           <div className="flex justify-end items-center mt-1">
