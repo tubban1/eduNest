@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
 import ContentCard from '@/components/ContentCard';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +12,7 @@ import { cache, generateCacheKey } from '@/lib/cache';
 
 function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { lists: any[], refreshLists: () => Promise<void>, userId?: string, refreshKey?: number }) {
   const { t } = useTranslation(['content', 'common']);
+  const searchParams = useSearchParams();
   const [content, setContent] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -93,6 +95,23 @@ function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { list
   useEffect(() => {
     refreshContentRef.current = refreshContent;
   }, [refreshContent]);
+  
+  // 检测是否需要强制刷新（从生成页面跳转过来）
+  useEffect(() => {
+    const shouldRefresh = searchParams.get('refresh') === 'true';
+    if (shouldRefresh && userId && refreshContentRef.current) {
+      // 清除缓存，确保获取最新数据
+      const filters: any = { created_by: userId };
+      const cacheKey = generateCacheKey('content:filtered', filters);
+      cache.delete(cacheKey);
+      // 强制刷新内容
+      refreshContentRef.current(true);
+      // 清除 URL 参数，避免重复刷新
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', '/c');
+      }
+    }
+  }, [searchParams, userId]);
   
   useEffect(() => {
     // 如果正在刷新中，且 refreshKey 没有变化，则跳过

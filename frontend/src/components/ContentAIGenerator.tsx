@@ -1084,7 +1084,13 @@ export default function ContentAIGenerator({
         }
       } catch {}
 
-      // 3) 让外部回调进行列表刷新等后续动作（可选）
+      // 3) 已登录用户生成后跳转到 /c 页面查看生成状态
+      if (user) {
+        router.push('/c?refresh=true');
+        return; // 跳转后直接返回，不执行后续逻辑
+      }
+
+      // 4) 让外部回调进行列表刷新等后续动作（可选，仅未登录用户）
       if (onGenerated) onGenerated();
     } catch (e: any) {
       const msg = e?.message || String(e);
