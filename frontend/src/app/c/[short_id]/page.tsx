@@ -60,6 +60,27 @@ export default function FullHTMLContentPage() {
     };
   }, []);
 
+  // 记录页面访问（异步，不阻塞页面渲染）
+  // 注意：只在生产环境或明确启用时记录（避免开发环境产生测试数据）
+  useEffect(() => {
+    if (!content?.id) return;
+
+    // 检查是否应该记录访问
+    // 生产环境或明确启用时记录，开发环境默认不记录
+    const shouldRecord = 
+      process.env.NODE_ENV === 'production' || 
+      process.env.NEXT_PUBLIC_ENABLE_PAGE_VIEWS === 'true';
+
+    if (!shouldRecord) {
+      return;
+    }
+
+    // 异步记录访问，静默处理错误
+    api.pageViews.record(content.id).catch(() => {
+      // 静默处理错误，不影响用户体验
+    });
+  }, [content?.id]);
+
   // 获取内容（只在 short_id 变化时执行）
   useEffect(() => {
     const fetchContent = async () => {

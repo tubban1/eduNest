@@ -804,6 +804,28 @@ class ApiClient {
     },
   };
 
+  // Page Views API
+  pageViews = {
+    // 记录页面访问
+    record: async (contentId: string, referer?: string) => {
+      const data = await this.post('/page-views/record', {
+        content_id: contentId,
+        referer: referer || (typeof window !== 'undefined' ? document.referrer : undefined)
+      });
+      return data.success ? data.data : null;
+    },
+    // 获取内容访问统计
+    getStats: async (contentId: string, days: number = 30) => {
+      const data = await this.get(`/page-views/stats/${contentId}?days=${days}`);
+      return data.success ? data.data : null;
+    },
+    // 获取热门内容
+    getPopular: async (limit: number = 20, days: number = 7) => {
+      const data = await this.get(`/page-views/popular?limit=${limit}&days=${days}`);
+      return data.success ? data.data : [];
+    },
+  };
+
   // AI Guided Learning API
   aiGuide = {
     init: async (contentId: string) => {
