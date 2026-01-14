@@ -312,16 +312,17 @@ const initConversation = async (contentId, userId) => {
     const modelName = initialMessageResult.model || 'fallback';
     const usage = initialMessageResult.usage || {};
     
-    // 4. 保存 system message（可选）
-    await supabase
-      .from('ai_messages')
-      .insert({
-        conversation_id: conversation.id,
-        role: 'system',
-        content: 'Session started'
-      });
-    
-    // 5. 保存 assistant message
+    // 4. 保存 assistant message（初始问候消息）
+    // 注意：
+    // - 不保存 "Start the session." 用户消息，因为：
+    //   1. 这不是用户真实输入，只是系统内部触发的技术性消息
+    //   2. 前端不会显示这个消息
+    //   3. 对话历史应该只包含用户真实的消息
+    //   4. ai_usage_logs 已经记录了这次交互（user_query: 'Start the session.'）
+    // - 不保存 "Session started" system message，因为：
+    //   1. ai_conversations.created_at 已经记录了对话创建时间
+    //   2. ai_usage_logs 已经记录了所有交互日志
+    //   3. 前端和业务逻辑都不使用 system 消息
     const { data: assistantMessage, error: messageError } = await supabase
       .from('ai_messages')
       .insert({
