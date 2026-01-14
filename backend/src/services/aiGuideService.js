@@ -1,6 +1,7 @@
 const { supabase, logAIUsage } = require('./database');
 const { aiProviderFactory, safeReplace } = require('./aiService');
 const { v4: uuidv4 } = require('uuid');
+const { isVisitorId } = require('../utils/visitorId');
 
 // Metadata Extraction Prompt
 const METADATA_PROMPT = `You are an advanced educational content analyzer. Your task is to extract comprehensive structured metadata from the provided HTML content to power an AI Learning Guide.
@@ -51,6 +52,59 @@ INTERACTION RULES:
 4. **Concise**: Keep replies short and focused on the content.
 
 Start by welcoming the student. If learning_objectives are present, briefly mention what they can learn here.`;
+
+/**
+ * 从 content 表获取 language_code
+ */
+const getLanguageCode = async (contentId) => {
+  try {
+    const { data: content } = await supabase
+      .from('content')
+      .select('language_code')
+      .eq('id', contentId)
+      .single();
+    
+    return content?.language_code || 'zh-CN';
+  } catch (error) {
+    console.warn(`获取 content ${contentId} 的 language_code 失败:`, error.message);
+    return 'zh-CN';
+  }
+};
+
+/**
+ * 生成初始问候消息（返回消息内容和模型信息）
+ */
+const generateInitialMessage = async (contentId) => {
+  try {
+    const metadata = await getOrGenerateMetadata(contentId);
+    const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
+    
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: 'Start the session.' }
+    ];
+
+    const result = await aiProviderFactory.createChatCompletion({
+      provider: 'qenda',
+      messages,
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+
+    return {
+      content: result.content,
+      model: result.model || 'fallback',
+      usage: result.usage || {}
+    };
+  } catch (aiError) {
+    console.warn('AI Greeting Failed, using fallback:', aiError);
+    return {
+      content: "你好！我是你的 AI 学习助手。虽然我的连接似乎有点不稳定，但我会尽力协助你探索这个内容。",
+      model: 'fallback',
+      usage: {}
+    };
+  }
+};
 
 /**
  * Get or generate metadata for a content item
@@ -168,47 +222,131 @@ const getOrGenerateMetadata = async (contentId, userId = null) => {
 };
 
 /**
- * Initialize a new guided learning session
+ * Initialize a new guided learning session (支持历史对话恢复)
  */
 const initConversation = async (contentId, userId) => {
   try {
-    // 1. Ensure metadata exists
-    const metadata = await getOrGenerateMetadata(contentId, userId);
+    const isVisitor = isVisitorId(userId);
     
-    // 2. Generate new conversation ID
-    const conversationId = uuidv4();
+    // 1. 检查是否已有该 content_id 和 user_id 的 conversation
+    let query = supabase
+      .from('ai_conversations')
+      .select('id, created_at, updated_at')
+      .eq('content_id', contentId)
+      .order('updated_at', { ascending: false })
+      .limit(1);
     
-    // 3. Generate initial greeting
-    // Construct system prompt with metadata context
-    // 增加错误捕获，避免 AI 服务失败导致 init 失败，而是返回降级方案
-    let initialMessage = '';
-    let result = { model: 'fallback', usage: {} };
-
-    try {
-      const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
-      
-      const messages = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: 'Start the session.' }
-      ];
-
-      result = await aiProviderFactory.createChatCompletion({
-        provider: 'qenda',
-        messages,
-        max_tokens: 1500, // 增加到1500，避免初始消息被截断
-        temperature: 0.7
-      });
-
-      initialMessage = result.content;
-    } catch (aiError) {
-      console.warn('AI Greeting Failed, using fallback:', aiError);
-      initialMessage = "你好！我是你的 AI 学习助手。虽然我的连接似乎有点不稳定，但我会尽力协助你探索这个内容。";
+    if (isVisitor) {
+      query = query.eq('visitor_id', userId).is('user_id', null);
+    } else {
+      query = query.eq('user_id', userId).is('visitor_id', null);
     }
-
-    // 4. Log the interaction (save initial message)
-    const { error: logError } = await logAIUsage({
-      user_id: userId,
-      request_id: conversationId,
+    
+    const { data: existingConversations, error: queryError } = await query;
+    
+    if (queryError) {
+      console.error('Error querying existing conversations:', queryError);
+    }
+    
+    // 如果已有 conversation，恢复历史对话
+    if (existingConversations && existingConversations.length > 0) {
+      const existingConversation = existingConversations[0];
+      
+      // 获取历史消息
+      const { data: messages, error: messagesError } = await supabase
+        .from('ai_messages')
+        .select('role, content, created_at')
+        .eq('conversation_id', existingConversation.id)
+        .order('created_at', { ascending: true });
+      
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+      }
+      
+      // 构建历史消息列表（排除 system 消息）
+      const historyMessages = (messages || [])
+        .filter(msg => msg.role !== 'system')
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+      
+      // 更新 conversation 的 updated_at
+      await supabase
+        .from('ai_conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', existingConversation.id);
+      
+      // 获取 metadata
+      const metadata = await getOrGenerateMetadata(contentId, userId);
+      
+      return {
+        conversation_id: existingConversation.id,
+        initial_message: historyMessages.length > 0 ? null : undefined, // 如果有历史消息，不返回初始消息
+        messages: historyMessages, // 返回历史消息列表
+        metadata: metadata,
+        is_resumed: true // 标记为恢复的对话
+      };
+    }
+    
+    // 2. 如果没有历史 conversation，创建新的 conversation
+    const languageCode = await getLanguageCode(contentId);
+    
+    const { data: conversation, error: insertError } = await supabase
+      .from('ai_conversations')
+      .insert({
+        user_id: !isVisitor ? userId : null,
+        visitor_id: isVisitor ? userId : null,
+        content_id: contentId,
+        language_code: languageCode
+      })
+      .select()
+      .single();
+    
+    if (insertError) throw insertError;
+    
+    // 3. 生成初始消息
+    const metadata = await getOrGenerateMetadata(contentId, userId);
+    const initialMessageResult = await generateInitialMessage(contentId);
+    const initialMessage = initialMessageResult.content;
+    const modelName = initialMessageResult.model || 'fallback';
+    const usage = initialMessageResult.usage || {};
+    
+    // 4. 保存 system message（可选）
+    await supabase
+      .from('ai_messages')
+      .insert({
+        conversation_id: conversation.id,
+        role: 'system',
+        content: 'Session started'
+      });
+    
+    // 5. 保存 assistant message
+    const { data: assistantMessage, error: messageError } = await supabase
+      .from('ai_messages')
+      .insert({
+        conversation_id: conversation.id,
+        role: 'assistant',
+        content: initialMessage
+      })
+      .select()
+      .single();
+    
+    if (messageError) throw messageError;
+    
+    // 6. 记录到 ai_usage_logs（用于计费）
+    const estimateTokens = (text) => Math.ceil(text.length / 3);
+    const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
+    const inputTokens = usage.prompt_tokens || estimateTokens(systemPrompt + 'Start the session.');
+    const outputTokens = usage.completion_tokens || estimateTokens(initialMessage);
+    const totalTokens = usage.total_tokens || (inputTokens + outputTokens);
+    
+    await logAIUsage({
+      user_id: !isVisitor ? userId : null,
+      visitor_id: isVisitor ? userId : null,
+      request_id: conversation.id,
+      conversation_id: conversation.id,
+      message_id: assistantMessage.id,
       action_type: 'ai_guide',
       content_id: contentId,
       user_query: 'Start the session.',
@@ -217,7 +355,7 @@ const initConversation = async (contentId, userId) => {
           { role: 'system', content: 'SYSTEM_PROMPT_TEMPLATE' },
           { role: 'user', content: 'Start the session.' }
         ],
-        max_tokens: 1500, // 与上面的实际调用保持一致
+        max_tokens: 1500,
         temperature: 0.7,
         metadata_summary: {
           title: metadata?.meta?.title || metadata?.title || 'Unknown',
@@ -228,22 +366,19 @@ const initConversation = async (contentId, userId) => {
         reply: initialMessage,
         role: 'assistant'
       },
-      model_name: result.model || 'fallback',
-      input_tokens: result.usage?.prompt_tokens || 0,
-      output_tokens: result.usage?.completion_tokens || 0,
-      total_tokens: result.usage?.total_tokens || 0,
-      is_render_success: true // marking as success
+      model_name: modelName, // 使用实际的模型名称
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      total_tokens: totalTokens,
+      is_render_success: true
     });
-
-    if (logError) {
-      console.error('initConversation: Failed to log initial interaction:', logError);
-      throw new Error('Failed to initialize conversation log: ' + logError.message);
-    }
-
+    
     return {
-      conversation_id: conversationId,
+      conversation_id: conversation.id,
       initial_message: initialMessage,
-      metadata
+      messages: [], // 新对话没有历史消息
+      metadata: metadata,
+      is_resumed: false // 标记为新对话
     };
   } catch (error) {
     console.error('Error in initConversation:', error);
@@ -256,54 +391,56 @@ const initConversation = async (contentId, userId) => {
  */
 const handleChat = async (conversationId, message, uiState, userId) => {
   try {
-    // 判断是 visitor_id 还是 user_id
-    const { isVisitorId } = require('../utils/visitorId');
     const isVisitor = isVisitorId(userId);
     
-    // 1. Get conversation history
-    let query = supabase
-      .from('ai_usage_logs')
-      .select('content_id, user_query, response_metadata, created_at')
-      .eq('request_id', conversationId)
-      .eq('action_type', 'ai_guide');
+    // 1. 获取 conversation 信息（包含 content_id）
+    let convQuery = supabase
+      .from('ai_conversations')
+      .select('id, content_id')
+      .eq('id', conversationId);
     
-    // 根据是 visitor_id 还是 user_id 来查询
     if (isVisitor) {
-      query = query.eq('visitor_id', userId);
+      convQuery = convQuery.eq('visitor_id', userId).is('user_id', null);
     } else {
-      query = query.eq('user_id', userId);
+      convQuery = convQuery.eq('user_id', userId).is('visitor_id', null);
     }
     
-    const { data: history, error: historyError } = await query.order('created_at', { ascending: true });
-
-    if (historyError) throw historyError;
-    if (!history || history.length === 0) {
-        const error = new Error('Conversation not found');
-        error.code = 'CONVERSATION_NOT_FOUND';
-        throw error;
+    const { data: conversation, error: convError } = await convQuery.single();
+    
+    if (convError || !conversation) {
+      const error = new Error('Conversation not found');
+      error.code = 'CONVERSATION_NOT_FOUND';
+      throw error;
     }
-
-    const contentId = history[0].content_id;
+    
+    const contentId = conversation.content_id;
     if (!contentId) {
-        throw new Error(`Content ID missing in conversation history for request_id: ${conversationId}`);
+      throw new Error(`Content ID missing in conversation: ${conversationId}`);
     }
-
-    // 2. Get metadata
+    
+    // 2. 从 ai_messages 表获取历史消息
+    const { data: historyMessages, error: messagesError } = await supabase
+      .from('ai_messages')
+      .select('role, content')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+    
+    if (messagesError) throw messagesError;
+    
+    // 3. Get metadata
     const metadata = await getOrGenerateMetadata(contentId, userId);
 
-    // 3. Build messages for LLM
+    // 4. Build messages for LLM
     const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
     
     const llmMessages = [
       { role: 'system', content: systemPrompt }
     ];
 
-    history.forEach(log => {
-      if (log.user_query) {
-        llmMessages.push({ role: 'user', content: log.user_query });
-      }
-      if (log.response_metadata && log.response_metadata.reply) {
-        llmMessages.push({ role: 'assistant', content: log.response_metadata.reply });
+    // 添加历史消息（排除 system 消息）
+    (historyMessages || []).forEach(msg => {
+      if (msg.role !== 'system') {
+        llmMessages.push({ role: msg.role, content: msg.content });
       }
     });
 
@@ -344,35 +481,73 @@ const handleChat = async (conversationId, message, uiState, userId) => {
       } finally {
         // 5. Save interaction (after stream completes)
         if (fullReply) {
-          // Estimate tokens if not provided by stream
-          // Rough estimation: 1 token ≈ 4 characters for Chinese, 1 token ≈ 4 characters for English
-          const estimateTokens = (text) => Math.ceil(text.length / 3);
+          // 5.1. 保存用户消息到 ai_messages
+          const { data: userMessage, error: userMsgError } = await supabase
+            .from('ai_messages')
+            .insert({
+              conversation_id: conversationId,
+              role: 'user',
+              content: message,
+              ui_state: uiState || null
+            })
+            .select()
+            .single();
           
+          if (userMsgError) {
+            console.error('Failed to save user message:', userMsgError);
+          }
+          
+          // 5.2. 保存助手消息到 ai_messages
+          const { data: assistantMessage, error: assistantMsgError } = await supabase
+            .from('ai_messages')
+            .insert({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: fullReply
+            })
+            .select()
+            .single();
+          
+          if (assistantMsgError) {
+            console.error('Failed to save assistant message:', assistantMsgError);
+          }
+          
+          // 5.3. 更新 conversation 的 updated_at
+          await supabase
+            .from('ai_conversations')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', conversationId);
+          
+          // 5.4. 记录到 ai_usage_logs（用于计费）
+          const estimateTokens = (text) => Math.ceil(text.length / 3);
           const inputTokens = usage?.prompt_tokens || estimateTokens(llmMessages.map(m => m.content).join(''));
           const outputTokens = usage?.completion_tokens || estimateTokens(fullReply);
           const totalTokens = usage?.total_tokens || (inputTokens + outputTokens);
           
           await logAIUsage({
-            user_id: userId,
+            user_id: !isVisitor ? userId : null,
+            visitor_id: isVisitor ? userId : null,
             request_id: conversationId,
+            conversation_id: conversationId,
+            message_id: assistantMessage?.id || null,
             action_type: 'ai_guide',
             content_id: contentId,
             user_query: message,
             request_payload: {
               messages: llmMessages.map(m => ({
                 role: m.role,
-                content: m.role === 'system' ? 'SYSTEM_PROMPT_WITH_METADATA' : m.content.substring(0, 200) // Truncate for storage
+                content: m.role === 'system' ? 'SYSTEM_PROMPT_WITH_METADATA' : m.content.substring(0, 200)
               })),
               max_tokens: 2000,
               temperature: 0.7,
               stream: true,
               ui_state: uiState,
-              history_length: history.length
+              history_length: (historyMessages || []).length
             },
             response_metadata: { 
               reply: fullReply,
               role: 'assistant',
-              estimated: !usage // Flag if tokens were estimated
+              estimated: !usage
             },
             model_name: model || 'unknown',
             input_tokens: inputTokens, 
@@ -393,38 +568,26 @@ const handleChat = async (conversationId, message, uiState, userId) => {
 };
 
 /**
- * Get conversation history
+ * Get conversation history (从新表查询)
  */
 const getMessages = async (conversationId) => {
   try {
-    const { data: logs, error } = await supabase
-      .from('ai_usage_logs')
-      .select('user_query, response_metadata, created_at')
-      .eq('request_id', conversationId)
-      .eq('action_type', 'ai_guide')
+    const { data: messages, error } = await supabase
+      .from('ai_messages')
+      .select('role, content, created_at')
+      .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
 
-    const messages = [];
-    logs.forEach(log => {
-      // User message
-      messages.push({
-        role: 'user',
-        content: log.user_query,
-        created_at: log.created_at
-      });
-      // Assistant message
-      if (log.response_metadata && log.response_metadata.reply) {
-        messages.push({
-          role: 'assistant',
-          content: log.response_metadata.reply,
-          created_at: log.created_at // Approximately same time
-        });
-      }
-    });
-
-    return messages;
+    // 排除 system 消息，返回格式化的消息列表
+    return (messages || [])
+      .filter(msg => msg.role !== 'system')
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        created_at: msg.created_at
+      }));
   } catch (error) {
     console.error('Error in getMessages:', error);
     throw error;
@@ -432,51 +595,59 @@ const getMessages = async (conversationId) => {
 };
 
 /**
- * Get list of conversations for a content
+ * Get list of conversations for a content (从新表查询)
  */
 const getConversations = async (contentId, userId) => {
   try {
-    // 判断是 visitor_id 还是 user_id
-    const { isVisitorId } = require('../utils/visitorId');
     const isVisitor = isVisitorId(userId);
     
-    // This is tricky because we need to group by request_id.
-    // Supabase JS client doesn't support complex GROUP BY well without RPC.
-    // We can fetch all logs for the content/user and process in memory (if not too many).
-    // Or just fetch distinct request_ids if possible.
-    
-    // Simpler approach: Fetch most recent logs for this user+content+action_type
+    // 查询该 content_id 和 user_id 的所有 conversations
     let query = supabase
-      .from('ai_usage_logs')
-      .select('request_id, created_at, user_query')
+      .from('ai_conversations')
+      .select('id, created_at, updated_at')
       .eq('content_id', contentId)
-      .eq('action_type', 'ai_guide');
+      .order('updated_at', { ascending: false });
     
-    // 根据是 visitor_id 还是 user_id 来查询
     if (isVisitor) {
-      query = query.eq('visitor_id', userId);
+      query = query.eq('visitor_id', userId).is('user_id', null);
     } else {
-      query = query.eq('user_id', userId);
+      query = query.eq('user_id', userId).is('visitor_id', null);
     }
     
-    const { data: logs, error } = await query.order('created_at', { ascending: false });
+    const { data: conversations, error } = await query;
 
     if (error) throw error;
 
-    const conversationMap = new Map();
-    logs.forEach(log => {
-      if (!conversationMap.has(log.request_id)) {
-        conversationMap.set(log.request_id, {
-          conversation_id: log.request_id,
-          last_message: log.user_query, // This is user's last query, not AI's reply, but acceptable for summary
-          last_active: log.created_at,
-          message_count: 0
-        });
-      }
-      conversationMap.get(log.request_id).message_count++;
-    });
+    // 为每个 conversation 获取消息数量和最后一条消息
+    const conversationsWithDetails = await Promise.all(
+      (conversations || []).map(async (conv) => {
+        // 获取消息数量
+        const { count: messageCount } = await supabase
+          .from('ai_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('conversation_id', conv.id)
+          .neq('role', 'system');
+        
+        // 获取最后一条用户消息（作为摘要）
+        const { data: lastUserMessage } = await supabase
+          .from('ai_messages')
+          .select('content')
+          .eq('conversation_id', conv.id)
+          .eq('role', 'user')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        return {
+          conversation_id: conv.id,
+          last_message: lastUserMessage?.content || '',
+          last_active: conv.updated_at,
+          message_count: messageCount || 0
+        };
+      })
+    );
 
-    return Array.from(conversationMap.values());
+    return conversationsWithDetails;
   } catch (error) {
     console.error('Error in getConversations:', error);
     throw error;

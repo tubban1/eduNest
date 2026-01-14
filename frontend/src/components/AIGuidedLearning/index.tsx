@@ -93,9 +93,28 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, c
       
       if (res) {
         setConversationId(res.conversation_id);
-        if (res.initial_message) {
+        
+        // 适配新的 API 响应格式
+        if (res.is_resumed) {
+          // 恢复历史对话：使用 messages 数组（如果有历史消息）
+          if (res.messages && res.messages.length > 0) {
+            setMessages(res.messages.map((msg: any) => ({
+              role: msg.role,
+              content: msg.content,
+              created_at: msg.created_at
+            })));
+          } else {
+            // 如果恢复的对话没有消息，显示空列表（不应该显示初始消息）
+            setMessages([]);
+          }
+        } else if (res.initial_message) {
+          // 新对话：显示初始消息
           setMessages([{ role: 'assistant', content: res.initial_message }]);
+        } else {
+          // 如果没有初始消息也没有历史消息，显示空消息列表
+          setMessages([]);
         }
+        
         setHasInit(true);
         setInitFailed(false);
       }

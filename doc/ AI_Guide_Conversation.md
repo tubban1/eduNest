@@ -716,13 +716,74 @@ Response: {
 ```javascript
 // aiGuideService.js (新实现)
 
-// 初始化对话
+// 初始化对话（支持恢复历史对话）
 const initConversation = async (contentId, userId) => {
-  // 1. 创建 conversation
-  const { data: conversation } = await supabase
+  const { isVisitorId } = require('../utils/visitorId');
+  const isVisitor = isVisitorId(userId);
+  
+  // 1. 检查是否已有该 content_id 和 user_id 的 conversation
+  let query = supabase
+    .from('ai_conversations')
+    .select('id, created_at, updated_at')
+    .eq('content_id', contentId)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+  
+  if (isVisitor) {
+    query = query.eq('visitor_id', userId).is('user_id', null);
+  } else {
+    query = query.eq('user_id', userId).is('visitor_id', null);
+  }
+  
+  const { data: existingConversations, error: queryError } = await query;
+  
+  if (queryError) {
+    console.error('Error querying existing conversations:', queryError);
+  }
+  
+  // 如果已有 conversation，恢复历史对话
+  if (existingConversations && existingConversations.length > 0) {
+    const existingConversation = existingConversations[0];
+    
+    // 获取历史消息
+    const { data: messages, error: messagesError } = await supabase
+      .from('ai_messages')
+      .select('role, content, created_at')
+      .eq('conversation_id', existingConversation.id)
+      .order('created_at', { ascending: true });
+    
+    if (messagesError) {
+      console.error('Error fetching messages:', messagesError);
+    }
+    
+    // 构建历史消息列表（排除 system 消息）
+    const historyMessages = (messages || [])
+      .filter(msg => msg.role !== 'system')
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+    
+    // 更新 conversation 的 updated_at
+    await supabase
+      .from('ai_conversations')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', existingConversation.id);
+    
+    return {
+      conversation_id: existingConversation.id,
+      initial_message: historyMessages.length > 0 ? null : undefined, // 如果有历史消息，不返回初始消息
+      messages: historyMessages, // 返回历史消息列表
+      metadata: await getOrGenerateMetadata(contentId),
+      is_resumed: true // 标记为恢复的对话
+    };
+  }
+  
+  // 2. 如果没有历史 conversation，创建新的 conversation
+  const { data: conversation, error: insertError } = await supabase
     .from('ai_conversations')
     .insert({
-      user_id: isUser ? userId : null,
+      user_id: !isVisitor ? userId : null,
       visitor_id: isVisitor ? userId : null,
       content_id: contentId,
       // 注意：knowledge_points 字段已移除，直接通过 JOIN content.tags 查询
@@ -731,10 +792,12 @@ const initConversation = async (contentId, userId) => {
     .select()
     .single();
   
-  // 2. 生成初始消息
+  if (insertError) throw insertError;
+  
+  // 3. 生成初始消息
   const initialMessage = await generateInitialMessage(contentId);
   
-  // 3. 保存 system message（可选）
+  // 4. 保存 system message（可选）
   await supabase
     .from('ai_messages')
     .insert({
@@ -743,16 +806,20 @@ const initConversation = async (contentId, userId) => {
       content: 'Session started'
     });
   
-  // 4. 保存 assistant message
-  await supabase
+  // 5. 保存 assistant message
+  const { data: assistantMessage, error: messageError } = await supabase
     .from('ai_messages')
     .insert({
       conversation_id: conversation.id,
       role: 'assistant',
       content: initialMessage
-    });
+    })
+    .select()
+    .single();
   
-  // 5. 记录到 ai_usage_logs（用于计费）
+  if (messageError) throw messageError;
+  
+  // 6. 记录到 ai_usage_logs（用于计费）
   await logAIUsage({
     conversation_id: conversation.id,
     message_id: assistantMessage.id,
@@ -762,7 +829,9 @@ const initConversation = async (contentId, userId) => {
   return {
     conversation_id: conversation.id,
     initial_message: initialMessage,
-    metadata: await getOrGenerateMetadata(contentId)
+    messages: [], // 新对话没有历史消息
+    metadata: await getOrGenerateMetadata(contentId),
+    is_resumed: false // 标记为新对话
   };
 };
 ```
@@ -964,6 +1033,64 @@ ORDER BY conversation_count DESC;
 **A**: 完全兼容。新表的 `user_id` 和 `visitor_id` 字段设计与原表一致：
 - 登录用户：`user_id` 有值，`visitor_id` 为 NULL
 - 未登录用户：`user_id` 为 NULL，`visitor_id` 有值（格式：`visitor-{uuid}`）
+
+## Q6: 使用过 AI Guide 之后，下次点开会不会自动读取历史对话？
+
+**A**: **是的，方案 2 支持自动恢复历史对话**。
+
+### 实现逻辑
+
+当用户点击打开 AI Guide 时，`initConversation` 函数会：
+
+1. **检查是否存在历史对话**：
+   - 查询 `ai_conversations` 表，查找是否有该 `content_id` 和 `user_id`（或 `visitor_id`）的 conversation
+   - 按 `updated_at` 降序排列，获取最近一次对话
+
+2. **如果存在历史对话**：
+   - 返回已有的 `conversation_id`
+   - 从 `ai_messages` 表获取所有历史消息（排除 `system` 消息）
+   - 返回历史消息列表给前端
+   - 设置 `is_resumed: true` 标记为恢复的对话
+   - 更新 conversation 的 `updated_at` 时间戳
+
+3. **如果不存在历史对话**：
+   - 创建新的 conversation
+   - 生成初始问候消息
+   - 返回新对话信息
+   - 设置 `is_resumed: false` 标记为新对话
+
+### API 响应格式
+
+```json
+{
+  "success": true,
+  "data": {
+    "conversation_id": "uuid",
+    "initial_message": "...", // 仅新对话有初始消息，恢复的对话为 null
+    "messages": [ // 历史消息列表
+      {
+        "role": "user",
+        "content": "..."
+      },
+      {
+        "role": "assistant",
+        "content": "..."
+      }
+    ],
+    "metadata": {...},
+    "is_resumed": true // 是否为恢复的对话
+  }
+}
+```
+
+### 前端处理
+
+前端收到响应后：
+
+- 如果 `is_resumed: true`：使用 `messages` 数组恢复历史对话界面
+- 如果 `is_resumed: false`：显示 `initial_message` 作为新对话的开始
+
+这样用户可以无缝继续之前的对话，提升用户体验。
 
 ---
 
