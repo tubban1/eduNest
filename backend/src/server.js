@@ -148,7 +148,6 @@ app.use("/api/subscriptions", subscriptionsRoutes);
 app.use("/api/payments", paymentsRoutes);
 app.use("/api/ai-guide", aiGuideRoutes);
 app.use("/api/ai", aiRoutes);
-app.use("/api/page-views", pageViewsRoutes);
 app.use("/api/ai", aiServiceRoutes);
 app.use("/api/visitor", visitorRoutes);
 app.use("/api/test-sharp-thumbnail", testSharpThumbnailRoutes);

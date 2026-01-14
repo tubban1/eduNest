@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, Heart, Plus, Settings, LogOut, User, Menu, X, List, Share2, HelpCircle } from 'lucide-react';
+import { Home, BookOpen, Heart, Plus, Settings, LogOut, User, Menu, X, List, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
@@ -10,7 +10,6 @@ import Logo from './Logo';
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import CreditsHistoryDialog from './CreditsHistoryDialog';
-import ReferralCodeDialog from './ReferralCodeDialog';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -26,9 +25,6 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
   const [credits, setCredits] = useState<number | null>(null);
   const [loadingCredits, setLoadingCredits] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [showReferralDialog, setShowReferralDialog] = useState(false);
-  const [referralCode, setReferralCode] = useState<string>('');
-  const [loadingReferral, setLoadingReferral] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -57,45 +53,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
   // 首次加载
   useEffect(() => {
     fetchCredits();
-    // 仅查询已有推荐码，不生成
-    const fetchReferral = async () => {
-      if (!user) { setReferralCode(''); return; }
-      try {
-        setLoadingReferral(true);
-        const res = await api.get('/referrals/code');
-        if ((res as any)?.success) {
-          setReferralCode((res as any).data?.code || '');
-        }
-      } catch (e) {
-        setReferralCode('');
-      } finally {
-        setLoadingReferral(false);
-      }
-    };
-    fetchReferral();
   }, [user]);
-
-  const handleShareReferral = async () => {
-    try {
-      // 确保有邀请码
-      if (!referralCode) {
-        const res = await api.post('/referrals/code'); // 显式生成
-        if ((res as any)?.success) {
-          const code = (res as any).data?.code || '';
-          setReferralCode(code);
-        }
-      }
-      const url = `${window.location.origin}/signup?ref=${encodeURIComponent(referralCode)}`;
-      if (navigator.share) {
-        await navigator.share({ title: '邀请注册', text: '一起使用 EduNest AI', url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        // 无额外提示，静默复制
-      }
-    } catch {}
-  };
-
-  // 分享/邀请与手动刷新已移除，积分自动加载
 
   // 使用 useMemo 确保在 mounted 之前使用默认值，避免 hydration 错误
   const menuItems = useMemo(() => {
@@ -187,20 +145,6 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
               <div className="mb-1">
                 <span className="font-medium">{mounted ? t('role', { ns: 'auth', defaultValue: 'Role:' }) : 'Role:'}</span> {user.role === 'admin' ? (mounted ? t('admin', { ns: 'auth', defaultValue: 'Admin' }) : 'Admin') : (mounted ? t('user', { ns: 'auth', defaultValue: 'User' }) : 'User')}
               </div>
-              <div className="mb-2 flex items-center justify-between">
-                <button 
-                  onClick={() => setShowReferralDialog(true)}
-                  className="flex-1 text-left hover:bg-gray-100 rounded p-1 -m-1 transition-colors"
-                >
-                  <div>
-                    <span className="font-medium">{mounted ? t('referralCode', { ns: 'referral', defaultValue: '邀请码' }) : '邀请码'}:</span>{' '}
-                    {loadingReferral ? (mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...') : (referralCode || '-')}
-                  </div>
-                </button>
-                <button onClick={handleShareReferral} className="p-1.5 rounded hover:bg-gray-200" title={mounted ? t('shareReferralLink', { ns: 'common', defaultValue: '分享邀请链接' }) : '分享邀请链接'}>
-                  <Share2 className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
               <div className="flex items-center justify-between">
                 <div>
                   <span className="font-medium">{mounted ? t('credits', { ns: 'credits', defaultValue: '积分:' }) : '积分:'}</span>{' '}
@@ -252,14 +196,6 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
 
       {/* 积分明细弹窗 */}
       <CreditsHistoryDialog open={showHistory} onClose={() => setShowHistory(false)} />
-      
-      {/* 邀请码弹窗 */}
-      <ReferralCodeDialog 
-        open={showReferralDialog} 
-        onClose={() => setShowReferralDialog(false)}
-        referralCode={referralCode}
-        onShare={handleShareReferral}
-      />
     </div>
   );
 

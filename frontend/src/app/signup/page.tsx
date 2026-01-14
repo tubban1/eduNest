@@ -3,7 +3,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from '@/components/Logo';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -24,48 +24,12 @@ function SignupPageInner() {
   const [mounted, setMounted] = useState(false); // 避免hydration错误
   const { signUpWithEmail, resendVerificationEmail, signInWithGoogle } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [refCode, setRefCode] = useState<string>('');
-  const [refValid, setRefValid] = useState<boolean | null>(null);
-  const [refChecking, setRefChecking] = useState(false);
-  const [refMessage, setRefMessage] = useState('');
   const { t } = useTranslation(['auth']);
 
   // 避免hydration错误
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // 读取并校验邀请码（如果存在）
-  useEffect(() => {
-    const code = (searchParams?.get('ref') || '').toString().trim().toUpperCase();
-    if (!code) { setRefCode(''); setRefValid(null); return; }
-    setRefCode(code);
-    const validate = async () => {
-      try {
-        setRefChecking(true);
-        setRefMessage('');
-        const res = await api.post('/referrals/validate', { code });
-        if ((res as any)?.success) {
-          setRefValid(true);
-          setRefMessage(t('refCodeVerified', { ns: 'auth', defaultValue: '邀请码 {code} 已验证', code }));
-          // 记录待发放的邀请码，等待首次有效登录时发放
-          try { localStorage.setItem('pending_ref_code', code); } catch {}
-        } else {
-          setRefValid(false);
-          setRefMessage(t('refCodeInvalid', { ns: 'auth', defaultValue: '邀请码无效' }));
-          try { localStorage.removeItem('pending_ref_code'); } catch {}
-        }
-      } catch (e: any) {
-        setRefValid(false);
-        setRefMessage(e?.message || t('refCodeInvalid', { ns: 'auth', defaultValue: '邀请码无效' }));
-        try { localStorage.removeItem('pending_ref_code'); } catch {}
-      } finally {
-        setRefChecking(false);
-      }
-    };
-    validate();
-  }, [searchParams]);
 
   const handleGoogleSignup = async () => {
     try {
@@ -107,8 +71,6 @@ function SignupPageInner() {
         setError(result.error);
       } else {
         setSuccess(true);
-        // 奖励将在首次有效登录时发放（避免机器人注册）
-        // TODO: 后续在注册成功后，将 refCode 传给后端记录 referral_logs 与奖励发放
         // 如果有消息，显示消息
         if (result.message) {
           setSuccessMessage(result.message);
@@ -239,13 +201,6 @@ function SignupPageInner() {
           <p className="text-gray-500 text-sm">{mounted ? t('createAccount', { ns: 'auth', defaultValue: '创建您的教育内容管理账号' }) : 'Create your educational content management account'}</p>
         </div>
 
-        {/* 邀请码提示 */}
-        {refCode && (
-          <div className={`text-sm rounded-lg p-3 ${refChecking ? 'bg-gray-50 text-gray-600' : refValid ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
-            {refChecking ? t('verifyingRefCode', { ns: 'auth', defaultValue: '正在验证邀请码…' }) : (refMessage || t('refCodePrefix', { ns: 'auth', defaultValue: '邀请码' }) + ` ${refCode}`)}
-          </div>
-        )}
-        
         <form onSubmit={handleSignup} className="space-y-4">
           <div>
             <input

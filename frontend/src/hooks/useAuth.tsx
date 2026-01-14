@@ -88,25 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
       };
       setUser(authUser);
-      
-      // 首次有效登录奖励发放（仅一次）
-      try {
-        const rewardedKey = `ref_rewarded_${authUser.id}`;
-        const already = localStorage.getItem(rewardedKey);
-        if (!already) {
-          const pendingCode = localStorage.getItem('pending_ref_code') || undefined;
-          // 调用推荐奖励API，后端会检查是否已发放
-          const response = await api.post('/referrals/reward', { code: pendingCode });
-          if (response.success) {
-            // 标记为已处理，无论是否实际发放了积分
-            localStorage.setItem(rewardedKey, '1');
-            if (pendingCode) localStorage.removeItem('pending_ref_code');
-          }
-        }
-      } catch (e) {
-        // 静默失败，不影响登录流程
-        console.warn('推荐奖励发放失败:', e);
-      }
 
       // 合并游客数据到用户账号（首次登录时）
       try {
