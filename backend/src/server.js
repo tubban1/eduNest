@@ -153,6 +153,7 @@ app.use("/api/ai-guide", aiGuideRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/ai", aiServiceRoutes);
 app.use("/api/visitor", visitorRoutes);
+app.use("/api/page-views", pageViewsRoutes);
 app.use("/api/test-sharp-thumbnail", testSharpThumbnailRoutes);
 app.use("/api/early-user-bonus", earlyUserBonusRoutes);
 // 404 处理
