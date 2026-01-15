@@ -23,6 +23,7 @@ interface ContentActionButtonsProps {
   onShare?: () => void;
   layout?: 'horizontal' | 'vertical';
   spacing?: 'tight' | 'normal' | 'loose';
+  isNewContent?: boolean; // 是否是新生成的内容
 }
 
 export default function ContentActionButtons({
@@ -42,7 +43,8 @@ export default function ContentActionButtons({
   onCollectChange,
   onShare,
   layout = 'horizontal',
-  spacing = 'normal'
+  spacing = 'normal',
+  isNewContent = false
 }: ContentActionButtonsProps) {
   const [mounted, setMounted] = useState(false);
   
@@ -90,6 +92,7 @@ export default function ContentActionButtons({
         size={size}
         showText={showText}
         onShare={onShare}
+        isNewContent={isNewContent}
       />
     </div>
   );

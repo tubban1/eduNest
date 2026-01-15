@@ -13,6 +13,7 @@ interface ShareButtonProps {
   showText?: boolean;
   className?: string;
   onShare?: () => void;
+  isNewContent?: boolean; // 是否是新生成的内容
 }
 
 export default function ShareButton({
@@ -22,7 +23,8 @@ export default function ShareButton({
   size = 'md',
   showText = true,
   className = '',
-  onShare
+  onShare,
+  isNewContent = false
 }: ShareButtonProps) {
   const { t } = useTranslation(['content', 'common']);
   const [mounted, setMounted] = useState(false);
@@ -30,6 +32,7 @@ export default function ShareButton({
   const [copySuccess, setCopySuccess] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [menuPos, setMenuPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  const [showNewEffect, setShowNewEffect] = useState(isNewContent); // 点击后消除特效
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -39,6 +42,10 @@ export default function ShareButton({
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // 点击后消除特效
+    if (showNewEffect) {
+      setShowNewEffect(false);
+    }
     setShowShareMenu(prev => !prev);
     if (!showShareMenu && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
@@ -154,16 +161,39 @@ export default function ShareButton({
   );
 
   return (
-    <div className="relative">
+    <div className="relative group">
       <button
         ref={btnRef}
         onClick={handleShare}
-        className={`flex items-center text-muted-foreground hover:text-foreground ${sizeClasses[size]} transition-colors ${className}`}
-        title={mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share'}
+        className={`flex items-center text-muted-foreground hover:text-foreground ${sizeClasses[size]} transition-colors ${className} ${
+          showNewEffect ? 'relative' : ''
+        }`}
+        title={mounted ? t('shareEarnCreditsTooltip', { ns: 'content', defaultValue: 'Share your content. You\'ll earn 1 credit for each unique visitor to your content' }) : 'Share to earn credits'}
       >
-        <Share2 className={`${iconSizes[size]} mr-1`} />
-        {showText && (mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share')}
+        {/* 新生成内容的特效：脉冲动画和光晕 */}
+        {showNewEffect && (
+          <>
+            <div className="absolute -inset-1 rounded-full bg-primary/30 animate-ping"></div>
+            <div className="absolute -inset-0.5 rounded-full bg-primary/40 animate-pulse"></div>
+          </>
+        )}
+        <Share2 className={`${iconSizes[size]} mr-1 relative z-10 ${showNewEffect ? 'text-primary' : ''} ${showNewEffect ? 'animate-bounce' : ''}`} style={showNewEffect ? { animationDuration: '1s', animationIterationCount: 'infinite' } : {}} />
+        {showText && (
+          <span className={`relative z-10 ${showNewEffect ? 'text-primary font-semibold' : ''}`}>
+            {mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share'}
+          </span>
+        )}
       </button>
+      {/* 提示文本：分享获得积分 - 仅对已存在的内容显示 */}
+      {!showNewEffect && (
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out pointer-events-none z-50 shadow-lg">
+          {mounted ? t('shareEarnCredits', { ns: 'content', defaultValue: 'Share to Earn Credits' }) : 'Share to Earn Credits'}
+          {/* 小箭头，指向按钮 */}
+          <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-px">
+            <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-900"></div>
+          </div>
+        </div>
+      )}
       {showShareMenu && mounted && typeof document !== 'undefined' && createPortal(
         <div
           className="z-[10000] w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden"

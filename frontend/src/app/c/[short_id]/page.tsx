@@ -534,6 +534,14 @@ export default function FullHTMLContentPage() {
               showCount={true}
               showText={false}
               disabled={!user}
+              isNewContent={(() => {
+                // 判断是否是新生成的内容（最近5分钟内）
+                if (!content.created_at) return false;
+                const createdAt = new Date(content.created_at);
+                const now = new Date();
+                const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+                return diffMinutes < 5;
+              })()}
               onLikeChange={(liked, count) => {
                 if (user) {
                   setIsLiked(liked);

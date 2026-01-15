@@ -563,6 +563,14 @@ function ContentCard({
             showCount={false}
             showText={false}
             disabled={!isAuthenticated} // 未登录用户禁用点赞和收藏，但可以分享
+            isNewContent={(() => {
+              // 判断是否是新生成的内容（最近5分钟内）
+              if (!content.created_at) return false;
+              const createdAt = new Date(content.created_at);
+              const now = new Date();
+              const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+              return diffMinutes < 5;
+            })()}
             onCollectChange={() => {
               // 更新父组件的状态
               if (refreshLists) {
