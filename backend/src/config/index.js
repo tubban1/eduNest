@@ -4,7 +4,9 @@ const path = require('path');
 if (process.env.VERCEL) {
   require('dotenv').config();
 } else {
-  require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
+  // 使用 resolve 确保路径正确，override: true 确保覆盖已存在的环境变量
+  const envPath = path.resolve(__dirname, '../../../.env');
+  require('dotenv').config({ path: envPath, override: true });
 }
 
 const config = {

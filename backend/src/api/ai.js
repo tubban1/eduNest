@@ -53,6 +53,7 @@ router.post('/generate', [
 
 
     // 订阅豁免与积分预校验（先校验，成功后再在成功渲染时扣减）
+    const CREDITS_COST = 10; // AI 内容生成消耗 10 积分
     const userId = req.user?.id;
     let shouldConsume = true;
     if (userId) {
@@ -61,7 +62,7 @@ router.post('/generate', [
         shouldConsume = false;
       } else {
         const { data: balance } = await DatabaseService.getCreditsBalance(userId);
-        if ((balance || 0) < 1) {
+        if ((balance || 0) < CREDITS_COST) {
           return res.status(402).json({ success: false, error: '积分不足' });
         }
       }
@@ -72,7 +73,7 @@ router.post('/generate', [
     if (result.success) {
       // 在生成成功后扣减积分（仅当需要且用户存在）
       if (shouldConsume && userId) {
-        await DatabaseService.addCreditChange(userId, 'usage', -1);
+        await DatabaseService.addCreditChange(userId, 'usage', -CREDITS_COST);
       }
 
       res.json({
@@ -574,6 +575,7 @@ router.post('/generate-async', [
     }
 
     // 订阅豁免与积分预校验
+    const CREDITS_COST = 10; // AI 内容生成消耗 10 积分
     let shouldConsume = true;
     if (userId) {
       const { data: subscription } = await DatabaseService.getActiveSubscription(userId);
@@ -581,7 +583,7 @@ router.post('/generate-async', [
         shouldConsume = false;
       } else {
         const { data: balance } = await DatabaseService.getCreditsBalance(userId);
-        if ((balance || 0) < 1) {
+        if ((balance || 0) < CREDITS_COST) {
           return res.status(402).json({ 
             success: false, 
             error: '积分不足' 

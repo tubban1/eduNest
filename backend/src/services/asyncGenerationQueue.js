@@ -631,6 +631,21 @@ class AsyncGenerationQueue {
           // 即使 content 更新失败，也要更新任务状态，避免状态卡在 processing
         }
         
+        // 在内容更新成功后扣除积分（仅已登录用户，非 Pro 订阅）
+        if (contentUpdateSuccess && task.user_id) {
+          try {
+            const { data: subscription } = await DatabaseService.getActiveSubscription(task.user_id);
+            if (!subscription || subscription.plan !== 'pro') {
+              const CREDITS_COST = 10; // AI 内容生成消耗 10 积分
+              await DatabaseService.addCreditChange(task.user_id, 'usage', -CREDITS_COST);
+              logger.info(`[Process Task] ✅ 扣除积分成功: user_id=${task.user_id}, credits=-${CREDITS_COST}`);
+            }
+          } catch (creditError) {
+            logger.error(`[Process Task] ❌ 扣除积分失败: user_id=${task.user_id}`, creditError);
+            // 积分扣除失败不影响内容生成，只记录错误
+          }
+        }
+        
         // 计算总时长并更新任务状态为 done
         const completedAt = new Date().toISOString();
         const { data: taskData } = await DatabaseService.supabase

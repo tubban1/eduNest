@@ -176,13 +176,13 @@ const awardCreditsForPageView = async (contentId, pageViewId) => {
     }
 
     // 7. 发放积分（+1）
-    // 注意：addCreditChange 方法签名是 (userId, changeType, changeAmount, relatedUserId)
-    // 当前版本不支持 related_content_id，后续可以扩展
+    // addCreditChange 方法签名: (userId, changeType, changeAmount, relatedUserId, relatedContentId)
     const { error: creditError } = await DatabaseService.addCreditChange(
       content.created_by,
       'page_view',
       1,
-      null // related_user_id（页面点击奖励不需要关联用户）
+      null, // related_user_id（页面点击奖励不需要关联用户）
+      contentId // related_content_id（关联到具体内容，便于审计和防刷检测）
     );
 
     if (creditError) {

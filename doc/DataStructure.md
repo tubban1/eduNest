@@ -1463,6 +1463,13 @@
     "column_default": "now()"
   },
   {
+    "table_name": "user_credits",
+    "column_name": "related_content_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "users",
     "column_name": "id",
     "data_type": "uuid",

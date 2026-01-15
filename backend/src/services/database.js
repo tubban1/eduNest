@@ -425,7 +425,7 @@ const getCreditsHistory = async (userId, limit = 50, offset = 0) => {
   }
 };
 
-const addCreditChange = async (userId, changeType, changeAmount, relatedUserId = null) => {
+const addCreditChange = async (userId, changeType, changeAmount, relatedUserId = null, relatedContentId = null) => {
   try {
     if (useMockData || !supabase) {
       // 在无配置环境下直接返回成功，便于开发流程
@@ -438,6 +438,7 @@ const addCreditChange = async (userId, changeType, changeAmount, relatedUserId =
         change_type: changeType,
         change_amount: changeAmount,
         related_user_id: relatedUserId,
+        related_content_id: relatedContentId,
         created_at: new Date().toISOString(),
       })
       .select()

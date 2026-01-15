@@ -57,8 +57,9 @@ router.post('/reward', authenticateToken, async (req, res) => {
     
     if (!code) {
       // 没有邀请码，仅发放新用户初始积分
-      await DatabaseService.addCreditChange(inviteeId, 'initial', 3);
-      return res.json({ success: true, data: { invited: false, initialGranted: true } });
+      const INITIAL_CREDITS = 100;
+      await DatabaseService.addCreditChange(inviteeId, 'initial', INITIAL_CREDITS);
+      return res.json({ success: true, data: { invited: false, initialGranted: true, credits: INITIAL_CREDITS } });
     }
 
     // 防止重复记录
@@ -71,24 +72,26 @@ router.post('/reward', authenticateToken, async (req, res) => {
     const { data: inviter } = await DatabaseService.getUserByReferralCode(String(code).toUpperCase());
     if (!inviter) {
       // 邀请码无效，仅发放新用户初始积分
-      await DatabaseService.addCreditChange(inviteeId, 'initial', 3);
-      return res.json({ success: true, data: { invited: false, initialGranted: true } });
+      const INITIAL_CREDITS = 100;
+      await DatabaseService.addCreditChange(inviteeId, 'initial', INITIAL_CREDITS);
+      return res.json({ success: true, data: { invited: false, initialGranted: true, credits: INITIAL_CREDITS } });
     }
 
     // 记录关系
     await DatabaseService.createReferralLog(inviter.id, inviteeId, code, 'success');
 
-    // 发放奖励：新用户+3，邀请人+3
-    await DatabaseService.addCreditChange(inviteeId, 'initial', 3);
-    await DatabaseService.addCreditChange(inviter.id, 'referral', 3, inviteeId);
+    // 发放奖励：新用户+100（统一奖励，不再区分是否有推荐码）
+    const INITIAL_CREDITS = 100;
+    await DatabaseService.addCreditChange(inviteeId, 'initial', INITIAL_CREDITS);
+    
+    // 不再发放推荐奖励和里程碑奖励（已取消）
+    // await DatabaseService.addCreditChange(inviter.id, 'referral', 3, inviteeId);
+    // const { data: count } = await DatabaseService.countSuccessfulReferrals(inviter.id);
+    // if (count % 5 === 0) {
+    //   await DatabaseService.addCreditChange(inviter.id, 'milestone', 10);
+    // }
 
-    // 里程碑：每满5人+10
-    const { data: count } = await DatabaseService.countSuccessfulReferrals(inviter.id);
-    if (count % 5 === 0) {
-      await DatabaseService.addCreditChange(inviter.id, 'milestone', 10);
-    }
-
-    res.json({ success: true, data: { invited: true, inviter_id: inviter.id } });
+    res.json({ success: true, data: { invited: true, inviter_id: inviter.id, initialGranted: true, credits: INITIAL_CREDITS } });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

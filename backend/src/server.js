@@ -5,7 +5,9 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 // 确保环境变量在配置验证之前加载
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+// .env 文件在 edu/ 目录下（backend 的上一级目录）
+// server.js 在 backend/src/，所以需要 ../.. 才能到 edu/
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), override: true });
 
 const config = require('./config');
 const authRoutes = require('./api/auth');
@@ -25,6 +27,7 @@ const paymentsRoutes = require("./api/payments");
 const visitorRoutes = require('./api/visitor');
 const pageViewsRoutes = require('./api/page_views');
 const testSharpThumbnailRoutes = require('./api/test-sharp-thumbnail');
+const earlyUserBonusRoutes = require('./api/early_user_bonus');
 const { errorHandler } = require('./utils/errorHandler');
 const logger = require('./utils/logger');
 const { supabase } = require('./services/database');
@@ -151,6 +154,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/ai", aiServiceRoutes);
 app.use("/api/visitor", visitorRoutes);
 app.use("/api/test-sharp-thumbnail", testSharpThumbnailRoutes);
+app.use("/api/early-user-bonus", earlyUserBonusRoutes);
 // 404 处理
 app.use('*', (req, res) => {
   res.status(404).json({ 

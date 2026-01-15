@@ -18,10 +18,11 @@ router.post('/', authenticateToken, async (req, res) => {
     // AI使用日志由aiService.fixEducationalContent统一记录
     
     // 积分验证和扣除（非pro订阅用户）
+    const CREDITS_COST = 10; // 内容修复消耗 10 积分
     const { data: subscription } = await DatabaseService.getActiveSubscription(userId);
     if (!subscription || subscription.plan !== 'pro') {
       const { data: balance } = await DatabaseService.getCreditsBalance(userId);
-      if ((balance || 0) < 1) {
+      if ((balance || 0) < CREDITS_COST) {
         return res.status(402).json({ success: false, error: '积分不足' });
       }
     }
@@ -50,7 +51,7 @@ router.post('/', authenticateToken, async (req, res) => {
       
       // 成功修复后扣除积分（非pro订阅用户）
       if (!subscription || subscription.plan !== 'pro') {
-        await DatabaseService.addCreditChange(userId, 'usage', -1);
+        await DatabaseService.addCreditChange(userId, 'usage', -CREDITS_COST);
       }
       
       const { full_html: newFullHtml, fixed } = aiResult.data;
@@ -82,7 +83,7 @@ router.post('/', authenticateToken, async (req, res) => {
       
       // 成功修复后扣除积分（非pro订阅用户）
       if (!subscription || subscription.plan !== 'pro') {
-        await DatabaseService.addCreditChange(userId, 'usage', -1);
+        await DatabaseService.addCreditChange(userId, 'usage', -CREDITS_COST);
       }
       
       const { full_html: newFullHtml, fixed } = aiResult.data;
