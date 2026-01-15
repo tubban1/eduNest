@@ -170,23 +170,8 @@ const mergeVisitorDataToUser = async (visitorId, userId) => {
     throw new Error('合并游客数据失败');
   }
   
-  // 检查并发放初始积分（如果用户还没有获得过）
-  const logger = require('../utils/logger');
-  try {
-    const { data: existingCredits } = await DatabaseService.getCreditsHistory(userId, 1, 0);
-    const hasInitialCredits = existingCredits && existingCredits.some(
-      credit => credit.change_type === 'initial'
-    );
-    
-    if (!hasInitialCredits) {
-      const INITIAL_CREDITS = 100; // 新用户注册奖励：+100 积分
-      await DatabaseService.addCreditChange(userId, 'initial', INITIAL_CREDITS);
-      logger.info(`游客注册后发放初始积分: user_id=${userId}, credits=${INITIAL_CREDITS}`);
-    }
-  } catch (creditError) {
-    // 积分发放失败不影响数据合并，只记录错误
-    logger.warn(`游客注册后发放初始积分失败: user_id=${userId}`, creditError);
-  }
+  // 注意：初始积分发放已移至 /api/visitor/merge-on-login 中统一处理
+  // 这里不再发放积分，避免重复发放
   
   return { 
     success: true,

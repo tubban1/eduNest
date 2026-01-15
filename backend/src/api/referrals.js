@@ -40,26 +40,17 @@ router.get('/stats', authenticateToken, async (req, res) => {
   }
 });
 
-// 注册成功后记录推荐与发放奖励
+// 注册成功后记录推荐关系（不再发放积分，积分统一在 mergeVisitorDataToUser 中发放）
 router.post('/reward', authenticateToken, async (req, res) => {
   try {
     const inviteeId = req.user.id;
     const { code } = req.body || {};
     
-    // 检查用户是否已经获得过初始积分
-    const { data: existingCredits } = await DatabaseService.getCreditsHistory(inviteeId, 1, 0);
-    const hasInitialCredits = existingCredits && existingCredits.some(credit => credit.change_type === 'initial');
-    
-    if (hasInitialCredits) {
-      // 用户已经获得过初始积分，不重复发放
-      return res.json({ success: true, data: { invited: false, initialGranted: false, reason: 'already_granted' } });
-    }
+    // 注意：初始积分已统一在 mergeVisitorDataToUser 中发放，这里不再发放
     
     if (!code) {
-      // 没有邀请码，仅发放新用户初始积分
-      const INITIAL_CREDITS = 100;
-      await DatabaseService.addCreditChange(inviteeId, 'initial', INITIAL_CREDITS);
-      return res.json({ success: true, data: { invited: false, initialGranted: true, credits: INITIAL_CREDITS } });
+      // 没有邀请码，只返回成功（积分已在 mergeVisitorDataToUser 中发放）
+      return res.json({ success: true, data: { invited: false, initialGranted: false, reason: 'handled_by_merge' } });
     }
 
     // 防止重复记录
@@ -71,18 +62,12 @@ router.post('/reward', authenticateToken, async (req, res) => {
     // 找邀请人
     const { data: inviter } = await DatabaseService.getUserByReferralCode(String(code).toUpperCase());
     if (!inviter) {
-      // 邀请码无效，仅发放新用户初始积分
-      const INITIAL_CREDITS = 100;
-      await DatabaseService.addCreditChange(inviteeId, 'initial', INITIAL_CREDITS);
-      return res.json({ success: true, data: { invited: false, initialGranted: true, credits: INITIAL_CREDITS } });
+      // 邀请码无效，只返回成功（积分已在 mergeVisitorDataToUser 中发放）
+      return res.json({ success: true, data: { invited: false, initialGranted: false, reason: 'invalid_code_handled_by_merge' } });
     }
 
-    // 记录关系
+    // 记录推荐关系（不再发放任何积分）
     await DatabaseService.createReferralLog(inviter.id, inviteeId, code, 'success');
-
-    // 发放奖励：新用户+100（统一奖励，不再区分是否有推荐码）
-    const INITIAL_CREDITS = 100;
-    await DatabaseService.addCreditChange(inviteeId, 'initial', INITIAL_CREDITS);
     
     // 不再发放推荐奖励和里程碑奖励（已取消）
     // await DatabaseService.addCreditChange(inviter.id, 'referral', 3, inviteeId);
@@ -91,7 +76,7 @@ router.post('/reward', authenticateToken, async (req, res) => {
     //   await DatabaseService.addCreditChange(inviter.id, 'milestone', 10);
     // }
 
-    res.json({ success: true, data: { invited: true, inviter_id: inviter.id, initialGranted: true, credits: INITIAL_CREDITS } });
+    res.json({ success: true, data: { invited: true, inviter_id: inviter.id, initialGranted: false, reason: 'handled_by_merge' } });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

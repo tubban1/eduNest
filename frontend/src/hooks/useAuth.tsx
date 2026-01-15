@@ -89,29 +89,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       setUser(authUser);
 
-      // 合并游客数据到用户账号（首次登录时）
+      // 首次登录处理：合并游客数据并发放初始积分（统一处理）
       try {
-        const visitorId = getVisitorId();
-        if (visitorId) {
-          const mergeKey = `visitor_merged_${authUser.id}`;
-          const alreadyMerged = localStorage.getItem(mergeKey);
-          if (!alreadyMerged) {
-            const mergeResult = await api.visitor.mergeOnLogin(visitorId);
-            if (mergeResult.success) {
-              // 标记为已合并，避免重复合并
-              localStorage.setItem(mergeKey, '1');
-              // 清除 Visitor ID
+        const mergeKey = `visitor_merged_${authUser.id}`;
+        const alreadyMerged = localStorage.getItem(mergeKey);
+        if (!alreadyMerged) {
+          const visitorId = getVisitorId(); // 可能为 null（直接注册的用户）
+          const mergeResult = await api.visitor.mergeOnLogin(visitorId || undefined);
+          if (mergeResult.success) {
+            // 标记为已处理，避免重复处理
+            localStorage.setItem(mergeKey, '1');
+            // 如果有 visitorId，清除它
+            if (visitorId) {
               clearVisitorId();
-              // 显示提示（可选）
-              if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
-                console.log('游客数据已合并:', mergeResult.data);
-              }
+            }
+            // 显示提示（可选）
+            if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
+              console.log('游客数据已合并:', mergeResult.data);
             }
           }
         }
       } catch (e) {
         // 静默失败，不影响登录流程
-        console.warn('合并游客数据失败:', e);
+        console.warn('首次登录处理失败:', e);
       }
       setLoading(false);
     } catch (error) {
@@ -195,29 +195,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser(authUser);
               setLoading(false);
 
-              // 合并游客数据到用户账号（首次登录时）
+              // 首次登录处理：合并游客数据并发放初始积分（统一处理）
               try {
-                const visitorId = getVisitorId();
-                if (visitorId) {
-                  const mergeKey = `visitor_merged_${authUser.id}`;
-                  const alreadyMerged = localStorage.getItem(mergeKey);
-                  if (!alreadyMerged) {
-                    const mergeResult = await api.visitor.mergeOnLogin(visitorId);
-                    if (mergeResult.success) {
-                      // 标记为已合并，避免重复合并
-                      localStorage.setItem(mergeKey, '1');
-                      // 清除 Visitor ID
+                const mergeKey = `visitor_merged_${authUser.id}`;
+                const alreadyMerged = localStorage.getItem(mergeKey);
+                if (!alreadyMerged) {
+                  const visitorId = getVisitorId(); // 可能为 null（直接注册的用户）
+                  const mergeResult = await api.visitor.mergeOnLogin(visitorId || undefined);
+                  if (mergeResult.success) {
+                    // 标记为已处理，避免重复处理
+                    localStorage.setItem(mergeKey, '1');
+                    // 如果有 visitorId，清除它
+                    if (visitorId) {
                       clearVisitorId();
-                      // 显示提示（可选）
-                      if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
-                        console.log('游客数据已合并:', mergeResult.data);
-                      }
+                    }
+                    // 显示提示（可选）
+                    if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
+                      console.log('游客数据已合并:', mergeResult.data);
                     }
                   }
                 }
               } catch (e) {
                 // 静默失败，不影响登录流程
-                console.warn('合并游客数据失败:', e);
+                console.warn('首次登录处理失败:', e);
               }
             }
           } catch (error) {

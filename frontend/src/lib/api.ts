@@ -798,9 +798,10 @@ class ApiClient {
     checkTrial: async () => {
       return this.get('/visitor/check-trial');
     },
-    // 注册后合并游客数据
-    mergeOnLogin: async (visitorId: string) => {
-      return this.post('/visitor/merge-on-login', { visitor_id: visitorId });
+    // 注册后合并游客数据（或仅发放初始积分）
+    // visitorId 是可选的，如果没有则只发放初始积分
+    mergeOnLogin: async (visitorId?: string) => {
+      return this.post('/visitor/merge-on-login', visitorId ? { visitor_id: visitorId } : {});
     },
   };
 
