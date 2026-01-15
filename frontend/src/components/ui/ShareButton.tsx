@@ -42,7 +42,42 @@ export default function ShareButton({
     setShowShareMenu(prev => !prev);
     if (!showShareMenu && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      setMenuPos({ left: Math.round(rect.left), top: Math.round(rect.bottom + 8) });
+      const menuWidth = 320; // w-80 = 320px
+      const menuHeight = 280; // 估算高度
+      const padding = 16; // 边距
+      
+      // 计算初始位置（按钮下方，右对齐）
+      let left = Math.round(rect.right - menuWidth);
+      let top = Math.round(rect.bottom + padding);
+      
+      // 检查左边界：如果超出，则对齐到按钮左边缘
+      if (left < padding) {
+        left = Math.round(rect.left);
+        // 如果还是超出，则对齐到窗口左边缘（留出边距）
+        if (left < padding) {
+          left = padding;
+        }
+      }
+      
+      // 检查右边界：如果超出，则对齐到窗口右边缘（留出边距）
+      if (left + menuWidth > window.innerWidth - padding) {
+        left = window.innerWidth - menuWidth - padding;
+        // 确保不会超出左边界
+        if (left < padding) {
+          left = padding;
+        }
+      }
+      
+      // 检查下边界：如果超出，则显示在按钮上方
+      if (top + menuHeight > window.innerHeight - padding) {
+        top = Math.round(rect.top - menuHeight - padding);
+        // 如果上方也超出，则显示在窗口顶部（留出边距）
+        if (top < padding) {
+          top = padding;
+        }
+      }
+      
+      setMenuPos({ left, top });
     }
     if (!showShareMenu) onShare?.();
   };
@@ -123,16 +158,20 @@ export default function ShareButton({
       <button
         ref={btnRef}
         onClick={handleShare}
-        className={`inline-flex items-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 ${pillPadding[size]} ${sizeClasses[size]} transition-colors ${className}`}
+        className={`flex items-center text-muted-foreground hover:text-foreground ${sizeClasses[size]} transition-colors ${className}`}
         title={mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share'}
       >
-        <Share2 className={`${iconSizes[size]} mr-2`} />
+        <Share2 className={`${iconSizes[size]} mr-1`} />
         {showText && (mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share')}
       </button>
       {showShareMenu && mounted && typeof document !== 'undefined' && createPortal(
         <div
           className="z-[10000] w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden"
-          style={{ position: 'fixed', left: menuPos.left, top: menuPos.top }}
+          style={{ 
+            position: 'fixed', 
+            left: `${menuPos.left}px`, 
+            top: `${menuPos.top}px`
+          }}
         >
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="text-sm font-semibold text-gray-800">{mounted ? t('share', { ns: 'content', defaultValue: 'Share' }) : 'Share'}</div>
