@@ -204,9 +204,17 @@ export class StatusPollingManager {
 
     // 设置回调
     this.callbacks.set(contentId, callback);
-    // 如果提供了恢复的尝试次数，使用它；否则从 sessionStorage 恢复
-    const savedAttemptCount = restoreAttemptCount ?? this.restoreAttemptCount(contentId);
+    
+    // 从 sessionStorage 恢复状态（尝试次数和间隔）
+    const restoredState = this.restorePollingState(contentId);
+    const savedAttemptCount = restoreAttemptCount ?? restoredState.attemptCount;
+    const savedInterval = restoredState.interval;
     this.attemptCounts.set(contentId, savedAttemptCount);
+    
+    // 如果有恢复的间隔，保存到内存中供后续使用
+    if (savedInterval > 0) {
+      this.pollingIntervals.set(contentId, savedInterval);
+    }
 
     // 开始轮询
     const poll = async () => {
@@ -382,24 +390,33 @@ export class StatusPollingManager {
     }
   }
 
-  // 从 sessionStorage 恢复尝试次数
-  private restoreAttemptCount(contentId: string): number {
+  // 从 sessionStorage 恢复轮询状态（尝试次数和间隔）
+  private restorePollingState(contentId: string): { attemptCount: number; interval: number } {
     try {
       if (typeof window !== 'undefined') {
         const key = `polling_${contentId}`;
         const saved = sessionStorage.getItem(key);
         if (saved) {
           const state = JSON.parse(saved);
-          // 如果保存的状态超过10分钟，认为已过期，重置为0
+          // 如果保存的状态超过10分钟，认为已过期，重置
           if (Date.now() - state.timestamp < 10 * 60 * 1000) {
-            return state.attemptCount || 0;
+            return {
+              attemptCount: state.attemptCount || 0,
+              // 恢复间隔，默认使用最快的轮询间隔（2秒）
+              interval: state.interval || POLLING_CONFIG.defaultInterval
+            };
           }
         }
       }
     } catch (e) {
       // sessionStorage 可能不可用，忽略错误
     }
-    return 0;
+    return { attemptCount: 0, interval: 0 };
+  }
+
+  // 向后兼容的方法
+  private restoreAttemptCount(contentId: string): number {
+    return this.restorePollingState(contentId).attemptCount;
   }
 
   // 清理持久化状态

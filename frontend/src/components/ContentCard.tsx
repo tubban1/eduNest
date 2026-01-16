@@ -279,11 +279,26 @@ function ContentCard({
       }
     };
 
+    // 网络恢复监听：网络恢复时主动重启轮询
+    const handleOnline = () => {
+      const manager = hybridStatusManagerRef.current;
+      const currentStatus = content.generation_status;
+      
+      // 只有在生成中状态才重启
+      if (manager && currentStatus && isGenerating(currentStatus)) {
+        console.log(`[ContentCard] 网络恢复，重启状态监控: contentId=${content.id}`);
+        manager.stop();
+        manager.start();
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
 
     // 清理函数
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
       if (hybridStatusManagerRef.current) {
         hybridStatusManagerRef.current.stop();
         hybridStatusManagerRef.current = null;
