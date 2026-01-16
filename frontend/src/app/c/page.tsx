@@ -9,6 +9,7 @@ import { api, Content } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import ContentAIGenerator from '@/components/ContentAIGenerator';
 import { cache, generateCacheKey } from '@/lib/cache';
+import LoginRequired from '@/components/LoginRequired';
 
 function FullHTMLContentList({ lists, refreshLists, userId, refreshKey }: { lists: any[], refreshLists: () => Promise<void>, userId?: string, refreshKey?: number }) {
   const { t } = useTranslation(['content', 'common']);
@@ -319,16 +320,49 @@ export default function FullHTMLContentListPage() {
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
 
-        <div className="p-8 lg:p-8">
-          {/* AI 生成表单 - 仅登录用户可见 */}
-          {user && (
+        {/* 未登录用户引导注册登录 */}
+        {!user ? (
+          <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+            <div className="text-center max-w-md mx-auto px-4">
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                  {mounted ? t('loginToViewCreations', { ns: 'auth', defaultValue: '登录查看我的创作' }) : 'Login to view My Creations'}
+                </h1>
+                <p className="text-gray-600">
+                  {mounted ? t('loginToViewCreationsDesc', { ns: 'auth', defaultValue: '登录后可以查看和管理您的所有创作内容' }) : 'Login to view and manage all your creations'}
+                </p>
+              </div>
+              <div className="space-y-3">
+                <a
+                  href="/login"
+                  className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:opacity-90 transition-colors font-medium w-full"
+                >
+                  {mounted ? t('login', { ns: 'auth', defaultValue: '登录' }) : 'Login'}
+                </a>
+                <a
+                  href="/signup"
+                  className="inline-block bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium w-full"
+                >
+                  {mounted ? t('signup', { ns: 'auth', defaultValue: '注册' }) : 'Sign Up'}
+                </a>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 lg:p-8">
+            {/* AI 生成表单 - 仅登录用户可见 */}
             <div className="mb-6">
               <ContentAIGenerator className="mb-6" onGenerated={handleContentGenerated} />
             </div>
-          )}
 
-          <FullHTMLContentList key={refreshKey} lists={lists} refreshLists={fetchLists} userId={user?.id} refreshKey={refreshKey} />
-        </div>
+            <FullHTMLContentList key={refreshKey} lists={lists} refreshLists={fetchLists} userId={user?.id} refreshKey={refreshKey} />
+          </div>
+        )}
       </main>
     </div>
   );

@@ -172,17 +172,6 @@ export default function CollectionsPage() {
     );
   }
 
-  // 渲染登录要求
-  if (!user) {
-    return (
-      <LoginRequired 
-        title={mounted ? t('loginRequired', { ns: 'auth', defaultValue: '请先登录' }) : 'Please login'}
-        description={mounted ? t('loginRequiredDesc', { ns: 'auth', defaultValue: '登录后查看您的收藏内容' }) : 'Login to view your collections'}
-        showSidebar={true}
-      />
-    );
-  }
-
   return (
     <div className="flex min-h-screen bg-background">
       {/* 桌面端侧边栏 */}
@@ -207,6 +196,40 @@ export default function CollectionsPage() {
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
 
+        {/* 未登录用户引导注册登录 */}
+        {!user ? (
+          <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+            <div className="text-center max-w-md mx-auto px-4">
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                </div>
+                <h1 className="text-2xl font-bold text-foreground mb-2">
+                  {mounted ? t('loginToViewCollections', { ns: 'auth', defaultValue: '登录查看我的收藏' }) : 'Login to view My Collections'}
+                </h1>
+                <p className="text-muted-foreground">
+                  {mounted ? t('loginToViewCollectionsDesc', { ns: 'auth', defaultValue: '登录后可以查看和管理您的所有收藏内容' }) : 'Login to view and manage all your collections'}
+                </p>
+              </div>
+              <div className="space-y-3">
+                <a
+                  href="/login"
+                  className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:opacity-90 transition-colors font-medium w-full"
+                >
+                  {mounted ? t('login', { ns: 'auth', defaultValue: '登录' }) : 'Login'}
+                </a>
+                <a
+                  href="/signup"
+                  className="inline-block bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium w-full"
+                >
+                  {mounted ? t('signup', { ns: 'auth', defaultValue: '注册' }) : 'Sign Up'}
+                </a>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="p-8 lg:p-8">
           {/* 页面标题 */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
@@ -328,6 +351,7 @@ export default function CollectionsPage() {
             </div>
           )}
         </div>
+        )}
       </main>
     </div>
   );

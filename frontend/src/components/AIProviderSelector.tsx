@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronDown } from 'lucide-react';
 
 interface AIProvider {
   key: string;
@@ -26,6 +27,7 @@ const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, boolean>>({});
+  const [isExpanded, setIsExpanded] = useState(false); // 默认收起
 
   // 移除调试日志
 
@@ -119,100 +121,123 @@ const AIProviderSelector: React.FC<AIProviderSelectorProps> = ({
     );
   }
 
+  // 获取当前选中的提供商名称
+  const selectedProviderName = providers.find(p => p.key === selectedProvider)?.name;
+
   return (
     <div className={`space-y-2 ${className}`}>
-      <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-foreground">
-          {t('title')}
-        </label>
+      {/* 标题栏 - 可点击展开/收起 */}
+      <div 
+        className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center space-x-2">
+          <ChevronDown 
+            className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
+              isExpanded ? 'rotate-0' : '-rotate-90'
+            }`}
+          />
+          <label className="block text-sm font-medium text-foreground cursor-pointer">
+            {t('title')}
+          </label>
+          {/* 收起时显示当前选中的提供商 */}
+          {!isExpanded && selectedProviderName && (
+            <span className="text-xs text-muted-foreground">
+              ({selectedProviderName})
+            </span>
+          )}
+        </div>
         <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
           {t('adminOnly')}
         </span>
       </div>
       
-      <div className="space-y-2">
-        {providers.map((provider) => (
-          <div
-            key={provider.key}
-            className={`
-              relative flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all
-              ${selectedProvider === provider.key
-                ? 'border-primary bg-primary/10'
-                : 'border-border hover:border-border/80'
-              }
-              ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-              ${!provider.configured ? 'opacity-50' : ''}
-            `}
-            onClick={() => !disabled && provider.configured && handleProviderChange(provider.key)}
-          >
-            <div className="flex items-center space-x-3">
-              <div className={`
-                w-4 h-4 rounded-full border-2 flex items-center justify-center
+      {/* 提供商列表 - 仅展开时显示 */}
+      {isExpanded && (
+        <div className="space-y-2 mt-2">
+          {providers.map((provider) => (
+            <div
+              key={provider.key}
+              className={`
+                relative flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all
                 ${selectedProvider === provider.key
-                  ? 'border-primary bg-primary'
-                  : 'border-border'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-border/80'
                 }
-              `}>
-                {selectedProvider === provider.key && (
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                )}
-              </div>
-              
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium text-gray-900">
-                    {provider.name}
-                  </span>
-                  {!provider.configured && (
-                    <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
-                      {t('notConfigured')}
-                    </span>
+                ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+                ${!provider.configured ? 'opacity-50' : ''}
+              `}
+              onClick={() => !disabled && provider.configured && handleProviderChange(provider.key)}
+            >
+              <div className="flex items-center space-x-3">
+                <div className={`
+                  w-4 h-4 rounded-full border-2 flex items-center justify-center
+                  ${selectedProvider === provider.key
+                    ? 'border-primary bg-primary'
+                    : 'border-border'
+                  }
+                `}>
+                  {selectedProvider === provider.key && (
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
                   )}
                 </div>
-                <div className="text-sm text-gray-500">
-                  {t('model')}: {provider.model}
+                
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-gray-900">
+                      {provider.name}
+                    </span>
+                    {!provider.configured && (
+                      <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                        {t('notConfigured')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {t('model')}: {provider.model}
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              {testResults[provider.key] !== undefined && (
-                <div className={`
-                  w-2 h-2 rounded-full
-                  ${testResults[provider.key] ? 'bg-green-500' : 'bg-red-500'}
-                `}></div>
-              )}
               
-              <button
-                type="button"
-                onClick={(e) => handleTestClick(e, provider.key)}
-                disabled={disabled || !provider.configured || testing === provider.key}
-                className={`
-                  px-3 py-1 text-xs rounded transition-colors
-                  ${testing === provider.key
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }
-                  ${disabled || !provider.configured ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-              >
-                {testing === provider.key ? (
-                  <div className="flex items-center space-x-1">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
-                    <span>{t('testing')}</span>
-                  </div>
-                ) : (
-                  t('test')
+              <div className="flex items-center space-x-2">
+                {testResults[provider.key] !== undefined && (
+                  <div className={`
+                    w-2 h-2 rounded-full
+                    ${testResults[provider.key] ? 'bg-green-500' : 'bg-red-500'}
+                  `}></div>
                 )}
-              </button>
+                
+                <button
+                  type="button"
+                  onClick={(e) => handleTestClick(e, provider.key)}
+                  disabled={disabled || !provider.configured || testing === provider.key}
+                  className={`
+                    px-3 py-1 text-xs rounded transition-colors
+                    ${testing === provider.key
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }
+                    ${disabled || !provider.configured ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {testing === provider.key ? (
+                    <div className="flex items-center space-x-1">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
+                      <span>{t('testing')}</span>
+                    </div>
+                  ) : (
+                    t('test')
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-      
-      {providers.length === 0 && (
-        <div className="text-center py-4 text-gray-500">
-          {t('noProviders')}
+          ))}
+          
+          {providers.length === 0 && (
+            <div className="text-center py-4 text-gray-500">
+              {t('noProviders')}
+            </div>
+          )}
         </div>
       )}
     </div>
