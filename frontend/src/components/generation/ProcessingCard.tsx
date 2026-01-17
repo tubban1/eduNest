@@ -84,7 +84,7 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retr
       
       <div className="mt-2 text-xs text-primary/80 text-center">
         {progress < 50 && t('generation.phaseAnalyzing', { ns: 'content', defaultValue: '正在分析您的需求...' })}
-        {progress >= 50 && progress < 80 && t('generation.phaseGenerating', { ns: 'content', defaultValue: '正在生成教学内容...' })}
+        {progress >= 50 && progress < 80 && t('generation.phaseGenerating', { ns: 'content', defaultValue: '请勿离开本页，并保持网络通畅' })}
         {progress >= 80 && t('generation.phaseFinishing', { ns: 'content', defaultValue: '即将完成，请稍候...' })}
       </div>
     </div>
