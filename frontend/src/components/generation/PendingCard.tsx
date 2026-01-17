@@ -64,7 +64,7 @@ const PendingCard: React.FC<PendingCardProps> = ({ userQuery, queuedAt }) => {
       <div className="flex items-center justify-center">
         <div className="text-sm text-gray-500 flex items-center gap-1">
           <span>⏳</span>
-          <span>{t('generation.pending', { ns: 'content', defaultValue: '等待生成中...' })}</span>
+          <span>{t('generation.pending', { ns: 'content', defaultValue: '请勿离开本页，并保持网络通畅' })}</span>
         </div>
       </div>
       <div className="mt-3 text-center text-xs text-gray-500">

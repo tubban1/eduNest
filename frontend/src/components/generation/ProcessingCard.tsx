@@ -75,7 +75,7 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ content, progress, retr
       <div className="flex items-center justify-center">
         <div className="text-sm text-primary flex items-center gap-1">
           <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
-          <span>{t('generation.processing', { ns: 'content', defaultValue: 'AI 正在生成中...' })}</span>
+          <span>{t('generation.processing', { ns: 'content', defaultValue: '请勿离开本页，并保持网络通畅' })}</span>
           {retryCount > 0 && (
             <span className="text-xs text-primary/80">{t('generation.autoRetry', { ns: 'content', defaultValue: '(自动重试 {{count}}/2)', count: retryCount })}</span>
           )}
