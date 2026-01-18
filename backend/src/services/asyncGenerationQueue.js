@@ -2,6 +2,7 @@ const aiService = require('./aiService');
 const DatabaseService = require('./database');
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
+const { getDefaultEngine } = require('./rendererEngine');
 
 class AsyncGenerationQueue {
   constructor() {
@@ -878,10 +879,41 @@ class AsyncGenerationQueue {
         throw new Error('AI返回的 full_html 字段为空或无效');
       }
       
+      // 使用 RendererEngine 自动修复渲染问题
+      let processedHtml = aiData.full_html;
+      try {
+        const rendererEngine = getDefaultEngine();
+        const renderResult = await rendererEngine.process(aiData.full_html, {
+          autoFix: true,
+          checkers: ['math', 'runtime']
+        });
+        
+        if (renderResult.success || renderResult.fixes.length > 0) {
+          processedHtml = renderResult.html;
+          
+          // 记录修复日志
+          if (renderResult.fixes.length > 0) {
+            logger.info(`[RendererEngine] contentId=${contentId} 自动修复了 ${renderResult.fixes.length} 个问题`, {
+              fixes: renderResult.fixes.map(f => ({ code: f.issueCode, strategy: f.strategy }))
+            });
+          }
+          
+          // 保存渲染报告到数据库（可选）
+          if (renderResult.report) {
+            await this.saveRenderReport(contentId, renderResult.report).catch(err => {
+              logger.warn(`[RendererEngine] 保存渲染报告失败: ${err.message}`);
+            });
+          }
+        }
+      } catch (renderError) {
+        // RendererEngine 失败不应阻止内容保存，使用原始 HTML
+        logger.warn(`[RendererEngine] 处理失败，使用原始 HTML: ${renderError.message}`);
+      }
+      
       const updateData = {
         title: aiData.title || 'AI生成内容',
         description: aiData.description || '',
-        full_html: aiData.full_html,
+        full_html: processedHtml,
         tags: aiData.tags || [],
         language_code: aiData.language_code || 'zh-CN',
         updated_at: new Date().toISOString()
@@ -915,6 +947,39 @@ class AsyncGenerationQueue {
     } catch (error) {
       logger.error(`更新content失败: ${contentId}`, error);
       throw error;
+    }
+  }
+
+  /**
+   * 保存渲染报告到数据库
+   */
+  async saveRenderReport(contentId, report) {
+    try {
+      const { error } = await DatabaseService.supabase
+        .from('render_reports')
+        .insert({
+          content_id: contentId,
+          engine_version: report.engineVersion,
+          checks: report.checks,
+          fixes: report.fixes,
+          status: report.summary.status,
+          issues_detected: report.summary.issuesDetected,
+          issues_fixed: report.summary.issuesFixed,
+          issues_remaining: report.summary.issuesRemaining
+        });
+
+      if (error) {
+        // 如果表不存在，只记录警告，不抛出错误
+        if (error.code === '42P01') {
+          logger.debug(`[RendererEngine] render_reports 表不存在，跳过保存`);
+          return;
+        }
+        throw error;
+      }
+      
+      logger.debug(`[RendererEngine] 保存渲染报告成功: contentId=${contentId}`);
+    } catch (error) {
+      logger.warn(`[RendererEngine] 保存渲染报告失败: ${error.message}`);
     }
   }
 

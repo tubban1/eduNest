@@ -1,14 +1,17 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2024-01-15T10:00:00Z",
+  "version": "1.1.0",
+  "lastUpdated": "2026-01-18T00:00:00Z",
+  "fallbackBaseUrl": "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib",
   "libraries": {
     "vue": {
       "name": "Vue.js",
       "category": "framework",
+      "priority": 10,
       "versions": {
         "3": "https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js",
         "3.5.20": "https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
       },
+      "fallback": "vue.global.prod.js",
       "patterns": [
         "vue@3",
         "vue@3.5.20",
@@ -16,16 +19,22 @@
         "vue@3/dist/vue.global.js",
         "unpkg.com/vue@3",
         "unpkg.com/vue@3/dist/vue.global.js",
-        "unpkg.com/vue@3/dist/vue.global.prod.js"
-      ]
+        "unpkg.com/vue@3/dist/vue.global.prod.js",
+        "vue.global.prod.js",
+        "vue.global.js"
+      ],
+      "detect": ["createApp", "Vue.createApp", "Vue.ref", "Vue.reactive"]
     },
     "vue-router": {
       "name": "Vue Router",
       "category": "framework",
+      "priority": 11,
+      "requires": ["vue"],
       "versions": {
         "4": "https://cdn.jsdelivr.net/npm/vue-router@4.5.1/dist/vue-router.global.prod.js",
         "4.5.1": "https://cdn.jsdelivr.net/npm/vue-router@4.5.1/dist/vue-router.global.prod.js"
       },
+      "fallback": "vue-router.global.prod.js",
       "patterns": [
         "vue-router@4",
         "vue-router@4.5.1"
@@ -34,270 +43,416 @@
     "vuex": {
       "name": "Vuex",
       "category": "framework",
+      "priority": 11,
+      "requires": ["vue"],
       "versions": {
         "4": "https://cdn.jsdelivr.net/npm/vuex@4.1.0/dist/vuex.global.prod.js",
         "4.1.0": "https://cdn.jsdelivr.net/npm/vuex@4.1.0/dist/vuex.global.prod.js"
       },
+      "fallback": "vuex.global.prod.js",
       "patterns": [
         "vuex@4",
         "vuex@4.1.0"
       ]
     },
-    "redux": {
-      "name": "Redux",
-      "category": "framework",
-      "versions": {
-        "5": "https://cdn.jsdelivr.net/npm/redux@5.0.1/dist/redux.legacy-esm.min.js",
-        "5.0.1": "https://cdn.jsdelivr.net/npm/redux@5.0.1/dist/redux.legacy-esm.min.js"
-      },
-      "patterns": [
-        "redux@5",
-        "redux@5.0.1"
-      ]
-    },
     "gsap": {
       "name": "GSAP",
       "category": "animation",
+      "priority": 20,
       "versions": {
         "3": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js",
         "3.13.0": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
       },
+      "fallback": "gsap.min.js",
       "patterns": [
         "gsap@3",
         "gsap@3.13.0",
         "gsap",
         "cdnjs.cloudflare.com/ajax/libs/gsap",
         "unpkg.com/gsap",
-        "unpkg.com/gsap@3.13.0"
-      ]
+        "unpkg.com/gsap@3.13.0",
+        "gsap.min.js"
+      ],
+      "detect": ["gsap.to", "gsap.from", "gsap.timeline"]
     },
     "three": {
       "name": "Three.js",
       "category": "3d",
+      "priority": 30,
       "versions": {
-        "147": "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        "147": "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js",
+        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
       },
+      "fallback": "three.min.js",
       "patterns": [
         "three@0.147.0",
         "three@0.147",
         "three@0",
         "three.js",
+        "three.min.js",
         "cdnjs.cloudflare.com/ajax/libs/three.js",
         "unpkg.com/three",
-        "unpkg.com/three@0.147.0"
-      ]
+        "unpkg.com/three@0.147.0",
+        "/build/three.min.js"
+      ],
+      "detect": ["THREE.Scene", "THREE.PerspectiveCamera", "THREE.WebGLRenderer", "new THREE"]
+    },
+    "three-orbit-controls": {
+      "name": "Three.js Orbit Controls",
+      "category": "3d",
+      "priority": 31,
+      "requires": ["three"],
+      "versions": {
+        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js",
+        "1": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+      },
+      "fallback": "OrbitControls.js",
+      "patterns": [
+        "@three-ts/orbit-controls@1.4.7",
+        "@three-ts/orbit-controls@1",
+        "three-ts/orbit-controls",
+        "orbit-controls",
+        "OrbitControls.js",
+        "three@0.160.0/examples/js/controls/OrbitControls.js",
+        "cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js",
+        "three@*/examples/js/controls/OrbitControls.js",
+        "cdn.jsdelivr.net/npm/three@*/examples/js/controls/OrbitControls.js",
+        "examples/js/controls/OrbitControls.js"
+      ],
+      "detect": ["THREE.OrbitControls", "OrbitControls", "new THREE.OrbitControls", "new OrbitControls"]
+    },
+    "three-css2d-renderer": {
+      "name": "Three.js CSS2D Renderer",
+      "category": "3d",
+      "priority": 31,
+      "requires": ["three"],
+      "versions": {
+        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/renderers/CSS2DRenderer.js"
+      },
+      "fallback": "CSS2DRenderer.js",
+      "patterns": [
+        "CSS2DRenderer.js",
+        "examples/js/renderers/CSS2DRenderer.js"
+      ],
+      "detect": ["THREE.CSS2DRenderer", "CSS2DRenderer", "CSS2DObject"]
+    },
+    "three-css3d-renderer": {
+      "name": "Three.js CSS3D Renderer",
+      "category": "3d",
+      "priority": 31,
+      "requires": ["three"],
+      "versions": {
+        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/renderers/CSS3DRenderer.js"
+      },
+      "fallback": "CSS3DRenderer.js",
+      "patterns": [
+        "CSS3DRenderer.js",
+        "examples/js/renderers/CSS3DRenderer.js"
+      ],
+      "detect": ["THREE.CSS3DRenderer", "CSS3DRenderer", "CSS3DObject"]
+    },
+    "three-fontloader": {
+      "name": "Three.js Font Loader",
+      "category": "3d",
+      "priority": 31,
+      "requires": ["three"],
+      "versions": {
+        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FontLoader.js",
+        "0.147": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FontLoader.js"
+      },
+      "fallback": "FontLoader.js",
+      "patterns": [
+        "three@0.147.0/examples/js/loaders/FontLoader.js",
+        "three@0.147/examples/js/loaders/FontLoader.js",
+        "FontLoader.js",
+        "FontLoader",
+        "three-fontloader"
+      ],
+      "detect": ["THREE.FontLoader", "FontLoader"]
+    },
+    "three-textgeometry": {
+      "name": "Three.js Text Geometry",
+      "category": "3d",
+      "priority": 31,
+      "requires": ["three"],
+      "versions": {
+        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js",
+        "0.147": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js"
+      },
+      "fallback": "TextGeometry.js",
+      "patterns": [
+        "three@0.147.0/examples/js/geometries/TextGeometry.js",
+        "three@0.147/examples/js/geometries/TextGeometry.js",
+        "TextGeometry.js",
+        "TextGeometry",
+        "three-textgeometry"
+      ],
+      "detect": ["THREE.TextGeometry", "TextGeometry"]
+    },
+    "three-gltfloader": {
+      "name": "Three.js GLTFLoader",
+      "category": "3d",
+      "priority": 31,
+      "requires": ["three"],
+      "versions": {
+        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js",
+        "0.147": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"
+      },
+      "fallback": "GLTFLoader.js",
+      "patterns": [
+        "three@0.147.0/examples/js/loaders/GLTFLoader.js",
+        "three@0.147/examples/js/loaders/GLTFLoader.js",
+        "GLTFLoader.js",
+        "GLTFLoader",
+        "three-gltfloader"
+      ],
+      "detect": ["THREE.GLTFLoader", "GLTFLoader"]
     },
     "animejs": {
       "name": "Anime.js",
       "category": "animation",
+      "priority": 20,
       "versions": {
         "4": "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js",
         "4.1.3": "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"
       },
+      "fallback": "anime.min.js",
       "patterns": [
         "animejs@4",
         "animejs@4.1.3",
         "animejs",
+        "anime.min.js",
         "cdnjs.cloudflare.com/ajax/libs/animejs",
         "unpkg.com/animejs"
-      ]
+      ],
+      "detect": ["anime("]
     },
     "babylon": {
       "name": "Babylon.js",
       "category": "3d",
+      "priority": 30,
       "versions": {
         "latest": "https://cdn.babylonjs.com/babylon.js"
       },
+      "fallback": "babylon.js",
       "patterns": [
         "babylon",
         "babylon.js"
-      ]
+      ],
+      "detect": ["BABYLON.Engine", "BABYLON.Scene"]
     },
     "tone": {
       "name": "Tone.js",
       "category": "audio",
+      "priority": 40,
       "versions": {
         "15.2.12": "https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
       },
+      "fallback": "Tone.min.js",
       "patterns": [
         "tone@15",
         "tone@15.2.12",
         "tone@14",
         "tone@14.8.49",
+        "Tone.min.js",
         "cdnjs.cloudflare.com/ajax/libs/tone",
         "cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"
-      ]
+      ],
+      "detect": ["Tone.start", "Tone.Synth", "new Tone"]
     },
     "howler": {
       "name": "Howler.js",
       "category": "audio",
+      "priority": 40,
       "versions": {
         "2": "https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js",
         "2.2.4": "https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"
       },
+      "fallback": "howler.min.js",
       "patterns": [
         "howler@2",
-        "howler@2.2.4"
-      ]
+        "howler@2.2.4",
+        "howler.min.js"
+      ],
+      "detect": ["new Howl", "Howler"]
     },
     "chartjs": {
       "name": "Chart.js",
       "category": "charts",
+      "priority": 50,
       "versions": {
         "4": "https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js",
         "4.5.0": "https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"
       },
+      "fallback": "chart.umd.min.js",
       "patterns": [
         "chart.js@4",
         "chart.js@4.5.0",
         "chart.js",
+        "chart.umd.min.js",
         "cdnjs.cloudflare.com/ajax/libs/chart.js"
-      ]
+      ],
+      "detect": ["new Chart"]
     },
     "d3": {
       "name": "D3.js",
       "category": "charts",
+      "priority": 50,
       "versions": {
         "7": "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js",
         "7.9.0": "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
       },
+      "fallback": "d3.min.js",
       "patterns": [
         "d3@7",
-        "d3@7.9.0"
-      ]
+        "d3@7.9.0",
+        "d3.min.js"
+      ],
+      "detect": ["d3.select", "d3.scaleLinear"]
     },
     "echarts": {
       "name": "ECharts",
       "category": "charts",
+      "priority": 50,
       "versions": {
-        "6": "https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js",
-        "6.0.0": "https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"
+        "5": "https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js",
+        "5.5.0": "https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"
       },
+      "fallback": "echarts.min.js",
       "patterns": [
-        "echarts@6",
-        "echarts@6.0.0"
-      ]
+        "echarts@5",
+        "echarts@5.5.0",
+        "echarts.min.js"
+      ],
+      "detect": ["echarts.init"]
     },
     "phaser": {
       "name": "Phaser.js",
       "category": "game",
+      "priority": 30,
       "versions": {
         "3": "https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js",
         "3.90.0": "https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"
       },
+      "fallback": "phaser.min.js",
       "patterns": [
         "phaser@3",
-        "phaser@3.90.0"
-      ]
+        "phaser@3.90.0",
+        "phaser.min.js"
+      ],
+      "detect": ["Phaser.Game", "new Phaser"]
     },
     "matter": {
       "name": "Matter.js",
       "category": "game",
+      "priority": 30,
       "versions": {
         "0": "https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js",
         "0.20.0": "https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"
       },
+      "fallback": "matter.min.js",
       "patterns": [
         "matter@0",
         "matter@0.20.0",
         "matter-js@0",
-        "matter-js@0.20.0"
-      ]
+        "matter-js@0.20.0",
+        "matter.min.js"
+      ],
+      "detect": ["Matter.Engine", "Matter.World"]
     },
     "p5": {
       "name": "p5.js",
       "category": "game",
+      "priority": 30,
       "versions": {
         "2": "https://cdn.jsdelivr.net/npm/p5@2.0.4/lib/p5.min.js",
-        "2.0.4": "https://cdn.jsdelivr.net/npm/p5@2.0.4/lib/p5.min.js"
+        "2.0.4": "https://cdn.jsdelivr.net/npm/p5@2.0.4/lib/p5.min.js",
+        "1": "https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js",
+        "1.9.4": "https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"
       },
+      "fallback": "p5.min.js",
       "patterns": [
         "p5@2",
-        "p5@2.0.4"
-      ]
+        "p5@2.0.4",
+        "p5@1",
+        "p5@1.9.4",
+        "p5.min.js"
+      ],
+      "detect": ["function setup()", "function draw()", "createCanvas"]
     },
     "lodash": {
       "name": "Lodash",
       "category": "utility",
+      "priority": 5,
       "versions": {
         "4": "https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js",
         "4.17.21": "https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"
       },
+      "fallback": "lodash.min.js",
       "patterns": [
         "lodash@4",
-        "lodash@4.17.21"
-      ]
+        "lodash@4.17.21",
+        "lodash.min.js"
+      ],
+      "detect": ["_.map", "_.filter", "_.debounce"]
     },
     "moment": {
       "name": "Moment.js",
       "category": "utility",
+      "priority": 5,
       "versions": {
         "2": "https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js",
         "2.30.1": "https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"
       },
+      "fallback": "moment.min.js",
       "patterns": [
         "moment@2",
-        "moment@2.30.1"
-      ]
+        "moment@2.30.1",
+        "moment.min.js"
+      ],
+      "detect": ["moment("]
     },
     "dayjs": {
       "name": "Day.js",
       "category": "utility",
+      "priority": 5,
       "versions": {
         "1": "https://cdn.jsdelivr.net/npm/dayjs@1.11.11/dayjs.min.js",
         "1.11.11": "https://cdn.jsdelivr.net/npm/dayjs@1.11.11/dayjs.min.js"
       },
+      "fallback": "dayjs.min.js",
       "patterns": [
         "dayjs@1",
-        "dayjs@1.11.11"
-      ]
-    },
-    "vee-validate": {
-      "name": "VeeValidate",
-      "category": "form",
-      "versions": {
-        "4": "https://cdn.jsdelivr.net/npm/vee-validate@4/dist/vee-validate.min.js"
-      },
-      "patterns": [
-        "vee-validate@4"
-      ]
-    },
-    "vee-validate-rules": {
-      "name": "VeeValidate Rules",
-      "category": "form",
-      "versions": {
-        "4": "https://cdn.jsdelivr.net/npm/@vee-validate/rules@4/dist/vee-validate-rules.min.js"
-      },
-      "patterns": [
-        "@vee-validate/rules@4"
-      ]
-    },
-    "vee-validate-i18n": {
-      "name": "VeeValidate i18n",
-      "category": "form",
-      "versions": {
-        "4": "https://cdn.jsdelivr.net/npm/@vee-validate/i18n@4/dist/vee-validate-i18n.min.js"
-      },
-      "patterns": [
-        "@vee-validate/i18n@4"
-      ]
+        "dayjs@1.11.11",
+        "dayjs.min.js"
+      ],
+      "detect": ["dayjs("]
     },
     "bootstrap": {
       "name": "Bootstrap",
       "category": "ui",
+      "priority": 15,
       "versions": {
         "5": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js",
         "5.3.3": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
       },
+      "fallback": "bootstrap.bundle.min.js",
+      "css": {
+        "5": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+        "5.3.3": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      },
+      "cssFallback": "bootstrap.min.css",
       "patterns": [
         "bootstrap@5",
         "bootstrap@5.3.3",
+        "bootstrap.bundle.min.js",
         "bootstrap@5/dist/css/bootstrap.min.css"
       ]
     },
     "tailwindcss": {
       "name": "Tailwind CSS",
       "category": "ui",
+      "priority": 5,
       "versions": {
         "latest": "https://cdn.tailwindcss.com",
         "3": "https://cdn.tailwindcss.com",
@@ -320,10 +475,12 @@
     "fontawesome": {
       "name": "Font Awesome",
       "category": "ui",
+      "priority": 5,
       "versions": {
         "6": "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css",
         "6.5.2": "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css"
       },
+      "cssFallback": "fontawesome-all.min.css",
       "patterns": [
         "fontawesome@6",
         "fontawesome@6.5.2",
@@ -333,168 +490,136 @@
     "fabric": {
       "name": "Fabric.js",
       "category": "graphics",
+      "priority": 30,
       "versions": {
         "6": "https://cdn.jsdelivr.net/npm/fabric@6.7.0/dist/index.min.js",
         "6.7.0": "https://cdn.jsdelivr.net/npm/fabric@6.7.0/dist/index.min.js"
       },
+      "fallback": "fabric.min.js",
       "patterns": [
         "fabric@6",
-        "fabric@6.7.0"
-      ]
+        "fabric@6.7.0",
+        "fabric.min.js"
+      ],
+      "detect": ["fabric.Canvas", "new fabric"]
     },
     "rough": {
       "name": "Rough.js",
       "category": "graphics",
+      "priority": 30,
       "versions": {
         "latest": "https://unpkg.com/roughjs@latest/bundled/rough.js"
       },
+      "fallback": "rough.js",
       "patterns": [
         "rough@latest",
-        "roughjs@latest"
-      ]
+        "roughjs@latest",
+        "rough.js"
+      ],
+      "detect": ["rough.canvas"]
     },
     "konva": {
       "name": "Konva.js",
       "category": "graphics",
+      "priority": 30,
       "versions": {
         "10": "https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js",
         "10.0.12": "https://cdn.jsdelivr.net/npm/konva@10.0.12/konva.min.js"
       },
+      "fallback": "konva.min.js",
       "patterns": [
         "konva@10",
-        "konva@10.0.12"
-      ]
-    },
-    "three-orbit-controls": {
-      "name": "Three.js Orbit Controls",
-      "category": "3d",
-      "versions": {
-        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js",
-        "1": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
-      },
-      "patterns": [
-        "@three-ts/orbit-controls@1.4.7",
-        "@three-ts/orbit-controls@1",
-        "three-ts/orbit-controls",
-        "orbit-controls",
-        "three@0.160.0/examples/js/controls/OrbitControls.js",
-        "cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js",
-        "three@*/examples/js/controls/OrbitControls.js",
-        "cdn.jsdelivr.net/npm/three@*/examples/js/controls/OrbitControls.js",
-        "examples/js/controls/OrbitControls.js"
-      ]
+        "konva@10.0.12",
+        "konva.min.js"
+      ],
+      "detect": ["Konva.Stage", "new Konva"]
     },
     "aframe-axeshelper": {
       "name": "A-Frame Axes Helper",
       "category": "3d",
+      "priority": 32,
       "versions": {
         "0.1.0": "https://cdn.jsdelivr.net/npm/aframe-axeshelper@0.1.0/dist/aframe-axeshelper.min.js",
         "0": "https://cdn.jsdelivr.net/npm/aframe-axeshelper@0.1.0/dist/aframe-axeshelper.min.js"
       },
+      "fallback": "aframe-axeshelper.min.js",
       "patterns": [
         "aframe-axeshelper@0.1.0",
         "aframe-axeshelper@0",
         "aframe-axeshelper"
       ]
     },
-    "three-fontloader": {
-      "name": "Three.js Font Loader",
-      "category": "3d",
-      "versions": {
-        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FontLoader.js",
-        "0.147": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FontLoader.js"
-      },
-      "patterns": [
-        "three@0.147.0/examples/js/loaders/FontLoader.js",
-        "three@0.147/examples/js/loaders/FontLoader.js",
-        "FontLoader",
-        "three-fontloader"
-      ]
-    },
-    "three-textgeometry": {
-      "name": "Three.js Text Geometry",
-      "category": "3d",
-      "versions": {
-        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js",
-        "0.147": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/TextGeometry.js"
-      },
-      "patterns": [
-        "three@0.147.0/examples/js/geometries/TextGeometry.js",
-        "three@0.147/examples/js/geometries/TextGeometry.js",
-        "TextGeometry",
-        "three-textgeometry"
-      ]
-    },
-    "three-gltfloader": {
-      "name": "Three.js GLTFLoader",
-      "category": "3d",
-      "versions": {
-        "0.147.0": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js",
-        "0.147": "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"
-      },
-      "patterns": [
-        "three@0.147.0/examples/js/loaders/GLTFLoader.js",
-        "three@0.147/examples/js/loaders/GLTFLoader.js",
-        "GLTFLoader",
-        "three-gltfloader"
-      ]
-    },
     "cannon-es": {
       "name": "cannon-es",
       "category": "physics",
+      "priority": 30,
       "versions": {
         "0.20.0": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
       },
+      "fallback": "cannon-es.js",
       "patterns": [
         "cannon-es@0.20.0",
         "cannon-es",
         "cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
-      ]
+      ],
+      "detect": ["CANNON.World", "new CANNON"]
     },
     "yuka": {
       "name": "Yuka.js",
       "category": "ai",
+      "priority": 30,
       "versions": {
         "0.7.8": "https://cdn.jsdelivr.net/npm/yuka@0.7.8/build/yuka.min.js"
       },
+      "fallback": "yuka.min.js",
       "patterns": [
         "yuka@0.7.8",
         "yuka",
         "cdn.jsdelivr.net/npm/yuka@0.7.8/build/yuka.min.js"
-      ]
+      ],
+      "detect": ["YUKA."]
     },
     "three-mesh-ui": {
       "name": "three-mesh-ui",
       "category": "3d-ui",
+      "priority": 32,
+      "requires": ["three"],
       "versions": {
         "6.5.4": "https://cdn.jsdelivr.net/npm/three-mesh-ui@6.5.4/build/three-mesh-ui.min.js"
       },
+      "fallback": "three-mesh-ui.min.js",
       "patterns": [
         "three-mesh-ui@6.5.4",
         "three-mesh-ui",
         "cdn.jsdelivr.net/npm/three-mesh-ui@6.5.4/build/three-mesh-ui.min.js"
-      ]
+      ],
+      "detect": ["ThreeMeshUI"]
     },
     "noisejs": {
       "name": "noisejs",
       "category": "math",
+      "priority": 20,
       "versions": {
         "2.1.0": "https://cdn.jsdelivr.net/npm/noisejs@2.1.0/index.min.js"
       },
+      "fallback": "noisejs.min.js",
       "patterns": [
         "noisejs@2.1.0",
         "noisejs",
         "cdn.jsdelivr.net/npm/noisejs@2.1.0/index.min.js"
-      ]
+      ],
+      "detect": ["new Noise", "noise.simplex"]
     },
     "katex": {
       "name": "KaTeX",
       "category": "math",
+      "priority": 20,
       "versions": {
         "0.16.10": "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js",
         "0.16": "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js",
         "0": "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
       },
+      "fallback": "katex.min.js",
       "patterns": [
         "katex@0.16.10",
         "katex@0.16",
@@ -505,82 +630,116 @@
         "katex.min.js",
         "katex/dist/katex.min.js"
       ],
-      "extras": {
-        "auto-render": {
-          "versions": {
-            "0.16.10": "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
-          },
-          "patterns": [
-            "katex@0.16.10/dist/contrib/auto-render.min.js",
-            "katex/dist/contrib/auto-render.min.js",
-            "auto-render.min.js"
-          ]
-        }
-      },
       "css": {
         "0.16.10": "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css",
         "0.16": "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css",
         "0": "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"
-      }
+      },
+      "cssFallback": "katex.min.css",
+      "detect": ["katex.render", "v-katex"]
+    },
+    "katex-auto-render": {
+      "name": "KaTeX Auto-Render",
+      "category": "math",
+      "priority": 21,
+      "requires": ["katex"],
+      "versions": {
+        "0.16.10": "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+      },
+      "fallback": "auto-render.min.js",
+      "patterns": [
+        "katex@0.16.10/dist/contrib/auto-render.min.js",
+        "katex/dist/contrib/auto-render.min.js",
+        "auto-render.min.js",
+        "contrib/auto-render"
+      ],
+      "detect": ["renderMathInElement"]
     },
     "desmos": {
       "name": "Desmos",
       "category": "math",
+      "priority": 20,
       "versions": {
         "1.5.4": "https://cdn.jsdelivr.net/npm/desmos@1.5.4/index.min.js",
         "1": "https://cdn.jsdelivr.net/npm/desmos@1.5.4/index.min.js"
       },
+      "fallback": "desmos.min.js",
       "patterns": [
         "desmos@1.5.4",
         "desmos@1",
         "desmos",
         "cdn.jsdelivr.net/npm/desmos"
-      ]
+      ],
+      "detect": ["Desmos.GraphingCalculator"]
     },
     "mediapipe-hands": {
       "name": "MediaPipe Hands",
       "category": "ai",
+      "priority": 40,
       "versions": {
         "0.4.1675469240": "https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js",
         "0.4": "https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"
       },
+      "fallback": "mediapipe-hands.min.js",
       "patterns": [
         "@mediapipe/hands@0.4.1675469240",
         "@mediapipe/hands@0.4",
         "@mediapipe/hands",
         "mediapipe-hands",
         "cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"
-      ]
+      ],
+      "detect": ["Hands"]
     },
     "mediapipe-camera-utils": {
       "name": "MediaPipe Camera Utils",
       "category": "ai",
+      "priority": 40,
       "versions": {
         "0.3.1675466862": "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js",
         "0.3": "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"
       },
+      "fallback": "mediapipe-camera-utils.min.js",
       "patterns": [
         "@mediapipe/camera_utils@0.3.1675466862",
         "@mediapipe/camera_utils@0.3",
         "@mediapipe/camera_utils",
         "mediapipe-camera-utils",
         "cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"
-      ]
+      ],
+      "detect": ["new Camera(", "@mediapipe/camera_utils"]
     },
     "mediapipe-drawing-utils": {
       "name": "MediaPipe Drawing Utils",
       "category": "ai",
+      "priority": 40,
       "versions": {
         "0.3.1675466124": "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js",
         "0.3": "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js"
       },
+      "fallback": "mediapipe-drawing-utils.min.js",
       "patterns": [
         "@mediapipe/drawing_utils@0.3.1675466124",
         "@mediapipe/drawing_utils@0.3",
         "@mediapipe/drawing_utils",
         "mediapipe-drawing-utils",
         "cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js"
-      ]
+      ],
+      "detect": ["drawConnectors", "drawLandmarks"]
+    },
+    "redux": {
+      "name": "Redux",
+      "category": "framework",
+      "priority": 11,
+      "versions": {
+        "5": "https://cdn.jsdelivr.net/npm/redux@5.0.1/dist/redux.legacy-esm.min.js",
+        "5.0.1": "https://cdn.jsdelivr.net/npm/redux@5.0.1/dist/redux.legacy-esm.min.js"
+      },
+      "fallback": "redux.min.js",
+      "patterns": [
+        "redux@5",
+        "redux@5.0.1"
+      ],
+      "detect": ["createStore", "Redux.createStore"]
     }
   }
 }
