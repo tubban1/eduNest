@@ -338,9 +338,11 @@ class MathChecker {
         // 只在数学公式上下文中检测（避免误报）
         const parsedCommandPatterns = {
           'div': /\bdiv\s*[=0-9]/g,  // "div 8" 或 "div ="
-          'frac': /\brac\s*\{/g,     // "rac{" (应该是 \frac{)
+          'frac': /(^|[^\\])rac\s*\{/g,     // "rac{" (应该是 \frac{)，前面不是反斜杠
           'sqrt': /(^|[^\\])sqrt\s*\{/g,    // "sqrt{" (应该是 \sqrt{)，前面不是反斜杠
-          'text': /\btext\s*\{/g     // "text{" (应该是 \text{)
+          'text': /(^|[^\\])ext\s*\{/g,     // "ext{" (应该是 \text{)，前面不是反斜杠
+          'times': /(^|[^\\])imes\b/g,      // "imes" (应该是 \times)，前面不是反斜杠
+          'approx': /(^|[^\\])approx\b/g    // "approx" (应该是 \approx)，前面不是反斜杠
         };
         
         if (parsedCommandPatterns[cmd]) {

@@ -85,6 +85,7 @@ class AsyncGenerationQueue {
 
       // 使用数据库级别的唯一约束来防止重复任务
       // 首先检查是否已有相同 content_id 的进行中任务
+      // 注意：这个检查不是原子性的，所以需要在插入时再次检查
       const { data: existingTasks, error: checkError } = await DatabaseService.supabase
         .from('ai_usage_logs')
         .select('*')
@@ -102,6 +103,7 @@ class AsyncGenerationQueue {
       // 如果已有进行中的任务，直接返回
       if (existingTasks && existingTasks.length > 0) {
         const existingTask = existingTasks[0];
+        logger.info(`[AddTask] 发现已有进行中的任务，跳过创建: contentId=${contentId}, taskId=${existingTask.id}, status=${existingTask.status}`);
         // 触发处理（防止处于 pending 未被拉起）
         this.processQueue();
         return { log: existingTask, requestId: existingTask.request_id };
@@ -196,6 +198,31 @@ class AsyncGenerationQueue {
         throw new Error(`创建生成任务失败: ${error.message}`);
       }
 
+      // 双重检查：插入后再次检查是否有其他任务（防止并发竞态条件）
+      // 如果发现其他任务，删除刚创建的任务并返回已存在的任务
+      const { data: duplicateTasks, error: dupCheckError } = await DatabaseService.supabase
+        .from('ai_usage_logs')
+        .select('*')
+        .eq('content_id', contentId)
+        .eq('action_type', 'generate')
+        .in('status', ['pending', 'processing'])
+        .neq('id', log.id) // 排除刚创建的任务
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!dupCheckError && duplicateTasks && duplicateTasks.length > 0) {
+        // 发现重复任务，删除刚创建的任务
+        logger.warn(`[AddTask] 检测到并发重复任务，删除刚创建的任务: contentId=${contentId}, newTaskId=${log.id}, existingTaskId=${duplicateTasks[0].id}`);
+        await DatabaseService.supabase
+          .from('ai_usage_logs')
+          .delete()
+          .eq('id', log.id);
+        
+        const existingTask = duplicateTasks[0];
+        // 触发处理（防止处于 pending 未被拉起）
+        this.processQueue();
+        return { log: existingTask, requestId: existingTask.request_id };
+      }
       
       // 触发队列处理
       this.processQueue();
@@ -319,21 +346,99 @@ class AsyncGenerationQueue {
   }
 
   /**
+   * 判断错误是否可重试（网络错误、连接错误等）
+   */
+  isRetryableError(error) {
+    if (!error) return false;
+    
+    const errorMessage = error.message || error.toString() || '';
+    const errorCode = error.code || '';
+    
+    // 网络相关错误
+    const retryablePatterns = [
+      'fetch failed',
+      'SocketError',
+      'UND_ERR_SOCKET',
+      'other side closed',
+      'ECONNRESET',
+      'ETIMEDOUT',
+      'ENOTFOUND',
+      'ECONNREFUSED',
+      'timeout',
+      'network'
+    ];
+    
+    return retryablePatterns.some(pattern => 
+      errorMessage.toLowerCase().includes(pattern.toLowerCase()) ||
+      errorCode.toLowerCase().includes(pattern.toLowerCase())
+    );
+  }
+
+  /**
+   * 带重试的 Supabase 查询
+   */
+  async retryableSupabaseQuery(queryFn, maxRetries = 3, delayMs = 1000) {
+    let lastError;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const result = await queryFn();
+        return result;
+      } catch (error) {
+        lastError = error;
+        
+        // 如果不是可重试的错误，直接抛出
+        if (!this.isRetryableError(error)) {
+          throw error;
+        }
+        
+        // 如果是最后一次尝试，抛出错误
+        if (attempt === maxRetries - 1) {
+          throw error;
+        }
+        
+        // 指数退避：延迟时间 = delayMs * 2^attempt
+        const backoffDelay = delayMs * Math.pow(2, attempt);
+        logger.warn(`清理重复processing任务查询失败，${backoffDelay}ms 后重试 (${attempt + 1}/${maxRetries}):`, {
+          error: error.message || error.toString(),
+          code: error.code
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+    }
+    
+    throw lastError;
+  }
+
+  /**
    * 清理重复的 processing 任务
    * 对于同一个 content_id，只保留最新的 processing 任务，其他的标记为 failed
    */
   async cleanupDuplicateProcessingTasks() {
     try {
-      // 查找所有 processing 任务，包含 id 字段
-      const { data: processingTasks, error } = await DatabaseService.supabase
-        .from('ai_usage_logs')
-        .select('id, content_id, created_at')
-        .eq('action_type', 'generate')
-        .eq('status', 'processing')
-        .order('content_id, created_at', { ascending: false });
+      // 使用重试机制查询 processing 任务
+      const { data: processingTasks, error } = await this.retryableSupabaseQuery(
+        async () => {
+          const result = await DatabaseService.supabase
+            .from('ai_usage_logs')
+            .select('id, content_id, created_at')
+            .eq('action_type', 'generate')
+            .eq('status', 'processing')
+            .order('content_id, created_at', { ascending: false });
+          
+          if (result.error) {
+            throw result.error;
+          }
+          
+          return result;
+        },
+        3, // 最多重试3次
+        500 // 初始延迟500ms
+      );
 
       if (error) {
-        logger.error('清理重复processing任务查询失败:', error);
+        logger.error('清理重复processing任务查询失败（重试后仍失败）:', error);
         return;
       }
 
@@ -355,20 +460,40 @@ class AsyncGenerationQueue {
           const tasksToClean = tasks.slice(1);
           const taskIds = tasksToClean.map(t => t.id);
           
-          const { error: updateError } = await DatabaseService.supabase
-            .from('ai_usage_logs')
-            .update({ 
-              status: 'failed', 
-              error_message: 'duplicate_processing_cleaned',
-              updated_at: new Date().toISOString()
-            })
-            .in('id', taskIds);
+          try {
+            // 使用重试机制更新任务状态
+            const { error: updateError } = await this.retryableSupabaseQuery(
+              async () => {
+                const result = await DatabaseService.supabase
+                  .from('ai_usage_logs')
+                  .update({ 
+                    status: 'failed', 
+                    error_message: 'duplicate_processing_cleaned',
+                    updated_at: new Date().toISOString()
+                  })
+                  .in('id', taskIds);
+                
+                if (result.error) {
+                  throw result.error;
+                }
+                
+                return result;
+              },
+              2, // 更新操作最多重试2次
+              300 // 初始延迟300ms
+            );
 
-          if (updateError) {
-            logger.error(`清理重复processing任务失败: contentId=${contentId}`, updateError);
-          } else {
-            cleanedCount += tasksToClean.length;
-            logger.warn(`清理了 ${tasksToClean.length} 个重复的processing任务: contentId=${contentId}`);
+            if (updateError) {
+              logger.error(`清理重复processing任务失败（重试后仍失败）: contentId=${contentId}`, updateError);
+            } else {
+              cleanedCount += tasksToClean.length;
+              logger.warn(`清理了 ${tasksToClean.length} 个重复的processing任务: contentId=${contentId}`);
+            }
+          } catch (updateError) {
+            // 重试机制已经处理了可重试的错误，这里只记录不可重试的错误
+            if (!this.isRetryableError(updateError)) {
+              logger.error(`清理重复processing任务失败（不可重试错误）: contentId=${contentId}`, updateError);
+            }
           }
         }
       }
@@ -377,7 +502,15 @@ class AsyncGenerationQueue {
         logger.warn(`Watchdog 清理重复processing任务: ${cleanedCount} 条`);
       }
     } catch (error) {
-      logger.error('清理重复processing任务异常:', error);
+      // 区分可重试和不可重试的错误
+      if (this.isRetryableError(error)) {
+        logger.warn('清理重复processing任务异常（网络错误，已重试）:', {
+          error: error.message || error.toString(),
+          code: error.code
+        });
+      } else {
+        logger.error('清理重复processing任务异常（非网络错误）:', error);
+      }
     }
   }
 
@@ -530,13 +663,9 @@ class AsyncGenerationQueue {
         return;
       }
 
-      // 添加到运行中任务集合
-      this.runningTasks.add(taskId);
-      this.runningContent.add(contentId);
-      
-
-      // 原子性更新：同时更新状态和清除错误信息，记录开始时间
-      const { error: updateError } = await DatabaseService.supabase
+      // 原子性更新：只更新状态为 'pending' 的任务，确保只有一个任务能被标记为 processing
+      // 这样可以防止并发情况下多个任务同时被处理
+      const { data: updatedTask, error: updateError } = await DatabaseService.supabase
         .from('ai_usage_logs')
         .update({ 
           status: 'processing',
@@ -544,12 +673,31 @@ class AsyncGenerationQueue {
           started_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('id', taskId);
+        .eq('id', taskId)
+        .eq('status', 'pending') // 只更新状态为 pending 的任务
+        .select()
+        .single();
 
       if (updateError) {
         logger.error(`更新任务状态失败: ${taskId}`, updateError);
+        // 清理运行中任务集合
+        this.runningTasks.delete(taskId);
+        this.runningContent.delete(contentId);
         throw new Error(`更新任务状态失败: ${updateError.message}`);
       }
+
+      // 如果更新返回空（说明任务状态已经不是 pending），说明有其他任务已经处理了
+      if (!updatedTask) {
+        logger.warn(`[ProcessTask] 任务状态已变更，跳过处理: taskId=${taskId}, contentId=${contentId}`);
+        // 清理运行中任务集合
+        this.runningTasks.delete(taskId);
+        this.runningContent.delete(contentId);
+        return;
+      }
+
+      // 更新成功，添加到运行中任务集合
+      this.runningTasks.add(taskId);
+      this.runningContent.add(contentId);
 
       // 调试日志：检查从数据库读取的图片数据
       let imageData = task.generation_params?.image || null;

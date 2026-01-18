@@ -342,8 +342,10 @@ class MathFixer {
           replacement: '\\\\div$1$2'  // 保留空格
         },
         'frac': {
-          pattern: /\brac\s*\{/g,
-          replacement: '\\\\frac{'
+          // 匹配 rac{，前面不是反斜杠（避免匹配 \\frac{）
+          // 匹配字符串开头或前面不是反斜杠的情况
+          pattern: /(^|[^\\])rac\s*\{/g,
+          replacement: '$1\\\\frac{'
         },
         'sqrt': {
           // 匹配 sqrt{，前面不是反斜杠（避免匹配 \\sqrt{）
@@ -352,8 +354,21 @@ class MathFixer {
           replacement: '$1\\\\sqrt{'
         },
         'text': {
-          pattern: /\btext\s*\{/g,
-          replacement: '\\\\text{'
+          // 匹配 ext{，前面不是反斜杠（避免匹配 \\text{）
+          pattern: /(^|[^\\])ext\s*\{/g,
+          replacement: '$1\\\\text{'
+        },
+        'times': {
+          // 匹配 imes，前面不是反斜杠（避免匹配 \\times）
+          // \times 会被解析为 imes（因为 \t 是制表符）
+          pattern: /(^|[^\\])imes\b/g,
+          replacement: '$1\\\\times'
+        },
+        'approx': {
+          // 匹配 approx，前面不是反斜杠（避免匹配 \\approx）
+          // \approx 会被解析为 approx（因为 \a 不是有效转义）
+          pattern: /(^|[^\\])approx\b/g,
+          replacement: '$1\\\\approx'
         }
       };
       
