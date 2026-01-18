@@ -313,7 +313,7 @@ class MathChecker {
         
         // 匹配所有 \cmd 或 \\cmd 模式
         // 然后过滤掉那些已经是双反斜杠的（\\cmd）
-        const allMatchesRegex = new RegExp(`\\\\{1,2}${cmd}(?![a-zA-Z])`, 'g');
+        const allMatchesRegex = new RegExp(`\\\\{1,2}${this.escapeRegex(cmd)}(?![a-zA-Z])`, 'g');
         const allMatches = content.match(allMatchesRegex) || [];
         
         // 过滤出单反斜杠的（即不是双反斜杠的）
@@ -330,6 +330,41 @@ class MathChecker {
           
           if (samples.length < 5) {
             samples.push(`\\${cmd} in "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`);
+          }
+        }
+        
+        // 额外检测：已经被 JavaScript 解析后的命令（没有反斜杠）
+        // 例如：\div → div, \frac → rac (因为 \d 和 \f 不是有效转义)
+        // 只在数学公式上下文中检测（避免误报）
+        const parsedCommandPatterns = {
+          'div': /\bdiv\s*[=0-9]/g,  // "div 8" 或 "div ="
+          'frac': /\brac\s*\{/g,     // "rac{" (应该是 \frac{)
+          'sqrt': /(^|[^\\])sqrt\s*\{/g,    // "sqrt{" (应该是 \sqrt{)，前面不是反斜杠
+          'text': /\btext\s*\{/g     // "text{" (应该是 \text{)
+        };
+        
+        if (parsedCommandPatterns[cmd]) {
+          const parsedMatches = content.match(parsedCommandPatterns[cmd]) || [];
+          if (parsedMatches.length > 0) {
+            // 检查是否已经有正确的转义（避免重复报告）
+            const correctPattern = new RegExp(`\\\\{1,2}${this.escapeRegex(cmd)}(?![a-zA-Z])`, 'g');
+            const correctMatches = content.match(correctPattern) || [];
+            
+            // 如果已经有正确的转义，就不报告解析后的命令
+            if (correctMatches.length === 0) {
+              issues.push({
+                fullMatch,
+                content,
+                position: match.index,
+                command: cmd,
+                matches: parsedMatches,
+                isParsed: true  // 标记为已解析的命令
+              });
+              
+              if (samples.length < 5) {
+                samples.push(`${cmd} (parsed from \\${cmd}) in "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`);
+              }
+            }
           }
         }
       }
@@ -411,6 +446,13 @@ class MathChecker {
     }
     
     return errors;
+  }
+  
+  /**
+   * 转义正则表达式特殊字符
+   */
+  escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
 

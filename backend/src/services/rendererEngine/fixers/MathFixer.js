@@ -334,6 +334,47 @@ class MathFixer {
         }
       }
       
+      // 修复已被 JavaScript 解析后的命令（没有反斜杠）
+      // 例如：\div → div, \frac → rac (因为 \d 和 \f 不是有效转义)
+      const parsedCommandFixes = {
+        'div': {
+          pattern: /\bdiv(\s*)([=0-9])/g,
+          replacement: '\\\\div$1$2'  // 保留空格
+        },
+        'frac': {
+          pattern: /\brac\s*\{/g,
+          replacement: '\\\\frac{'
+        },
+        'sqrt': {
+          // 匹配 sqrt{，前面不是反斜杠（避免匹配 \\sqrt{）
+          // 匹配字符串开头或前面不是反斜杠的情况
+          pattern: /(^|[^\\])sqrt\s*\{/g,
+          replacement: '$1\\\\sqrt{'
+        },
+        'text': {
+          pattern: /\btext\s*\{/g,
+          replacement: '\\\\text{'
+        }
+      };
+      
+      for (const [cmd, fix] of Object.entries(parsedCommandFixes)) {
+        // 检查是否已经有正确的转义（避免重复修复）
+        const correctPattern = new RegExp(`\\\\{1,2}${this.escapeRegex(cmd)}(?![a-zA-Z])`, 'g');
+        // 使用 match() 而不是 test()，避免修改 lastIndex
+        const correctMatches = fixedContent.match(correctPattern) || [];
+        const hasCorrect = correctMatches.length > 0;
+        
+        if (!hasCorrect) {
+          const beforeFix = fixedContent;
+          fixedContent = fixedContent.replace(fix.pattern, fix.replacement);
+          
+          if (fixedContent !== beforeFix) {
+            const matches = beforeFix.match(fix.pattern) || [];
+            localFixes += matches.length;
+          }
+        }
+      }
+      
       // 特殊处理：修复 \{ 和 \} 等特殊字符
       // 在 HTML 源码中，\{ 会被解析为 {，所以我们需要检测单独的 { 
       // 但更准确的是：检测后面跟着 { 或 } 的单反斜杠（不是双反斜杠）
@@ -622,6 +663,13 @@ class MathFixer {
     if (hasStages) parts.push('支持 v-if 阶段切换');
     
     return parts.join('，');
+  }
+  
+  /**
+   * 转义正则表达式特殊字符
+   */
+  escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
 
