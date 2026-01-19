@@ -676,9 +676,26 @@ class AsyncGenerationQueue {
         .eq('id', taskId)
         .eq('status', 'pending') // 只更新状态为 pending 的任务
         .select()
-        .single();
+        .maybeSingle(); // 使用 maybeSingle() 而不是 single()，允许返回 0 行
 
       if (updateError) {
+        // 检查是否是"没有行返回"的错误（PGRST116）
+        // 这通常意味着任务状态已经不是 pending，已被其他进程处理
+        const isNoRowsError = updateError.code === 'PGRST116' || 
+                              (updateError.message && updateError.message.includes('no rows returned'));
+        
+        if (isNoRowsError) {
+          logger.warn(`[ProcessTask] 任务状态已变更（已被其他进程处理），跳过处理: taskId=${taskId}, contentId=${contentId}`, {
+            errorCode: updateError.code,
+            errorMessage: updateError.message
+          });
+          // 清理运行中任务集合
+          this.runningTasks.delete(taskId);
+          this.runningContent.delete(contentId);
+          return; // 优雅退出，不抛出错误
+        }
+        
+        // 其他错误才是真正的错误
         logger.error(`更新任务状态失败: ${taskId}`, updateError);
         // 清理运行中任务集合
         this.runningTasks.delete(taskId);

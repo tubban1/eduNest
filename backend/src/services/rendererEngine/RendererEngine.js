@@ -160,6 +160,7 @@ class RendererEngine {
           options
         });
         
+        // 记录所有修复尝试（包括成功和失败的）
         if (fixResult.success) {
           currentHtml = fixResult.html;
           appliedFixes.push({
@@ -172,6 +173,21 @@ class RendererEngine {
           });
           
           logger.debug(`[RendererEngine] 修复成功: ${issue.code}`, {
+            fixer: fixer.name,
+            explanation: fixResult.explanation
+          });
+        } else {
+          // 记录失败的修复尝试
+          appliedFixes.push({
+            issueCode: issue.code,
+            fixer: fixer.name,
+            strategy: issue.fixStrategy,
+            success: false,
+            explanation: fixResult.explanation || '修复返回了 success: false',
+            changes: fixResult.changes || []
+          });
+          
+          logger.debug(`[RendererEngine] 修复失败: ${issue.code}`, {
             fixer: fixer.name,
             explanation: fixResult.explanation
           });

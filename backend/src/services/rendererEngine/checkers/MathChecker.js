@@ -39,6 +39,26 @@ class MathChecker {
   }
   
   /**
+   * 获取已解析命令的模式定义（供检测器和修复器共享）
+   * 这些模式用于检测已被 JavaScript 解析后的命令（没有反斜杠）
+   * 例如：\frac → rac, \text → [TAB]ext, \times → [TAB]imes
+   * 
+   * 注意：检测器和修复器必须使用完全相同的模式，确保检测到的问题都能被修复
+   */
+  static getParsedCommandPatterns() {
+    return {
+      'div': /\bdiv\s*[=0-9]/g,  // "div 8" 或 "div ="
+      'frac': /(^|[^\\a-zA-Z])rac\s*\{/g,     // "rac{" (应该是 \frac{)，前面不是反斜杠或字母
+      'sqrt': /(^|[^\\])sqrt\s*\{/g,    // "sqrt{" (应该是 \sqrt{)，前面不是反斜杠
+      'text': /([\t]|^|[^\\])ext\s*\{/g,     // "ext{" (应该是 \text{)，前面可能是制表符、开头或非反斜杠字符
+      'times': /([\t]|^|[^\\])imes\b/g,      // "imes" (应该是 \times)，前面可能是制表符、开头或非反斜杠字符
+      'approx': /(^|[^\\])approx\b/g,   // "approx" (应该是 \approx)，前面不是反斜杠
+      'ln': /(^|[^\\])ln(?![a-zA-Z])/g,           // "ln" (应该是 \ln)，前面不是反斜杠，后面不是字母
+      'prod': /(^|[^\\])prod(?![a-zA-Z])/g        // "prod" (应该是 \prod)，前面不是反斜杠，后面不是字母
+    };
+  }
+  
+  /**
    * 执行检测
    * @param {string} html - HTML 内容
    * @returns {Promise<CheckResult>}
@@ -135,6 +155,23 @@ class MathChecker {
         message: '使用了 KaTeX 但未检测到 renderMathInElement 调用或 MathRenderManager',
         fixable: true,
         fixStrategy: 'INJECT_MATH_RENDER_MANAGER'
+      });
+    }
+    
+    // 问题 5: 检测空的 renderMathInElement 函数定义（会覆盖 auto-render.min.js 中的函数）
+    const emptyRenderFunction = this.detectEmptyRenderFunction(html);
+    if (emptyRenderFunction) {
+      issues.push({
+        type: 'math',
+        code: 'EMPTY_RENDER_FUNCTION',
+        severity: 'high',
+        message: '检测到空的 renderMathInElement 函数定义，会覆盖 auto-render.min.js 中的函数',
+        fixable: true,
+        fixStrategy: 'REMOVE_EMPTY_RENDER_FUNCTION',
+        context: {
+          position: emptyRenderFunction.position,
+          match: emptyRenderFunction.match
+        }
       });
     }
     
@@ -335,37 +372,26 @@ class MathChecker {
         
         // 额外检测：已经被 JavaScript 解析后的命令（没有反斜杠）
         // 例如：\div → div, \frac → rac (因为 \d 和 \f 不是有效转义)
-        // 只在数学公式上下文中检测（避免误报）
-        const parsedCommandPatterns = {
-          'div': /\bdiv\s*[=0-9]/g,  // "div 8" 或 "div ="
-          'frac': /(^|[^\\])rac\s*\{/g,     // "rac{" (应该是 \frac{)，前面不是反斜杠
-          'sqrt': /(^|[^\\])sqrt\s*\{/g,    // "sqrt{" (应该是 \sqrt{)，前面不是反斜杠
-          'text': /(^|[^\\])ext\s*\{/g,     // "ext{" (应该是 \text{)，前面不是反斜杠
-          'times': /(^|[^\\])imes\b/g,      // "imes" (应该是 \times)，前面不是反斜杠
-          'approx': /(^|[^\\])approx\b/g    // "approx" (应该是 \approx)，前面不是反斜杠
-        };
+        // 使用共享的解析命令模式定义，确保与修复器完全一致
+        const parsedCommandPatterns = MathChecker.getParsedCommandPatterns();
         
         if (parsedCommandPatterns[cmd]) {
           const parsedMatches = content.match(parsedCommandPatterns[cmd]) || [];
           if (parsedMatches.length > 0) {
-            // 检查是否已经有正确的转义（避免重复报告）
-            const correctPattern = new RegExp(`\\\\{1,2}${this.escapeRegex(cmd)}(?![a-zA-Z])`, 'g');
-            const correctMatches = content.match(correctPattern) || [];
+            // 总是报告解析后的命令（即使内容中已经有正确的转义）
+            // 因为内容中可能同时存在：既有 \\frac（正确）也有 rac（错误，从 \frac 解析而来）
+            // 例如：v-katex="'\\frac{x}{y} + \frac{a}{b}'" 中既有 \\frac 也有 rac
+            issues.push({
+              fullMatch,
+              content,
+              position: match.index,
+              command: cmd,
+              matches: parsedMatches,
+              isParsed: true  // 标记为已解析的命令
+            });
             
-            // 如果已经有正确的转义，就不报告解析后的命令
-            if (correctMatches.length === 0) {
-              issues.push({
-                fullMatch,
-                content,
-                position: match.index,
-                command: cmd,
-                matches: parsedMatches,
-                isParsed: true  // 标记为已解析的命令
-              });
-              
-              if (samples.length < 5) {
-                samples.push(`${cmd} (parsed from \\${cmd}) in "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`);
-              }
+            if (samples.length < 5) {
+              samples.push(`${cmd} (parsed from \\${cmd}) in "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`);
             }
           }
         }
@@ -448,6 +474,90 @@ class MathChecker {
     }
     
     return errors;
+  }
+  
+  /**
+   * 检测空的 renderMathInElement 函数定义
+   * 这种函数定义会覆盖 auto-render.min.js 中的函数，导致 $...$ 形式的公式不能被渲染
+   */
+  detectEmptyRenderFunction(html) {
+    // 匹配 function renderMathInElement 函数定义（处理嵌套大括号）
+    const functionStartPattern = /function\s+renderMathInElement\s*\([^)]*\)\s*\{/g;
+    let match;
+    
+    while ((match = functionStartPattern.exec(html)) !== null) {
+      const startIndex = match.index;
+      const startMatch = match[0];
+      
+      // 从函数开始位置查找匹配的大括号
+      let braceCount = 0;
+      let inString = false;
+      let stringChar = null;
+      let endIndex = -1;
+      
+      for (let i = startIndex; i < html.length; i++) {
+        const char = html[i];
+        const prevChar = i > 0 ? html[i - 1] : null;
+        
+        // 处理字符串（单引号和双引号）
+        if (!inString && (char === '"' || char === "'") && prevChar !== '\\') {
+          inString = true;
+          stringChar = char;
+        } else if (inString && char === stringChar && prevChar !== '\\') {
+          inString = false;
+          stringChar = null;
+        }
+        
+        // 只在非字符串状态下处理大括号
+        if (!inString) {
+          if (char === '{') {
+            braceCount++;
+          } else if (char === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              endIndex = i;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (endIndex === -1) continue;
+      
+      // 提取函数体（不包括外层大括号）
+      const fullFunction = html.substring(startIndex, endIndex + 1);
+      const bodyContent = html.substring(startIndex + startMatch.length, endIndex);
+      
+      // 移除注释和空白
+      const cleanBody = bodyContent
+        .replace(/\/\/.*$/gm, '') // 移除单行注释
+        .replace(/\/\*[\s\S]*?\*\//g, '') // 移除多行注释
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // 检查是否是空的或者只是占位符
+      // 1. 函数体为空
+      // 2. 只有变量声明但没有实际调用
+      // 3. 只有 if 检查但没有实际实现（如只有 const text = el.innerHTML;）
+      const isEmpty = !cleanBody || 
+                      cleanBody === ';' ||
+                      cleanBody.match(/^\/\/.*$/); // 只有注释
+      
+      // 检查是否只是占位符（有 if 检查但实际没有调用 renderMathInElement）
+      const isPlaceholder = cleanBody.match(/^if\s*\([^)]+\)\s*\{[^}]*\}$/i) || // 只有 if 检查
+                           cleanBody.match(/^const\s+\w+\s*=.*;?\s*$/i) || // 只有变量声明
+                           (cleanBody.includes('el.innerHTML') && !cleanBody.includes('renderMathInElement')); // 有读取 innerHTML 但没有调用渲染
+      
+      if (isEmpty || isPlaceholder) {
+        return {
+          position: startIndex,
+          match: fullFunction,
+          body: bodyContent
+        };
+      }
+    }
+    
+    return null;
   }
   
   /**

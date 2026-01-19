@@ -249,6 +249,7 @@ class LibraryFixer {
       'LIBRARY_VERSION_MISMATCH',
       'DUPLICATE_LIBRARY',
       'MISSING_DEPENDENCY',
+      'MISSING_FALLBACK',
       'LIBRARY_OPTIMIZE'
     ];
   }
