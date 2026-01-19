@@ -94,16 +94,15 @@ export default function HomePage() {
       offset: (pageNum - 1) * ITEMS_PER_PAGE
     };
     
-    // 未登录用户：按当前语言筛选，只获取有 full_html 的内容
-    if (!user) {
-      const currentLang = i18n.language || 'zh-CN';
-      // 标准化语言代码（zh -> zh-CN, en -> en-US）
-      const normalizedLang = currentLang === 'zh' ? 'zh-CN' : 
-                            currentLang === 'en' ? 'en-US' :
-                            currentLang === 'de' ? 'de-DE' :
-                            currentLang === 'fr' ? 'fr-FR' : currentLang;
-      filters.language_code = normalizedLang;
-    }
+    // 所有用户（包括已登录用户）：按当前语言筛选内容
+    const currentLang = i18n.language || 'zh-CN';
+    // 标准化语言代码（zh -> zh-CN, en -> en-US）
+    const normalizedLang = currentLang === 'zh' ? 'zh-CN' : 
+                          currentLang === 'en' ? 'en-US' :
+                          currentLang === 'de' ? 'de-DE' :
+                          currentLang === 'fr' ? 'fr-FR' : currentLang;
+    filters.language_code = normalizedLang;
+    
     // 已登录用户：不设置 created_by，显示所有用户的内容（按时间排序，最近的在最上面）
     
     // 如果是第一页，检查缓存
@@ -278,15 +277,14 @@ export default function HomePage() {
       try {
         // 获取所有内容的最新状态（轮询时清除缓存，确保获取最新数据）
         const filters: any = {};
-        // 未登录用户：按语言筛选
-        if (!user) {
-          const currentLang = i18n.language || 'zh-CN';
-          const normalizedLang = currentLang === 'zh' ? 'zh-CN' : 
-                                currentLang === 'en' ? 'en-US' :
-                                currentLang === 'de' ? 'de-DE' :
-                                currentLang === 'fr' ? 'fr-FR' : currentLang;
-          filters.language_code = normalizedLang;
-        }
+        // 所有用户（包括已登录用户）：按当前语言筛选内容
+        const currentLang = i18n.language || 'zh-CN';
+        const normalizedLang = currentLang === 'zh' ? 'zh-CN' : 
+                              currentLang === 'en' ? 'en-US' :
+                              currentLang === 'de' ? 'de-DE' :
+                              currentLang === 'fr' ? 'fr-FR' : currentLang;
+        filters.language_code = normalizedLang;
+        
         // 登录用户：不设置 created_by，获取所有用户的内容
         filters.limit = ITEMS_PER_PAGE;
         filters.offset = (page - 1) * ITEMS_PER_PAGE;
