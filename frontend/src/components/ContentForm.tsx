@@ -116,6 +116,8 @@ export default function ContentForm({
   const [tagInput, setTagInput] = useState('');
   const [tagList, setTagList] = useState<string[]>([]);
   const [full_html, setFullHtml] = useState(DEFAULT_FULL_HTML);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -1311,15 +1313,45 @@ export default function ContentForm({
                   <label className="block font-semibold mb-2 text-gray-700">
                     {mounted ? t('fullHtml', { ns: 'content', defaultValue: 'Complete HTML' }) : 'Complete HTML'} <span className="text-red-500">*</span>
                   </label>
-                  <textarea 
-                    className="w-full border border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-gray-50 resize-y transition" 
-                    value={full_html} 
-                    onChange={e => setFullHtml(e.target.value)} 
-                    placeholder={mounted ? t('enterFullHtml', { ns: 'content', defaultValue: 'Enter complete HTML code (including DOCTYPE, html, head, body tags)' }) : 'Enter complete HTML code (including DOCTYPE, html, head, body tags)'} 
-                    disabled={isAiFormDisabled}
-                    rows={25}
-                    required
-                  />
+                  {/* 带行号的代码编辑器 */}
+                  <div className="relative border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                    {/* 行号区域 */}
+                    <div 
+                      ref={lineNumbersRef}
+                      className="absolute left-0 top-0 bottom-0 w-12 bg-gray-100 border-r border-gray-200 text-right text-gray-500 font-mono text-sm py-3 px-2 select-none pointer-events-none z-10 overflow-hidden"
+                      style={{ lineHeight: '1.5rem' }}
+                    >
+                      {full_html.split('\n').map((_, index) => (
+                        <div key={index} className="leading-6">
+                          {index + 1}
+                        </div>
+                      ))}
+                    </div>
+                    {/* 文本输入区域 */}
+                    <textarea 
+                      ref={textareaRef}
+                      className="w-full border-0 p-3 pl-16 rounded-lg focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm bg-transparent resize-y transition overflow-x-auto" 
+                      value={full_html} 
+                      onChange={e => setFullHtml(e.target.value)} 
+                      onScroll={(e) => {
+                        if (lineNumbersRef.current) {
+                          lineNumbersRef.current.scrollTop = e.currentTarget.scrollTop;
+                        }
+                      }}
+                      placeholder={mounted ? t('enterFullHtml', { ns: 'content', defaultValue: 'Enter complete HTML code (including DOCTYPE, html, head, body tags)' }) : 'Enter complete HTML code (including DOCTYPE, html, head, body tags)'} 
+                      disabled={isAiFormDisabled}
+                      rows={25}
+                      required
+                      style={{ 
+                        lineHeight: '1.5rem',
+                        whiteSpace: 'pre',
+                        overflowWrap: 'normal',
+                        wordBreak: 'normal'
+                      }}
+                      spellCheck={false}
+                      wrap="off"
+                    />
+                  </div>
                   <p className="text-xs text-gray-500 mt-2">
                     {mounted ? t('fullHtmlHint', { ns: 'content', defaultValue: 'Include all CSS in <style> tags and JavaScript in <script> tags. All external libraries should be loaded via CDN links in the HTML.' }) : 'Include all CSS in <style> tags and JavaScript in <script> tags. All external libraries should be loaded via CDN links in the HTML.'}
                   </p>
