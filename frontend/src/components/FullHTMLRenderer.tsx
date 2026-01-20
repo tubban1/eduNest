@@ -478,8 +478,12 @@ export default function FullHTMLRenderer({
     WebkitOverflowScrolling: 'touch',
   };
 
-  // 如果有锚点链接，允许 iframe 滚动以支持锚点跳转
-  const iframeScrolling = fixedHeight || hasAnchorLinks ? 'auto' : 'no';
+  // 如果有锚点链接，或者外层选择了非自适应高度（如编辑页的固定预览区），允许 iframe 自身滚动
+  // 场景：
+  // - fixedHeight: 卡片/布局本身固定高度，内部内容需要滚动
+  // - hasAnchorLinks: 为支持锚点跳转，必须允许滚动
+  // - !autoHeight: 调用方显式关闭自动高度检测（例如编辑页面的 sandbox 预览），此时用滚动来适配超长内容
+  const iframeScrolling = fixedHeight || hasAnchorLinks || !autoHeight ? 'auto' : 'no';
 
   // 计算容器样式
   const containerMinHeight = (() => {
