@@ -425,6 +425,31 @@ const getCreditsHistory = async (userId, limit = 50, offset = 0) => {
   }
 };
 
+/**
+ * 检查用户是否已有初始积分记录
+ */
+const hasInitialCredits = async (userId) => {
+  try {
+    if (useMockData || !supabase) {
+      return { data: false, error: null };
+    }
+    // 直接查询是否存在 initial 类型的记录
+    const { data, error } = await supabase
+      .from('user_credits')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('change_type', 'initial')
+      .limit(1)
+      .maybeSingle();
+    
+    if (error) throw error;
+    // 如果查询到记录，说明已有初始积分
+    return { data: data !== null, error: null };
+  } catch (error) {
+    return { data: false, error };
+  }
+};
+
 const addCreditChange = async (userId, changeType, changeAmount, relatedUserId = null, relatedContentId = null) => {
   try {
     if (useMockData || !supabase) {
@@ -2020,6 +2045,7 @@ module.exports = {
   // credits & subscription
   getCreditsBalance,
   getCreditsHistory,
+  hasInitialCredits,
   addCreditChange,
   getActiveSubscription,
   // referrals

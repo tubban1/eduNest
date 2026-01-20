@@ -52,18 +52,32 @@ router.post('/merge-on-login', authenticateToken, async (req, res) => {
     const logger = require('../utils/logger');
     
     try {
-      const { data: existingCredits } = await DatabaseService.getCreditsHistory(userId, 1, 0);
-      const hasInitialCredits = existingCredits && existingCredits.some(
-        credit => credit.change_type === 'initial'
-      );
+      // 直接查询是否有 initial 类型的积分记录（更高效且准确）
+      const { data: hasInitial, error: checkError } = await DatabaseService.hasInitialCredits(userId);
       
-      if (!hasInitialCredits) {
+      if (checkError) {
+        logger.warn(`检查初始积分失败: user_id=${userId}`, checkError);
+        // 检查失败时不发放积分，避免重复发放
+        return res.status(500).json({
+          success: false,
+          error: '检查初始积分状态失败'
+        });
+      }
+      
+      if (!hasInitial) {
         const INITIAL_CREDITS = 100; // 新用户注册奖励：+100 积分
-        await DatabaseService.addCreditChange(userId, 'initial', INITIAL_CREDITS);
+        const { error: creditError } = await DatabaseService.addCreditChange(userId, 'initial', INITIAL_CREDITS);
+        if (creditError) {
+          logger.error(`发放初始积分失败: user_id=${userId}`, creditError);
+          throw creditError;
+        }
         logger.info(`首次登录发放初始积分: user_id=${userId}, credits=${INITIAL_CREDITS}`);
+      } else {
+        logger.info(`用户已有初始积分记录，跳过发放: user_id=${userId}`);
       }
     } catch (creditError) {
       logger.warn(`发放初始积分失败: user_id=${userId}`, creditError);
+      // 积分发放失败不影响数据合并，继续执行
     }
 
     // 如果有 visitor_id，则合并游客数据
