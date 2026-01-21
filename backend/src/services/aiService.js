@@ -493,11 +493,10 @@ const SYSTEM_PROMPT_CONTENT = {
     "math_rendering": {
       "mandatory": true,
       "rules": [
-        "ALL mathematical formulas MUST be rendered using KaTeX.",
-        "Raw LaTeX text MUST NOT appear in the final UI.",
-        "Inline formulas MUST use $...$, block formulas MUST use $$...$$.",
-        "renderMathInElement MUST be called after any state change.",
-        "All backslashes in JavaScript LaTeX strings MUST be double-escaped."
+        "ALL mathematical formulas MUST be rendered using KaTeX (via auto-render / MathRenderManager in the platform).",
+        "Inline formulas SHOULD use $...$, block formulas SHOULD use $$...$$ in HTML text.",
+        "When LaTeX appears inside JavaScript strings (including directives / template literals), all backslashes MUST be double-escaped (e.g. \\\\frac, \\\\sqrt, \\\\times, \\\\text).",
+        "Always use complete LaTeX commands (\\\\frac{}{}, \\\\sqrt{}, \\\\times, \\\\text{}, etc.), never output broken forms like 'rac', 'imes', 'ext' in formulas."
       ]
     },
     "audio_policy": {
@@ -1086,30 +1085,35 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
   let logParams = {};
   try {
     // 构建修复prompt
-    const SYSTEM_PROMPT = `You are an expert Vue 3 frontend developer and educational UI engineer.
-    Your task is to fix and improve a complete standalone HTML file for an interactive Vue 3 educational project.
-    Only modify the "full_html" field in the provided JSON:
-    - full_html: A complete, standalone HTML file that includes DOCTYPE, <html>, <head>, and <body> tags
-    - All CSS must be in <style> tags within <head>
-    - All JavaScript must be in <script> tags (before closing </body>)
-    - CRITICAL: DO NOT use overflow: hidden on body element. Ensure vertical scrolling is available on small screens.
-    - All external libraries must be loaded via CDN in <head> or before </body>
-    - fixed: A short non-technical summary of what was changed or fixed (1-2 sentences)
+    const SYSTEM_PROMPT = `You are an expert frontend developer specializing in interactive educational content.
+    Your task is to fix and improve a complete standalone HTML file for an interactive educational project.
     
-    Constraints:
-    - Use Vue 3.5.20 with <script setup> style via production CDN
-    - The HTML file must be completely self-contained and runnable
-    - Ensure mobile and desktop compatibility
-    - Only output valid JSON with the following format: 
+    Output format (valid JSON only):
     {
       "full_html": "<!DOCTYPE html><html>...complete HTML file...</html>",
-      "fixed": "a short non-technical summary of what was changed or fixed (1-2 sentences)"
+      "fixed": "Brief summary of changes (1-2 sentences)"
     }
-    If you receive error logs, fix the specific issue.
-    If you receive a user modification note, apply it as a functional update or enhancement.
-    Do not change project structure or title. Focus only on fixing code or updating interactivity/behavior.`;
+    
+    Core requirements:
+    - Self-contained HTML: DOCTYPE, <html>, <head>, <body> tags
+    - CSS in <style> tags within <head>
+    - JavaScript in <script> tags before </body>
+    - Layout: DO NOT use overflow:hidden on <body>. Ensure vertical scrolling on small screens.
+    - Libraries: Load via production CDN (jsdelivr, unpkg, cdnjs)
+    
+    Math formulas (CRITICAL):
+    - Use KaTeX via auto-render / MathRenderManager
+    - Inline: $...$, Block: $$...$$
+    - In JS strings: double-escape backslashes (\\\\frac, \\\\sqrt, \\\\times, \\\\text)
+    - Always use complete commands (\\\\frac{}{}, \\\\sqrt{}, etc.), never 'rac', 'imes', 'ext'
+    
+    Fix strategy:
+    - If error logs provided: fix the specific issue
+    - If user request provided: apply functional update/enhancement
+    - Do NOT change project structure or title
+    - Focus on fixing code or updating interactivity/behavior only`;
       
-    const USER_PROMPT = safeReplace(`The current Vue 3 project has the following issue or user request:\n{{note}}\n\nCurrent full_html:\n{{full_html}}`, '{{note}}', note);
+    const USER_PROMPT = safeReplace(`Issue or request:\n{{note}}\n\nCurrent full_html:\n{{full_html}}`, '{{note}}', note);
 
     const finalUserPrompt = safeReplace(USER_PROMPT, '{{full_html}}', full_html || '');
 

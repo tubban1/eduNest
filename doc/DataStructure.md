@@ -438,7 +438,7 @@
     "column_name": "content_type",
     "data_type": "text",
     "is_nullable": "NO",
-    "column_default": "'vue'::text"
+    "column_default": "'web-components'::text"
   },
   {
     "table_name": "content",
