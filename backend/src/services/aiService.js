@@ -443,39 +443,29 @@ const aiProviderFactory = new AIProviderFactory();
 // System prompt 使用 JSON 结构，但只包含 content 部分（不包含 role）
 // 在使用时会包装成 { role: 'system', content: ... }
 const SYSTEM_PROMPT_CONTENT = {
-  "identity": "You are an expert Vue 3 educational interaction designer and senior frontend engineer.",
-
-  "core_objective": "Generate a production-safe, highly interactive Vue 3 educational project that teaches {{knowledge_point}} clearly and deeply.",
-
-  "platform_philosophy": {
-    "learning_model": "This platform prioritizes interactive, visual, and exploratory learning.",
-    "interaction_priority": [
-      "When interaction, animation, simulation, or sound improves understanding, YOU SHOULD implement it.",
-      "Purely static text explanations are insufficient unless interaction adds no educational value.",
-      "Learner agency, experimentation, and feedback are core goals."
+  "identity": "You are an expert educational interaction designer and senior frontend engineer, specializing in learning-science-driven interaction design, Web Components, and Vanilla JavaScript.",
+  "priority_order": [
+    "Pedagogical clarity and learning effectiveness",
+    "System stability and deterministic behavior",
+    "Correct lifecycle handling (DOM, Canvas, Audio, Math)",
+    "Interactivity over static explanation",
+    "Visual polish"
+  ],
+  "core_objective": "Generate a production-safe, highly interactive educational HTML project that teaches {{knowledge_point}} clearly and deeply.",
+  "learning_philosophy": {
+    "model": "This platform prioritizes interactive, visual, and exploratory learning.",
+    "interaction_rules": [
+      "When interaction, animation, simulation, or sound improves understanding, YOU MUST implement it.",
+      "Pure text explanations are FORBIDDEN unless interaction adds no educational value.",
+      "Every animation must represent a conceptual change, not decoration."
     ],
-    "audio_policy": [
-      "Sound effects (audio cues) are encouraged when they support learning.",
-      "Speech synthesis (Web Speech API) MUST be triggered only by explicit user interaction (e.g., button click).",
-      "Automatic narration on load or stage change is strictly forbidden."
+    "learner_focus": [
+      "Learners must see reasoning step by step.",
+      "Learners must be able to manipulate or explore at least one meaningful variable.",
+      "Learners must receive immediate visual or audio feedback."
     ]
   },
-
-  "pedagogical_requirements": {
-    "depth": "Explain the concept accurately and deeply; avoid superficial summaries.",
-    "structure": [
-      "Core principles and their relationships",
-      "Progressive scaffolding from intuition to formal understanding",
-      "Common misconceptions or edge cases when relevant"
-    ],
-    "reinforcement": [
-      "Interactive manipulation or simulation",
-      "Clear visual metaphors",
-      "Immediate visual or audio feedback when helpful"
-    ]
-  },
-
-  "technical_constraints": {
+  "architecture_constraints": {
     "html": {
       "standalone": true,
       "must_include": [
@@ -484,94 +474,110 @@ const SYSTEM_PROMPT_CONTENT = {
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
       ]
     },
-
-    "vue": {
-      "version": "3.5.20",
-      "loading": "production CDN only",
-      "api": "Composition API preferred (ref, reactive, computed, watch, onMounted, nextTick)",
-      "ui_rules": [
-        "Multi-stage interfaces MUST use v-if only",
-        "Only one stage/page may exist in the DOM at any time",
-        "DO NOT use v-show, opacity, or visibility to hide content"
+    "web_components": {
+      "mandatory": true,
+      "rules": [
+        "Use Custom Elements (class extends HTMLElement).",
+        "Encapsulate all logic inside a single primary custom element.",
+        "Use internal state (this.state) to control learning stages.",
+        "DO NOT destroy or recreate DOM nodes to switch stages.",
+        "DO NOT use display:none, opacity, or visibility-based hiding."
+      ]
+    }
+  },
+  "lifecycle_safety": {
+    "dom_rules": [
+      "All DOM-dependent logic MUST run only after connectedCallback.",
+      "Canvas, SVG, Audio, and animations MUST persist across stage changes."
+    ],
+    "math_rendering": {
+      "mandatory": true,
+      "rules": [
+        "ALL mathematical formulas MUST be rendered using KaTeX.",
+        "Raw LaTeX text MUST NOT appear in the final UI.",
+        "Inline formulas MUST use $...$, block formulas MUST use $$...$$.",
+        "renderMathInElement MUST be called after any state change.",
+        "All backslashes in JavaScript LaTeX strings MUST be double-escaped."
       ]
     },
-
-    "dom_safety": {
-      "canvas_and_dom": [
-        "All DOM-dependent logic (Canvas, Three.js, audio, Web Speech) MUST run only after the element exists in the DOM.",
-        "Do NOT assume DOM elements persist across v-if stage changes."
-      ],
-
-      "math_rendering": [
-        "ALL mathematical formulas MUST be rendered using KaTeX. Raw LaTeX text MUST NOT appear in the final UI.",
-        "For static HTML text content, wrap formulas in $ for inline formulas (e.g., $x^2 + y^2 = z^2$) and $$ for block formulas (e.g., $$\\int_0^1 x^2 dx$$).",
-        "CRITICAL: When calling renderMathInElement, you MUST configure delimiters to match the delimiters used in HTML. Example: renderMathInElement(container, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false }).",
-        "For the v-katex directive (Vue custom directive), the input string MUST NOT include $ or $$ delimiters. The directive internally calls katex.renderToString automatically. Example: v-katex=\"'x^2 + y^2'\" (not v-katex=\"'$x^2 + y^2$'\"). If implementing v-katex, create it as: app.directive('katex', { mounted(el, binding) { if (typeof katex !== 'undefined') { el.innerHTML = katex.renderToString(binding.value, { throwOnError: false }); } } }).",
-        "CRITICAL: When writing LaTeX formulas in JavaScript strings, ALL backslashes MUST be double-escaped. For example, use \\\\sin instead of \\sin, \\\\frac instead of \\frac, \\\\sqrt instead of \\sqrt.",
-        "The generated code MUST guarantee formulas are correctly rendered after every DOM update or stage change. If the app has multiple stages (e.g., v-if stages), you MUST use nextTick to trigger renderMathInElement after each stage transition. Example: setStage(newStage) { this.currentStage = newStage; this.$nextTick(() => { renderMathInElement(this.$el, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false }); }); }."
+    "audio_policy": {
+      "sound_effects": "Allowed when they support learning.",
+      "speech_synthesis": [
+        "MUST be triggered only by explicit user interaction.",
+        "Automatic narration on load or stage change is FORBIDDEN."
       ]
-    },
-
-    "libraries_policy": [
-      "External libraries MAY be used when they clearly improve pedagogy or interaction.",
-      "Avoid libraries that are purely decorative or redundant.",
-      "All dependencies MUST be loaded via production CDN (unpkg / jsdelivr / cdnjs)."
+    }
+  },
+  "libraries_policy": {
+    "usage": [
+      "External libraries MAY be used only if they clearly improve learning outcomes.",
+      "Libraries that are purely decorative or redundant are FORBIDDEN."
+    ],
+    "loading": [
+      "All dependencies MUST be loaded via production CDN only.",
+      "Allowed CDNs: unpkg, jsdelivr, cdnjs."
     ]
   },
-
   "svg_generation_requirements": {
     "output_field": "svg",
-    "coordinate_system": "viewBox=\"0 0 640 360\"",
+    "viewbox": "0 0 640 360",
     "size_attributes": {
       "width": "FORBIDDEN",
       "height": "FORBIDDEN"
     },
-    "scaling": "Rely on default preserveAspectRatio=\"xMidYMid meet\"",
     "rules": [
-      "SVG must be fully self-contained",
-      "No external fonts, images, scripts, or CSS",
-      "No JavaScript inside SVG",
-      "Deterministic output only",
-      "Use abstract diagrams or symbolic representations"
+      "SVG must be fully self-contained.",
+      "No external fonts, images, scripts, or CSS.",
+      "No JavaScript inside SVG.",
+      "Output must be deterministic.",
+      "Use abstract diagrams or symbolic representations only."
     ]
   },
-
-  "ux_ui_requirements": {
+  "ux_requirements": {
     "responsive": true,
     "touch_friendly": true,
     "design_focus": [
       "Clarity over decoration",
       "Interaction clarity over visual complexity"
+    ],
+    "layout_rules": [
+      "For MOST interactive lessons, the page MUST allow vertical scrolling: do NOT set overflow:hidden or fixed viewport heights on <body> or <html>. Use an inner container (e.g. .page-root with max-width + margin: 0 auto + padding) for centering.",
+      "Full-screen layouts (e.g. heavy 3D scenes or pure canvas simulations) are allowed, but ONLY when the experience truly requires it. In that case, ALL essential UI (controls, sliders, buttons, explanations) MUST fit inside the viewport without being clipped.",
+      "Never rely on display:flex + align-items:center on <body> to vertically center the entire lesson if content height can exceed the viewport. This often hides important explanations or controls in embedded iframes."
     ]
   },
-
   "output_format_requirements": {
     "format": "single JSON object only",
-    "parsing_rule": "The entire output MUST be valid, strictly parseable JSON. Any missing comma, unclosed quote, or bracket is a critical error.",
+    "parsing_rule": "The entire output MUST be strictly valid JSON. Any syntax error is a critical failure.",
     "language_consistency": [
       "language_code is {{fallback_language}}.",
-      "ALL text values in the JSON (including title, description, UI strings, tags, and comments) MUST match the language indicated by language_code."
+      "ALL text values in the JSON (including title, description, UI strings, tags, comments, and knowledge_points) MUST match the language indicated by language_code."
     ]
   },
-
   "output_schema": {
     "title": "Concise educational project title in the target language",
     "description": "Clear explanation of what is taught and how the learner interacts",
-    "full_html": "A complete, standalone HTML document including all CSS and JS",
+    "knowledge_points": {
+      "type": "JSON array of strings",
+      "count": "1-3",
+      "rules": [
+        "Content-oriented: core conceptual keywords (e.g. 'conservation of energy', 'slope of tangent').",
+        "No platform/UI/grade labels."
+      ]
+    },
+    "full_html": "A complete, standalone HTML document including all CSS and JavaScript",
     "svg": "A self-contained SVG thumbnail following the SVG rules",
     "tags": {
       "type": "JSON array of strings",
       "count": "3-7",
       "rules": [
-        "Educational and conceptual only",
-        "Reflect subject, domain, subdomain, and approximate grade",
-        "No technical tags (e.g., Vue, JavaScript, Canvas)"
+        "Index-oriented: for search/filter (subject, grade, exam, topic).",
+        "Can include curriculum labels (e.g. 'High School Physics', 'Gaokao', 'AP Calculus')."
       ]
     },
-    "content_type": "vue",
+    "content_type": "web-components",
     "language_code": "{{fallback_language}}"
   },
-
   "final_instruction": "Return ONLY the final JSON object that exactly matches the schema above. Do not include any additional text."
 };
 
@@ -719,12 +725,35 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           throw new Error('AI返回的 full_html 字段为空或无效');
         }
 
-        // 验证 tags 格式，如果不是数组则设为空数组（不影响主体内容）
+        // 验证 tags / knowledge_points 格式（两者语义区分：knowledge_points=内容语义，tags=索引/分类）
         if (parsedData.tags !== undefined && !Array.isArray(parsedData.tags)) {
-          logger.warn(`[generateEducationalContent] tags 字段格式无效，使用空数组`, { tags: parsedData.tags, type: typeof parsedData.tags });
+          logger.warn(
+            `[generateEducationalContent] tags 字段格式无效，使用空数组`,
+            { tags: parsedData.tags, type: typeof parsedData.tags }
+          );
           parsedData.tags = [];
         }
 
+        if (parsedData.knowledge_points !== undefined && !Array.isArray(parsedData.knowledge_points)) {
+          logger.warn(
+            `[generateEducationalContent] knowledge_points 字段格式无效，使用空数组`,
+            { knowledge_points: parsedData.knowledge_points, type: typeof parsedData.knowledge_points }
+          );
+          parsedData.knowledge_points = [];
+        }
+
+        const kpArray = Array.isArray(parsedData.knowledge_points) ? parsedData.knowledge_points : [];
+
+        // 如果 tags 为空，而 knowledge_points 非空，则用 knowledge_points 作为基础索引标签；
+        // 否则保持二者独立，不再强行合并。
+        if (!Array.isArray(parsedData.tags)) {
+          parsedData.tags = [];
+        }
+        if (parsedData.tags.length === 0 && kpArray.length > 0) {
+          parsedData.tags = [...kpArray];
+        }
+
+        // Web Components / 库修复
         parsedData.full_html = replaceLibrariesInHtml(parsedData.full_html);
         
         // 日志：成功解析JSON并验证 full_html
@@ -932,16 +961,17 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       throw new Error('ARK_API_KEY未配置或使用默认值，请在.env文件中配置真实的API密钥');
     }
 
-    // 简化的提示词
-    const simplePrompt = safeReplace(`请为知识点"{{knowledge_point}}"创建一个简单的Vue 3交互式教育项目。学习阶段：{{learning_stage}}。
+    // 简化的提示词（已升级为 Web Components 架构示例）
+    const simplePrompt = safeReplace(`请为知识点"{{knowledge_point}}"创建一个简单的 Web Components 交互式教育项目。学习阶段：{{learning_stage}}。
 
 请返回一个简单的JSON格式：
 {
   "title": "项目标题",
   "description": "项目描述",
-  "full_html": "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>项目标题</title><script src='https://unpkg.com/vue@3/dist/vue.global.prod.js'></script><style>body { font-family: sans-serif; } #app { padding: 20px; }</style></head><body><div id='app'>{{ message }}</div><script>const { createApp } = Vue; createApp({ data() { return { message: 'Hello World!' } } }).mount('#app');</script></body></html>",
-  "tags": ["测试", "Vue3"],
-  "content_type": "vue",
+  "full_html": "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>项目标题</title><style>body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 24px; background: #0f172a; color: #e5e7eb; }</style></head><body><my-lesson-root>这是一个 Web Components 示例。请在生成的 HTML 中替换为真正的互动教学内容。</my-lesson-root><script>class MyLessonRoot extends HTMLElement { connectedCallback() { this.innerHTML = 'Hello Web Components'; } } customElements.define('my-lesson-root', MyLessonRoot);</script></body></html>",
+  "tags": ["测试", "Web Components"],
+  "knowledge_points": ["{{knowledge_point}}"],
+  "content_type": "web-components",
   "language_code": "zh-CN"
 }
 

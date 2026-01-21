@@ -163,28 +163,32 @@ export function generateSandboxHTML(content: SandboxContent): string {
       scriptStatus.textContent = '❌ Promise错误: ' + e.reason;
     });
     
-    // Vue集成优化
+    // Vue/Web Components 集成状态展示（仅用于调试，不强制依赖 Vue）
     function initVue() {
+      // 如果外部 HTML 加载了 Vue，则展示版本信息；否则认为是 Web Components 或纯原生模式
       if (typeof Vue !== 'undefined') {
-        window.GlobalVue = Vue;
-        console.log('Vue loaded successfully, version:', Vue.version);
-        vueStatus.textContent = '✅ 已加载 v' + Vue.version;
-        
-        // 检查VueKinesis
-        if (typeof VueKinesis !== 'undefined') {
+        (window as any).GlobalVue = Vue;
+        console.log('Vue loaded successfully, version:', (Vue as any).version);
+        if (vueStatus) {
+          vueStatus.textContent = '✅ 已加载 v' + (Vue as any).version;
+        }
+        // 检查VueKinesis（如存在）
+        if (typeof (window as any).VueKinesis !== 'undefined') {
           try {
-            Vue.use(VueKinesis);
+            (Vue as any).use((window as any).VueKinesis);
             console.log('VueKinesis registered successfully');
-          } catch (error) {
+          } catch (error: any) {
             console.log('VueKinesis registration failed:', error.message);
           }
         }
-        
-        return true;
       } else {
-        vueStatus.textContent = '❌ 未加载';
-        return false;
+        // 没有检测到 Vue，标记为 Web Components / 原生模式，仅展示信息，不算错误
+        if (vueStatus) {
+          vueStatus.textContent = 'ℹ️ 未检测到 Vue（可能是 Web Components 或原生 JS 模式）';
+        }
       }
+      // 无论是否存在 Vue，都允许继续执行用户脚本
+      return true;
     }
     
     // 等待外部脚本加载完成
@@ -194,19 +198,9 @@ export function generateSandboxHTML(content: SandboxContent): string {
       // 延迟执行，确保所有资源加载完成
       setTimeout(function() {
         try {
-          // 初始化Vue
-          if (!initVue()) {
-            // 如果Vue还没加载，等待一下再试
-            setTimeout(function() {
-              if (initVue()) {
-                executeUserScript();
-              } else {
-                scriptStatus.textContent = '❌ Vue加载失败';
-              }
-            }, 500);
-          } else {
-            executeUserScript();
-          }
+          // 初始化运行环境（Vue 或 Web Components）
+          initVue();
+          executeUserScript();
         } catch (error) {
           console.log('Initialization error:', error.message);
           scriptStatus.textContent = '❌ 初始化错误: ' + error.message;

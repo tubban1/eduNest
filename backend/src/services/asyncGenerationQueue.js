@@ -1075,11 +1075,21 @@ class AsyncGenerationQueue {
         logger.warn(`[RendererEngine] 处理失败，使用原始 HTML: ${renderError.message}`);
       }
       
+      // 规范化标签与知识点：保持语义区分
+      const kpArray = Array.isArray(aiData.knowledge_points) ? aiData.knowledge_points : [];
+      let tagArray = Array.isArray(aiData.tags) ? aiData.tags : [];
+
+      // 如果 AI 未提供 tags，而提供了 knowledge_points，则用 knowledge_points 作为基础索引标签
+      if (tagArray.length === 0 && kpArray.length > 0) {
+        tagArray = [...kpArray];
+      }
+
       const updateData = {
         title: aiData.title || 'AI生成内容',
         description: aiData.description || '',
         full_html: processedHtml,
-        tags: aiData.tags || [],
+        tags: tagArray,
+        knowledge_points: kpArray,
         language_code: aiData.language_code || 'zh-CN',
         updated_at: new Date().toISOString()
       };

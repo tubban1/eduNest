@@ -1213,8 +1213,10 @@ router.post('/generate-free', [
       title: knowledgePoint.substring(0, 50) || '生成中...',
       full_html: '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>生成中...</title></head><body><p>内容正在生成中，请稍候...</p></body></html>',
       tags: [],
+      knowledge_points: [],
       description: description || '',
-      content_type: 'vue',
+      // 新架构统一使用 web-components 作为内容类型
+      content_type: 'web-components',
       language_code: language_code || 'zh-CN'
     };
     

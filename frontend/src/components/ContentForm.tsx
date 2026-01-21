@@ -17,30 +17,71 @@ const DEFAULT_FULL_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>新内容</title>
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <title>新内容（Web Components 示例）</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
-      padding: 20px;
+      padding: 24px;
+      background: #020617;
+      color: #e5e7eb;
     }
-    #app {
-      padding: 20px;
+    my-lesson-root {
+      display: block;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px;
+      border-radius: 16px;
+      background: radial-gradient(circle at top left, rgba(59,130,246,0.25), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(236,72,153,0.18), transparent 55%),
+                  #020617;
+      box-shadow: 0 22px 45px rgba(15,23,42,0.9);
     }
   </style>
 </head>
 <body>
-  <div id="app">{{ message }}</div>
+  <my-lesson-root></my-lesson-root>
   <script>
-    const { createApp } = Vue;
-    createApp({
-      data() {
-        return {
-          message: "Hello World!"
+    class MyLessonRoot extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+      }
+      connectedCallback() {
+        this.render();
+      }
+      render() {
+        if (!this.shadowRoot) return;
+        this.shadowRoot.innerHTML = \`
+          <style>
+            :host { color: #e5e7eb; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+            h1 { font-size: 1.4rem; margin: 0 0 0.75rem; }
+            p { margin: 0.4rem 0; line-height: 1.6; }
+            button {
+              margin-top: 0.75rem;
+              border-radius: 9999px;
+              padding: 0.4rem 0.9rem;
+              border: none;
+              cursor: pointer;
+              background: linear-gradient(135deg, #4f46e5, #22c55e);
+              color: white;
+              font-size: 0.85rem;
+            }
+          </style>
+          <h1>Web Components 入门示例</h1>
+          <p>这是一个使用原生 Web Components 构建的最小教学内容示例。</p>
+          <p>你可以直接编辑 HTML，将这里替换为真正的交互式教具。</p>
+          <button id="btn">点击这里，不会发生任何错误</button>
+        \`;
+        const btn = this.shadowRoot.getElementById('btn');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            alert('可以在这里触发教学相关的交互逻辑');
+          });
         }
       }
-    }).mount("#app");
+    }
+    customElements.define('my-lesson-root', MyLessonRoot);
   </script>
 </body>
 </html>`;

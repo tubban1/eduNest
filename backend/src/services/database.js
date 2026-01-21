@@ -349,7 +349,15 @@ function generateShortId() {
 
 const createContent = async (contentData, userId) => {
   try {
-    const { title, full_html, tags, description, content_type, language_code } = contentData;
+    const {
+      title,
+      full_html,
+      tags,
+      description,
+      content_type,
+      language_code,
+      knowledge_points
+    } = contentData;
     
     // 只接受 full_html，不再使用代码块字段
     if (!full_html || typeof full_html !== 'string' || full_html.trim().length === 0) {
@@ -362,14 +370,20 @@ const createContent = async (contentData, userId) => {
     const actualUserId = isVisitor ? null : userId;
     const visitorId = isVisitor ? userId : null;
     
+    // 基础规范化：保持 knowledge_points（内容语义）与 tags（索引/分类）分离
+    const kpArray = Array.isArray(knowledge_points) ? knowledge_points : [];
+    const tagArray = Array.isArray(tags) ? tags : [];
+
     const result = await supabase
       .from('content')
       .insert({
         title,
         full_html,
-        tags: tags || [],
+        tags: tagArray,
+        knowledge_points: kpArray,
         description: description || '',
-        content_type: content_type || 'vue',
+        // 新架构默认使用 web-components 作为内容类型
+        content_type: content_type || 'web-components',
         language_code: language_code || 'zh-CN',
         created_by: actualUserId, // 如果是 visitor_id，则设置为 NULL
         visitor_id: visitorId, // 如果是 visitor_id，则存储在这里
