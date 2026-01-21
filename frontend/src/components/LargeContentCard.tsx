@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api, Content } from '@/lib/api';
 import FullHTMLRenderer from './FullHTMLRenderer';
+import MathText from './MathText';
 import { useTranslation } from 'react-i18next';
 
 interface LargeContentCardProps {
@@ -153,10 +154,12 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
             )}
           </div>
           
-          {/* 标题 */}
-          <h3 className="text-2xl font-bold text-foreground mb-3 line-clamp-2">
-            {content.title}
-          </h3>
+          {/* 标题 - 支持数学表达式渲染 */}
+          <MathText
+            as="h3"
+            text={content.title}
+            className="text-2xl font-bold text-foreground mb-3 line-clamp-2"
+          />
           
           {/* 描述 */}
           {content.description && (

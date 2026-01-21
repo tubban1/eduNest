@@ -6,6 +6,7 @@ import { Copy, Trash2, ThumbsUp, X, Eye, Bookmark } from 'lucide-react';
 import ContentActionButtons from './ui/ContentActionButtons';
 // EditButton removed - edit functionality not needed for c pages
 import CollectionListDialog from './CollectionListDialog';
+import MathText from './MathText';
 import { api } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 
@@ -127,11 +128,13 @@ export default function CollectionCard({ content, collectionInfo, onAction, refr
     <div className="overflow-visible hover:shadow-lg transition-shadow group">
       {/* 内容信息 */}
       <div className="p-4">
-        {/* 标题 - 可点击跳转 */}
+        {/* 标题 - 可点击跳转，支持数学表达式渲染 */}
         <Link href={`/c/${content.short_id || content.id}`} prefetch={false} className="block">
-          <h3 className="font-semibold text-foreground mb-2 line-clamp-2 hover:text-primary transition-colors cursor-pointer">
-            {content.title}
-          </h3>
+          <MathText
+            as="h3"
+            text={content.title}
+            className="font-semibold text-foreground mb-2 line-clamp-2 hover:text-primary transition-colors cursor-pointer"
+          />
         </Link>
 
         {/* 标签 */}

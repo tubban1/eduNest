@@ -10,6 +10,7 @@ import PendingCard from './generation/PendingCard';
 import ProcessingCard from './generation/ProcessingCard';
 import FailedCard from './generation/FailedCard';
 import PromptPreviewModal from './PromptPreviewModal';
+import MathText from './MathText';
 import { api } from '@/lib/api';
 import { 
   GenerationStatus, 
@@ -557,11 +558,14 @@ function ContentCard({
       </Link>
 
       <div className="p-5">
-        {/* 标题 - 可点击跳转，限制长度 */}
+        {/* 标题 - 可点击跳转，限制长度，支持数学表达式渲染 */}
         <Link href={contentUrl} prefetch={false} className="block mb-4">
-          <h3 className="text-lg font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors cursor-pointer" title={content.title}>
-            {content.title}
-          </h3>
+          <MathText 
+            as="h3" 
+            text={content.title}
+            className="text-lg font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors cursor-pointer" 
+            title={content.title}
+          />
         </Link>
         
         {/* 操作按钮区域 - 所有用户都可以看到 */}

@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
+import MathText from '@/components/MathText';
 
 interface CollectionListData {
   list: {
@@ -384,9 +385,11 @@ export default function CollectionListPage() {
                   
                   {/* 内容信息 */}
                   <div className="relative z-0">
-                    <h3 className="font-semibold text-foreground mb-2 line-clamp-2">
-                      {item.content.title}
-                    </h3>
+                    <MathText
+                      as="h3"
+                      text={item.content.title}
+                      className="font-semibold text-foreground mb-2 line-clamp-2"
+                    />
                     {item.content.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                         {item.content.description}
