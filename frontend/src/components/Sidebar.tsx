@@ -60,6 +60,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
     if (!mounted) {
       // 服务器端渲染时使用默认英语文本
       return [
+        { href: '/', label: 'Home', icon: Home },
         { href: '/c', label: 'My Creations', icon: BookOpen },
         { href: '/collections', label: 'My Collections', icon: Heart },
         { href: '/help', label: 'Help', icon: HelpCircle },
@@ -67,6 +68,7 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
     }
     // 客户端挂载后使用翻译
     return [
+      { href: '/', label: t('home', { ns: 'navigation', defaultValue: 'Home' }), icon: Home },
       { href: '/c', label: t('myContent', { ns: 'navigation', defaultValue: 'My Creations' }), icon: BookOpen },
       { href: '/collections', label: t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }), icon: Heart },
       { href: '/help', label: t('help', { ns: 'navigation', defaultValue: 'Help' }), icon: HelpCircle },
@@ -173,7 +175,10 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
         <nav className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            // 首页需要精确匹配，其他路径使用前缀匹配
+            const isActive = item.href === '/' 
+              ? pathname === '/' 
+              : pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link key={item.href} href={item.href} onClick={handleItemClick}
                 className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}>

@@ -30,6 +30,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// 防止并发调用 mergeOnLogin 的内存锁（组件外部，避免重复创建）
+const mergeOnLoginLock = new Map<string, boolean>();
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,32 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
       };
       setUser(authUser);
-
-      // 首次登录处理：合并游客数据并发放初始积分（统一处理）
-      try {
-        const mergeKey = `visitor_merged_${authUser.id}`;
-        const alreadyMerged = localStorage.getItem(mergeKey);
-        if (!alreadyMerged) {
-          const visitorId = getVisitorId(); // 可能为 null（直接注册的用户）
-          const mergeResult = await api.visitor.mergeOnLogin(visitorId || undefined);
-          if (mergeResult.success) {
-            // 标记为已处理，避免重复处理
-            localStorage.setItem(mergeKey, '1');
-            // 如果有 visitorId，清除它
-            if (visitorId) {
-              clearVisitorId();
-            }
-            // 显示提示（可选）
-            if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
-              console.log('游客数据已合并:', mergeResult.data);
-            }
-          }
-        }
-      } catch (e) {
-        // 静默失败，不影响登录流程
-        console.warn('首次登录处理失败:', e);
-      }
       setLoading(false);
+      
+      // 注意：首次登录处理（合并游客数据、发放初始积分）统一在 onAuthStateChange 中处理
+      // 这里只检查状态，不执行登录后的操作，避免重复调用
     } catch (error) {
       console.error('Auth check error:', error);
       setUser(null);
@@ -195,29 +176,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser(authUser);
               setLoading(false);
 
-              // 首次登录处理：合并游客数据并发放初始积分（统一处理）
-              try {
-                const mergeKey = `visitor_merged_${authUser.id}`;
-                const alreadyMerged = localStorage.getItem(mergeKey);
-                if (!alreadyMerged) {
-                  const visitorId = getVisitorId(); // 可能为 null（直接注册的用户）
-                  const mergeResult = await api.visitor.mergeOnLogin(visitorId || undefined);
-                  if (mergeResult.success) {
-                    // 标记为已处理，避免重复处理
-                    localStorage.setItem(mergeKey, '1');
-                    // 如果有 visitorId，清除它
-                    if (visitorId) {
-                      clearVisitorId();
-                    }
-                    // 显示提示（可选）
-                    if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
-                      console.log('游客数据已合并:', mergeResult.data);
+              // 首次登录处理：合并游客数据并发放初始积分（仅在 SIGNED_IN 时执行，TOKEN_REFRESHED 不执行）
+              if (event === 'SIGNED_IN') {
+                try {
+                  const mergeKey = `visitor_merged_${authUser.id}`;
+                  const lockKey = `merge_lock_${authUser.id}`;
+                  
+                  // 双重检查：localStorage + 内存锁
+                  const alreadyMerged = localStorage.getItem(mergeKey);
+                  const isLocked = mergeOnLoginLock.get(lockKey);
+                  
+                  if (!alreadyMerged && !isLocked) {
+                    // 设置内存锁
+                    mergeOnLoginLock.set(lockKey, true);
+                    
+                    try {
+                      const visitorId = getVisitorId(); // 可能为 null（直接注册的用户）
+                      const mergeResult = await api.visitor.mergeOnLogin(visitorId || undefined);
+                      if (mergeResult.success) {
+                        // 标记为已处理，避免重复处理
+                        localStorage.setItem(mergeKey, '1');
+                        // 如果有 visitorId，清除它
+                        if (visitorId) {
+                          clearVisitorId();
+                        }
+                        // 显示提示（可选）
+                        if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
+                          console.log('游客数据已合并:', mergeResult.data);
+                        }
+                      }
+                    } finally {
+                      // 释放内存锁（延迟释放，防止并发）
+                      setTimeout(() => {
+                        mergeOnLoginLock.delete(lockKey);
+                      }, 1000);
                     }
                   }
+                } catch (e) {
+                  // 静默失败，不影响登录流程
+                  console.warn('首次登录处理失败:', e);
                 }
-              } catch (e) {
-                // 静默失败，不影响登录流程
-                console.warn('首次登录处理失败:', e);
               }
             }
           } catch (error) {
