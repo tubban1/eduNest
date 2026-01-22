@@ -319,11 +319,11 @@ class MathFixer {
       let fixedContent = content;
       let localFixes = 0;
       
-      // 第一步：处理 \frac{ 的情况（如果在 HTML 源码中存在）
-      // 注意：在 v-katex 属性字符串中，\frac{ 在 JavaScript 中会被解析，\f 变成 formfeed
-      // 所以实际内容是 rac{，不需要特殊处理 \frac{
-      // 但如果 HTML 源码中有 \frac{，需要先处理，避免后续修复时出错
-      // 策略：只处理明确有问题的模式，不处理正常的 \frac{
+      // 第一步：移除所有 \\t（在 HTML 源码中，\\t 是字面的反斜杠加 t，会被解析为 \t 制表符）
+      // 用户说"应该只需要 \t"，这意味着代码中不应该有 \\t，应该只有 \t
+      // 但在 HTML 源码中，\t 会被解析为制表符，而制表符不应该出现在 LaTeX 公式中
+      // 所以，最好的做法是直接移除 \\t，避免在公式中出现制表符
+      fixedContent = fixedContent.replace(/\\\\t/g, '');
       
       // 第二步：修复已被 JavaScript 解析后的命令（没有反斜杠）
       // 例如：\div → div, \frac → rac (因为 \d 和 \f 不是有效转义)
@@ -337,19 +337,39 @@ class MathFixer {
         },
         'frac': {
           pattern: parsedCommandPatterns['frac'],
-          replacement: '$1\\\\frac{'  // 匹配 (^|[^\\a-zA-Z])rac\{ → $1\\frac{
+          replacement: (match, p1) => {
+            // 如果 p1 是制表符，不保留它；否则保留 p1
+            return (p1 === '\t' ? '' : p1) + '\\\\frac{';
+          }
         },
         'sqrt': {
           pattern: parsedCommandPatterns['sqrt'],
-          replacement: '$1\\\\sqrt{'  // 匹配 (^|[^\\])sqrt\{ → $1\\sqrt{
+          replacement: (match, p1) => {
+            // 如果 p1 是制表符，不保留它；否则保留 p1
+            return (p1 === '\t' ? '' : p1) + '\\\\sqrt{';
+          }
         },
         'text': {
           pattern: parsedCommandPatterns['text'],
-          replacement: '$1\\\\text{'  // 匹配 ([\t]|^|[^\\])ext\{ → $1\\text{
+          replacement: (match, p1) => {
+            // 如果 p1 是制表符或字面的 \t 字符串，不保留它；否则保留 p1
+            // 这样可以避免在公式中出现 \t 字符
+            // 注意：p1 可能是制表符字符（\t）或空字符串（匹配到开头）
+            if (p1 === '\t' || p1 === '\\t' || p1 === '') {
+              return '\\\\text{';
+            }
+            return p1 + '\\\\text{';
+          }
         },
         'times': {
           pattern: parsedCommandPatterns['times'],
-          replacement: '$1\\\\times'  // 匹配 ([\t]|^|[^\\])imes → $1\\times
+          replacement: (match, p1) => {
+            // 如果 p1 是制表符或字面的 \t 字符串，不保留它；否则保留 p1
+            if (p1 === '\t' || p1 === '\\t' || p1 === '') {
+              return '\\\\times';
+            }
+            return p1 + '\\\\times';
+          }
         },
         'approx': {
           pattern: parsedCommandPatterns['approx'],
@@ -370,7 +390,13 @@ class MathFixer {
         // 即使内容中已经有正确的转义（\\frac），也可能同时存在未转义的（\frac 被解析为 rac）
         // 例如：v-katex="'\\frac{x}{y} + \frac{a}{b}'" 中既有 \\frac 也有 rac
         const beforeFix = fixedContent;
-        fixedContent = fixedContent.replace(fix.pattern, fix.replacement);
+        
+        // 如果 replacement 是函数，使用函数替换；否则使用字符串替换
+        if (typeof fix.replacement === 'function') {
+          fixedContent = fixedContent.replace(fix.pattern, fix.replacement);
+        } else {
+          fixedContent = fixedContent.replace(fix.pattern, fix.replacement);
+        }
         
         if (fixedContent !== beforeFix) {
           const matches = beforeFix.match(fix.pattern) || [];
