@@ -20,6 +20,7 @@ class MathFixer {
       'RAW_TEX_DETECTED',
       'ESCAPE_ERROR',
       'V_KATEX_ESCAPE_MISSING',
+      'V_KATEX_RENDER_TO_STRING',
       'INJECT_KATEX_AND_RENDER',
       'EMPTY_RENDER_FUNCTION'
     ];
@@ -76,6 +77,9 @@ class MathFixer {
         
       case 'V_KATEX_ESCAPE_MISSING':
         return this.fixVKatexEscapes(html);
+        
+      case 'V_KATEX_RENDER_TO_STRING':
+        return this.fixVKatexRenderToString(html, issue);
         
       case 'EMPTY_RENDER_FUNCTION':
         return this.removeEmptyRenderFunction(html);
@@ -161,6 +165,11 @@ class MathFixer {
         reason: '注入数学公式渲染管理器'
       });
     }
+    
+    // 注入后，优化自定义 renderMath 函数调用（暂时禁用，避免破坏 HTML 结构）
+    // const optimizeResult = this.optimizeCustomRenderMath(fixedHtml);
+    // fixedHtml = optimizeResult.html;
+    // changes.push(...optimizeResult.changes);
     
     // 如果是 Three.js 项目，注入 Three.js 集成
     if (isThreeJS) {
@@ -854,6 +863,117 @@ class MathFixer {
   }
   
   /**
+   * 优化自定义 renderMath 函数调用
+   * 确保在 MathRenderManager 初始化后执行，或使用 MathRenderManager 的方法
+   */
+  optimizeCustomRenderMath(html) {
+    const changes = [];
+    let fixedHtml = html;
+    
+    // 匹配自定义 renderMath 函数定义和调用
+    // 例如：const renderMath = () => { ... }
+    // 或：function renderMath() { ... }
+    // 或：watch(currentStage, () => { renderMath(); })
+    
+    // 1. 优化 renderMath 函数定义，确保等待 renderMathInElement 加载
+    const renderMathPattern = /(const|let|var|function)\s+renderMath\s*[=:]\s*(?:\([^)]*\)\s*=>|function\s*\([^)]*\))\s*\{[^}]*renderMathInElement[^}]*\}/g;
+    let match;
+    
+    while ((match = renderMathPattern.exec(html)) !== null) {
+      const original = match[0];
+      // 检查是否已经有等待逻辑
+      if (!original.includes('waitForKaTeX') && !original.includes('typeof renderMathInElement')) {
+        // 优化函数，添加等待逻辑
+        const optimized = original.replace(
+          /(\{)([^}]*renderMathInElement[^}]*)(\})/,
+          (m, open, body, close) => {
+            // 如果已经有 if 检查，添加等待逻辑
+            if (body.includes('if (typeof renderMathInElement')) {
+              return `${open}${body}${close}`;
+            }
+            // 否则添加等待逻辑
+            return `${open}
+        if (typeof renderMathInElement === 'undefined') {
+          setTimeout(renderMath, 100);
+          return;
+        }
+        ${body}${close}`;
+          }
+        );
+        
+        fixedHtml = fixedHtml.replace(original, optimized);
+        changes.push({
+          type: 'replace',
+          location: 'renderMath function',
+          before: original.substring(0, 100) + (original.length > 100 ? '...' : ''),
+          after: optimized.substring(0, 100) + (optimized.length > 100 ? '...' : ''),
+          reason: '优化 renderMath 函数，确保等待 renderMathInElement 加载完成'
+        });
+      }
+    }
+    
+    // 2. 优化 watch 中的 renderMath 调用，使用 MathRenderManager
+    // 匹配：watch(currentStage, () => { renderMath(); nextTick(() => { renderMath(); }); })
+    const watchPattern = /watch\s*\(\s*currentStage[^,]*,\s*(?:\([^)]*\)\s*=>|function\s*\([^)]*\))\s*\{[^}]*renderMath\s*\([^}]*\}/g;
+    let watchMatch;
+    
+    while ((watchMatch = watchPattern.exec(html)) !== null) {
+      const original = watchMatch[0];
+      // 如果已经有 MathRenderManager 调用，跳过
+      if (original.includes('MathRenderManager')) {
+        continue;
+      }
+      
+      // 替换为使用 MathRenderManager
+      // 先替换 nextTick 中的 renderMath 调用
+      let optimized = original.replace(
+        /nextTick\s*\(\s*\([^)]*\)\s*=>\s*\{[^}]*renderMath\s*\(\s*\)[^}]*\}/g,
+        (m) => {
+          return `nextTick(() => {
+            if (window.MathRenderManager) {
+              window.MathRenderManager.refreshOnStageChange();
+            } else {
+              renderMath();
+            }
+          })`;
+        }
+      );
+      
+      // 再替换其他 renderMath() 调用
+      optimized = optimized.replace(
+        /renderMath\s*\(\s*\)/g,
+        (m) => {
+          return `if (window.MathRenderManager) {
+            window.MathRenderManager.refreshOnStageChange();
+          } else {
+            renderMath();
+          }`;
+        }
+      );
+      
+      if (optimized !== original) {
+        fixedHtml = fixedHtml.replace(original, optimized);
+        changes.push({
+          type: 'replace',
+          location: 'watch currentStage',
+          before: original.substring(0, 100) + (original.length > 100 ? '...' : ''),
+          after: optimized.substring(0, 100) + (optimized.length > 100 ? '...' : ''),
+          reason: '优化 watch 中的 renderMath 调用，优先使用 MathRenderManager'
+        });
+      }
+    }
+    
+    return {
+      success: changes.length > 0,
+      html: fixedHtml,
+      changes,
+      explanation: changes.length > 0 
+        ? `优化了 ${changes.length} 处自定义 renderMath 函数调用`
+        : '未检测到需要优化的 renderMath 函数'
+    };
+  }
+
+  /**
    * 删除空的 renderMathInElement 函数定义
    * 这种函数定义会覆盖 auto-render.min.js 中的函数，导致 $...$ 形式的公式不能被渲染
    */
@@ -967,6 +1087,47 @@ class MathFixer {
       explanation: removedCount > 0 
         ? `删除了 ${removedCount} 个空的 renderMathInElement 函数定义` 
         : '未检测到需要删除的函数定义'
+    };
+  }
+  
+  /**
+   * 修复 v-katex 指令使用 katex.renderToString 的问题
+   * 替换为使用 renderMathInElement，以便在阶段切换时重新渲染
+   */
+  fixVKatexRenderToString(html, issue) {
+    const changes = [];
+    let fixedHtml = html;
+    
+    // 匹配完整的 directive 定义，查找使用 katex.renderToString 的地方
+    const directivePattern = /(app\.directive\s*\(\s*['"]katex['"]\s*,\s*\{[^}]*(mounted|updated)\s*:\s*(?:function\s*\([^)]*\)|(?:\([^)]*\)\s*=>))\s*\{[^}]*)(el\.innerHTML\s*=\s*katex\.renderToString\s*\(\s*([^,)]+)(?:\s*,\s*([^)]+))?\s*\)\s*;?\s*)([^}]*\}\s*\}\s*\))/g;
+    
+    fixedHtml = fixedHtml.replace(directivePattern, (fullMatch, before, hookName, renderCall, value, options, after) => {
+      const optionsStr = options || '{ throwOnError: false }';
+      
+      // 替换为使用 renderMathInElement
+      const replacement = 
+        `${before}` + 
+        `el.innerHTML = ${value};\n        if (typeof renderMathInElement !== 'undefined') {\n          renderMathInElement(el, {\n            delimiters: [\n              {left: '$$', right: '$$', display: true},\n              {left: '$', right: '$', display: false}\n            ],\n            throwOnError: false\n          });\n        }` + 
+        `${after}`;
+      
+      changes.push({
+        type: 'replace',
+        location: `v-katex directive ${hookName} hook`,
+        before: fullMatch.substring(0, 100) + (fullMatch.length > 100 ? '...' : ''),
+        after: replacement.substring(0, 100) + (replacement.length > 100 ? '...' : ''),
+        reason: `修复 v-katex 指令的 ${hookName} 钩子，改用 renderMathInElement 以支持阶段切换时的重新渲染`
+      });
+      
+      return replacement;
+    });
+    
+    return {
+      success: changes.length > 0,
+      html: fixedHtml,
+      changes,
+      explanation: changes.length > 0 
+        ? `修复了 ${changes.length} 处 v-katex 指令，改用 renderMathInElement 以支持阶段切换时的重新渲染`
+        : '未检测到需要修复的 v-katex 指令'
     };
   }
   

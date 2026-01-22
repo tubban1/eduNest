@@ -59,6 +59,10 @@ class RuntimeChecker {
       issues.push(...gsapIssues);
     }
     
+    // 4. Vue ref 使用错误检查
+    const vueRefIssues = this.checkVueRefErrors(html);
+    issues.push(...vueRefIssues);
+    
     return { issues, metadata };
   }
   
@@ -241,6 +245,50 @@ class RuntimeChecker {
         message: 'GSAP 动画未检测到清理代码，页面切换时可能导致动画残留',
         fixable: true,
         fixStrategy: 'INJECT_GSAP_CLEANUP'
+      });
+    }
+    
+    return issues;
+  }
+  
+  /**
+   * 检查 Vue ref 使用错误
+   * 例如：hasMutated.ref = true; 应该是 hasMutated.value = true;
+   */
+  checkVueRefErrors(html) {
+    const issues = [];
+    
+    // 检测 Vue 3 的 ref 使用错误
+    // 模式：refName.ref = 或 refName.ref =
+    const refErrorPattern = /(\w+)\.ref\s*=/g;
+    const matches = [];
+    let match;
+    
+    while ((match = refErrorPattern.exec(html)) !== null) {
+      const refName = match[1];
+      // 检查是否是 Vue ref（通常是通过 ref() 创建的）
+      const isRef = new RegExp(`(const|let|var)\\s+${refName}\\s*=\\s*ref\\(`, 'i').test(html);
+      
+      if (isRef) {
+        matches.push({
+          refName,
+          position: match.index,
+          fullMatch: match[0]
+        });
+      }
+    }
+    
+    if (matches.length > 0) {
+      issues.push({
+        type: 'runtime',
+        code: 'VUE_REF_ERROR',
+        severity: 'high',
+        message: `检测到 ${matches.length} 处 Vue ref 使用错误（使用了 .ref 而不是 .value）`,
+        fixable: true,
+        fixStrategy: 'FIX_VUE_REF_ERROR',
+        context: {
+          matches: matches.slice(0, 10) // 只保存前10个
+        }
       });
     }
     

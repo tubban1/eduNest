@@ -13,7 +13,8 @@ class RuntimeFixer {
     this.handles = [
       'AUDIO_AUTOPLAY_BLOCKED',
       'THREE_DISPOSE_MISSING',
-      'GSAP_ANIMATION_LEAK'
+      'GSAP_ANIMATION_LEAK',
+      'VUE_REF_ERROR'
     ];
   }
   
@@ -37,6 +38,9 @@ class RuntimeFixer {
         
       case 'GSAP_ANIMATION_LEAK':
         return this.injectGsapCleanup(html);
+        
+      case 'VUE_REF_ERROR':
+        return this.fixVueRefError(html, issue);
         
       default:
         return { success: false, html, changes: [], explanation: '未知的问题类型' };
@@ -269,6 +273,49 @@ class RuntimeFixer {
       html: fixedHtml,
       changes,
       explanation: '注入页面卸载时的 GSAP 动画清理'
+    };
+  }
+  
+  /**
+   * 修复 Vue ref 使用错误
+   * 将 .ref = 替换为 .value =
+   */
+  fixVueRefError(html, issue) {
+    const changes = [];
+    let fixedHtml = html;
+    
+    // 获取所有匹配的 ref 名称
+    const matches = issue.context?.matches || [];
+    
+    // 对每个 ref 名称，替换 .ref = 为 .value =
+    for (const match of matches) {
+      const refName = match.refName;
+      // 使用单词边界确保只匹配完整的 ref 名称
+      const pattern = new RegExp(`\\b${refName}\\.ref\\s*=`, 'g');
+      
+      if (pattern.test(fixedHtml)) {
+        const before = fixedHtml;
+        fixedHtml = fixedHtml.replace(pattern, `${refName}.value =`);
+        
+        if (before !== fixedHtml) {
+          changes.push({
+            type: 'replace',
+            location: `${refName} ref usage`,
+            before: `${refName}.ref =`,
+            after: `${refName}.value =`,
+            reason: `修复 Vue ref 使用错误：将 ${refName}.ref 替换为 ${refName}.value`
+          });
+        }
+      }
+    }
+    
+    return {
+      success: changes.length > 0,
+      html: fixedHtml,
+      changes,
+      explanation: changes.length > 0 
+        ? `修复了 ${changes.length} 处 Vue ref 使用错误`
+        : '未检测到需要修复的 Vue ref 错误'
     };
   }
 }

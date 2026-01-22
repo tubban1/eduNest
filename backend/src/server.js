@@ -28,6 +28,7 @@ const visitorRoutes = require('./api/visitor');
 const pageViewsRoutes = require('./api/page_views');
 const testSharpThumbnailRoutes = require('./api/test-sharp-thumbnail');
 const earlyUserBonusRoutes = require('./api/early_user_bonus');
+const rendererTestRoutes = require('./api/renderer-test');
 const { errorHandler } = require('./utils/errorHandler');
 const logger = require('./utils/logger');
 const { supabase } = require('./services/database');
@@ -156,6 +157,7 @@ app.use("/api/visitor", visitorRoutes);
 app.use("/api/page-views", pageViewsRoutes);
 app.use("/api/test-sharp-thumbnail", testSharpThumbnailRoutes);
 app.use("/api/early-user-bonus", earlyUserBonusRoutes);
+app.use("/api/renderer-test", rendererTestRoutes);
 // 404 处理
 app.use('*', (req, res) => {
   res.status(404).json({ 

@@ -135,15 +135,39 @@ class MathChecker {
     
     // 问题 3: Vue v-if 切换但缺少 MathRenderManager（重要！）
     // 即使有 renderMathInElement，Vue v-if 切换时也需要 MathRenderManager 来自动处理 DOM 更新
-    if (metadata.hasVueStages && !metadata.hasMathRenderManager) {
+    // 同时检查是否有 $...$ 公式（通过检测 mathHtml 或模板中的 $ 符号）
+    const hasMathFormulas = this.detectRawTex(html).count > 0 || 
+                           html.includes('mathHtml') || 
+                           html.includes('$') && (html.match(/\$[^$\n]+\$/g) || []).length > 0;
+    
+    if (metadata.hasVueStages && !metadata.hasMathRenderManager && hasMathFormulas) {
       issues.push({
         type: 'math',
         code: 'STAGE_CHANGE_MATH_LOST',
         severity: 'high',
-        message: 'Vue v-if 阶段切换需要 MathRenderManager 来自动渲染公式',
+        message: 'Vue v-if 阶段切换需要 MathRenderManager 来自动渲染公式（检测到阶段切换和数学公式）',
         fixable: true,
         fixStrategy: 'INJECT_MATH_RENDER_MANAGER'
       });
+    }
+    
+    // 问题 3.5: 即使没有明确的阶段切换，如果有 $...$ 公式和 Vue，也应该使用 MathRenderManager
+    // 注意：这个检测可能导致重复问题，如果已经检测到阶段切换，就不再检测自定义 renderMath
+    if (metadata.hasKatex && hasMathFormulas && !metadata.hasMathRenderManager && 
+        !metadata.hasVueStages && // 避免重复检测
+        (html.includes('createApp') || html.includes('Vue.'))) {
+      // 检查是否有自定义 renderMath 函数但没有 MathRenderManager
+      const hasCustomRenderMath = /(const|let|var|function)\s+renderMath\s*[=:]/i.test(html);
+      if (hasCustomRenderMath) {
+        issues.push({
+          type: 'math',
+          code: 'STAGE_CHANGE_MATH_LOST',
+          severity: 'high',
+          message: '检测到自定义 renderMath 函数和数学公式，建议使用 MathRenderManager 确保正确渲染',
+          fixable: true,
+          fixStrategy: 'INJECT_MATH_RENDER_MANAGER'
+        });
+      }
     }
     
     // 问题 4: 缺少 renderMathInElement 和 MathRenderManager
@@ -175,8 +199,25 @@ class MathChecker {
       });
     }
     
+    // 问题 6: 检测 v-katex 指令使用 katex.renderToString（阶段切换时不会重新渲染）
+    const vKatexRenderToString = this.detectVKatexRenderToString(html);
+    if (vKatexRenderToString.count > 0) {
+      issues.push({
+        type: 'math',
+        code: 'V_KATEX_RENDER_TO_STRING',
+        severity: 'high',
+        message: `检测到 ${vKatexRenderToString.count} 处 v-katex 指令使用 katex.renderToString，阶段切换时公式不会重新渲染`,
+        fixable: true,
+        fixStrategy: 'FIX_V_KATEX_RENDER_TO_STRING',
+        context: {
+          samples: vKatexRenderToString.samples
+        }
+      });
+    }
+    
     // 问题 2: v-if 阶段切换后公式可能不重渲染
-    if (metadata.hasVueStages && !metadata.hasMathRenderManager) {
+    // 注意：避免重复检测，如果问题 3 已经检测到阶段切换和数学公式，就不再检测
+    if (metadata.hasVueStages && !metadata.hasMathRenderManager && !hasMathFormulas) {
       // 检查是否有正确的重渲染处理
       const hasProperRerender = this.checkVueStageRerender(html);
       
@@ -294,11 +335,18 @@ class MathChecker {
    */
   detectVueStages(html) {
     // 检测常见的阶段切换模式
+    // 注意：需要匹配 v-if="currentStage === 1" 这样的模式，不仅仅是引号内的
     const patterns = [
-      /v-if\s*=\s*["'][^"']*stage/i,
-      /v-if\s*=\s*["'][^"']*currentStage/i,
-      /v-if\s*=\s*["'][^"']*step/i,
-      /v-show\s*=\s*["'][^"']*stage/i
+      /v-if\s*=\s*["'][^"']*stage/i,  // v-if="stage === 1"
+      /v-if\s*=\s*["'][^"']*currentStage/i,  // v-if="currentStage === 1"
+      /v-if\s*=\s*["'][^"']*step/i,  // v-if="step === 1"
+      /v-show\s*=\s*["'][^"']*stage/i,  // v-show="stage"
+      // 匹配 v-if="currentStage === 1" 这样的模式（不在引号内的变量）
+      /v-if\s*=\s*["'][^"']*currentStage[^"']*["']/i,
+      /v-if\s*=\s*["'][^"']*stage[^"']*===/i,
+      // 匹配 :key="currentStage" 这样的模式
+      /:key\s*=\s*["'][^"']*currentStage/i,
+      /:key\s*=\s*["'][^"']*stage/i
     ];
     
     return patterns.some(p => p.test(html));
@@ -558,6 +606,34 @@ class MathChecker {
     }
     
     return null;
+  }
+  
+  /**
+   * 检测 v-katex 指令使用 katex.renderToString
+   * 这种用法在阶段切换时不会重新渲染公式
+   */
+  detectVKatexRenderToString(html) {
+    const issues = [];
+    const samples = [];
+    
+    // 匹配 app.directive('katex', { mounted(el, binding) { el.innerHTML = katex.renderToString(...) } })
+    // 或 app.directive('katex', { updated(el, binding) { el.innerHTML = katex.renderToString(...) } })
+    const directivePattern = /app\.directive\s*\(\s*['"]katex['"]\s*,\s*\{[^}]*(mounted|updated)\s*:\s*(?:function\s*\([^)]*\)|(?:\([^)]*\)\s*=>))\s*\{[^}]*el\.innerHTML\s*=\s*katex\.renderToString\s*\([^)]+\)\s*;?[^}]*\}\s*\}\s*\)/g;
+    let match;
+    
+    while ((match = directivePattern.exec(html)) !== null) {
+      issues.push({
+        fullMatch: match[0],
+        context: match[0].substring(0, 100) + (match[0].length > 100 ? '...' : ''),
+        position: match.index,
+        hook: match[1] // mounted 或 updated
+      });
+      if (samples.length < 5) {
+        samples.push(`v-katex ${match[1]} hook uses katex.renderToString: ${match[0].substring(0, 50)}${match[0].length > 50 ? '...' : ''}`);
+      }
+    }
+    
+    return { count: issues.length, issues, samples };
   }
   
   /**

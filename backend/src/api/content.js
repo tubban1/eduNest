@@ -289,7 +289,15 @@ router.put('/:id', authenticateToken, [
       return res.status(500).json({ error: result.error.message });
     }
 
-    res.json({ success: true, data: result.data });
+    // result 可能是更新后的内容对象，也可能是 { success: false, error: ... }
+    // 如果 result 有 error 属性，说明更新失败
+    if (result && result.error) {
+      return res.status(500).json({ error: result.error.message || '更新失败' });
+    }
+
+    // 如果 result 是内容对象，直接返回；否则返回 result.data
+    const data = result && typeof result === 'object' && !result.error ? result : (result?.data || result);
+    res.json({ success: true, data: data || { id: req.params.id, updated: true } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
