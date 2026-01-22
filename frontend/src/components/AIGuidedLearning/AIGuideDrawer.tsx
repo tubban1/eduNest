@@ -57,7 +57,7 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
       <div
         onClick={onClose}
         className="fixed inset-0 bg-black/20 z-40 transition-opacity duration-300"
-        style={{ right: `${width}px` }}
+        style={{ right: `${width}px`, cursor: 'pointer' }}
       />
       
       {/* AI Guide Drawer */}
@@ -65,6 +65,7 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
         ref={drawerRef}
         className="fixed right-0 top-0 h-full bg-card shadow-2xl z-50 transition-transform duration-300 flex flex-col border-l border-border translate-x-0"
         style={{ width: `${width}px` }}
+        onClick={(e) => e.stopPropagation()}
       >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
