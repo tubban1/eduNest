@@ -177,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setLoading(false);
 
               // 首次登录处理：合并游客数据并发放初始积分（仅在 SIGNED_IN 时执行，TOKEN_REFRESHED 不执行）
+              // 确保所有新用户（Google 登录和 email 注册）都能获得初始积分
               if (event === 'SIGNED_IN') {
                 try {
                   const mergeKey = `visitor_merged_${authUser.id}`;
@@ -204,17 +205,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         if (mergeResult.data && (mergeResult.data.contentCount > 0 || mergeResult.data.conversationCount > 0)) {
                           console.log('游客数据已合并:', mergeResult.data);
                         }
+                        console.log('✅ 新用户初始积分已发放:', authUser.id);
+                      } else {
+                        // 如果调用失败，清除标记，允许重试
+                        console.warn('❌ 初始积分发放失败，将在下次登录时重试:', mergeResult.error);
+                        // 不设置 localStorage 标记，允许重试
                       }
+                    } catch (e) {
+                      // 调用异常，清除标记，允许重试
+                      console.warn('❌ 首次登录处理异常，将在下次登录时重试:', e);
+                      // 不设置 localStorage 标记，允许重试
                     } finally {
                       // 释放内存锁（延迟释放，防止并发）
                       setTimeout(() => {
                         mergeOnLoginLock.delete(lockKey);
                       }, 1000);
                     }
+                  } else if (alreadyMerged) {
+                    console.log('✅ 用户已处理过初始积分:', authUser.id);
                   }
                 } catch (e) {
-                  // 静默失败，不影响登录流程
-                  console.warn('首次登录处理失败:', e);
+                  // 外层异常，不影响登录流程
+                  console.warn('首次登录处理外层异常:', e);
                 }
               }
             }
