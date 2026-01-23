@@ -557,15 +557,22 @@ const SYSTEM_PROMPT_CONTENT = {
   "output_schema": {
     "title": "Concise educational project title in the target language",
     "description": "Clear explanation of what is taught and how the learner interacts",
+    "knowledge_points": {
+      "type": "JSON array of strings",
+      "count": "1-3",
+      "rules": [
+        "Content-oriented: core conceptual keywords (e.g. 'conservation of energy', 'slope of tangent').",
+        "No platform/UI/grade labels."
+      ]
+    },
     "full_html": "A complete, standalone HTML document including all CSS and JS",
     "svg": "A self-contained SVG thumbnail following the SVG rules",
     "tags": {
       "type": "JSON array of strings",
       "count": "3-7",
       "rules": [
-        "Educational and conceptual only",
-        "Reflect subject, domain, subdomain, and approximate grade",
-        "No technical tags (e.g., Vue, JavaScript, Canvas)"
+        "Index-oriented: for search/filter (subject, grade, exam, topic).",
+        "Can include curriculum labels (e.g. 'High School Physics', 'Gaokao', 'AP Calculus')."
       ]
     },
     "content_type": "vue",
@@ -585,12 +592,10 @@ const getSystemPrompt = (knowledgePoint, languageCode = 'en-US') => {
 
 // 学习阶段的用户提示词映射
 const LEARNING_STAGE_PROMPTS = {
-  understanding: `Create an interactive project that visually and audibly explains the concept of {{knowledge_point}}.
-Ensure users can explore the concept in steps, with each stage accompanied by sound effects (audio cues) or animation cues.
-Encourage discovery by letting users click, hover, or reveal hidden patterns and connections that show how "{{knowledge_point}}" links to broader ideas.
-Each interaction should feel meaningful — revealing not just information, but relationships and insights that deepen comprehension.
-End with a moment of reflection or synthesis, helping learners see the "big picture" of how "{{knowledge_point}}" fits within a wider knowledge network.
-Note: Use sound effects freely, but speech synthesis (voice narration) must be user-triggered only.`,
+  understanding: `Help learners deeply understand {{knowledge_point}} through interactive exploration.
+Let users explore in steps, with interactions that reveal relationships and insights. Show how "{{knowledge_point}}" connects to broader ideas and real-world applications.
+End with reflection or synthesis, helping learners see the "big picture" of how "{{knowledge_point}}" fits within a wider knowledge network and connects to related concepts.
+`,
 
   application: `Build an interactive simulation that lets users apply "{{knowledge_point}}" in a real-world or scenario-based context.
 Use sliders, drag-and-drop, or live input fields to manipulate variables.

@@ -141,7 +141,13 @@ class RendererEngine {
       if (!issue.fixable) continue;
       
       // 找到能处理这个问题的 Fixer
-      const fixer = this.fixers.find(f => f.handles.includes(issue.code));
+      // 优先使用 canFix 方法（如果存在），否则使用 handles 数组
+      const fixer = this.fixers.find(f => {
+        if (typeof f.canFix === 'function') {
+          return f.canFix(issue);
+        }
+        return f.handles && f.handles.includes(issue.code);
+      });
       
       if (!fixer) {
         logger.debug(`[RendererEngine] 没有找到能处理 ${issue.code} 的 Fixer`);

@@ -63,6 +63,14 @@ class RuntimeChecker {
     const vueRefIssues = this.checkVueRefErrors(html);
     issues.push(...vueRefIssues);
     
+    // 5. Vue setInterval 在阶段切换时未停止检查
+    const vueIntervalIssues = this.checkVueIntervalIssues(html);
+    issues.push(...vueIntervalIssues);
+    
+    // 6. 重复赋值检查
+    const duplicateAssignmentIssues = this.checkDuplicateAssignments(html);
+    issues.push(...duplicateAssignmentIssues);
+    
     return { issues, metadata };
   }
   
@@ -288,6 +296,100 @@ class RuntimeChecker {
         fixStrategy: 'FIX_VUE_REF_ERROR',
         context: {
           matches: matches.slice(0, 10) // 只保存前10个
+        }
+      });
+    }
+    
+    return issues;
+  }
+  
+  /**
+   * 检查 Vue setInterval 在阶段切换时未停止的问题
+   * 例如：startProliferation 函数中使用了 setInterval，但没有在阶段切换时停止
+   */
+  checkVueIntervalIssues(html) {
+    const issues = [];
+    
+    // 检测包含 setInterval 的函数，且该函数在 Vue 组件中（有 currentStage）
+    const hasCurrentStage = /currentStage/.test(html);
+    const hasSetInterval = /setInterval/.test(html);
+    
+    if (hasCurrentStage && hasSetInterval) {
+      // 匹配函数定义，支持多行函数体
+      const functionPattern = /(const|let|function)\s+(\w+)\s*=\s*\([^)]*\)\s*=>\s*\{([\s\S]*?setInterval[\s\S]*?)\}/g;
+      let match;
+      
+      while ((match = functionPattern.exec(html)) !== null) {
+        const funcName = match[2];
+        const funcBody = match[3];
+        
+        // 检查 setInterval 回调中是否有 currentStage 检查
+        // 匹配 setInterval(() => { ... }, delay) 中的回调体
+        const intervalCallbackPattern = /setInterval\s*\(\s*\([^)]*\)\s*=>\s*\{([\s\S]*?)\}\s*,\s*[^)]+\)/;
+        const callbackMatch = funcBody.match(intervalCallbackPattern);
+        
+        if (callbackMatch) {
+          const callbackBody = callbackMatch[1];
+          
+          // 检查回调体中是否有 currentStage 检查
+          const hasStageCheck = /currentStage\.value\s*[!=]==?\s*\d+/.test(callbackBody) || 
+                               /if\s*\(\s*currentStage/.test(callbackBody);
+          
+          // 检查是否有 clearInterval（但可能只是用于 count 检查，不是阶段检查）
+          const hasClearInterval = /clearInterval/.test(callbackBody);
+          
+          // 如果回调体中有数组 push 操作（如 tumorCells.value.push），但没有阶段检查，则有问题
+          const hasArrayPush = /\.value\.push\s*\(/.test(callbackBody);
+          
+          if (hasArrayPush && !hasStageCheck) {
+            issues.push({
+              type: 'runtime',
+              code: 'VUE_INTERVAL_NOT_STOPPED',
+              severity: 'high',
+              message: `检测到 ${funcName} 函数中使用了 setInterval 更新数组，但没有在阶段切换时停止，可能导致 DOM 更新错误`,
+              fixable: true,
+              fixStrategy: 'FIX_VUE_INTERVAL',
+              context: {
+                functionName: funcName,
+                position: match.index
+              }
+            });
+          }
+        }
+      }
+    }
+    
+    return issues;
+  }
+  
+  /**
+   * 检查重复赋值问题
+   * 例如：hasMutated.value = true; hasMutated.value = true;
+   */
+  checkDuplicateAssignments(html) {
+    const issues = [];
+    
+    // 检测连续相同的赋值语句（支持多行）
+    // 匹配模式：varName.value = value; 后跟相同的赋值
+    const duplicatePattern = /((\w+\.(value|ref)\s*=\s*[^;]+;)\s*\n\s*\2)/g;
+    let match;
+    
+    while ((match = duplicatePattern.exec(html)) !== null) {
+      const fullMatch = match[1];
+      const assignment = match[2];
+      const varName = match[3];
+      
+      issues.push({
+        type: 'runtime',
+        code: 'DUPLICATE_ASSIGNMENT',
+        severity: 'low',
+        message: `检测到重复赋值：${assignment}`,
+        fixable: true,
+        fixStrategy: 'REMOVE_DUPLICATE_ASSIGNMENT',
+        context: {
+          assignment: assignment,
+          fullMatch: fullMatch,
+          position: match.index
         }
       });
     }

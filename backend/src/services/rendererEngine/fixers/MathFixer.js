@@ -22,7 +22,8 @@ class MathFixer {
       'V_KATEX_ESCAPE_MISSING',
       'V_KATEX_RENDER_TO_STRING',
       'INJECT_KATEX_AND_RENDER',
-      'EMPTY_RENDER_FUNCTION'
+      'EMPTY_RENDER_FUNCTION',
+      'HTML_TEXT_DOUBLE_BACKSLASH'
     ];
     
     // 需要在 JS 字符串中用双反斜杠的 LaTeX 命令和特殊字符
@@ -83,6 +84,9 @@ class MathFixer {
         
       case 'EMPTY_RENDER_FUNCTION':
         return this.removeEmptyRenderFunction(html);
+        
+      case 'HTML_TEXT_DOUBLE_BACKSLASH':
+        return this.fixHtmlTextDoubleBackslash(html, issue);
         
       default:
         return { success: false, html, changes: [], explanation: '未知的问题类型' };
@@ -328,13 +332,61 @@ class MathFixer {
       let fixedContent = content;
       let localFixes = 0;
       
-      // 第一步：移除所有 \\t（在 HTML 源码中，\\t 是字面的反斜杠加 t，会被解析为 \t 制表符）
+      // 简化修复逻辑：统一处理所有 text 相关的问题
+      // 目标：确保所有 text 命令在 HTML 中都是 \\\\text{（这样在 JavaScript 中就是 \\text{）
+      // 策略：收集所有需要修复的位置，然后从后往前统一替换
+      
+      const fixes = [];
+      
+      // 1. 查找 ext{（已被解析的命令，前面不是 \\text）
+      const extPattern = /ext\s*\{/g;
+      let extMatch;
+      while ((extMatch = extPattern.exec(fixedContent)) !== null) {
+        const matchIndex = extMatch.index;
+        const beforeText = fixedContent.substring(Math.max(0, matchIndex - 6), matchIndex);
+        // 如果不是 \\\\text 或 \\text，则需要修复
+        if (!beforeText.endsWith('\\\\text') && !beforeText.endsWith('\\text')) {
+          fixes.push({
+            index: matchIndex,
+            length: extMatch[0].length,
+            replacement: '\\\\text{'
+          });
+        }
+      }
+      
+      // 2. 查找 \\text{（单反斜杠，在 HTML 中，前面不是 \\）
+      const singleBackslashPattern = /\\text\{/g;
+      let singleMatch;
+      while ((singleMatch = singleBackslashPattern.exec(fixedContent)) !== null) {
+        const matchIndex = singleMatch.index;
+        const beforeChar = matchIndex > 0 ? fixedContent[matchIndex - 1] : '';
+        // 如果前面不是反斜杠，则需要修复（单反斜杠的情况）
+        if (beforeChar !== '\\') {
+          fixes.push({
+            index: matchIndex,
+            length: singleMatch[0].length,
+            replacement: '\\\\text{'
+          });
+        }
+      }
+      
+      // 3. 从后往前统一替换，避免索引问题
+      fixes.sort((a, b) => b.index - a.index); // 按索引从大到小排序
+      let newContent = fixedContent;
+      for (const fix of fixes) {
+        newContent = newContent.substring(0, fix.index) + fix.replacement + 
+                    newContent.substring(fix.index + fix.length);
+        localFixes++;
+      }
+      fixedContent = newContent;
+      
+      // 第二步：移除所有 \\t（在 HTML 源码中，\\t 是字面的反斜杠加 t，会被解析为 \t 制表符）
       // 用户说"应该只需要 \t"，这意味着代码中不应该有 \\t，应该只有 \t
       // 但在 HTML 源码中，\t 会被解析为制表符，而制表符不应该出现在 LaTeX 公式中
       // 所以，最好的做法是直接移除 \\t，避免在公式中出现制表符
       fixedContent = fixedContent.replace(/\\\\t/g, '');
       
-      // 第二步：修复已被 JavaScript 解析后的命令（没有反斜杠）
+      // 第三步：修复已被 JavaScript 解析后的命令（没有反斜杠）
       // 例如：\div → div, \frac → rac (因为 \d 和 \f 不是有效转义)
       // 使用共享的解析命令模式定义，确保与检测器完全一致
       // 注意：必须与检测器使用完全相同的正则表达式，替换字符串也必须是匹配的
@@ -402,14 +454,44 @@ class MathFixer {
         
         // 如果 replacement 是函数，使用函数替换；否则使用字符串替换
         if (typeof fix.replacement === 'function') {
+          // 使用全局替换，确保所有匹配都被替换
           fixedContent = fixedContent.replace(fix.pattern, fix.replacement);
         } else {
+          // 使用全局替换
           fixedContent = fixedContent.replace(fix.pattern, fix.replacement);
         }
         
         if (fixedContent !== beforeFix) {
           const matches = beforeFix.match(fix.pattern) || [];
           localFixes += matches.length;
+        } else if (cmd === 'text') {
+          // 如果替换没有生效，可能是因为模式没有匹配到
+          // 对于 text，尝试更宽松的匹配：匹配 ext{ 即使前面有反斜杠（但不在 \\text{ 中）
+          // 由于 JavaScript 不支持负向后查找，我们手动检查
+          const loosePattern = /ext\s*\{/g;
+          let match;
+          let newContent = beforeFix;
+          let found = false;
+          
+          while ((match = loosePattern.exec(beforeFix)) !== null) {
+            const matchIndex = match.index;
+            // 检查前面是否是 \\text{（即双反斜杠 + text）
+            const beforeText = beforeFix.substring(Math.max(0, matchIndex - 5), matchIndex);
+            // 如果不是 \\text{，则替换
+            if (!beforeText.endsWith('\\\\text') && !beforeText.endsWith('\\text')) {
+              // 替换 ext{ 为 \\text{
+              newContent = newContent.substring(0, matchIndex) + '\\\\text{' + 
+                          newContent.substring(matchIndex + match[0].length);
+              found = true;
+              localFixes++;
+              // 更新索引，因为内容长度改变了
+              loosePattern.lastIndex = matchIndex + 7; // 7 = '\\\\text{'.length
+            }
+          }
+          
+          if (found) {
+            fixedContent = newContent;
+          }
         }
       }
       
@@ -546,7 +628,6 @@ class MathFixer {
       
       ${isVue ? '// 3. Vue 集成\n      this.setupVueIntegration();' : ''}
       
-      console.log('[MathRenderManager] Initialized');
     },
     
     // 渲染指定元素或全局
@@ -698,7 +779,6 @@ class MathFixer {
       if (Vue.version && Vue.version.startsWith('3')) {
         // 注意：在生产环境中不建议使用全局 mixin
         // 这里只是作为备用方案
-        console.log('[MathRenderManager] Vue 3 detected, using MutationObserver for updates');
         
         // 延迟再次渲染，确保 Vue 挂载后的内容也能被渲染
         // Vue 挂载可能需要一些时间，所以延迟 200ms 后再次渲染
@@ -746,7 +826,6 @@ class MathFixer {
             attributes: false
           });
           
-          console.log('[MathRenderManager] Observing Vue app container for changes');
         }
         
         // 提供全局刷新方法，供 Vue 组件调用
@@ -1128,6 +1207,96 @@ class MathFixer {
       explanation: changes.length > 0 
         ? `修复了 ${changes.length} 处 v-katex 指令，改用 renderMathInElement 以支持阶段切换时的重新渲染`
         : '未检测到需要修复的 v-katex 指令'
+    };
+  }
+  
+  /**
+   * 修复 HTML 文本内容中 $...$ 内的双反斜杠
+   * 在 HTML 文本内容中，LaTeX 公式应该使用单反斜杠，而不是双反斜杠
+   */
+  fixHtmlTextDoubleBackslash(html, issue) {
+    const changes = [];
+    let fixedHtml = html;
+    let fixCount = 0;
+    
+    // 匹配 HTML 文本内容中的 $...$ 公式
+    const dollarFormulaPattern = /\$[^$\n]+\$/g;
+    let match;
+    const replacements = [];
+    
+    while ((match = dollarFormulaPattern.exec(html)) !== null) {
+      const formulaContent = match[0];
+      const matchIndex = match.index;
+      
+      // 检查是否在 script 标签内
+      const before = html.substring(0, matchIndex);
+      const scriptOpenCount = (before.match(/<script[^>]*>/gi) || []).length;
+      const scriptCloseCount = (before.match(/<\/script>/gi) || []).length;
+      const inScript = scriptOpenCount > scriptCloseCount;
+      
+      // 检查是否在 v-katex 属性中
+      const tagStartMatch = before.match(/<[^>]*$/);
+      let inVKatex = false;
+      if (tagStartMatch) {
+        const tagStartIndex = tagStartMatch.index;
+        const tagContent = html.substring(tagStartIndex, matchIndex + formulaContent.length);
+        inVKatex = /v-katex\s*=\s*["'][^"']*\$[^$]*\$[^"']*["']/i.test(tagContent);
+      }
+      
+      // 只处理 HTML 文本内容中的公式（不在 script 和 v-katex 中）
+      if (!inScript && !inVKatex) {
+        // 在公式内容中查找双反斜杠并替换为单反斜杠
+        let fixedFormula = formulaContent;
+        const doubleBackslashPattern = /\\\\[a-zA-Z]+/g;
+        let backslashMatch;
+        let localFixCount = 0;
+        
+        while ((backslashMatch = doubleBackslashPattern.exec(formulaContent)) !== null) {
+          const cmd = backslashMatch[0].substring(2); // 去掉 \\，获取命令名
+          // 检查是否是有效的 LaTeX 命令
+          if (this.latexCommands.includes(cmd) || cmd.length <= 10) {
+            const replacement = '\\' + cmd;
+            fixedFormula = fixedFormula.replace(backslashMatch[0], replacement);
+            localFixCount++;
+          }
+        }
+        
+        if (localFixCount > 0) {
+          replacements.push({
+            original: formulaContent,
+            fixed: fixedFormula,
+            position: matchIndex,
+            fixCount: localFixCount
+          });
+        }
+      }
+    }
+    
+    // 从后往前替换，避免位置偏移
+    replacements.sort((a, b) => b.position - a.position);
+    
+    for (const replacement of replacements) {
+      const before = fixedHtml.substring(0, replacement.position);
+      const after = fixedHtml.substring(replacement.position + replacement.original.length);
+      fixedHtml = before + replacement.fixed + after;
+      fixCount += replacement.fixCount;
+      
+      changes.push({
+        type: 'replace',
+        location: 'HTML text content',
+        before: replacement.original,
+        after: replacement.fixed,
+        reason: `修复 HTML 文本内容中的双反斜杠：${replacement.original} → ${replacement.fixed}`
+      });
+    }
+    
+    return {
+      success: fixCount > 0,
+      html: fixedHtml,
+      changes,
+      explanation: fixCount > 0 
+        ? `修复了 ${fixCount} 处 HTML 文本内容中 $...$ 公式的双反斜杠问题`
+        : '未检测到需要修复的问题'
     };
   }
   

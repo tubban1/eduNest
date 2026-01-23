@@ -1050,7 +1050,7 @@ class AsyncGenerationQueue {
         const rendererEngine = getDefaultEngine();
         const renderResult = await rendererEngine.process(aiData.full_html, {
           autoFix: true,
-          checkers: ['math', 'runtime']
+          checkers: ['math', 'runtime', 'eslint'] // 添加 eslint 检查器
         });
         
         if (renderResult.success || renderResult.fixes.length > 0) {
@@ -1080,9 +1080,17 @@ class AsyncGenerationQueue {
         description: aiData.description || '',
         full_html: processedHtml,
         tags: aiData.tags || [],
+        knowledge_points: aiData.knowledge_points || [],
         language_code: aiData.language_code || 'zh-CN',
         updated_at: new Date().toISOString()
       };
+
+      // 验证并记录 knowledge_points
+      if (aiData.knowledge_points && Array.isArray(aiData.knowledge_points) && aiData.knowledge_points.length > 0) {
+        logger.info(`[Content Update] ✅ 保存 knowledge_points: ${JSON.stringify(aiData.knowledge_points)}`);
+      } else {
+        logger.warn(`[Content Update] ⚠️ AI 返回的 knowledge_points 为空或格式无效，使用空数组`);
+      }
 
       // 如果 AI 返回了 svg 字段，保存到 svg_thumbnail
       if (aiData.svg && typeof aiData.svg === 'string' && aiData.svg.trim().length > 0) {

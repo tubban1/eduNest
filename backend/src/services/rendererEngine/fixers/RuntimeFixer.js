@@ -14,7 +14,9 @@ class RuntimeFixer {
       'AUDIO_AUTOPLAY_BLOCKED',
       'THREE_DISPOSE_MISSING',
       'GSAP_ANIMATION_LEAK',
-      'VUE_REF_ERROR'
+      'VUE_REF_ERROR',
+      'VUE_INTERVAL_NOT_STOPPED',
+      'DUPLICATE_ASSIGNMENT'
     ];
   }
   
@@ -41,6 +43,12 @@ class RuntimeFixer {
         
       case 'VUE_REF_ERROR':
         return this.fixVueRefError(html, issue);
+        
+      case 'VUE_INTERVAL_NOT_STOPPED':
+        return this.fixVueInterval(html, issue);
+        
+      case 'DUPLICATE_ASSIGNMENT':
+        return this.fixDuplicateAssignment(html, issue);
         
       default:
         return { success: false, html, changes: [], explanation: '未知的问题类型' };
@@ -316,6 +324,168 @@ class RuntimeFixer {
       explanation: changes.length > 0 
         ? `修复了 ${changes.length} 处 Vue ref 使用错误`
         : '未检测到需要修复的 Vue ref 错误'
+    };
+  }
+  
+  /**
+   * 修复 Vue setInterval 在阶段切换时未停止的问题
+   */
+  fixVueInterval(html, issue) {
+    const changes = [];
+    let fixedHtml = html;
+    const funcName = issue.context?.functionName;
+    
+    if (!funcName) {
+      return { success: false, html: fixedHtml, changes: [], explanation: '无法确定函数名' };
+    }
+    
+    // 查找函数定义，使用更宽松的模式匹配多行函数体
+    const funcPattern = new RegExp(`(const|let|function)\\s+${funcName}\\s*=\\s*\\([^)]*\\)\\s*=>\\s*\\{([\\s\\S]*?)\\}`, 'g');
+    let match;
+    
+    while ((match = funcPattern.exec(html)) !== null) {
+      const funcBody = match[2];
+      const fullMatch = match[0];
+      
+      // 查找 setInterval 调用
+      const intervalPattern = /(const\s+interval\s*=\s*)?setInterval\s*\(\s*\([^)]*\)\s*=>\s*\{([\s\S]*?)\}\s*,\s*([^)]+)\)/;
+      const intervalMatch = funcBody.match(intervalPattern);
+      
+      if (intervalMatch) {
+        const callbackBody = intervalMatch[2];
+        
+        // 检查回调体中是否已经有阶段检查
+        if (!/currentStage\.value\s*[!=]==?\s*\d+/.test(callbackBody)) {
+          const hasConstInterval = intervalMatch[1];
+          const delay = intervalMatch[3];
+          
+          // 在回调开头添加阶段检查（在 count 检查之前）
+          // 找到第一个 if 语句的位置，在其之前插入阶段检查
+          const firstIfIndex = callbackBody.search(/\s*if\s*\(/);
+          
+          let stageCheck;
+          if (firstIfIndex > 0) {
+            // 在第一个 if 之前插入
+            stageCheck = `if (currentStage.value !== 2) {
+                            clearInterval(interval);
+                            isProliferating.value = false;
+                            return;
+                        }
+                        `;
+            const newCallbackBody = callbackBody.slice(0, firstIfIndex) + stageCheck + callbackBody.slice(firstIfIndex);
+            const newIntervalCall = `${hasConstInterval || 'const interval = '}setInterval(() => {${newCallbackBody}}, ${delay})`;
+            const newFuncBody = funcBody.replace(intervalPattern, newIntervalCall);
+            const newFullMatch = fullMatch.replace(funcBody, newFuncBody);
+            
+            fixedHtml = fixedHtml.replace(fullMatch, newFullMatch);
+          } else {
+            // 如果没有 if，直接在开头插入
+            stageCheck = `if (currentStage.value !== 2) {
+                            clearInterval(interval);
+                            isProliferating.value = false;
+                            return;
+                        }
+                        `;
+            const newCallbackBody = stageCheck + callbackBody;
+            const newIntervalCall = `${hasConstInterval || 'const interval = '}setInterval(() => {${newCallbackBody}}, ${delay})`;
+            const newFuncBody = funcBody.replace(intervalPattern, newIntervalCall);
+            const newFullMatch = fullMatch.replace(funcBody, newFuncBody);
+            
+            fixedHtml = fixedHtml.replace(fullMatch, newFullMatch);
+          }
+          
+          changes.push({
+            type: 'replace',
+            location: `${funcName} function`,
+            before: 'setInterval without stage check',
+            after: 'setInterval with stage check',
+            reason: `在 ${funcName} 函数中添加阶段检查，确保在阶段切换时停止 setInterval`
+          });
+          
+          // 只修复第一个匹配
+          break;
+        }
+      }
+    }
+    
+    return {
+      success: changes.length > 0,
+      html: fixedHtml,
+      changes,
+      explanation: changes.length > 0 
+        ? `修复了 ${funcName} 函数中的 setInterval 问题`
+        : '未检测到需要修复的 setInterval 问题'
+    };
+  }
+  
+  /**
+   * 修复重复赋值问题
+   */
+  fixDuplicateAssignment(html, issue) {
+    const changes = [];
+    let fixedHtml = html;
+    const fullMatch = issue.context?.fullMatch;
+    const assignment = issue.context?.assignment;
+    
+    if (!fullMatch || !assignment) {
+      return { success: false, html: fixedHtml, changes: [], explanation: '无法确定重复赋值语句' };
+    }
+    
+    // 直接使用字符串替换，避免正则表达式转义问题
+    // fullMatch 格式：assignment + '\n' + whitespace + assignment
+    // 我们要保留第一个，移除第二个
+    const before = fixedHtml;
+    
+    // 首先尝试直接使用 fullMatch 进行替换
+    if (fixedHtml.includes(fullMatch)) {
+      // 直接替换 fullMatch 为单个 assignment
+      fixedHtml = fixedHtml.replace(fullMatch, assignment);
+      
+      if (before !== fixedHtml) {
+        changes.push({
+          type: 'replace',
+          location: 'duplicate assignment',
+          before: fullMatch,
+          after: assignment,
+          reason: '移除重复的赋值语句'
+        });
+      }
+    } else {
+      // 如果 fullMatch 不匹配，尝试查找第一个和第二个匹配
+      const firstIndex = fixedHtml.indexOf(assignment);
+      if (firstIndex !== -1) {
+        // 查找第二个匹配的位置（在第一个之后）
+        const secondIndex = fixedHtml.indexOf(assignment, firstIndex + assignment.length);
+        if (secondIndex !== -1) {
+          // 检查第二个匹配之前是否有换行符和空白字符
+          const beforeSecond = fixedHtml.substring(firstIndex + assignment.length, secondIndex);
+          // 匹配换行符和空白字符（包括制表符和空格）
+          if (/^\s*\n\s*$/.test(beforeSecond) || /^\s+$/.test(beforeSecond)) {
+            // 移除第二个赋值语句及其前面的换行和空白
+            fixedHtml = fixedHtml.substring(0, firstIndex + assignment.length) + 
+                        fixedHtml.substring(secondIndex + assignment.length);
+            
+            if (before !== fixedHtml) {
+              changes.push({
+                type: 'replace',
+                location: 'duplicate assignment',
+                before: fullMatch,
+                after: assignment,
+                reason: '移除重复的赋值语句'
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    return {
+      success: changes.length > 0,
+      html: fixedHtml,
+      changes,
+      explanation: changes.length > 0 
+        ? '移除了重复的赋值语句'
+        : '未检测到需要修复的重复赋值'
     };
   }
 }

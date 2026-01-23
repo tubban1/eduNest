@@ -22,10 +22,26 @@ function createRendererEngine(options = {}) {
   engine.registerChecker(new MathChecker());     // 优先级 2
   engine.registerChecker(new RuntimeChecker());  // 优先级 3
   
+  // ESLint 检查器（可选，需要安装 eslint 和 eslint-plugin-vue）
+  try {
+    const ESLintChecker = require('./checkers/ESLintChecker');
+    engine.registerChecker(new ESLintChecker());  // 优先级 1，与 LibraryChecker 同级
+  } catch (error) {
+    console.warn('[RendererEngine] ESLintChecker 未加载，跳过 ESLint 检查:', error.message);
+  }
+  
   // 注册默认 Fixers
   engine.registerFixer(new LibraryFixer());      // 库修复优先
   engine.registerFixer(new MathFixer());
   engine.registerFixer(new RuntimeFixer());
+  
+  // ESLint 修复器（可选，需要安装 eslint 和 eslint-plugin-vue）
+  try {
+    const ESLintFixer = require('./fixers/ESLintFixer');
+    engine.registerFixer(new ESLintFixer());
+  } catch (error) {
+    console.warn('[RendererEngine] ESLintFixer 未加载，跳过 ESLint 修复:', error.message);
+  }
   
   return engine;
 }

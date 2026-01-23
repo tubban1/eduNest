@@ -858,6 +858,7 @@ const updateContent = async (contentId, contentData) => {
     updateFields.full_html = contentData.full_html;
   }
   if (contentData.tags !== undefined) updateFields.tags = contentData.tags;
+  if (contentData.knowledge_points !== undefined) updateFields.knowledge_points = contentData.knowledge_points;
   if (contentData.description !== undefined) updateFields.description = contentData.description;
   if (contentData.content_type !== undefined) updateFields.content_type = contentData.content_type;
   if (contentData.language_code !== undefined) updateFields.language_code = contentData.language_code;

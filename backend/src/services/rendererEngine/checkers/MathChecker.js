@@ -267,6 +267,23 @@ class MathChecker {
       });
     }
     
+    // 问题 5: 检测 HTML 文本内容中 $...$ 内的双反斜杠（应该使用单反斜杠）
+    const htmlTextDoubleBackslash = this.detectHtmlTextDoubleBackslash(html);
+    if (htmlTextDoubleBackslash.count > 0) {
+      issues.push({
+        type: 'math',
+        code: 'HTML_TEXT_DOUBLE_BACKSLASH',
+        severity: 'high',
+        message: `检测到 ${htmlTextDoubleBackslash.count} 处 HTML 文本内容中 $...$ 公式使用了双反斜杠（应该使用单反斜杠）`,
+        fixable: true,
+        fixStrategy: 'FIX_HTML_TEXT_DOUBLE_BACKSLASH',
+        context: {
+          issues: htmlTextDoubleBackslash.issues,
+          samples: htmlTextDoubleBackslash.samples
+        }
+      });
+    }
+    
     return { issues, metadata };
   }
   
@@ -606,6 +623,83 @@ class MathChecker {
     }
     
     return null;
+  }
+  
+  /**
+   * 检测 HTML 文本内容中 $...$ 内的双反斜杠
+   * 在 HTML 文本内容中，LaTeX 公式应该使用单反斜杠，而不是双反斜杠
+   * 例如：$15 \\cdot \\frac{6}{5}$ 应该是 $15 \cdot \frac{6}{5}$
+   */
+  detectHtmlTextDoubleBackslash(html) {
+    const issues = [];
+    const samples = [];
+    
+    // 匹配 HTML 文本内容中的 $...$ 公式（不在 script 标签内，不在 v-katex 属性中）
+    const dollarFormulaPattern = /\$[^$\n]+\$/g;
+    let match;
+    
+    while ((match = dollarFormulaPattern.exec(html)) !== null) {
+      const formulaContent = match[0];
+      const matchIndex = match.index;
+      
+      // 检查是否在 script 标签内
+      const before = html.substring(0, matchIndex);
+      const scriptOpenCount = (before.match(/<script[^>]*>/gi) || []).length;
+      const scriptCloseCount = (before.match(/<\/script>/gi) || []).length;
+      const inScript = scriptOpenCount > scriptCloseCount;
+      
+      // 检查是否在 v-katex 属性中（更精确的检测）
+      // 查找最近的标签开始位置
+      const tagStartMatch = before.match(/<[^>]*$/);
+      if (tagStartMatch) {
+        const tagStartIndex = tagStartMatch.index;
+        const tagContent = html.substring(tagStartIndex, matchIndex + formulaContent.length);
+        const inVKatex = /v-katex\s*=\s*["'][^"']*\$[^$]*\$[^"']*["']/i.test(tagContent);
+        
+        if (inVKatex) {
+          continue; // 跳过 v-katex 属性中的公式
+        }
+      }
+      
+      // 只处理 HTML 文本内容中的公式（不在 script 和 v-katex 中）
+      if (!inScript) {
+        // 检测双反斜杠后跟 LaTeX 命令
+        const doubleBackslashPattern = /\\\\[a-zA-Z]+/g;
+        let backslashMatch;
+        const formulaIssues = [];
+        
+        while ((backslashMatch = doubleBackslashPattern.exec(formulaContent)) !== null) {
+          const cmd = backslashMatch[0].substring(2); // 去掉 \\，获取命令名
+          // 检查是否是有效的 LaTeX 命令（使用 MathChecker 的 latexCommands 列表）
+          if (this.latexCommands.includes(cmd) || cmd.length <= 10) {
+            formulaIssues.push({
+              position: matchIndex + backslashMatch.index,
+              match: backslashMatch[0],
+              command: cmd,
+              suggestion: '\\' + cmd
+            });
+          }
+        }
+        
+        if (formulaIssues.length > 0) {
+          issues.push({
+            formula: formulaContent,
+            position: matchIndex,
+            issues: formulaIssues
+          });
+          
+          if (samples.length < 5) {
+            samples.push(`Double backslash in HTML text: "${formulaContent.substring(0, 60)}${formulaContent.length > 60 ? '...' : ''}"`);
+          }
+        }
+      }
+    }
+    
+    return {
+      count: issues.length,
+      issues,
+      samples
+    };
   }
   
   /**
