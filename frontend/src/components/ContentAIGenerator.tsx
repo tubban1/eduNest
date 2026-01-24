@@ -1268,7 +1268,7 @@ export default function ContentAIGenerator({
                 title={mounted ? t('outputType.select', { ns: 'content', defaultValue: '选择输出类型' }) : 'Select Output Type'}
               >
                 <option value="interactive">
-                  {mounted ? t('outputType.interactive', { ns: 'content', defaultValue: '交互式（默认）' }) : 'Interactive (Default)'}
+                  {mounted ? t('outputType.interactive', { ns: 'content', defaultValue: '交互式' }) : 'Interactive'}
                 </option>
                 <option value="animated">
                   {mounted ? t('outputType.animated', { ns: 'content', defaultValue: '动画' }) : 'Animated'}
