@@ -171,7 +171,7 @@ class AsyncGenerationQueue {
           image_url: imageUrl, // 保存图片URL
           generation_params: {
             knowledge_point: generationParams.knowledge_point,
-            learning_stage: generationParams.learning_stage,
+            output_type: generationParams.output_type || 'interactive',
             description: generationParams.description,
             language_code: generationParams.language_code,
             provider: generationParams.provider,
@@ -181,7 +181,7 @@ class AsyncGenerationQueue {
           },
           request_payload: {
             knowledge_point: generationParams.knowledge_point,
-            learning_stage: generationParams.learning_stage,
+            output_type: generationParams.output_type || 'interactive',
             description: generationParams.description,
             language_code: generationParams.language_code,
             provider: generationParams.provider,
@@ -768,7 +768,7 @@ class AsyncGenerationQueue {
       // 调用 AI 生成服务（异步模式）+ 超时保护
       const aiPromise = aiService.generateEducationalContent(
         task.generation_params.knowledge_point,
-        task.generation_params.learning_stage || 'understanding',
+        task.generation_params.output_type || 'interactive',
         task.generation_params.description,
         task.generation_params.language_code,
         task.user_id,
@@ -1085,11 +1085,60 @@ class AsyncGenerationQueue {
         updated_at: new Date().toISOString()
       };
 
+      // 验证并保存 content_type（从 AI 返回的数据中读取）
+      if (aiData.content_type && typeof aiData.content_type === 'string') {
+        // 验证 content_type 值（只允许 'interactive' 或 'animated'）
+        if (['interactive', 'animated'].includes(aiData.content_type)) {
+          updateData.content_type = aiData.content_type;
+          logger.info(`[Content Update] ✅ 保存 content_type: ${aiData.content_type}`);
+        } else {
+          logger.warn(`[Content Update] ⚠️ AI 返回的 content_type 值无效: ${aiData.content_type}，跳过保存`);
+        }
+      } else {
+        // 如果 AI 没有返回 content_type，从 generation_params 中获取（向后兼容）
+        try {
+          const { data: taskData, error: taskError } = await DatabaseService.supabase
+            .from('ai_usage_logs')
+            .select('generation_params')
+            .eq('content_id', contentId)
+            .eq('action_type', 'generate')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (!taskError && taskData?.generation_params?.output_type) {
+            const outputType = taskData.generation_params.output_type;
+            // 将 output_type 映射到 content_type
+            if (['interactive', 'animated'].includes(outputType)) {
+              updateData.content_type = outputType;
+              logger.info(`[Content Update] ✅ 从 generation_params 获取 content_type: ${outputType}`);
+            } else {
+              logger.warn(`[Content Update] ⚠️ generation_params.output_type 值无效: ${outputType}，使用默认值 'interactive'`);
+              updateData.content_type = 'interactive'; // 默认值
+            }
+          } else {
+            logger.warn(`[Content Update] ⚠️ AI 返回的 content_type 为空，且无法从 generation_params 获取，使用默认值 'interactive'`);
+            updateData.content_type = 'interactive'; // 默认值
+          }
+        } catch (taskQueryError) {
+          logger.error(`[Content Update] ❌ 查询 generation_params 失败: ${taskQueryError.message}`);
+          updateData.content_type = 'interactive'; // 默认值
+        }
+      }
+
       // 验证并记录 knowledge_points
       if (aiData.knowledge_points && Array.isArray(aiData.knowledge_points) && aiData.knowledge_points.length > 0) {
         logger.info(`[Content Update] ✅ 保存 knowledge_points: ${JSON.stringify(aiData.knowledge_points)}`);
       } else {
         logger.warn(`[Content Update] ⚠️ AI 返回的 knowledge_points 为空或格式无效，使用空数组`);
+      }
+
+      // 验证并保存 tech_stack
+      if (aiData.tech_stack && Array.isArray(aiData.tech_stack) && aiData.tech_stack.length > 0) {
+        updateData.tech_stack = aiData.tech_stack;
+        logger.info(`[Content Update] ✅ 保存 tech_stack: ${JSON.stringify(aiData.tech_stack)}`);
+      } else {
+        logger.warn(`[Content Update] ⚠️ AI 返回的 tech_stack 为空或格式无效，跳过保存`);
       }
 
       // 如果 AI 返回了 svg 字段，保存到 svg_thumbnail
@@ -1371,7 +1420,7 @@ class AsyncGenerationQueue {
       const generationParams = {
         user_id: userId,
         knowledge_point: failedTask.user_query,
-        learning_stage: failedTask.request_payload?.learning_stage || 'understanding',
+        output_type: failedTask.request_payload?.output_type || 'interactive',
         description: failedTask.request_payload?.description || '',
         language_code: failedTask.request_payload?.language_code || 'zh-CN',
         provider: failedTask.request_payload?.provider || process.env.DEFAULT_AI_PROVIDER || 'qenda'

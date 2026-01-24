@@ -222,7 +222,8 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
           generation_updated_at: log.updated_at,
           user_query: log.user_query,
           image_url: log.image_url || null,
-          started_at: log.started_at
+          started_at: log.started_at,
+          is_render_success: log.is_render_success // 保存渲染成功状态
         });
       });
       
@@ -232,22 +233,44 @@ const getContentsWithGenerationStatus = async (filters = {}) => {
     }
 
     // 合并内容数据和生成状态
-    const contentsWithStatus = contents.map(content => {
-      const status = statusMap.get(content.id);
-      const retryCount = retryCountMap.get(content.id) || 0;
-      
-      const result = {
-        ...content,
-        generation_status: status?.generation_status || null,
-        generation_error: status?.generation_error || null,
-        retry_count: retryCount,
-        generation_updated_at: status?.generation_updated_at || null,
-        user_query: status?.user_query || null,
-        image_url: status?.image_url || null
-      };
-      
-      return result;
-    });
+    // 注意：生成中的内容（pending, processing, failed）都应该显示，让前端显示状态卡片
+    const contentsWithStatus = contents
+      .map(content => {
+        const status = statusMap.get(content.id);
+        const retryCount = retryCountMap.get(content.id) || 0;
+        
+        const result = {
+          ...content,
+          generation_status: status?.generation_status || null,
+          generation_error: status?.generation_error || null,
+          retry_count: retryCount,
+          generation_updated_at: status?.generation_updated_at || null,
+          user_query: status?.user_query || null,
+          image_url: status?.image_url || null,
+          started_at: status?.started_at || null
+        };
+        
+        return result;
+      })
+      .filter(content => {
+        // 如果有生成记录，根据状态决定是否显示
+        const status = statusMap.get(content.id);
+        if (status) {
+          // 生成中的状态（pending, processing, failed）都显示，让前端显示状态卡片
+          if (['pending', 'processing', 'failed'].includes(status.generation_status)) {
+            return true;
+          }
+          // done 状态：只有渲染成功的内容才显示
+          if (status.generation_status === 'done') {
+            return status.is_render_success === true;
+          }
+        }
+        
+        // 如果没有生成记录，只要有 full_html 就认为可以渲染（可能是手动创建的内容）
+        // 注意：生成中的内容可能没有 full_html，但应该显示状态卡片
+        // 所以这里不要求必须有 full_html（如果 status 存在，上面已经处理了）
+        return true;
+      });
     
     return { data: contentsWithStatus, error: null };
   } catch (error) {

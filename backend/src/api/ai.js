@@ -13,7 +13,7 @@ const DatabaseService = require('../services/database');
 router.post('/generate', [
   authenticateToken,
   body('knowledgePoint').isString().isLength({ min: 1, max: 1500 }).withMessage('知识点不能为空且长度不能超过1500字'),
-  body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
+  body('output_type').optional().isIn(['interactive', 'animated']).withMessage('output_type 必须是 interactive 或 animated'),
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
@@ -44,13 +44,7 @@ router.post('/generate', [
       });
     }
 
-    const { knowledgePoint, learningStage, description, language_code, provider, requestId, image } = req.body;
-
-    // 验证学习阶段
-    if (!aiService.validateLearningStage(learningStage)) {
-      return res.status(400).json({ error: '不支持的学习阶段' });
-    }
-
+    const { knowledgePoint, output_type = 'interactive', description, language_code, provider, requestId, image } = req.body;
 
     // 订阅豁免与积分预校验（先校验，成功后再在成功渲染时扣减）
     const CREDITS_COST = 10; // AI 内容生成消耗 10 积分
@@ -68,7 +62,7 @@ router.post('/generate', [
       }
     }
 
-    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage, description, language_code, userId, 'generate', provider, requestId, false, image || null);
+    const result = await aiService.generateEducationalContent(knowledgePoint, output_type, description, language_code, userId, 'generate', provider, requestId, false, image || null);
 
     if (result.success) {
       // 在生成成功后扣减积分（仅当需要且用户存在）
@@ -79,12 +73,12 @@ router.post('/generate', [
       res.json({
         success: true,
         data: result.data,
-        learningStage: result.learningStage
+        output_type: result.output_type || output_type
       });
     } else {
       logger.error(`AI生成失败: ${result.error}`, {
         knowledgePoint,
-        learningStage,
+        output_type,
         language_code,
         error: result.error,
         details: result.details
@@ -108,7 +102,7 @@ router.post('/generate', [
 // 测试AI API（不需要认证）
 router.post('/test', [
   body('knowledgePoint').isString().isLength({ min: 1, max: 1500 }).withMessage('知识点不能为空且长度不能超过1500字'),
-  body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
+  body('output_type').optional().isIn(['interactive', 'animated']).withMessage('output_type 必须是 interactive 或 animated'),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -119,21 +113,20 @@ router.post('/test', [
       });
     }
 
-    const { knowledgePoint, learningStage } = req.body;
+    const { knowledgePoint, output_type = 'interactive' } = req.body;
 
-
-    const result = await aiService.generateEducationalContent(knowledgePoint, learningStage);
+    const result = await aiService.generateEducationalContent(knowledgePoint, output_type);
 
     if (result.success) {
       res.json({
         success: true,
         data: result.data,
-        learningStage: result.learningStage
+        output_type: result.output_type || output_type
       });
     } else {
       logger.error(`AI测试生成失败: ${result.error}`, {
         knowledgePoint,
-        learningStage,
+        output_type,
         error: result.error,
         details: result.details
       });
@@ -153,46 +146,19 @@ router.post('/test', [
   }
 });
 
-// 获取支持的学习阶段
-router.get('/learning-stages', authenticateToken, async (req, res) => {
+// 获取支持的输出类型
+router.get('/output-types', authenticateToken, async (req, res) => {
   try {
-    const stages = aiService.getSupportedLearningStages();
+    const types = aiService.getSupportedOutputTypes();
     res.json({
       success: true,
-      data: stages
+      data: types
     });
   } catch (error) {
-    logger.error('获取学习阶段失败:', error);
+    logger.error('获取输出类型失败:', error);
     res.status(500).json({
       success: false,
-      error: error.message || '获取学习阶段失败'
-    });
-  }
-});
-
-// 获取学习阶段描述
-router.get('/learning-stage/:stage/description', authenticateToken, async (req, res) => {
-  try {
-    const { stage } = req.params;
-    
-    if (!aiService.validateLearningStage(stage)) {
-      return res.status(400).json({ error: '不支持的学习阶段' });
-    }
-
-    const description = aiService.getLearningStageDescription(stage);
-    res.json({
-      success: true,
-      data: {
-        stage,
-        description,
-        name: aiService.LEARNING_STAGE_NAMES[stage]
-      }
-    });
-  } catch (error) {
-    logger.error('获取学习阶段描述失败:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || '获取学习阶段描述失败'
+      error: error.message || '获取输出类型失败'
     });
   }
 });
@@ -254,7 +220,7 @@ router.get('/test-key', async (req, res) => {
 // 测试AI返回的原始内容
 router.post('/test-raw', [
   body('knowledgePoint').isString().isLength({ min: 1, max: 200 }).withMessage('知识点不能为空且长度不能超过200字'),
-  body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
+  body('output_type').optional().isIn(['interactive', 'animated']).withMessage('output_type 必须是 interactive 或 animated'),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -265,11 +231,11 @@ router.post('/test-raw', [
       });
     }
 
-    const { knowledgePoint, learningStage } = req.body;
-
+    const { knowledgePoint, output_type = 'interactive' } = req.body;
 
     // 直接调用AI API查看原始返回
-    const userPrompt = aiService.LEARNING_STAGE_PROMPTS[learningStage].replace('{{knowledge_point}}', knowledgePoint);
+    const config = aiService.OUTPUT_TYPE_CONFIGS[output_type] || aiService.OUTPUT_TYPE_CONFIGS.interactive;
+    const userPrompt = config.userPrompt.replace('{{knowledge_point}}', knowledgePoint);
     
     const response = await fetch(process.env.ARK_URL || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
       method: 'POST',
@@ -280,7 +246,7 @@ router.post('/test-raw', [
       body: JSON.stringify({
         model: process.env.ARK_MODEL || 'kimi-k2-250711',
         messages: [
-          { role: 'system', content: aiService.SYSTEM_PROMPT },
+          { role: 'system', content: aiService.getSystemPrompt(knowledgePoint, 'en-US', output_type) },
           { role: 'user', content: userPrompt }
         ]
       })
@@ -517,7 +483,7 @@ router.post('/generate-async', [
   authenticateToken,
   body('content_id').isUUID().withMessage('content_id 必须是有效的UUID'),
   body('knowledge_point').isString().isLength({ min: 1, max: 1500 }).withMessage('知识点不能为空且长度不能超过1500字'),
-  body('learning_stage').optional().isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
+  body('output_type').optional().isIn(['interactive', 'animated']).withMessage('output_type 必须是 interactive 或 animated'),
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
@@ -549,7 +515,7 @@ router.post('/generate-async', [
       });
     }
 
-    const { content_id, knowledge_point, learning_stage, description, language_code, provider, image, idempotency_key } = req.body;
+    const { content_id, knowledge_point, output_type = 'interactive', description, language_code, provider, image, idempotency_key } = req.body;
     const userId = req.user?.id;
     
     // 调试日志：检查图片数据
@@ -596,7 +562,7 @@ router.post('/generate-async', [
     const { log, requestId } = await asyncGenerationQueue.addTask(content_id, {
       user_id: userId,
       knowledge_point,
-      learning_stage: learning_stage || 'understanding',
+      output_type: output_type || 'interactive',
       description,
       language_code,
       provider,
@@ -1147,7 +1113,7 @@ const visitorUsageService = require('../services/visitorUsageService');
 router.post('/generate-free', [
   validateVisitorId,
   body('knowledgePoint').isString().isLength({ min: 1, max: 1500 }).withMessage('知识点不能为空且长度不能超过1500字'),
-  body('learningStage').isIn(['understanding', 'application', 'assessment', 'expansion', 'gamify']).withMessage('学习阶段不合法'),
+  body('output_type').optional().isIn(['interactive', 'animated']).withMessage('output_type 必须是 interactive 或 animated'),
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
@@ -1180,7 +1146,7 @@ router.post('/generate-free', [
     }
 
     const visitorId = req.visitorId;
-    const { knowledgePoint, learningStage, description, language_code, provider, image, idempotency_key } = req.body;
+    const { knowledgePoint, output_type = 'interactive', description, language_code, provider, image, idempotency_key } = req.body;
     
     // 调试日志：检查图片数据
     if (image) {
@@ -1200,11 +1166,11 @@ router.post('/generate-free', [
       });
     }
 
-    // 验证学习阶段
-    if (!aiService.validateLearningStage(learningStage)) {
+    // 验证输出类型
+    if (!aiService.validateOutputType(output_type)) {
       return res.status(400).json({ 
         success: false,
-        error: '不支持的学习阶段' 
+        error: '不支持的输出类型' 
       });
     }
 
@@ -1231,7 +1197,7 @@ router.post('/generate-free', [
     const { log, requestId } = await asyncGenerationQueue.addTask(createdContent.id, {
       user_id: visitorId,
       knowledge_point: knowledgePoint,
-      learning_stage: learningStage || 'understanding',
+      output_type: output_type || 'interactive',
       description: description,
       language_code: language_code,
       provider: provider,

@@ -107,6 +107,7 @@ export default function ContentAIGenerator({
   const [knowledgePoint, setKnowledgePoint] = useState('');
   const [description, setDescription] = useState('');
   const [language, setLanguage] = useState('');
+  const [outputType, setOutputType] = useState<'interactive' | 'animated'>('interactive');
   const [aiProvider, setAiProvider] = useState<string>('');
   const [aiGenerating, setAiGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -1019,6 +1020,7 @@ export default function ContentAIGenerator({
         const idempotencyKey = [
           'free',
           currentKnowledgePoint,
+          outputType,
           language,
           currentDescription || '',
           currentUploadedImage ? currentUploadedImage.mimeType : 'noimg'
@@ -1026,7 +1028,7 @@ export default function ContentAIGenerator({
 
         generateResponse = await api.generateContentFree({
           knowledgePoint: currentKnowledgePoint,
-          learningStage: 'understanding',
+          output_type: outputType,
           description: currentDescription,
           language_code: language,
           image: currentUploadedImage ? {
@@ -1088,6 +1090,7 @@ export default function ContentAIGenerator({
           'gen',
           contentResponse.id,
           currentKnowledgePoint,
+          outputType,
           language,
           currentDescription || '',
           currentUploadedImage ? currentUploadedImage.mimeType : 'noimg'
@@ -1095,7 +1098,7 @@ export default function ContentAIGenerator({
 
         generateResponse = await api.generateContentAsync(contentResponse.id, {
           knowledge_point: currentKnowledgePoint,
-          learning_stage: 'understanding',
+          output_type: outputType,
           description: currentDescription,
           language_code: language,
           provider: user.role === 'admin' ? aiProvider : undefined,
@@ -1244,7 +1247,7 @@ export default function ContentAIGenerator({
               disabled={isAiFormDisabled}
               maxLength={1500}
             />
-            {/* 底部左侧按钮区域（语言选择和图片上传，并排显示） */}
+            {/* 底部左侧按钮区域（语言选择、输出类型和图片上传，并排显示） */}
             <div className="absolute bottom-2 left-2 flex gap-2 items-center z-10">
               {/* 语言选择按钮 */}
               <button
@@ -1256,6 +1259,21 @@ export default function ContentAIGenerator({
               >
                 {language ? getLanguageLabel(language) : (mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: '选择语言' }) : 'Select Language')}
               </button>
+              {/* 输出类型选择器 */}
+              <select
+                value={outputType}
+                onChange={(e) => setOutputType(e.target.value as 'interactive' | 'animated')}
+                disabled={isAiFormDisabled}
+                className="px-2 py-1 text-sm border border-border rounded hover:bg-muted/50 transition disabled:opacity-50 disabled:cursor-not-allowed bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                title={mounted ? t('outputType.select', { ns: 'content', defaultValue: '选择输出类型' }) : 'Select Output Type'}
+              >
+                <option value="interactive">
+                  {mounted ? t('outputType.interactive', { ns: 'content', defaultValue: '交互式（默认）' }) : 'Interactive (Default)'}
+                </option>
+                <option value="animated">
+                  {mounted ? t('outputType.animated', { ns: 'content', defaultValue: '动画' }) : 'Animated'}
+                </option>
+              </select>
               {/* 图片上传按钮 */}
               <input
                 type="file"

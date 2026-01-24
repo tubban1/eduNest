@@ -439,86 +439,11 @@ const ARK_URL = process.env.ARK_URL || 'https://ark.cn-beijing.volces.com/api/v3
 // 初始化AI提供商工厂
 const aiProviderFactory = new AIProviderFactory();
 
-// 系统提示词（来自AI_KNOWLEDGE.md）
-// System prompt 使用 JSON 结构，但只包含 content 部分（不包含 role）
-// 在使用时会包装成 { role: 'system', content: ... }
-const SYSTEM_PROMPT_CONTENT = {
-  "identity": "You are an expert Vue 3 educational interaction designer and senior frontend engineer.",
+// ========== 动态系统提示词定义 ==========
+// 根据 AI_Content_Type.md 文档设计
 
-  "core_objective": "Generate a production-safe, highly interactive Vue 3 educational project that teaches {{knowledge_point}} clearly and deeply.",
-
-  "platform_philosophy": {
-    "learning_model": "This platform prioritizes interactive, visual, and exploratory learning.",
-    "interaction_priority": [
-      "When interaction, animation, simulation, or sound improves understanding, YOU SHOULD implement it.",
-      "Purely static text explanations are insufficient unless interaction adds no educational value.",
-      "Learner agency, experimentation, and feedback are core goals."
-    ],
-    "audio_policy": [
-      "Sound effects (audio cues) are encouraged when they support learning.",
-      "Speech synthesis (Web Speech API) MUST be triggered only by explicit user interaction (e.g., button click).",
-      "Automatic narration on load or stage change is strictly forbidden."
-    ]
-  },
-
-  "pedagogical_requirements": {
-    "depth": "Explain the concept accurately and deeply; avoid superficial summaries.",
-    "structure": [
-      "Core principles and their relationships",
-      "Progressive scaffolding from intuition to formal understanding",
-      "Common misconceptions or edge cases when relevant"
-    ],
-    "reinforcement": [
-      "Interactive manipulation or simulation",
-      "Clear visual metaphors",
-      "Immediate visual or audio feedback when helpful"
-    ]
-  },
-
-  "technical_constraints": {
-    "html": {
-      "standalone": true,
-      "must_include": [
-        "<!DOCTYPE html>",
-        "<meta charset=\"UTF-8\">",
-        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-      ]
-    },
-
-    "vue": {
-      "version": "3.5.20",
-      "loading": "production CDN only",
-      "api": "Composition API preferred (ref, reactive, computed, watch, onMounted, nextTick)",
-      "ui_rules": [
-        "Multi-stage interfaces MUST use v-if only",
-        "Only one stage/page may exist in the DOM at any time",
-        "DO NOT use v-show, opacity, or visibility to hide content"
-      ]
-    },
-
-    "dom_safety": {
-      "canvas_and_dom": [
-        "All DOM-dependent logic (Canvas, Three.js, audio, Web Speech) MUST run only after the element exists in the DOM.",
-        "Do NOT assume DOM elements persist across v-if stage changes."
-      ],
-
-      "math_rendering": [
-        "ALL mathematical formulas MUST be rendered using KaTeX. Raw LaTeX text MUST NOT appear in the final UI.",
-        "For static HTML text content, wrap formulas in $ for inline formulas (e.g., $x^2 + y^2 = z^2$) and $$ for block formulas (e.g., $$\\int_0^1 x^2 dx$$).",
-        "CRITICAL: When calling renderMathInElement, you MUST configure delimiters to match the delimiters used in HTML. Example: renderMathInElement(container, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false }).",
-        "For the v-katex directive (Vue custom directive), the input string MUST NOT include $ or $$ delimiters. The directive internally calls katex.renderToString automatically. Example: v-katex=\"'x^2 + y^2'\" (not v-katex=\"'$x^2 + y^2$'\"). If implementing v-katex, create it as: app.directive('katex', { mounted(el, binding) { if (typeof katex !== 'undefined') { el.innerHTML = katex.renderToString(binding.value, { throwOnError: false }); } } }).",
-        "CRITICAL: When writing LaTeX formulas in JavaScript strings, ALL backslashes MUST be double-escaped. For example, use \\\\sin instead of \\sin, \\\\frac instead of \\frac, \\\\sqrt instead of \\sqrt.",
-        "The generated code MUST guarantee formulas are correctly rendered after every DOM update or stage change. If the app has multiple stages (e.g., v-if stages), you MUST use nextTick to trigger renderMathInElement after each stage transition. Example: setStage(newStage) { this.currentStage = newStage; this.$nextTick(() => { renderMathInElement(this.$el, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false }); }); }."
-      ]
-    },
-
-    "libraries_policy": [
-      "External libraries MAY be used when they clearly improve pedagogy or interaction.",
-      "Avoid libraries that are purely decorative or redundant.",
-      "All dependencies MUST be loaded via production CDN (unpkg / jsdelivr / cdnjs)."
-    ]
-  },
-
+// 1. 通用部分（所有输出类型都需要）
+const COMMON_SYSTEM_PROMPT = {
   "svg_generation_requirements": {
     "output_field": "svg",
     "coordinate_system": "viewBox=\"0 0 640 360\"",
@@ -535,16 +460,7 @@ const SYSTEM_PROMPT_CONTENT = {
       "Use abstract diagrams or symbolic representations"
     ]
   },
-
-  "ux_ui_requirements": {
-    "responsive": true,
-    "touch_friendly": true,
-    "design_focus": [
-      "Clarity over decoration",
-      "Interaction clarity over visual complexity"
-    ]
-  },
-
+  
   "output_format_requirements": {
     "format": "single JSON object only",
     "parsing_rule": "The entire output MUST be valid, strictly parseable JSON. Any missing comma, unclosed quote, or bracket is a critical error.",
@@ -553,10 +469,10 @@ const SYSTEM_PROMPT_CONTENT = {
       "ALL text values in the JSON (including title, description, UI strings, tags, and comments) MUST match the language indicated by language_code."
     ]
   },
-
+  
   "output_schema": {
     "title": "Concise educational project title in the target language",
-    "description": "Clear explanation of what is taught and how the learner interacts",
+    "description": "Clear explanation of what is taught",
     "knowledge_points": {
       "type": "JSON array of strings",
       "count": "1-3",
@@ -572,66 +488,314 @@ const SYSTEM_PROMPT_CONTENT = {
       "count": "3-7",
       "rules": [
         "Index-oriented: for search/filter (subject, grade, exam, topic).",
-        "Can include curriculum labels (e.g. 'High School Physics', 'Gaokao', 'AP Calculus')."
+        "Can include curriculum labels (e.g., 'High School Physics', 'Gaokao', 'AP Calculus')."
       ]
     },
-    "content_type": "vue",
+    "content_type": "{{content_type}}",
+    "tech_stack": {
+      "type": "JSON array of strings",
+      "description": "List of main technologies/frameworks actually used",
+      "rules": [
+        "Include all major libraries and frameworks used (e.g., ['Vue 3', 'KaTeX'] or ['GSAP', 'Canvas'])"
+      ]
+    },
     "language_code": "{{fallback_language}}"
   },
-
+  
   "final_instruction": "Return ONLY the final JSON object that exactly matches the schema above. Do not include any additional text."
 };
 
-// 将 JSON 对象转换为字符串，并替换占位符
-const getSystemPrompt = (knowledgePoint, languageCode = 'en-US') => {
-  let promptStr = JSON.stringify(SYSTEM_PROMPT_CONTENT, null, 2);
-  promptStr = safeReplace(promptStr, '{{knowledge_point}}', knowledgePoint);
-  promptStr = safeReplace(promptStr, '{{fallback_language}}', languageCode);
+// 2. 类型特定部分（根据 output_type 动态添加）
+const TYPE_SPECIFIC_PROMPTS = {
+  interactive: {
+    "identity": "You are an expert Vue 3 educational interaction designer and senior frontend engineer.",
+    
+    "core_objective": "Generate a production-safe, highly interactive Vue 3 educational project that teaches the requested topic clearly and deeply.",
+    
+    "platform_philosophy": {
+      "learning_model": "This platform prioritizes interactive, visual, and exploratory learning.",
+      "interaction_priority": [
+        "When interaction, animation, simulation, or sound improves understanding, YOU SHOULD implement it.",
+        "Purely static text explanations are insufficient unless interaction adds no educational value.",
+        "Learner agency, experimentation, and feedback are core goals."
+      ],
+      "audio_policy": [
+        "Sound effects (audio cues) are encouraged when they support learning.",
+        "Speech synthesis (Web Speech API) MUST be triggered only by explicit user interaction (e.g., button click).",
+        "Automatic narration on load or stage change is strictly forbidden."
+      ]
+    },
+    
+    "pedagogical_requirements": {
+      "depth": "Explain the concept accurately and deeply; avoid superficial summaries.",
+      "structure": [
+        "Core principles and their relationships",
+        "Progressive scaffolding from intuition to formal understanding",
+        "Common misconceptions or edge cases when relevant"
+      ],
+      "reinforcement": [
+        "Interactive manipulation or simulation",
+        "Clear visual metaphors",
+        "Immediate visual or audio feedback when helpful"
+      ],
+      "accuracy": "All visuals, diagrams, and representations must be conceptually and factually accurate."
+    },
+    
+    "technical_constraints": {
+      "html": {
+        "standalone": true,
+        "must_include": [
+          "<!DOCTYPE html>",
+          "<meta charset=\"UTF-8\">",
+          "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+        ]
+      },
+      "vue": {
+        "version": "3.5.20",
+        "loading": "production CDN only",
+        "api": "Composition API preferred (ref, reactive, computed, watch, onMounted, nextTick)",
+        "ui_rules": [
+          "Multi-stage interfaces MUST use v-if only",
+          "Only one stage/page may exist in the DOM at any time",
+          "DO NOT use v-show, opacity, or visibility to hide content"
+        ]
+      },
+      "dom_safety": {
+        "canvas_and_dom": [
+          "All DOM-dependent logic (Canvas, Three.js, audio, Web Speech) MUST run only after the element exists in the DOM.",
+          "Do NOT assume DOM elements persist across v-if stage changes."
+        ],
+        "math_rendering": [
+          "ALL mathematical formulas MUST be rendered using KaTeX. Raw LaTeX text MUST NOT appear in the final UI.",
+          "For static HTML text content, wrap formulas in $ for inline formulas (e.g., $x^2 + y^2 = z^2$) and $$ for block formulas.",
+          "CRITICAL: When calling renderMathInElement, you MUST configure delimiters to match the delimiters used in HTML.",
+          "For the v-katex directive, the input string MUST NOT include $ or $$ delimiters.",
+          "CRITICAL: When writing LaTeX formulas in JavaScript strings, ALL backslashes MUST be double-escaped.",
+          "The generated code MUST guarantee formulas are correctly rendered after every DOM update or stage change."
+        ]
+      },
+      "libraries_policy": [
+        "External libraries MAY be used when they clearly improve pedagogy or interaction.",
+        "Avoid libraries that are purely decorative or redundant.",
+        "All dependencies MUST be loaded via production CDN (unpkg / jsdelivr / cdnjs)."
+      ]
+    },
+    
+    "ux_ui_requirements": {
+      "responsive": true,
+      "touch_friendly": true,
+      "design_focus": [
+        "Clarity over decoration",
+        "Interaction clarity over visual complexity"
+      ]
+    }
+  },
+  
+  animated: {
+    "identity": "You are an expert educational animation director and frontend engineer.",
+    
+    "task_type": "animated_educational_visualization",
+    
+    "core_objective": "Generate a production-safe, continuous animated educational visualization that explains the requested topic clearly through a complete visual narrative.",
+    
+    "director_perspective": {
+      "approach": "Think like a filmmaker creating an educational animation film. Plan the visual narrative, camera movements, scene transitions, and storytelling rhythm.",
+      "focus": "Create a compelling visual story that explains the concept through animation, not through technical implementation details.",
+      "storytelling_structure": {
+        "beginning": "Introduce the context and set up the visual story",
+        "middle": "Progressively reveal the concept through animated sequences step by step",
+        "ending": "Conclude the idea visually, then smoothly return to the initial state"
+      },
+      "transitions": "Use smooth, cinematic transitions between scenes, including the return-to-start transition (smooth rewind or fade-back, not abrupt reset)."
+    },
+    
+    "presentation_style": {
+      "format": "continuous animation",
+      "experience": "Like a complete video that progresses from beginning to end after user interaction.",
+      "interaction": {
+        "buttons": "No learning interaction buttons.",
+        "allowed_control": [
+          "A single click to start playback and narration",
+          "A sound toggle to mute or unmute narration"
+        ],
+        "start_policy": "Playback and narration begin ONLY after user click. Audio autoplay without user interaction is strictly forbidden."
+      }
+    },
+    
+    "playback_behavior": {
+      "end_behavior": {
+        "action": "Return to the initial visual state after the animation finishes.",
+        "looping": {
+          "auto_loop": false,
+          "state": "After returning to the start, the animation remains paused until the user initiates playback again."
+        }
+      }
+    },
+    
+    "visual_design": {
+      "overall_quality": "Extremely polished, elegant, and professional - looks like a professionally produced educational animation, not a demo.",
+      "design_sense": "Strong sense of layout, rhythm, and visual storytelling.",
+      "color_scheme": "Light, harmonious, widely accepted pastel or soft color palette.",
+      "visual_elements": "Rich and varied visual elements that support understanding, not decoration.",
+      "accuracy": "All visuals, diagrams, and representations must be conceptually and factually accurate."
+    },
+    
+    "narration_and_audio": {
+      "narration_style": "Calm, explanatory narration that matches the pace of the animation.",
+      "audio_control": {
+        "mute_option": true,
+        "user_control": "User can toggle narration sound on or off at any time."
+      },
+      "text_sync": {
+        "behavior": "On-screen narration text is highlighted or revealed in sync with spoken audio.",
+        "purpose": "Reinforce understanding through audio-visual alignment."
+      }
+    },
+    
+    "subtitle_and_text": {
+      "style": "Narration-style explanatory text.",
+      "coverage": "From start to finish, the narration text fully explains the topic.",
+      "subtitle": {
+        "language": "{{fallback_language}}",
+        "placement": "Carefully positioned to avoid blocking important visuals or key graphics",
+        "readability": "Clear, legible, and visually integrated into the scene"
+      }
+    },
+    
+    "layout_and_resolution": {
+      "container_resolution": "2K resolution",
+      "layout_rules": [
+        "All elements must be correctly positioned within the 2K container",
+        "No overlapping, clipping, or visual collision",
+        "All spatial relationships should enhance clarity"
+      ]
+    },
+    
+    "technical_constraints": {
+      "html": {
+        "standalone": true,
+        "must_include": [
+          "<!DOCTYPE html>",
+          "<meta charset=\"UTF-8\">",
+          "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+        ],
+        "deliverable": "Single self-contained HTML file",
+        "includes": [
+          "HTML",
+          "CSS",
+          "JavaScript",
+          "SVG graphics"
+        ],
+        "structure_rule": "All code must be embedded into one HTML file."
+      },
+      "animation_policy": {
+        "timeline_controller": "GSAP (mandatory)",
+        "allowed_rendering_layers": [
+          "DOM + CSS",
+          "SVG",
+          "Canvas",
+          "Three.js / WebGL"
+        ],
+        "rules": [
+          "GSAP MUST control the overall animation timeline and stage transitions",
+          "Specialized libraries MAY be used when GSAP is not technically suitable",
+          "No animation sequencing via setTimeout or setInterval",
+          "All animations MUST support a clean reset to the initial state and return deterministically to the starting frame"
+        ]
+      }
+    },
+    
+    "quality_bar": {
+      "educational": "Knowledge is conveyed clearly, accurately, and coherently.",
+      "experience": "Pleasant to watch from start to finish without confusion or distraction."
+    }
+  }
+};
+
+// 3. 动态生成系统提示词函数
+const getSystemPrompt = (knowledgePoint, languageCode, outputType = 'interactive') => {
+  // 深拷贝通用部分
+  const systemPrompt = JSON.parse(JSON.stringify(COMMON_SYSTEM_PROMPT));
+  
+  // 根据 output_type 添加特定配置
+  const typeSpecific = TYPE_SPECIFIC_PROMPTS[outputType];
+  if (typeSpecific) {
+    // 合并所有特定配置
+    Object.keys(typeSpecific).forEach(key => {
+      if (key === 'technical_constraints') {
+        // technical_constraints 需要合并到现有的 technical_constraints 中
+        systemPrompt.technical_constraints = {
+          ...systemPrompt.technical_constraints,
+          ...typeSpecific.technical_constraints
+        };
+      } else if (key === 'pedagogical_requirements') {
+        // pedagogical_requirements 需要合并到现有的 pedagogical_requirements 中
+        systemPrompt.pedagogical_requirements = {
+          ...systemPrompt.pedagogical_requirements,
+          ...typeSpecific.pedagogical_requirements
+        };
+      } else {
+        // 其他配置直接添加
+        systemPrompt[key] = typeSpecific[key];
+      }
+    });
+  }
+  
+  // 替换占位符
+  let promptStr = JSON.stringify(systemPrompt, null, 2);
+  promptStr = safeReplace(promptStr, '{{fallback_language}}', languageCode || 'en-US');
+  promptStr = safeReplace(promptStr, '{{content_type}}', outputType); // outputType 本身就是 'interactive' 或 'animated'
+  
   return promptStr;
 };
 
-// 学习阶段的用户提示词映射
-const LEARNING_STAGE_PROMPTS = {
-  understanding: `Help learners deeply understand {{knowledge_point}} through interactive exploration.
-Let users explore in steps, with interactions that reveal relationships and insights. Show how "{{knowledge_point}}" connects to broader ideas and real-world applications.
-End with reflection or synthesis, helping learners see the "big picture" of how "{{knowledge_point}}" fits within a wider knowledge network and connects to related concepts.
-`,
+// 用户提示词模板（根据 output_type 选择）
+const INTERACTIVE_USER_PROMPTS = `Create an interactive educational project that teaches "{{knowledge_point}}".
 
-  application: `Build an interactive simulation that lets users apply "{{knowledge_point}}" in a real-world or scenario-based context.
-Use sliders, drag-and-drop, or live input fields to manipulate variables.
-Provide dynamic visual feedback and context-appropriate sound effects for user actions.`,
+Help learners deeply understand it through interactive exploration.
+Let users explore in steps, with interactions that reveal relationships and insights. Show how it connects to broader ideas and real-world applications.
+End with reflection or synthesis, helping learners see the "big picture" of how it fits within a wider knowledge network and connects to related concepts.`;
 
-  assessment: `Design an interactive challenge to test the user's grasp of "{{knowledge_point}}".
-Include multiple-choice, input-based, or drag-to-match interactions.
-Use audio cues for right/wrong feedback and visual progress indicators like score or level bars.`,
+const ANIMATED_USER_PROMPTS = `Create an animated visualization that explains "{{knowledge_point}}" through a complete visual narrative.
 
-  expansion: `Present "{{knowledge_point}}" in a way that connects it to related or advanced topics.
-Let users toggle between views, click into deeper explanations, or reveal hidden patterns or links.
-Use smooth transitions, layered visuals, and curiosity-triggering sound effects to guide exploration.`,
+The animation should help viewers understand the full process and core idea without additional explanation.`;
 
-  gamify: `Turn "{{knowledge_point}}" into a mini-game with educational purpose.
-Design challenges that involve collecting, matching, avoiding, or timing.
-Incorporate scoring, win/lose states, and expressive sound effects.
-The learning goal should stay clear and integrated into gameplay.`
-};
-
-// 学习阶段的中文名称映射
-const LEARNING_STAGE_NAMES = {
-  understanding: '理解',
-  application: '应用',
-  assessment: '测评',
-  expansion: '拓展',
-  gamify: '游戏化'
+// 输出类型配置
+const OUTPUT_TYPE_CONFIGS = {
+  interactive: {
+    name: '交互式',
+    name_en: 'Interactive',
+    description: 'Vue 3 交互式教育项目，支持多阶段和丰富交互',
+    userPrompt: INTERACTIVE_USER_PROMPTS,
+    default: true
+  },
+  animated: {
+    name: '动画',
+    name_en: 'Animated',
+    description: '连续动画可视化，自动播放，类似视频体验',
+    userPrompt: ANIMATED_USER_PROMPTS,
+    default: false
+  }
 };
 
 // 生成教育交互内容
-const generateEducationalContent = async (knowledgePoint, learningStage, description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null, isAsyncMode = false, image = null) => {
+const generateEducationalContent = async (knowledgePoint, outputType = 'interactive', description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null, isAsyncMode = false, image = null) => {
   let logId = null;
   let logParams = {};
   try {
-    // 构建完整的提示词
-    const userPrompt = safeReplace(LEARNING_STAGE_PROMPTS[learningStage], '{{knowledge_point}}', knowledgePoint);
-    const systemPromptWithKnowledge = getSystemPrompt(knowledgePoint, languageCode || 'en-US');
+    // 验证 outputType
+    if (!OUTPUT_TYPE_CONFIGS[outputType]) {
+      outputType = 'interactive'; // 默认使用 interactive
+      logger.warn(`[generateEducationalContent] 无效的 outputType，使用默认值 interactive`);
+    }
+    
+    // 根据 outputType 选择对应的用户提示词
+    const config = OUTPUT_TYPE_CONFIGS[outputType] || OUTPUT_TYPE_CONFIGS.interactive;
+    const userPromptTemplate = config.userPrompt;
+    const userPrompt = safeReplace(userPromptTemplate, '{{knowledge_point}}', knowledgePoint);
+    
+    // 动态生成系统提示词（只包含当前类型需要的配置）
+    const systemPromptWithKnowledge = getSystemPrompt(knowledgePoint, languageCode || 'en-US', outputType);
     
     // 构建用户消息，如果提供了图片，则包含图片数据
     const userMessage = {
@@ -680,7 +844,7 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
           generation_params: {
             knowledge_point: knowledgePoint,
-            learning_stage: learningStage,
+            output_type: outputType,
             description: description,
             language_code: languageCode,
             provider: provider
@@ -744,7 +908,7 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
             request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
             generation_params: {
               knowledge_point: knowledgePoint,
-              learning_stage: learningStage,
+              output_type: outputType,
               description: description,
               language_code: languageCode,
               provider: provider
@@ -796,7 +960,7 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
             request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
             generation_params: {
               knowledge_point: knowledgePoint,
-              learning_stage: learningStage,
+              output_type: outputType,
               description: description,
               language_code: languageCode,
               provider: provider
@@ -844,7 +1008,7 @@ const generateEducationalContent = async (knowledgePoint, learningStage, descrip
           request_payload: { messages, max_tokens: 24000, temperature: 0.6 },
           generation_params: {
             knowledge_point: knowledgePoint,
-            learning_stage: learningStage,
+            output_type: outputType,
             description: description,
             language_code: languageCode,
             provider: provider
@@ -1206,29 +1370,19 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
   }
 };
 
-// 获取支持的学习阶段
-const getSupportedLearningStages = () => {
-  return Object.keys(LEARNING_STAGE_PROMPTS).map(key => ({
+// 获取支持的输出类型
+const getSupportedOutputTypes = () => {
+  return Object.keys(OUTPUT_TYPE_CONFIGS).map(key => ({
     value: key,
-    label: LEARNING_STAGE_NAMES[key]
+    label: OUTPUT_TYPE_CONFIGS[key].name,
+    label_en: OUTPUT_TYPE_CONFIGS[key].name_en,
+    description: OUTPUT_TYPE_CONFIGS[key].description
   }));
 };
 
-// 获取学习阶段描述
-const getLearningStageDescription = (stage) => {
-  const descriptions = {
-    understanding: '帮助用户快速掌握知识的核心原理和逻辑结构，通过可视化和可操作性增强理解。',
-    application: '引导用户在模拟或真实场景中主动使用知识点，建立"会用"的能力。',
-    assessment: '检测用户对知识点的掌握情况，提供即时反馈和评分。',
-    expansion: '将知识引申到更广阔的视角，如跨学科应用、现实案例或进阶原理。',
-    gamify: '增强学习动机，通过游戏机制让知识获得更高参与度和记忆度。'
-  };
-  return descriptions[stage] || '';
-};
-
-// 验证学习阶段
-const validateLearningStage = (stage) => {
-  return Object.keys(LEARNING_STAGE_PROMPTS).includes(stage);
+// 验证输出类型
+const validateOutputType = (outputType) => {
+  return Object.keys(OUTPUT_TYPE_CONFIGS).includes(outputType);
 };
 
 // 测试安全替换函数（开发环境使用）
@@ -1331,10 +1485,10 @@ router.get('/default-provider', async (req, res) => {
 
 module.exports = {
   generateEducationalContent,
-  getSupportedLearningStages,
-  getLearningStageDescription,
-  validateLearningStage,
-  LEARNING_STAGE_NAMES,
+  getSupportedOutputTypes,
+  validateOutputType,
+  OUTPUT_TYPE_CONFIGS,
+  getSystemPrompt, // 导出系统提示词生成函数
   fixEducationalContent,
   safeReplace,  // 导出安全替换函数供测试使用
   testSafeReplace,  // 导出测试函数

@@ -602,8 +602,8 @@ export default function FullHTMLContentPage() {
             setError(error);
           }}
         />
-        {/* AI Guided Learning - Always show button, even for non-logged-in users */}
-        {content?.id && (
+        {/* AI Guided Learning - Hide for animated content type */}
+        {content?.id && content?.content_type !== 'animated' && (
           <AIGuidedLearning 
             contentId={content.id}
             content={content}

@@ -611,7 +611,7 @@ class ApiClient {
   // 异步生成内容
   async generateContentAsync(contentId: string, params: {
     knowledge_point: string;
-    learning_stage?: string;
+    output_type?: 'interactive' | 'animated';
     description?: string;
     language_code?: string;
     provider?: string;
@@ -651,7 +651,7 @@ class ApiClient {
   // 免费内容生成接口（无需认证，需要 visitor_id）
   async generateContentFree(params: {
     knowledgePoint: string;
-    learningStage: string;
+    output_type?: 'interactive' | 'animated';
     description?: string;
     language_code?: string;
     provider?: string;
