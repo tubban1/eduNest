@@ -131,7 +131,7 @@ export default function ContentForm({
   
   // AI生成相关状态
   const [knowledgePoint, setKnowledgePoint] = useState('');
-  const [learningStage, setLearningStage] = useState('understanding');
+  const [outputType, setOutputType] = useState<'interactive' | 'animated'>('interactive');
   const [aiGenerating, setAiGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false); // 新增：标记是否已经生成过内容
   const [aiProvider, setAiProvider] = useState<string>(''); // AI提供商选择
@@ -696,7 +696,7 @@ export default function ContentForm({
       // 2. 调用异步生成 API
       const generateResponse = await api.generateContentAsync(contentResponse.id, {
         knowledge_point: currentKnowledgePoint,
-        learning_stage: learningStage,
+        output_type: outputType,
         description: currentDescription,
         language_code: language,
         provider: user?.role === 'admin' ? aiProvider : undefined,
@@ -739,11 +739,11 @@ export default function ContentForm({
     setShowReloadButton(false);
 
     try {
-      const prompt = `${t('aiGenerateContentPrompt', { ns: 'content', defaultValue: `Generate a ${learningStage} learning content about "${knowledgePoint.trim()}".${description ? `Specific requirements: ${description}` : ''}` })}`;
+      const prompt = `${t('aiGenerateContentPrompt', { ns: 'content', defaultValue: `Generate an ${outputType} learning content about "${knowledgePoint.trim()}".${description ? `Specific requirements: ${description}` : ''}` })}`;
       
       const response = await api.generateContent(prompt, {
         knowledgePoint,
-        learningStage,
+        output_type: outputType,
         description,
         language_code: language,
         provider: user?.role === 'admin' ? aiProvider : undefined // 只有管理员可以指定提供商
@@ -1028,7 +1028,7 @@ export default function ContentForm({
     }
   };
 
-  const LEARNING_STAGES: { value: string; label: string }[] = [];
+  // LEARNING_STAGES 已废弃，现在使用 output_type (interactive/animated)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center py-8">
@@ -1172,7 +1172,7 @@ export default function ContentForm({
                             </div>
                           )}
                         </div>
-                        {/* 学习阶段在 create 页面隐藏，仅后端使用默认 understanding */}
+                        {/* output_type 在 create 页面使用默认值 interactive */}
                         <div>
                           <label className="block font-semibold mb-1 text-gray-700">{mounted ? t('outputLanguage', { ns: 'content', defaultValue: 'Output Language' }) : 'Output Language'}</label>
                           <input
