@@ -4,6 +4,8 @@ const aiGuideService = require('../services/aiGuideService');
 const { authenticateToken } = require('../middleware/auth');
 const { validateVisitorId } = require('../middleware/visitorId');
 const visitorUsageService = require('../services/visitorUsageService');
+const DatabaseService = require('../services/database');
+const { t } = require('../utils/i18n');
 
 // Initialize conversation
 router.post('/init', authenticateToken, async (req, res) => {
@@ -12,12 +14,13 @@ router.post('/init', authenticateToken, async (req, res) => {
     const user_id = req.user.id;
 
     if (!content_id) {
-      return res.status(400).json({ error: 'content_id is required' });
+      return res.status(400).json({ error: t(req, 'CONTENT_ID_REQUIRED', 'content_id is required') });
     }
     if (!user_id) {
-      return res.status(401).json({ error: 'User not authenticated' });
+      return res.status(401).json({ error: t(req, 'USER_NOT_AUTHENTICATED', 'User not authenticated') });
     }
 
+    // 初始化对话不扣分
     const result = await aiGuideService.initConversation(content_id, user_id);
     res.json({ success: true, data: result });
   } catch (error) {
@@ -33,10 +36,27 @@ router.post('/chat', authenticateToken, async (req, res) => {
     const user_id = req.user.id;
 
     if (!conversation_id || !message) {
-      return res.status(400).json({ error: 'conversation_id and message are required' });
+      return res.status(400).json({ error: t(req, 'CONVERSATION_ID_REQUIRED', 'conversation_id and message are required') });
     }
 
-    const streamGenerator = await aiGuideService.handleChat(conversation_id, message, ui_state, user_id);
+    // 检查订阅状态和积分余额（每次对话消耗积分）
+    const CREDITS_COST = 2; // AI Guide 每次对话消耗 2 积分
+    let shouldConsume = true;
+    const { data: subscription } = await DatabaseService.getActiveSubscription(user_id);
+    if (subscription && (subscription.plan === 'pro' || subscription.plan === 'monthly' || subscription.plan === 'yearly')) {
+      shouldConsume = false;
+    } else {
+      const { data: balance } = await DatabaseService.getCreditsBalance(user_id);
+      if ((balance || 0) < CREDITS_COST) {
+        return res.status(402).json({ 
+          success: false, 
+          error: t(req, 'INSUFFICIENT_CREDITS'),
+          message: t(req, 'INSUFFICIENT_CREDITS_MESSAGE')
+        });
+      }
+    }
+
+    const streamGenerator = await aiGuideService.handleChat(conversation_id, message, ui_state, user_id, shouldConsume, CREDITS_COST);
 
     // Set headers for SSE
     res.setHeader('Content-Type', 'text/event-stream');
@@ -107,7 +127,7 @@ router.post('/init-free', validateVisitorId, async (req, res) => {
     const visitor_id = req.visitorId;
 
     if (!content_id) {
-      return res.status(400).json({ success: false, error: 'content_id is required' });
+      return res.status(400).json({ success: false, error: t(req, 'CONTENT_ID_REQUIRED', 'content_id is required') });
     }
 
     // 检查免费试用状态
@@ -116,7 +136,7 @@ router.post('/init-free', validateVisitorId, async (req, res) => {
       return res.status(403).json({
         success: false,
         error: 'FREE_TRIAL_USED',
-        message: '请登录后继续使用',
+        message: t(req, 'PLEASE_LOGIN'),
         requiresRegistration: true
       });
     }
@@ -137,7 +157,7 @@ router.post('/chat-free', validateVisitorId, async (req, res) => {
     const visitor_id = req.visitorId;
 
     if (!conversation_id || !message) {
-      return res.status(400).json({ success: false, error: 'conversation_id and message are required' });
+      return res.status(400).json({ success: false, error: t(req, 'CONVERSATION_ID_REQUIRED', 'conversation_id and message are required') });
     }
 
     // 检查是否已使用免费对话（在第一次对话时标记）

@@ -18,11 +18,12 @@ interface CreditRecord {
 }
 
 export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDialogProps) {
-  const { t } = useTranslation(['common', 'credits']);
+  const { t } = useTranslation(['common', 'credits', 'content']);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [records, setRecords] = useState<CreditRecord[]>([]);
+  const [recharging, setRecharging] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -51,6 +52,29 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
     load();
   }, [open]);
 
+  const handleTopUp = async () => {
+    setRecharging(true);
+    try {
+      // 创建支付会话，传递计划类型 lite
+      const session = await api.createPaymentSession('lite', {
+        success_url: `${window.location.origin}/subscription/success`,
+        cancel_url: `${window.location.origin}/subscription/cancel`,
+      });
+      
+      if (session?.url) {
+        // 重定向到Stripe支付页面
+        window.location.href = session.url;
+      } else {
+        alert(mounted ? t('subscription.createSessionFailed', { ns: 'content', defaultValue: '创建支付会话失败' }) : '创建支付会话失败');
+      }
+    } catch (error) {
+      console.error('充值失败:', error);
+      alert(mounted ? t('credits.topUpFailed', { ns: 'credits', defaultValue: '充值失败，请稍后重试' }) : 'Top-up failed, please try again later');
+    } finally {
+      setRecharging(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -62,6 +86,31 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
             {mounted ? t('creditsHistory', { ns: 'credits', defaultValue: '积分明细' }) : 'Credits History'}
           </h2>
           <button className="text-gray-500 hover:text-black" onClick={onClose}>✕</button>
+        </div>
+        
+        {/* Lite 充值选项 */}
+        <div className="mb-4 bg-blue-50 rounded-lg p-3 border border-blue-200">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="font-semibold text-gray-900 text-sm">
+                {mounted ? t('credits.liteTopUp', { ns: 'credits', defaultValue: 'Lite 充值' }) : 'Lite Top-up'}
+              </h3>
+              <p className="text-xs text-gray-600">
+                {mounted ? t('credits.liteTopUpDesc', { ns: 'credits', defaultValue: '$10 获得 500 积分' }) : '$10 for 500 credits'}
+              </p>
+            </div>
+            <span className="text-lg font-bold text-gray-900">$10</span>
+          </div>
+          <button
+            onClick={handleTopUp}
+            disabled={recharging}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+          >
+            {recharging 
+              ? (mounted ? t('credits.processing', { ns: 'credits', defaultValue: '处理中...' }) : 'Processing...')
+              : (mounted ? t('credits.topUpCredits', { ns: 'credits', defaultValue: '充值积分' }) : 'Top-up Credits')
+            }
+          </button>
         </div>
         {loading && (
           <div className="py-8 text-center text-gray-500">

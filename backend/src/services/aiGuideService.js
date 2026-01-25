@@ -2,6 +2,7 @@ const { supabase, logAIUsage } = require('./database');
 const { aiProviderFactory, safeReplace } = require('./aiService');
 const { v4: uuidv4 } = require('uuid');
 const { isVisitorId } = require('../utils/visitorId');
+const DatabaseService = require('./database');
 
 // Metadata Extraction Prompt
 const METADATA_PROMPT = `You are an advanced educational content analyzer. Your task is to extract comprehensive structured metadata from the provided HTML content to power an AI Learning Guide.
@@ -248,7 +249,7 @@ const initConversation = async (contentId, userId) => {
       console.error('Error querying existing conversations:', queryError);
     }
     
-    // 如果已有 conversation，恢复历史对话
+    // 如果已有 conversation，恢复历史对话（恢复对话不扣减积分）
     if (existingConversations && existingConversations.length > 0) {
       const existingConversation = existingConversations[0];
       
@@ -285,7 +286,7 @@ const initConversation = async (contentId, userId) => {
         initial_message: historyMessages.length > 0 ? null : undefined, // 如果有历史消息，不返回初始消息
         messages: historyMessages, // 返回历史消息列表
         metadata: metadata,
-        is_resumed: true // 标记为恢复的对话
+        is_resumed: true // 标记为恢复的对话（恢复对话不扣减积分）
       };
     }
     
@@ -374,6 +375,8 @@ const initConversation = async (contentId, userId) => {
       is_render_success: true
     });
     
+    // 初始化对话不扣分
+    
     return {
       conversation_id: conversation.id,
       initial_message: initialMessage,
@@ -390,7 +393,7 @@ const initConversation = async (contentId, userId) => {
 /**
  * Handle a user message in the guided learning session (Streaming)
  */
-const handleChat = async (conversationId, message, uiState, userId) => {
+const handleChat = async (conversationId, message, uiState, userId, shouldConsume = false, creditsCost = 0) => {
   try {
     const isVisitor = isVisitorId(userId);
     
@@ -556,6 +559,17 @@ const handleChat = async (conversationId, message, uiState, userId) => {
             total_tokens: totalTokens,
             is_render_success: true
           });
+          
+          // 5.5. 扣减积分（仅当需要且用户存在且不是访客）
+          if (shouldConsume && creditsCost > 0 && !isVisitor && userId) {
+            try {
+              await DatabaseService.addCreditChange(userId, 'usage', -creditsCost, null, contentId);
+              console.log(`[AI Guide Chat] 扣除积分成功: user_id=${userId}, credits=-${creditsCost}`);
+            } catch (creditError) {
+              console.error(`[AI Guide Chat] 扣除积分失败: user_id=${userId}`, creditError);
+              // 不抛出错误，因为对话已经成功完成
+            }
+          }
         }
       }
     }

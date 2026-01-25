@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../services/database');
+const DatabaseService = require('../services/database');
 const { authenticateToken } = require('../middleware/auth');
 
 // 获取可用的支付方式（支持地区参数）
@@ -66,20 +67,23 @@ router.post('/create-session', authenticateToken, async (req, res) => {
     const { plan_type, success_url, cancel_url } = req.body;
     const userId = req.user.id;
     
-    if (!plan_type || !['pro'].includes(plan_type)) {
+    if (!plan_type || !['pro', 'monthly', 'yearly', 'lite'].includes(plan_type)) {
       return res.status(400).json({ error: '不支持的计划类型' });
     }
     
-    // 检查用户是否已有活跃订阅
-    const { data: existingSubscription } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .single();
-    
-    if (existingSubscription) {
-      return res.status(400).json({ error: '用户已有活跃订阅' });
+    // Lite 充值不需要检查订阅状态
+    if (plan_type !== 'lite') {
+      // 检查用户是否已有活跃订阅
+      const { data: existingSubscription } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+      
+      if (existingSubscription) {
+        return res.status(400).json({ error: '用户已有活跃订阅' });
+      }
     }
     
     // 创建Stripe Checkout Session
@@ -125,15 +129,53 @@ router.post('/create-session', authenticateToken, async (req, res) => {
     console.log('用户选择的支付方式:', payment_methods);
     console.log('用户地区:', region);
     
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: paymentMethods,
-      line_items: [
+    // Lite 充值使用一次性支付，其他使用订阅
+    const isLite = plan_type === 'lite';
+    const isSubscription = !isLite;
+    
+    // 构建 line_items
+    let lineItems;
+    if (isLite) {
+      // Lite 充值：$10，500积分
+      lineItems = [
         {
-          price: process.env.STRIPE_PRICE_ID_PRO, // 从环境变量获取价格ID
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Lite Credits Top-up',
+              description: '500 credits for AI content generation',
+            },
+            unit_amount: 1000, // $10.00 in cents
+          },
           quantity: 1,
         },
-      ],
-      mode: 'subscription',
+      ];
+    } else {
+      // 订阅计划：根据 plan_type 选择价格ID
+      const priceId = plan_type === 'monthly' 
+        ? process.env.STRIPE_PRICE_ID_MONTHLY 
+        : plan_type === 'yearly'
+        ? process.env.STRIPE_PRICE_ID_YEARLY
+        : process.env.STRIPE_PRICE_ID_PRO; // 向后兼容
+      
+      if (!priceId) {
+        return res.status(500).json({ 
+          error: `未配置 ${plan_type} 计划的价格ID。请检查环境变量 STRIPE_PRICE_ID_${plan_type.toUpperCase()}` 
+        });
+      }
+      
+      lineItems = [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ];
+    }
+    
+    const sessionConfig = {
+      payment_method_types: paymentMethods,
+      line_items: lineItems,
+      mode: isSubscription ? 'subscription' : 'payment', // Lite 使用 payment 模式
       success_url: success_url || `${process.env.FRONTEND_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancel_url || `${process.env.FRONTEND_URL}/subscription/cancel`,
       customer_email: req.user.email,
@@ -141,17 +183,22 @@ router.post('/create-session', authenticateToken, async (req, res) => {
         user_id: userId,
         plan_type: plan_type,
       },
-      subscription_data: {
+      allow_promotion_codes: true,
+      billing_address_collection: 'required',
+      locale: 'auto', // 自动检测用户语言
+    };
+    
+    // 只有订阅模式才需要 subscription_data
+    if (isSubscription) {
+      sessionConfig.subscription_data = {
         metadata: {
           user_id: userId,
           plan_type: plan_type,
         },
-
-      },
-      allow_promotion_codes: true,
-      billing_address_collection: 'required',
-      locale: 'auto', // 自动检测用户语言
-    });
+      };
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionConfig);
     
     return res.json({
       success: true,
@@ -241,15 +288,56 @@ router.get('/history', authenticateToken, async (req, res) => {
 // 处理支付成功
 async function handlePaymentSuccess(session) {
   try {
+    const userId = session.metadata.user_id;
+    const planType = session.metadata.plan_type;
+    
+    // Lite 充值：添加积分，不创建订阅
+    if (planType === 'lite') {
+      // 添加500积分
+      const { error: creditError } = await DatabaseService.addCreditChange(
+        userId,
+        'purchase_bonus', // 充值类型
+        500, // 500积分
+        null, // related_user_id
+        null  // related_content_id
+      );
+      
+      if (creditError) {
+        console.error('添加积分错误:', creditError);
+      } else {
+        console.log(`✅ 用户 ${userId} 充值成功，已添加500积分`);
+      }
+      
+      // 记录支付记录
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          user_id: userId,
+          amount_usd: 10.00,
+          currency: 'USD',
+          plan: 'lite',
+          status: 'success',
+          stripe_session_id: session.id,
+          created_at: new Date().toISOString()
+        });
+      
+      if (paymentError) {
+        console.error('记录支付记录错误:', paymentError);
+      }
+      
+      return; // Lite 充值不需要创建订阅
+    }
+    
+    // 订阅计划：创建或更新订阅
     const { data, error } = await supabase
       .from('subscriptions')
       .upsert({
-        user_id: session.metadata.user_id,
-        plan_type: session.metadata.plan_type,
+        user_id: userId,
+        plan: planType === 'monthly' ? 'monthly' : planType === 'yearly' ? 'yearly' : 'pro', // 使用 plan 字段
         status: 'active',
         stripe_subscription_id: session.subscription || session.id,
         current_period_start: new Date().toISOString(),
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        current_period_end: new Date(Date.now() + (planType === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
         cancel_at_period_end: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -259,6 +347,8 @@ async function handlePaymentSuccess(session) {
     
     if (error) {
       console.error('更新订阅状态错误:', error);
+    } else {
+      console.log(`✅ 用户 ${userId} 订阅成功，计划类型: ${planType}`);
     }
   } catch (error) {
     console.error('处理支付成功错误:', error);
