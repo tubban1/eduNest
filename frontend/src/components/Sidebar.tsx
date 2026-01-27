@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, Heart, Plus, Settings, LogOut, User, Menu, X, List, HelpCircle } from 'lucide-react';
+import { Home, BookOpen, Heart, Plus, Settings, LogOut, User, Menu, X, List, HelpCircle, Crown, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
@@ -18,13 +18,16 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }: SidebarProps) {
-  const { t } = useTranslation(['navigation', 'common', 'auth']);
+  const { t } = useTranslation(['navigation', 'common', 'auth', 'content', 'credits']);
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [loadingCredits, setLoadingCredits] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(false);
+  const [userInfoExpanded, setUserInfoExpanded] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -50,10 +53,39 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
     }
   };
 
+  // 获取订阅状态
+  const fetchSubscription = async () => {
+    if (!user) {
+      setSubscription(null);
+      return;
+    }
+    try {
+      setLoadingSubscription(true);
+      const data = await api.getSubscriptionStatus();
+      setSubscription(data);
+    } catch (error) {
+      console.error('获取订阅状态失败:', error);
+      setSubscription(null);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  };
+
   // 首次加载
   useEffect(() => {
     fetchCredits();
+    fetchSubscription();
   }, [user]);
+
+  // 判断是否是Pro用户
+  const isProUser = useMemo(() => {
+    if (!subscription) return false;
+    const plan = subscription.plan;
+    const status = subscription.status;
+    const isActive = subscription.is_active;
+    // Pro用户：plan是monthly或yearly，且状态是active
+    return (plan === 'monthly' || plan === 'yearly') && (status === 'active' || isActive);
+  }, [subscription]);
 
   // 使用 useMemo 确保在 mounted 之前使用默认值，避免 hydration 错误
   const menuItems = useMemo(() => {
@@ -130,43 +162,122 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
         )}
 
         {user && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center mb-3">
-              <User className="w-5 h-5 text-gray-600 mr-2" />
-              <span className="text-sm font-medium text-gray-900">
-                {mounted ? t('userInfo', { ns: 'auth', defaultValue: 'User Info' }) : 'User Info'}
-              </span>
-            </div>
-            <div className="text-sm text-gray-600">
-              <div className="mb-1">
-                <span className="font-medium">{mounted ? t('username', { ns: 'auth', defaultValue: 'Name:' }) : 'Name:'}</span> {user.name}
-              </div>
-              <div className="mb-1">
-                <span className="font-medium">{mounted ? t('email', { ns: 'auth', defaultValue: 'Email:' }) : 'Email:'}</span> {user.email}
-              </div>
-              <div className="mb-1">
-                <span className="font-medium">{mounted ? t('role', { ns: 'auth', defaultValue: 'Role:' }) : 'Role:'}</span> {user.role === 'admin' ? (mounted ? t('admin', { ns: 'auth', defaultValue: 'Admin' }) : 'Admin') : (mounted ? t('user', { ns: 'auth', defaultValue: 'User' }) : 'User')}
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-medium">{mounted ? t('credits', { ns: 'credits', defaultValue: '积分:' }) : '积分:'}</span>{' '}
-                  {loadingCredits ? (mounted ? t('loading', { ns: 'credits', defaultValue: '加载中...' }) : 'Loading...') : (credits ?? '-')}
+          <div className={`mb-6 rounded-lg transition-all overflow-hidden ${
+            isProUser 
+              ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300 shadow-lg relative' 
+              : 'bg-gray-50 border border-gray-200'
+          }`}>
+            {/* Pro用户特殊背景装饰 */}
+            {isProUser && (
+              <>
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-400/20 to-orange-400/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-yellow-400/20 to-amber-400/20 rounded-full blur-xl -ml-8 -mb-8"></div>
+                <div className="absolute top-2 right-2 z-10">
+                  <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
                 </div>
+              </>
+            )}
+            
+            {/* 折叠状态：Pro用户显示徽章，非Pro用户显示积分和统计 */}
+            <button
+              onClick={() => setUserInfoExpanded(!userInfoExpanded)}
+              className={`w-full p-4 flex items-center justify-between relative z-10 transition-colors ${
+                isProUser 
+                  ? 'hover:bg-amber-100/50' 
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              {isProUser ? (
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setShowHistory(true)} className="p-1.5 rounded hover:bg-gray-200" title={mounted ? t('creditsHistory', { ns: 'credits', defaultValue: '查看积分明细' }) : 'View Credits History'}>
+                  <span className="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-bold rounded-full shadow-md flex items-center gap-1.5">
+                    <Crown className="w-4 h-4" />
+                    PRO
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">
+                      {mounted ? t('credits', { ns: 'credits', defaultValue: '积分' }) : 'Credits'}:
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {loadingCredits ? (mounted ? t('loading', { ns: 'credits', defaultValue: '...' }) : '...') : (credits ?? '-')}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowHistory(true);
+                    }}
+                    className="p-1.5 rounded hover:bg-gray-200 transition-colors"
+                    title={mounted ? t('creditsHistory', { ns: 'credits', defaultValue: '查看积分明细' }) : 'View Credits History'}
+                  >
                     <List className="w-4 h-4 text-gray-600" />
                   </button>
                 </div>
+              )}
+              
+              {userInfoExpanded ? (
+                <ChevronUp className={`w-5 h-5 ${isProUser ? 'text-amber-700' : 'text-gray-600'}`} />
+              ) : (
+                <ChevronDown className={`w-5 h-5 ${isProUser ? 'text-amber-700' : 'text-gray-600'}`} />
+              )}
+            </button>
+
+            {/* 展开状态：显示详细信息 */}
+            {userInfoExpanded && (
+              <div className={`px-4 pb-4 pt-0 relative z-10 border-t ${isProUser ? 'border-amber-200' : 'border-gray-200'}`}>
+                <div className={`text-sm mt-3 space-y-2 ${isProUser ? 'text-amber-900' : 'text-gray-600'}`}>
+                  <div>
+                    <span className="font-medium">{mounted ? t('username', { ns: 'auth', defaultValue: 'Name:' }) : 'Name:'}</span>{' '}
+                    <span>{user.name}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">{mounted ? t('email', { ns: 'auth', defaultValue: 'Email:' }) : 'Email:'}</span>{' '}
+                    <span>{user.email}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">{mounted ? t('role', { ns: 'auth', defaultValue: 'Role:' }) : 'Role:'}</span>{' '}
+                    {isProUser ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-semibold">
+                        <Crown className="w-3 h-3" />
+                        {subscription?.plan === 'monthly' 
+                          ? (mounted ? t('subscription.monthly', { ns: 'content', defaultValue: '月付' }) : 'Monthly')
+                          : subscription?.plan === 'yearly'
+                          ? (mounted ? t('subscription.yearly', { ns: 'content', defaultValue: '年付' }) : 'Yearly')
+                          : 'Pro'
+                        }
+                      </span>
+                    ) : (
+                      user.role === 'admin' 
+                        ? (mounted ? t('admin', { ns: 'auth', defaultValue: 'Admin' }) : 'Admin') 
+                        : (mounted ? t('user', { ns: 'auth', defaultValue: 'User' }) : 'User')
+                    )}
+                  </div>
+                  
+                  {/* Pro用户显示Subscription管理按钮 */}
+                  {isProUser && (
+                    <div className="pt-2">
+                      <Link
+                        href="/subscription"
+                        onClick={handleItemClick}
+                        className="block w-full px-3 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-medium text-center hover:opacity-90 transition-opacity shadow-md"
+                      >
+                        {mounted ? t('subscription.manageSubscription', { ns: 'content', defaultValue: '管理订阅' }) : 'Manage Subscription'}
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
         
-        {user && (
+        {user && !isProUser && (
           <Link
             href="/subscription"
             onClick={handleItemClick}
-            className="block w-full mb-4 px-4 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90"
+            className="block w-full mb-4 px-4 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90 transition-opacity"
           >
             {mounted ? t('upgrade_to_pro', { ns: 'navigation', defaultValue: '升级到 Pro' }) : '升级到 Pro'}
           </Link>

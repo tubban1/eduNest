@@ -78,6 +78,10 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Stripe webhook 需要原始请求体来验证签名
+// 必须在 express.json() 之前处理 webhook 路由
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
 // 解析 JSON（增加限制以支持大图片 base64 编码）
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

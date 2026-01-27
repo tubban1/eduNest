@@ -48,15 +48,21 @@ const SubscriptionManager: React.FC = () => {
     setUpgrading(true);
     try {
       // 创建支付会话，传递计划类型（monthly 或 yearly）
-      const session = await api.createPaymentSession(planType, {
+      const response = await api.createPaymentSession(planType, {
         success_url: `${window.location.origin}/subscription/success`,
         cancel_url: `${window.location.origin}/subscription/cancel`,
       });
       
-      if (session?.url) {
+      console.log('支付会话响应:', response);
+      
+      // 后端返回格式: { success: true, session: { url: ... } }
+      const sessionUrl = response?.session?.url || response?.url;
+      
+      if (sessionUrl) {
         // 重定向到Stripe支付页面
-        window.location.href = session.url;
+        window.location.href = sessionUrl;
       } else {
+        console.error('响应中没有找到 session URL:', response);
         alert(mounted ? t('subscription.createSessionFailed', { ns: 'content', defaultValue: '创建支付会话失败' }) : '创建支付会话失败');
       }
     } catch (error) {
@@ -215,7 +221,7 @@ const SubscriptionManager: React.FC = () => {
                   {mounted ? t('subscription.proPlan', { ns: 'content', defaultValue: 'Pro 计划' }) : 'Pro Plan'}
                 </h4>
                 <p className="text-muted-foreground text-sm">
-                  {mounted ? t('subscription.monthlyPrice', { ns: 'content', defaultValue: '$30/月（无限使用，订阅制）' }) : '$30/month (Unlimited usage, subscription)'}
+                  {mounted ? t('subscription.monthlyPrice', { ns: 'content', defaultValue: '$29.8/月（无限使用，订阅制）' }) : '$29.8/month (Unlimited usage, subscription)'}
                 </p>
               </div>
               <span className="text-2xl font-bold text-foreground">$29.8</span>
@@ -223,6 +229,8 @@ const SubscriptionManager: React.FC = () => {
             <ul className="text-foreground text-sm space-y-1 mb-4">
               <li>• {mounted ? t('subscription.unlimitedAI', { ns: 'content', defaultValue: '无限AI内容生成（交互式与动画）' }) : 'Unlimited AI content generation (Interactive & Animated)'}</li>
               <li>• {mounted ? t('subscription.unlimitedContent', { ns: 'content', defaultValue: '无限内容创建与管理' }) : 'Unlimited content creation & management'}</li>
+              <li>• {mounted ? t('subscription.aiGuide', { ns: 'content', defaultValue: 'AI Guide (AI教师) - 个性化学习辅导' }) : 'AI Guide (AI Teacher) - Personalized learning assistance'}</li>
+              <li>• {mounted ? t('subscription.aiLearningAnalysis', { ns: 'content', defaultValue: 'AI学习分析 - 时间感知型学习轨迹洞察' }) : 'AI Learning Analysis - Time-aware learning trajectory insights'}</li>
               <li>• {mounted ? t('subscription.contentFix', { ns: 'content', defaultValue: 'AI内容自动修复' }) : 'AI content auto-fix'}</li>
               <li>• {mounted ? t('subscription.prioritySupport', { ns: 'content', defaultValue: '优先技术支持' }) : 'Priority technical support'}</li>
               <li>• {mounted ? t('subscription.advancedFeatures', { ns: 'content', defaultValue: '高级功能访问' }) : 'Advanced feature access'}</li>
@@ -262,6 +270,8 @@ const SubscriptionManager: React.FC = () => {
             <ul className="text-foreground text-sm space-y-1 mb-4">
               <li>• {mounted ? t('subscription.unlimitedAI', { ns: 'content', defaultValue: '无限AI内容生成（交互式与动画）' }) : 'Unlimited AI content generation (Interactive & Animated)'}</li>
               <li>• {mounted ? t('subscription.unlimitedContent', { ns: 'content', defaultValue: '无限内容创建与管理' }) : 'Unlimited content creation & management'}</li>
+              <li>• {mounted ? t('subscription.aiGuide', { ns: 'content', defaultValue: 'AI Guide (AI教师) - 个性化学习辅导' }) : 'AI Guide (AI Teacher) - Personalized learning assistance'}</li>
+              <li>• {mounted ? t('subscription.aiLearningAnalysis', { ns: 'content', defaultValue: 'AI学习分析 - 时间感知型学习轨迹洞察' }) : 'AI Learning Analysis - Time-aware learning trajectory insights'}</li>
               <li>• {mounted ? t('subscription.contentFix', { ns: 'content', defaultValue: 'AI内容自动修复' }) : 'AI content auto-fix'}</li>
               <li>• {mounted ? t('subscription.prioritySupport', { ns: 'content', defaultValue: '优先技术支持' }) : 'Priority technical support'}</li>
               <li>• {mounted ? t('subscription.advancedFeatures', { ns: 'content', defaultValue: '高级功能访问' }) : 'Advanced feature access'}</li>

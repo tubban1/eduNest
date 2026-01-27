@@ -38,7 +38,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     
     return res.json({
       status: subscription.status,
-      plan: subscription.plan_type,
+      plan: subscription.plan, // 使用 plan 字段，不是 plan_type
       current_period_start: subscription.current_period_start,
       current_period_end: subscription.current_period_end,
       cancel_at_period_end: subscription.cancel_at_period_end,
@@ -62,9 +62,9 @@ router.post('/upgrade', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: '缺少必要参数' });
     }
     
-    // 验证计划类型
-    if (!['pro'].includes(plan_type)) {
-      return res.status(400).json({ error: '不支持的计划类型' });
+    // 验证计划类型（支持 monthly, yearly, pro）
+    if (!['pro', 'monthly', 'yearly'].includes(plan_type)) {
+      return res.status(400).json({ error: '不支持的计划类型。支持的类型：monthly, yearly, pro' });
     }
     
     // 创建或更新订阅记录

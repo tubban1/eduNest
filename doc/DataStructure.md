@@ -1561,6 +1561,13 @@
     "column_default": "now()"
   },
   {
+    "table_name": "subscriptions",
+    "column_name": "stripe_subscription_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "user_collections",
     "column_name": "id",
     "data_type": "uuid",

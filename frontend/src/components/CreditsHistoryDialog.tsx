@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
 
 interface CreditsHistoryDialogProps {
@@ -19,6 +20,7 @@ interface CreditRecord {
 
 export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDialogProps) {
   const { t } = useTranslation(['common', 'credits', 'content']);
+  const { currentLanguage } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -56,15 +58,21 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
     setRecharging(true);
     try {
       // 创建支付会话，传递计划类型 lite
-      const session = await api.createPaymentSession('lite', {
+      const response = await api.createPaymentSession('lite', {
         success_url: `${window.location.origin}/subscription/success`,
         cancel_url: `${window.location.origin}/subscription/cancel`,
       });
       
-      if (session?.url) {
+      console.log('支付会话响应:', response);
+      
+      // 后端返回格式: { success: true, session: { url: ... } }
+      const sessionUrl = response?.session?.url || response?.url;
+      
+      if (sessionUrl) {
         // 重定向到Stripe支付页面
-        window.location.href = session.url;
+        window.location.href = sessionUrl;
       } else {
+        console.error('响应中没有找到 session URL:', response);
         alert(mounted ? t('subscription.createSessionFailed', { ns: 'content', defaultValue: '创建支付会话失败' }) : '创建支付会话失败');
       }
     } catch (error) {
@@ -133,7 +141,13 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
                   <div className="text-sm font-medium text-gray-900">
                     {mounted ? t(`changeTypeLabels.${r.change_type}`, { ns: 'credits', defaultValue: r.change_type }) : r.change_type}
                   </div>
-                  <div className="text-xs text-gray-500">{new Date(r.created_at).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">
+                    {new Date(r.created_at).toLocaleString(
+                      currentLanguage === 'zh-CN' ? 'zh-CN' :
+                      currentLanguage === 'de-DE' ? 'de-DE' :
+                      currentLanguage === 'fr-FR' ? 'fr-FR' : 'en-US'
+                    )}
+                  </div>
                 </div>
                 <div className={`text-sm font-semibold ${r.change_amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {r.change_amount > 0 ? `+${r.change_amount}` : r.change_amount}
