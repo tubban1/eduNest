@@ -84,18 +84,18 @@ class RuntimeFixer {
     // Tone.js
     if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
       Tone.start().then(function() {
-        console.log('[AudioAutoplayHandler] Tone.js audio context resumed');
+        //console.log('[AudioAutoplayHandler] Tone.js audio context resumed');
       }).catch(function(e) {
-        console.warn('[AudioAutoplayHandler] Failed to resume Tone.js:', e);
+        //console.warn('[AudioAutoplayHandler] Failed to resume Tone.js:', e);
       });
     }
     
     // Howler.js
     if (typeof Howler !== 'undefined' && Howler.ctx && Howler.ctx.state !== 'running') {
       Howler.ctx.resume().then(function() {
-        console.log('[AudioAutoplayHandler] Howler.js audio context resumed');
+        //console.log('[AudioAutoplayHandler] Howler.js audio context resumed');
       }).catch(function(e) {
-        console.warn('[AudioAutoplayHandler] Failed to resume Howler.js:', e);
+        //console.warn('[AudioAutoplayHandler] Failed to resume Howler.js:', e);
       });
     }
     
@@ -112,7 +112,7 @@ class RuntimeFixer {
     document.addEventListener(eventType, resume, { once: true });
   });
   
-  console.log('[AudioAutoplayHandler] Initialized - waiting for user interaction');
+  //console.log('[AudioAutoplayHandler] Initialized - waiting for user interaction');
 })();
 </script>`;
     
@@ -187,7 +187,7 @@ class RuntimeFixer {
       }
     }
     
-    console.log('[ThreeJSCleanup] WebGL resources released');
+    //console.log('[ThreeJSCleanup] WebGL resources released');
   };
   
   // 页面卸载时清理
@@ -200,7 +200,7 @@ class RuntimeFixer {
     }
   });
   
-  console.log('[ThreeJSCleanup] Initialized');
+  //console.log('[ThreeJSCleanup] Initialized');
 })();
 </script>`;
     
@@ -251,14 +251,14 @@ class RuntimeFixer {
     if (typeof gsap !== 'undefined') {
       try {
         gsap.killTweensOf('*');
-        console.log('[GSAPCleanup] All GSAP tweens killed');
+       //console.log('[GSAPCleanup] All GSAP tweens killed');
       } catch (e) {
         // 忽略错误
       }
     }
   });
   
-  console.log('[GSAPCleanup] Initialized');
+  //console.log('[GSAPCleanup] Initialized');
 })();
 </script>`;
     

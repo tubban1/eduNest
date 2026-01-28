@@ -195,74 +195,11 @@ class MathFixer {
       }
     }
     
-    const argFix = this.fixRenderMathArguments(fixedHtml);
-    if (argFix.success) {
-      fixedHtml = argFix.html;
-      changes.push(...argFix.changes);
-    }
-    
     return {
       success: true,
       html: fixedHtml,
       changes,
       explanation: this.generateExplanation(isVue, isThreeJS, hasStages)
-    };
-  }
-  
-  fixRenderMathArguments(html) {
-    const changes = [];
-    let fixedHtml = html;
-    let fixCount = 0;
-    const pattern = /renderMath\s*\(\s*(['"])([\s\S]*?)\1\s*\)/g;
-    fixedHtml = fixedHtml.replace(pattern, (full, quote, content) => {
-      let updated = content;
-      let localFixes = 0;
-      for (const cmd of this.latexCommands) {
-        if (cmd.startsWith('\\')) continue;
-        const tempMarker = `__TEMP_RMARG_${cmd}__`;
-        const dbl = new RegExp(`\\\\\\\\${this.escapeRegex(cmd)}(?![a-zA-Z])`, 'g');
-        updated = updated.replace(dbl, tempMarker);
-        const sgl = new RegExp(`\\\\(${this.escapeRegex(cmd)})(?![a-zA-Z])`, 'g');
-        const before = updated;
-        updated = updated.replace(sgl, (m, name) => `\\\\${name}`);
-        updated = updated.replace(new RegExp(tempMarker, 'g'), `\\\\${cmd}`);
-        if (updated !== before) {
-          const matches = before.match(sgl) || [];
-          localFixes += matches.length;
-        }
-      }
-      const specials = ['{', '}', '[', ']', '(', ')'];
-      for (const ch of specials) {
-        const esc = ch.replace(/[{}[\]()]/g, '\\$&');
-        const tempMarker = `__TEMP_RMARG_SP_${ch.charCodeAt(0)}__`;
-        const dbl = new RegExp(`\\\\\\\\${esc}`, 'g');
-        updated = updated.replace(dbl, tempMarker);
-        const sgl = new RegExp(`\\\\(${esc})`, 'g');
-        const before = updated;
-        updated = updated.replace(sgl, (m, name) => `\\\\${name}`);
-        updated = updated.replace(new RegExp(tempMarker, 'g'), `\\\\${ch}`);
-        if (updated !== before) {
-          const matches = before.match(sgl) || [];
-          localFixes += matches.length;
-        }
-      }
-      if (localFixes > 0) {
-        fixCount += localFixes;
-        changes.push({
-          type: 'replace',
-          location: 'renderMath argument',
-          before: content.substring(0, 80) + (content.length > 80 ? '...' : ''),
-          after: updated.substring(0, 80) + (updated.length > 80 ? '...' : ''),
-          reason: `修复 ${localFixes} 处 LaTeX 转义`
-        });
-      }
-      return `renderMath(${quote}${updated}${quote})`;
-    });
-    return {
-      success: fixCount > 0,
-      html: fixedHtml,
-      changes,
-      explanation: fixCount > 0 ? `修复了 ${fixCount} 处 renderMath 参数中的 LaTeX 转义` : '未发现需要修复的 renderMath 参数'
     };
   }
   
@@ -988,7 +925,7 @@ class MathFixer {
     };
   }
   
-  console.log('[MathRenderManager] Three.js CSS2D/CSS3D integration enabled');
+  //console.log('[MathRenderManager] Three.js CSS2D/CSS3D integration enabled');
 })();
 </script>`;
   }
