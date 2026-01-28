@@ -28,31 +28,89 @@ OUTPUT FORMAT:
 Now analyze the provided HTML code and generate the metadata JSON that best fits it.`;
 
 // AI Guided Learning System Prompt
-const SYSTEM_PROMPT_TEMPLATE = `You are an AI Learning Guide inside eduNest. You are "pair-learning" with a student who is looking at an interactive web page.
-
-CONTEXT:
-- **Metadata**: JSON describing the page's content, structure, and capabilities.
-- **UI State**: Real-time values from the page (e.g., current slider value, selected object).
-- **Conversation**: History of your chat.
-
-YOUR ROLE:
-Adapt your teaching style to the content_type and domain defined in metadata:
-- **Experiment/Simulation**: Act as a Lab Partner. Encourage "What if?" questions. Suggest trying specific interactions defined in interactive_elements.
-- **Math/Problem**: Act as a Tutor. Don't give answers. Ask guiding questions to check understanding of key_concepts.
-- **Data/Chart**: Act as an Analyst. Ask the user to interpret trends or outliers in the visual_elements.
-- **Game/Quiz**: Act as a Coach. Cheer them on and offer hints from guidance_strategy if they fail.
-- **Article/Lecture**: Act as a Discussion Partner. Summarize sections and ask reflection questions.
-
-INTERACTION RULES:
-1. **Context Aware**: If the user asks "What is this?", use visual_elements to explain what they are likely pointing at or looking at.
-2. **Flexible Pedagogy**: If the student proposes a valid alternative method or approach NOT shown on screen:
-   - Acknowledge and validate their thinking first.
-   - Briefly discuss how their method relates to the current visualization.
-   - Then, gently invite them to see how the current interactive tool demonstrates the concept visually.
-3. **Action Oriented**: If state_variables show the user hasn't interacted yet, gently suggest using a specific control (e.g., "Try dragging the blue slider...").
-4. **Concise**: Keep replies short and focused on the content.
-
-Start by welcoming the student. If learning_objectives are present, briefly mention what they can learn here.`;
+const SYSTEM_PROMPT_TEMPLATE = `
+{
+  "role": "ai_learning_guide",
+  "identity": {
+    "name": "aiGuide",
+    "mode": "pair_learning",
+    "environment": "interactive_web_page",
+    "platform": "eduNest"
+  },
+  "inputs": {
+    "metadata": "page content, structure, capabilities",
+    "ui_state": "real-time interaction state",
+    "conversation": "chat history"
+  },
+  "teaching_modes": {
+    "structured_reasoning": {
+      "goal": "step_by_step_logical_understanding",
+      "rules": [
+        "never_give_final_answer",
+        "focus_on_current_step_reasoning",
+        "do_not_skip_steps"
+      ]
+    },
+    "concept_construction": {
+      "goal": "build_intuition_from_visual_and_sensory_input",
+      "rules": [
+        "describe_observed_changes",
+        "map_visuals_to_concepts",
+        "check_intuitive_understanding"
+      ]
+    },
+    "exploratory_interaction": {
+      "goal": "discover_patterns_through_interaction",
+      "rules": [
+        "encourage_prediction",
+        "compare_outcomes",
+        "guide_pattern_naming"
+      ]
+    },
+    "systems_thinking": {
+      "goal": "understand_multi_variable_systems",
+      "rules": [
+        "build_mental_models",
+        "explain_causal_links",
+        "extract_general_principles"
+      ]
+    },
+    "knowledge_synthesis": {
+      "goal": "integrate_and_transfer_knowledge",
+      "rules": [
+        "ask_student_to_summarize",
+        "encourage_cross_context_transfer"
+      ]
+    }
+  },
+  "interaction_rules": {
+    "context_aware": {
+      "trigger": "user asks unclear reference",
+      "action": "explain_using_visual_elements"
+    },
+    "flexible_pedagogy": {
+      "trigger": "valid_alternative_approach",
+      "steps": [
+        "acknowledge_and_validate",
+        "relate_to_current_visualization",
+        "invite_visual_exploration"
+      ]
+    },
+    "action_oriented": {
+      "trigger": "no_user_interaction_detected",
+      "action": "suggest_specific_control"
+    },
+    "response_style": {
+      "length": "concise",
+      "focus": "current_content"
+    }
+  },
+  "startup_behavior": {
+    "welcome_student": true,
+    "mention_learning_objectives_if_present": true
+  }
+}
+`;
 
 /**
  * 从 content 表获取 language_code
@@ -75,9 +133,9 @@ const getLanguageCode = async (contentId) => {
 /**
  * 生成初始问候消息（返回消息内容和模型信息）
  */
-const generateInitialMessage = async (contentId) => {
+const generateInitialMessage = async (contentId, metadataOverride = null) => {
   try {
-    const metadata = await getOrGenerateMetadata(contentId);
+    const metadata = metadataOverride || await getOrGenerateMetadata(contentId);
     const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
     
     const messages = [
@@ -105,6 +163,64 @@ const generateInitialMessage = async (contentId) => {
       usage: {}
     };
   }
+};
+
+/**
+ * 获取或生成「content 级别」统一的初始问候消息（所有用户共享同一条）
+ * - 优先读取 content.ai_guide_initial_message
+ * - 不存在时生成一次并写回 content
+ *
+ * 注意：为了兼容老库/未执行 migration 的环境，这里对 “字段不存在” 做了降级处理。
+ */
+const getOrGenerateContentInitialMessage = async (contentId, metadata, userId = null) => {
+  // 1) 尝试从 content 表读取全局初始消息
+  try {
+    const { data: contentRow, error: fetchError } = await supabase
+      .from('content')
+      .select('ai_guide_initial_message, ai_guide_initial_model, ai_guide_initial_created_at, ai_guide_initial_updated_at')
+      .eq('id', contentId)
+      .single();
+
+    if (!fetchError && contentRow?.ai_guide_initial_message) {
+      return {
+        content: contentRow.ai_guide_initial_message,
+        model: contentRow.ai_guide_initial_model || 'cached',
+        usage: {},
+        source: 'content_cached'
+      };
+    }
+  } catch (e) {
+    // 可能是字段不存在（migration 未执行）或其他查询错误：降级为每次生成
+    console.warn('[aiGuide] 读取 content 级初始消息失败，降级为实时生成:', e?.message || e);
+  }
+
+  // 2) 不存在则生成一次
+  const initialMessageResult = await generateInitialMessage(contentId, metadata);
+  const now = new Date().toISOString();
+
+  // 3) 写回 content 表，供后续所有用户复用
+  try {
+    const { error: updateError } = await supabase
+      .from('content')
+      .update({
+        ai_guide_initial_message: initialMessageResult.content,
+        ai_guide_initial_model: initialMessageResult.model || null,
+        ai_guide_initial_created_at: now,
+        ai_guide_initial_updated_at: now
+      })
+      .eq('id', contentId);
+
+    if (updateError) {
+      console.warn('[aiGuide] 写入 content 级初始消息失败（不影响返回）:', updateError.message || updateError);
+    }
+  } catch (e) {
+    console.warn('[aiGuide] 写入 content 级初始消息异常（不影响返回）:', e?.message || e);
+  }
+
+  return {
+    ...initialMessageResult,
+    source: 'generated'
+  };
 };
 
 /**
@@ -308,10 +424,11 @@ const initConversation = async (contentId, userId) => {
     
     // 3. 生成初始消息
     const metadata = await getOrGenerateMetadata(contentId, userId);
-    const initialMessageResult = await generateInitialMessage(contentId);
+    const initialMessageResult = await getOrGenerateContentInitialMessage(contentId, metadata, userId);
     const initialMessage = initialMessageResult.content;
     const modelName = initialMessageResult.model || 'fallback';
     const usage = initialMessageResult.usage || {};
+    const source = initialMessageResult.source || 'unknown';
     
     // 4. 保存 assistant message（初始问候消息）
     // 注意：
@@ -339,9 +456,11 @@ const initConversation = async (contentId, userId) => {
     // 6. 记录到 ai_usage_logs（用于计费）
     const estimateTokens = (text) => Math.ceil(text.length / 3);
     const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
-    const inputTokens = usage.prompt_tokens || estimateTokens(systemPrompt + 'Start the session.');
-    const outputTokens = usage.completion_tokens || estimateTokens(initialMessage);
-    const totalTokens = usage.total_tokens || (inputTokens + outputTokens);
+    // 如果是 content 缓存复用，则不应重复计入 token 成本（这次 init 没有调用模型）
+    const isCached = source === 'content_cached';
+    const inputTokens = isCached ? 0 : (usage.prompt_tokens || estimateTokens(systemPrompt + 'Start the session.'));
+    const outputTokens = isCached ? 0 : (usage.completion_tokens || estimateTokens(initialMessage));
+    const totalTokens = isCached ? 0 : (usage.total_tokens || (inputTokens + outputTokens));
     
     await logAIUsage({
       user_id: !isVisitor ? userId : null,
@@ -349,7 +468,7 @@ const initConversation = async (contentId, userId) => {
       request_id: conversation.id,
       conversation_id: conversation.id,
       message_id: assistantMessage.id,
-      action_type: 'ai_guide',
+      action_type: 'ai_guide_init',
       content_id: contentId,
       user_query: 'Start the session.',
       request_payload: {
@@ -359,6 +478,7 @@ const initConversation = async (contentId, userId) => {
         ],
         max_tokens: 1500,
         temperature: 0.7,
+        source,
         metadata_summary: {
           title: metadata?.meta?.title || metadata?.title || 'Unknown',
           content_type: metadata?.meta?.contentType || metadata?.content_type || 'Unknown'
@@ -366,7 +486,8 @@ const initConversation = async (contentId, userId) => {
       },
       response_metadata: { 
         reply: initialMessage,
-        role: 'assistant'
+        role: 'assistant',
+        source
       },
       model_name: modelName, // 使用实际的模型名称
       input_tokens: inputTokens,

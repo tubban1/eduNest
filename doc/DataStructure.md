@@ -574,6 +574,34 @@
     "column_default": null
   },
   {
+    "table_name": "content",
+    "column_name": "ai_guide_initial_message",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
+    "column_name": "ai_guide_initial_model",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
+    "column_name": "ai_guide_initial_created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "content",
+    "column_name": "ai_guide_initial_updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "content_backup_legacy",
     "column_name": "id",
     "data_type": "uuid",
@@ -1367,6 +1395,13 @@
   {
     "table_name": "payments",
     "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "payments",
+    "column_name": "updated_at",
     "data_type": "timestamp with time zone",
     "is_nullable": "YES",
     "column_default": "now()"
