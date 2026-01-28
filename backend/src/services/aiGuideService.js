@@ -4,6 +4,11 @@ const { v4: uuidv4 } = require('uuid');
 const { isVisitorId } = require('../utils/visitorId');
 const DatabaseService = require('./database');
 
+// In-flight dedupe: avoid duplicated analyze/start-session when user quickly closes & reopens aiGuide.
+// 关键：同一个 contentId 的 metadata/initial message 在生成中时，后续请求复用同一个 Promise，避免重复跑 LLM。
+const metadataInFlight = new Map(); // contentId -> Promise<metadata>
+const contentInitialInFlight = new Map(); // contentId -> Promise<{content, model, usage, source}>
+
 // Metadata Extraction Prompt
 const METADATA_PROMPT = `You are an advanced educational content analyzer. Your task is to extract comprehensive structured metadata from the provided HTML content to power an AI Learning Guide.
 
@@ -137,10 +142,14 @@ const generateInitialMessage = async (contentId, metadataOverride = null) => {
   try {
     const metadata = metadataOverride || await getOrGenerateMetadata(contentId);
     const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
-    
+
+    // 语言只在 init welcome message 上强制，与 content.language_code 对齐
+    const languageCode = await getLanguageCode(contentId);
+    const languageHint = `The assistant MUST reply in the language specified by language_code: ${languageCode}.`;
+
     const messages = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: 'Start the session.' }
+      { role: 'user', content: `Start the session. ${languageHint}` }
     ];
 
     const result = await aiProviderFactory.createChatCompletion({
@@ -173,6 +182,12 @@ const generateInitialMessage = async (contentId, metadataOverride = null) => {
  * 注意：为了兼容老库/未执行 migration 的环境，这里对 “字段不存在” 做了降级处理。
  */
 const getOrGenerateContentInitialMessage = async (contentId, metadata, userId = null) => {
+  // In-flight 去重：同一 content 的欢迎语生成中，后续复用同一个 Promise
+  if (contentInitialInFlight.has(contentId)) {
+    return await contentInitialInFlight.get(contentId);
+  }
+
+  const job = (async () => {
   // 1) 尝试从 content 表读取全局初始消息
   try {
     const { data: contentRow, error: fetchError } = await supabase
@@ -221,12 +236,26 @@ const getOrGenerateContentInitialMessage = async (contentId, metadata, userId = 
     ...initialMessageResult,
     source: 'generated'
   };
+  })();
+
+  contentInitialInFlight.set(contentId, job);
+  try {
+    return await job;
+  } finally {
+    contentInitialInFlight.delete(contentId);
+  }
 };
 
 /**
  * Get or generate metadata for a content item
  */
 const getOrGenerateMetadata = async (contentId, userId = null) => {
+  // In-flight 去重：同一 content 的 analyze_html 生成中，后续复用同一个 Promise
+  if (metadataInFlight.has(contentId)) {
+    return await metadataInFlight.get(contentId);
+  }
+
+  const job = (async () => {
   try {
     // 1. Check if metadata exists
     const { data: content, error: fetchError } = await supabase
@@ -335,6 +364,14 @@ const getOrGenerateMetadata = async (contentId, userId = null) => {
   } catch (error) {
     console.error('Error in getOrGenerateMetadata:', error);
     throw error;
+  }
+  })();
+
+  metadataInFlight.set(contentId, job);
+  try {
+    return await job;
+  } finally {
+    metadataInFlight.delete(contentId);
   }
 };
 
