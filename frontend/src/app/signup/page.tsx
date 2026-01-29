@@ -142,9 +142,11 @@ function SignupPageInner() {
                   alert(t('resendFailed', { ns: 'auth', defaultValue: '重发失败，请稍后重试' }));
                 }
               }}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="tile button"
             >
-              {t('resendVerification', { ns: 'auth', defaultValue: '重发验证邮件' })}
+              <div className="tile up px-4 py-2 font-medium">
+                {t('resendVerification', { ns: 'auth', defaultValue: '重发验证邮件' })}
+              </div>
             </button>
           </div>
           <p className="text-gray-500 text-xs">
@@ -172,9 +174,11 @@ function SignupPageInner() {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => router.push('/login')}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
+                  className="tile button"
                 >
-                  {t('backToLogin', { ns: 'auth', defaultValue: '回到登录页面' })}
+                  <div className="tile up px-4 py-2 font-medium">
+                    {t('backToLogin', { ns: 'auth', defaultValue: '回到登录页面' })}
+                  </div>
                 </button>
                 <p className="text-gray-500 text-xs">
                   {t('canLoginLater', { ns: 'auth', defaultValue: '您可以稍后使用邮箱和密码登录' })}
@@ -251,10 +255,13 @@ function SignupPageInner() {
           </div>
           <button
             type="submit"
-            className="w-full py-2 px-4 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="tile button w-full"
+            data-state={loading ? 'down' : undefined}
             disabled={loading}
           >
-            {loading ? (mounted ? t('signupProcessing', { ns: 'auth', defaultValue: '注册中...' }) : 'Registering...') : (mounted ? t('signupAccount', { ns: 'auth', defaultValue: '注册账号' }) : 'Create Account')}
+            <div className="tile w-full justify-center py-2 px-4 font-medium">
+              {loading ? (mounted ? t('signupProcessing', { ns: 'auth', defaultValue: '注册中...' }) : 'Registering...') : (mounted ? t('signupAccount', { ns: 'auth', defaultValue: '注册账号' }) : 'Create Account')}
+            </div>
           </button>
         </form>
         

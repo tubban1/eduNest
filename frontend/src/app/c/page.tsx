@@ -297,7 +297,7 @@ export default function FullHTMLContentListPage() {
   }
   
   return (
-    <div className="flex min-h-screen bg-gray-50 text-gray-900">
+    <div className="flex min-h-screen bg-background text-foreground">
       {/* 桌面端侧边栏 */}
       <div className="hidden lg:block h-screen sticky top-0 left-0 z-30">
         <Sidebar variant="desktop" />
@@ -310,9 +310,9 @@ export default function FullHTMLContentListPage() {
         onClose={() => setSidebarOpen(false)} 
       />
       
-      <main className="flex-1 bg-white overflow-y-auto">
+      <main className="flex-1 bg-background overflow-y-auto">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-background/90 backdrop-blur-sm border-b border-border">
           <MobileMenuButton onClick={() => setSidebarOpen(true)} />
           <div className="w-10" /> {/* 占位，保持居中 */}
         </div>

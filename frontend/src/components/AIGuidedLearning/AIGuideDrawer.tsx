@@ -91,10 +91,13 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
             <button
               onClick={onRetryInit}
               disabled={isLoading}
-              className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="tile button w-full"
+              data-state={isLoading ? 'down' : undefined}
             >
-              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-              {t('retry')}
+              <div className="tile w-full justify-center py-2 px-4 font-medium">
+                <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+                {t('retry')}
+              </div>
             </button>
           </div>
         )}
@@ -109,15 +112,19 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
           <div className="space-y-3">
             <button
               onClick={handleLogin}
-              className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              className="tile button w-full"
             >
-              {t('loginButton')}
+              <div className="tile w-full justify-center py-3 px-4 font-semibold">
+                {t('loginButton')}
+              </div>
             </button>
             <button
               onClick={handleRegister}
-              className="w-full py-3 px-4 bg-card text-primary border-2 border-primary rounded-lg font-semibold hover:bg-primary/10 transition-all duration-200"
+              className="tile button w-full"
             >
-              {t('registerButton')}
+              <div className="tile w-full justify-center py-3 px-4 font-semibold">
+                {t('registerButton')}
+              </div>
             </button>
           </div>
         ) : (

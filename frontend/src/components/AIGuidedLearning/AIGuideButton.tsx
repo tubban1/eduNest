@@ -53,17 +53,60 @@ export const AIGuideButton: React.FC<AIGuideButtonProps> = ({ onClick, hasNewMes
 
   return (
     <>
+      {/* AI Guide 专用滤镜（局部 SVG，不影响其它组件） */}
+      <svg className="ai-guide-filters" aria-hidden="true">
+        <defs>
+          <filter id="aiGuideFilmGrain">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="1.2"
+              numOctaves="3"
+              stitchTiles="noStitch"
+              result="noise"
+            />
+            <feColorMatrix in="noise" type="saturate" values="0" result="mono" />
+            <feComponentTransfer in="mono">
+              <feFuncA type="linear" slope="0.5" />
+            </feComponentTransfer>
+          </filter>
+
+          <filter id="aiGuideGlow" x="-150%" y="-150%" width="400%" height="400%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="35" result="blurred" />
+            <feColorMatrix
+              in="blurred"
+              type="matrix"
+              values="
+                0 0 0 0 0.65
+                0 0 0 0 0.78
+                0 0 0 0 1
+                0 0 0 0.6 0
+              "
+              result="coloredGlow"
+            />
+            <feMerge>
+              <feMergeNode in="coloredGlow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
+
       <button
         ref={buttonRef}
         onClick={handleClick}
-        className="fixed bottom-6 right-6 bg-primary hover:opacity-90 text-primary-foreground p-4 rounded-full shadow-lg transition-all hover:scale-105 z-50 flex items-center justify-center group animate-breathe"
+        className="ai-guide-btn fixed bottom-6 right-6 z-50 group"
       >
-        <MessageCircle className="w-6 h-6" />
-        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap group-hover:ml-2">
-          {t('buttonLabel')}
-        </span>
+        <div className="ai-guide-btn-inner">
+          <div className="ai-guide-blob">
+            <div className="ai-guide-blob-shape">
+              <div className="ai-guide-grain" />
+            </div>
+          </div>
+          {/* 图中文字胶囊去掉，仅保留中心图标 */}
+          <MessageCircle className="w-6 h-6 text-white/90 absolute inset-0 m-auto drop-shadow-[0_4px_10px_rgba(15,23,42,0.45)] pointer-events-none" />
+        </div>
         {hasNewMessage && (
-          <span className="absolute top-0 right-0 w-3 h-3 bg-destructive rounded-full border-2 border-white"></span>
+          <span className="ai-guide-dot" />
         )}
       </button>
       {showBubble && (

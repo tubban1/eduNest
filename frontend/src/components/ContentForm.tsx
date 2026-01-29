@@ -82,15 +82,17 @@ function FixForm({ error, onSubmit, loading, t }: { error: string; onSubmit: (no
         }
         disabled={loading}
       />
-      <button type="submit" className="bg-primary text-primary-foreground rounded p-2 mt-2 flex items-center justify-center gap-2" disabled={loading}>
-        {loading ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            {t('fixForm.fixing', { ns: 'content', defaultValue: 'Fixing...' })}
-          </>
-        ) : (
-          hasError ? t('fixForm.submitFix', { ns: 'content', defaultValue: 'Submit fix' }) : t('fixForm.submitOptimization', { ns: 'content', defaultValue: 'Submit optimization' })
-        )}
+      <button type="submit" className="tile button w-full mt-2" data-state={loading ? 'down' : undefined} disabled={loading}>
+        <div className="tile w-full justify-center px-4 py-2 font-medium">
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-foreground/60"></div>
+              {t('fixForm.fixing', { ns: 'content', defaultValue: 'Fixing...' })}
+            </>
+          ) : (
+            hasError ? t('fixForm.submitFix', { ns: 'content', defaultValue: 'Submit fix' }) : t('fixForm.submitOptimization', { ns: 'content', defaultValue: 'Submit optimization' })
+          )}
+        </div>
       </button>
     </form>
   );
@@ -1040,7 +1042,7 @@ export default function ContentForm({
           <button onClick={() => router.push('/c')} className="text-gray-400 hover:text-black text-sm font-medium transition">{mounted ? t('back', { ns: 'common', defaultValue: '← Back' }) : '← Back'}</button>
           <div className="flex gap-2">
             <button 
-              className="px-6 py-2 rounded-full bg-primary text-primary-foreground font-medium shadow hover:opacity-90 transition" 
+              className="tile button"
               onClick={() => {
                   let targetId = null;
                   
@@ -1060,7 +1062,9 @@ export default function ContentForm({
                 }}
               type="button"
             >
-              {mode === 'create' ? (mounted ? t('openAfterSave', { ns: 'content', defaultValue: 'Open after save' }) : 'Open after save') : (mounted ? t('open', { ns: 'common', defaultValue: 'Open' }) : 'Open')}
+              <div className="tile up px-6 py-2 font-medium">
+                {mode === 'create' ? (mounted ? t('openAfterSave', { ns: 'content', defaultValue: 'Open after save' }) : 'Open after save') : (mounted ? t('open', { ns: 'common', defaultValue: 'Open' }) : 'Open')}
+              </div>
             </button>
             <button className="px-6 py-2 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition" onClick={handlePreview} type="button">{mounted ? t('preview', { ns: 'content', defaultValue: 'Preview' }) : 'Preview'}</button>
             <button className="px-6 py-2 rounded-full bg-gradient-to-r from-gray-900 to-gray-700 text-white font-medium shadow hover:from-gray-800 hover:to-gray-600 transition" onClick={handleSave} type="button" disabled={loading}>{loading ? (mode === 'edit' ? (mounted ? t('updating', { ns: 'common', defaultValue: 'Updating...' }) : 'Updating...') : (mounted ? t('saving', { ns: 'common', defaultValue: 'Saving...' }) : 'Saving...')) : (mode === 'edit' ? (mounted ? t('update', { ns: 'common', defaultValue: 'Update' }) : 'Update') : (mounted ? t('save', { ns: 'common', defaultValue: 'Save' }) : 'Save'))}</button>
@@ -1198,18 +1202,21 @@ export default function ContentForm({
                       </div>
                       <button
                         type="button"
-                        className="w-full px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg shadow hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="tile button w-full"
+                        data-state={aiGenerating ? 'down' : undefined}
                         onClick={handleAsyncAiGenerate}
                         disabled={isAiFormDisabled || !knowledgePoint.trim()}
                       >
-                        {aiGenerating ? (
-                          <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                            🤖 正在启动生成...
-                          </>
-                        ) : (
-                          '🚀 AI 异步生成内容'
-                        )}
+                        <div className="tile w-full justify-center px-6 py-3 font-medium">
+                          {aiGenerating ? (
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-foreground/60"></div>
+                              🤖 正在启动生成...
+                            </>
+                          ) : (
+                            '🚀 AI 异步生成内容'
+                          )}
+                        </div>
                       </button>
                     </div>
                   )}
@@ -1291,10 +1298,15 @@ export default function ContentForm({
                     />
                     <button
                       type="button"
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90 transition"
+                      className="tile button"
+                      data-state={isAiFormDisabled ? 'down' : undefined}
                       onClick={handleAddTag}
                       disabled={isAiFormDisabled}
-                    >{mounted ? t('addTag', { ns: 'content', defaultValue: 'Add' }) : 'Add'}</button>
+                    >
+                      <div className="tile up px-4 py-2 font-medium">
+                        {mounted ? t('addTag', { ns: 'content', defaultValue: 'Add' }) : 'Add'}
+                      </div>
+                    </button>
                   </div>
                   {/* 块状标签实时预览，可删除 */}
                   <div className="flex flex-wrap gap-2 mt-2">
@@ -1364,12 +1376,15 @@ export default function ContentForm({
                     <button
                       onClick={handleReload}
                       disabled={reloading}
-                      className="mt-2 px-4 py-2 bg-primary hover:opacity-90 disabled:bg-muted text-primary-foreground rounded-lg transition-colors"
+                      className="tile button mt-2"
+                      data-state={reloading ? 'down' : undefined}
                     >
-                      {reloading 
-                        ? (mounted ? t('reloading', { ns: 'content', defaultValue: '重新加载中...' }) : '重新加载中...')
-                        : (mounted ? t('reloadResult', { ns: 'content', defaultValue: '重新加载结果' }) : '重新加载结果')
-                      }
+                      <div className="tile up px-4 py-2 font-medium">
+                        {reloading 
+                          ? (mounted ? t('reloading', { ns: 'content', defaultValue: '重新加载中...' }) : '重新加载中...')
+                          : (mounted ? t('reloadResult', { ns: 'content', defaultValue: '重新加载结果' }) : '重新加载结果')
+                        }
+                      </div>
                     </button>
                   )}
                 </div>

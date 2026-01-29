@@ -186,7 +186,7 @@ export default function CollectionsPage() {
         onClose={() => setSidebarOpen(false)} 
       />
       
-      <main className="flex-1 bg-card overflow-y-auto">
+      <main className="flex-1 bg-background overflow-y-auto">
         {/* 移动端头部（固定） */}
         <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-card border-b border-border">
           <MobileMenuButton onClick={() => setSidebarOpen(true)} />

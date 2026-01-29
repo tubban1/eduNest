@@ -10,7 +10,7 @@ export default function CreateContentPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* 内容区域 */}
       <div className="w-full">
         <div className="w-full h-screen">

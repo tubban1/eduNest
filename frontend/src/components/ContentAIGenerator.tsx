@@ -1160,16 +1160,27 @@ export default function ContentAIGenerator({
   };
 
   return (
-    <div className={`flex flex-col gap-3 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl shadow border border-primary/20 p-4 ${className || ''}`}>
-      <h3 className="text-lg font-semibold text-foreground mb-1">
+    <div className={`ai-gen-border ${className || ''}`}>
+      <div
+        className="relative flex flex-col gap-3 rounded-[30px] p-5 shadow-xl shadow-primary/10 border border-white/40 bg-card/80 backdrop-blur-xl overflow-hidden"
+      >
+      {/* 背景柔和高光，让生成框整体更有悬浮感 */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.85]">
+        <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/25 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full bg-secondary/25 blur-3xl" />
+      </div>
+
+      <h3 className="text-lg font-semibold text-foreground mb-1 relative z-10">
         {mounted ? t('aiGenerate', { ns: 'content', defaultValue: '动画解题 · 自动生成课件' }) : '动画解题 · 自动生成课件'}
       </h3>
 
       {error && (
-        <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-2">{error}</div>
+        <div className="relative z-10 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-2">
+          {error}
+        </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4 relative z-10">
         <div>
           {/* 图片预览区域（显示在对话框上部） */}
           {uploadedImage && (
@@ -1284,23 +1295,8 @@ export default function ContentAIGenerator({
                 id="image-upload-input"
               />
               <div className="relative inline-flex items-center justify-center">
-                {/* 外圈呼吸动画 */}
-                <style jsx>{`
-                  @keyframes breathing {
-                    0%, 100% {
-                      opacity: 0.2;
-                      transform: scale(0.8);
-                    }
-                    50% {
-                      opacity: 0.8;
-                      transform: scale(0.9);
-                    }
-                  }
-                  .breathing-ring {
-                    animation: breathing 2.5s ease-in-out infinite;
-                  }
-                `}</style>
-                <div className="absolute -inset-1 rounded-full border-2 border-primary/70 breathing-ring pointer-events-none"></div>
+                {/* 外圈呼吸动画（样式统一放到本组件底部的 style jsx，避免 nested styled-jsx） */}
+                <div className="absolute -inset-1 rounded-full border-2 border-primary/90 breathing-ring pointer-events-none"></div>
                 <label
                   htmlFor="image-upload-input"
                   className={`relative cursor-pointer p-1.5 rounded hover:bg-muted/50 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -1346,7 +1342,8 @@ export default function ContentAIGenerator({
 
       <button
         type="button"
-        className="w-full px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg shadow hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        data-state={aiGenerating ? 'down' : undefined}
+        className="tile button w-full"
         onClick={(e) => {
           // 移动端：如果已经处理了 touchstart，忽略 click 事件
           if ((e.target as HTMLElement).hasAttribute('data-touch-handled')) {
@@ -1377,14 +1374,18 @@ export default function ContentAIGenerator({
         }}
         disabled={isAiFormDisabled || aiGenerating || !knowledgePoint.trim() || checking || (user && creditsBalance !== null && creditsBalance <= 0) || (user && pendingCount >= 3) || (!user && trialStatus?.content_generated)}
       >
-        {aiGenerating ? (
-          <>
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
-            <span>🤖 {t('startingGeneration', { ns: 'content', defaultValue: '正在启动生成...' })}</span>
-          </>
-        ) : (
-          '🚀 ' + (mounted ? t('aiGenerateShort', { ns: 'content', defaultValue: 'AI生成' }) : 'AI生成')
-        )}
+        <div className="tile w-full justify-center px-6 py-3 font-medium">
+          {aiGenerating ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-foreground/60"></div>
+              <span>🤖 {t('startingGeneration', { ns: 'content', defaultValue: '正在启动生成...' })}</span>
+            </>
+          ) : (
+            <span>
+              {'🚀 ' + (mounted ? t('aiGenerateShort', { ns: 'content', defaultValue: 'AI生成' }) : 'AI生成')}
+            </span>
+          )}
+        </div>
       </button>
 
       {user && (creditsBalance !== null && creditsBalance <= 0) && (
@@ -1664,6 +1665,7 @@ export default function ContentAIGenerator({
         onDismiss={() => setShowRegistrationPrompt(false)}
         visible={showRegistrationPrompt}
       />
+      </div>
     </div>
   );
 }

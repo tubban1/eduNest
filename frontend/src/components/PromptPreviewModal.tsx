@@ -89,9 +89,11 @@ export default function PromptPreviewModal({
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-medium"
+            className="tile button"
           >
-            {t('close', { ns: 'common', defaultValue: '关闭' })}
+            <div className="tile up px-6 py-2 font-medium">
+              {t('close', { ns: 'common', defaultValue: '关闭' })}
+            </div>
           </button>
         </div>
       </div>

@@ -36,10 +36,12 @@ export default function EditButton({
   return (
     <Link
       href={`/c/edit/${contentId}`}
-      className={`flex items-center justify-center bg-primary hover:opacity-90 text-primary-foreground rounded-lg transition-colors ${sizeClasses[size]} ${className}`}
+      className={`tile button ${className}`}
       title={mounted ? t('edit', { ns: 'common', defaultValue: 'Edit' }) : 'Edit'}
     >
-      <Edit3 className={iconSizes[size]} />
+      <div className={`tile up flex items-center justify-center ${sizeClasses[size]}`}>
+        <Edit3 className={iconSizes[size]} />
+      </div>
     </Link>
   );
 }

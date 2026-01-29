@@ -508,9 +508,9 @@ export default function FullHTMLContentPage() {
   const HEADER_HEIGHT = 64;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col overflow-hidden">
       {/* 顶栏：固定一行 */}
-      <div className="sticky top-0 z-40 bg-white shadow-sm border-b h-16">
+      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-sm shadow-sm border-b border-border h-16">
         <div className="max-w-7xl mx-auto h-full px-4">
           <div className="flex items-center h-full gap-3">
             {/* 返回 */}
@@ -582,7 +582,7 @@ export default function FullHTMLContentPage() {
       </div>
       
       {/* 内容区域：iframe 内滚动，父容器不出现滚动条 */}
-      <div className="w-full flex-1 flex flex-col bg-white min-h-0 overflow-hidden">
+      <div className="w-full flex-1 flex flex-col bg-background min-h-0 overflow-hidden">
         <FullHTMLRenderer
           fullHTML={content.full_html}
           externalUrl={`/full-html/${content.short_id}`}

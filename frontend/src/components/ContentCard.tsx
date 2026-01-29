@@ -492,12 +492,17 @@ function ContentCard({
                 e.stopPropagation();
                 setShowPromptModal(true);
               }}
-              className="absolute top-2 right-2 z-20 p-2 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors backdrop-blur-sm shadow-lg"
+              className="absolute top-2 right-2 z-20 tile button"
               title={mounted ? t('generation.viewPromptDetails', { ns: 'content', defaultValue: '查看生成提示详情' }) : '查看生成提示详情'}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <div
+                className="tile round flex items-center justify-center"
+                style={{ width: 40, height: 40, padding: 0 }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
             </button>
           )}
           {isThumbnailReady ? (

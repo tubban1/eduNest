@@ -102,6 +102,617 @@
   animation: bubblePop 10s ease-out forwards;
 }
 
+/* ========= Soft UI / Neumorphism Tiles (按你提供的 tile/up/down/button 结构) ========= */
+:root {
+  --tile-radius: 18px;
+  --tile-bg: #f2f3f5; /* 接近示例图浅灰 */
+  --tile-text: rgba(46, 46, 46, 0.85);
+  --tile-hi: rgba(255, 255, 255, 0.95);
+  --tile-lo: rgba(163, 177, 198, 0.55);
+  --tile-hi-strong: rgba(255, 255, 255, 1);
+  --tile-lo-strong: rgba(163, 177, 198, 0.65);
+  --tile-inset-hi: rgba(255, 255, 255, 0.92);
+  --tile-inset-lo: rgba(163, 177, 198, 0.6);
+}
+
+.tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--tile-radius);
+  background: var(--tile-bg);
+  color: var(--tile-text);
+  padding: 12px 18px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tile.up {
+  box-shadow:
+    -10px -10px 20px var(--tile-hi),
+    10px 10px 20px var(--tile-lo);
+}
+
+.tile.down {
+  box-shadow:
+    inset 6px 6px 12px var(--tile-inset-lo),
+    inset -6px -6px 12px var(--tile-inset-hi);
+}
+
+.tile.padded {
+  padding: 10px;
+}
+
+/* clickable wrapper: <button class="tile button"><div class="tile">...</div></button> */
+.tile.button {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+}
+
+.tile.button > .tile {
+  width: 100%;
+  border-radius: var(--tile-radius);
+  background: var(--tile-bg);
+  box-shadow:
+    -10px -10px 20px var(--tile-hi),
+    10px 10px 20px var(--tile-lo);
+  transition: box-shadow 160ms ease, transform 160ms ease, filter 160ms ease;
+}
+
+.tile.button:hover > .tile {
+  box-shadow:
+    -12px -12px 24px var(--tile-hi-strong),
+    12px 12px 24px var(--tile-lo-strong);
+}
+
+.tile.button:active > .tile {
+  box-shadow:
+    inset 6px 6px 12px var(--tile-inset-lo),
+    inset -6px -6px 12px var(--tile-inset-hi);
+  transform: translateY(1px);
+}
+
+/* persistent DOWN (UP&DOWN) */
+.tile.button[data-state='down'] > .tile,
+.tile.button[aria-pressed='true'] > .tile {
+  box-shadow:
+    inset 6px 6px 12px var(--tile-inset-lo),
+    inset -6px -6px 12px var(--tile-inset-hi);
+}
+
+/* disabled */
+button.tile.button:disabled,
+input.tile.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+button.tile.button:disabled > .tile,
+input.tile.button:disabled > .tile {
+  box-shadow:
+    -5px -5px 10px rgba(255, 255, 255, 0.75),
+    5px 5px 10px rgba(163, 177, 198, 0.35);
+}
+
+button.tile.button:disabled[data-state='down'] > .tile,
+input.tile.button:disabled[data-state='down'] > .tile {
+  box-shadow:
+    inset 6px 6px 12px rgba(163, 177, 198, 0.55),
+    inset -6px -6px 12px rgba(255, 255, 255, 0.92);
+}
+
+/* ========= 深色磨砂玻璃侧边栏 ========= */
+.sidebar-dark {
+  color: rgb(243 244 246);
+}
+.sidebar-dark .tile.button > .tile {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgb(229 231 235);
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.sidebar-dark .tile.button:hover > .tile {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: none;
+}
+.sidebar-dark .tile.button:active > .tile {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+  transform: none;
+}
+/* 当前页：高亮明显 */
+.sidebar-dark .tile.button[aria-pressed='true'] > .tile {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  color: rgb(255 255 255);
+}
+.sidebar-dark .sidebar-dark-login .tile.button > .tile {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.sidebar-dark .sidebar-dark-login .tile.button:hover > .tile {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* 四个导航按钮：文字与内容左对齐 */
+.sidebar-dark nav.sidebar-nav .tile.button > .tile.sidebar-nav-link {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+/* circle variants */
+.tile.tile--circle {
+  width: 72px;
+  height: 72px;
+  padding: 0;
+}
+.tile.round {
+  border-radius: 9999px;
+}
+.tile.round.up {
+  box-shadow:
+    -10px -10px 20px var(--tile-hi),
+    10px 10px 20px var(--tile-lo);
+}
+.tile.round-down {
+  border-radius: 9999px;
+  box-shadow:
+    inset 6px 6px 12px var(--tile-inset-lo),
+    inset -6px -6px 12px var(--tile-inset-hi);
+}
+.tile.round-button {
+  border-radius: 9999px;
+  box-shadow:
+    -10px -10px 20px var(--tile-hi),
+    10px 10px 20px var(--tile-lo);
+}
+
+/* breathing ring (ContentAIGenerator image button) */
+@keyframes breathing {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(0.95);
+  }
+}
+.breathing-ring {
+  animation: breathing 2.5s ease-in-out infinite;
+}
+
+/* ========= Animated conic border for AI 生成框 ========= */
+@property --ai-gen-gradient-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes ai-gen-loading-border {
+  0% {
+    --ai-gen-gradient-angle: 0deg;
+  }
+  100% {
+    --ai-gen-gradient-angle: 360deg;
+  }
+}
+
+.ai-gen-border {
+  position: relative;
+  border-radius: 32px;
+  animation: ai-gen-loading-border 4s linear infinite;
+}
+
+.ai-gen-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: 32px;
+  background: conic-gradient(
+    from var(--ai-gen-gradient-angle),
+    rgba(255, 255, 255, 0.08) 0deg,
+    rgba(255, 255, 255, 0.08) 60deg,
+    rgba(255, 255, 255, 0.98) 120deg,
+    rgba(255, 255, 255, 0.08) 180deg,
+    rgba(255, 255, 255, 0.08) 240deg,
+    rgba(255, 255, 255, 0.98) 300deg,
+    rgba(255, 255, 255, 0.08) 360deg
+  );
+  mask: conic-gradient(#000 0 0) content-box exclude, conic-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* ========= AI Guide organic blob button ========= */
+.ai-guide-filters {
+  position: fixed;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* CSS Custom Properties for organic motion */
+@property --s1 {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --s2 {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --s3 {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --rotation {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --mesh-x-0 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 85%;
+}
+@property --mesh-y-0 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 80%;
+}
+@property --mesh-c-0 {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: hsla(150.88, 62%, 73%, 1);
+}
+@property --mesh-s-start-0 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 9%;
+}
+@property --mesh-s-end-0 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 55%;
+}
+
+@property --mesh-x-1 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 60%;
+}
+@property --mesh-y-1 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 24%;
+}
+@property --mesh-c-1 {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: hsla(220, 100%, 72%, 1);
+}
+@property --mesh-s-start-1 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 5%;
+}
+@property --mesh-s-end-1 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 72%;
+}
+
+@property --mesh-x-2 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 13%;
+}
+@property --mesh-y-2 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 82%;
+}
+@property --mesh-c-2 {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: hsla(297.79, 100%, 55%, 0.49);
+}
+@property --mesh-s-start-2 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 5%;
+}
+@property --mesh-s-end-2 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 52%;
+}
+
+@property --mesh-x-3 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 24%;
+}
+@property --mesh-y-3 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 7%;
+}
+@property --mesh-c-3 {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: hsla(182, 72%, 68%, 1);
+}
+@property --mesh-s-start-3 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 13%;
+}
+@property --mesh-s-end-3 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 68%;
+}
+
+@property --ai-depth {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0.6;
+}
+
+@keyframes s1 {
+  to {
+    --s1: 360deg;
+  }
+}
+@keyframes s2 {
+  to {
+    --s2: 360deg;
+  }
+}
+@keyframes s3 {
+  to {
+    --s3: 360deg;
+  }
+}
+@keyframes rotation {
+  to {
+    --rotation: 360deg;
+  }
+}
+
+@keyframes mesh-gradient {
+  0% {
+    --mesh-x-0: 85%;
+    --mesh-y-0: 80%;
+    --mesh-c-1: hsla(220, 100%, 82%, 1);
+    --mesh-x-1: 60%;
+    --mesh-y-1: 24%;
+    --mesh-x-2: 13%;
+    --mesh-y-2: 82%;
+    --mesh-x-3: 24%;
+    --mesh-y-3: 7%;
+  }
+  100% {
+    --mesh-x-0: 31%;
+    --mesh-y-0: 94%;
+    --mesh-c-1: hsla(220, 82%, 95%, 1);
+    --mesh-x-1: 2%;
+    --mesh-y-1: 25%;
+    --mesh-x-2: 98%;
+    --mesh-y-2: 20%;
+    --mesh-x-3: 95%;
+    --mesh-y-3: 92%;
+  }
+}
+
+@keyframes ai-depth-wave {
+  0% {
+    --ai-depth: 0.6;
+  }
+  20% {
+    --ai-depth: 1.05;
+  }
+  40% {
+    --ai-depth: 1.25;
+  }
+  50% {
+    --ai-depth: 0;
+  }
+  60% {
+    --ai-depth: 1.25;
+  }
+  80% {
+    --ai-depth: 1.05;
+  }
+  100% {
+    --ai-depth: 0.6;
+  }
+}
+
+@keyframes grain-jitter {
+  0% {
+    transform: translate(0px, 0px);
+    opacity: 0.35;
+  }
+  25% {
+    transform: translate(0.8px, -0.8px);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(-0.8px, 0.8px);
+    opacity: 0.32;
+  }
+  75% {
+    transform: translate(0.4px, 0.6px);
+    opacity: 0.38;
+  }
+  100% {
+    transform: translate(0px, 0px);
+    opacity: 0.35;
+  }
+}
+
+.ai-guide-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.ai-guide-btn-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.ai-guide-blob {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 9999px;
+  filter: url(#aiGuideGlow);
+}
+
+.ai-guide-blob-shape {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+
+  background-color: hsla(358, 0%, 100%, 1);
+  background-image:
+    radial-gradient(
+      circle at var(--mesh-x-0) var(--mesh-y-0),
+      var(--mesh-c-0) var(--mesh-s-start-0),
+      transparent var(--mesh-s-end-0)
+    ),
+    radial-gradient(
+      circle at var(--mesh-x-1) var(--mesh-y-1),
+      var(--mesh-c-1) var(--mesh-s-start-1),
+      transparent var(--mesh-s-end-1)
+    ),
+    radial-gradient(
+      circle at var(--mesh-x-2) var(--mesh-y-2),
+      var(--mesh-c-2) var(--mesh-s-start-2),
+      transparent var(--mesh-s-end-2)
+    ),
+    radial-gradient(
+      circle at var(--mesh-x-3) var(--mesh-y-3),
+      var(--mesh-c-3) var(--mesh-s-start-3),
+      transparent var(--mesh-s-end-3)
+    );
+
+  --ai-depth: 0.4;
+  --rotation: 0deg;
+
+  animation: s1 7s linear infinite, s2 11s linear infinite, s3 13s linear infinite,
+    mesh-gradient 10s linear infinite alternate, ai-depth-wave 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
+  box-shadow:
+    -14px -14px 28px rgba(255, 255, 255, 0.95),
+    12px 18px 32px rgba(15, 23, 42, 0.4);
+  /* 通过 border-radius 在圆形和不规则形状之间形变，而不是整体放大缩小 */
+  border-radius:
+    calc(50% + var(--ai-depth) * 8%) calc(50% - var(--ai-depth) * 6%)
+    calc(50% + var(--ai-depth) * 11%) calc(50% - var(--ai-depth) * 8%) /
+    calc(50% + var(--ai-depth) * 7%) calc(50% - var(--ai-depth) * 9%)
+    calc(50% + var(--ai-depth) * 6%) calc(50% - var(--ai-depth) * 7%);
+}
+
+.ai-guide-grain {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  filter: url(#aiGuideFilmGrain);
+  mix-blend-mode: multiply;
+  opacity: 0.4;
+  pointer-events: none;
+  animation: grain-jitter 2s ease-in-out infinite;
+}
+
+.ai-guide-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.95rem 0.5rem 0.9rem;
+  border-radius: 9999px;
+  background: rgba(248, 250, 252, 0.98);
+  box-shadow:
+    0 10px 24px rgba(15, 23, 42, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(18px);
+}
+
+.ai-guide-label-text {
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(15, 23, 42, 0.7);
+  white-space: nowrap;
+}
+
+.ai-guide-btn:hover .ai-guide-blob {
+  animation-duration: 9s;
+  box-shadow:
+    -16px -16px 30px rgba(255, 255, 255, 1),
+    16px 22px 38px rgba(15, 23, 42, 0.55);
+}
+
+.ai-guide-btn:active .ai-guide-blob {
+  transform: scale(0.96);
+  box-shadow:
+    inset 6px 6px 12px rgba(148, 163, 184, 0.55),
+    inset -6px -6px 12px rgba(255, 255, 255, 0.9);
+}
+
+.ai-guide-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #f97373;
+  box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7);
+  animation: pulse 1.5s infinite;
+  border: 2px solid #f9fafb;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7);
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 0;
+    box-shadow: 0 0 0 12px rgba(248, 113, 113, 0);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
+  }
+}
+
 /* 响应式字体 */
 @media (max-width: 640px) {
   .text-5xl {

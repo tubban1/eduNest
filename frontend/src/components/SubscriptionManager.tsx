@@ -238,12 +238,15 @@ const SubscriptionManager: React.FC = () => {
             <button
               onClick={getUpgradeButtonAction()}
               disabled={upgrading}
-              className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="tile button w-full"
+              data-state={upgrading ? 'down' : undefined}
             >
-              {upgrading 
-                ? (mounted ? t('subscription.processing', { ns: 'content', defaultValue: '处理中...' }) : 'Processing...')
-                : getUpgradeButtonText()
-              }
+              <div className="tile w-full justify-center py-2 px-4 font-medium">
+                {upgrading 
+                  ? (mounted ? t('subscription.processing', { ns: 'content', defaultValue: '处理中...' }) : 'Processing...')
+                  : getUpgradeButtonText()
+                }
+              </div>
             </button>
           </div>
         )}
@@ -279,12 +282,15 @@ const SubscriptionManager: React.FC = () => {
             <button
               onClick={getUpgradeButtonAction()}
               disabled={upgrading}
-              className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="tile button w-full"
+              data-state={upgrading ? 'down' : undefined}
             >
-              {upgrading 
-                ? (mounted ? t('subscription.processing', { ns: 'content', defaultValue: '处理中...' }) : 'Processing...')
-                : getUpgradeButtonText()
-              }
+              <div className="tile w-full justify-center py-2 px-4 font-medium">
+                {upgrading 
+                  ? (mounted ? t('subscription.processing', { ns: 'content', defaultValue: '处理中...' }) : 'Processing...')
+                  : getUpgradeButtonText()
+                }
+              </div>
             </button>
           </div>
         )}

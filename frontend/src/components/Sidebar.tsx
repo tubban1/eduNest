@@ -10,6 +10,7 @@ import Logo from './Logo';
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import CreditsHistoryDialog from './CreditsHistoryDialog';
+import LogoEduAnimation from './LogoEduAnimation';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -119,15 +120,15 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
   };
 
   const sidebarContent = (
-    <div className={`w-64 h-screen bg-white shadow-sm border-r border-gray-200 flex flex-col ${variant === 'mobile' ? 'h-[100dvh]' : ''}`}>
+    <div className={`sidebar-dark w-64 h-screen bg-slate-900/65 backdrop-blur-xl border-r border-white/10 flex flex-col shadow-[inset_-1px_0_0_0_rgba(255,255,255,0.06)] ${variant === 'mobile' ? 'h-[100dvh]' : ''}`}>
       {variant === 'mobile' && (
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <Logo size="sm" />
+            <Logo size="sm" className="[&_span]:text-gray-100" />
             <LanguageSelector variant="button" />
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <X className="w-5 h-5 text-gray-600" />
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors">
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
       )}
@@ -135,61 +136,61 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
       <div className="p-6 flex-1">
         {variant === 'desktop' && (
           <div className="mb-6 flex items-center gap-3">
-            <Logo size="md" />
+            <Logo size="md" className="[&_span]:text-gray-100" />
             <LanguageSelector variant="button" />
           </div>
         )}
         
         {!user && (
-          <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+          <div className="sidebar-dark-login mb-6 p-4 rounded-xl bg-white/5 border border-white/15">
             <div className="flex flex-col gap-2">
               <Link
                 href="/login"
                 onClick={handleItemClick}
-                className="block w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90 transition-colors"
+                className="tile button w-full"
               >
-                {mounted ? t('login', { ns: 'navigation', defaultValue: '登录' }) : 'Login'}
+                <div className="tile w-full justify-center text-sm font-medium">
+                  {mounted ? t('login', { ns: 'navigation', defaultValue: '登录' }) : 'Login'}
+                </div>
               </Link>
               <Link
                 href="/signup"
                 onClick={handleItemClick}
-                className="block w-full px-4 py-2 rounded-lg bg-card text-primary border border-primary text-sm font-medium text-center hover:bg-primary/10 transition-colors"
+                className="tile button w-full"
               >
-                {mounted ? t('signup', { ns: 'navigation', defaultValue: '注册' }) : 'Sign Up'}
+                <div className="tile w-full justify-center text-sm font-medium">
+                  {mounted ? t('signup', { ns: 'navigation', defaultValue: '注册' }) : 'Sign Up'}
+                </div>
               </Link>
             </div>
           </div>
         )}
 
         {user && (
-          <div className={`mb-6 rounded-lg transition-all overflow-hidden ${
+          <div className={`sidebar-dark-usercard mb-6 rounded-xl transition-all overflow-hidden border border-white/15 ${
             isProUser 
-              ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300 shadow-lg relative' 
-              : 'bg-gray-50 border border-gray-200'
+              ? 'bg-amber-950/40 relative' 
+              : 'bg-white/5'
           }`}>
-            {/* Pro用户特殊背景装饰 */}
             {isProUser && (
               <>
-                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-400/20 to-orange-400/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-yellow-400/20 to-amber-400/20 rounded-full blur-xl -ml-8 -mb-8"></div>
+                <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/15 rounded-full blur-2xl -mr-10 -mt-10" />
+                <div className="absolute bottom-0 left-0 w-16 h-16 bg-amber-400/10 rounded-full blur-xl -ml-8 -mb-8" />
                 <div className="absolute top-2 right-2 z-10">
-                  <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+                  <Sparkles className="w-4 h-4 text-amber-400" />
                 </div>
               </>
             )}
             
-            {/* 折叠状态：Pro用户显示徽章，非Pro用户显示积分和统计 */}
             <button
               onClick={() => setUserInfoExpanded(!userInfoExpanded)}
               className={`w-full p-4 flex items-center justify-between relative z-10 transition-colors ${
-                isProUser 
-                  ? 'hover:bg-amber-100/50' 
-                  : 'hover:bg-gray-100'
+                isProUser ? 'hover:bg-amber-500/10' : 'hover:bg-white/10'
               }`}
             >
               {isProUser ? (
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-bold rounded-full shadow-md flex items-center gap-1.5">
+                  <span className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold rounded-full shadow-lg flex items-center gap-1.5">
                     <Crown className="w-4 h-4" />
                     PRO
                   </span>
@@ -197,10 +198,10 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-gray-400">
                       {mounted ? t('credits', { ns: 'credits', defaultValue: '积分' }) : 'Credits'}:
                     </span>
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-gray-100">
                       {loadingCredits ? (mounted ? t('loading', { ns: 'credits', defaultValue: '...' }) : '...') : (credits ?? '-')}
                     </span>
                   </div>
@@ -209,25 +210,24 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
                       e.stopPropagation();
                       setShowHistory(true);
                     }}
-                    className="p-1.5 rounded hover:bg-gray-200 transition-colors"
+                    className="p-1.5 rounded hover:bg-white/10 transition-colors"
                     title={mounted ? t('creditsHistory', { ns: 'credits', defaultValue: '查看积分明细' }) : 'View Credits History'}
                   >
-                    <List className="w-4 h-4 text-gray-600" />
+                    <List className="w-4 h-4 text-gray-400" />
                   </button>
                 </div>
               )}
               
               {userInfoExpanded ? (
-                <ChevronUp className={`w-5 h-5 ${isProUser ? 'text-amber-700' : 'text-gray-600'}`} />
+                <ChevronUp className={`w-5 h-5 ${isProUser ? 'text-amber-400' : 'text-gray-400'}`} />
               ) : (
-                <ChevronDown className={`w-5 h-5 ${isProUser ? 'text-amber-700' : 'text-gray-600'}`} />
+                <ChevronDown className={`w-5 h-5 ${isProUser ? 'text-amber-400' : 'text-gray-400'}`} />
               )}
             </button>
 
-            {/* 展开状态：显示详细信息 */}
             {userInfoExpanded && (
-              <div className={`px-4 pb-4 pt-0 relative z-10 border-t ${isProUser ? 'border-amber-200' : 'border-gray-200'}`}>
-                <div className={`text-sm mt-3 space-y-2 ${isProUser ? 'text-amber-900' : 'text-gray-600'}`}>
+              <div className={`px-4 pb-4 pt-0 relative z-10 border-t ${isProUser ? 'border-amber-500/20' : 'border-white/10'}`}>
+                <div className={`text-sm mt-3 space-y-2 ${isProUser ? 'text-amber-200' : 'text-gray-400'}`}>
                   <div>
                     <span className="font-medium">{mounted ? t('username', { ns: 'auth', defaultValue: 'Name:' }) : 'Name:'}</span>{' '}
                     <span>{user.name}</span>
@@ -261,9 +261,11 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
                       <Link
                         href="/subscription"
                         onClick={handleItemClick}
-                        className="block w-full px-3 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-medium text-center hover:opacity-90 transition-opacity shadow-md"
+                        className="tile button w-full"
                       >
-                        {mounted ? t('subscription.manageSubscription', { ns: 'content', defaultValue: '管理订阅' }) : 'Manage Subscription'}
+                        <div className="tile w-full justify-center text-sm font-medium">
+                          {mounted ? t('subscription.manageSubscription', { ns: 'content', defaultValue: '管理订阅' }) : 'Manage Subscription'}
+                        </div>
                       </Link>
                     </div>
                   )}
@@ -277,13 +279,15 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
           <Link
             href="/subscription"
             onClick={handleItemClick}
-            className="block w-full mb-4 px-4 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90 transition-opacity"
+            className="tile button w-full mb-4"
           >
-            {mounted ? t('upgrade_to_pro', { ns: 'navigation', defaultValue: '升级到 Pro' }) : '升级到 Pro'}
+            <div className="tile w-full justify-center text-sm font-medium">
+              {mounted ? t('upgrade_to_pro', { ns: 'navigation', defaultValue: '升级到 Pro' }) : '升级到 Pro'}
+            </div>
           </Link>
         )}
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 sidebar-nav">
           {menuItems.map((item) => {
             const Icon = item.icon;
             // 对于首页 (/)，只有完全匹配时才激活；其他路径支持子路径匹配
@@ -292,9 +296,13 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
               : pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link key={item.href} href={item.href} onClick={handleItemClick}
-                className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}>
-                <Icon className="w-5 h-5 mr-3" />
-                {item.label}
+                className="tile button w-full"
+                aria-pressed={isActive ? 'true' : 'false'}
+              >
+                <div className="tile w-full justify-start px-4 py-3 text-sm font-medium sidebar-nav-link">
+                  <Icon className="w-5 h-5 mr-3" />
+                  {item.label}
+                </div>
               </Link>
             );
           })}
@@ -302,12 +310,17 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
       </div>
       
       {user && (
-        <div className={`p-6 border-t border-gray-200 ${variant === 'mobile' ? 'pb-[calc(1.5rem+env(safe-area-inset-bottom))]' : ''}`}>
-          <button onClick={handleSignOut} className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors">
-            <LogOut className="w-5 h-5 mr-3" />
-            {mounted ? t('logout', { ns: 'auth', defaultValue: 'Logout' }) : 'Logout'}
-          </button>
-        </div>
+        <>
+          <div className="px-6 pt-4 pb-2">
+            <LogoEduAnimation />
+          </div>
+          <div className={`p-6 border-t border-white/10 ${variant === 'mobile' ? 'pb-[calc(1.5rem+env(safe-area-inset-bottom))]' : ''}`}>
+            <button onClick={handleSignOut} className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/15 transition-colors">
+              <LogOut className="w-5 h-5 mr-3" />
+              {mounted ? t('logout', { ns: 'auth', defaultValue: 'Logout' }) : 'Logout'}
+            </button>
+          </div>
+        </>
       )}
 
       {/* 积分明细弹窗 */}

@@ -136,23 +136,26 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+          className="tile button flex-1"
         >
-          取消
+          <div className="tile w-full justify-center py-2 px-4 font-medium">取消</div>
         </button>
         <button
           onClick={handleCheckout}
           disabled={isLoading}
-          className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50 transition-colors"
+          className="tile button flex-1"
+          data-state={isLoading ? 'down' : undefined}
         >
-          {isLoading ? (
-            <span className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              处理中...
-            </span>
-          ) : (
-            '开始订阅'
-          )}
+          <div className="tile w-full justify-center py-2 px-4 font-medium">
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-foreground/60 mr-2"></div>
+                处理中...
+              </span>
+            ) : (
+              '开始订阅'
+            )}
+          </div>
         </button>
       </div>
     </div>

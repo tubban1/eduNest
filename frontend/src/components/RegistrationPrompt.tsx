@@ -72,17 +72,21 @@ export const RegistrationPrompt: React.FC<RegistrationPromptProps> = ({
         <div className="flex gap-3 justify-center mt-6">
           {onDismiss && type !== 'trialUsed' && (
             <button
-              className="px-6 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground"
+              className="tile button"
               onClick={onDismiss}
             >
-              {mounted ? t('registrationPrompt.later', { ns: 'common', defaultValue: '稍后再说' }) : '稍后再说'}
+              <div className="tile up px-6 py-2 font-medium">
+                {mounted ? t('registrationPrompt.later', { ns: 'common', defaultValue: '稍后再说' }) : '稍后再说'}
+              </div>
             </button>
           )}
           <button
-            className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90"
+            className="tile button"
             onClick={handleRegister}
           >
-            {mounted ? t('registrationPrompt.registerNow', { ns: 'common', defaultValue: '立即注册' }) : '立即注册'}
+            <div className="tile up px-6 py-2 font-semibold">
+              {mounted ? t('registrationPrompt.registerNow', { ns: 'common', defaultValue: '立即注册' }) : '立即注册'}
+            </div>
           </button>
         </div>
       </div>
