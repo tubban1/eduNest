@@ -1220,8 +1220,9 @@ export default function ContentAIGenerator({
           )}
           {/* 文字输入区域 */}
           <div className="relative">
+            <div className="ai-gen-focus-wrap rounded-lg">
             <textarea
-              className="w-full border border-border p-2 pr-2 pb-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card resize-none h-32"
+              className="w-full border-0 p-2 pr-2 pb-10 rounded-[6px] focus:outline-none focus:ring-0 bg-card resize-none h-32"
               value={knowledgePoint}
               onChange={e => setKnowledgePoint(e.target.value)}
               onPaste={async (e) => {
@@ -1258,6 +1259,7 @@ export default function ContentAIGenerator({
               disabled={isAiFormDisabled}
               maxLength={1500}
             />
+            </div>
             {/* 底部左侧按钮区域（语言选择、输出类型和图片上传，并排显示） */}
             <div className="absolute bottom-2 left-2 flex gap-2 items-center z-10">
               {/* 语言选择按钮 */}
@@ -1271,20 +1273,22 @@ export default function ContentAIGenerator({
                 {language ? getLanguageLabel(language) : (mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: '选择语言' }) : 'Select Language')}
               </button>
               {/* 输出类型选择器 */}
-              <select
-                value={outputType}
-                onChange={(e) => setOutputType(e.target.value as 'interactive' | 'animated')}
-                disabled={isAiFormDisabled}
-                className="px-2 py-1 text-sm border border-border rounded hover:bg-muted/50 transition disabled:opacity-50 disabled:cursor-not-allowed bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                title={mounted ? t('outputType.select', { ns: 'content', defaultValue: '选择输出类型' }) : 'Select Output Type'}
-              >
-                <option value="interactive">
-                  {mounted ? t('outputType.interactive', { ns: 'content', defaultValue: '交互式' }) : 'Interactive'}
-                </option>
-                <option value="animated">
-                  {mounted ? t('outputType.animated', { ns: 'content', defaultValue: '动画' }) : 'Animated'}
-                </option>
-              </select>
+              <div className="ai-gen-focus-wrap rounded inline-flex">
+                <select
+                  value={outputType}
+                  onChange={(e) => setOutputType(e.target.value as 'interactive' | 'animated')}
+                  disabled={isAiFormDisabled}
+                  className="px-2 py-1 text-sm border-0 rounded-[2px] focus:outline-none focus:ring-0 hover:bg-muted/50 transition disabled:opacity-50 disabled:cursor-not-allowed bg-card text-foreground min-w-0"
+                  title={mounted ? t('outputType.select', { ns: 'content', defaultValue: '选择输出类型' }) : 'Select Output Type'}
+                >
+                  <option value="interactive">
+                    {mounted ? t('outputType.interactive', { ns: 'content', defaultValue: '交互式' }) : 'Interactive'}
+                  </option>
+                  <option value="animated">
+                    {mounted ? t('outputType.animated', { ns: 'content', defaultValue: '动画' }) : 'Animated'}
+                  </option>
+                </select>
+              </div>
               {/* 图片上传按钮 */}
               <input
                 type="file"
@@ -1294,12 +1298,12 @@ export default function ContentAIGenerator({
                 className="hidden"
                 id="image-upload-input"
               />
-              <div className="relative inline-flex items-center justify-center">
-                {/* 外圈呼吸动画（样式统一放到本组件底部的 style jsx，避免 nested styled-jsx） */}
-                <div className="absolute -inset-1 rounded-full border-2 border-primary/90 breathing-ring pointer-events-none"></div>
+              <div className="relative inline-flex items-center justify-center p-1.5">
+                {/* 外圈呼吸动画：环在 padding 区域，不超出容器避免被 overflow-hidden 裁剪 */}
+                <div className="absolute inset-0 rounded-full breathing-ring pointer-events-none"></div>
                 <label
                   htmlFor="image-upload-input"
-                  className={`relative cursor-pointer p-1.5 rounded hover:bg-muted/50 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`relative z-10 cursor-pointer p-1.5 rounded hover:bg-muted/50 transition ${isAiFormDisabled || imageUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title={mounted ? t('uploadImage', { ns: 'content', defaultValue: '上传图片' }) : 'Upload Image'}
                 >
                   {imageUploading ? (

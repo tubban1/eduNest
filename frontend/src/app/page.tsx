@@ -24,11 +24,26 @@ export default function HomePage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [pollingContents, setPollingContents] = useState<Set<string>>(new Set());
+  const [gradientPhase, setGradientPhase] = useState(0);
   
   const ITEMS_PER_PAGE = 18; // 每页加载 18 个卡片
   const MAX_CONTENT_COUNT = 100; // 最多显示 100 个内容
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    let raf = 0;
+    let last = 0;
+    const loop = (now: number) => {
+      if (!last) last = now;
+      const dt = Math.min((now - last) / 4000, 1 / 30);
+      last = now;
+      setGradientPhase((p) => (p + dt) % 1);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // 获取收藏列表
   const fetchLists = async () => {
@@ -380,9 +395,45 @@ export default function HomePage() {
           <div className="mb-6">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-tight">
               {t('make_learning', { ns: 'home', defaultValue: 'Make Learning' })}
-              <span className="text-primary">
-                {' '}
-                {t('dynamic_and_interesting', { ns: 'home', defaultValue: 'Dynamic and Interesting' })}
+              {' '}
+              <span className="inline-block whitespace-pre">
+                {(() => {
+                  const raw = mounted ? t('dynamic_and_interesting', { ns: 'home', defaultValue: 'Dynamic and Interesting' }) : 'Dynamic and Interesting';
+                  const chars = [...raw];
+                  const stops = ['#a78bfa', '#ec4899', '#f59e0b', '#a78bfa'] as const;
+                  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+                  const hex = (r: number, g: number, b: number) => `rgb(${r},${g},${b})`;
+                  const parseRgb = (h: string) => {
+                    const n = parseInt(h.slice(1), 16);
+                    return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff] as const;
+                  };
+                  return chars.map((char, i) => {
+                    const pos = chars.length <= 1 ? 0 : i / (chars.length - 1);
+                    const t = (pos + gradientPhase) % 1;
+                    const si = Math.min(Math.floor(t * 3), 2);
+                    const st = t * 3 - si;
+                    const [r1, g1, b1] = parseRgb(stops[si]);
+                    const [r2, g2, b2] = parseRgb(stops[si + 1]);
+                    const r = lerp(r1, r2, st);
+                    const g = lerp(g1, g2, st);
+                    const b = lerp(b1, b2, st);
+                    const color = hex(r, g, b);
+                    const isSpace = /\s/.test(char);
+                    return (
+                      <span
+                        key={i}
+                        className="inline-block"
+                        style={{
+                          color,
+                          transform: isSpace ? 'none' : `rotate(${[-2, 1, 2, -1, 0, 1, -2, 1, 0, -1, 2, -2, 1, 0, -1, 2][i % 16]}deg) translateY(${[0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0][i % 16] * 2}px)`,
+                          marginRight: isSpace ? '0.28em' : undefined,
+                        }}
+                      >
+                        {isSpace ? '\u00A0' : char}
+                      </span>
+                    );
+                  });
+                })()}
               </span>
             </h1>
           </div>
