@@ -230,7 +230,7 @@ export default function CollectionsPage() {
             </div>
           </div>
         ) : (
-        <div className="p-8 lg:p-8">
+        <div className="px-4 py-8 sm:px-6 lg:p-8">
           {/* 页面标题 */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
             <div>

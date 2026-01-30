@@ -121,7 +121,7 @@ export default function HelpPage() {
           <Sidebar variant="desktop" />
         </div>
         <main className="flex-1 bg-background overflow-y-auto">
-          <div className="p-8 lg:p-8">
+          <div className="px-4 py-8 sm:px-6 lg:p-8">
             <div className="text-center text-muted-foreground">Loading...</div>
           </div>
         </main>
@@ -153,7 +153,7 @@ export default function HelpPage() {
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
 
-        <div className="p-8 lg:p-12 max-w-4xl mx-auto">
+        <div className="px-4 py-8 sm:px-6 lg:p-12 max-w-4xl mx-auto">
           {/* 页面标题 */}
           <div className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-foreground mb-2 opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">

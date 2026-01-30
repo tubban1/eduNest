@@ -354,7 +354,7 @@ export default function FullHTMLContentListPage() {
             </div>
           </div>
         ) : (
-          <div className="p-8 lg:p-8">
+          <div className="px-4 py-8 sm:px-6 lg:p-8">
             {/* AI 生成表单 - 仅登录用户可见 */}
             <div className="mb-6">
               <ContentAIGenerator className="mb-6" onGenerated={handleContentGenerated} />

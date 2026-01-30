@@ -38,7 +38,7 @@ export default function SubscriptionPage() {
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
 
-        <div className="p-8 lg:p-8">
+        <div className="px-4 py-8 sm:px-6 lg:p-8">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-2xl font-bold text-gray-900 mb-6">
               {mounted ? t('subscription.title', { ns: 'content', defaultValue: '订阅与升级' }) : 'Subscription & Upgrade'}
