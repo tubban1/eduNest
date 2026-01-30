@@ -197,6 +197,7 @@ export default function StarfieldBackground({ containerRef, className = '' }: St
       }
 
       function clientToWorld(clientX: number, clientY: number, depth = 0.5) {
+        if (!container) return new THREE.Vector3(0, 0, depth);
         const rect = container.getBoundingClientRect();
         const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
         const ny = -((clientY - rect.top) / rect.height) * 2 + 1;
@@ -204,6 +205,7 @@ export default function StarfieldBackground({ containerRef, className = '' }: St
       }
 
       const handleMouseMove = (e: MouseEvent) => {
+        if (!container) return;
         const rect = container.getBoundingClientRect();
         if (
           e.clientX < rect.left ||
