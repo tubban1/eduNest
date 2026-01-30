@@ -1279,18 +1279,18 @@ export default function ContentAIGenerator({
                 type="button"
                 onClick={() => !isAiFormDisabled && setShowLanguagePicker(true)}
                 disabled={isAiFormDisabled}
-                className="px-2 py-1 text-sm border border-border rounded hover:bg-muted/50 transition disabled:opacity-50 disabled:cursor-not-allowed bg-card text-foreground"
+                className="h-8 px-2 flex items-center text-sm border-2 border-white/30 rounded bg-transparent text-white/90 hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 title={mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: '选择输出语言' }) : 'Select Output Language'}
               >
                 {language ? getLanguageLabel(language) : (mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: '选择语言' }) : 'Select Language')}
               </button>
               {/* 输出类型选择器 */}
-              <div className="ai-gen-focus-wrap rounded inline-flex">
+              <div className="ai-gen-focus-wrap ai-gen-focus-wrap-transparent h-8 inline-flex items-stretch !border-2 !border-white/30 !rounded">
                 <select
                   value={outputType}
                   onChange={(e) => setOutputType(e.target.value as 'interactive' | 'animated')}
                   disabled={isAiFormDisabled}
-                  className="px-2 py-1 text-sm border-0 rounded-[2px] focus:outline-none focus:ring-0 hover:bg-muted/50 transition disabled:opacity-50 disabled:cursor-not-allowed bg-card text-foreground min-w-0"
+                  className="h-full px-2 text-sm border-0 rounded-[2px] focus:outline-none focus:ring-0 hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed bg-transparent text-white/90 min-w-0 cursor-pointer"
                   title={mounted ? t('outputType.select', { ns: 'content', defaultValue: '选择输出类型' }) : 'Select Output Type'}
                 >
                   <option value="interactive">
@@ -1329,7 +1329,7 @@ export default function ContentAIGenerator({
               </div>
               {/* 提示文字 */}
               <span 
-                className={`text-xs text-white/90 transition-opacity duration-2500 whitespace-nowrap ${
+                className={`text-xs text-muted-foreground transition-opacity duration-2500 whitespace-nowrap ${
                   showUploadHint ? 'opacity-100' : 'opacity-0'
                 }`}
               >
