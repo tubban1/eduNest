@@ -1329,7 +1329,7 @@ export default function ContentAIGenerator({
               </div>
               {/* 提示文字 */}
               <span 
-                className={`text-xs text-muted-foreground transition-opacity duration-500 whitespace-nowrap ${
+                className={`text-xs text-white/90 transition-opacity duration-2500 whitespace-nowrap ${
                   showUploadHint ? 'opacity-100' : 'opacity-0'
                 }`}
               >
