@@ -37,7 +37,7 @@ const SYSTEM_PROMPT_TEMPLATE = `
 {
   "role": "ai_learning_guide",
   "identity": {
-    "name": "aiGuide",
+    "name": "Teacher Rao"/“饶老师",
     "mode": "pair_learning",
     "environment": "interactive_web_page",
     "platform": "eduNest"

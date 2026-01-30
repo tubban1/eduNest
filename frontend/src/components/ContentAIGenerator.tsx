@@ -1162,6 +1162,20 @@ export default function ContentAIGenerator({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // 按钮禁用时的提示文字（多语言）
+  const getBuildKnowledgeDisabledHint = () => {
+    if (aiGenerating) return t('buildKnowledgeDisabledHint.generating', { ns: 'content', defaultValue: '正在生成中...' });
+    if (checking) return t('buildKnowledgeDisabledHint.checking', { ns: 'content', defaultValue: '正在检查...' });
+    if (!knowledgePoint.trim()) return t('buildKnowledgeDisabledHint.enterRequirement', { ns: 'content', defaultValue: '请输入要求' });
+    if (user && creditsBalance !== null && creditsBalance <= 0) return t('buildKnowledgeDisabledHint.insufficientCredits', { ns: 'content', defaultValue: '积分不足，无法生成' });
+    if (user && pendingCount >= 3) return t('buildKnowledgeDisabledHint.queueLimitReached', { ns: 'content', defaultValue: '队列不能超过3个任务，请等待当前任务完成' });
+    if (!user && trialStatus?.content_generated) return t('buildKnowledgeDisabledHint.freeTrialUsed', { ns: 'content', defaultValue: '请登录后继续使用' });
+    if (isAiFormDisabled) return t('buildKnowledgeDisabledHint.checking', { ns: 'content', defaultValue: '正在检查...' });
+    return '';
+  };
+
+  const isBuildKnowledgeDisabled = isAiFormDisabled || aiGenerating || !knowledgePoint.trim() || checking || (user && creditsBalance !== null && creditsBalance <= 0) || (user && pendingCount >= 3) || (!user && trialStatus?.content_generated);
+
   return (
     <div className={`ai-gen-border ${className || ''}`}>
       <div
@@ -1388,7 +1402,8 @@ export default function ContentAIGenerator({
             (e.target as HTMLElement).removeAttribute('data-touch-handled');
           }, 300);
         }}
-        disabled={isAiFormDisabled || aiGenerating || !knowledgePoint.trim() || checking || (user && creditsBalance !== null && creditsBalance <= 0) || (user && pendingCount >= 3) || (!user && trialStatus?.content_generated)}
+        disabled={isBuildKnowledgeDisabled}
+        title={isBuildKnowledgeDisabled ? getBuildKnowledgeDisabledHint() : undefined}
       >
         <div className="w-full flex items-center justify-center gap-2 px-6 py-3.5 font-semibold rounded-2xl bg-gradient-to-r from-[#a78bfa] via-[#ec4899] to-[#f59e0b] text-white shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:brightness-110 active:scale-[0.98] transition-all duration-200 group-disabled:opacity-60 group-disabled:cursor-not-allowed group-disabled:hover:brightness-100">
           {aiGenerating ? (
@@ -1398,7 +1413,9 @@ export default function ContentAIGenerator({
             </>
           ) : (
             <span>
-              {'🚀 ' + (mounted ? t('aiGenerateShort', { ns: 'content', defaultValue: 'AI生成' }) : 'AI生成')}
+              {isBuildKnowledgeDisabled && !knowledgePoint.trim()
+                ? (mounted ? t('buildKnowledgeDisabledHint.enterRequirement', { ns: 'content', defaultValue: '请输入要求' }) : '请输入要求')
+                : ('🚀 ' + (mounted ? t('buildKnowledge', { ns: 'content', defaultValue: '构建知识' }) : '构建知识'))}
             </span>
           )}
         </div>

@@ -439,8 +439,476 @@ GET /api/kb/recommend
 
 ---
 
-**文档版本**：v1.4  
+## 十三、附录：表结构、示例代码与 Prompt
+
+### 13.1 数据库表结构（Supabase / PostgreSQL）
+
+#### kb_entries 主表
+
+```sql
+-- 启用 pgvector 扩展（若尚未启用）
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 咨询分类枚举
+CREATE TYPE kb_category AS ENUM ('产品', '价格', '销售', '售后', '分销', 'FAQ');
+
+-- 内容类型枚举
+CREATE TYPE kb_content_type AS ENUM ('faq', 'feature', 'pricing', 'sales_script', 'support', 'distributor');
+
+CREATE TABLE kb_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category kb_category NOT NULL,
+  subcategory TEXT,                          -- 可选：如 FAQ-功能、FAQ-技术
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  content_type kb_content_type NOT NULL,
+  question TEXT,                             -- FAQ 专用：标准问题
+  answer TEXT,                               -- FAQ 专用：标准答案
+  tags TEXT[] DEFAULT '{}',
+  source TEXT,                               -- 文档来源，如 "3.1 功能使用问题"
+  language_code TEXT DEFAULT 'zh-CN',        -- 主语言，用于精确匹配
+  embedding vector(1536),                    -- OpenAI text-embedding-3-small 维度
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 索引
+CREATE INDEX idx_kb_entries_category ON kb_entries(category);
+CREATE INDEX idx_kb_entries_content_type ON kb_entries(content_type);
+CREATE INDEX idx_kb_entries_tags ON kb_entries USING GIN(tags);
+CREATE INDEX idx_kb_entries_language ON kb_entries(language_code);
+
+-- 全文检索（Phase 1 关键词搜索）
+CREATE INDEX idx_kb_entries_content_fts ON kb_entries 
+  USING GIN(to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(content, '') || ' ' || coalesce(question, '')));
+
+-- 向量索引（Phase 2，ivfflat 适合中等规模 <100万）
+CREATE INDEX idx_kb_entries_embedding ON kb_entries 
+  USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
+-- pg_trgm 用于 similarity() 相似度匹配（精确匹配 FAQ 时可选）
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_kb_entries_question_trgm ON kb_entries USING GIN(question gin_trgm_ops);  -- 需 pg_trgm 扩展
+```
+
+#### consult_demo_mapping 推荐映射表（可选）
+
+```sql
+CREATE TABLE consult_demo_mapping (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  kb_category kb_category NOT NULL,
+  user_role TEXT,                            -- 教师|学生|家长|机构，NULL 表示通用
+  content_short_id TEXT NOT NULL,            -- 关联 content 表
+  tags TEXT[] DEFAULT '{}',                  -- 或直接用 tags 映射，不指定具体内容
+  "order" INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_consult_demo_mapping_category ON consult_demo_mapping(kb_category);
+```
+
+---
+
+### 13.2 解析脚本示例（Node.js）
+
+```javascript
+// scripts/parse-kb-md.js
+const fs = require('fs');
+const path = require('path');
+
+const MD_PATH = path.join(__dirname, '../经销商产品培训文档.md');
+const OUTPUT_JSON = path.join(__dirname, '../kb_entries.json');
+
+// 分类映射：根据 ## 标题映射到 category
+const SECTION_TO_CATEGORY = {
+  '0. 产品介绍': '产品',
+  '0. 订阅与积分': '价格',
+  '2. 学习分析': '产品',
+  '3.1 功能使用': 'FAQ',
+  '3.2 技术问题': '售后',
+  '3.3 账户问题': '售后',
+  '4. 产品优势': '销售',
+  '5. 演示流程': '销售',
+  '6. 技术支持': '售后',
+  '6.2 经销商': '分销',
+};
+
+function parseMdToEntries(mdContent) {
+  const entries = [];
+  const sections = mdContent.split(/\n(?=## )/);
+  let currentCategory = 'FAQ';
+
+  for (const section of sections) {
+    const lines = section.split('\n');
+    const header = lines[0];
+    const sectionMatch = header.match(/^## (.+)$/);
+    if (sectionMatch) {
+      const key = Object.keys(SECTION_TO_CATEGORY).find(k => header.includes(k));
+      if (key) currentCategory = SECTION_TO_CATEGORY[key];
+    }
+
+    // FAQ 模式：#### ❓ **Q1: xxx** ... **A:** yyy
+    const faqRegex = /####\s*❓\s*\*\*Q\d+:\s*(.+?)\*\*[\s\S]*?\*\*A:\*\*\s*([\s\S]+?)(?=####|$)/gi;
+    let m;
+    while ((m = faqRegex.exec(section)) !== null) {
+      entries.push({
+        category: currentCategory,
+        subcategory: null,
+        title: m[1].trim(),
+        content: m[2].trim(),
+        content_type: 'faq',
+        question: m[1].trim(),
+        answer: m[2].trim(),
+        tags: extractTags(m[1] + ' ' + m[2]),
+        source: header.replace(/^## /, ''),
+        language_code: 'zh-CN',
+      });
+    }
+
+    // 非 FAQ 区块：按 ### 切分
+    const subsections = section.split(/\n(?=### )/).slice(1);
+    for (const sub of subsections) {
+      const subLines = sub.split('\n');
+      const subTitle = subLines[0].replace(/^###\s*/, '');
+      const subContent = subLines.slice(1).join('\n').trim();
+      if (subContent.length > 50) {
+        entries.push({
+          category: currentCategory,
+          subcategory: subTitle,
+          title: subTitle,
+          content: subContent,
+          content_type: mapContentType(currentCategory),
+          question: null,
+          answer: null,
+          tags: extractTags(subTitle + ' ' + subContent),
+          source: header.replace(/^## /, '') + ' / ' + subTitle,
+          language_code: 'zh-CN',
+        });
+      }
+    }
+  }
+
+  return entries;
+}
+
+function extractTags(text) {
+  const keywords = ['AI生成', 'AI Guide', '积分', '订阅', 'Pro', '教师', '学生', '家长', '经销商', '退款', '价格', '月付', '年付'];
+  return keywords.filter(k => text.includes(k));
+}
+
+function mapContentType(cat) {
+  const map = { 产品: 'feature', 价格: 'pricing', 销售: 'sales_script', 售后: 'support', 分销: 'distributor', FAQ: 'faq' };
+  return map[cat] || 'faq';
+}
+
+const md = fs.readFileSync(MD_PATH, 'utf-8');
+const entries = parseMdToEntries(md);
+fs.writeFileSync(OUTPUT_JSON, JSON.stringify(entries, null, 2), 'utf-8');
+console.log(`Parsed ${entries.length} entries -> ${OUTPUT_JSON}`);
+```
+
+---
+
+### 13.3 Embedding 方法
+
+#### 选型
+
+| 模型 | 维度 | 多语言 | 说明 |
+|------|------|--------|------|
+| **OpenAI text-embedding-3-small** | 1536 | ✓ | 推荐，质量好、多语支持 |
+| **OpenAI text-embedding-3-large** | 3072 | ✓ | 更高精度，成本更高 |
+| **multilingual-e5-large** | 1024 | ✓ | 开源，自托管 |
+| **bge-m3** | 1024 | ✓ | 开源，中英效果佳 |
+
+#### 示例代码（OpenAI text-embedding-3-small）
+
+```javascript
+// lib/kb/embedding.js
+const OpenAI = require('openai');
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const EMBEDDING_MODEL = 'text-embedding-3-small';
+const EMBEDDING_DIM = 1536;
+
+async function getEmbedding(text) {
+  const res = await openai.embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: text.slice(0, 8000), // 限制长度
+  });
+  return res.data[0].embedding;
+}
+
+async function embedEntry(entry) {
+  const textToEmbed = [entry.title, entry.content, entry.question, entry.answer]
+    .filter(Boolean)
+    .join('\n\n');
+  return getEmbedding(textToEmbed);
+}
+
+// 批量写入 embedding 到 Supabase
+async function syncEmbeddings(supabase) {
+  const { data: entries } = await supabase
+    .from('kb_entries')
+    .select('id, title, content, question, answer')
+    .is('embedding', null);
+
+  for (const entry of entries || []) {
+    const embedding = await embedEntry(entry);
+    await supabase
+      .from('kb_entries')
+      .update({ embedding, updated_at: new Date().toISOString() })
+      .eq('id', entry.id);
+    await sleep(100); // 限速
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+```
+
+#### pgvector 向量检索示例
+
+```sql
+-- 余弦相似度检索 Top 5
+SELECT id, title, content, 1 - (embedding <=> $1::vector) AS similarity
+FROM kb_entries
+WHERE embedding IS NOT NULL
+  AND language_code = 'zh-CN'
+ORDER BY embedding <=> $1::vector
+LIMIT 5;
+```
+
+```javascript
+// 传入 query 的 embedding
+const queryEmbedding = await getEmbedding(userQuery);
+const { data } = await supabase.rpc('match_kb_entries', {
+  query_embedding: queryEmbedding,
+  match_threshold: 0.7,
+  match_count: 5,
+});
+
+// 或直接用 raw SQL
+const { data } = await supabase
+  .from('kb_entries')
+  .select('id, title, content, question, answer')
+  .not('embedding', 'is', null)
+  .limit(5);
+// 注意：pgvector 的 <=> 需通过 RPC 或 raw query，见 Supabase 文档
+```
+
+---
+
+### 13.4 Prompt 示例
+
+#### System Prompt（RAG 生成）
+
+```
+你是一个 EduNest 产品顾问，只根据以下知识库内容回答用户问题。
+
+规则：
+1. 仅使用提供的「参考内容」回答，不得编造价格、联系方式或政策。
+2. 若参考内容不足以回答，请明确说「该问题暂无法从知识库回答，建议联系客服」。
+3. 回复必须使用用户的语言（根据 language_code）。
+4. 回复简洁清晰，必要时可分点列举。
+5. 可适当引导用户「点击下方推荐内容亲自体验」。
+
+参考内容：
+---
+{{CONTEXT}}
+---
+```
+
+#### User Prompt 模板
+
+```
+用户问题：{{USER_QUERY}}
+用户语言：{{LANGUAGE_CODE}}
+请根据上述参考内容用用户语言回答。
+```
+
+#### Context 组装格式
+
+```javascript
+const context = retrievedEntries
+  .map((e, i) => `[${i + 1}] 标题：${e.title}\n内容：${e.content || e.answer}`)
+  .join('\n\n---\n\n');
+```
+
+---
+
+### 13.5 精确匹配规则示例（主语言 zh-CN）
+
+```javascript
+// lib/kb/exact-match.js
+
+// 价格/退款关键词 → 命中则直接查对应条目
+const EXACT_MATCH_KEYWORDS = {
+  price: ['月付', '年付', '$29.8', '$240', '多少钱', '价格', '订阅费用'],
+  refund: ['退款', '退订', '取消订阅', '如何退'],
+  contact: ['客服', '联系方式', '电话', '邮箱', 'support'],
+};
+
+// FAQ question 相似度匹配（需 pg_trgm）
+// SQL: SELECT * FROM kb_entries 
+//      WHERE content_type = 'faq' 
+//        AND language_code = 'zh-CN'
+//        AND similarity(question, $query) > 0.3
+//      ORDER BY similarity(question, $query) DESC
+//      LIMIT 1;
+
+// 或 ILIKE 简化版
+// WHERE question ILIKE '%' || $query || '%'
+```
+
+---
+
+### 13.6 API 路由示例（Next.js）
+
+#### GET /api/kb/entries
+
+```javascript
+// app/api/kb/entries/route.js
+import { createClient } from '@supabase/supabase-js';
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const category = searchParams.get('category');
+  const q = searchParams.get('q');
+  const limit = parseInt(searchParams.get('limit') || '20');
+  const lang = searchParams.get('language_code') || 'zh-CN';
+
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+
+  let query = supabase
+    .from('kb_entries')
+    .select('id, category, title, content, content_type, question, answer, tags, source')
+    .eq('language_code', lang)
+    .limit(limit);
+
+  if (category) query = query.eq('category', category);
+  if (q) query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%,question.ilike.%${q}%`);
+
+  const { data, error } = await query;
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ data });
+}
+```
+
+#### POST /api/kb/ask（混合检索）
+
+```javascript
+// app/api/kb/ask/route.js
+export async function POST(req) {
+  const { query, language_code = 'zh-CN', role } = await req.json();
+  const supabase = createClient(...);
+
+  // 1. 精确匹配（仅主语言）
+  if (language_code === 'zh-CN') {
+    const exact = await exactMatch(supabase, query);
+    if (exact) {
+      const recommend = await getRecommend(supabase, { category: exact.category, role, language_code });
+      return Response.json({ answer: exact.answer || exact.content, source: exact, recommend });
+    }
+  }
+
+  // 2. 向量检索 + LLM 生成
+  const embedding = await getEmbedding(query);
+  const { data: retrieved } = await supabase.rpc('match_kb_entries', {
+    query_embedding: embedding,
+    match_count: 5,
+  });
+
+  const context = retrieved?.map(e => `${e.title}\n${e.content || e.answer}`).join('\n\n') || '';
+  const answer = await generateWithLLM(context, query, language_code);
+  const recommend = await getRecommend(supabase, { tags: extractedTags(retrieved), role, language_code });
+
+  return Response.json({ answer, sources: retrieved, recommend });
+}
+```
+
+#### GET /api/kb/recommend
+
+```javascript
+// app/api/kb/recommend/route.js
+const CATEGORY_TO_TAGS = {
+  '产品': ['数学', '分数', '几何'],
+  '价格': [],
+  '销售': ['教师', '演示'],
+  '售后': [],
+  '分销': [],
+};
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const category = searchParams.get('category');
+  const role = searchParams.get('role');
+  const tags = searchParams.get('tags')?.split(',');
+  const language_code = searchParams.get('language_code') || 'zh-CN';
+  const limit = parseInt(searchParams.get('limit') || '4');
+
+  const tagsToUse = tags?.length ? tags : CATEGORY_TO_TAGS[category] || [];
+  let apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/content/featured?language_code=${language_code}&limit=${limit}`;
+  if (tagsToUse.length) apiUrl += `&tags=${encodeURIComponent(tagsToUse.join(','))}`;
+
+  const res = await fetch(apiUrl);
+  const json = await res.json();
+  return Response.json({ data: json.data || [] });
+}
+```
+
+---
+
+### 13.7 Supabase RPC（向量匹配）
+
+在 Supabase SQL Editor 中创建：
+
+```sql
+CREATE OR REPLACE FUNCTION match_kb_entries(
+  query_embedding vector(1536),
+  match_threshold float DEFAULT 0.7,
+  match_count int DEFAULT 5,
+  filter_category text DEFAULT NULL
+)
+RETURNS TABLE (
+  id uuid,
+  category kb_category,
+  title text,
+  content text,
+  question text,
+  answer text,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    e.id,
+    e.category,
+    e.title,
+    e.content,
+    e.question,
+    e.answer,
+    1 - (e.embedding <=> query_embedding) AS similarity
+  FROM kb_entries e
+  WHERE e.embedding IS NOT NULL
+    AND (filter_category IS NULL OR e.category::text = filter_category)
+    AND 1 - (e.embedding <=> query_embedding) > match_threshold
+  ORDER BY e.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$;
+```
+
+---
+
+**文档版本**：v1.5  
 **更新日期**：2026-01  
+**v1.1**：新增 § 九 内容推荐、§4.3 推荐入口、Phase 1/2/3 推荐相关改动。  
+**v1.2**：§3.4 方案 B/C 评估与选择（采用方案 C）；§ 十 内容扩展与运维；§ 十二 实施规划；Phase 2 明确混合检索链路。  
+**v1.3**：§ 十一 多语言适配；实施规划与技术选型补充多语相关任务。  
+**v1.4**：§ 11.2 检索适配简化为「精确匹配仅主语言」，非主语言直接走向量；移除多语关键词/FAQ 维护，降低长期运维成本。  
+**v1.5**：新增 § 十三 附录：完整表结构、解析脚本、embedding 方法、Prompt 示例、API 与 RPC 示例。
 **v1.1**：新增 § 九 内容推荐、§4.3 推荐入口、Phase 1/2/3 推荐相关改动。  
 **v1.2**：§3.4 方案 B/C 评估与选择（采用方案 C）；§ 十 内容扩展与运维；§ 十二 实施规划；Phase 2 明确混合检索链路。  
 **v1.3**：§ 十一 多语言适配；实施规划与技术选型补充多语相关任务。  
