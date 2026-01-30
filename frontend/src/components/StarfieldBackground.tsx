@@ -9,8 +9,8 @@ interface StarfieldBackgroundProps {
   className?: string;
 }
 
-/** Load Three.js from CDN (avoids npm dependency) */
-function loadThree(): Promise<typeof import('three')> {
+/** Load Three.js from CDN (avoids npm dependency). Returns any to avoid requiring 'three' package at build time. */
+function loadThree(): Promise<any> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined') return reject(new Error('No window'));
     const g = window as any;
