@@ -390,7 +390,7 @@ export default function HomePage() {
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
 
-        <div className="p-8 lg:p-8">
+        <div className="px-4 py-8 sm:px-6 lg:p-8">
           {/* 标题 */}
           <div className="mb-6">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-tight">

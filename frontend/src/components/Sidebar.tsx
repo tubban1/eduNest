@@ -279,11 +279,10 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
           <Link
             href="/subscription"
             onClick={handleItemClick}
-            className="tile button w-full mb-4"
+            className="w-full mb-4 flex items-center justify-center gap-1.5 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold rounded-xl shadow-lg hover:from-amber-400 hover:to-orange-400 active:scale-[0.98] transition-all duration-200"
           >
-            <div className="tile w-full justify-center text-sm font-medium">
-              {mounted ? t('upgrade_to_pro', { ns: 'navigation', defaultValue: '升级到 Pro' }) : '升级到 Pro'}
-            </div>
+            <Crown className="w-4 h-4" />
+            {mounted ? t('upgrade_to_pro', { ns: 'navigation', defaultValue: '升级到 Pro' }) : '升级到 Pro'}
           </Link>
         )}
 

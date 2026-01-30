@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,6 +10,7 @@ import AIProviderSelector from '@/components/AIProviderSelector';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
 import { getVisitorId } from '@/utils/visitorId';
 import { RegistrationPrompt } from '@/components/RegistrationPrompt';
+import StarfieldBackground from '@/components/StarfieldBackground';
 import i18n from '@/i18n/config';
 
 const DEFAULT_FULL_HTML = `<!DOCTYPE html>
@@ -1159,18 +1160,29 @@ export default function ContentAIGenerator({
     }
   };
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   return (
     <div className={`ai-gen-border ${className || ''}`}>
       <div
-        className="relative flex flex-col gap-3 rounded-[30px] p-5 shadow-xl shadow-primary/10 border border-white/40 bg-card/80 backdrop-blur-xl overflow-hidden"
+        ref={containerRef}
+        className="relative flex flex-col gap-3 rounded-[30px] p-5 shadow-xl shadow-primary/10 border border-white/40 bg-card/30 backdrop-blur-xl overflow-hidden"
       >
-      {/* 背景柔和高光，让生成框整体更有悬浮感 */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.85]">
-        <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/25 blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full bg-secondary/25 blur-3xl" />
+      {/* 星空背景层：深色渐变 + 粒子 + 鼠标轨迹/闪电 */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 rounded-[inherit]"
+        style={{
+          background: 'radial-gradient(circle at 30% 20%, #120023 0%, #04000a 60%, #000 100%)',
+        }}
+      />
+      <StarfieldBackground containerRef={containerRef} />
+      {/* 背景柔和高光，叠加在星空上增强悬浮感 */}
+      <div className="pointer-events-none absolute inset-0 z-[1] opacity-60">
+        <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full bg-secondary/20 blur-3xl" />
       </div>
 
-      <h3 className="text-lg font-semibold text-foreground mb-1 relative z-10">
+      <h3 className="text-lg font-semibold text-white/90 mb-1 relative z-10">
         {mounted ? t('aiGenerate', { ns: 'content', defaultValue: '动画解题 · 自动生成课件' }) : '动画解题 · 自动生成课件'}
       </h3>
 
@@ -1220,9 +1232,9 @@ export default function ContentAIGenerator({
           )}
           {/* 文字输入区域 */}
           <div className="relative">
-            <div className="ai-gen-focus-wrap rounded-lg">
+            <div className="ai-gen-focus-wrap ai-gen-focus-wrap-transparent rounded-lg">
             <textarea
-              className="w-full border-0 p-2 pr-2 pb-10 rounded-[6px] focus:outline-none focus:ring-0 bg-card resize-none h-32"
+              className="w-full border-0 p-2 pr-2 pb-10 rounded-[6px] focus:outline-none focus:ring-0 bg-black/25 focus:bg-transparent backdrop-blur-sm focus:backdrop-blur-none resize-none h-40 text-white placeholder:text-white/60"
               value={knowledgePoint}
               onChange={e => setKnowledgePoint(e.target.value)}
               onPaste={async (e) => {
@@ -1309,7 +1321,7 @@ export default function ContentAIGenerator({
                   {imageUploading ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
                   ) : (
-                    <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   )}
@@ -1347,7 +1359,7 @@ export default function ContentAIGenerator({
       <button
         type="button"
         data-state={aiGenerating ? 'down' : undefined}
-        className="tile button w-full"
+        className="ai-gen-submit-btn w-full relative z-10 group"
         onClick={(e) => {
           // 移动端：如果已经处理了 touchstart，忽略 click 事件
           if ((e.target as HTMLElement).hasAttribute('data-touch-handled')) {
@@ -1378,10 +1390,10 @@ export default function ContentAIGenerator({
         }}
         disabled={isAiFormDisabled || aiGenerating || !knowledgePoint.trim() || checking || (user && creditsBalance !== null && creditsBalance <= 0) || (user && pendingCount >= 3) || (!user && trialStatus?.content_generated)}
       >
-        <div className="tile w-full justify-center px-6 py-3 font-medium">
+        <div className="w-full flex items-center justify-center gap-2 px-6 py-3.5 font-semibold rounded-2xl bg-gradient-to-r from-[#a78bfa] via-[#ec4899] to-[#f59e0b] text-white shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:brightness-110 active:scale-[0.98] transition-all duration-200 group-disabled:opacity-60 group-disabled:cursor-not-allowed group-disabled:hover:brightness-100">
           {aiGenerating ? (
             <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-foreground/60"></div>
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/40 border-t-white"></div>
               <span>🤖 {t('startingGeneration', { ns: 'content', defaultValue: '正在启动生成...' })}</span>
             </>
           ) : (

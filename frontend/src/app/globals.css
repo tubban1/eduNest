@@ -295,6 +295,17 @@ input.tile.button:disabled[data-state='down'] > .tile {
   -webkit-mask: radial-gradient(circle, transparent 62%, black 62%);
 }
 
+/* AI 生成按钮：高对比度，星空背景下清晰可见 */
+.ai-gen-submit-btn {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.ai-gen-submit-btn:disabled {
+  cursor: not-allowed;
+}
+
 /* gradient focus ring for ContentAIGenerator inputs (#a78bfa #ec4899 #f59e0b #a78bfa) */
 .ai-gen-focus-wrap {
   border: 2px solid hsl(var(--border));
@@ -309,6 +320,34 @@ input.tile.button:disabled[data-state='down'] > .tile {
     linear-gradient(to right, #a78bfa, #ec4899, #f59e0b, #a78bfa) border-box;
   background-origin: border-box;
   background-clip: padding-box, border-box;
+}
+/* 透明版：用于星空背景下的输入框，只有边框有渐变色，中间透明 */
+.ai-gen-focus-wrap-transparent {
+  background: transparent !important;
+}
+.ai-gen-focus-wrap-transparent:focus-within {
+  border-color: transparent !important;
+  background: transparent !important;
+  position: relative;
+}
+/* 用伪元素画渐变边框，mask 只保留边框环，中间镂空 */
+.ai-gen-focus-wrap-transparent:focus-within::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(to right, #a78bfa, #ec4899, #f59e0b, #a78bfa);
+  -webkit-mask: linear-gradient(#fff, #fff) content-box, linear-gradient(#fff, #fff);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff, #fff) content-box, linear-gradient(#fff, #fff);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+.ai-gen-focus-wrap-transparent:focus-within > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* ========= Animated conic border for AI 生成框 ========= */
