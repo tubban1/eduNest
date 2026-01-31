@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar';
+import MobileHeader from '@/components/MobileHeader';
 import LoginRequired from '@/components/LoginRequired';
 import { api } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
@@ -153,10 +154,7 @@ export default function CollectionListsManagementPage() {
       
       <main className="flex-1 bg-card overflow-y-auto">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-card border-b border-border">
-          <MobileMenuButton onClick={() => setSidebarOpen(true)} />
-          <div className="w-10" /> {/* 占位，保持居中 */}
-        </div>
+        <MobileHeader onMenuClick={() => setSidebarOpen(true)} className="bg-card" />
         
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
@@ -171,7 +169,7 @@ export default function CollectionListsManagementPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowCreateDialog(true)}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
+                className="ai-gradient-btn px-4 py-2 rounded-lg text-sm font-medium"
               >
                 ➕ {t('collections:management.createList')}
               </button>
@@ -287,7 +285,7 @@ export default function CollectionListsManagementPage() {
               <p className="text-muted-foreground mb-6">{t('collections:management.noListsDesc')}</p>
               <button
                 onClick={() => setShowCreateDialog(true)}
-                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
+                className="ai-gradient-btn px-6 py-2 rounded-lg"
               >
                 {t('collections:management.createFirstList')}
               </button>

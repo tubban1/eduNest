@@ -1449,7 +1449,7 @@ export default function ContentAIGenerator({
         disabled={isBuildKnowledgeDisabled}
         title={isBuildKnowledgeDisabled ? getBuildKnowledgeDisabledHint() : undefined}
       >
-        <div className="w-full flex items-center justify-center gap-2 px-6 py-3.5 font-semibold rounded-2xl bg-gradient-to-r from-[#a78bfa] via-[#ec4899] to-[#f59e0b] text-white shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:brightness-110 active:scale-[0.98] transition-all duration-200 group-disabled:opacity-60 group-disabled:cursor-not-allowed group-disabled:hover:brightness-100">
+        <div className="w-full flex items-center justify-center gap-2 px-6 py-3.5 font-semibold rounded-2xl ai-gradient-btn shadow-lg shadow-primary/30 group-disabled:opacity-60 group-disabled:cursor-not-allowed">
           {aiGenerating ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/40 border-t-white"></div>
@@ -1509,8 +1509,8 @@ export default function ContentAIGenerator({
               <button className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-900 dark:text-white" onClick={() => setShowLanguagePicker(false)}>
                 {mounted ? t('cancel', { ns: 'common', defaultValue: '取消' }) : 'Cancel'}
               </button>
-              <button className="ai-gradient-btn px-4 py-2 rounded-lg" onClick={() => setShowLanguagePicker(false)}>
-                {mounted ? t('confirm', { ns: 'common', defaultValue: '确定' }) : 'Confirm'}
+              <button className="tile button" onClick={() => setShowLanguagePicker(false)}>
+                <div className="tile px-4 py-2 font-medium">{mounted ? t('confirm', { ns: 'common', defaultValue: '确定' }) : 'Confirm'}</div>
               </button>
             </div>
           </div>
@@ -1728,9 +1728,9 @@ export default function ContentAIGenerator({
               <button
                 type="button"
                 onClick={handleApplyEdit}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition"
+                className="tile button"
               >
-                {mounted ? t('apply', { ns: 'content', defaultValue: '应用' }) : 'Apply'}
+                <div className="tile px-4 py-2 font-medium">{mounted ? t('apply', { ns: 'content', defaultValue: '应用' }) : 'Apply'}</div>
               </button>
             </div>
           </div>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar';
+import MobileHeader from '@/components/MobileHeader';
 import Logo from '@/components/Logo';
 import LoginRequired from '@/components/LoginRequired';
 import CollectionCard from '@/components/CollectionCard';
@@ -188,10 +189,7 @@ export default function CollectionsPage() {
       
       <main className="flex-1 bg-background overflow-y-auto">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-card border-b border-border">
-          <MobileMenuButton onClick={() => setSidebarOpen(true)} />
-          <div className="w-10" /> {/* 占位，保持居中 */}
-        </div>
+        <MobileHeader onMenuClick={() => setSidebarOpen(true)} className="bg-card" />
         
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
@@ -216,7 +214,7 @@ export default function CollectionsPage() {
               <div className="space-y-3">
                 <a
                   href="/login"
-                  className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:opacity-90 transition-colors font-medium w-full"
+                  className="ai-gradient-btn inline-block px-6 py-3 rounded-lg font-medium w-full"
                 >
                   {mounted ? t('login', { ns: 'auth', defaultValue: '登录' }) : 'Login'}
                 </a>

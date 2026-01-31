@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar';
+import MobileHeader from '@/components/MobileHeader';
 import SubscriptionManager from '@/components/SubscriptionManager';
 import { useTranslation } from 'react-i18next';
 
@@ -30,10 +31,7 @@ export default function SubscriptionPage() {
       
       <main className="flex-1 bg-white overflow-y-auto">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
-          <MobileMenuButton onClick={() => setSidebarOpen(true)} />
-          <div className="w-10" /> {/* 占位，保持居中 */}
-        </div>
+        <MobileHeader onMenuClick={() => setSidebarOpen(true)} className="bg-white border-gray-200" />
         
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />

@@ -207,6 +207,41 @@ ContentAIGenerator 内的语言弹窗建议：
 
 ### 8.5 实施检查清单（八）
 
+---
+
+## 九、按钮逻辑：渐变 vs 淡紫（全局统一）
+
+### 9.1 规则
+
+| 类型 | 样式类 | 用途 | 示例 |
+|------|--------|------|------|
+| **主 CTA** | `.ai-cta-btn` | 每页 1–2 个最高优先级操作 | 构建知识、注册、登录、升级Pro、立即注册、充值、领取奖励 |
+| **次要主操作** | `.tile.button` | 弹窗/表单内主操作 | 确定、应用、保存、创建、关闭 |
+
+### 9.2 主 CTA（渐变紫-粉-琥珀）
+
+- 构建知识（ContentAIGenerator）
+- 注册账号、登录（signup/login）
+- 升级到 Pro、管理订阅（Sidebar、SubscriptionManager、订阅成功页）
+- 立即注册（RegistrationPrompt、LoginRequired）
+- 充值积分（CreditsHistoryDialog）
+- 领取奖励（claim-bonus）
+- 移动端登录按钮（MobileHeader）
+- 新建列表、创建列表（collections 主操作）
+
+### 9.3 次要主操作（tile button 物理风格）
+
+- 弹窗内：确定、应用、保存、创建、关闭 → `.tile.button`（与 ContentCard 编辑按钮一致）
+- 表单内：保存、更新
+
+### 9.4 实施检查清单（九）
+
+- [x] globals.css 定义 `.ai-gradient-btn`（主 CTA）、`.btn-primary`（次要主操作）
+- [x] 构建知识、注册、登录、升级Pro、立即注册 → ai-gradient-btn
+- [x] 移动端登录、充值、领取、新建列表 → ai-gradient-btn
+- [x] 弹窗内 确定、应用、保存、创建、关闭 → tile button
+- [x] 表单 保存、更新 → tile button
+
 - [x] ContentAIGenerator 移动端禁用 StarfieldBackground
 - [x] ContentAIGenerator 移动端降级 blur、圆角
 - [x] 首页桌面端深色背景与 scrollbar-dark

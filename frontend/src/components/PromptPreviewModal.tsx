@@ -88,11 +88,8 @@ export default function PromptPreviewModal({
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-600 flex justify-end">
-          <button
-            onClick={onClose}
-            className="ai-gradient-btn px-6 py-2 rounded-lg"
-          >
-            {t('close', { ns: 'common', defaultValue: '关闭' })}
+          <button onClick={onClose} className="tile button">
+            <div className="tile px-6 py-2 font-medium">{t('close', { ns: 'common', defaultValue: '关闭' })}</div>
           </button>
         </div>
       </div>

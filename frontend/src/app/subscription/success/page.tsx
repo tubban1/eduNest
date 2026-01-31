@@ -6,7 +6,8 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../../lib/api';
-import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar';
+import MobileHeader from '@/components/MobileHeader';
 
 const SubscriptionSuccessContent: React.FC = () => {
   const searchParams = useSearchParams();
@@ -72,10 +73,7 @@ const SubscriptionSuccessContent: React.FC = () => {
           <Sidebar variant="desktop" />
         </div>
         <main className="flex-1 bg-white overflow-y-auto">
-          <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
-            <MobileMenuButton onClick={() => setSidebarOpen(true)} />
-            <div className="w-10" />
-          </div>
+          <MobileHeader onMenuClick={() => setSidebarOpen(true)} className="bg-white border-gray-200" />
           <div className="lg:hidden h-14" />
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
@@ -113,10 +111,7 @@ const SubscriptionSuccessContent: React.FC = () => {
       
       <main className="flex-1 bg-white overflow-y-auto">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-white border-b border-gray-200">
-          <MobileMenuButton onClick={() => setSidebarOpen(true)} />
-          <div className="w-10" />
-        </div>
+        <MobileHeader onMenuClick={() => setSidebarOpen(true)} className="bg-white border-gray-200" />
         
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
@@ -210,7 +205,7 @@ const SubscriptionSuccessContent: React.FC = () => {
                   </button>
                   <button
                     onClick={() => router.push('/subscription')}
-                    className="flex-1 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="ai-gradient-btn flex-1 flex justify-center py-2 px-4 rounded-md text-sm font-medium"
                   >
                     {mounted ? t('subscription.manageSubscription', { ns: 'content', defaultValue: '管理订阅' }) : 'Manage Subscription'}
                   </button>

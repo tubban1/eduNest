@@ -111,15 +111,16 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
             {t('cancel', { ns: 'common', defaultValue: '取消' })}
           </button>
           <button
-            className={`flex-1 py-2 rounded-lg ${title.trim() ? 'ai-gradient-btn' : 'bg-gray-300 dark:bg-slate-600 cursor-not-allowed text-gray-500'}`}
+            className="tile button flex-1"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               handleCreate();
             }}
             disabled={!title.trim() || loading}
+            data-state={loading ? 'down' : undefined}
           >
-            {loading ? t('creating', { ns: 'common', defaultValue: '创建中...' }) : t('create', { ns: 'common', defaultValue: '创建' })}
+            <div className="tile w-full justify-center py-2 font-medium">{loading ? t('creating', { ns: 'common', defaultValue: '创建中...' }) : t('create', { ns: 'common', defaultValue: '创建' })}</div>
           </button>
         </div>
       </div>
@@ -344,14 +345,14 @@ export default function CollectionListDialog({
           </div>
           <div className="p-5 border-t border-slate-200 dark:border-slate-600">
             <button 
-              className="ai-gradient-btn w-full py-2.5 rounded-lg font-medium" 
+              className="tile button w-full"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setShowNewList(true);
               }}
             >
-              ＋{t('collectionsDialog.newList', { ns: 'content', defaultValue: '新建列表' })}
+              <div className="tile w-full justify-center py-2.5 font-medium">＋{t('collectionsDialog.newList', { ns: 'content', defaultValue: '新建列表' })}</div>
             </button>
           </div>
         </div>

@@ -1068,7 +1068,9 @@ export default function ContentForm({
               </div>
             </button>
             <button className="px-6 py-2 rounded-full bg-black text-white font-medium shadow hover:bg-gray-800 transition" onClick={handlePreview} type="button">{mounted ? t('preview', { ns: 'content', defaultValue: 'Preview' }) : 'Preview'}</button>
-            <button className="px-6 py-2 rounded-full bg-gradient-to-r from-gray-900 to-gray-700 text-white font-medium shadow hover:from-gray-800 hover:to-gray-600 transition" onClick={handleSave} type="button" disabled={loading}>{loading ? (mode === 'edit' ? (mounted ? t('updating', { ns: 'common', defaultValue: 'Updating...' }) : 'Updating...') : (mounted ? t('saving', { ns: 'common', defaultValue: 'Saving...' }) : 'Saving...')) : (mode === 'edit' ? (mounted ? t('update', { ns: 'common', defaultValue: 'Update' }) : 'Update') : (mounted ? t('save', { ns: 'common', defaultValue: 'Save' }) : 'Save'))}</button>
+            <button className="tile button" onClick={handleSave} type="button" data-state={loading ? 'down' : undefined} disabled={loading}>
+              <div className="tile px-6 py-2 font-medium">{loading ? (mode === 'edit' ? (mounted ? t('updating', { ns: 'common', defaultValue: 'Updating...' }) : 'Updating...') : (mounted ? t('saving', { ns: 'common', defaultValue: 'Saving...' }) : 'Saving...')) : (mode === 'edit' ? (mounted ? t('update', { ns: 'common', defaultValue: 'Update' }) : 'Update') : (mounted ? t('save', { ns: 'common', defaultValue: 'Save' }) : 'Save'))}</div>
+            </button>
           </div>
         </div>
         <div className="px-6 pt-4 pb-8">
@@ -1484,10 +1486,12 @@ export default function ContentForm({
                 onClick={() => setShowLanguagePicker(false)}
               >{mounted ? 'Cancel' : 'Cancel'}</button>
               <button
-                className="ai-gradient-btn px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="tile button"
                 onClick={() => handleLanguageSelect(languageSearch)}
                 disabled={!isValidBCP47(languageSearch)}
-              >{mounted ? 'OK' : 'OK'}</button>
+              >
+                <div className="tile px-4 py-2 font-medium">{mounted ? 'OK' : 'OK'}</div>
+              </button>
             </div>
           </div>
         </div>,

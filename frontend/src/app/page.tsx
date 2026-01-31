@@ -5,7 +5,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { api, Content } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar';
+import MobileHeader from '@/components/MobileHeader';
 import ContentCard from '@/components/ContentCard';
 import ContentAIGenerator from '@/components/ContentAIGenerator';
 import { cache, generateCacheKey } from '@/lib/cache';
@@ -394,10 +395,7 @@ export default function HomePage() {
       
       <main className="flex-1 bg-background lg:bg-gradient-to-br lg:from-slate-950 lg:via-slate-900/98 lg:to-slate-950 overflow-y-auto scrollbar-dark">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-background/90 backdrop-blur-sm border-b border-border">
-          <MobileMenuButton onClick={() => setSidebarOpen(true)} />
-          <div className="w-10" /> {/* 占位，保持居中 */}
-        </div>
+        <MobileHeader onMenuClick={() => setSidebarOpen(true)} className="bg-background/90 backdrop-blur-sm" />
         
         {/* 顶部预留占位，避免内容被固定头部遮挡 */}
         <div className="lg:hidden h-14" />
