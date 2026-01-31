@@ -48,7 +48,7 @@ const FailedCard: React.FC<FailedCardProps> = ({
     {userQuery && (
       <div className="mb-3">
         <div className="text-sm text-red-700 font-medium mb-1">
-          {t('generation.userQuery', { ns: 'content', defaultValue: '生成内容' })}: <span title={userQuery}>{truncateUserQuery(userQuery, 15)}</span>
+          {t('generation.userQuery', { ns: 'content', defaultValue: '提示词' })}: <span title={userQuery}>{truncateUserQuery(userQuery, 15)}</span>
         </div>
       </div>
     )}

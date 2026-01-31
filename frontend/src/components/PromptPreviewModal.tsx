@@ -47,18 +47,19 @@ export default function PromptPreviewModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {/* 图片预览 */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {/* 图片预览 - 优先显示 */}
           {imageUrl && (
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('generation.uploadedImage', { ns: 'content', defaultValue: '上传的图片' })}
               </h3>
-              <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/50">
                 <img
                   src={imageUrl}
-                  alt="Uploaded"
-                  className="w-full h-auto max-h-96 object-contain"
+                  alt={t('generation.uploadedImage', { ns: 'content', defaultValue: '上传的图片' })}
+                  className="w-full h-auto max-h-[50vh] object-contain block"
+                  loading="eager"
                 />
               </div>
             </div>
@@ -67,11 +68,11 @@ export default function PromptPreviewModal({
           {/* 提示文本 */}
           {userQuery && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
-                {t('generation.userQuery', { ns: 'content', defaultValue: '用户提示' })}
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('generation.userQuery', { ns: 'content', defaultValue: '提示词' })}
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <p className="text-gray-800 whitespace-pre-wrap break-words">
+              <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
+                <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
                   {userQuery}
                 </p>
               </div>

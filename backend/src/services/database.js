@@ -318,7 +318,7 @@ const getContentByShortId = async (shortId) => {
     // 注意：应该按 updated_at 排序，而不是 created_at，因为 updated_at 更能反映记录的最新状态
     const { data: log, error: logError } = await supabase
       .from('ai_usage_logs')
-      .select('status, error_message, user_query, created_at, updated_at, is_render_success, started_at')
+      .select('status, error_message, user_query, image_url, created_at, updated_at, is_render_success, started_at')
       .eq('content_id', content.id)
       .eq('action_type', 'generate')
       .order('updated_at', { ascending: false })
@@ -357,6 +357,7 @@ const getContentByShortId = async (shortId) => {
       content.generation_error = log.error_message || (log.status === 'done' && log.is_render_success === false ? '内容渲染失败' : null);
       content.generation_updated_at = log.updated_at;
       content.user_query = log.user_query;
+      content.image_url = log.image_url || null;
       content.generation_started_at = log.started_at;
     }
 
