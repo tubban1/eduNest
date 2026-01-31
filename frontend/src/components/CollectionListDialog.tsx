@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
 import { MoreVertical, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
@@ -70,15 +71,15 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50" aria-modal="true" role="dialog">
       <div 
-        className="bg-white rounded-xl shadow-xl w-80 flex flex-col p-6"
+        className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-80 flex flex-col p-6 border border-slate-200 dark:border-slate-600 mx-4"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
         }}
       >
-        <div className="font-semibold text-lg mb-4">{t('collectionsDialog.newList', { ns: 'content', defaultValue: '新建列表' })}</div>
+        <div className="font-semibold text-lg mb-4 text-gray-900 dark:text-white">{t('collectionsDialog.newList', { ns: 'content', defaultValue: '新建列表' })}</div>
         <input
           type="text"
           value={title}
@@ -92,7 +93,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
             e.stopPropagation();
           }}
           placeholder={t('collectionsDialog.inputListName', { ns: 'content', defaultValue: '输入列表名称' })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a78bfa] bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
           onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
         />
         {error && (
@@ -100,7 +101,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
         )}
         <div className="flex gap-2 mt-4">
           <button 
-            className="flex-1 py-2 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors" 
+            className="flex-1 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-900 dark:text-white transition-colors" 
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -110,7 +111,7 @@ function NewListDialog({ open, onClose, onCreate, refreshLists }: { open: boolea
             {t('cancel', { ns: 'common', defaultValue: '取消' })}
           </button>
           <button
-            className={`flex-1 py-2 rounded-lg text-primary-foreground ${title.trim() ? 'bg-primary hover:opacity-90' : 'bg-muted cursor-not-allowed'}`}
+            className={`flex-1 py-2 rounded-lg ${title.trim() ? 'ai-gradient-btn' : 'bg-gray-300 dark:bg-slate-600 cursor-not-allowed text-gray-500'}`}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -141,7 +142,7 @@ function renderCollectionCheckbox(isCollected: boolean, onToggle: () => void) {
         e.preventDefault();
         e.stopPropagation();
       }}
-      className="w-4 h-4 text-primary bg-muted border-border rounded focus:ring-primary focus:ring-2"
+      className="w-4 h-4 text-[#a78bfa] bg-muted border-border rounded focus:ring-[#a78bfa] focus:ring-2"
     />
   );
 }
@@ -313,25 +314,25 @@ export default function CollectionListDialog({
 
   if (!open) return null;
 
-  return (
+  const dialogContent = (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" aria-modal="true" role="dialog">
         <div 
-          className="bg-white rounded-xl shadow-xl w-96 max-h-[80vh] flex flex-col"
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-96 max-h-[80vh] flex flex-col border border-slate-200 dark:border-slate-600"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
           }}
         >
-          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
-            <span className="font-semibold text-lg text-gray-900">{t('collectionsDialog.saveTo', { ns: 'content', defaultValue: '将内容保存至...' })}</span>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-600">
+            <span className="font-semibold text-lg text-gray-900 dark:text-white">{t('collectionsDialog.saveTo', { ns: 'content', defaultValue: '将内容保存至...' })}</span>
             <button 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onClose();
               }} 
-              className="text-gray-400 hover:text-gray-600 text-xl transition-colors"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-xl transition-colors"
             >
               ×
             </button>
@@ -341,9 +342,9 @@ export default function CollectionListDialog({
               {renderLists()}
             </ul>
           </div>
-          <div className="p-5 border-t border-gray-200">
+          <div className="p-5 border-t border-slate-200 dark:border-slate-600">
             <button 
-              className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-medium" 
+              className="ai-gradient-btn w-full py-2.5 rounded-lg font-medium" 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -365,19 +366,19 @@ export default function CollectionListDialog({
       
       {/* 删除确认弹窗 */}
       {confirmDelete.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50" aria-modal="true" role="alertdialog">
           <div 
-            className="bg-white rounded-xl shadow-xl w-80 flex flex-col p-6"
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-80 flex flex-col p-6 border border-slate-200 dark:border-slate-600"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
             }}
           >
-            <div className="font-semibold text-lg mb-4 text-gray-900">{t('confirmDelete', { ns: 'common', defaultValue: '确认删除？' })}</div>
-            <div className="mb-6 text-gray-700 text-sm">{t('collectionsDialog.deleteTip', { ns: 'content', defaultValue: '将删除该列表，操作不可恢复。' })}</div>
+            <div className="font-semibold text-lg mb-4 text-gray-900 dark:text-white">{t('confirmDelete', { ns: 'common', defaultValue: '确认删除？' })}</div>
+            <div className="mb-6 text-gray-600 dark:text-gray-300 text-sm">{t('collectionsDialog.deleteTip', { ns: 'content', defaultValue: '将删除该列表，操作不可恢复。' })}</div>
             <div className="flex gap-3">
               <button 
-                className="flex-1 py-2 px-4 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors" 
+                className="flex-1 py-2 px-4 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-900 dark:text-white transition-colors" 
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -402,4 +403,6 @@ export default function CollectionListDialog({
       )}
     </>
   );
+
+  return typeof document !== 'undefined' ? createPortal(dialogContent, document.body) : null;
 } 

@@ -128,13 +128,10 @@ function LoginForm() {
           </div>
           <button
             type="submit"
-            className="tile button w-full"
-            data-state={loading ? 'down' : undefined}
+            className="ai-gradient-btn w-full py-2.5 px-4 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            <div className="tile w-full justify-center py-2 px-4 font-medium">
-              {mounted ? (loading ? t('loggingIn', { ns: 'auth', defaultValue: 'Logging in...' }) : t('login', { ns: 'auth', defaultValue: 'Login' })) : (loading ? 'Logging in...' : 'Login')}
-            </div>
+            {mounted ? (loading ? t('loggingIn', { ns: 'auth', defaultValue: 'Logging in...' }) : t('login', { ns: 'auth', defaultValue: 'Login' })) : (loading ? 'Logging in...' : 'Login')}
           </button>
         </form>
         

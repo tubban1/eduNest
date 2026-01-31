@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -1449,47 +1450,48 @@ export default function ContentForm({
         }}
       />
       {/* 语言选择器弹窗 */}
-      {showLanguagePicker && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowLanguagePicker(false)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-4" onClick={(e) => e.stopPropagation()}>
+      {showLanguagePicker && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center" aria-modal="true" role="dialog" onClick={() => setShowLanguagePicker(false)}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg p-4 mx-4 border border-slate-200 dark:border-slate-600" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">{mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select Output Language' }) : 'Select Output Language'}</h3>
-              <button className="text-gray-500 hover:text-black" onClick={() => setShowLanguagePicker(false)}>{mounted ? '✕' : '✕'}</button>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select Output Language' }) : 'Select Output Language'}</h3>
+              <button className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" onClick={() => setShowLanguagePicker(false)}>✕</button>
             </div>
             <input
-              className="w-full border border-gray-200 p-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-slate-300 dark:border-slate-600 p-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-[#a78bfa] bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white"
               placeholder={mounted ? 'Search language or enter BCP 47 code (e.g., zh-CN, en-US)' : 'Search language or enter BCP 47 code (e.g., zh-CN, en-US)'}
               value={languageSearch}
               onChange={e => setLanguageSearch(e.target.value)}
             />
-            <div className="max-h-72 overflow-auto border border-gray-100 rounded-lg">
+            <div className="max-h-72 overflow-auto border border-slate-200 dark:border-slate-600 rounded-lg">
               {filteredLanguages.map(item => (
                 <button
                   key={item.code}
-                  className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between ${language === item.code ? 'bg-gray-50' : ''}`}
+                  className={`w-full text-left px-3 py-2 flex items-center justify-between ${language === item.code ? 'bg-[#a78bfa]/15 dark:bg-[#a78bfa]/20 text-[#a78bfa]' : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-600'}`}
                   onClick={() => handleLanguageSelect(item.code)}
                 >
                   <span>{item.name}</span>
-                  <span className="text-gray-500 text-sm">{item.code}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">{item.code}</span>
                 </button>
               ))}
               {filteredLanguages.length === 0 && (
-                <div className="p-3 text-sm text-gray-500">{mounted ? 'No matching language found' : 'No matching language found'}</div>
+                <div className="p-3 text-sm text-gray-500 dark:text-gray-400">{mounted ? 'No matching language found' : 'No matching language found'}</div>
               )}
             </div>
             <div className="mt-3 flex gap-2 justify-end">
               <button
-                className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+                className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-900 dark:text-white"
                 onClick={() => setShowLanguagePicker(false)}
               >{mounted ? 'Cancel' : 'Cancel'}</button>
               <button
-                className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
+                className="ai-gradient-btn px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => handleLanguageSelect(languageSearch)}
                 disabled={!isValidBCP47(languageSearch)}
               >{mounted ? 'OK' : 'OK'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

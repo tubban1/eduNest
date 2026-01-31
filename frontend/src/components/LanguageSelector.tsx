@@ -98,13 +98,13 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
       </button>
       {isOpen && !isMobile && (
         <ul
-          className="absolute left-0 z-50 mt-2 min-w-[10rem] bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+          className="absolute left-0 z-50 mt-2 min-w-[10rem] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg py-1"
           role="listbox"
         >
           {supportedLanguages.map(lang => (
             <li
               key={lang.code}
-              className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${lang.code === currentLanguage ? 'font-semibold bg-gray-50' : ''}`}
+              className={`flex items-center px-3 py-2 cursor-pointer text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-600 ${lang.code === currentLanguage ? 'font-semibold bg-gray-50 dark:bg-slate-700' : ''}`}
               onClick={() => handleSelect(lang.code)}
               role="option"
               aria-selected={lang.code === currentLanguage}
@@ -139,25 +139,24 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
           />
           {/* 底部弹出框 */}
           <div 
-            className="bg-white rounded-t-2xl shadow-2xl"
+            className="bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl"
             style={{
               position: 'absolute',
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'white',
               borderTopLeftRadius: '1rem',
               borderTopRightRadius: '1rem',
               boxShadow: '0 -10px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04)',
               paddingBottom: 'env(safe-area-inset-bottom)'
             }}
           >
-            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
+            <div className="w-12 h-1.5 bg-gray-300 dark:bg-slate-600 rounded-full mx-auto mt-3 mb-2" />
             <div className="max-h-[60vh] overflow-auto py-2">
               {supportedLanguages.map(lang => (
                 <button
                   key={lang.code}
-                  className={`w-full text-left px-5 py-3 flex items-center ${lang.code === currentLanguage ? 'bg-gray-50 font-semibold' : 'hover:bg-gray-50'}`}
+                  className={`w-full text-left px-5 py-3 flex items-center text-gray-900 dark:text-white ${lang.code === currentLanguage ? 'bg-gray-100 dark:bg-slate-700 font-semibold' : 'hover:bg-gray-100 dark:hover:bg-slate-700'}`}
                   onClick={() => handleSelect(lang.code)}
                   role="option"
                   aria-selected={lang.code === currentLanguage}
@@ -169,7 +168,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
             </div>
             <div className="p-3">
               <button
-                className="w-full py-3 border border-gray-300 rounded-xl text-gray-700"
+                className="ai-gradient-btn w-full py-3 rounded-xl"
                 onClick={() => setIsOpen(false)}
               >
                 {t('common:close', { defaultValue: '关闭' })}

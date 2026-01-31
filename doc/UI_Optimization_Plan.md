@@ -162,11 +162,55 @@ ContentAIGenerator 内的语言弹窗建议：
 
 ## 七、实施检查清单
 
-- [x] globals.css 添加 `--ai-violet`、`--ai-pink`、`--ai-amber`
+- [x] globals.css 添加 `--ai-violet`、`--ai-pink`、`--ai-amber` 及 `.ai-gradient-btn`
 - [x] ContentCard 渐变占位改为 AI 色系
 - [x] 主按钮（signup/login/subscription）应用渐变
 - [x] ProcessingCard 强调色统一（FailedCard 保持红色错误态）
-- [x] 深色区域滚动条样式（Sidebar scrollbar-dark）
 - [x] 语言选择弹窗确定按钮与选中项 AI 色系
-- [ ] Sidebar 选中态优化（可选）
-- [ ] 移动端头部背景微调（可选）
+- [x] 所有弹窗风格统一（遮罩 bg-black/50，面板白/深色，主按钮 ai-gradient-btn，选中项 #a78bfa）
+
+
+---
+
+## 八、整体协调与移动端降级
+
+### 8.1 设计目标
+
+从 **ContentAIGenerator → 内容区域 → Sidebar** 形成统一的视觉流，三者共用同一套设计语言。
+
+| 区域 | 桌面端 | 移动端 |
+|------|--------|--------|
+| Sidebar | 深色玻璃 `slate-900/65`、`border-white/10` | 同上，侧滑抽屉 |
+| ContentAIGenerator | 星空深色 + 粒子 + 渐变边框 | **静态**：纯渐变背景，无粒子/Three.js |
+| 内容区域 | 深色渐变背景，卡片玻璃风格 | **静态**：浅色背景，常规卡片 |
+| 标题 | 动态渐变 + 微动效 | **静态**：纯色或静态渐变 |
+
+### 8.2 桌面端整体协调
+
+- **主区域背景**：与 Sidebar 同色系，`bg-gradient-to-br from-slate-950 via-slate-900/98 to-slate-950`
+- **内容卡片**：玻璃风格 `bg-white/5 backdrop-blur border-white/10`，与 ContentAIGenerator 边框呼应
+- **Sidebar 选中态**：可增加 `#a78bfa` 细线或弱渐变高光，与 AI 色系统一
+
+### 8.3 移动端降级策略
+
+- **性能**：禁用 StarfieldBackground（Three.js）、减少 backdrop-blur 范围
+- **视觉**：恢复浅色背景、常规卡片，标题使用静态渐变
+- **实现**：通过 `lg:` 断点区分，移动端使用 `staticMode` 或媒体查询
+
+### 8.4 技术实现要点
+
+1. **ContentAIGenerator**：`useEffect` + `matchMedia('(min-width: 1024px)')`，`!isDesktop` 时不渲染 StarfieldBackground，使用静态 `radial-gradient` 背景；移动端 `backdrop-blur-md`、`rounded-2xl` 降级
+2. **首页 page.tsx**：主区域 `lg:bg-gradient-to-br from-slate-950 via-slate-900/98 to-slate-950`，标题桌面端动态渐变、移动端静态 `bg-clip-text`；深色滚动条 `scrollbar-dark`
+3. **ContentCard**：新增 `glass?: boolean`，首页桌面端传 `glass={true}` 启用玻璃风格（`bg-white/5 border-white/10`）
+4. **Sidebar**：选中态使用 `#a78bfa` 左侧细线与背景，与 AI 色系统一
+5. **globals.css**：移动端禁用 `.ai-gen-border` 动画，减少性能消耗
+
+### 8.5 实施检查清单（八）
+
+- [x] ContentAIGenerator 移动端禁用 StarfieldBackground
+- [x] ContentAIGenerator 移动端降级 blur、圆角
+- [x] 首页桌面端深色背景与 scrollbar-dark
+- [x] 标题移动端静态、桌面端动态
+- [x] ContentCard glass  prop 与玻璃风格
+- [x] Sidebar 选中态 AI 色系
+- [x] ai-gen-border 移动端禁用动画

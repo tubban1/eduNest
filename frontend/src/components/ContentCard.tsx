@@ -90,6 +90,8 @@ interface ContentCardProps {
   onContentUpdate?: () => void;
   // 可选的链接路径前缀，默认为 '/c'
   linkPathPrefix?: string;
+  // 玻璃风格（深色背景下使用，与 ContentAIGenerator/Sidebar 协调）
+  glass?: boolean;
 }
 
 function ContentCard({ 
@@ -99,7 +101,8 @@ function ContentCard({
   lists, 
   refreshLists, 
   onContentUpdate,
-  linkPathPrefix = '/c'
+  linkPathPrefix = '/c',
+  glass = false
 }: ContentCardProps) {
   const { t } = useTranslation(['content', 'common']);
   const { user } = useAuth();
@@ -480,10 +483,14 @@ function ContentCard({
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow w-full">
+    <div className={`rounded-lg overflow-hidden transition-all w-full ${
+      glass 
+        ? 'bg-white/5 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:shadow-lg shadow-md' 
+        : 'bg-card shadow-md hover:shadow-lg'
+    }`}>
       {/* 缩略图区域 */}
       <Link href={contentUrl} prefetch={false} className="block">
-        <div className="relative w-full aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 overflow-hidden">
+        <div className="relative w-full aspect-video bg-gradient-to-br from-[#a78bfa]/10 via-[#ec4899]/10 to-[#f59e0b]/10 overflow-hidden">
           {/* 提示详情角标图标 - 只在有 user_query 或 image_url 时显示 */}
           {(content.user_query || content.image_url) && (
             <button
@@ -530,31 +537,31 @@ function ContentCard({
               />
             )
           ) : isThumbnailGenerating ? (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#a78bfa]/10 via-[#ec4899]/10 to-[#f59e0b]/10">
               <div className="flex flex-col items-center gap-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a78bfa]"></div>
                 <span className="text-xs text-muted-foreground">
                   {mounted ? t('thumbnailGenerating', { ns: 'content', defaultValue: '生成中...' }) : '生成中...'}
                 </span>
               </div>
             </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#a78bfa]/10 via-[#ec4899]/10 to-[#f59e0b]/10 relative overflow-hidden">
               <span className="text-4xl z-10">{getEmojiByTags(content.tags)}</span>
               {/* 水印 */}
               <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                <div className="text-6xl font-bold text-primary rotate-[-45deg] select-none pointer-events-none">
+                <div className="text-6xl font-bold text-[#a78bfa] rotate-[-45deg] select-none pointer-events-none">
                   EduNest AI
                 </div>
               </div>
             </div>
           )}
           {/* 占位符（图片加载失败时显示） */}
-          <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
+          <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-[#a78bfa]/10 via-[#ec4899]/10 to-[#f59e0b]/10 relative overflow-hidden">
             <span className="text-4xl z-10">{getEmojiByTags(content.tags)}</span>
             {/* 水印 */}
             <div className="absolute inset-0 flex items-center justify-center opacity-20">
-              <div className="text-6xl font-bold text-primary rotate-[-45deg] select-none pointer-events-none">
+              <div className="text-6xl font-bold text-[#a78bfa] rotate-[-45deg] select-none pointer-events-none">
                 EduNest AI
               </div>
             </div>
@@ -568,7 +575,9 @@ function ContentCard({
           <MathText 
             as="h3" 
             text={content.title}
-            className="text-lg font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors cursor-pointer" 
+            className={`text-lg font-semibold line-clamp-2 transition-colors cursor-pointer ${
+              glass ? 'text-white/90 hover:text-[#a78bfa]' : 'text-foreground hover:text-primary'
+            }`}
             title={content.title}
           />
         </Link>
@@ -643,6 +652,7 @@ export default memo(ContentCard, (prevProps, nextProps) => {
     prevProps.content.title === nextProps.content.title &&
     prevProps.isAuthenticated === nextProps.isAuthenticated &&
     prevProps.editMode === nextProps.editMode &&
-    prevProps.lists.length === nextProps.lists.length
+    prevProps.lists.length === nextProps.lists.length &&
+    prevProps.glass === nextProps.glass
   );
 }); 

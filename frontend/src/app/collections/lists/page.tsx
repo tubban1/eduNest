@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar, { MobileMenuButton } from '@/components/Sidebar';
@@ -296,27 +297,27 @@ export default function CollectionListsManagementPage() {
       </main>
 
       {/* 创建列表对话框 */}
-      {showCreateDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-card rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold text-foreground mb-4">{t('collections:management.createNewList')}</h2>
+      {showCreateDialog && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" aria-modal="true" role="dialog" onClick={() => { setShowCreateDialog(false); setNewListName(''); setError(''); }}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 w-full max-w-md mx-4 border border-slate-200 dark:border-slate-600" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('collections:management.createNewList')}</h2>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 {t('collections:settings.listNameRequired')} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
-                className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#a78bfa] bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                 placeholder={t('collections:settings.listNamePlaceholder')}
                 autoFocus
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 {t('collections:settings.visibility')}
               </label>
               <div className="flex gap-4">
@@ -352,7 +353,7 @@ export default function CollectionListsManagementPage() {
                   setNewListName('');
                   setError('');
                 }}
-                className="px-4 py-2 border border-input rounded-lg text-foreground hover:bg-muted transition-colors"
+                className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
                 disabled={creating}
               >
                 {t('collections:settings.cancel')}
@@ -360,13 +361,14 @@ export default function CollectionListsManagementPage() {
               <button
                 onClick={handleCreateList}
                 disabled={creating || !newListName.trim()}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="ai-gradient-btn px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {creating ? t('collections:management.creating') : t('create')}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

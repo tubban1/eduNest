@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -129,8 +130,20 @@ export default function ContentAIGenerator({
   const [examplePromptIndex, setExamplePromptIndex] = useState(0);
   // 上传提示文字显示状态
   const [showUploadHint, setShowUploadHint] = useState(false);
+  // 移动端降级：桌面端(>=lg)显示星空粒子，移动端使用静态背景
+  const [isDesktop, setIsDesktop] = useState(true);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsDesktop('matches' in e ? e.matches : (e as MediaQueryList).matches);
+    };
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   
   // 上传提示文字动画：页面加载后淡入，停留10秒，然后淡出
   useEffect(() => {
@@ -1180,20 +1193,22 @@ export default function ContentAIGenerator({
     <div className={`ai-gen-border ${className || ''}`}>
       <div
         ref={containerRef}
-        className="relative flex flex-col gap-3 rounded-[30px] p-5 shadow-xl shadow-primary/10 border border-white/40 bg-card/30 backdrop-blur-xl overflow-hidden"
+        className="relative flex flex-col gap-3 rounded-2xl lg:rounded-[30px] p-5 shadow-xl shadow-primary/10 border border-white/40 bg-card/30 backdrop-blur-md lg:backdrop-blur-xl overflow-hidden"
       >
-      {/* 星空背景层：深色渐变 + 粒子 + 鼠标轨迹/闪电 */}
+      {/* 背景层：桌面端=星空+粒子，移动端=静态渐变（性能降级） */}
       <div
         className="pointer-events-none absolute inset-0 z-0 rounded-[inherit]"
         style={{
-          background: 'radial-gradient(circle at 30% 20%, #120023 0%, #04000a 60%, #000 100%)',
+          background: isDesktop
+            ? 'radial-gradient(circle at 30% 20%, #120023 0%, #04000a 60%, #000 100%)'
+            : 'radial-gradient(circle at 30% 20%, #1a0a2e 0%, #0d0218 50%, #050208 100%)',
         }}
       />
-      <StarfieldBackground containerRef={containerRef} />
-      {/* 背景柔和高光，叠加在星空上增强悬浮感 */}
+      {isDesktop && <StarfieldBackground containerRef={containerRef} />}
+      {/* 背景柔和高光 */}
       <div className="pointer-events-none absolute inset-0 z-[1] opacity-60">
-        <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full bg-secondary/20 blur-3xl" />
+        <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-[#a78bfa]/20 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full bg-[#ec4899]/15 blur-3xl" />
       </div>
 
       <h3 className="text-lg font-semibold text-white/90 mb-1 relative z-10">
@@ -1433,56 +1448,57 @@ export default function ContentAIGenerator({
         </div>
       )}
 
-      {showLanguagePicker && (
-        <div className="fixed inset-0 bg-foreground/30 flex items-center justify-center z-50" onClick={() => setShowLanguagePicker(false)}>
-          <div className="bg-card rounded-xl shadow-xl w-full max-w-lg p-4" onClick={(e) => e.stopPropagation()}>
+      {showLanguagePicker && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center" aria-modal="true" role="dialog" onClick={() => setShowLanguagePicker(false)}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg p-4 mx-4 border border-slate-200 dark:border-slate-600" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-foreground">{mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select Output Language' }) : 'Select Output Language'}</h3>
-              <button className="text-muted-foreground hover:text-foreground" onClick={() => setShowLanguagePicker(false)}>✕</button>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{mounted ? t('selectOutputLanguage', { ns: 'content', defaultValue: 'Select Output Language' }) : 'Select Output Language'}</h3>
+              <button className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" onClick={() => setShowLanguagePicker(false)}>✕</button>
             </div>
             <input
-              className="w-full border border-border p-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary bg-card"
+              className="w-full border border-slate-300 dark:border-slate-600 p-2 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-[#a78bfa] bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               value={languageSearch}
               onChange={e => setLanguageSearch(e.target.value)}
               placeholder={mounted ? t('searchLanguage', { ns: 'content', defaultValue: 'Search language...' }) : 'Search language...'}
             />
-            <div className="max-h-80 overflow-auto border border-border rounded-lg">
+            <div className="max-h-80 overflow-auto border border-slate-200 dark:border-slate-600 rounded-lg bg-gray-50/50 dark:bg-slate-700/50">
               {filteredLanguages.map(l => (
                 <div
                   key={l.code}
-                  className={`px-3 py-2 cursor-pointer hover:bg-muted/50 flex items-center justify-between ${language === l.code ? 'bg-primary/10' : ''}`}
+                  className={`px-3 py-2 cursor-pointer flex items-center justify-between ${language === l.code ? 'bg-[#a78bfa]/15 dark:bg-[#a78bfa]/20 text-[#a78bfa]' : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-600'}`}
                   onClick={() => handleSelectLanguage(l.code)}
                 >
-                  <div className="font-medium text-foreground">{l.label}</div>
-                  {language === l.code && <span className="text-primary">✓</span>}
+                  <div className="font-medium">{l.label}</div>
+                  {language === l.code && <span>✓</span>}
                 </div>
               ))}
               {filteredLanguages.length === 0 && (
-                <div className="px-3 py-6 text-center text-muted-foreground text-sm">{mounted ? t('noResults', { ns: 'common', defaultValue: '暂无结果' }) : 'No results'}</div>
+                <div className="px-3 py-6 text-center text-gray-500 dark:text-gray-400 text-sm">{mounted ? t('noResults', { ns: 'common', defaultValue: '暂无结果' }) : 'No results'}</div>
               )}
             </div>
             <div className="mt-3 flex gap-2 justify-end">
-              <button className="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground" onClick={() => setShowLanguagePicker(false)}>
+              <button className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-900 dark:text-white" onClick={() => setShowLanguagePicker(false)}>
                 {mounted ? t('cancel', { ns: 'common', defaultValue: '取消' }) : 'Cancel'}
               </button>
-              <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90" onClick={() => setShowLanguagePicker(false)}>
+              <button className="ai-gradient-btn px-4 py-2 rounded-lg" onClick={() => setShowLanguagePicker(false)}>
                 {mounted ? t('confirm', { ns: 'common', defaultValue: '确定' }) : 'Confirm'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 图片编辑器模态框 */}
-      {showImageEditor && uploadedImage && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleCloseImageEditor}>
-          <div className="bg-card rounded-xl shadow-xl w-full max-w-2xl p-4 m-4" onClick={(e) => e.stopPropagation()}>
+      {showImageEditor && uploadedImage && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center" aria-modal="true" role="dialog" onClick={handleCloseImageEditor}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-2xl p-4 m-4 border border-slate-200 dark:border-slate-600" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {mounted ? t('editImage', { ns: 'content', defaultValue: '编辑图片' }) : 'Edit Image'}
               </h3>
               <button
-                className="text-muted-foreground hover:text-foreground"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 onClick={handleCloseImageEditor}
               >
                 ✕
@@ -1689,7 +1705,8 @@ export default function ContentAIGenerator({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <RegistrationPrompt

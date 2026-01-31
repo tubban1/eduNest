@@ -255,13 +255,10 @@ function SignupPageInner() {
           </div>
           <button
             type="submit"
-            className="tile button w-full"
-            data-state={loading ? 'down' : undefined}
+            className="ai-gradient-btn w-full py-2.5 px-4 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            <div className="tile w-full justify-center py-2 px-4 font-medium">
-              {loading ? (mounted ? t('signupProcessing', { ns: 'auth', defaultValue: '注册中...' }) : 'Registering...') : (mounted ? t('signupAccount', { ns: 'auth', defaultValue: '注册账号' }) : 'Create Account')}
-            </div>
+            {loading ? (mounted ? t('signupProcessing', { ns: 'auth', defaultValue: '注册中...' }) : 'Registering...') : (mounted ? t('signupAccount', { ns: 'auth', defaultValue: '注册账号' }) : 'Create Account')}
           </button>
         </form>
         

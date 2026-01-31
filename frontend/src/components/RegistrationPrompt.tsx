@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 
@@ -58,39 +59,37 @@ export const RegistrationPrompt: React.FC<RegistrationPromptProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-foreground/30 flex items-center justify-center z-50" onClick={onDismiss}>
-      <div className="bg-card rounded-xl shadow-xl w-full max-w-md p-6 mx-4" onClick={(e) => e.stopPropagation()}>
+  const promptContent = (
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center" aria-modal="true" role="dialog" onClick={onDismiss}>
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-6 mx-4 border border-slate-200 dark:border-slate-600" onClick={(e) => e.stopPropagation()}>
         <div className="text-center mb-4">
-          <h3 className="text-xl font-semibold text-foreground mb-2">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {getTitle()}
           </h3>
-          <p className="text-muted-foreground whitespace-pre-line">
+          <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line">
             {getMessage()}
           </p>
         </div>
         <div className="flex gap-3 justify-center mt-6">
           {onDismiss && type !== 'trialUsed' && (
             <button
-              className="tile button"
+              className="px-6 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-900 dark:text-white"
               onClick={onDismiss}
             >
-              <div className="tile up px-6 py-2 font-medium">
-                {mounted ? t('registrationPrompt.later', { ns: 'common', defaultValue: '稍后再说' }) : '稍后再说'}
-              </div>
+              {mounted ? t('registrationPrompt.later', { ns: 'common', defaultValue: '稍后再说' }) : '稍后再说'}
             </button>
           )}
           <button
-            className="tile button"
+            className="ai-gradient-btn px-6 py-2 rounded-lg"
             onClick={handleRegister}
           >
-            <div className="tile up px-6 py-2 font-semibold">
-              {mounted ? t('registrationPrompt.registerNow', { ns: 'common', defaultValue: '立即注册' }) : '立即注册'}
-            </div>
+            {mounted ? t('registrationPrompt.registerNow', { ns: 'common', defaultValue: '立即注册' }) : '立即注册'}
           </button>
         </div>
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(promptContent, document.body) : null;
 };
 

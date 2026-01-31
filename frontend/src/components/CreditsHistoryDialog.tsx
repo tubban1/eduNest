@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
@@ -85,34 +86,34 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white w-11/12 max-w-lg rounded-2xl shadow-lg border p-4">
+  const dialogContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center" aria-modal="true" role="dialog">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white dark:bg-slate-800 w-11/12 max-w-lg rounded-2xl shadow-xl border border-slate-200 dark:border-slate-600 p-4 mx-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {mounted ? t('creditsHistory', { ns: 'credits', defaultValue: '积分明细' }) : 'Credits History'}
           </h2>
-          <button className="text-gray-500 hover:text-black" onClick={onClose}>✕</button>
+          <button className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" onClick={onClose}>✕</button>
         </div>
         
         {/* Lite 充值选项 */}
-        <div className="mb-4 bg-blue-50 rounded-lg p-3 border border-blue-200">
+        <div className="mb-4 bg-[#a78bfa]/10 rounded-lg p-3 border border-[#a78bfa]/20">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">
+              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                 {mounted ? t('credits.liteTopUp', { ns: 'credits', defaultValue: 'Lite 充值' }) : 'Lite Top-up'}
               </h3>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600 dark:text-gray-300">
                 {mounted ? t('credits.liteTopUpDesc', { ns: 'credits', defaultValue: '$10 获得 500 积分' }) : '$10 for 500 credits'}
               </p>
             </div>
-            <span className="text-lg font-bold text-gray-900">$10</span>
+            <span className="text-lg font-bold text-gray-900 dark:text-white">$10</span>
           </div>
           <button
             onClick={handleTopUp}
             disabled={recharging}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+            className="ai-gradient-btn w-full py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
           >
             {recharging 
               ? (mounted ? t('credits.processing', { ns: 'credits', defaultValue: '处理中...' }) : 'Processing...')
@@ -121,7 +122,7 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
           </button>
         </div>
         {loading && (
-          <div className="py-8 text-center text-gray-500">
+          <div className="py-8 text-center text-gray-500 dark:text-gray-400">
             {mounted ? t('loading', { ns: 'credits', defaultValue: '加载中...' }) : 'Loading...'}
           </div>
         )}
@@ -131,17 +132,17 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
         {!loading && !error && (
           <div className="max-h-80 overflow-y-auto divide-y">
             {records.length === 0 && (
-              <div className="py-6 text-center text-gray-500">
+              <div className="py-6 text-center text-gray-500 dark:text-gray-400">
                 {mounted ? t('noRecords', { ns: 'credits', defaultValue: '暂无记录' }) : 'No records'}
               </div>
             )}
             {records.map((r) => (
               <div key={r.id} className="py-3 flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
                     {mounted ? t(`changeTypeLabels.${r.change_type}`, { ns: 'credits', defaultValue: r.change_type }) : r.change_type}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {new Date(r.created_at).toLocaleString(
                       currentLanguage === 'zh-CN' ? 'zh-CN' :
                       currentLanguage === 'de-DE' ? 'de-DE' :
@@ -159,4 +160,6 @@ export default function CreditsHistoryDialog({ open, onClose }: CreditsHistoryDi
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(dialogContent, document.body) : null;
 }

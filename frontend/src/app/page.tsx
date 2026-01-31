@@ -25,6 +25,7 @@ export default function HomePage() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [pollingContents, setPollingContents] = useState<Set<string>>(new Set());
   const [gradientPhase, setGradientPhase] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(false);
   
   const ITEMS_PER_PAGE = 18; // 每页加载 18 个卡片
   const MAX_CONTENT_COUNT = 100; // 最多显示 100 个内容
@@ -32,6 +33,17 @@ export default function HomePage() {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsDesktop('matches' in e ? e.matches : (e as MediaQueryList).matches);
+    };
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop) return;
     let raf = 0;
     let last = 0;
     const loop = (now: number) => {
@@ -43,7 +55,7 @@ export default function HomePage() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [isDesktop]);
 
   // 获取收藏列表
   const fetchLists = async () => {
@@ -380,9 +392,9 @@ export default function HomePage() {
         onClose={() => setSidebarOpen(false)} 
       />
       
-      <main className="flex-1 bg-background overflow-y-auto">
+      <main className="flex-1 bg-background lg:bg-gradient-to-br lg:from-slate-950 lg:via-slate-900/98 lg:to-slate-950 overflow-y-auto scrollbar-dark">
         {/* 移动端头部（固定） */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-background/90 backdrop-blur-sm border-b border-border">
           <MobileMenuButton onClick={() => setSidebarOpen(true)} />
           <div className="w-10" /> {/* 占位，保持居中 */}
         </div>
@@ -391,12 +403,17 @@ export default function HomePage() {
         <div className="lg:hidden h-14" />
 
         <div className="px-4 py-8 sm:px-6 lg:p-8">
-          {/* 标题 */}
+          {/* 标题：桌面端动态渐变，移动端静态渐变（降级） */}
           <div className="mb-6">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground lg:text-white/95 leading-tight">
               {t('make_learning', { ns: 'home', defaultValue: 'Make Learning' })}
               {' '}
-              <span className="inline-block whitespace-pre">
+              {/* 移动端：静态渐变 */}
+              <span className="lg:hidden inline-block bg-gradient-to-r from-[#a78bfa] via-[#ec4899] to-[#f59e0b] bg-clip-text text-transparent">
+                {mounted ? t('dynamic_and_interesting', { ns: 'home', defaultValue: 'Dynamic and Interesting' }) : 'Dynamic and Interesting'}
+              </span>
+              {/* 桌面端：动态渐变 + 微动效 */}
+              <span className="hidden lg:inline-block whitespace-pre">
                 {(() => {
                   const raw = mounted ? t('dynamic_and_interesting', { ns: 'home', defaultValue: 'Dynamic and Interesting' }) : 'Dynamic and Interesting';
                   const chars = [...raw];
@@ -447,7 +464,7 @@ export default function HomePage() {
           <div className="mb-16">
             
             {isLoading ? (
-              <div className="flex justify-center items-center py-12">
+              <div className="flex justify-center items-center py-12 text-foreground lg:text-white/80">
                 <LoadingSpinner />
               </div>
             ) : contents.length > 0 ? (
@@ -465,6 +482,7 @@ export default function HomePage() {
                       lists={lists} 
                       refreshLists={fetchLists}
                       linkPathPrefix="/c"
+                      glass={isDesktop}
                       onContentUpdate={() => {
                         setPage(1);
                         setHasMore(true);
@@ -480,7 +498,7 @@ export default function HomePage() {
                     {isLoadingMore ? (
                       <div className="flex flex-col items-center gap-2">
                         <LoadingSpinner />
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-muted-foreground lg:text-white/60">
                           {mounted ? t('loadingMore', { ns: 'content', defaultValue: '加载更多...' }) : 'Loading more...'}
                         </span>
                       </div>
@@ -493,20 +511,20 @@ export default function HomePage() {
                 {/* 没有更多内容提示 */}
                 {!hasMore && contents.length > 0 && (
                   <div className="text-center py-8">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground lg:text-white/60">
                       {mounted ? t('noMoreContent', { ns: 'content', defaultValue: '没有更多内容了' }) : 'No more content'}
                     </p>
                   </div>
                 )}
               </>
             ) : (
-              <div className="text-center py-12">
+              <div className="text-center py-12 text-foreground lg:text-white/90">
                 <div className="text-6xl mb-4">📚</div>
-                <p className="text-muted-foreground text-lg mb-4">
+                <p className="text-muted-foreground lg:text-white/70 text-lg mb-4">
                   {mounted ? t('noContent', { ns: 'content', defaultValue: '暂无内容' }) : 'No content yet'}
                 </p>
                 {!user && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground lg:text-white/60">
                     {t('tryGeneratingContent', { ns: 'home', defaultValue: 'Try generating content above!' })}
                   </p>
                 )}

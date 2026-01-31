@@ -238,15 +238,12 @@ const SubscriptionManager: React.FC = () => {
             <button
               onClick={getUpgradeButtonAction()}
               disabled={upgrading}
-              className="tile button w-full"
-              data-state={upgrading ? 'down' : undefined}
+              className="ai-gradient-btn w-full py-2.5 px-4 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <div className="tile w-full justify-center py-2 px-4 font-medium">
-                {upgrading 
-                  ? (mounted ? t('subscription.processing', { ns: 'content', defaultValue: '处理中...' }) : 'Processing...')
-                  : getUpgradeButtonText()
-                }
-              </div>
+              {upgrading 
+                ? (mounted ? t('subscription.processing', { ns: 'content', defaultValue: '处理中...' }) : 'Processing...')
+                : getUpgradeButtonText()
+              }
             </button>
           </div>
         )}
@@ -282,15 +279,12 @@ const SubscriptionManager: React.FC = () => {
             <button
               onClick={getUpgradeButtonAction()}
               disabled={upgrading}
-              className="tile button w-full"
-              data-state={upgrading ? 'down' : undefined}
+              className="ai-gradient-btn w-full py-2.5 px-4 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <div className="tile w-full justify-center py-2 px-4 font-medium">
-                {upgrading 
-                  ? (mounted ? t('subscription.processing', { ns: 'content', defaultValue: '处理中...' }) : 'Processing...')
-                  : getUpgradeButtonText()
-                }
-              </div>
+              {upgrading 
+                ? (mounted ? t('subscription.processing', { ns: 'content', defaultValue: '处理中...' }) : 'Processing...')
+                : getUpgradeButtonText()
+              }
             </button>
           </div>
         )}

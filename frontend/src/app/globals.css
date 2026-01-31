@@ -28,6 +28,18 @@
   background: #6B7280; /* Text Sub color */
 }
 
+/* 深色区域滚动条（与 Sidebar / 星空背景协调） */
+.scrollbar-dark::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+}
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+.scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 /* 动画效果 */
 @keyframes fadeIn {
   from {
@@ -100,6 +112,31 @@
 
 .animate-bubble-pop {
   animation: bubblePop 10s ease-out forwards;
+}
+
+/* ========= AI / 品牌渐变色（与 ContentAIGenerator 统一） ========= */
+:root {
+  --ai-violet: #a78bfa;
+  --ai-pink: #ec4899;
+  --ai-amber: #f59e0b;
+  --ai-gradient: linear-gradient(to right, #a78bfa, #ec4899, #f59e0b, #a78bfa);
+}
+
+.ai-gradient-btn {
+  background: linear-gradient(to right, #a78bfa, #ec4899, #f59e0b);
+  color: white;
+  font-weight: 500;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.ai-gradient-btn:hover:not(:disabled) {
+  opacity: 0.95;
+}
+.ai-gradient-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.ai-gradient-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ========= Soft UI / Neumorphism Tiles (按你提供的 tile/up/down/button 结构) ========= */
@@ -227,9 +264,9 @@ input.tile.button:disabled[data-state='down'] > .tile {
 }
 /* 当前页：高亮明显 */
 .sidebar-dark .tile.button[aria-pressed='true'] > .tile {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.85);
+  background: rgba(167, 139, 250, 0.15);
+  border-color: rgba(167, 139, 250, 0.4);
+  box-shadow: inset 3px 0 0 #a78bfa;
   font-weight: 600;
   color: rgb(255 255 255);
 }
@@ -370,6 +407,12 @@ input.tile.button:disabled[data-state='down'] > .tile {
   position: relative;
   border-radius: 32px;
   animation: ai-gen-loading-border 4s linear infinite;
+}
+
+@media (max-width: 1023px) {
+  .ai-gen-border {
+    animation: none;
+  }
 }
 
 .ai-gen-border::before {
@@ -794,8 +837,12 @@ input.tile.button:disabled[data-state='down'] > .tile {
     --card-foreground: 0 0% 18%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 18%;
-    /* Primary: #3A6EA5 - 低饱和蓝，稳定理性 */
-    --primary: 210 48% 44%;
+    /* AI 品牌色（紫-粉-琥珀渐变），供渐变按钮等复用 */
+    --ai-violet: 263 91% 76%;   /* #a78bfa */
+    --ai-pink: 330 81% 60%;     /* #ec4899 */
+    --ai-amber: 38 92% 50%;     /* #f59e0b */
+    /* Primary: 与 AI 紫统一，全局主色 */
+    --primary: 263 91% 76%;
     --primary-foreground: 0 0% 100%;
     /* Secondary: #4FB3A2 - 柔和青绿，缓解紧张感 */
     --secondary: 170 40% 50%;
@@ -813,7 +860,7 @@ input.tile.button:disabled[data-state='down'] > .tile {
     /* Border: #E5E7EB - 边框 */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 210 48% 44%;
+    --ring: 263 91% 76%;
     --radius: 0.5rem;
     /* Warning: #F0AD4E - 警告色 */
     --warning: 38 85% 63%;
@@ -829,7 +876,7 @@ input.tile.button:disabled[data-state='down'] > .tile {
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
     /* Primary 在暗色模式下稍微调亮 */
-    --primary: 210 48% 54%;
+    --primary: 263 91% 80%;
     --primary-foreground: 0 0% 100%;
     /* Secondary 在暗色模式下稍微调亮 */
     --secondary: 170 40% 60%;
@@ -842,7 +889,7 @@ input.tile.button:disabled[data-state='down'] > .tile {
     --destructive-foreground: 0 0% 100%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 210 48% 54%;
+    --ring: 263 91% 80%;
     --warning: 38 85% 70%;
     --warning-foreground: 0 0% 100%;
   }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { api, Content } from '@/lib/api';
 import FullHTMLRenderer from './FullHTMLRenderer';
@@ -204,21 +205,23 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
       </div>
       
       {/* 预览模态框 */}
-      {showPreview && (
+      {showPreview && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4"
+          aria-modal="true"
+          role="dialog"
           onClick={() => setShowPreview(false)}
         >
           <div
-            className="bg-card rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col"
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 dark:border-slate-600"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 模态框头部 */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">{content.title}</h3>
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{content.title}</h3>
               <button
                 onClick={() => setShowPreview(false)}
-                className="text-muted-foreground hover:text-foreground text-2xl"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl"
               >
                 ×
               </button>
@@ -243,22 +246,23 @@ export default function LargeContentCard({ content, onPreview }: LargeContentCar
             </div>
             
             {/* 模态框底部 */}
-            <div className="p-4 border-t flex justify-end gap-3">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-600 flex justify-end gap-3">
               <button
                 onClick={() => setShowPreview(false)}
-                className="px-4 py-2 border border-input rounded-lg hover:bg-muted"
+                className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-600"
               >
                 关闭
               </button>
               <Link
                 href={`/c/${content.short_id}`}
-                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90"
+                className="ai-gradient-btn px-6 py-2 rounded-lg inline-block text-center"
               >
                 查看完整内容
               </Link>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
