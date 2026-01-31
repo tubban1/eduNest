@@ -2,55 +2,33 @@ import { useRouter } from 'next/navigation';
 
 /**
  * 智能返回逻辑
- * 根据来源页面智能选择返回目标
+ * - 只返回平台内页面（同域）
+ * - 使用浏览器返回以恢复前一个具体浏览位置（滚动位置）
  */
 export const useSmartBack = () => {
   const router = useRouter();
 
-  const getBackTarget = () => {
-    // 检查是否有来源页面
-    if (typeof window === 'undefined') return '/';
-    
+  const isPlatformReferrer = () => {
+    if (typeof window === 'undefined') return false;
     const referrer = document.referrer;
-    if (!referrer) return '/'; // 无来源，返回首页
-    
+    if (!referrer) return false;
     try {
       const referrerUrl = new URL(referrer);
-      const currentOrigin = window.location.origin;
-      
-      // 如果是同域名的来源
-      if (referrerUrl.origin === currentOrigin) {
-        const pathname = referrerUrl.pathname;
-        
-        // 从内容列表页面来，返回到内容列表
-        if (pathname === '/c') return '/c';
-        
-        // 从首页来，返回到首页
-        if (pathname === '/') return '/';
-        
-        // 从其他页面来，使用浏览器返回
-        return null; // null 表示使用 router.back()
-      }
-    } catch (error) {
-      // URL解析失败，返回首页
-      console.warn('Failed to parse referrer URL:', error);
+      return referrerUrl.origin === window.location.origin;
+    } catch {
+      return false;
     }
-    
-    // 跨域或其他情况，返回首页
-    return '/';
   };
 
   const handleSmartBack = () => {
-    const target = getBackTarget();
-    
-    if (target === null) {
-      // 使用浏览器返回
+    if (isPlatformReferrer()) {
+      // 同域来源：使用浏览器返回，自动恢复滚动位置
       router.back();
     } else {
-      // 导航到指定页面
-      router.push(target);
+      // 外部来源或无来源：返回首页
+      router.push('/');
     }
   };
 
-  return { handleSmartBack, getBackTarget };
+  return { handleSmartBack, isPlatformReferrer };
 };
