@@ -454,6 +454,7 @@ export default function ContentAIGenerator({
   // 图片裁剪和旋转相关状态
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [imageRotation, setImageRotation] = useState(0);
+  const [imageFlipH, setImageFlipH] = useState(false);
   const [cropArea, setCropArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
@@ -466,6 +467,7 @@ export default function ContentAIGenerator({
   const handleEditImage = () => {
     setShowImageEditor(true);
     setImageRotation(0);
+    setImageFlipH(false);
     setCropArea(null);
     setCropMode(false);
   };
@@ -474,6 +476,7 @@ export default function ContentAIGenerator({
   const handleCloseImageEditor = () => {
     setShowImageEditor(false);
     setImageRotation(0);
+    setImageFlipH(false);
     setCropArea(null);
     setCropMode(false);
     setIsDragging(false);
@@ -483,7 +486,12 @@ export default function ContentAIGenerator({
   // 旋转图片
   const handleRotateImage = (degrees: number) => {
     setImageRotation((prev) => (prev + degrees) % 360);
-    // 旋转时清除裁剪区域
+    setCropArea(null);
+  };
+
+  // 水平翻转图片
+  const handleFlipImage = () => {
+    setImageFlipH((prev) => !prev);
     setCropArea(null);
   };
 
@@ -867,11 +875,16 @@ export default function ContentAIGenerator({
       const clampedCropWidth = Math.max(0, Math.min(cropArea.width, displayWidth - clampedCropX));
       const clampedCropHeight = Math.max(0, Math.min(cropArea.height, displayHeight - clampedCropY));
       
-      // 将显示坐标转换为实际图片坐标
-      sourceX = clampedCropX * scaleX;
-      sourceY = clampedCropY * scaleY;
+      // 将显示坐标转换为实际图片坐标（翻转时 X 需取反）
       sourceWidth = clampedCropWidth * scaleX;
       sourceHeight = clampedCropHeight * scaleY;
+      if (imageFlipH && imageRotation === 0) {
+        sourceX = (displayWidth - clampedCropX - clampedCropWidth) * scaleX;
+        sourceY = clampedCropY * scaleY;
+      } else {
+        sourceX = clampedCropX * scaleX;
+        sourceY = clampedCropY * scaleY;
+      }
       
       // 确保不超出图片边界
       sourceX = Math.max(0, Math.min(sourceX, naturalWidth));
@@ -899,7 +912,23 @@ export default function ContentAIGenerator({
       workingCtx.drawImage(img, 0, 0);
     }
 
-    // 第二步：应用旋转（如果有）
+    // 第二步：应用水平翻转（如果有）
+    if (imageFlipH) {
+      const flipCanvas = document.createElement('canvas');
+      flipCanvas.width = workingCanvas.width;
+      flipCanvas.height = workingCanvas.height;
+      const flipCtx = flipCanvas.getContext('2d');
+      if (!flipCtx) {
+        handleCloseImageEditor();
+        return;
+      }
+      flipCtx.translate(flipCanvas.width, 0);
+      flipCtx.scale(-1, 1);
+      flipCtx.drawImage(workingCanvas, 0, 0);
+      workingCanvas = flipCanvas;
+    }
+
+    // 第三步：应用旋转（如果有）
     if (imageRotation !== 0) {
       const rad = (imageRotation * Math.PI) / 180;
       const cos = Math.abs(Math.cos(rad));
@@ -1525,7 +1554,7 @@ export default function ContentAIGenerator({
                 alt="Edit"
                 className="w-full h-auto max-h-96 object-contain block select-none"
                 style={{
-                  transform: `rotate(${imageRotation}deg)`,
+                  transform: `scaleX(${imageFlipH ? -1 : 1}) rotate(${imageRotation}deg)`,
                   transition: 'transform 0.3s ease',
                   pointerEvents: 'none'
                 }}
@@ -1638,15 +1667,15 @@ export default function ContentAIGenerator({
             <div className="flex gap-2 justify-center mb-4 flex-wrap">
               <button
                 type="button"
-                onClick={() => handleRotateImage(-90)}
+                onClick={handleFlipImage}
                 className="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-foreground transition flex items-center"
-                title={mounted ? t('rotateLeft', { ns: 'content', defaultValue: '向左旋转' }) : 'Rotate Left'}
+                title={mounted ? t('flip', { ns: 'content', defaultValue: '翻转' }) : 'Flip'}
                 disabled={cropMode}
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" transform="rotate(-90 12 12)" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 22V2M2 12h20M4 6l4 6-4 6M20 6l-4 6 4 6" />
                 </svg>
-                {mounted ? t('rotateLeft', { ns: 'content', defaultValue: '向左旋转 90°' }) : 'Rotate Left 90°'}
+                {mounted ? t('flip', { ns: 'content', defaultValue: '翻转' }) : 'Flip'}
               </button>
               <button
                 type="button"
