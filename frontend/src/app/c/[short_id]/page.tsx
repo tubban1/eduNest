@@ -597,6 +597,10 @@ export default function FullHTMLContentPage() {
             margin: '0',
             padding: '0'
           }}
+          contentId={content.id}
+          userQuery={content.user_query || undefined}
+          imageUrl={content.image_url || undefined}
+          canEdit={!!(user && (content.created_by === user.id || user.role === 'admin'))}
           onError={(error) => {
             console.error('FullHTMLRenderer error:', error);
             setError(error);

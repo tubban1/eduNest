@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import PromptPreviewModal from './PromptPreviewModal';
 
 /**
  * FullHTMLRenderer - 稳定版
@@ -25,6 +27,14 @@ interface FullHTMLRendererProps {
   enableHeightListener?: boolean;
   codepenMode?: boolean;
   title?: string;
+  /** 内容 ID，用于显示「进入编辑」入口 */
+  contentId?: string;
+  /** 生成时的用户提示，用于 PromptPreviewModal */
+  userQuery?: string;
+  /** 生成时的上传图片，用于 PromptPreviewModal */
+  imageUrl?: string;
+  /** 是否可编辑（内容所有者或 admin） */
+  canEdit?: boolean;
 }
 
 export default function FullHTMLRenderer({
@@ -39,13 +49,50 @@ export default function FullHTMLRenderer({
   autoHeight = true,
   enableHeightListener = true,
   codepenMode = false,
-  title
+  title,
+  contentId,
+  userQuery,
+  imageUrl,
+  canEdit = false
 }: FullHTMLRendererProps) {
-  const { t } = useTranslation(['common']);
+  const { t } = useTranslation(['common', 'content']);
   const [mounted, setMounted] = useState(false);
   const [runtimeFullScreen, setRuntimeFullScreen] = useState(false);
   // 运行时检测到内容高度远超视口，覆盖静态全屏检测
   const [runtimeOverrideFullScreen, setRuntimeOverrideFullScreen] = useState(false);
+  // 右上角菜单：hover 弹出（桌面）/ click 弹出（移动端）
+  const [cornerMenuOpen, setCornerMenuOpen] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const cornerMenuRef = useRef<HTMLDivElement>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showCornerMenu = !!(userQuery || imageUrl || (contentId && canEdit));
+
+  const scheduleClose = useCallback(() => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = setTimeout(() => setCornerMenuOpen(false), 1000);
+  }, []);
+
+  const cancelClose = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => { if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current); }, []);
+
+  // 点击外部关闭菜单（移动端）
+  useEffect(() => {
+    if (!cornerMenuOpen || !showCornerMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (cornerMenuRef.current && !cornerMenuRef.current.contains(e.target as Node)) {
+        setCornerMenuOpen(false);
+      }
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [cornerMenuOpen, showCornerMenu]);
 
   useEffect(() => {
     setMounted(true);
@@ -565,6 +612,71 @@ export default function FullHTMLRenderer({
           为获得完整体验，请点击右上角菜单并选择&nbsp;&quot;在浏览器中打开&quot;。
         </div>
       )}
+
+      {/* 右上角菜单：查看提示 / 进入编辑 */}
+      {showCornerMenu && (
+        <div
+          ref={cornerMenuRef}
+          className="absolute top-2 right-2 z-30"
+          onMouseEnter={() => { cancelClose(); setCornerMenuOpen(true); }}
+          onMouseLeave={() => scheduleClose()}
+        >
+          <button
+            type="button"
+            onClick={() => { cancelClose(); setCornerMenuOpen((v) => !v); }}
+            className="opacity-80 hover:opacity-100 p-2 rounded-lg border-2 border-gray-300 dark:border-gray-500 bg-white/10 dark:bg-black/20 backdrop-blur-sm transition-opacity"
+            title={mounted ? t('generation.viewPromptDetails', { ns: 'content', defaultValue: '查看生成提示详情' }) : 'View prompt'}
+            aria-expanded={cornerMenuOpen}
+            aria-haspopup="true"
+          >
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+            </svg>
+          </button>
+          {cornerMenuOpen && (
+            <div className="absolute top-full right-0 mt-2 py-1.5 min-w-[160px] bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-xl shadow-xl border border-gray-200/50 dark:border-slate-600/50 overflow-hidden">
+              {(userQuery || imageUrl) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPromptModal(true);
+                    setCornerMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+                >
+                  <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
+                  {mounted ? t('generation.prompt', { ns: 'content', defaultValue: '提示词' }) : 'Prompt'}
+                </button>
+              )}
+              {contentId && canEdit && (
+                <Link
+                  href={`/c/edit/${contentId}`}
+                  onClick={() => setCornerMenuOpen(false)}
+                  className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+                >
+                  <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </span>
+                  {mounted ? t('actions.enterEdit', { ns: 'content', defaultValue: '编辑' }) : 'Edit'}
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <PromptPreviewModal
+        open={showPromptModal}
+        onClose={() => setShowPromptModal(false)}
+        userQuery={userQuery}
+        imageUrl={imageUrl}
+      />
 
       {/* 主 iframe */}
       {forceExternalInWechat ? (
