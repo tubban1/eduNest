@@ -914,6 +914,11 @@ class ApiClient {
       const data = await this.get(`/ai-guide/conversations?content_id=${contentId}`);
       return data.success ? data.data.conversations : [];
     },
+    /** 获取当前用户/访客在 ai_conversations 中的对话数（3 次以上不显示气泡提示） */
+    getConversationCount: async () => {
+      const data = await this.get('/ai-guide/conversation-count');
+      return data?.success ? (data.data?.count ?? 0) : 0;
+    },
     getMessages: async (conversationId: string) => {
       const data = await this.get(`/ai-guide/messages?conversation_id=${conversationId}`);
       return data.success ? data.data.messages : [];

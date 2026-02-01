@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/api';
 
 interface AIGuideButtonProps {
   onClick: () => void;
   hasNewMessage?: boolean;
 }
 
-const STORAGE_KEY = 'ai_guide_button_clicked';
+const BUBBLE_HIDE_MS = 10000;
 
 export const AIGuideButton: React.FC<AIGuideButtonProps> = ({ onClick, hasNewMessage }) => {
   const { t } = useTranslation('aiGuide');
@@ -16,21 +17,29 @@ export const AIGuideButton: React.FC<AIGuideButtonProps> = ({ onClick, hasNewMes
   const bubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // 检查用户是否已经点击过
-    const hasClicked = typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY) === 'true';
-    
-    if (!hasClicked) {
-      // 5秒后显示气泡提示
-      bubbleTimeoutRef.current = setTimeout(() => {
-        setShowBubble(true);
-        // 10秒后自动隐藏气泡
-        setTimeout(() => {
-          setShowBubble(false);
-        }, 10000);
-      }, 5000);
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        // ai_conversations 中 user_id 出现 3 次以上则不显示提示
+        const count = await api.aiGuide.getConversationCount();
+        if (cancelled || count >= 3) return;
 
+        setShowBubble(true);
+        bubbleTimeoutRef.current = setTimeout(() => {
+          if (!cancelled) setShowBubble(false);
+        }, BUBBLE_HIDE_MS);
+      } catch {
+        // API 失败时默认显示
+        if (!cancelled) {
+          setShowBubble(true);
+          bubbleTimeoutRef.current = setTimeout(() => {
+            if (!cancelled) setShowBubble(false);
+          }, BUBBLE_HIDE_MS);
+        }
+      }
+    })();
     return () => {
+      cancelled = true;
       if (bubbleTimeoutRef.current) {
         clearTimeout(bubbleTimeoutRef.current);
       }
@@ -38,13 +47,7 @@ export const AIGuideButton: React.FC<AIGuideButtonProps> = ({ onClick, hasNewMes
   }, []);
 
   const handleClick = () => {
-    // 记录用户点击过
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, 'true');
-    }
-    // 隐藏气泡
     setShowBubble(false);
-    // 清除定时器
     if (bubbleTimeoutRef.current) {
       clearTimeout(bubbleTimeoutRef.current);
     }
@@ -102,8 +105,7 @@ export const AIGuideButton: React.FC<AIGuideButtonProps> = ({ onClick, hasNewMes
               <div className="ai-guide-grain" />
             </div>
           </div>
-          {/* 图中文字胶囊去掉，仅保留中心图标 */}
-          <MessageCircle className="w-6 h-6 text-white/90 absolute inset-0 m-auto drop-shadow-[0_4px_10px_rgba(15,23,42,0.45)] pointer-events-none" />
+          <MessageCircle className="w-4 h-4 text-white/90 absolute inset-0 m-auto drop-shadow-[0_2px_6px_rgba(15,23,42,0.4)] pointer-events-none" />
         </div>
         {hasNewMessage && (
           <span className="ai-guide-dot" />

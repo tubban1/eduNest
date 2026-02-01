@@ -613,11 +613,11 @@ export default function FullHTMLRenderer({
         </div>
       )}
 
-      {/* 右上角菜单：查看提示 / 进入编辑 */}
+      {/* 右上角菜单：与下方 aiGuide 按钮右对齐（right-6） */}
       {showCornerMenu && (
         <div
           ref={cornerMenuRef}
-          className="absolute top-2 right-2 z-30"
+          className="absolute top-2 right-6 z-30"
           onMouseEnter={() => { cancelClose(); setCornerMenuOpen(true); }}
           onMouseLeave={() => scheduleClose()}
         >

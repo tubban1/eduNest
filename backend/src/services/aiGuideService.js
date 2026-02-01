@@ -827,11 +827,37 @@ const getConversations = async (contentId, userId) => {
   }
 };
 
+/**
+ * 统计用户在 ai_conversations 中的对话数（用于气泡提示：3 次以上不显示）
+ * @param {string} userId - user_id (UUID) 或 visitor_id
+ */
+const getConversationCount = async (userId) => {
+  if (!userId) return 0;
+  try {
+    const isVisitor = isVisitorId(userId);
+    let query = supabase
+      .from('ai_conversations')
+      .select('*', { count: 'exact', head: true });
+    if (isVisitor) {
+      query = query.eq('visitor_id', userId).is('user_id', null);
+    } else {
+      query = query.eq('user_id', userId).is('visitor_id', null);
+    }
+    const { count, error } = await query;
+    if (error) throw error;
+    return count || 0;
+  } catch (error) {
+    console.error('Error in getConversationCount:', error);
+    return 0;
+  }
+};
+
 module.exports = {
   getOrGenerateMetadata,
   initConversation,
   handleChat,
   getMessages,
-  getConversations
+  getConversations,
+  getConversationCount
 };
 

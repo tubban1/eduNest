@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const aiGuideService = require('../services/aiGuideService');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const { validateVisitorId } = require('../middleware/visitorId');
+const { isValidVisitorId } = require('../utils/visitorId');
 const visitorUsageService = require('../services/visitorUsageService');
 const DatabaseService = require('../services/database');
 const { t } = require('../utils/i18n');
@@ -99,6 +100,26 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     res.json({ success: true, data: { conversations } });
   } catch (error) {
     console.error('API Error /conversations:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取当前用户/访客的 ai_conversations 对话数（用于气泡提示：3 次以上不显示）
+router.get('/conversation-count', optionalAuth, async (req, res) => {
+  try {
+    let userId = null;
+    if (req.user?.id) {
+      userId = req.user.id;
+    } else {
+      const visitorId = req.headers['x-visitor-id'];
+      if (visitorId && isValidVisitorId(visitorId)) {
+        userId = visitorId;
+      }
+    }
+    const count = await aiGuideService.getConversationCount(userId);
+    res.json({ success: true, data: { count } });
+  } catch (error) {
+    console.error('API Error /conversation-count:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
