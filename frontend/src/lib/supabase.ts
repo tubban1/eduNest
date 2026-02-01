@@ -26,13 +26,39 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase配置无效');
 }
 
+// 安全 storage：localStorage 不可用时（Android WebView 等）回退到内存，避免 session 读取失败
+const STORAGE_KEY = 'sb-zayoczhybuegvtpcsgso-auth-token';
+const memoryStore: Record<string, string> = {};
+const safeStorage = typeof window !== 'undefined' ? {
+  getItem: (key: string): string | null => {
+    try {
+      return window.localStorage.getItem(key) ?? memoryStore[key] ?? null;
+    } catch {
+      return memoryStore[key] ?? null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {
+      memoryStore[key] = value;
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch { /* ignore */ }
+    delete memoryStore[key];
+  },
+} : undefined;
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,        // 启用自动刷新
     persistSession: true,          // 持久化session
     detectSessionInUrl: true,      // 检测URL中的session
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'sb-zayoczhybuegvtpcsgso-auth-token',
+    storage: safeStorage,
+    storageKey: STORAGE_KEY,
     debug: false  // 关闭调试日志
   },
   global: {
