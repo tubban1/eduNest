@@ -33,15 +33,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // 防止并发调用 mergeOnLogin 的内存锁（组件外部，避免重复创建）
 const mergeOnLoginLock = new Map<string, boolean>();
 
+// Supabase 相关 fetch 超时（三星等设备上 DNS/TLS 慢，避免永久 pending）
+const AUTH_FETCH_TIMEOUT_MS = 10000;
+
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = AUTH_FETCH_TIMEOUT_MS
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(id));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // 检查用户认证状态 - 简化版本，依赖Supabase自动刷新
+  // 检查用户认证状态 - 带超时，避免三星等设备上永久 loading
   const checkAuthStatus = async () => {
     try {
-      // 使用Supabase的getSession方法，它会自动处理token刷新
+      // 使用Supabase的getSession方法（通常读本地存储，较快）
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
@@ -59,28 +72,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // 注入 API 客户端令牌
       api.setToken(session.access_token);
-
-      // 获取用户信息
       const userData = session.user;
 
-      // 获取用户角色信息
+      // 角色请求加超时，超时则用默认 role
       let role = 'user';
       try {
-      const roleResponse = await fetch(`https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users?id=eq.${userData.id}&select=role`, {
-        headers: {
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-      if (roleResponse.ok) {
-        const roleData = await roleResponse.json();
-        role = roleData?.[0]?.role || 'user';
+        const roleResponse = await fetchWithTimeout(
+          `https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users?id=eq.${userData.id}&select=role`,
+          {
+            headers: {
+              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          }
+        );
+        if (roleResponse.ok) {
+          const roleData = await roleResponse.json();
+          role = roleData?.[0]?.role || 'user';
         }
       } catch (roleError) {
-        console.warn('Failed to get user role:', roleError);
+        console.warn('Failed to get user role (timeout or error):', roleError);
       }
 
       const authUser: AuthUser = {
@@ -92,9 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       setUser(authUser);
       setLoading(false);
-      
-      // 注意：首次登录处理（合并游客数据、发放初始积分）统一在 onAuthStateChange 中处理
-      // 这里只检查状态，不执行登录后的操作，避免重复调用
     } catch (error) {
       console.error('Auth check error:', error);
       setUser(null);
@@ -104,7 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // 检测并处理session冲突
     const handleSessionConflict = async () => {
       if (detectSessionConflict()) {
         console.warn('Session conflict detected, enforcing single account...');
@@ -113,7 +121,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     handleSessionConflict();
-    checkAuthStatus();
+    
+    // 初始化链最大等待：超时后强制结束 loading，避免三星等设备上永久卡住
+    const authMaxWaitMs = 8000;
+    const maxWaitId = setTimeout(() => {
+      setLoading(prev => {
+        if (prev) {
+          console.warn('Auth init timeout, allowing page to render');
+          return false;
+        }
+        return prev;
+      });
+    }, authMaxWaitMs);
+    
+    checkAuthStatus().finally(() => clearTimeout(maxWaitId));
     
     // 启动token监控（每1分钟检查一次）
     tokenMonitor.startMonitoring(60 * 1000);
@@ -140,30 +161,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await enforceSingleAccount();
         api.setToken(session.access_token);
           
-          // 获取用户信息并设置状态
+          // 获取用户信息并设置状态（带超时，避免三星等设备上 pending）
           try {
-            const userData = await fetch('https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/user', {
-              headers: {
-                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-                'Authorization': `Bearer ${session.access_token}`
-              }
-            });
-            
-            if (userData.ok) {
-              const user = await userData.json();
-              
-              // 获取用户角色信息
-              const roleResponse = await fetch(`https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users?id=eq.${user.id}&select=role`, {
+            const userData = await fetchWithTimeout(
+              'https://zayoczhybuegvtpcsgso.supabase.co/auth/v1/user',
+              {
                 headers: {
                   'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
                   'Authorization': `Bearer ${session.access_token}`
                 }
-              });
-
+              }
+            );
+            
+            if (userData.ok) {
+              const user = await userData.json();
+              
               let role = 'user';
-              if (roleResponse.ok) {
-                const roleData = await roleResponse.json();
-                role = roleData?.[0]?.role || 'user';
+              try {
+                const roleResponse = await fetchWithTimeout(
+                  `https://zayoczhybuegvtpcsgso.supabase.co/rest/v1/users?id=eq.${user.id}&select=role`,
+                  {
+                    headers: {
+                      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+                      'Authorization': `Bearer ${session.access_token}`
+                    }
+                  }
+                );
+                if (roleResponse.ok) {
+                  const roleData = await roleResponse.json();
+                  role = roleData?.[0]?.role || 'user';
+                }
+              } catch {
+                // 超时或错误时使用默认 role
               }
 
               const authUser = {

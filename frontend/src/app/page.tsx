@@ -14,7 +14,7 @@ import { cache, generateCacheKey } from '@/lib/cache';
 export default function HomePage() {
   const { t, i18n } = useTranslation(['home', 'common', 'content', 'navigation']);
   const [mounted, setMounted] = useState(false);
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, signOut } = useAuth();
   const [contents, setContents] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -371,14 +371,7 @@ export default function HomePage() {
     );
   }
 
-  if (authLoading) {
-    return (
-      <div className="text-center text-muted-foreground py-12">
-        <div>{mounted ? t('loading', { ns: 'common', defaultValue: '加载中...' }) : 'Loading...'}</div>
-      </div>
-    );
-  }
-
+  // 不阻塞于 auth：卡片（公开内容）与 auth 并行加载，避免三星等设备上 auth 慢导致永远 loading
   return (
     <div className="flex min-h-screen bg-background">
       {/* 桌面端侧边栏 */}

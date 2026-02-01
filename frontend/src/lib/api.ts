@@ -38,17 +38,12 @@ class ApiClient {
     this.token = null;
   }
 
-  private async getLatestToken(retryCount = 0): Promise<string | null> {
-    const maxRetries = 2; // 首次 + 1 次重试（Android 上 Supabase 恢复 session 可能延迟）
+  private async getLatestToken(): Promise<string | null> {
     try {
       // 首先尝试从Supabase获取当前session（这会自动刷新过期的token）
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        if (retryCount < maxRetries) {
-          await new Promise(r => setTimeout(r, 400));
-          return this.getLatestToken(retryCount + 1);
-        }
         console.error('获取session失败:', error);
         return null;
       }
@@ -66,9 +61,8 @@ class ApiClient {
           
           if (refreshError) {
             console.error('Token刷新失败:', refreshError);
-            if (typeof window !== 'undefined') {
-              try { localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token'); } catch { /* ignore */ }
-            }
+            // 如果刷新失败，清除本地存储并重定向到登录页
+            localStorage.removeItem('sb-zayoczhybuegvtpcsgso-auth-token');
             this.clearToken();
             if (typeof window !== 'undefined') {
               window.location.href = '/login';
@@ -84,31 +78,17 @@ class ApiClient {
         return this.convertSupabaseToken(session.access_token);
       }
       
-      // 如果Supabase没有session，尝试从localStorage获取（兼容旧版本 / Android WebView）
-      if (typeof window !== 'undefined') {
-        try {
-          const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
-          if (sessionStr) {
-            const parsed = JSON.parse(sessionStr);
-            if (parsed?.access_token) {
-              return this.convertSupabaseToken(parsed.access_token);
-            }
-          }
-        } catch { /* localStorage 可能受限 */ }
-      }
-      
-      // Android：首次 getSession 可能尚未恢复，延迟后重试一次
-      if (retryCount < maxRetries) {
-        await new Promise(r => setTimeout(r, 400));
-        return this.getLatestToken(retryCount + 1);
+      // 如果Supabase没有session，尝试从localStorage获取（兼容旧版本）
+      const sessionStr = localStorage.getItem('sb-zayoczhybuegvtpcsgso-auth-token');
+      if (sessionStr) {
+        const session = JSON.parse(sessionStr);
+        if (session?.access_token) {
+          return this.convertSupabaseToken(session.access_token);
+        }
       }
       
       return null;
     } catch (error) {
-      if (retryCount < maxRetries) {
-        await new Promise(r => setTimeout(r, 400));
-        return this.getLatestToken(retryCount + 1);
-      }
       console.error('Failed to get token:', error);
       return null;
     }
@@ -160,7 +140,6 @@ class ApiClient {
     const config: RequestInit = {
       ...options,
       headers,
-      mode: 'cors', // 显式指定，确保 Android Chrome 等正确发送跨域请求
     };
 
     try {
