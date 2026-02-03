@@ -1742,7 +1742,7 @@ export default function ContentAIGenerator({
         type={trialStatus?.content_generated ? 'trialUsed' : 'generation'}
         onRegister={() => setShowRegistrationPrompt(false)}
         onDismiss={() => setShowRegistrationPrompt(false)}
-        visible={showRegistrationPrompt}
+        visible={showRegistrationPrompt && !user}
       />
       </div>
     </div>
