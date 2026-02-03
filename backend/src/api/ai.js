@@ -52,7 +52,8 @@ router.post('/generate', [
     let shouldConsume = true;
     if (userId) {
       const { data: subscription } = await DatabaseService.getActiveSubscription(userId);
-      if (subscription && subscription.plan === 'pro') {
+      if (subscription && (subscription.plan === 'pro' || subscription.plan === 'monthly' || subscription.plan === 'yearly')) {
+        // Pro（月付/年付）订阅用户不扣积分
         shouldConsume = false;
       } else {
         const { data: balance } = await DatabaseService.getCreditsBalance(userId);
@@ -545,7 +546,8 @@ router.post('/generate-async', [
     let shouldConsume = true;
     if (userId) {
       const { data: subscription } = await DatabaseService.getActiveSubscription(userId);
-      if (subscription && subscription.plan === 'pro') {
+      if (subscription && (subscription.plan === 'pro' || subscription.plan === 'monthly' || subscription.plan === 'yearly')) {
+        // Pro（月付/年付）订阅用户不扣积分
         shouldConsume = false;
       } else {
         const { data: balance } = await DatabaseService.getCreditsBalance(userId);

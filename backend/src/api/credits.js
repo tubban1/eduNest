@@ -37,9 +37,9 @@ router.post('/consume', authenticateToken, async (req, res) => {
     const { amount = 1, reason = 'usage' } = req.body || {};
     if (amount <= 0) return res.status(400).json({ success: false, error: 'amount 必须为正数' });
 
-    // 判断订阅豁免
+    // 判断订阅豁免（Pro / 月付 / 年付订阅不扣积分）
     const { data: subscription } = await DatabaseService.getActiveSubscription(userId);
-    if (subscription && subscription.plan === 'pro') {
+    if (subscription && (subscription.plan === 'pro' || subscription.plan === 'monthly' || subscription.plan === 'yearly')) {
       return res.json({ success: true, data: { balance: null, skipped: true, reason: 'pro_subscription' } });
     }
 

@@ -801,7 +801,7 @@ class AsyncGenerationQueue {
         if (contentUpdateSuccess && task.user_id) {
           try {
             const { data: subscription } = await DatabaseService.getActiveSubscription(task.user_id);
-            if (!subscription || subscription.plan !== 'pro') {
+            if (!subscription || !['pro', 'monthly', 'yearly'].includes(subscription.plan)) {
               const CREDITS_COST = 10; // AI 内容生成消耗 10 积分
               await DatabaseService.addCreditChange(task.user_id, 'usage', -CREDITS_COST);
               logger.info(`[Process Task] ✅ 扣除积分成功: user_id=${task.user_id}, credits=-${CREDITS_COST}`);
