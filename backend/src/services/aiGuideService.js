@@ -10,27 +10,50 @@ const metadataInFlight = new Map(); // contentId -> Promise<metadata>
 const contentInitialInFlight = new Map(); // contentId -> Promise<{content, model, usage, source}>
 
 // Metadata Extraction Prompt
-const METADATA_PROMPT = `You are an advanced educational content analyzer. Your task is to extract comprehensive structured metadata from the provided HTML content to power an AI Learning Guide.
-
-The content could be ANYTHING: a 3D experiment, a math problem, a business case chart, a game, a slide deck, or a simple interactive article.
+// canonical = 固定 schema，供 buildTeachingSnapshot / Realtime / AI Guide 稳定解析
+// extras = 灵活格式，供 AI Guide 获取更丰富上下文
+const METADATA_PROMPT = `You are an advanced educational content analyzer. Extract structured metadata from the provided HTML.
 
 RULES:
-1. **Analyze Deeply**: Look at HTML structure, CSS styles, and JavaScript logic to understand what the page DOES, not just what it looks like.
-2. **Identify Technology**: Recognize libraries like Three.js, PixiJS, D3, ECharts, Vue, React, etc., to better describe visual elements.
-3. **Capture Interactivity**: Identify HOW a user interacts (clicks, drags, gestures, scrolls, inputs). What changes when they interact?
-4. **Extract Pedagogy**: What is the learning goal? Is it exploring, solving, or reading?
-5. **No Hallucinations**: Only describe features actually present in the code.
+1. Analyze HTML structure, CSS, JS logic — what the page DOES, not just looks like.
+2. Identify technology (Three.js, Vue, D3, etc.).
+3. Capture interactivity: how users interact and what changes.
+4. Extract pedagogy: exploring, solving, or reading?
+5. No hallucinations: only describe features present in the code.
 
-OUTPUT FORMAT:
-- Return ONLY a valid JSON object.
-- The structure MUST be tailored to the current HTML page.
-- You may:
-  - Use the recommended grouping keys: "meta", "objectives", "sections", "conceptMap", "visualElements", "interactions", "actions", "pageStateSchema", "keywords", **or**
-  - Design a more page-specific schema if that matches the content better.
-- Field names should be meaningful and consistent within the JSON.
-- Do NOT include fields that do not make sense for this page.
+OUTPUT: Return ONLY valid JSON with two keys:
 
-Now analyze the provided HTML code and generate the metadata JSON that best fits it.`;
+1. "canonical" (required) — FIXED schema. 
+
+{
+  "topic": "string, one-line theme",
+  "language": "string, e.g. zh-CN | en-US",
+  "stages": [
+    {
+      "index": 1,
+      "title": "string",
+      "description": "string, optional",
+      "key_concept": "string, optional",
+      "formula": "string, optional, LaTeX in this step",
+      "pedagogy": "string, optional, e.g. 交互式实验 | Quiz | 讲解",
+      "interactivity_hint": "string, optional, e.g. 拖动滑块；点击下一步"
+    }
+  ],
+  "learning_objectives": ["string"],
+  "concept_map": [{"concept": "string", "formula": "string, optional", "description": "string"}],
+  "interactions_summary": [{"action": "string", "result": "string"}],
+  "visual_hints": "string or array, optional"
+}
+
+- stages[].index: MUST start from 1 (1-based, not 0).
+- concept_map: concept DEFINITIONS for "what is X?" — use {concept, formula?, description}, NOT source/target/relationship.
+- interactions_summary: ARRAY of {action, result}. Omit optional fields if not applicable.
+
+2. "extras" (optional) — FLEXIBLE format. Any page-specific structure: visualElements, pageStateSchema, gameMechanics, logicSchema, problemStatement, etc.
+
+Omit fields that do not apply. Escape LaTeX backslashes in JSON: use \\\\ for \\ (e.g. \\\\frac not \\frac).
+
+Analyze the HTML and output the JSON.`;
 
 // AI Guided Learning System Prompt
 const SYSTEM_PROMPT_TEMPLATE = `
