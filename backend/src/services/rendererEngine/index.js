@@ -9,6 +9,7 @@ const RendererEngine = require('./RendererEngine');
 const MathChecker = require('./checkers/MathChecker');
 const RuntimeChecker = require('./checkers/RuntimeChecker');
 const LibraryChecker = require('./checkers/LibraryChecker');
+const SimpleModeChecker = require('./checkers/SimpleModeChecker');
 const MathFixer = require('./fixers/MathFixer');
 const RuntimeFixer = require('./fixers/RuntimeFixer');
 const LibraryFixer = require('./fixers/LibraryFixer');
@@ -17,8 +18,9 @@ const LibraryFixer = require('./fixers/LibraryFixer');
 function createRendererEngine(options = {}) {
   const engine = new RendererEngine(options);
   
-  // 注册默认 Checkers（按优先级：库 → 数学 → 运行时）
-  engine.registerChecker(new LibraryChecker());  // 优先级 1，最先检测
+  // 注册默认 Checkers（按优先级：简单模式 → 库 → 数学 → 运行时）
+  engine.registerChecker(new SimpleModeChecker()); // 优先级 0，最先检测高危 DOM 模式
+  engine.registerChecker(new LibraryChecker());  // 优先级 1
   engine.registerChecker(new MathChecker());     // 优先级 2
   engine.registerChecker(new RuntimeChecker());  // 优先级 3
   

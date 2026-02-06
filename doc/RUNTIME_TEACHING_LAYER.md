@@ -11,12 +11,13 @@
 2. [当前内容架构与 Runtime API 注入策略](#二当前内容架构与-runtime-api-注入策略)
 3. [设计时 vs 运行时](#三设计时-vs-运行时)
 4. [Teaching Runtime Layer](#四teaching-runtime-layer)
-5. [metadata、metadata_realtime 与 TeachingSnapshot（含固定格式二选一）](#五metadatametadata_realtime-与-teachingsnapshot-的关系)
+5. [metadata_json 与 TeachingSnapshot](#五metadata_json-与-teachingsnapshot-的关系)
 6. [Realtime 与 TeachingSnapshot 集成](#六realtime-与-teachingsnapshot-集成)
 7. [Runtime API 与上下文上报](#七runtime-api-与上下文上报)
 8. [实现路线图](#八实现路线图)
 9. [参考文档](#九参考文档)
 10. [与现有文档的关系](#十与现有文档的关系)
+11. [附录 A：Prompt 修改方案](#附录-a-prompt-修改方案)
 
 ---
 
@@ -28,7 +29,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  AI Generated Content（设计时）                                         │
 │    ├── full_html / 组件                                                 │
-│    └── metadata_json（若约定固定格式则可提供 stages、keyConcept 等）     │
+│    └── metadata_json（canonical + extras，canonical 供 TeachingSnapshot）│
 ├─────────────────────────────────────────────────────────────────────────┤
 │  Runtime Engine（平台控制）                                               │
 │    ├── UI State 收集（getUIState、data-*、currentStage）                  │
@@ -125,12 +126,10 @@ AI 生成（Prompt）→ full_html（HTML + Vue）
 
 ### 3.1 设计时（Content + metadata_json）
 
-- **来源**：AI 生成内容时产出，或人工配置。
-- **理想角色**：告诉 Runtime「有哪些 stage、哪些是 keyConcept、哪些交互是重要信号」。
-- **当前事实**：**metadata_json 没有固定输出格式**，生成阶段 AI 返回的 metadata 结构不统一，因此**拿不到确定的 stages、keyConcept 等**，TeachingSnapshot 与 buildTeachingSnapshot 无法稳定依赖它。
+- **来源**：AI 生成内容时产出，或 AI Guide analyze HTML 时产出，历史内容已通过迁移脚本统一格式。
+- **角色**：告诉 Runtime「有哪些 stage、哪些是 keyConcept、哪些交互是重要信号」。
+- **当前格式**：**metadata_json 已统一为 `{ canonical, extras }` 结构**。**canonical** 为固定 schema（topic、language、stages、learning_objectives、concept_map、interactions_summary、visual_hints），可直接用于 Realtime 生成 TeachingSnapshot；**extras** 为页面特有信息（visualElements、pageStateSchema、gameMechanics 等），供 AI Guide 获取更丰富上下文。详见 [metadata_unified_schema.md](./metadata_unified_schema.md)。
 - **不包含**：当前步骤、学生是否卡住、是否刚点了 hint 等**实时状态**。
-
-要获得**确定的** stages、keyConcept 等信息，**必须在某一处约定固定格式**：要么在 **metadata_json**（生成时），要么在 **metadata_realtime**（analyze 时），见 [5.3 固定格式二选一](#53-固定格式二选一或兼有)。
 
 ### 3.2 运行时（UI State + Events + TeachingSnapshot）
 
@@ -193,20 +192,23 @@ AI 生成（Prompt）→ full_html（HTML + Vue）
 
 ```javascript
 // buildTeachingSnapshot.js（新建）
+// meta 取 metadata_json.canonical
 function buildTeachingSnapshot({ meta, currentStage, uiState }) {
+  const stageFromMeta = meta?.stages?.find(s => s.index === currentStage?.index);
+
   return {
     role: 'ai_learning_guide',
-    topic: meta?.subtopic || meta?.topic || '当前内容',
+    topic: meta?.topic || '当前内容',
     language: meta?.language || 'zh-CN',
 
     current_stage: currentStage ? {
       index: currentStage.index,
-      title: currentStage.title,
-      visible_expression: currentStage.visibleExpression || currentStage.formula || null,
-      key_rule: currentStage.keyConcept || currentStage.keyRule || null,
+      title: currentStage.title || stageFromMeta?.title,
+      visible_expression: currentStage.visibleExpression || stageFromMeta?.formula || currentStage.formula || null,
+      key_rule: stageFromMeta?.key_concept || currentStage.keyConcept || currentStage.keyRule || null,
     } : null,
 
-    learning_goal_now: inferGoal(currentStage),
+    learning_goal_now: inferGoal(currentStage, stageFromMeta),
 
     student_state: {
       has_interacted: uiState?.hasInteracted ?? false,
@@ -222,102 +224,86 @@ function buildTeachingSnapshot({ meta, currentStage, uiState }) {
   };
 }
 
-function inferGoal(stage) {
+function inferGoal(currentStage, stageFromMeta) {
+  const stage = currentStage || stageFromMeta;
   if (!stage) return '理解当前步骤';
-  const map = {
-    'Base Unification': 'Rewrite different bases into the same base',
-    'Factoring': 'Identify and extract common factors',
-    'Exponent Multiplication': 'Apply exponent multiplication correctly',
-  };
-  return map[stage.title] || 'Understand the current transformation';
+  return stageFromMeta?.description || stage.description || '理解当前步骤';
 }
 
 module.exports = { buildTeachingSnapshot };
 ```
 
-- **meta**：来自 content 的 metadata_json（或后端按 content_id 查询到的元数据）。
-- **currentStage**：由前端在「阶段变化」或「上下文更新」时上报。
+- **meta**：来自 content 的 **metadata_json.canonical**（或后端按 content_id 查询到的元数据，取 `.canonical` 部分）。canonical 含 topic、language、stages、learning_objectives 等固定字段，可直接用于 TeachingSnapshot。
+- **currentStage**：由前端在「阶段变化」或「上下文更新」时上报；可与 meta.stages 按 index 匹配，取对应 stage 的 formula、key_concept 等。
 - **uiState**：由前端通过 Runtime API / postMessage 汇总（getUIState + 事件）。
 
 ---
 
-## 五、metadata、metadata_realtime 与 TeachingSnapshot 的关系
+## 五、metadata_json 与 TeachingSnapshot 的关系
 
-### 5.1 metadata 与 TeachingSnapshot
+### 5.1 metadata_json 结构（已统一）
 
-| 维度 | metadata_json | TeachingSnapshot |
-|------|----------------|-------------------|
-| **何时产生** | 设计时（生成/配置） | 运行时（每次需要更新 Realtime 时） |
-| **谁产生** | AI 或人工 | 平台 Runtime 引擎 |
-| **内容** | 全量结构、stages、signals、技术栈等 | 当前步骤、当前目标、学生状态、约束 |
-| **用途** | 告诉 Runtime「有哪些阶段、哪些是关键步骤、卡顿阈值」 | 告诉 Realtime「此刻该说什么、不该说什么」 |
+**metadata_json** 已统一为 `{ canonical, extras }` 格式：
+
+- **canonical**：固定 schema，供 Realtime 生成 TeachingSnapshot。含 topic、language、stages（1-based index）、learning_objectives、concept_map、interactions_summary、visual_hints 等。
+- **extras**：灵活格式，页面特有信息（visualElements、pageStateSchema、gameMechanics 等），供 AI Guide 文字对话获取更丰富上下文。
+
+**来源**：AI Guide analyze HTML 时产出；历史内容已通过迁移脚本统一为该格式。详见 [metadata_unified_schema.md](./metadata_unified_schema.md)。
+
+### 5.2 metadata_json 与 TeachingSnapshot
+
+| 维度 | metadata_json.canonical | TeachingSnapshot |
+|------|--------------------------|------------------|
+| **何时产生** | 设计时（analyze/迁移） | 运行时（每次需要更新 Realtime 时） |
+| **谁产生** | AI 分析 或 迁移脚本 | 平台 Runtime 引擎 |
+| **内容** | 全量结构：topic、stages、learning_objectives、concept_map 等 | 当前步骤、当前目标、学生状态、约束 |
+| **用途** | 告诉 buildTeachingSnapshot「有哪些阶段、keyConcept、公式」 | 告诉 Realtime「此刻该说什么、不该说什么」 |
 | **更新频率** | 基本不变 | 每 3–10 秒最多 1 次，且仅在「有意义变化」时 |
 
-**结论**：metadata 是 Teaching Runtime Layer 的**输入**之一；TeachingSnapshot 是 Layer 的**输出**，专门喂给 Realtime。不要用 metadata 的子集或「另一份 realtime 专用 metadata」直接当 instructions。
+**结论**：**metadata_json.canonical** 是 Teaching Runtime Layer 的**输入**之一；TeachingSnapshot 是 Layer 的**输出**，专门喂给 Realtime。buildTeachingSnapshot 从 canonical 读取 topic、language、stages，结合 currentStage、uiState 生成 TeachingSnapshot。
 
-### 5.2 metadata_realtime：给 AI 老师的「大致在讲什么」
-
-即使不拿到每个 section/stage 的完整结构，AI 老师也需要知道**这节课大致在做什么**，才能做有针对性的引导。建议在 **AI Guide 分析内容（analyze HTML）时** 产出 **metadata_realtime**，且**建议采用固定格式**（见 5.3），以便 buildTeachingSnapshot 稳定解析 stages、keyConcept 等。
-
-- **定位**：对当前内容的简洁、**结构化**描述，供 Realtime / TeachingSnapshot 使用。
-- **产出时机**：内容被打开或需要为 AI Guide（含 Realtime）提供上下文时，由「分析 full_html」的流程产出（analyze 请求返回**固定 schema** 的 JSON）。
-- **与 metadata_json 的区别**：metadata_json 是生成时的输出（当前无固定格式）；metadata_realtime 是 **analyze 时的输出**，若约定固定格式，则所有经过 analyze 的内容都能得到确定的 stages、keyConcept，且可覆盖历史内容。
-
-### 5.3 固定格式二选一（或兼有）
-
-**问题**：metadata_json 目前无固定输出格式 → 无法稳定得到 stages、keyConcept 等 → TeachingSnapshot 无法依赖。
-
-**结论**：要获得**确定的** stages、keyConcept 等信息，必须在**至少一处**约定固定格式：
-
-| 方案 | 约定位置 | 产出时机 | 优点 | 缺点 |
-|------|----------|----------|------|------|
-| **A：metadata_json 固定格式** | 生成内容的 Prompt / 解析逻辑 | 内容生成时 | 新内容自带确定结构；与 full_html 同源，一致性好 | 需改生成 Prompt 与存储；历史内容仍无结构，需兜底 |
-| **B：metadata_realtime 固定格式** | Analyze HTML 的 Prompt / 接口返回 | 打开内容或请求 AI Guide 时 | 不依赖生成阶段；所有内容（含历史）经一次 analyze 即得统一结构 | 需在打开或使用 AI Guide 时调用 analyze；有额外请求 |
-| **A + B 兼有** | 两处都约定 | 生成 + analyze | 新内容有 metadata_json；历史或未带 metadata 的内容用 metadata_realtime 兜底；可互相校验 | 需维护两套 schema，建议字段对齐便于合并 |
-
-**推荐**：至少落实**其一**；若希望新内容与历史内容都能稳定拿到 stages/keyConcept，建议 **B（metadata_realtime 固定格式）** 必做，**A 可选**（新内容生成时即带固定格式则更佳）。
-
----
-
-**方案 A：metadata_json 固定格式（生成时）**
-
-在**内容生成 Prompt** 中约定：AI 除输出 full_html 外，必须输出一个 **metadata** 对象，且结构固定。例如最小 schema：
+### 5.3 canonical Schema（供 buildTeachingSnapshot 消费）
 
 ```json
 {
-  "topic": "string，一句话主题",
+  "topic": "string",
   "language": "zh-CN",
   "stages": [
-    { "index": 1, "title": "string", "key_concept": "string" }
+    {
+      "index": 1,
+      "title": "string",
+      "description": "string, 可选",
+      "key_concept": "string, 可选",
+      "formula": "string, 可选",
+      "pedagogy": "string, 可选",
+      "interactivity_hint": "string, 可选"
+    }
   ],
-  "signals": { "stall_threshold_sec": 60, "critical_steps": [1, 2] }
+  "learning_objectives": ["string"],
+  "concept_map": [{"concept": "string", "formula": "string, 可选", "description": "string"}],
+  "interactions_summary": [{"action": "string", "result": "string"}],
+  "visual_hints": "string or array, 可选"
 }
 ```
 
-- 解析：从 AI 返回的 JSON 中提取该对象，写入 content 表或单独字段；buildTeachingSnapshot 读取时按此 schema 解析。
+**buildTeachingSnapshot 的输入约定**：入参 `meta` 取 `metadata_json.canonical`。字段名一致（stages[].index / title / key_concept / formula），current_stage、learning_goal_now 等从 meta.stages 按 currentStage.index 匹配取值。
 
----
+### 5.4 阶段标识兼容（代码中的 stage 名与 metadata 的 index）
 
-**方案 B：metadata_realtime 固定格式（analyze 时）**
+- **canonical 侧**：`metadata_json.canonical.stages` 使用 **1-based 数字 index**（1, 2, 3, …）表示阶段；`buildTeachingSnapshot` 通过 `meta.stages.find(s => s.index === currentStage.index)` 匹配当前阶段。
+- **内容侧**：业务逻辑里常用**字符串阶段名**（如 `'identify'`、`'move'`）或 0-based 数组下标，二者与 canonical 的 1-based index 需要统一。
 
-在 **AI Guide 分析 HTML（analyze）** 的请求/响应中约定：analyze 的**输出**必须为固定 schema，便于平台与 buildTeachingSnapshot 直接使用。例如最小 schema：
+**约定（兼容做法）**：
 
-```json
-{
-  "topic_short": "string，一句话主题",
-  "language": "zh-CN",
-  "stages": [
-    { "index": 1, "title": "string", "key_concept": "string" }
-  ]
-}
-```
+1. **上报与 UI 状态必须带 1-based stageIndex**  
+   内容在调用 `dispatchLearningEvent('stage_change', { stage, stageIndex })` 或通过 data-* / getUIState 暴露状态时，**必须**提供 **stageIndex（1-based）**，以便与 canonical.stages[].index 一致。内部仍可使用 stage 名或 0-based 下标做逻辑判断。
+2. **映射方式**  
+   若内容只有阶段名或 0-based 下标，应在发事件或写 data-* 时做一次映射，例如：  
+   `stageIndex = 内部阶段列表.findIndex(s => s.id === currentStage) + 1`，或维护一份 `{ 'identify': 1, 'move': 2, ... }` 再写入 `data-stage-index` 与事件 payload。
+3. **可选：canonical 中为 stage 增加 id**  
+   若希望在平台侧也能按「阶段名」匹配，可在 canonical 的 stages 中增加可选字段 **id**（如 `id: 'identify'`）。`buildTeachingSnapshot` 可扩展为：优先用 `currentStage.index` 匹配；若无 index 则用 `currentStage.id` 匹配 `meta.stages[].id`。这样内容在未换算成 1-based 时仍能通过 id 对上。
 
-- 实现：analyze 的 Prompt 或后端解析中明确要求返回上述结构（可再增加可选字段如 `sections_overview` 数组）；返回后缓存到当前会话或 content 关联，供 edu.context.update 与 buildTeachingSnapshot 使用。
-- 这样**不依赖 metadata_json 是否有格式**，所有内容只要经过 analyze 就能得到确定的 stages、keyConcept。
-
----
-
-**buildTeachingSnapshot 的输入约定**：无论选用 A 或 B，建议统一约定「meta」入参为上述其一（或合并后的）结构，字段名一致（如 `stages[].index / title / key_concept`），以便 current_stage、learning_goal_now 等稳定从 meta 中取。
+**结论**：代码中的 stage 名与 metadata 的 index **可以兼容**——要求内容在上报与暴露状态时**始终带 1-based stageIndex**；内部命名与实现方式不限；可选通过 canonical stages[].id 做按名匹配。
 
 ---
 
@@ -345,13 +331,13 @@ Rules:
 
 ### 6.3 客户端 → Proxy：教学上下文更新
 
-约定消息类型 **edu.context.update**，由前端在「阶段变化 / 重要交互」时发送：
+约定消息类型 **edu.context.update**，由前端在「阶段变化 / 重要交互」时发送。`meta` 取 content 的 **metadata_json.canonical**：
 
 ```json
 {
   "type": "edu.context.update",
   "payload": {
-    "meta": { "subtopic": "Exponent Simplification", "language": "zh-CN" },
+    "meta": { "topic": "Exponent Simplification", "language": "zh-CN", "stages": [...] },
     "currentStage": {
       "index": 2,
       "title": "Factoring",
@@ -429,14 +415,14 @@ clientWs.on('message', (data) => {
   - `window.eduNestRuntime.requestAIGuideHelp(context)`
 - Teaching Layer **消费**这些能力：
   - 平台层（FullHTMLRenderer / AIGuidedLearning）监听 postMessage，汇总 **ui_state**、**currentStage**、**事件**。
-  - 在打开 Realtime 或阶段/交互变化时，向 Proxy 发送 **edu.context.update**（payload 来自 getUIState + 事件 + 当前 content 的 metadata；若有 **metadata_realtime** 可作为 topic / 摘要一并传入）。
+  - 在打开 Realtime 或阶段/交互变化时，向 Proxy 发送 **edu.context.update**（payload 中 meta 取 content 的 **metadata_json.canonical**，结合 currentStage、uiState）。
 
 ### 7.2 前端职责简述
 
 1. **内容页 / iframe**：通过 Runtime API 上报状态与事件（已有或按 RUNTIME_API_INJECTION 实现）。
 2. **平台层**：
    - 监听 `EDUNEST_UI_STATE_RESPONSE`、`LEARNING_EVENT`、`AI_GUIDE_REQUEST` 等。
-   - 维护「当前 content 的 metadata / metadata_realtime」「当前 stage」「聚合后的 uiState」。
+   - 维护「当前 content 的 metadata_json.canonical」「当前 stage」「聚合后的 uiState」。
    - 建立 Realtime WebSocket 后，在适当时机发送 **edu.context.update**（含 meta、currentStage、uiState）。
 
 ### 7.3 消息流小结
@@ -456,14 +442,15 @@ clientWs.on('message', (data) => {
 
 ## 八、实现路线图
 
-路线图顺序原则：**先做 Runtime API，且先改 Prompt（影响最小、可测性强），再做脚本注入**；AI 老师需知「大致在讲什么」，故 **metadata_realtime** 在 analyze HTML 时产出并接入 TeachingSnapshot。
+路线图顺序原则：**先做 Runtime API，且先改 Prompt（影响最小、可测性强），再做脚本注入**。**metadata_json** 已统一为 canonical + extras 格式，canonical 可直接供 TeachingSnapshot 使用。
 
 ### 阶段 1：Runtime API（先 Prompt，再脚本注入）
 
 1. **先改 Prompt（影响最小、可测性强）**  
-   - 在 Content Prompt / SYSTEM_PROMPT_CONTENT 中明确：生成的 **HTML 包裹 Vue** 里，凡需要「上报学习事件、请求 AI 指导、暴露 UI 状态」的交互，**必须**通过 `window.eduNestRuntime` 调用（`dispatchLearningEvent`、`requestAIGuideHelp`、需要时配合 `getUIState` 等）。  
+   - 在 Content Prompt 中明确：生成的 **HTML 包裹 Vue** 里，凡需要「上报学习事件、请求 AI 指导、暴露 UI 状态」的交互，**必须**通过 `window.eduNestRuntime` 调用。  
    - 不要求 AI 输出 Runtime 脚本本身，只约定调用方式。  
-   - 新生成的内容即可按约定写调用逻辑；可先不注入脚本，通过 Mock 或后续注入做联调与验证。
+   - 新生成的内容即可按约定写调用逻辑；可先不注入脚本，通过 Mock 或后续注入做联调与验证。  
+   - **具体修改方案**见 [附录 A：Prompt 修改方案](#附录-a-prompt-修改方案)。
 
 2. **再做脚本注入**  
    - 在 RendererEngine 中增加「MISSING_RUNTIME_API」检测与注入（RuntimeAPIFixer 或扩展 RuntimeFixer），使生成流水线产出的 full_html 自带 `window.eduNestRuntime`。  
@@ -473,16 +460,14 @@ clientWs.on('message', (data) => {
 ### 阶段 2：TeachingSnapshot 与 Proxy 改造
 
 1. **定义 TeachingSnapshot JSON Schema**（见 4.2），并可选在代码中加校验。
-2. **实现 buildTeachingSnapshot**（Node），入参：meta、currentStage、uiState（可选：metadata_realtime 作为 topic 等 fallback）。
+2. **实现 buildTeachingSnapshot**（Node），入参：meta（metadata_json.canonical）、currentStage、uiState。
 3. **Realtime Proxy**：支持 **edu.context.update**；维护 currentTeachingSnapshot，在连接建立或上下文更新时发送 session.update（BASE + 完整 Snapshot）。
 4. **前端**：在 Realtime 连接建立后发送一次 edu.context.update；在 currentStage 变化、hint 点击等时机再发。
 
-### 阶段 3：固定格式与输入源（metadata_json 和/或 metadata_realtime）
+### 阶段 3：metadata_json.canonical 与 buildTeachingSnapshot
 
-1. **选定固定格式方案**（见 5.3）：在 **metadata_json** 和/或 **metadata_realtime** 中至少选一处约定固定 schema，才能得到确定的 stages、keyConcept 等。
-2. **若选 metadata_json 固定格式**：在内容生成 Prompt 中约定 metadata 输出结构（如 topic、language、stages[{ index, title, key_concept }]、signals）；解析并落库后，buildTeachingSnapshot 从 content 的 metadata 读取。
-3. **若选 metadata_realtime 固定格式（推荐至少做此）**：在 **AI Guide 分析 HTML（analyze）** 的请求/响应中约定固定 schema（如 topic_short、language、stages[{ index, title, key_concept }]）；analyze 返回后缓存并传入 edu.context.update；buildTeachingSnapshot 可将 metadata_realtime 作为 meta 输入，或与 metadata_json 合并后使用。
-4. **buildTeachingSnapshot**：入参 meta 统一按选定 schema 解析（字段名一致），current_stage、learning_goal_now 等从 meta.stages 等稳定取值。
+1. **metadata_json 已统一**（见 5.1）：格式为 `{ canonical, extras }`，canonical 含 topic、language、stages、learning_objectives 等固定字段。
+2. **buildTeachingSnapshot**：入参 meta 取 **metadata_json.canonical**；current_stage、learning_goal_now 等从 meta.stages 按 currentStage.index 匹配取值。
 
 ### 阶段 4：可观测与学习分析
 
@@ -495,19 +480,78 @@ clientWs.on('message', (data) => {
 
 | 文档 | 说明 |
 |------|------|
+| **metadata_unified_schema.md** | metadata_json 统一格式（canonical + extras）、迁移脚本、映射规则 |
 | **RUNTIME_API_INJECTION.md** | Runtime API 规范、UI State 收集、事件追踪、注入方案 |
 | **RUNTIME_DEVELOPMENT_GUIDE.md** | 双层架构、Runtime API 列表、RendererEngine 注入、前端消息监听、Prompt 分层 |
 
-上述两份文档描述「设计时内容 + 平台 Runtime API」；本文档在此基础上增加 **Teaching Runtime Layer** 与 **Realtime 集成**，使 AI Guide 的 realtime 能力具备「当前内容 + 当前状态」的完整教学上下文。
+上述文档描述「设计时内容 + 平台 Runtime API + metadata 格式」；本文档在此基础上增加 **Teaching Runtime Layer** 与 **Realtime 集成**，使 AI Guide 的 realtime 能力具备「当前内容 + 当前状态」的完整教学上下文。
 
 ---
 
 **总结**：  
-- **metadata_json** 当前无固定输出格式，无法稳定得到 stages、keyConcept；**须在 metadata_json 或 metadata_realtime 至少一处约定固定格式**，才能有确定的 stages、keyConcept 等信息（见 5.3）。  
-- **metadata_realtime** = AI Guide 分析 HTML 时产出；若采用**固定格式**（推荐），则所有经 analyze 的内容都能得到统一结构，供 buildTeachingSnapshot 与 Realtime 使用。  
-- **TeachingSnapshot** = 运行时课堂实况，由平台从 meta（固定格式的 metadata 或 metadata_realtime）+ ui_state + events 生成，专供 Realtime。  
+- **metadata_json** 已统一为 `{ canonical, extras }` 格式。**canonical** 含 topic、language、stages（1-based）、learning_objectives、concept_map 等，可直接用于 Realtime 生成 TeachingSnapshot。  
+- **TeachingSnapshot** = 运行时课堂实况，由 buildTeachingSnapshot 从 **metadata_json.canonical** + currentStage + uiState 生成，专供 Realtime。  
 - **每次 session.update 都发完整 BASE + 完整 Snapshot**，保证模型始终遵守教学约束与当前焦点。  
 - **内容形态**：输出为 **HTML 包裹 Vue**。
+
+---
+
+## 附录 A：Prompt 修改方案
+
+### 目标
+
+在 `edu/backend/src/services/aiService.js` 的 Content Prompt 中增加 **Runtime API 调用约定**，使 AI 生成的 HTML/Vue 在阶段切换、重要交互、请求帮助时**调用** `window.eduNestRuntime`，而非输出脚本实现。脚本由 RendererEngine 或 FullHTMLRenderer 注入。
+
+### 修改位置
+
+在 `TYPE_SPECIFIC_PROMPTS.interactive.technical_constraints` 中新增 `runtime_api` 节点，与 `dom_safety`、`libraries_policy` 同级。
+
+### 新增 JSON 片段（interactive 类型）
+
+在 `technical_constraints` 的 `libraries_policy` 之后添加：
+
+```json
+"runtime_api": {
+  "mandatory": true,
+  "rules": [
+    "Do NOT implement or assign window.eduNestRuntime or window.getUIState. The platform injects them.",
+    "When stage changes, call window.eduNestRuntime.dispatchLearningEvent('stage_change', { stage: stageId, stageIndex }) with stageIndex 1-based to match metadata canonical stages.",
+    "When parameters or sliders change meaningfully, call window.eduNestRuntime.dispatchLearningEvent('parameter_change', payload).",
+    "Expose current stageIndex and key parameters via data-* on root or step nodes (e.g. data-stage-index, data-current-stage, data-value).",
+    "If you need to expose extra derived state (e.g. from Vue), set window.__eduNestUIStateProvider = () => ({ ... }) and put serializable values only."
+  ],
+  "example_calls": {
+    "stage_change": "window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stage: currentStageId, stageIndex })",
+    "parameter_change": "window.eduNestRuntime?.dispatchLearningEvent('parameter_change', { radius, volume })"
+  }
+}
+```
+
+### 可选：animated 类型
+
+若 animated 内容有「开始播放」「静音切换」等交互，可添加简化版：
+
+```json
+"runtime_api": {
+  "mandatory": false,
+  "rules": [
+    "If user triggers playback or mute, optionally call window.eduNestRuntime?.dispatchLearningEvent('playback_start' | 'mute_toggle', payload)"
+  ]
+}
+```
+
+### 可选：COMMON_SYSTEM_PROMPT 补充
+
+若希望所有类型都知晓 Runtime API 存在，可在 `COMMON_SYSTEM_PROMPT` 的 `output_schema` 或 `final_instruction` 附近增加一条：
+
+```json
+"runtime_note": "Platform injects window.eduNestRuntime. Generated content may CALL it (dispatchLearningEvent, requestAIGuideHelp). Do NOT output the implementation."
+```
+
+### 验证方式
+
+1. 生成一条新的 interactive 内容，检查 full_html 中是否出现 `window.eduNestRuntime.dispatchLearningEvent` 或 `requestAIGuideHelp` 的调用。
+2. 若尚未注入脚本，可 Mock：在 FullHTMLRenderer 加载前执行 `window.eduNestRuntime = { dispatchLearningEvent: console.log, requestAIGuideHelp: console.log }`，验证调用是否触发。
 
 ---
 

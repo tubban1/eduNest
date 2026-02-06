@@ -3,6 +3,7 @@ const { aiProviderFactory, safeReplace } = require('./aiService');
 const { v4: uuidv4 } = require('uuid');
 const { isVisitorId } = require('../utils/visitorId');
 const DatabaseService = require('./database');
+const { buildTeachingSnapshot } = require('./teachingSnapshot');
 
 // In-flight dedupe: avoid duplicated analyze/start-session when user quickly closes & reopens aiGuide.
 // 关键：同一个 contentId 的 metadata/initial message 在生成中时，后续请求复用同一个 Promise，避免重复跑 LLM。
@@ -615,8 +616,35 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
     // 3. Get metadata
     const metadata = await getOrGenerateMetadata(contentId, userId);
 
-    // 4. Build messages for LLM
-    const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
+    // 4. Build TeachingSnapshot（从 uiState 中提取 currentStage 和实际 uiState）
+    let teachingSnapshot = null;
+    if (uiState && typeof uiState === 'object') {
+      const currentStage = uiState.currentStage || null;
+      const actualUIState = uiState.uiState || uiState; // 兼容两种格式：{currentStage, uiState} 或直接是 uiState
+      
+      if (metadata?.canonical) {
+        teachingSnapshot = buildTeachingSnapshot({
+          meta: metadata.canonical,
+          currentStage: currentStage,
+          uiState: actualUIState
+        });
+        // 调试日志（开发阶段）
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[AI Guide] TeachingSnapshot generated:', JSON.stringify(teachingSnapshot, null, 2));
+        }
+      } else {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[AI Guide] Cannot build TeachingSnapshot: metadata.canonical is missing');
+        }
+      }
+    }
+
+    // 5. Build messages for LLM
+    let systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
+    
+    if (teachingSnapshot) {
+      systemPrompt += `\n\nTEACHING SNAPSHOT (Current Context):\n${JSON.stringify(teachingSnapshot, null, 2)}`;
+    }
     
     const llmMessages = [
       { role: 'system', content: systemPrompt }
@@ -630,9 +658,10 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
     });
 
     let finalUserMessage = message;
-    if (uiState) {
-      finalUserMessage += `\n\nUI STATE:\n${JSON.stringify(uiState, null, 2)}`;
-    }
+    // UI State 已包含在 TeachingSnapshot 中，不再单独附加（可选：保留作为补充信息）
+    // if (uiState) {
+    //   finalUserMessage += `\n\nUI STATE:\n${JSON.stringify(uiState, null, 2)}`;
+    // }
     llmMessages.push({ role: 'user', content: finalUserMessage });
 
     // 4. Call LLM with streaming enabled
@@ -667,13 +696,15 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
         // 5. Save interaction (after stream completes)
         if (fullReply) {
           // 5.1. 保存用户消息到 ai_messages
+          const messageMetadata = (uiState || teachingSnapshot) ? { ui_state: uiState || null, teaching_snapshot: teachingSnapshot || null } : null;
           const { data: userMessage, error: userMsgError } = await supabase
             .from('ai_messages')
             .insert({
               conversation_id: conversationId,
               role: 'user',
               content: message,
-              ui_state: uiState || null
+              ui_state: uiState || null,
+              metadata: messageMetadata
             })
             .select()
             .single();
@@ -688,7 +719,8 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
             .insert({
               conversation_id: conversationId,
               role: 'assistant',
-              content: fullReply
+              content: fullReply,
+              metadata: messageMetadata
             })
             .select()
             .single();
@@ -727,6 +759,7 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
               temperature: 0.7,
               stream: true,
               ui_state: uiState,
+              teaching_snapshot: teachingSnapshot || null,
               history_length: (historyMessages || []).length
             },
             response_metadata: { 

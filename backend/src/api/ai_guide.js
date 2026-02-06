@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const aiGuideService = require('../services/aiGuideService');
+const learningAnalysisService = require('../services/learningAnalysisService');
 const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const { validateVisitorId } = require('../middleware/visitorId');
 const { isValidVisitorId } = require('../utils/visitorId');
@@ -228,6 +229,61 @@ router.post('/chat-free', validateVisitorId, async (req, res) => {
         res.write(`event: error\ndata: ${JSON.stringify({ message: error.message })}\n\n`);
         res.end();
     }
+  }
+});
+
+// 学习分析报表（基于 ai_messages.metadata、ai_usage_logs.request_payload）
+router.post('/learning-reports/generate', authenticateToken, async (req, res) => {
+  try {
+    const user_id = req.user?.id;
+    if (!user_id) {
+      return res.status(401).json({ error: t(req, 'USER_NOT_AUTHENTICATED', 'User not authenticated') });
+    }
+    const { report_type = 'monthly', period_start, period_end } = req.body;
+    const end = period_end ? new Date(period_end) : new Date();
+    const start = period_start ? new Date(period_start) : new Date(end.getFullYear(), end.getMonth(), 1);
+    const result = await learningAnalysisService.generateLearningReport(
+      user_id,
+      report_type,
+      start.toISOString(),
+      end.toISOString()
+    );
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('API Error /learning-reports/generate:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/learning-reports', authenticateToken, async (req, res) => {
+  try {
+    const user_id = req.user?.id;
+    if (!user_id) {
+      return res.status(401).json({ error: t(req, 'USER_NOT_AUTHENTICATED', 'User not authenticated') });
+    }
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
+    const list = await learningAnalysisService.listReportsByUser(user_id, limit);
+    res.json({ success: true, data: list });
+  } catch (error) {
+    console.error('API Error /learning-reports list:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/learning-reports/:id', authenticateToken, async (req, res) => {
+  try {
+    const user_id = req.user?.id;
+    if (!user_id) {
+      return res.status(401).json({ error: t(req, 'USER_NOT_AUTHENTICATED', 'User not authenticated') });
+    }
+    const report = await learningAnalysisService.getReport(req.params.id);
+    if (!report || report.user_id !== user_id) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    res.json({ success: true, data: report });
+  } catch (error) {
+    console.error('API Error /learning-reports get:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

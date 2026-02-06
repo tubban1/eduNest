@@ -41,6 +41,10 @@
 
 **用户提示词：** `ANIMATED_USER_PROMPTS`（见下文）
 
+## 简单模式规范
+
+交互式内容统一用「骨架填空」：`aiService.js` 中 `INTERACTIVE_CODE_FRAMEWORK` 为最简骨架，AI 只填占位符，不改结构。SimpleModeChecker 会拦截 MutationObserver、renderMathInElement(document.body)、MathRenderManager、mount('body') 等违规。
+
 ## 实现方案
 
 ### 1. 设计原则

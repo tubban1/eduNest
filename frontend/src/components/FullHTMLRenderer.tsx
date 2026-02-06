@@ -290,6 +290,83 @@ export default function FullHTMLRenderer({
   }, [fullHTML]);
 
   /**
+   * eduNestRuntime API 注入：供内容调用 dispatchLearningEvent / requestAIGuideHelp，供平台请求 getUIState
+   */
+  const runtimeAPIScript = useMemo(() => {
+    if (!fullHTML || forceExternalInWechat) return '';
+    // 始终注入：保证 iframe 内有 getUIState 和 EDUNEST_GET_UI_STATE 监听，否则 AI Guide 无法拿到 ui_state
+    return `
+<script>
+(function() {
+  'use strict';
+  window.eduNestRuntime = {
+    dispatchLearningEvent: function(eventType, data) {
+      if (window.parent) {
+        window.parent.postMessage({
+          type: 'EDUNEST_EVENT',
+          data: { eventType: eventType, data: data || {}, timestamp: new Date().toISOString() }
+        }, '*');
+      }
+    },
+    requestAIGuideHelp: function(payload) {
+      if (window.parent) {
+        window.parent.postMessage({ type: 'EDUNEST_AI_GUIDE_REQUEST', data: payload || {} }, '*');
+      }
+    },
+    getUIState: function() {
+      var state = {};
+      if (typeof window.__eduNestUIStateProvider === 'function') {
+        try {
+          var custom = window.__eduNestUIStateProvider();
+          if (custom && typeof custom === 'object') {
+            for (var k in custom) if (custom.hasOwnProperty(k)) state[k] = custom[k];
+          }
+        } catch (e) {}
+      }
+      var inputs = document.querySelectorAll('input, select, textarea');
+      inputs.forEach(function(inp) {
+        var name = inp.name || inp.id;
+        if (name) {
+          if (inp.type === 'checkbox' || inp.type === 'radio') state[name] = inp.checked;
+          else if (inp.type === 'range') state[name] = parseFloat(inp.value) || 0;
+          else state[name] = inp.value || '';
+        }
+      });
+      var si = document.querySelector('[data-stage-index]');
+      if (si) { var v = si.getAttribute('data-stage-index'); state.stageIndex = v != null && !isNaN(parseFloat(v)) ? parseFloat(v) : v; }
+      var cs = document.querySelector('[data-current-stage]');
+      if (cs) state.currentStage = cs.getAttribute('data-current-stage') || '';
+      var sc = document.querySelector('[data-score]');
+      if (sc) { var v = sc.getAttribute('data-score'); state.score = v != null && !isNaN(parseFloat(v)) ? parseFloat(v) : v; }
+      // 增强：如果 __eduNestUIStateProvider 返回了 currentStage 但没有 stageIndex，从 currentStage 推断
+      if (state.currentStage != null && state.stageIndex == null) {
+        var csVal = state.currentStage;
+        if (typeof csVal === 'number') {
+          state.stageIndex = csVal;
+        } else if (typeof csVal === 'string') {
+          // 尝试从字符串中提取数字（如 "STAGE_1" -> 1, "1" -> 1）
+          var numMatch = csVal.match(/(\d+)/);
+          if (numMatch) {
+            state.stageIndex = parseFloat(numMatch[1]);
+          }
+        }
+      }
+      return state;
+    }
+  };
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'EDUNEST_GET_UI_STATE') {
+      var ui = window.eduNestRuntime.getUIState();
+      if (window.parent) {
+        window.parent.postMessage({ type: 'EDUNEST_UI_STATE_RESPONSE', data: ui }, '*');
+      }
+    }
+  });
+})();
+</script>`;
+  }, [fullHTML, forceExternalInWechat]);
+
+  /**
    * 注入高度检测脚本和锚点跳转处理（使用 ResizeObserver 和 postMessage）
    */
   const processedHTML = useMemo(() => {
@@ -300,7 +377,7 @@ export default function FullHTMLRenderer({
       return fullHTML;
     }
 
-    const heightScript = `
+    const scriptsToInject = runtimeAPIScript + `
 <script>
 (function() {
   var lastHeight = 0;
@@ -474,14 +551,15 @@ export default function FullHTMLRenderer({
 })();
 </script>`;
 
+    const allScripts = scriptsToInject;
     if (fullHTML.includes('</body>')) {
-      return fullHTML.replace('</body>', `${heightScript}</body>`);
+      return fullHTML.replace('</body>', `${allScripts}</body>`);
     } else if (fullHTML.includes('</html>')) {
-      return fullHTML.replace('</html>', `${heightScript}</html>`);
+      return fullHTML.replace('</html>', `${allScripts}</html>`);
     } else {
-      return fullHTML + heightScript;
+      return fullHTML + allScripts;
     }
-  }, [fullHTML, forceExternalInWechat]);
+  }, [fullHTML, forceExternalInWechat, runtimeAPIScript]);
 
   useEffect(() => {
     if (useExternalUrl && !externalUrl) {

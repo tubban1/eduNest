@@ -1134,10 +1134,20 @@ class MathFixer {
                       cleanBody === ';' ||
                       cleanBody.match(/^\/\/.*$/); // 只有注释
       
+      // 检查是否为真实实现：AI 常自定义 renderMathInElement，使用 katex.renderToString/forEach 等
+      // 这类实现不能调用自身，故 !cleanBody.includes('renderMathInElement') 恒为 true，不能据此判占位符
+      const hasRealImplementation = 
+        cleanBody.includes('katex.renderToString') ||
+        cleanBody.includes('katex.render(') ||
+        (cleanBody.includes('forEach') && (cleanBody.includes('katex') || cleanBody.includes('replace'))) ||
+        (cleanBody.includes('querySelectorAll') && (cleanBody.includes('replace') || cleanBody.includes('katex')));
+      
       // 检查是否只是占位符
-      const isPlaceholder = cleanBody.match(/^if\s*\([^)]+\)\s*\{[^}]*\}$/i) || // 只有 if 检查
-                           cleanBody.match(/^const\s+\w+\s*=.*;?\s*$/i) || // 只有变量声明
-                           (cleanBody.includes('el.innerHTML') && !cleanBody.includes('renderMathInElement')); // 有读取 innerHTML 但没有调用渲染
+      const isPlaceholder = !hasRealImplementation && (
+        cleanBody.match(/^if\s*\([^)]+\)\s*\{[^}]*\}$/i) || // 只有 if 检查
+        cleanBody.match(/^const\s+\w+\s*=.*;?\s*$/i) || // 只有变量声明
+        (cleanBody.includes('el.innerHTML') && !cleanBody.includes('renderMathInElement'))
+      );
       
       if (isEmpty || isPlaceholder) {
         // 删除函数定义（包括前后的空白和换行）

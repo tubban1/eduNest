@@ -243,5 +243,6 @@ module.exports = {
   authenticateToken,
   optionalAuth,
   requireAdmin,
-  generateToken
+  generateToken,
+  verifySupabaseToken
 }; 

@@ -53,11 +53,12 @@ router.get('/metadata-by-content/:content_id', optionalAuth, async (req, res) =>
   try {
     const { content_id } = req.params;
     
-    // 从数据库查询日志（按创建时间倒序，取最新的）
+    // 从数据库查询日志（仅生成记录，按创建时间倒序，取最新的）
     const { data: logData, error: queryError } = await DatabaseService.supabase
       .from('ai_usage_logs')
       .select('*')
       .eq('content_id', content_id)
+      .eq('action_type', 'generate')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -199,11 +200,12 @@ router.get('/metadata/:request_id', optionalAuth, async (req, res) => {
     const { request_id } = req.params;
     const userId = req.user?.id;
     
-    // 从数据库查询日志
+    // 从数据库查询日志（仅生成记录）
     const { data: logData, error: queryError } = await DatabaseService.supabase
       .from('ai_usage_logs')
       .select('*')
       .eq('request_id', request_id)
+      .eq('action_type', 'generate')
       .single();
     
     if (queryError || !logData) {

@@ -505,6 +505,35 @@ const COMMON_SYSTEM_PROMPT = {
   "final_instruction": "Return ONLY the final JSON object that exactly matches the schema above. Do not include any additional text."
 };
 
+// 交互式内容骨架：AI 按此填空，head 中自行添加 KaTeX/Tailwind 等依赖
+const INTERACTIVE_CODE_FRAMEWORK = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+  <!-- AI adds: katex, tailwind, three, gsap, etc. as needed -->
+</head>
+<body class="bg-slate-50"><div id="app" class="max-w-4xl mx-auto p-6">
+  <div v-if="stage === 'S1'" class="bg-white p-6 rounded-xl"><h2>{{S1_TITLE}}</h2><p>{{S1_CONTENT}}</p><button @click="nextStage('S2')">下一步</button></div>
+  <div v-if="stage === 'S2'" class="bg-white p-6 rounded-xl">
+    <div v-for="(step,i) in solveSteps" :key="i" v-show="currentStep>=i"><p>{{step.desc}}</p><div v-html="renderLaTeX(step.formula)"></div></div>
+    <button v-if="currentStep<solveSteps.length-1" @click="currentStep++">下一步</button>
+    <button v-else @click="nextStage('S3')">继续</button>
+  </div>
+  <div v-if="stage === 'S3'" class="bg-white p-6 rounded-xl"><h2>{{S3_TITLE}}</h2><p>{{S3_CONTENT}}</p><button @click="reset">重新探索</button></div>
+</div>
+<script>
+const { createApp, ref, nextTick } = Vue;
+createApp({ setup() {
+  const stage = ref('S1'), currentStep = ref(0), solveSteps = ref([{ desc: '', formula: 'x^2' }]);
+  const renderLaTeX = (t) => { try { return katex.renderToString(t, { throwOnError: false, displayMode: true }); } catch(e) { return t; } };
+  const nextStage = (n) => { stage.value = n; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stage: n, stageIndex: ['S1','S2','S3'].indexOf(n)+1 }); };
+  const reset = () => { stage.value = 'S1'; currentStep.value = 0; nextTick(()=>{}); };
+  return { stage, currentStep, solveSteps, renderLaTeX, nextStage, reset };
+} }).mount('#app');
+</script></body></html>`;
+
 // 2. 类型特定部分（根据 output_type 动态添加）
 const TYPE_SPECIFIC_PROMPTS = {
   interactive: {
@@ -542,47 +571,12 @@ const TYPE_SPECIFIC_PROMPTS = {
     },
     
     "technical_constraints": {
-      "html": {
-        "standalone": true,
-        "must_include": [
-          "<!DOCTYPE html>",
-          "<meta charset=\"UTF-8\">",
-          "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-        ]
-      },
-      "vue": {
-        "version": "3.5.20",
-        "loading": "production CDN only",
-        "api": "Composition API preferred (ref, reactive, computed, watch, onMounted, nextTick)",
-        "ui_rules": [
-          "Multi-stage interfaces MUST use v-if only",
-          "Only one stage/page may exist in the DOM at any time",
-          "DO NOT use v-show, opacity, or visibility to hide content"
-        ]
-      },
-      "dom_safety": {
-        "canvas_and_dom": [
-          "All DOM-dependent logic (Canvas, Three.js, audio, Web Speech) MUST run only after the element exists in the DOM.",
-          "Do NOT assume DOM elements persist across v-if stage changes."
-        ],
-        "math_rendering": [
-          "ALL mathematical formulas MUST be rendered using KaTeX. Raw LaTeX text MUST NOT appear in the final UI.",
-          "For static HTML text content, wrap formulas in $ for inline formulas (e.g., $x^2 + y^2 = z^2$) and $$ for block formulas.",
-          "CRITICAL: When calling renderMathInElement, you MUST configure delimiters to match the delimiters used in HTML.",
-          "For the v-katex directive, the input string MUST NOT include $ or $$ delimiters.",
-          "CRITICAL: When writing LaTeX formulas in JavaScript strings, ALL backslashes MUST be double-escaped.",
-          "The generated code MUST guarantee formulas are correctly rendered after every DOM update or stage change."
-        ]
-      },
-      "libraries_policy": [
-        "External libraries MAY be used when they clearly improve pedagogy or interaction.",
-        "Avoid libraries that are purely decorative or redundant.",
-        "All dependencies MUST be loaded via production CDN (unpkg / jsdelivr / cdnjs)."
-      ]
+      "code": "Base full_html on the skeleton below. Fill placeholders only. Do not add MutationObserver, renderMathInElement(document.body), MathRenderManager, or mount('body').",
+      "libraries": "Three/GSAP/D3/p5/etc allowed; load via CDN; target Vue refs only."
     },
     
     "ux_ui_requirements": {
-      "responsive": true,
+      "responsive": "mobile first",
       "touch_friendly": true,
       "design_focus": [
         "Clarity over decoration",
@@ -745,7 +739,11 @@ const getSystemPrompt = (knowledgePoint, languageCode, outputType = 'interactive
   let promptStr = JSON.stringify(systemPrompt, null, 2);
   promptStr = safeReplace(promptStr, '{{fallback_language}}', languageCode || 'en-US');
   promptStr = safeReplace(promptStr, '{{content_type}}', outputType); // outputType 本身就是 'interactive' 或 'animated'
-  
+
+  if (outputType === 'interactive') {
+    promptStr += '\n\n## skeleton (fill placeholders only)\n\n' + INTERACTIVE_CODE_FRAMEWORK;
+  }
+
   return promptStr;
 };
 
@@ -828,7 +826,6 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
     });
     
     const aiResponse = result.content;
-    // tokens字段名修正，全部用prompt_tokens/completion_tokens/total_tokens
     const usage = result.usage || {};
     const inputTokens = usage.prompt_tokens || 0;
     const outputTokens = usage.completion_tokens || 0;
