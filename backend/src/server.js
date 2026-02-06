@@ -1,8 +1,11 @@
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const { WebSocketServer } = require('ws');
+const { handleClientConnection } = require('./services/realtimeProxy');
 
 // 确保环境变量在配置验证之前加载
 // .env 文件在 edu/ 目录下（backend 的上一级目录）
@@ -176,33 +179,43 @@ app.use(errorHandler);
 // 在Vercel环境中，不需要启动HTTP服务器
 if (!process.env.VERCEL) {
   const PORT = config.PORT || 3001;
-  
-  // 启动服务器
+  const server = http.createServer(app);
+
+  // 实时语音 WebSocket（AI Guide）
+  const wss = new WebSocketServer({ noServer: true });
+  wss.on('connection', handleClientConnection);
+
+  server.on('upgrade', (request, socket, head) => {
+    const pathname = require('url').parse(request.url).pathname;
+    if (pathname === '/api/ai-guide/realtime') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    } else {
+      socket.destroy();
+    }
+  });
+
   const startServer = async () => {
     try {
-      // 在Vercel环境中，不需要启动HTTP服务器
-      if (process.env.VERCEL) {
-        return;
-      }
-      
-      // 验证数据库连接（仅在非Vercel环境中）
+      if (process.env.VERCEL) return;
+
       try {
         const DatabaseService = require('./services/database');
         await DatabaseService.getContents();
       } catch (dbError) {
         logger.warn('数据库连接验证失败，但继续启动服务器:', dbError.message);
       }
-      
-      app.listen(PORT, () => {
+
+      server.listen(PORT, () => {
+        logger.info(`Server listening on port ${PORT}`);
       });
     } catch (error) {
       logger.error('服务器启动失败:', error.message);
-      if (!process.env.VERCEL) {
-        process.exit(1);
-      }
+      if (!process.env.VERCEL) process.exit(1);
     }
   };
-  
+
   startServer();
 }
 

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { AIGuideButton } from './AIGuideButton';
 import { AIGuideDrawer } from './AIGuideDrawer';
+import { AIGuideRealtimeHandle } from './AIGuideRealtime';
 import { api } from '../../lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { getVisitorId } from '@/utils/visitorId';
@@ -33,6 +34,123 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, c
   const [freeTrialUsed, setFreeTrialUsed] = useState(false);
   // 记录初始化时 metadata 是否存在（用于显示分析动画）
   const [hadMetadataOnInit, setHadMetadataOnInit] = useState<boolean | null>(null);
+  // Runtime API 状态（来自 iframe 的 postMessage）
+  const [currentStage, setCurrentStage] = useState<{ stageId: string; stageIndex: number } | null>(null);
+  const [currentUIState, setCurrentUIState] = useState<Record<string, unknown> | null>(null);
+  const pendingUIStateResolveRef = useRef<
+    ((value: { currentStage: { stageId: string; stageIndex: number } | null; uiState: Record<string, unknown> | null }) => void) | null
+  >(null);
+  const pendingUIStateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const realtimeRef = useRef<AIGuideRealtimeHandle | null>(null);
+
+  // 发送 edu.context.update 到 Realtime Proxy（传完整 metadata_json，后端会规范化并取 canonical）
+  const sendContextUpdate = useCallback(() => {
+    if (!realtimeRef.current) return;
+    
+    const meta = content?.metadata_json ?? null;
+    const stage = currentStage ? {
+      stageIndex: currentStage.stageIndex,
+      stageId: currentStage.stageId
+    } : null;
+    
+    realtimeRef.current.sendContextUpdate({
+      meta,
+      currentStage: stage,
+      uiState: currentUIState
+    });
+  }, [content?.metadata_json, currentStage, currentUIState]);
+
+  // 监听 iframe 内内容通过 eduNestRuntime 上报的消息
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+
+      if (data.type === 'EDUNEST_EVENT' && data.data) {
+        const { eventType, data: payload } = data.data;
+
+        if (eventType === 'stage_change') {
+          const stageId = payload?.stage ?? payload?.stageId ?? '';
+          const stageIndex = Number(payload?.stageIndex ?? 0) || 0;
+          if (stageId && stageIndex > 0) {
+            setCurrentStage({ stageId, stageIndex });
+            // 阶段变化时，发送上下文更新到 Realtime
+            setTimeout(() => {
+              if (realtimeRef.current) {
+                const meta = content?.metadata_json ?? null;
+                realtimeRef.current.sendContextUpdate({
+                  meta,
+                  currentStage: { stageIndex, stageId },
+                  uiState: currentUIState
+                });
+              }
+            }, 200); // 延迟一点，确保状态已更新
+          }
+        }
+      }
+
+      if (data.type === 'EDUNEST_UI_STATE_RESPONSE') {
+        const uiState = (data.data ?? {}) as Record<string, unknown>;
+        setCurrentUIState(uiState);
+        onUIStateChange?.(uiState);
+        if (pendingUIStateResolveRef.current) {
+          const resolveFn = pendingUIStateResolveRef.current;
+          pendingUIStateResolveRef.current = null;
+          if (pendingUIStateTimeoutRef.current) {
+            clearTimeout(pendingUIStateTimeoutRef.current);
+            pendingUIStateTimeoutRef.current = null;
+          }
+          const stage =
+            currentStage ??
+            (typeof uiState.stageIndex === 'number' && uiState.stageIndex > 0
+              ? {
+                  stageId: String(uiState.currentStage ?? uiState['data-current-stage'] ?? `STAGE_${uiState.stageIndex}`),
+                  stageIndex: uiState.stageIndex as number,
+                }
+              : null);
+          resolveFn({ currentStage: stage, uiState });
+        }
+      }
+
+      if (data.type === 'EDUNEST_AI_GUIDE_REQUEST') {
+        // TODO: 后续可自动打开抽屉并预填问题
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onUIStateChange, currentStage]);
+
+  // 向 iframe 请求 UI 状态，返回 Promise，超时 800ms 则用当前缓存
+  const refreshUIState = useCallback((): Promise<{
+    currentStage: { stageId: string; stageIndex: number } | null;
+    uiState: Record<string, unknown> | null;
+  }> => {
+    const iframe = document.querySelector('iframe[srcdoc], iframe[src*="full-html"]') || document.querySelector('iframe');
+    if (!iframe?.contentWindow) {
+      return Promise.resolve({ currentStage, uiState: currentUIState });
+    }
+    iframe.contentWindow.postMessage({ type: 'EDUNEST_GET_UI_STATE' }, '*');
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        pendingUIStateTimeoutRef.current = null;
+        if (pendingUIStateResolveRef.current) {
+          pendingUIStateResolveRef.current({ currentStage, uiState: currentUIState });
+          pendingUIStateResolveRef.current = null;
+        }
+        resolve({ currentStage, uiState: currentUIState });
+      }, 800);
+      pendingUIStateTimeoutRef.current = timeout;
+      pendingUIStateResolveRef.current = (value) => {
+        if (pendingUIStateTimeoutRef.current) {
+          clearTimeout(pendingUIStateTimeoutRef.current);
+          pendingUIStateTimeoutRef.current = null;
+        }
+        pendingUIStateResolveRef.current = null;
+        resolve(value);
+      };
+    });
+  }, [currentStage, currentUIState]);
 
   // 检查免费试用状态（未登录用户）
   const fetchTrialStatus = async () => {
@@ -199,12 +317,16 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, c
     
     setIsLoading(true);
     try {
+      const { currentStage: stage, uiState } = await refreshUIState();
+      const ui_state = { currentStage: stage, uiState };
+      
+
       let fullReply = '';
       let trialUsedInThisChat = false;
       
       if (!user) {
         // 未登录用户：使用免费对话接口
-        const result = await api.aiGuide.chatStreamFree(conversationId, text, null, (chunk) => {
+        const result = await api.aiGuide.chatStreamFree(conversationId, text, ui_state, (chunk) => {
           fullReply += chunk;
           setMessages(prev => {
             const newMessages = [...prev];
@@ -223,7 +345,7 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, c
         }
       } else {
         // 已登录用户：使用原有接口
-        await api.aiGuide.chatStream(conversationId, text, null, (chunk) => {
+        await api.aiGuide.chatStream(conversationId, text, ui_state, (chunk) => {
           fullReply += chunk;
           setMessages(prev => {
             const newMessages = [...prev];
@@ -290,12 +412,42 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, c
         onClose={() => setIsOpen(false)}
         messages={messages}
         onSendMessage={handleSendMessage}
+        onRealtimeMessage={user?.role === 'admin' ? (role, content) => setMessages((prev) => [...prev, { role, content }]) : undefined}
+        onUpdateLastUserMessage={user?.role === 'admin' ? (transcript) =>
+          setMessages((prev) => {
+            const t = typeof transcript === 'string' ? transcript.trim() : '';
+            if (!t) return prev;
+            const next = [...prev];
+            let lastUserIdx = -1;
+            for (let i = next.length - 1; i >= 0; i--) {
+              if (next[i].role === 'user') {
+                lastUserIdx = i;
+                break;
+              }
+            }
+            const lastUserContent = lastUserIdx >= 0 ? (next[lastUserIdx].content || '') : '';
+            const lastMsg = next.length > 0 ? next[next.length - 1] : null;
+            // 最后一条用户消息为占位 [语音]：更新；否则追加新消息（按时间顺序完整记录）
+            if (lastUserIdx >= 0 && (lastUserContent === '[语音]' || lastUserContent.trim() === '')) {
+              next[lastUserIdx] = { ...next[lastUserIdx], content: t };
+            } else if (!lastMsg || lastMsg.role === 'assistant') {
+              next.push({ role: 'user', content: t });
+            } else {
+              next[next.length - 1] = { ...lastMsg, content: t };
+            }
+            return next;
+          })
+        : undefined}
         isLoading={isLoading}
         isLoggedIn={!!user}
         initFailed={initFailed}
         onRetryInit={retryInit}
         freeTrialUsed={freeTrialUsed || trialStatus?.ai_guide_used || false}
         hasMetadata={hadMetadataOnInit !== null ? hadMetadataOnInit : !!(content?.metadata_json !== undefined && content?.metadata_json !== null)}
+        realtimeRef={user?.role === 'admin' ? realtimeRef : undefined}
+        onRealtimeConnected={user?.role === 'admin' ? () => {
+          setTimeout(() => sendContextUpdate(), 300);
+        } : undefined}
       />
     </>
   );

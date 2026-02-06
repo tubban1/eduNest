@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next';
 interface AIGuideInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
+  /** 渲染在发送按钮左侧的额外按钮（如语音） */
+  trailingButtons?: React.ReactNode;
 }
 
-export const AIGuideInput: React.FC<AIGuideInputProps> = ({ onSend, disabled }) => {
+export const AIGuideInput: React.FC<AIGuideInputProps> = ({ onSend, disabled, trailingButtons }) => {
   const { t } = useTranslation('aiGuide');
   const [text, setText] = useState('');
   const [isComposing, setIsComposing] = useState(false); // IME 输入状态
@@ -51,16 +53,19 @@ export const AIGuideInput: React.FC<AIGuideInputProps> = ({ onSend, disabled }) 
         onCompositionEnd={handleCompositionEnd}
         disabled={disabled}
         placeholder={t('inputPlaceholder')}
-        className="w-full border border-input rounded-xl p-3 pr-12 focus:ring-2 focus:ring-primary focus:border-transparent resize-none bg-background focus:bg-card transition-all text-sm"
+        className="w-full border border-input rounded-xl p-3 pr-24 focus:ring-2 focus:ring-primary focus:border-transparent resize-none bg-background focus:bg-card transition-all text-sm"
         rows={2}
       />
-      <button
-        onClick={handleSend}
-        disabled={!text.trim() || disabled}
-        className="absolute right-2 bottom-2.5 p-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:hover:opacity-50 transition-colors"
-      >
-        <Send size={16} />
-      </button>
+      <div className="absolute right-2 bottom-2.5 flex items-center gap-1">
+        {trailingButtons}
+        <button
+          onClick={handleSend}
+          disabled={!text.trim() || disabled}
+          className="p-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:hover:opacity-50 transition-colors"
+        >
+          <Send size={16} />
+        </button>
+      </div>
     </div>
   );
 };

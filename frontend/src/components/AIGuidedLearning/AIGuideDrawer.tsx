@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { AIGuideMessageList } from './AIGuideMessageList';
 import { AIGuideInput } from './AIGuideInput';
+import { AIGuideRealtime, AIGuideRealtimeHandle } from './AIGuideRealtime';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -16,12 +17,16 @@ interface AIGuideDrawerProps {
   onClose: () => void;
   messages: Message[];
   onSendMessage: (message: string) => void;
+  onRealtimeMessage?: (role: 'user' | 'assistant', content: string) => void;
+  onUpdateLastUserMessage?: (transcript: string) => void;
+  onRealtimeConnected?: () => void;
   isLoading: boolean;
   isLoggedIn: boolean;
   initFailed?: boolean;
   onRetryInit?: () => void;
   freeTrialUsed?: boolean;
   hasMetadata?: boolean;
+  realtimeRef?: React.RefObject<AIGuideRealtimeHandle>;
 }
 
 export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
@@ -29,12 +34,16 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
   onClose,
   messages,
   onSendMessage,
+  onRealtimeMessage,
+  onUpdateLastUserMessage,
+  onRealtimeConnected,
   isLoading,
   isLoggedIn,
   initFailed = false,
   onRetryInit,
   freeTrialUsed = false,
-  hasMetadata = true
+  hasMetadata = true,
+  realtimeRef
 }) => {
   const { t } = useTranslation('aiGuide');
   const router = useRouter();
@@ -104,31 +113,40 @@ export const AIGuideDrawer: React.FC<AIGuideDrawerProps> = ({
       </div>
       
       {/* Input or Login Buttons */}
-      <div className="p-4 border-t border-border bg-card">
+      <div className="p-4 border-t border-border bg-card space-y-2">
         {isLoggedIn ? (
-          <AIGuideInput onSend={onSendMessage} disabled={isLoading || initFailed} />
+          onRealtimeMessage ? (
+            <AIGuideRealtime
+              ref={realtimeRef}
+              onAddMessage={onRealtimeMessage}
+              onUpdateLastUserMessage={onUpdateLastUserMessage}
+              onConnected={onRealtimeConnected}
+              disabled={isLoading || initFailed}
+            >
+              {({ voiceButtons, systemLogs }) => (
+                <>
+                  <AIGuideInput
+                    onSend={onSendMessage}
+                    disabled={isLoading || initFailed}
+                    trailingButtons={voiceButtons}
+                  />
+                  {systemLogs}
+                </>
+              )}
+            </AIGuideRealtime>
+          ) : (
+            <AIGuideInput onSend={onSendMessage} disabled={isLoading || initFailed} />
+          )
         ) : freeTrialUsed ? (
-          // 免费试用已使用，显示登录/注册按钮
           <div className="space-y-3">
-            <button
-              onClick={handleLogin}
-              className="tile button w-full"
-            >
-              <div className="tile w-full justify-center py-3 px-4 font-semibold">
-                {t('loginButton')}
-              </div>
+            <button onClick={handleLogin} className="tile button w-full">
+              <div className="tile w-full justify-center py-3 px-4 font-semibold">{t('loginButton')}</div>
             </button>
-            <button
-              onClick={handleRegister}
-              className="tile button w-full"
-            >
-              <div className="tile w-full justify-center py-3 px-4 font-semibold">
-                {t('registerButton')}
-              </div>
+            <button onClick={handleRegister} className="tile button w-full">
+              <div className="tile w-full justify-center py-3 px-4 font-semibold">{t('registerButton')}</div>
             </button>
           </div>
         ) : (
-          // 未登录且免费试用未使用，显示输入框（允许第一次对话）
           <AIGuideInput onSend={onSendMessage} disabled={isLoading || initFailed} />
         )}
       </div>

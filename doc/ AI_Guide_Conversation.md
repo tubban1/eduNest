@@ -1127,6 +1127,196 @@ ORDER BY conversation_count DESC;
 
 ---
 
+# 十一、实时对话功能
+
+## 11.1 概述
+
+支持基于 WebSocket 的实时语音/文字对话，采用 OpenAI Realtime API 兼容协议（如 hrqdapi.cn）。
+
+**技术栈**：
+- 后端：Node.js + `ws` 库
+- 前端：React + 原生 `WebSocket` 或 `useSWR` 等
+- API Key：从 `.env` 的 `GPT_REALTIME_API_KEY` 读取，**切勿写入代码或文档**
+
+## 11.2 环境配置
+
+在 `.env` 或 `env.example` 中添加：
+
+```bash
+# 实时对话 API（OpenAI Realtime 兼容）
+GPT_REALTIME_API_KEY=your-realtime-api-key-here
+GPT_REALTIME_WS_URL=wss://hrqdapi.cn/v1/realtime
+```
+
+> ⚠️ **安全**：API Key 仅存于服务端 env，前端通过后端代理建立 WebSocket，不直接暴露 Key。
+
+## 11.3 协议要点
+
+- **URL**：`wss://hrqdapi.cn/v1/realtime?model=gpt-4o-realtime-preview`（`ws://` 用于非 HTTPS 环境）
+- **Headers**：`Authorization: Bearer <API_KEY>`，`OpenAI-Beta: realtime=v1`
+- **首条事件**：连接后发送 `response.create`，指定 `modalities: ["text"]` 和 `instructions`
+
+## 11.4 后端示例（Node.js）
+
+```javascript
+// backend/src/services/realtimeService.js
+const WebSocket = require('ws');
+
+const REALTIME_WS_URL = process.env.GPT_REALTIME_WS_URL || 'wss://hrqdapi.cn/v1/realtime';
+const API_KEY = process.env.GPT_REALTIME_API_KEY;
+
+function createRealtimeConnection(conversationId, contentId, onMessage, onError, onClose) {
+  const url = `${REALTIME_WS_URL}?model=gpt-4o-realtime-preview`;
+  const ws = new WebSocket(url, {
+    headers: {
+      'Authorization': `Bearer ${API_KEY}`,
+      'OpenAI-Beta': 'realtime=v1'
+    }
+  });
+
+  ws.on('open', () => {
+    ws.send(JSON.stringify({
+      type: 'response.create',
+      response: {
+        modalities: ['text'],
+        instructions: 'Please assist the user with learning.'
+      }
+    }));
+  });
+
+  ws.on('message', (data) => {
+    try {
+      const msg = JSON.parse(data.toString());
+      if (msg.type === 'error') {
+        onError?.(msg.error);
+      } else {
+        onMessage?.(msg);
+      }
+    } catch (e) {
+      onError?.(e);
+    }
+  });
+
+  ws.on('error', onError);
+  ws.on('close', onClose);
+  return ws;
+}
+
+module.exports = { createRealtimeConnection };
+```
+
+## 11.5 前端示例（React）
+
+```tsx
+// 通过后端代理建立 WebSocket，避免暴露 API Key
+useEffect(() => {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}/api/ai-guide/realtime?conversation_id=${conversationId}`;
+  const ws = new WebSocket(wsUrl);
+
+  ws.onmessage = (ev) => {
+    const data = JSON.parse(ev.data);
+    if (data.type === 'response.done' && data.response?.output) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.response.output.join('') }]);
+    }
+  };
+
+  ws.onerror = (e) => console.error('Realtime WS error:', e);
+  return () => ws.close();
+}, [conversationId]);
+```
+
+## 11.6 Python 参考（调试/本地测试）
+
+```python
+# pip install websocket-client
+import os
+import json
+import websocket
+
+url = os.getenv("GPT_REALTIME_WS_URL", "wss://hrqdapi.cn/v1/realtime") + "?model=gpt-4o-realtime-preview"
+api_key = os.getenv("GPT_REALTIME_API_KEY")
+
+def on_open(ws):
+    ws.send(json.dumps({
+        "type": "response.create",
+        "response": {
+            "modalities": ["text"],
+            "instructions": "Please assist the user."
+        }
+    }))
+
+def on_message(ws, message):
+    data = json.loads(message)
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+
+ws = websocket.WebSocketApp(
+    url,
+    header={"Authorization": f"Bearer {api_key}", "OpenAI-Beta": "realtime=v1"},
+    on_open=on_open,
+    on_message=on_message
+)
+ws.run_forever()
+```
+
+## 11.7 集成建议
+
+| 模块 | 说明 |
+|------|------|
+| 后端代理 | WebSocket 端点 `/api/ai-guide/realtime`，转发到 Realtime API |
+| `ai_conversations` | 新增 `conversation_type` 区分 text / realtime |
+| 计费 | 实时对话计入 `ai_usage_logs` |
+
+---
+
+## 11.8 数据库优化（实时对话）
+
+### 11.8.1 ai_conversations 新增字段
+
+```sql
+-- 对话类型：text（文字）| realtime（实时语音）
+ALTER TABLE ai_conversations 
+  ADD COLUMN IF NOT EXISTS conversation_type TEXT NOT NULL DEFAULT 'text';
+
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_type ON ai_conversations(conversation_type);
+```
+
+### 11.8.2 ai_messages 记录对话内容
+
+实时对话的用户语音与助手回复均写入 `ai_messages`：
+
+| 来源 | role | content 说明 |
+|------|------|-------------|
+| 用户语音 | user | 语音转文字结果，或占位 `[语音]` |
+| 助手回复 | assistant | `response.audio_transcript` 或 `response.text` |
+| 系统 | system | 可选，如 instructions |
+
+写入时机：收到 `response.done` / `response.audio_transcript.done` 后，通过后端 WebSocket 代理或单独 API 写入 `ai_messages`。
+
+### 11.8.3 ai_usage_logs 记录用量
+
+实时对话每次请求需记录：
+
+```sql
+-- 示例字段
+action_type = 'ai_guide_realtime'
+request_id = conversation_id（或 realtime_session_id）
+user_id / visitor_id
+content_id
+input_tokens, output_tokens -- 若有
+response_metadata: { duration_ms, audio_chunks, ... }
+```
+
+后端在转发 Realtime API 响应时，根据 `response.output_audio_done` 或 `response.done` 的 usage 信息写入 `ai_usage_logs`。
+
+### 11.8.4 实现顺序建议
+
+1. 先支持前端实时对话（不落库）
+2. 再增加 `conversation_type` 与 `ai_messages` 写入
+3. 最后补充 `ai_usage_logs` 计费
+
+---
+
 # 附录：完整 SQL 脚本
 
 见 `edu/backend/migrations/create_ai_conversations_tables.sql`（需要创建）
