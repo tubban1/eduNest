@@ -126,7 +126,7 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, c
     currentStage: { stageId: string; stageIndex: number } | null;
     uiState: Record<string, unknown> | null;
   }> => {
-    const iframe = document.querySelector('iframe[srcdoc], iframe[src*="full-html"]') || document.querySelector('iframe');
+    const iframe = (document.querySelector('iframe[srcdoc], iframe[src*="full-html"]') || document.querySelector('iframe')) as HTMLIFrameElement | null;
     if (!iframe?.contentWindow) {
       return Promise.resolve({ currentStage, uiState: currentUIState });
     }
