@@ -6,6 +6,19 @@ const { createRendererEngine } = require('../services/rendererEngine');
 const logger = require('../utils/logger');
 
 /**
+ * Renderer 测试 API
+ *
+ * 使用方式：在前端「renderer-test」页面中可视化操作：
+ *   - 用 short_id 加载内容（左侧=基准 response_metadata，右侧=content.full_html）
+ *   - 点击「修复」对左侧 HTML 调用 POST /api/renderer-test/fix，结果写入右侧并自动切换渲染预览到修复结果
+ *   - 在页面底部「渲染预览」中直接查看修复后的渲染效果，确认无误后可保存到 content.full_html
+ *
+ * 修复逻辑说明：
+ *   - 无公式的 Vue 多阶段内容不会注入 MathRenderManager，避免破坏拖拽等交互
+ *   - LibraryFixer 仅按 issue 类型做单项修复（补 fallback / 去重 / 注入缺失库），不做全量脚本重排，避免破坏可渲染内容
+ */
+
+/**
  * 根据 short_id 获取 full_html
  * GET /api/renderer-test/content/:short_id
  */

@@ -154,6 +154,7 @@ export default function RendererTestPage() {
   const [showDiff, setShowDiff] = useState(true); // 默认开启差异对比
   const codeEditor1Ref = useRef<HTMLTextAreaElement>(null);
   const codeEditor2Ref = useRef<HTMLTextAreaElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
   
   // 计算差异：以 html1（基准，来自 response_metadata）为基础，显示 html2（修改后，来自 content.full_html）相对于 html1 的差异
   // diff1 显示基准版本（html1，来自 response_metadata，左侧）
@@ -239,6 +240,11 @@ export default function RendererTestPage() {
         
         // 更新 HTML（更新右侧代码框）
         setHtml2(fixedHtml);
+        // 自动切换预览到修复结果，便于直接查看渲染效果
+        setRenderSource('html2');
+        setTimeout(() => {
+          previewContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
         
         // 记录修复日志
         const newLogs: any[] = [];
@@ -730,11 +736,11 @@ export default function RendererTestPage() {
           </div>
         )}
         
-        {/* 渲染器 */}
-        <div className="bg-white rounded-lg shadow">
+        {/* 渲染器：修复后会自动切换到此预览，直接查看渲染结果 */}
+        <div ref={previewContainerRef} className="bg-white rounded-lg shadow">
           <div className="p-3 border-b">
             <label className="font-medium">
-              渲染预览 (当前渲染: {renderSource === 'html1' ? '代码框 1 (response_metadata)' : '代码框 2 (content.full_html)'})
+              渲染预览 (当前: {renderSource === 'html1' ? '代码框 1 (基准)' : '代码框 2 (修复结果)'})
             </label>
           </div>
           <div className="h-[600px] border-t">

@@ -134,11 +134,9 @@ class MathChecker {
     }
     
     // 问题 3: Vue v-if 切换但缺少 MathRenderManager（重要！）
-    // 即使有 renderMathInElement，Vue v-if 切换时也需要 MathRenderManager 来自动处理 DOM 更新
-    // 同时检查是否有 $...$ 公式（通过检测 mathHtml 或模板中的 $ 符号）
-    const hasMathFormulas = this.detectRawTex(html).count > 0 || 
-                           html.includes('mathHtml') || 
-                           html.includes('$') && (html.match(/\$[^$\n]+\$/g) || []).length > 0;
+    // 仅当确实有数学公式时才要求注入；无公式的 Vue 多阶段（如动物园拖拽）不注入，避免 MutationObserver 破坏交互
+    const rawTexResult = this.detectRawTex(html);
+    const hasMathFormulas = rawTexResult.count > 0 || html.includes('mathHtml');
     
     if (metadata.hasVueStages && !metadata.hasMathRenderManager && hasMathFormulas) {
       issues.push({
@@ -215,9 +213,9 @@ class MathChecker {
       });
     }
     
-    // 问题 2: v-if 阶段切换后公式可能不重渲染
-    // 注意：避免重复检测，如果问题 3 已经检测到阶段切换和数学公式，就不再检测
-    if (metadata.hasVueStages && !metadata.hasMathRenderManager && !hasMathFormulas) {
+    // 问题 2: v-if 阶段切换后公式可能不重渲染（仅当存在数学公式时才要求注入 MathRenderManager）
+    // 无公式的纯 Vue 内容（如拖拽、多阶段 UI）不应注入 MathRenderManager，否则 MutationObserver 会干扰 Vue 的 DOM 更新
+    if (metadata.hasVueStages && !metadata.hasMathRenderManager && hasMathFormulas) {
       // 检查是否有正确的重渲染处理
       const hasProperRerender = this.checkVueStageRerender(html);
       
@@ -302,35 +300,59 @@ class MathChecker {
   }
   
   /**
-   * 检测原始 TeX 语法
+   * 判断 HTML 中某位置是否在 <script> 内（避免把 JS 模板字符串 `${...}` 误判为公式）
+   */
+  isInsideScript(html, index) {
+    const before = html.slice(0, index);
+    const scriptOpen = (before.match(/<script\b/gi) || []).length;
+    const scriptClose = (before.match(/<\/script\s*>/gi) || []).length;
+    return scriptOpen > scriptClose;
+  }
+
+  /**
+   * 检测原始 TeX 语法（排除 <script> 内的 ${...} 等，避免误判）
    */
   detectRawTex(html) {
     const samples = [];
     let count = 0;
-    
-    // 常见的 TeX 模式
-    const patterns = [
-      /\$\$[^$]+\$\$/g,           // $$ ... $$
-      /\$[^$\n]+\$/g,             // $ ... $ (单行)
-      /\\\[[^\]]+\\\]/g,          // \[ ... \]
-      /\\\([^)]+\\\)/g,           // \( ... \)
-      /\\frac\{[^}]+\}\{[^}]+\}/g, // \frac{...}{...}
-      /\\sum_/g,                   // \sum_
-      /\\int_/g,                   // \int_
-      /\\sqrt\{/g                  // \sqrt{
+
+    // 仅统计明显是公式的模式；$...$ / $$...$$ 在 script 内一律不统计（多为模板字符串）
+    const dollarPatterns = [
+      { re: /\$\$[^$]+\$\$/g, inScriptInvalid: true },
+      { re: /\$[^$\n]+\$/g, inScriptInvalid: true }
     ];
-    
-    for (const pattern of patterns) {
+    for (const { re, inScriptInvalid } of dollarPatterns) {
+      let m;
+      re.lastIndex = 0;
+      while ((m = re.exec(html)) !== null) {
+        if (inScriptInvalid && this.isInsideScript(html, m.index)) continue;
+        // 排除明显是 JS 模板字符串：中间含 .value、}、{ 且像变量名
+        const inner = m[0].slice(1, -1).trim();
+        if (/\}\s*\.\s*value|\.value\s*\.|habitatId|draggedAnimal|\.name\b/.test(inner)) continue;
+        count++;
+        if (samples.length < 3) samples.push(m[0]);
+      }
+    }
+
+    // 以下模式在 script 内也可能是公式，统一统计
+    const otherPatterns = [
+      /\\\[[^\]]+\\\]/g,
+      /\\\([^)]+\\\)/g,
+      /\\frac\{[^}]+\}\{[^}]+\}/g,
+      /\\sum_/g,
+      /\\int_/g,
+      /\\sqrt\{/g
+    ];
+    for (const pattern of otherPatterns) {
       const matches = html.match(pattern);
       if (matches) {
         count += matches.length;
-        // 保存前几个样本
         if (samples.length < 3) {
           samples.push(...matches.slice(0, 3 - samples.length));
         }
       }
     }
-    
+
     return { count, samples };
   }
   

@@ -262,14 +262,70 @@ class LibraryFixer {
   }
   
   /**
-   * 执行修复
+   * 执行修复（仅处理当前 issue 对应的一项，避免全量优化破坏原本可渲染的页面）
    */
   async fix(html, issue, context = {}) {
-    return this.optimizeLibraries(html);
+    if (typeof html !== 'string' || !html.trim()) {
+      return { success: true, html, changes: [], explanation: 'HTML 为空，无需处理' };
+    }
+    const changes = [];
+    let updatedHtml = html;
+
+    switch (issue.code) {
+      case 'MISSING_DEPENDENCY': {
+        const name = issue.context?.libraryName || issue.context?.name;
+        const reason = issue.context?.reason || '缺失依赖';
+        if (name) {
+          const missing = [{ name, reason, priority: 50 }];
+          updatedHtml = this.injectMissingLibraries(updatedHtml, missing, changes);
+        }
+        return {
+          success: true,
+          html: updatedHtml,
+          changes,
+          explanation: changes.length > 0 ? `注入缺失的库: ${name}` : `未注入: ${name}`
+        };
+      }
+      case 'DUPLICATE_LIBRARY':
+        updatedHtml = this.removeDuplicateLibraries(updatedHtml, changes);
+        return {
+          success: true,
+          html: updatedHtml,
+          changes,
+          explanation: changes.length > 0 ? `移除 ${changes.length} 处重复库引用` : '无重复库引用'
+        };
+      case 'MISSING_FALLBACK':
+        updatedHtml = this.replaceScriptsWithFallback(updatedHtml, changes);
+        updatedHtml = this.replaceLinksWithFallback(updatedHtml, changes);
+        return {
+          success: true,
+          html: updatedHtml,
+          changes,
+          explanation: changes.length > 0 ? `为 ${changes.length} 处引用添加 fallback` : '已具备 fallback'
+        };
+      case 'CDN_UNREACHABLE':
+      case 'LIBRARY_VERSION_MISMATCH':
+      case 'LIBRARY_OPTIMIZE':
+        updatedHtml = this.replaceScriptsWithFallback(updatedHtml, changes);
+        updatedHtml = this.replaceLinksWithFallback(updatedHtml, changes);
+        return {
+          success: true,
+          html: updatedHtml,
+          changes,
+          explanation: changes.length > 0 ? `优化了 ${changes.length} 处库引用` : '无需变更'
+        };
+      default:
+        return {
+          success: true,
+          html,
+          changes: [],
+          explanation: `未处理的问题类型: ${issue.code}`
+        };
+    }
   }
-  
+
   /**
-   * 优化库引用（主方法）
+   * 优化库引用（全量方法，仅用于非 issue 驱动的批量处理）
    */
   optimizeLibraries(html) {
     if (typeof html !== 'string' || !html.trim()) {
