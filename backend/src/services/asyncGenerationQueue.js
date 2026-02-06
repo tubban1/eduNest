@@ -1416,14 +1416,15 @@ class AsyncGenerationQueue {
         await this.updateTaskError(failedTask.id, `手动重试前标记为失败: ${failedTask.error_message || '未知错误'}`);
       }
 
-      // 重新构建生成参数
+      // 重新构建生成参数：优先从 generation_params 读取（request_payload 可能被 updateExistingLog 覆盖为 { messages, ... }）
+      const gp = failedTask.generation_params || {};
       const generationParams = {
         user_id: userId,
-        knowledge_point: failedTask.user_query,
-        output_type: failedTask.request_payload?.output_type || 'interactive',
-        description: failedTask.request_payload?.description || '',
-        language_code: failedTask.request_payload?.language_code || 'zh-CN',
-        provider: failedTask.request_payload?.provider || process.env.DEFAULT_AI_PROVIDER || 'qenda'
+        knowledge_point: gp.knowledge_point || failedTask.user_query,
+        output_type: gp.output_type || 'interactive',
+        description: gp.description || '',
+        language_code: gp.language_code || failedTask.request_payload?.language_code || 'zh-CN',
+        provider: gp.provider ?? failedTask.request_payload?.provider ?? process.env.DEFAULT_AI_PROVIDER ?? 'qenda'
       };
       
       // 如果有image_url但没有image数据，尝试从URL下载并转换为base64

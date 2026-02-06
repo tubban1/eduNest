@@ -702,7 +702,9 @@ export default function ContentForm({
         output_type: outputType,
         description: currentDescription,
         language_code: language,
-        provider: user?.role === 'admin' ? aiProvider : undefined,
+        ...(user?.role === 'admin' && aiProvider && ['ark', 'kimi', 'qenda'].includes(aiProvider)
+          ? { provider: aiProvider }
+          : {}),
         image: currentUploadedImage ? {
           mime_type: currentUploadedImage.mimeType,
           data: currentUploadedImage.base64
@@ -717,14 +719,13 @@ export default function ContentForm({
       }
 
     } catch (error: any) {
-      
       // 检查是否是认证错误
       if (error.message?.includes('401') || error.message?.includes('无效的访问令牌') || error.message?.includes('访问令牌缺失')) {
         window.location.href = '/login';
         return;
       }
-
-      setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
+      const { translateApiError } = await import('@/utils/translateApiError');
+      setError(translateApiError(error, 'submitGenerateFailed'));
     } finally {
       setAiGenerating(false);
     }
@@ -749,7 +750,9 @@ export default function ContentForm({
         output_type: outputType,
         description,
         language_code: language,
-        provider: user?.role === 'admin' ? aiProvider : undefined // 只有管理员可以指定提供商
+        ...(user?.role === 'admin' && aiProvider && ['ark', 'kimi', 'qenda'].includes(aiProvider)
+          ? { provider: aiProvider }
+          : {})
       });
 
       // 存储当前请求的request_id
@@ -862,7 +865,8 @@ export default function ContentForm({
       if (error.message?.includes('load failed') || error.message?.includes('Failed to fetch') || error.message?.includes('网络连接失败')) {
         markLoadFailed('生成失败，但可以尝试重新加载结果');
       } else {
-      setError(error.message || t('aiGenerateFailed', { ns: 'content', defaultValue: 'AI generation failed, please try again later' }));
+      const { translateApiError } = await import('@/utils/translateApiError');
+      setError(translateApiError(error, 'submitGenerateFailed'));
       }
     } finally {
       setAiGenerating(false);
@@ -940,11 +944,11 @@ export default function ContentForm({
         setHasGenerated(true);
         setShowReloadButton(false);
       } else {
-        setError('重新加载失败，请重试');
+        setError(t('errors.reloadFailed', { ns: 'content', defaultValue: '重新加载失败，请重试' }));
       }
     } catch (error: any) {
       console.error('重新加载失败:', error);
-      setError('重新加载失败: ' + (error.message || '未知错误'));
+      setError(t('errors.reloadFailedWithError', { ns: 'content', error: error.message || t('errors.unknown', { ns: 'content', defaultValue: '未知错误' }), defaultValue: '重新加载失败: {{error}}' }));
     } finally {
       setReloading(false);
     }

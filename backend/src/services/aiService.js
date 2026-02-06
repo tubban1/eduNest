@@ -112,6 +112,28 @@ const updateExistingLog = async (requestId, updateData, retries = 3) => {
   return { success: false, error: { message: '所有重试都失败' } };
 };
 
+// 修复 AI 返回 JSON 中的非法转义（LaTeX 反斜杠等）。JSON 仅允许 \" \\ \/ \b \f \n \r \t \uXXXX
+const repairJsonEscapes = (str) => str.replace(/\\(.)/g, (m, c) => {
+  if (['"', '\\', '/', 'b', 'f', 'n', 'r', 't'].includes(c)) return m;
+  if (c === 'u') return m;
+  return '\\\\' + c;
+});
+
+const tryParseAiJson = (jsonString) => {
+  try {
+    return JSON.parse(jsonString);
+  } catch (firstError) {
+    const repaired = repairJsonEscapes(jsonString);
+    try {
+      const parsed = JSON.parse(repaired);
+      logger.info('[aiService] JSON 经转义修复后解析成功');
+      return parsed;
+    } catch (secondError) {
+      throw firstError; // 修复后仍失败，抛出原始错误
+    }
+  }
+};
+
 // 安全的变量替换函数
 const safeReplace = (template, placeholder, value) => {
   if (typeof value !== 'string') {
@@ -463,7 +485,7 @@ const COMMON_SYSTEM_PROMPT = {
   
   "output_format_requirements": {
     "format": "single JSON object only",
-    "parsing_rule": "The entire output MUST be valid, strictly parseable JSON. Any missing comma, unclosed quote, or bracket is a critical error.",
+    "parsing_rule": "The entire output MUST be valid, strictly parseable JSON. All string values must use proper escaping (e.g. backslash as \\\\, quote as \\\").",
     "language_consistency": [
       "language_code is {{fallback_language}}.",
       "ALL text values in the JSON (including title, description, UI strings, tags, and comments) MUST match the language indicated by language_code."
@@ -515,22 +537,21 @@ const INTERACTIVE_CODE_FRAMEWORK = `<!DOCTYPE html>
   <!-- AI adds: katex, tailwind, three, gsap, etc. as needed -->
 </head>
 <body class="bg-slate-50"><div id="app" class="max-w-4xl mx-auto p-6">
-  <div v-if="stage === 'S1'" class="bg-white p-6 rounded-xl"><h2>{{S1_TITLE}}</h2><p>{{S1_CONTENT}}</p><button @click="nextStage('S2')">下一步</button></div>
-  <div v-if="stage === 'S2'" class="bg-white p-6 rounded-xl">
-    <div v-for="(step,i) in solveSteps" :key="i" v-show="currentStep>=i"><p>{{step.desc}}</p><div v-html="renderLaTeX(step.formula)"></div></div>
-    <button v-if="currentStep<solveSteps.length-1" @click="currentStep++">下一步</button>
-    <button v-else @click="nextStage('S3')">继续</button>
+  <div v-for="(s, i) in stages" :key="i" v-show="currentStageIndex === i" class="bg-white p-6 rounded-xl">
+    <h2 v-if="s.title">{{ s.title }}</h2>
+    <div v-if="s.content" v-html="s.content"></div>
+    <button v-if="i < stages.length - 1" @click="nextStage">Next</button>
+    <button v-else @click="reset">Return to Start</button>
   </div>
-  <div v-if="stage === 'S3'" class="bg-white p-6 rounded-xl"><h2>{{S3_TITLE}}</h2><p>{{S3_CONTENT}}</p><button @click="reset">重新探索</button></div>
 </div>
 <script>
 const { createApp, ref, nextTick } = Vue;
 createApp({ setup() {
-  const stage = ref('S1'), currentStep = ref(0), solveSteps = ref([{ desc: '', formula: 'x^2' }]);
-  const renderLaTeX = (t) => { try { return katex.renderToString(t, { throwOnError: false, displayMode: true }); } catch(e) { return t; } };
-  const nextStage = (n) => { stage.value = n; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stage: n, stageIndex: ['S1','S2','S3'].indexOf(n)+1 }); };
-  const reset = () => { stage.value = 'S1'; currentStep.value = 0; nextTick(()=>{}); };
-  return { stage, currentStep, solveSteps, renderLaTeX, nextStage, reset };
+  const stages = ref([{ title: '{{STAGE_1_TITLE}}', content: '{{STAGE_1_CONTENT}}' }]);
+  const currentStageIndex = ref(0);
+  const nextStage = () => { currentStageIndex.value = Math.min(currentStageIndex.value + 1, stages.value.length - 1); window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: currentStageIndex.value + 1, totalStages: stages.value.length }); };
+  const reset = () => { currentStageIndex.value = 0; nextTick(()=>{}); };
+  return { stages, currentStageIndex, nextStage, reset };
 } }).mount('#app');
 </script></body></html>`;
 
@@ -572,6 +593,7 @@ const TYPE_SPECIFIC_PROMPTS = {
     
     "technical_constraints": {
       "code": "Base full_html on the skeleton below. Fill placeholders only. Do not add MutationObserver, renderMathInElement(document.body), MathRenderManager, or mount('body').",
+      "stages": "stages array length is content-driven: use 1–5+ stages as appropriate (intro, steps, summary, etc.); each stage may have different structure (title, content, step list, formulas).",
       "libraries": "Three/GSAP/D3/p5/etc allowed; load via CDN; target Vue refs only."
     },
     
@@ -874,7 +896,7 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
     if (jsonMatch) {
       try {
         const jsonString = jsonMatch[0];
-        const parsedDataRaw = JSON.parse(jsonString);
+        const parsedDataRaw = tryParseAiJson(jsonString);
         const parsedData = {
           ...parsedDataRaw,
           language_code: parsedDataRaw.language_code || languageCode || 'zh-CN'
@@ -1176,7 +1198,7 @@ const generateSimpleContent = async (knowledgePoint, learningStage) => {
       
       if (jsonMatch) {
         const jsonString = jsonMatch[0];
-        parsedData = JSON.parse(jsonString);
+        parsedData = tryParseAiJson(jsonString);
         
         // 验证 full_html 是否存在
         if (!parsedData.full_html || typeof parsedData.full_html !== 'string' || parsedData.full_html.trim().length === 0) {
@@ -1305,7 +1327,7 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
       }
       if (jsonMatch) {
         const jsonString = jsonMatch[0];
-        parsed = JSON.parse(jsonString);
+        parsed = tryParseAiJson(jsonString);
         
         // 验证 full_html 是否存在
         if (!parsed.full_html || typeof parsed.full_html !== 'string' || parsed.full_html.trim().length === 0) {

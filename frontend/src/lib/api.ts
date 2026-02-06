@@ -181,7 +181,12 @@ class ApiClient {
         }
         
         // 优先使用后端返回的 error 字段或 message 字段
-        throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
+        const err = new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
+        (err as any).errorCode = errorData.error; // 供前端 i18n 使用
+        if (errorData.details && Array.isArray(errorData.details)) {
+          (err as any).details = errorData.details;
+        }
+        throw err;
       }
 
       return await response.json();

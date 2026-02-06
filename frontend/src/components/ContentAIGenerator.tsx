@@ -1144,7 +1144,9 @@ export default function ContentAIGenerator({
           output_type: outputType,
           description: currentDescription,
           language_code: language,
-          provider: user.role === 'admin' ? aiProvider : undefined,
+          ...(user.role === 'admin' && aiProvider && ['ark', 'kimi', 'qenda'].includes(aiProvider)
+            ? { provider: aiProvider }
+            : {}),
           image: currentUploadedImage ? {
             mime_type: currentUploadedImage.mimeType,
             data: currentUploadedImage.base64
@@ -1192,11 +1194,16 @@ export default function ContentAIGenerator({
         return;
       }
       
-      // 使用统一的网络错误处理
-      const errorMsg = handleNetworkError(e, '提交生成请求失败');
-      // 后端参数验证失败时返回 details
-      const detailed = (e?.details && Array.isArray(e.details)) ? e.details.map((d: any) => d.msg || d.message || d.param).join('\n') : '';
-      setError(detailed ? `${errorMsg}\n${detailed}` : errorMsg);
+      const errMsg = e?.message || String(e);
+      const isNetworkError = errMsg.includes('fetch') || errMsg.includes('Failed to fetch') || errMsg.includes('网络连接') || errMsg.includes('请求超时') || errMsg.includes('timeout');
+      const errorMsg = isNetworkError
+        ? handleNetworkError(e, t('errors.submitGenerateFailed', { ns: 'content', defaultValue: '提交生成请求失败' }))
+        : (await import('@/utils/translateApiError')).translateApiError(e, 'submitGenerateFailed');
+      setError(errorMsg);
+      if (!isNetworkError) {
+        const { toast } = await import('@/utils/toast');
+        toast.error(errorMsg, 5000);
+      }
     } finally {
       setAiGenerating(false);
     }

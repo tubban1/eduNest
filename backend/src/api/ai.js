@@ -5,6 +5,7 @@ const asyncGenerationQueue = require('../services/asyncGenerationQueue');
 const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const jwt = require('jsonwebtoken'); // Added for token testing
+const { mapValidationErrorsToCodes } = require('../utils/validationErrors');
 
 const router = express.Router();
 const DatabaseService = require('../services/database');
@@ -38,9 +39,10 @@ router.post('/generate', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      const details = mapValidationErrorsToCodes(errors.array());
       return res.status(400).json({ 
-        error: '参数验证失败', 
-        details: errors.array() 
+        error: 'PARAM_VALIDATION_FAILED', 
+        details
       });
     }
 
@@ -58,7 +60,7 @@ router.post('/generate', [
       } else {
         const { data: balance } = await DatabaseService.getCreditsBalance(userId);
         if ((balance || 0) < CREDITS_COST) {
-          return res.status(402).json({ success: false, error: '积分不足' });
+          return res.status(402).json({ success: false, error: 'INSUFFICIENT_CREDITS' });
         }
       }
     }
@@ -108,9 +110,10 @@ router.post('/test', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      const details = mapValidationErrorsToCodes(errors.array());
       return res.status(400).json({ 
-        error: '参数验证失败', 
-        details: errors.array() 
+        error: 'PARAM_VALIDATION_FAILED', 
+        details
       });
     }
 
@@ -488,7 +491,7 @@ router.post('/generate-async', [
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
-  body('idempotency_key').optional().isString().isLength({ max: 1024 }).withMessage('idempotency_key 不合法'),
+  body('idempotency_key').optional().isString().isLength({ max: 4096 }).withMessage('idempotency_key 不合法'),
   body('image').optional().custom((value) => {
     if (value && typeof value === 'object') {
       if (!value.mime_type || typeof value.mime_type !== 'string') {
@@ -509,10 +512,12 @@ router.post('/generate-async', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      const details = mapValidationErrorsToCodes(errors.array());
+      logger.warn('[generate-async] 参数验证失败', { details, bodyKeys: Object.keys(req.body || {}) });
       return res.status(400).json({ 
         success: false,
-        error: '参数验证失败', 
-        details: errors.array() 
+        error: 'PARAM_VALIDATION_FAILED', 
+        details
       });
     }
 
@@ -537,7 +542,7 @@ router.post('/generate-async', [
     if (contentError || !content) {
       return res.status(404).json({
         success: false,
-        error: '内容不存在或无权限访问'
+        error: 'CONTENT_NOT_FOUND'
       });
     }
 
@@ -554,7 +559,7 @@ router.post('/generate-async', [
         if ((balance || 0) < CREDITS_COST) {
           return res.status(402).json({ 
             success: false, 
-            error: '积分不足' 
+            error: 'INSUFFICIENT_CREDITS' 
           });
         }
       }
@@ -1052,7 +1057,7 @@ router.post('/retry/:contentId', authenticateToken, async (req, res) => {
     if (contentError || !content) {
       return res.status(404).json({
         success: false,
-        error: '内容不存在或无权限访问'
+        error: 'CONTENT_NOT_FOUND'
       });
     }
 
@@ -1119,7 +1124,7 @@ router.post('/generate-free', [
   body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
-  body('idempotency_key').optional().isString().isLength({ max: 1024 }).withMessage('idempotency_key 不合法'),
+  body('idempotency_key').optional().isString().isLength({ max: 4096 }).withMessage('idempotency_key 不合法'),
   body('image').optional().custom((value) => {
     if (value && typeof value === 'object') {
       if (!value.mime_type || typeof value.mime_type !== 'string') {
@@ -1140,10 +1145,11 @@ router.post('/generate-free', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      const details = mapValidationErrorsToCodes(errors.array());
       return res.status(400).json({ 
         success: false,
-        error: '参数验证失败', 
-        details: errors.array() 
+        error: 'PARAM_VALIDATION_FAILED', 
+        details
       });
     }
 
@@ -1172,7 +1178,7 @@ router.post('/generate-free', [
     if (!aiService.validateOutputType(output_type)) {
       return res.status(400).json({ 
         success: false,
-        error: '不支持的输出类型' 
+        error: 'OUTPUT_TYPE_INVALID' 
       });
     }
 
