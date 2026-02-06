@@ -391,3 +391,4 @@ export const AIGuideRealtime = forwardRef<AIGuideRealtimeHandle, AIGuideRealtime
 
   return <>{children({ voiceButtons, systemLogs: systemLogsEl })}</>;
 });
+AIGuideRealtime.displayName = 'AIGuideRealtime';
