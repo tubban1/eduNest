@@ -32,6 +32,7 @@ const pageViewsRoutes = require('./api/page_views');
 const testSharpThumbnailRoutes = require('./api/test-sharp-thumbnail');
 const earlyUserBonusRoutes = require('./api/early_user_bonus');
 const rendererTestRoutes = require('./api/renderer-test');
+const kbRoutes = require('./api/kb');
 const { errorHandler } = require('./utils/errorHandler');
 const logger = require('./utils/logger');
 const { supabase } = require('./services/database');
@@ -165,6 +166,7 @@ app.use("/api/page-views", pageViewsRoutes);
 app.use("/api/test-sharp-thumbnail", testSharpThumbnailRoutes);
 app.use("/api/early-user-bonus", earlyUserBonusRoutes);
 app.use("/api/renderer-test", rendererTestRoutes);
+app.use("/api/kb", kbRoutes);
 // 404 处理
 app.use('*', (req, res) => {
   res.status(404).json({ 
@@ -178,8 +180,21 @@ app.use(errorHandler);
 
 // 在Vercel环境中，不需要启动HTTP服务器
 if (!process.env.VERCEL) {
+  const asyncGenerationQueue = require('./services/asyncGenerationQueue');
   const PORT = config.PORT || 3001;
   const server = http.createServer(app);
+
+  const onShutdown = () => {
+    logger.info('收到退出信号，执行优雅关闭…');
+    asyncGenerationQueue.gracefulShutdown(25 * 1000).then(() => {
+      process.exit(0);
+    }).catch((err) => {
+      logger.error('优雅关闭异常', err);
+      process.exit(1);
+    });
+  };
+  process.on('SIGTERM', onShutdown);
+  process.on('SIGINT', onShutdown);
 
   // 实时语音 WebSocket（AI Guide）
   const wss = new WebSocketServer({ noServer: true });

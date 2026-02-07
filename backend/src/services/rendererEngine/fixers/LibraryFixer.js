@@ -107,6 +107,30 @@ const getFallbackBaseUrl = () => {
 };
 
 /**
+ * 库名 → 加载成功后挂载的全局变量名（用于超时检测：中国区 CDN 可能不触发 onerror，仅靠 onerror 无法回退）
+ */
+const LIBRARY_GLOBAL_CHECK = {
+  vue: 'Vue',
+  'vue-router': 'VueRouter',
+  vuex: 'Vuex',
+  gsap: 'gsap',
+  three: 'THREE',
+  katex: 'katex',
+  konva: 'Konva',
+  tailwindcss: 'tailwind',
+};
+const FALLBACK_TIMEOUT_MS = 5000;
+
+/**
+ * 生成「超时未加载则用 fallback」的内联脚本（中国区 CDN 可能不触发 onerror，需超时兜底）
+ * @param {string} globalName - 库加载成功后的全局变量名，如 'Vue'、'gsap'
+ * @param {string} fallbackUrl - 回退 URL
+ * @returns {string} 内联 <script>...</script> 字符串
+ */
+const buildTimeoutFallbackScript = (globalName, fallbackUrl) =>
+  `<script>(function(){var g=${JSON.stringify(globalName)};var u=${JSON.stringify(fallbackUrl)};var t=setTimeout(function(){if(typeof window[g]==="undefined"){var s=document.createElement("script");s.src=u;(document.currentScript&&document.currentScript.parentNode||document.head).appendChild(s);}},${FALLBACK_TIMEOUT_MS});})();<\/script>`;
+
+/**
  * 从 URL 中提取库信息
  */
 const extractLibraryInfo = (url) => {
@@ -210,6 +234,30 @@ const findReplacementUrl = (url, type) => {
   }
   
   return null;
+};
+
+/**
+ * 仅根据 URL 匹配返回对应的库 entry（不要求「需要替换」）
+ * 用于已有 onerror 的 script：只需拿到 entry 以追加超时检测，当前 URL 可能已是推荐 URL 导致 findReplacementUrl 返回 null
+ */
+const findEntryByUrl = (url, type) => {
+  if (!url || typeof url !== 'string') return null;
+  const entries = getSupportedLibraryEntries();
+  if (!entries || !entries.length) return null;
+  const matches = [];
+  for (const entry of entries) {
+    if (entry.type !== type) continue;
+    if (!entry.patterns || !entry.patterns.length) continue;
+    for (const pattern of entry.patterns) {
+      if (pattern && url.includes(pattern)) {
+        matches.push({ entry, patternLength: pattern.length });
+        break;
+      }
+    }
+  }
+  if (matches.length === 0) return null;
+  matches.sort((a, b) => b.patternLength - a.patternLength);
+  return matches[0].entry;
 };
 
 /**
@@ -529,10 +577,14 @@ class LibraryFixer {
       
       const fallbackUrl = fallbackFile ? `${baseUrl}/${fallbackFile}` : null;
       
-      // 构建 script 标签
+      // 构建 script 标签（带 onerror + 超时检测，与 replaceScriptsWithFallback 行为一致）
       let scriptTag;
       if (fallbackUrl) {
         scriptTag = `<script src="${url}" onerror="this.onerror=null; this.src='${fallbackUrl}'"></script>`;
+        const globalName = LIBRARY_GLOBAL_CHECK[lib.name];
+        if (globalName) {
+          scriptTag += buildTimeoutFallbackScript(globalName, fallbackUrl);
+        }
       } else {
         scriptTag = `<script src="${url}"></script>`;
       }
@@ -689,8 +741,15 @@ class LibraryFixer {
     return html.replace(
       /<script\b([^>]*)\bsrc=["']([^"']+)["']([^>]*)><\/script>/gi,
       (match, beforeAttrs, src, afterAttrs) => {
-        // 如果已经有 onerror，跳过
+        // 如果已经有 onerror：仍为其追加超时检测（中国区 CDN 可能不触发 onerror）
         if (/onerror=/i.test(match)) {
+          const primary = src;
+          const entry = findEntryByUrl(primary, 'js');
+          const fallbackMatch = match.match(/this\.src='(https?:\/\/[^']+)'/);
+          const fallbackUrl = fallbackMatch ? fallbackMatch[1] : null;
+          if (entry && fallbackUrl && LIBRARY_GLOBAL_CHECK[entry.name]) {
+            return match + buildTimeoutFallbackScript(LIBRARY_GLOBAL_CHECK[entry.name], fallbackUrl);
+          }
           return match;
         }
         
@@ -703,6 +762,8 @@ class LibraryFixer {
         const replacement = findReplacementUrl(src, 'js');
         let primary = replacement?.url || src;
         let entry = replacement?.entry;
+        // URL 已是推荐地址时 replacement 为 null，用 findEntryByUrl 仍可拿到 entry 以追加超时检测
+        if (!entry) entry = findEntryByUrl(primary, 'js');
         
         // 获取 fallback
         let fallbackUrl = null;
@@ -734,7 +795,12 @@ class LibraryFixer {
               reason: '添加 CDN 回退'
             });
           }
-          return `<script${beforeAttrs || ''} src="${primary}" onerror="this.onerror=null; this.src='${fallbackUrl}'"${afterAttrs || ''}></script>`;
+          const scriptWithOnerror = `<script${beforeAttrs || ''} src="${primary}" onerror="this.onerror=null; this.src='${fallbackUrl.replace(/'/g, "\\'")}'"${afterAttrs || ''}></script>`;
+          const globalName = entry && LIBRARY_GLOBAL_CHECK[entry.name];
+          if (globalName) {
+            return scriptWithOnerror + buildTimeoutFallbackScript(globalName, fallbackUrl);
+          }
+          return scriptWithOnerror;
         }
         
         if (primary !== src) {

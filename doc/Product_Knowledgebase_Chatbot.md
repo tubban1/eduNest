@@ -129,6 +129,41 @@
 
 **选择结论**：**采用方案 C（混合）**。本知识库覆盖价格、退款、售后、FAQ 等需合规、不可臆造的内容，精确匹配优先可保证回复准确；开放问法由向量 + 生成兜底，兼顾体验与成本。
 
+### 3.5 多源答案扩展设计（规划）
+
+当前检索链路仅使用 `kb_entries` 表。为支持**非数据库来源**的答案，可扩展为多源架构：
+
+| 来源类型 | 说明 | 触发方式 | 优先级建议 |
+|----------|------|----------|------------|
+| **kb_entries** | 主知识库表（现状） | 精确匹配、向量检索 | 1 |
+| **静态配置 / JSON** | 写死在代码或配置文件中的 FAQ（如「这是什么」固定回复） | 关键词/规则命中 | 0（最高，可作兜底或高权重） |
+| **Markdown 文档** | 实时解析 `经销商产品培训文档.md` 等文件 | 全文搜索或章节映射 | 2 |
+| **外部 API** | 调用 CRM、帮助中心、工单系统等 | API 查询 | 3 |
+| **规则占位** | 特定问题直接返回预设文案（如联系方式、合规声明） | 精确规则 | 0 |
+
+**检索流程扩展示意**：
+
+```
+用户 query
+    ↓
+① 精确规则（含静态配置、规则占位）→ 命中则直接返回
+    ↓ 未命中
+② kb_entries 精确匹配（FAQ question、价格/退款/联系方式关键词）
+    ↓ 未命中
+③ kb_entries 向量检索 + 可选：Markdown 文档/外部 API 结果
+    ↓
+④ 合并 context → LLM 生成
+    ↓ 无可参考内容
+⑤ 兜底：固定文案（如「建议联系客服」）
+```
+
+**实施建议**：
+
+- **Phase 2+**：先完善 kb_entries，多源为可选扩展。
+- **静态配置**：适合极短问法（「这是什么」「怎么用」）或高频问题，维护成本低。**已实现**：`kbAskService.staticRulesMatch` 在精确匹配前优先命中「这是什么」「怎么用」「还有什么学科」等口语化问法，直接返回预设答案。
+- **Markdown 文档**：适合培训文档、长文档，可定期解析或按需检索，避免与 kb_entries 重复维护。
+- **外部 API**：按业务需要接入，需考虑延迟与可用性。
+
 ---
 
 ## 四、产品集成：入口与交互
@@ -160,6 +195,19 @@
 - 在「产品咨询」列表旁 / 回答下方增加 **「为你推荐」** 区块，展示 2–4 张内容卡片。
 - 用户点击卡片进入 `/c/[short_id]`，直接体验对应交互内容。
 - 推荐可随**咨询分类**、**用户角色**（教师/学生/家长/机构）、**当前问题**动态调整（见 § 九）。
+
+### 4.4 问一问与生成窗口融合（可选扩展）
+
+当前「问一问」在 Help 页（产品咨询），「生成」在 `/c/create`（ContentForm：知识点 + 图片 + 生成按钮），两者入口与交互分离。若希望**同一对话窗口内既可咨询又可触发生成**，可考虑以下方式。
+
+| 方式 | 做法 | 优点 | 成本 |
+|------|------|------|------|
+| **A. 同一对话，意图分流** | 一个输入框 + 统一对话流。用户发「月付多少钱？」→ 走 kb/ask 返回文字；发「帮我生成一个分数运算的互动课」→ 走创建内容 + 异步生成，在对话里展示「生成中…」再展示结果卡片/链接。需意图识别（关键词如「生成」「做一个」或简单规则）与话题抽取。 | 一个入口完成咨询与生成，体验连贯。 | 需统一入口 API 或前端分流；生成结果在对话中展示进度与卡片。 |
+| **B. 模式切换（Tab）** | 同一窗口顶部 Tab：「咨询」\|「生成」。咨询 = 当前问一问逻辑；生成 = 当前知识点输入 + 生成按钮（可收缩为一行输入 + 按钮）。 | 实现简单，用户意图明确，不依赖意图识别。 | 多一次点击切换。 |
+| **C. 咨询后 CTA 跳生成** | 保持问一问与生成页分离。在问一问回答或「为你推荐」下方加强 CTA：「想自己生成一份？去创建」，链接到 `/c/create?knowledge_point=xxx` 预填知识点。 | 改动最小，仅加强引导与传参。 | 未真正融合，只是流程衔接。 |
+| **D. 生成页内嵌问一问** | 在 `/c/create` 增加侧栏或可折叠的「先问一问」：同一页既可填知识点生成，也可问产品问题。 | 创作场景下不用切页即可咨询。 | 两套交互仍在同一页并存，非单一对话。 |
+
+**建议**：若优先「一个窗口搞定咨询+生成」，可选 **A**（意图分流，对话内展示生成进度与结果卡片）；若优先快速落地，可选 **B**（Tab 切换）或 **C**（咨询后跳生成并预填）。实现 A 时，后端可提供统一入口（如根据 query 或 explicit flag 决定调 kb/ask 还是创建内容并返回 request_id/content_id），前端同一对话流根据响应类型渲染文字回答或生成状态/卡片。
 
 ---
 
@@ -286,6 +334,36 @@ GET /api/kb/recommend
 - 若采用 **方案 C** 且新条目需参与向量检索，新增/更新时应对 `title + content` 调用 embedding API，写入 `embedding`。  
 - 精确匹配（如 FAQ `question`）新增后即可生效，无需重跑 embedding。
 
+**脚本 vs 管理 API**：
+
+| 方式 | 适用场景 | 说明 |
+|------|----------|------|
+| **脚本**（`parse-kb-md.js`、`seed-kb-supplement.js`） | 批量导入：从培训文档 MD 解析、或预定义运营补充条目一次性写入 | 在服务器/本机执行 `node scripts/xxx.js --db`，适合初始化、大版本更新 |
+| **管理 API**（`POST/PUT/DELETE /api/kb/entries`） | 单条增删改：运营随时新增/修改/删除一条（如新 FAQ、价格调整、纠错） | 需先登录获取 JWT，请求头带 `Authorization: Bearer <token>`，适合后台管理页或 curl/Postman |
+
+**管理 API 调用方式**：先调用登录接口（如 `POST /api/auth/login`）获取 JWT，再在请求头中携带：
+
+```bash
+# 示例：新增一条（需将 YOUR_JWT 替换为登录后返回的 token）
+curl -X POST 'https://your-backend/api/kb/entries' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer YOUR_JWT' \
+  -d '{
+    "category": "售后",
+    "title": "如何申请发票？",
+    "content": "请联系 info@tubban.com…",
+    "content_type": "support",
+    "question": "如何申请发票？",
+    "answer": "请联系 info@tubban.com…",
+    "tags": ["发票","报销"],
+    "source": "运营补充",
+    "language_code": "zh-CN"
+  }'
+```
+
+- 仅 **admin** 角色可调用；非 admin 会得到 403。  
+- 若后续有「知识库管理」后台页，前端只需在已登录 admin 状态下对上述接口发 POST/PUT/DELETE 即可。
+
 ### 10.3 embedding 同步策略
 
 - **精确匹配型**（FAQ question、价格关键词）：新增即生效，可不写 embedding。  
@@ -364,34 +442,48 @@ GET /api/kb/recommend
 | **Phase 3** | 按需 | 多轮对话、反馈、统计、推荐优化 |
 | **运维** | 持续 | 管理 API、内容扩展（如退款、发票）、embedding 同步 |
 
-### 12.2 任务分解
+### 12.2 任务分解与实施状态
+
+**图例**：✅ 已完成　⬜ 待做
 
 **Phase 1**
 
-| 任务 | 负责人建议 | 产出 |
-|------|------------|------|
-| 1.1 解析脚本 | 后端/脚本 | `kb_entries.json` 或直写 DB |
-| 1.2 Supabase 建表 | 后端 | `kb_entries` 表结构 |
-| 1.3 `GET /api/kb/entries` | 后端 | 分类 + 关键词检索 |
-| 1.4 `GET /api/kb/recommend` | 后端 | 场景映射 + 调 featured；支持 `language_code`（§ 十一） |
-| 1.5 Help 页改造 | 前端 | 产品咨询 Tab + 搜索 + 列表 + 为你推荐；传 `i18n.language` 至 API |
+| 任务 | 负责人建议 | 产出 | 状态 |
+|------|------------|------|------|
+| 1.1 解析脚本 | 后端/脚本 | `kb_entries.json` 或直写 DB | ✅ |
+| 1.2 Supabase 建表 | 后端 | `kb_entries` 表结构 | ✅ |
+| 1.3 `GET /api/kb/entries` | 后端 | 分类 + 关键词检索 | ✅ |
+| 1.4 `GET /api/kb/recommend` | 后端 | 场景映射 + 调 featured；支持 `language_code`（§ 十一） | ✅ |
+| 1.5 Help 页改造 | 前端 | 产品咨询 Tab + 搜索 + 列表 + 为你推荐；传 `i18n.language` 至 API | ✅ |
+| （额外）embedding 同步 | 后端 | `kbEmbeddingService` + `sync-kb-embeddings.js` 写入 embedding | ✅ |
 
 **Phase 2**
 
-| 任务 | 负责人建议 | 产出 |
-|------|------------|------|
-| 2.1 pgvector + embedding 列 | 后端 | 表结构 + 初始 embedding；采用**多语 embedding 模型**（§ 十一） |
-| 2.2 精确匹配规则 | 后端 | FAQ question、价格关键词、退款等；**仅主语言**，非主语言直接走向量（§ 十一） |
-| 2.3 `POST /api/kb/ask`（混合链路） | 后端 | 精确优先 → 向量兜底 → LLM 生成；支持 `language_code`，LLM 按用户语言输出 |
-| 2.4 Help 页「问一问」 | 前端 | 输入框 + 回答展示 + 推荐体验；传入 `language_code` |
+| 任务 | 负责人建议 | 产出 | 状态 |
+|------|------------|------|------|
+| 2.1 pgvector + embedding 列 | 后端 | 表结构 + 初始 embedding；采用**多语 embedding 模型**（§ 十一） | ✅ 列已有；ivfflat 索引待确认 |
+| 2.2 精确匹配规则 | 后端 | FAQ question、价格关键词、退款等；**仅主语言**，非主语言直接走向量（§ 十一） | ✅ |
+| 2.3 `POST /api/kb/ask`（混合链路） | 后端 | 精确优先 → 向量兜底 → LLM 生成；支持 `language_code`，LLM 按用户语言输出 | ✅ |
+| 2.4 Help 页「问一问」 | 前端 | 输入框 + 回答展示 + 推荐体验；传入 `language_code` | ✅ |
 
 **运维**
 
-| 任务 | 产出 |
-|------|------|
-| 管理 API（增删改） | `POST/PUT/DELETE /api/kb/entries` |
-| 新增条目 embedding 同步 | 写入时或批量任务 |
-| 内容扩展 | 如退款、发票等条目 |
+| 任务 | 产出 | 状态 |
+|------|------|------|
+| 管理 API（增删改） | `POST/PUT/DELETE /api/kb/entries` | ✅ |
+| 新增条目 embedding 同步 | 写入时或批量任务 | ✅ 有批量脚本 |
+| 内容扩展 | 如退款、发票等条目 | ⬜ 按需 |
+
+**Phase 3**（按需）
+
+| 任务 | 产出 | 状态 |
+|------|------|------|
+| 反馈（有用/无用） | `POST /api/kb/feedback`，表 `kb_ask_feedback`；Help 页问一问结果下「有用」「无用」按钮 | ✅ |
+| 多轮对话 | 会话 context、连续追问；`POST /api/kb/ask` 支持 `history`，Help 页聊天式多轮展示 + 清空对话 | ✅ |
+| 简单统计 | 高频问题、零结果 query（可基于 feedback 表） | ⬜ |
+| 推荐优化 | 按角色/行为微调推荐 | ⬜ |
+
+**实施备注**：Phase 2 向量检索依赖 Supabase 中已创建的 RPC `match_kb_entries`（§ 13.7）。若未创建，问一问在精确未命中时会返回「暂未找到…」并仍返回推荐内容。Phase 3 反馈依赖表 `kb_ask_feedback`，需执行 `backend/migrations/kb_ask_feedback.sql`。
 
 ### 12.3 依赖与风险
 
@@ -506,6 +598,25 @@ CREATE TABLE consult_demo_mapping (
 
 CREATE INDEX idx_consult_demo_mapping_category ON consult_demo_mapping(kb_category);
 ```
+
+#### kb_ask_feedback 问一问反馈表（Phase 3）
+
+```sql
+-- 执行脚本见 backend/migrations/kb_ask_feedback.sql
+CREATE TABLE IF NOT EXISTS kb_ask_feedback (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  query TEXT NOT NULL,
+  helpful BOOLEAN NOT NULL,
+  source_type TEXT,                    -- 'static' | 'exact' | 'vector'
+  entry_id UUID REFERENCES kb_entries(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_kb_ask_feedback_created_at ON kb_ask_feedback(created_at);
+CREATE INDEX idx_kb_ask_feedback_helpful ON kb_ask_feedback(helpful);
+```
+
+- 接口：`POST /api/kb/feedback`，body: `{ query, helpful: true|false, source_type?, entry_id? }`，匿名提交无需鉴权。  
+- `ask` 返回中增加 `source_type`（static/exact/vector）供前端提交反馈时携带。
 
 ---
 
@@ -863,6 +974,7 @@ export async function GET(req) {
 在 Supabase SQL Editor 中创建：
 
 ```sql
+-- 使用 $fn$ 作为函数体分隔符，避免 Supabase 解析 $$ 时报 unterminated string
 CREATE OR REPLACE FUNCTION match_kb_entries(
   query_embedding vector(1536),
   match_threshold float DEFAULT 0.7,
@@ -879,7 +991,7 @@ RETURNS TABLE (
   similarity float
 )
 LANGUAGE plpgsql
-AS $$
+AS $fn$
 BEGIN
   RETURN QUERY
   SELECT
@@ -902,14 +1014,61 @@ $$;
 
 ---
 
-**文档版本**：v1.5  
+## 十四、知识库内容自检与 Chatbot 覆盖范围
+
+本文档已完整定义**如何实现**产品咨询 Chatbot（数据模型、检索、API、多语言、推荐、实施阶段）。Chatbot **能否充分解答**「如何使用平台」「如何合作」等问题，还取决于**知识库实际内容**是否覆盖这些主题。建议在落库前或上线前做一次内容自检。
+
+### 14.1 实现层面：已足够
+
+| 维度 | 是否足够 | 说明 |
+|------|----------|------|
+| 分类与入口 | ✓ | 产品 / 价格 / 销售 / 售后 / **分销** / FAQ 已覆盖「如何使用」「如何合作」等咨询类型 |
+| 检索与回答 | ✓ | 混合检索（精确 + 向量）、RAG 生成、多语言、合规边界（不编造价格/联系方式）均已设计 |
+| 入口与交互 | ✓ | Help 页产品咨询、问一问、推荐体验、Phase 2/3 扩展路径明确 |
+| 运维与扩展 | ✓ | 管理 API、新增条目（如退款、发票）、embedding 同步、§ 十 已说明 |
+
+因此，**从实现角度**，当前文档足以支撑一个专门解答「如何使用平台、如何合作、价格与售后等」的 Chatbot。
+
+### 14.2 内容层面：建议自检清单
+
+**「如何使用平台」** 建议知识库至少覆盖：
+
+- 注册 / 登录、角色（教师 / 学生 / 家长 / 机构）
+- 创建或 **AI 生成内容**、编辑与保存
+- **分享**内容（链接、班级/学生）
+- **学习报告 / 学习分析** 查看与解读
+- **订阅与积分**：获取方式、消耗、月付/年付
+- **AI Guide** 是什么、如何在学习中使用
+- 常见操作问题（内容打不开、无法生成、报告不显示等）→ 对应培训文档 3.1 / 3.2 / 3.3
+
+**「如何合作」** 建议知识库至少覆盖：
+
+- **合作类型**：经销商 / 机构 / 学校 等（对应 4.2 目标用户、6.2 经销商支持）
+- **经销商支持**：销售材料、培训资源、话术与演示流程（§4、§5）
+- **申请/对接流程**：如何成为经销商、联系谁、有无门槛
+- **价格与结算**：面向 B 端/渠道的政策（若与 C 端不同，需单独条目）
+
+若《经销商产品培训文档》中上述部分较简略，可通过 **§ 十 内容扩展** 在 `kb_entries` 中**补充条目**（如「如何申请成为经销商」「教师/机构合作联系方式」），并走精确匹配或向量检索即可。
+
+### 14.3 无法回答时的兜底
+
+- 已在 **§ 13.4 Prompt** 中约定：参考内容不足以回答时，明确说「该问题暂无法从知识库回答，建议联系客服」。
+- 建议在 Help 页或回答末尾**固定露出**：客服邮箱/表单/销售咨询链接，便于「合作意向、定制需求、投诉」等场景直接转人工。
+
+按上述自检补全内容后，当前方案即可支撑一个**以产品/价格/合作/售后为主题的咨询 Chatbot**，且实现路径与运维方式均已具备。
+
+---
+
+**文档版本**：v1.8  
 **更新日期**：2026-01  
 **v1.1**：新增 § 九 内容推荐、§4.3 推荐入口、Phase 1/2/3 推荐相关改动。  
 **v1.2**：§3.4 方案 B/C 评估与选择（采用方案 C）；§ 十 内容扩展与运维；§ 十二 实施规划；Phase 2 明确混合检索链路。  
 **v1.3**：§ 十一 多语言适配；实施规划与技术选型补充多语相关任务。  
 **v1.4**：§ 11.2 检索适配简化为「精确匹配仅主语言」，非主语言直接走向量；移除多语关键词/FAQ 维护，降低长期运维成本。  
-**v1.5**：新增 § 十三 附录：完整表结构、解析脚本、embedding 方法、Prompt 示例、API 与 RPC 示例。
-**v1.1**：新增 § 九 内容推荐、§4.3 推荐入口、Phase 1/2/3 推荐相关改动。  
-**v1.2**：§3.4 方案 B/C 评估与选择（采用方案 C）；§ 十 内容扩展与运维；§ 十二 实施规划；Phase 2 明确混合检索链路。  
-**v1.3**：§ 十一 多语言适配；实施规划与技术选型补充多语相关任务。  
-**v1.4**：§ 11.2 检索适配简化为「精确匹配仅主语言」，非主语言直接走向量；移除多语关键词/FAQ 维护，降低长期运维成本。
+**v1.5**：新增 § 十三 附录：完整表结构、解析脚本、embedding 方法、Prompt 示例、API 与 RPC 示例。  
+**v1.6**：新增 § 十四 知识库内容自检与 Chatbot 覆盖范围；修正文末版本记录重复。  
+**v1.7**：§ 12.2 增加**实施状态**列（✅ 已完成 / ⬜ 待做），Phase 1 全部完成；Phase 2（精确匹配、`POST /api/kb/ask`、Help 页「问一问」）已实现；运维管理 API 仍为 ⬜。  
+**v1.8**：新增 § 3.5 **多源答案扩展设计**，规划除 kb_entries 外的答案来源（静态配置、Markdown、外部 API、规则占位）及检索流程扩展。  
+**v1.9**：§ 10.2 **管理 API** 已实现：`POST/PUT/DELETE /api/kb/entries`，鉴权为 admin；新增/更新后异步生成并回写 embedding；§ 12.2 运维任务「管理 API（增删改）」标为 ✅。  
+**v1.10**：Phase 3 **反馈（有用/无用）** 已实现：表 `kb_ask_feedback`（见 migrations/kb_ask_feedback.sql）、`POST /api/kb/feedback`；ask 返回增加 `source_type`；Help 页问一问结果下增加「有用」「无用」按钮；§ 12.2 Phase 3 拆分为任务表，反馈标为 ✅。  
+**v1.11**：Phase 3 **多轮对话** 已实现：`POST /api/kb/ask` 支持 body 参数 `history`（`[{ role, content }]`）；`kbAskService.generateAnswer` 接收 history 并拼入 LLM 上下文（最近 6 条）；Help 页问一问改为聊天式多轮展示、支持「清空对话」；§ 12.2 多轮对话标为 ✅。
