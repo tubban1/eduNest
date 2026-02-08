@@ -71,6 +71,12 @@ class RuntimeChecker {
     const duplicateAssignmentIssues = this.checkDuplicateAssignments(html);
     issues.push(...duplicateAssignmentIssues);
     
+    // 7. Vue ref 在 v-for 内 + Three.js/Canvas 容器（ref 为数组导致 3D 不渲染）
+    if (metadata.hasThree || /getContext\s*\(\s*['"]2d['"]|getContext\s*\(\s*['"]webgl/i.test(html)) {
+      const vueRefVforIssues = this.checkVueRefInVforForThree(html);
+      issues.push(...vueRefVforIssues);
+    }
+    
     return { issues, metadata };
   }
   
@@ -362,6 +368,37 @@ class RuntimeChecker {
     return issues;
   }
   
+  /**
+   * 检查 Vue ref 在 v-for 内用于 Three.js/Canvas 容器：Vue 3 会收集为数组，直接用 .value 导致 3D 不渲染
+   */
+  checkVueRefInVforForThree(html) {
+    const issues = [];
+    if (!/v-for\s*=/.test(html)) return issues;
+    // 查找阶段索引变量名（常见命名），未检测到则不修复，避免误伤
+    const stageIndexVars = ['currentStageIndex', 'stageIndex', 'currentStep', 'stepIndex', 'pageIndex', 'currentPage'];
+    const stageIndexVar = stageIndexVars.find(name => new RegExp(`\\b${name}\\b`).test(html));
+    if (!stageIndexVar) return issues;
+    // 查找 ref="xxx" 且用于 DOM 操作的容器名
+    const refMatch = html.match(/ref\s*=\s*["'](\w+)["']/);
+    if (!refMatch) return issues;
+    const refName = refMatch[1];
+    // 检查是否有 initThree/initCanvas 等函数直接使用 refName.value 做 clientWidth/appendChild，且没有 Array.isArray 解析
+    const hasDirectUse = new RegExp(`${refName}\\.value\\.(clientWidth|clientHeight|appendChild)`, 'i').test(html);
+    const hasArrayCheck = new RegExp(`Array\\.isArray\\s*\\(\\s*${refName}\\.value\\s*\\)`, 'i').test(html);
+    if (hasDirectUse && !hasArrayCheck) {
+      issues.push({
+        type: 'runtime',
+        code: 'VUE_REF_IN_VFOR_THREE',
+        severity: 'high',
+        message: 'Vue 3 中 ref 在 v-for 内会变成数组，Three.js/Canvas 容器需取阶段索引对应元素',
+        fixable: true,
+        fixStrategy: 'FIX_VUE_REF_IN_VFOR_THREE',
+        context: { refName, stageIndexVar }
+      });
+    }
+    return issues;
+  }
+
   /**
    * 检查重复赋值问题
    * 例如：hasMutated.value = true; hasMutated.value = true;

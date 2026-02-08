@@ -23,7 +23,8 @@ class MathFixer {
       'V_KATEX_RENDER_TO_STRING',
       'INJECT_KATEX_AND_RENDER',
       'EMPTY_RENDER_FUNCTION',
-      'HTML_TEXT_DOUBLE_BACKSLASH'
+      'HTML_TEXT_DOUBLE_BACKSLASH',
+      'LATEX_SINGLE_BACKSLASH_IN_SCRIPT'
     ];
     
     // 需要在 JS 字符串中用双反斜杠的 LaTeX 命令和特殊字符
@@ -90,6 +91,9 @@ class MathFixer {
       case 'HTML_TEXT_DOUBLE_BACKSLASH':
         return this.fixHtmlTextDoubleBackslash(html, issue);
         
+      case 'LATEX_SINGLE_BACKSLASH_IN_SCRIPT':
+        return this.fixScriptContentLatexEscapes(html);
+        
       default:
         return { success: false, html, changes: [], explanation: '未知的问题类型' };
     }
@@ -143,10 +147,14 @@ class MathFixer {
       };
     }
     
-    // 检测项目特性
+    // 检测项目特性（与 MathChecker.detectVueStages 保持一致）
     const isVue = html.includes('vue.global') || html.includes('createApp') || html.includes('Vue.');
     const isThreeJS = html.includes('three') || html.includes('THREE');
-    const hasStages = /v-if\s*=\s*["'][^"']*stage/i.test(html);
+    const hasStages = /v-if\s*=\s*["'][^"']*stage/i.test(html) ||
+      /v-show\s*=\s*["'][^"']*currentStage/i.test(html) ||
+      /v-html\s*=\s*["'][^"']*stages\[/i.test(html) ||
+      /v-for\s*=\s*["'][^"']*in\s+stages/i.test(html) ||
+      (/\bcurrentStageIndex\b/.test(html) && /\bstages\b/.test(html));
     
     // 注入 MathRenderManager
     const mathRenderManagerScript = this.generateMathRenderManager(isVue, isThreeJS, hasStages);
@@ -172,10 +180,10 @@ class MathFixer {
       });
     }
     
-    // 注入后，优化自定义 renderMath 函数调用（暂时禁用，避免破坏 HTML 结构）
-    // const optimizeResult = this.optimizeCustomRenderMath(fixedHtml);
-    // fixedHtml = optimizeResult.html;
-    // changes.push(...optimizeResult.changes);
+    // 注入后，将空的/占位符 renderMath 替换为调用 MathRenderManager（阶段切换时公式才能重渲染）
+    fixedHtml = this.patchEmptyRenderMath(fixedHtml, changes);
+    // 自定义 renderMath 里 katex.renderToString(formula,...) 收到的 formula 可能含 &lt;/&gt;（v-html 转义），需解码后再传给 KaTeX
+    fixedHtml = this.patchKatexRenderToStringDecodeEntities(fixedHtml, changes);
     
     // 如果是 Three.js 项目，注入 Three.js 集成
     if (isThreeJS) {
@@ -584,6 +592,67 @@ class MathFixer {
       explanation: explanation || `修复了 ${fixCount} 处 v-katex 指令中的 LaTeX 命令转义（将 \\cmd 改为 \\\\cmd）`
     };
   }
+
+  /**
+   * 修复 script 内模板字符串（如 stages[].content）中 LaTeX 单反斜杠
+   * 将 \times、\frac、\sqrt 等改为 \\times、\\frac、\\sqrt，避免 JS 将 \t、\n 等转义导致公式错乱
+   */
+  fixScriptContentLatexEscapes(html) {
+    const scriptCommandList = [
+      'times', 'frac', 'sqrt', 'Rightarrow', 'cdot', 'text', 'alpha', 'beta', 'gamma', 'delta',
+      'sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'approx', 'pi', 'theta', 'eta', 'infty',
+      'left', 'right', 'sum', 'int', 'prod', 'lim', 'log', 'ln', 'vec', 'hat', 'quad'
+    ];
+    const changes = [];
+    let fixCount = 0;
+    let result = '';
+    let lastEnd = 0;
+    let start = html.indexOf('<script');
+    while (start !== -1) {
+      result += html.slice(lastEnd, start);
+      const tagEnd = html.indexOf('>', start);
+      if (tagEnd === -1) {
+        result += html.slice(start);
+        lastEnd = html.length;
+        break;
+      }
+      const contentStart = tagEnd + 1;
+      const contentEnd = html.indexOf('</script>', contentStart);
+      if (contentEnd === -1) {
+        result += html.slice(start);
+        lastEnd = html.length;
+        break;
+      }
+      let content = html.slice(contentStart, contentEnd);
+      const beforeContent = content;
+      for (const cmd of scriptCommandList) {
+        const re = new RegExp('(^|[^\\\\])' + '\\\\' + this.escapeRegex(cmd) + '(?![a-zA-Z])', 'g');
+        content = content.replace(re, (m, p1) => {
+          fixCount++;
+          return p1 + '\\\\' + cmd;
+        });
+      }
+      if (content !== beforeContent) {
+        changes.push({
+          type: 'replace',
+          location: 'script content (template literal LaTeX)',
+          reason: '将单反斜杠 LaTeX 改为双反斜杠'
+        });
+      }
+      result += html.slice(start, contentStart) + content;
+      lastEnd = contentEnd;
+      start = html.indexOf('<script', contentEnd);
+    }
+    result += html.slice(lastEnd);
+    return {
+      success: fixCount > 0,
+      html: result,
+      changes,
+      explanation: fixCount > 0
+        ? `修复了 ${fixCount} 处 script 内模板字符串中的 LaTeX 单反斜杠（\\cmd → \\\\cmd）`
+        : '未检测到需要修复的 script 内 LaTeX 单反斜杠'
+    };
+  }
   
   /**
    * 生成 MathRenderManager 脚本
@@ -614,7 +683,11 @@ class MathFixer {
       ],
       throwOnError: false,
       errorColor: '#cc0000',
-      strict: false
+      strict: false,
+      // v-html 插入时会把 < > 转成 &lt; &gt;，公式在传给 KaTeX 前需解码，否则会显示为字面 &lt; 且影响后续命令解析
+      preprocess: function(math) {
+        return math.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+      }
     },
     
     // 初始化
@@ -943,6 +1016,50 @@ class MathFixer {
     return parts.join('，');
   }
   
+  /**
+   * 将空的/占位符 renderMath 替换为调用 MathRenderManager
+   * 例如 forEach 体为空或仅注释时，改为调用 MathRenderManager.refresh
+   */
+  patchEmptyRenderMath(html, changes = []) {
+    let fixedHtml = html;
+    // 匹配 renderMath 内 forEach(el => { 空体或仅注释 }) - 空体不执行公式渲染
+    const emptyForEachPattern = /(els\.forEach\s*\(\s*el\s*=>\s*\{\s*)((?:\/\/[^\n\r]*[\r\n]|\/\*[\s\S]*?\*\/|\s)*)(\s*\}\s*\))/g;
+    let m;
+    while ((m = emptyForEachPattern.exec(html)) !== null) {
+      // 仅当前面有 querySelectorAll('.prose') 时替换（避免误伤）
+      const before = html.slice(Math.max(0, m.index - 80), m.index);
+      if (/querySelectorAll\s*\(\s*['"]\.prose['"]\s*\)/.test(before)) {
+        const replacement = `${m[1]}if (window.MathRenderManager) { window.MathRenderManager.refresh(document.getElementById('app') || document.body); }${m[3]}`;
+        fixedHtml = fixedHtml.replace(m[0], replacement);
+        changes.push({
+          type: 'replace',
+          location: 'renderMath forEach body',
+          reason: '空 renderMath 改为调用 MathRenderManager.refresh，确保 v-html 内公式能渲染'
+        });
+        break; // 只替换一处
+      }
+    }
+    return fixedHtml;
+  }
+
+  /**
+   * 在自定义 renderMath 中，katex.renderToString(formula, ...) 收到的 formula 来自 innerHTML，
+   * v-html 插入时会把 < > 转成 &lt; &gt;，需在传入 KaTeX 前解码，否则公式中会显示字面 &lt; 且影响 \alpha、\pi 等解析
+   */
+  patchKatexRenderToStringDecodeEntities(html, changes = []) {
+    const pattern = /katex\.renderToString\s*\(\s*(\w+)\s*,/g;
+    const replacement = "katex.renderToString($1.replace(/&lt;/g, '<').replace(/&gt;/g, '>'),";
+    const newHtml = html.replace(pattern, replacement);
+    if (newHtml !== html) {
+      changes.push({
+        type: 'replace',
+        location: 'katex.renderToString in renderMath',
+        reason: '公式传入 KaTeX 前解码 &lt;/&gt;，避免 v-html 转义导致小于/大于号与后续命令显示错误'
+      });
+    }
+    return newHtml;
+  }
+
   /**
    * 优化自定义 renderMath 函数调用
    * 确保在 MathRenderManager 初始化后执行，或使用 MathRenderManager 的方法

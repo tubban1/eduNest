@@ -16,7 +16,8 @@ class RuntimeFixer {
       'GSAP_ANIMATION_LEAK',
       'VUE_REF_ERROR',
       'VUE_INTERVAL_NOT_STOPPED',
-      'DUPLICATE_ASSIGNMENT'
+      'DUPLICATE_ASSIGNMENT',
+      'VUE_REF_IN_VFOR_THREE'
     ];
   }
   
@@ -49,6 +50,9 @@ class RuntimeFixer {
         
       case 'DUPLICATE_ASSIGNMENT':
         return this.fixDuplicateAssignment(html, issue);
+        
+      case 'VUE_REF_IN_VFOR_THREE':
+        return this.fixVueRefInVforForThree(html, issue);
         
       default:
         return { success: false, html, changes: [], explanation: '未知的问题类型' };
@@ -284,6 +288,41 @@ class RuntimeFixer {
     };
   }
   
+  /**
+   * 修复 Vue ref 在 v-for 内用于 Three.js/Canvas：ref 为数组，需取阶段索引对应元素
+   */
+  fixVueRefInVforForThree(html, issue) {
+    const refName = issue.context?.refName;
+    const stageIndexVar = issue.context?.stageIndexVar;
+    if (!refName || !stageIndexVar) return { success: false, html, changes: [], explanation: '缺少 refName 或 stageIndexVar' };
+    const containerExpr = `(Array.isArray(${refName}.value)?${refName}.value[${stageIndexVar}.value]:${refName}.value)`;
+    let fixedHtml = html;
+    // 1. 修复 if (!refName.value) return; 以正确检查解析后的容器
+    const ifPattern = new RegExp(`if\\s*\\(\\s*!\\s*${refName}\\.value\\s*\\)\\s*return\\s*;`, 'g');
+    fixedHtml = fixedHtml.replace(ifPattern, `var _r=${refName}.value;var _c=Array.isArray(_r)?_r[${stageIndexVar}.value]:_r;if(!_c)return;`);
+    // 2. 替换用于 DOM 操作的 refName.value：clientWidth、clientHeight、appendChild
+    fixedHtml = fixedHtml.replace(
+      new RegExp(`\\b${refName}\\.value(?=\\.(clientWidth|clientHeight|appendChild))`, 'g'),
+      containerExpr
+    );
+    // 3. 替换 appendChild(refName.value) 中的 refName.value
+    fixedHtml = fixedHtml.replace(
+      new RegExp(`(appendChild\\s*\\(\\s*)${refName}\\.value(\\s*\\))`, 'g'),
+      `$1${containerExpr}$2`
+    );
+    const changed = fixedHtml !== html;
+    return {
+      success: changed,
+      html: fixedHtml,
+      changes: changed ? [{
+        type: 'replace',
+        location: 'initThree/Canvas container ref',
+        reason: `Vue 3 ref 在 v-for 内为数组，已改为取 currentStageIndex 对应元素`
+      }] : [],
+      explanation: changed ? '已修复 Vue ref 在 v-for 内导致的 3D 不渲染' : '无需修复'
+    };
+  }
+
   /**
    * 修复 Vue ref 使用错误
    * 将 .ref = 替换为 .value =

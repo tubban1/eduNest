@@ -281,6 +281,26 @@ class MathChecker {
         }
       });
     }
+
+    // 问题 6: 检测 script 内模板字符串（如 stages[].content）中 LaTeX 单反斜杠
+    // 在 JS 中 \t、\n 等会被转义，导致 \times → 制表符+imes、\text → 制表符+ext，需改为 \\times、\\text
+    if (metadata.hasKatex && this.detectVueStages(html)) {
+      const scriptLatex = this.detectScriptContentSingleBackslash(html);
+      if (scriptLatex.count > 0) {
+        issues.push({
+          type: 'math',
+          code: 'LATEX_SINGLE_BACKSLASH_IN_SCRIPT',
+          severity: 'high',
+          message: `检测到 ${scriptLatex.count} 处 script 内公式使用单反斜杠 LaTeX（会被 JS 转义，应改为双反斜杠）`,
+          fixable: true,
+          fixStrategy: 'FIX_SCRIPT_CONTENT_LATEX_ESCAPES',
+          context: {
+            count: scriptLatex.count,
+            samples: scriptLatex.samples
+          }
+        });
+      }
+    }
     
     return { issues, metadata };
   }
@@ -334,14 +354,22 @@ class MathChecker {
       }
     }
 
-    // 以下模式在 script 内也可能是公式，统一统计
+    // 以下模式在 script 内也可能是公式（如 stages[].content 中的 v-html 内容），统一统计
     const otherPatterns = [
       /\\\[[^\]]+\\\]/g,
       /\\\([^)]+\\\)/g,
       /\\frac\{[^}]+\}\{[^}]+\}/g,
       /\\sum_/g,
       /\\int_/g,
-      /\\sqrt\{/g
+      /\\sqrt\{/g,
+      // LaTeX 命令：常出现在 stages/content 等模板字符串中，经 v-html 渲染到 DOM
+      /\\\\Phi\b/g,
+      /\\\\cdot\b/g,
+      /\\\\theta\b/g,
+      /\\\\cos\b/g,
+      /\\\\sin\b/g,
+      /\\\\alpha\b/g,
+      /\\\\beta\b/g
     ];
     for (const pattern of otherPatterns) {
       const matches = html.match(pattern);
@@ -376,16 +404,19 @@ class MathChecker {
     // 检测常见的阶段切换模式
     // 注意：需要匹配 v-if="currentStage === 1" 这样的模式，不仅仅是引号内的
     const patterns = [
-      /v-if\s*=\s*["'][^"']*stage/i,  // v-if="stage === 1"
-      /v-if\s*=\s*["'][^"']*currentStage/i,  // v-if="currentStage === 1"
-      /v-if\s*=\s*["'][^"']*step/i,  // v-if="step === 1"
-      /v-show\s*=\s*["'][^"']*stage/i,  // v-show="stage"
-      // 匹配 v-if="currentStage === 1" 这样的模式（不在引号内的变量）
+      /v-if\s*=\s*["'][^"']*stage/i,
+      /v-if\s*=\s*["'][^"']*currentStage/i,
+      /v-if\s*=\s*["'][^"']*step/i,
+      /v-show\s*=\s*["'][^"']*stage/i,
+      /v-show\s*=\s*["'][^"']*currentStage/i,
       /v-if\s*=\s*["'][^"']*currentStage[^"']*["']/i,
       /v-if\s*=\s*["'][^"']*stage[^"']*===/i,
-      // 匹配 :key="currentStage" 这样的模式
       /:key\s*=\s*["'][^"']*currentStage/i,
-      /:key\s*=\s*["'][^"']*stage/i
+      /:key\s*=\s*["'][^"']*stage/i,
+      // v-html 渲染 stages[].content，阶段切换会更新 DOM
+      /v-html\s*=\s*["'][^"']*stages\[[^\]]+\]\.content/i,
+      /v-for\s*=\s*["'][^"']*in\s+stages/i,
+      /\bcurrentStageIndex\b.*\bstages\b|\bstages\b.*\bcurrentStageIndex\b/
     ];
     
     return patterns.some(p => p.test(html));
@@ -732,6 +763,43 @@ class MathChecker {
       issues,
       samples
     };
+  }
+
+  /**
+   * 检测 script 内模板字符串中 LaTeX 单反斜杠（会因 JS 转义导致 \times→imes、\text→ext 等）
+   * 仅在有 stages/v-html 且使用 KaTeX 时调用；只统计 script 标签内的匹配。
+   */
+  detectScriptContentSingleBackslash(html) {
+    const samples = [];
+    let count = 0;
+    const scriptCommandList = [
+      'times', 'frac', 'sqrt', 'Rightarrow', 'cdot', 'text', 'alpha', 'beta', 'gamma', 'delta',
+      'sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'approx', 'pi', 'theta', 'eta', 'infty',
+      'left', 'right', 'sum', 'int', 'prod', 'lim', 'log', 'ln', 'vec', 'hat', 'quad'
+    ];
+    const singleBackslashRe = new RegExp(
+      '(^|[^\\\\])\\\\(' + scriptCommandList.map(c => this.escapeRegex(c)).join('|') + ')(?![a-zA-Z])',
+      'g'
+    );
+    let scriptStart = html.indexOf('<script');
+    while (scriptStart !== -1) {
+      const tagEnd = html.indexOf('>', scriptStart);
+      if (tagEnd === -1) break;
+      const contentStart = tagEnd + 1;
+      const contentEnd = html.indexOf('</script>', contentStart);
+      if (contentEnd === -1) break;
+      const scriptContent = html.slice(contentStart, contentEnd);
+      let m;
+      singleBackslashRe.lastIndex = 0;
+      while ((m = singleBackslashRe.exec(scriptContent)) !== null) {
+        count++;
+        if (samples.length < 5) {
+          samples.push(`\\\\${m[2]} in script (use \\\\\\\\${m[2]} in template literal)`);
+        }
+      }
+      scriptStart = html.indexOf('<script', contentEnd);
+    }
+    return { count, samples };
   }
   
   /**
