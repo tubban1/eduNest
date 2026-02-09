@@ -181,6 +181,7 @@ router.get('/collection-list/:listId', async (req, res) => {
 });
 
 // 获取内容列表（支持未登录用户按语言筛选）
+// 语言规则：传 2 位（如 zh/de/en/fr）按前缀模糊匹配；传完整 code（如 zh-CN）则精确匹配；无匹配时兜底英语（en）
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const filters = {};
@@ -193,9 +194,15 @@ router.get('/', optionalAuth, async (req, res) => {
       filters.created_by = req.query.created_by;
     }
     
-    // 支持按语言筛选（未登录用户）
+    // 语言：2 位按前缀匹配（de→de-DE/de-CH，zh→zh-CN/zh-TW），否则精确匹配
     if (req.query.language_code) {
-      filters.language_code = req.query.language_code;
+      const code = String(req.query.language_code).trim();
+      const prefix = code.split('-')[0].toLowerCase();
+      if (prefix.length === 2) {
+        filters.language_prefix = prefix;
+      } else {
+        filters.language_code = code;
+      }
     }
     
     // 支持分页参数
@@ -207,14 +214,27 @@ router.get('/', optionalAuth, async (req, res) => {
     }
     
     // 首页与公开列表需要显示提示角标所依赖的 user_query/image_url
-    // 为所有列表查询合并最新的生成日志字段（不影响权限控制）
     const result = await DatabaseService.getContentsWithGenerationStatus(filters);
     
     if (result.error) {
       return res.status(500).json({ success: false, error: result.error.message });
     }
 
-    res.json({ success: true, data: result.data });
+    // 无结果且请求的语言不是英语时，用英语兜底
+    const requestedPrefix = req.query.language_code
+      ? String(req.query.language_code).trim().split('-')[0].toLowerCase()
+      : '';
+    if ((!result.data || result.data.length === 0) && requestedPrefix !== 'en') {
+      const fallbackFilters = { ...filters };
+      delete fallbackFilters.language_code;
+      fallbackFilters.language_prefix = 'en';
+      const fallbackResult = await DatabaseService.getContentsWithGenerationStatus(fallbackFilters);
+      if (!fallbackResult.error && fallbackResult.data && fallbackResult.data.length > 0) {
+        return res.json({ success: true, data: fallbackResult.data });
+      }
+    }
+
+    res.json({ success: true, data: result.data || [] });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
