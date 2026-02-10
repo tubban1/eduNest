@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>概率与统计新定义（2）信息熵</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tool-item label {
+      width: 120px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .tool-item input {
+      flex: 1;
+      margin-left: 10px;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+  <meta name="description" content="信息熵定义、二元熵函数与最大值、递推概率求熵。">
+  <meta name="keywords" content="信息熵、log2、最大值、概率分布">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>概率与统计新定义（2）信息熵</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·河北·高三雄县第一高级中学校联考期末) 在信息论中，<strong>熵
+              (entropy)</strong>是接收的每条消息中包含的信息的平均量，又被称为信息熵、信源熵、平均自信息量．这里，“消息”代表来自分布或数据流中的事件、样本或特征．（熵最好理解为不确定性的量度而不是确定性的量度，因为越随机的信源的熵越大．）来自信源的另一个特征是样本的概率分布．这里的想法是，比较不可能发生的事情，当它发生了，会提供更多的信息．由于一些其他的原因，把信息（熵）定义为概率分布的对数的相反数是有道理的．事件的概率分布和每个事件的信息量构成了一个随机变量，这个随机变量的均值（即期望）就是这个分布产生的信息量的平均值（即熵）．熵的单位通常为比特，但也用
+            Sh、nat、Hart 计量，取决于定义用到对数的底．设随机变量 \(\xi\) 所有取值为 \(1, 2, \cdots, n\)，定义 \(\xi\)
+            的<strong>信息熵</strong>\(H(\xi)=-\sum_{i=1}^{n} P_i \log_2 P_i\)，其中 \(\sum_{i=1}^{n} P_i=1\)，\(i=1, 2, \cdots,
+            n\)．</p>
+          <p><strong>(1)</strong>若 \(n=2\)，试探索 \(\xi\) 的信息熵关于 \(P_1\) 的解析式，并求其最大值；</p>
+          <p><strong>(2)</strong>若 \(P_1=P_2=\frac{1}{2^{n-1}}\)，\(P_{k+1}=2 P_k\)（\(k=2, 3, \cdots, n\)），求此时的信息熵．</p>
+        </div>
+      </div>
+
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>问题描述</strong>：信息熵 \(H(\xi)\) 是衡量随机变量不确定性的指标。定义为 \(H(\xi)=-\sum P_i \log_2 P_i\)。本题研究两种情况下的信息熵：(1)
+            二元分布 (\(n=2\))；(2) 特殊递推分布。</p>
+          <p><strong>题意拆解</strong>：
+            <br>1. <strong>核心概念</strong>：熵越大，不确定性越高。对于二元分布（如抛硬币），当概率 \(p=0.5\) 时，结果最难预测，熵最大。
+            <br>2. <strong>任务</strong>：(1) \(n=2\) 时，设 \(P_1=p, P_2=1-p\)，寻找 \(H(p)\) 的最大值；(2) 给定递推关系 \(P_{k+1}=2P_k\) 且
+            \(P_1=P_2\)，求 \(H\) 的通项公式。
+          </p>
+          <p><strong>思路提示</strong>：
+            <br><strong>第(1)问</strong>：构造函数 \(H(p)=-p\log_2 p - (1-p)\log_2(1-p)\)，求导找极值点。利用 \(\ln(1/p)=-\ln p\)。
+            <br><strong>第(2)问</strong>：先由递推求出通项 \(P_k\)（等比数列），利用 \(\sum P_i=1\) 验证。代入熵公式，化简 \(-\sum P_k \log_2
+            P_k\)，利用错位相减法求和。
+          </p>
+          <p><strong>考点与易错</strong>：导数求最值、数列求和（错位相减）、对数运算性质。易错点是对数的底为 2，求导时需带上 \(\ln 2\) 因子（虽不影响驻点位置）。</p>
+          <canvas id="canvas-intro" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>设元</strong>：\(n=2\) 时 \(\xi\) 取 1、2，设 \(P_1=P(\xi=1)=p\)（\(0 < p < 1\)），则 \(P_2=1-p\)。</p>
+              <p><strong>列式</strong>：由定义 \[ H(\xi)=-\sum_{i=1}^2 P_i\log_2 P_i=-p\log_2 p-(1-p)\log_2(1-p). \]</p>
+              <p><strong>求最大值</strong>：求导得 \(H'(p)=\frac{1}{\ln 2}\ln\frac{1-p}{p}\)。令 \(H'(p)=0\) 得 \(p=1/2\)。此时
+                \(H(p)\) 最大。</p>
+              <p><strong>答</strong>：解析式 \(H(P_1)=-P_1\log_2 P_1-(1-P_1)\log_2(1-P_1)\)；最大值为 \(\boxed{1}\)（当 \(P_1=1/2\)
+                时取得）。</p>
+              <div class="tools-container">
+                <div class="tool-item">
+                  <label>概率 P1: {{ params.p }}</label>
+                  <input type="range" v-model.number="params.p" min="0.01" max="0.99" step="0.01" @input="updateGraphs">
+                </div>
+                <p class="tool-desc">改变 P1 (发生的概率)，观察信息熵 H(p) (不确定性) 的变化。</p>
+              </div>
+              <canvas id="canvas-q1" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>条件</strong>：\(P_1=P_2=\dfrac{1}{2^{n-1}}\)，\(P_{k+1}=2P_k\)（\(k=2, 3, \cdots, n\)）。</p>
+          <p><strong>通项</strong>：由递推得 \(P_k = P_2\cdot 2^{k-2} = \dfrac{1}{2^{n-1}}\cdot 2^{k-2} = \dfrac{1}{2^{n-k+1}}\)（\(k=2, \ldots, n\)）。</p>
+          <p><strong>\(P_k\log_2 P_k\)</strong>：\(P_k\log_2 P_k = \dfrac{1}{2^{n-k+1}}\log_2\dfrac{1}{2^{n-k+1}} = -\dfrac{n-k+1}{2^{n-k+1}}\)；\(P_1\log_2 P_1 = -\dfrac{n-1}{2^{n-1}}\)。</p>
+          <p><strong>\(H(\xi)\)</strong>：\(H(\xi)=-\sum_{k=1}^n P_k\log_2 P_k = \dfrac{n-1}{2^{n-1}} + \sum_{k=2}^n \dfrac{n-k+1}{2^{n-k+1}}\)。令 \(j=n-k+1\) 可写成 \(H(\xi) = \dfrac{n-1}{2^{n-1}} + \dfrac{n-1}{2^{n-1}} + \dfrac{n-2}{2^{n-2}} + \cdots + \dfrac{1}{2}\)。</p>
+          <p><strong>错位相减</strong>：令 \(S_n = \dfrac{1}{2}+\dfrac{2}{2^2}+\cdots+\dfrac{n}{2^n}\)，则 \(\dfrac{1}{2}S_n = \dfrac{1}{2^2}+\dfrac{2}{2^3}+\cdots+\dfrac{n}{2^{n+1}}\)，两式相减得 \(\dfrac{1}{2}S_n = \dfrac{1}{2}+\dfrac{1}{2^2}+\cdots+\dfrac{1}{2^n} - \dfrac{n}{2^{n+1}} = 1-\dfrac{1}{2^n} - \dfrac{n}{2^{n+1}} = 1 - \dfrac{n+2}{2^{n+1}}\)，故 \(S_n = 2 - \dfrac{n+2}{2^n}\)。</p>
+          <p><strong>代入</strong>：整理得 \(H(\xi) = \dfrac{n-1}{2^{n-1}} - \dfrac{n}{2^n} + S_n = \dfrac{n-1}{2^{n-1}} - \dfrac{n}{2^n} + 2 - \dfrac{n+2}{2^n}\)，化简得 \(H(\xi) = \dfrac{2(n-1)-n-(n+2)}{2^n} + 2 = \dfrac{-4}{2^n} + 2 = 2 - \dfrac{1}{2^{n-2}}\)。</p>
+          <p><strong>答</strong>：\(H(\xi) = \boxed{2 - \dfrac{1}{2^{n-2}}}\)。</p>
+          <canvas id="canvas-q2" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <p><strong>(1)</strong> \(n=2\) 时 \(H(P_1)=-P_1\log_2 P_1-(1-P_1)\log_2(1-P_1)\)，最大值 1（当 \(P_1=1/2\)）。</p>
+          <p><strong>(2)</strong> \(P_1=P_2=1/2^{n-1}\)，\(P_{k+1}=2P_k\) 时，\(P_k=1/2^{n-k+1}\)，错位相减得 \(H(\xi)=2-\dfrac{1}{2^{n-2}}\)。</p>
+          <p><strong>回顾</strong>：信息熵衡量不确定性；概率均等时熵最大。</p>
+          <canvas id="canvas-summary" width="520" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+
+      var TABS = ['intro', 'q1', 'q2', 'summary'];
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center'; ctx.font = '14px sans-serif';
+        ctx.fillText('H(X) = -Σ p_i log₂ p_i', cx, cy - 20);
+        ctx.fillText('不确定性越大，熵越大', cx, cy + 20);
+      }
+
+      function drawQ1(c, params) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        var pVal = params ? params.p : 0.5;
+        ctx.clearRect(0, 0, w, h);
+
+        // Plot H(p) = -p log2 p - (1-p) log2 (1-p)
+        var margin = 40;
+        var mw = w - 2 * margin, mh = h - 2 * margin;
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 2;
+
+        for (var i = 0; i <= 100; i++) {
+          var x = i / 100;
+          if (x === 0 || x === 1) continue; // log(0) undefined
+          var y = -x * Math.log2(x) - (1 - x) * Math.log2(1 - x);
+          var px = margin + x * mw;
+          var py = h - margin - y * mh; // Max H is 1
+          if (i === 1) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Draw current point
+        var H_curr = -pVal * Math.log2(pVal) - (1 - pVal) * Math.log2(1 - pVal);
+        var cx = margin + pVal * mw;
+        var cy = h - margin - H_curr * mh;
+
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath(); ctx.arc(cx, cy, 6, 0, 2 * Math.PI); ctx.fill();
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.fillText('p=' + pVal, cx, cy - 25);
+        ctx.fillText('H=' + H_curr.toFixed(3), cx, cy - 10);
+      }
+
+      function drawQ2(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+        ctx.fillText('递推分布的信息熵', cx, cy);
+      }
+
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+        ctx.fillText('熵在均匀分布时最大', cx, cy);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () { return { activeTab: 'intro', params: { p: 0.5 } }; },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function') {
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              }
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            updateGraphs: function () { this.renderGraphs(); },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              var c = document.getElementById('canvas-' + n);
+              if (n === 'intro') drawIntro(c);
+              else if (n === 'q1') drawQ1(c, this.params);
+              else if (n === 'q2') drawQ2(c);
+              else if (n === 'summary') drawSummary(c);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

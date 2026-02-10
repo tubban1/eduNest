@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>概率与统计新定义（4）样本相关系数与斯皮尔曼相关系数</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 0.95em;
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 6px 10px;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tool-item label {
+      width: 120px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .tool-item input {
+      flex: 1;
+      margin-left: 10px;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+  <meta name="description" content="样本相关系数、斯皮尔曼秩相关系数公式与证明、线性相关分析。">
+  <meta name="keywords" content="样本相关系数、斯皮尔曼、排名、线性相关">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>概率与统计新定义（4）样本相关系数与斯皮尔曼相关系数</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·山西朔州·高三校考开学考试) 某校 20 名学生的数学成绩 \(x_i\)（\(i=1, 2, \cdots, 20\)）和知识竞赛成绩 \(y_i\)（\(i=1, 2, \cdots,
+            20\)）如下表：</p>
+          <table>
+            <thead>
+              <tr>
+                <th>学生编号 \(i\)</th>
+                <th>数学成绩 \(x_i\)</th>
+                <th>知识竞赛成绩 \(y_i\)</th>
+                <th>学生编号 \(i\)</th>
+                <th>数学成绩 \(x_i\)</th>
+                <th>知识竞赛成绩 \(y_i\)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>100</td>
+                <td>290</td>
+                <td>11</td>
+                <td>75</td>
+                <td>45</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>99</td>
+                <td>160</td>
+                <td>12</td>
+                <td>74</td>
+                <td>35</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>96</td>
+                <td>220</td>
+                <td>13</td>
+                <td>72</td>
+                <td>40</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>93</td>
+                <td>200</td>
+                <td>14</td>
+                <td>70</td>
+                <td>50</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>90</td>
+                <td>65</td>
+                <td>15</td>
+                <td>68</td>
+                <td>25</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td>88</td>
+                <td>70</td>
+                <td>16</td>
+                <td>66</td>
+                <td>30</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td>85</td>
+                <td>90</td>
+                <td>17</td>
+                <td>60</td>
+                <td>20</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td>83</td>
+                <td>100</td>
+                <td>18</td>
+                <td>50</td>
+                <td>15</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td>80</td>
+                <td>60</td>
+                <td>19</td>
+                <td>39</td>
+                <td>10</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td>77</td>
+                <td>270</td>
+                <td>20</td>
+                <td>35</td>
+                <td>5</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>计算可得数学成绩的平均值是 \(\bar{x}=75\)，知识竞赛成绩的平均值是 \(\bar{y}=90\)，并且 \(\sum_{i=1}^{20} (x_i -
+            \bar{x})^2=6464\)，\(\sum_{i=1}^{20} (y_i - \bar{y})^2=149450\)，\(\sum_{i=1}^{20} (x_i - \bar{x})(y_i -
+            \bar{y})=21650\)．</p>
+          <p><strong>(1)</strong>求这组学生的数学成绩和知识竞赛成绩的样本相关系数（精确到 0.01）；</p>
+          <p><strong>(2)</strong>设 \(N \in \mathbb{N}^*\)，变量 \(x\) 和变量 \(y\) 的一组样本数据为 \((x_i, y_i)\)（\(i=1, 2, \cdots,
+            N\)），其中 \(x_i\)（\(i=1, 2, \cdots, N\)）两两不相同，\(y_i\)（\(i=1, 2, \cdots, N\)）两两不相同．记 \(x_i\) 在 \(\{x_n \mid
+            n=1, 2, \cdots, N\}\) 中的排名是第 \(R_i\) 位，\(y_i\) 在 \(\{y_n \mid n=1, 2, \cdots, N\}\) 中的排名是第 \(S_i\) 位，\(i=1,
+            2, \cdots, N\)．定义变量 \(x\) 和变量 \(y\) 的“<strong>斯皮尔曼相关系数</strong>”（记为 \(\rho\)）为变量 \(x\) 的排名和变量 \(y\)
+            的排名的样本相关系数．<br>(i) 记 \(d_i=R_i - S_i\)，\(i=1, 2, \cdots, N\)．证明：\(\rho=1 - \frac{6}{N(N^2-1)} \sum_{i=1}^{N}
+            d_i^2\)；<br>(ii) 用 (i) 的公式求得这组学生的数学成绩和知识竞赛成绩的“斯皮尔曼相关系数”约为 0.91，简述“斯皮尔曼相关系数”在分析线性相关性时的优势．</p>
+          <p><strong>注：</strong>参考公式
+            \(r=\frac{\sum_{i=1}^{n}(x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum_{i=1}^{n}(x_i-\bar{x})^2}\sqrt{\sum_{i=1}^{n}(y_i-\bar{y})^2}}\)；\(\sum_{k=1}^{n}
+            k^2=\frac{n(n+1)(2n+1)}{6}\)；\(\sqrt{6464 \times 149450} \approx 31000\)．</p>
+        </div>
+      </div>
+
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>核心概念</strong>：
+            <br>1. <strong>Pearson 相关系数 \(r\)</strong>：衡量两个变量之间<strong>线性相关</strong>程度的指标。对<strong>异常值</strong>非常敏感。
+            <br>2. <strong>Spearman 相关系数
+              \(\rho\)</strong>：基于变量的<strong>排名（秩）</strong>计算的相关系数。衡量两个变量之间<strong>单调相关</strong>程度。
+          </p>
+          <p><strong>直观对比</strong>：
+            <br>如果数据基本在一条直线上，\(r\) 和 \(\rho\) 都接近 1 或 -1。
+            <br>如果有<strong>极端异常值</strong>，\(r\) 会被严重拉低（偏离真实关系），而 \(\rho\) 依然保持稳定，因为它只看排名。
+          </p>
+          <p><strong>本题思路</strong>：
+            <br><strong>第(1)问</strong>：直接代入 Pearson 公式计算。
+            <br><strong>第(2)问</strong>：推导 Spearman 公式 \(\rho=1 - \frac{6\sum d_i^2}{N(N^2-1)}\)，并说明其优势（抗干扰、单调性）。
+          </p>
+          <canvas id="canvas-intro" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p>
+            <strong>设元</strong>：\(n=20\)，\(\bar{x}=75\)，\(\bar{y}=90\)，\(\sum(x_i-\bar{x})^2=6464\)，\(\sum(y_i-\bar{y})^2=149450\)，\(\sum(x_i-\bar{x})(y_i-\bar{y})=21650\)。
+          </p>
+          <p><strong>列式</strong>：\(r=\frac{21650}{\sqrt{6464\times 149450}}\)。</p>
+          <p><strong>化简</strong>：由注 \(\sqrt{6464\times 149450}\approx 31000\)，故
+            \(r\approx\frac{21650}{31000}=\frac{433}{620}\approx 0.698\cdots\)，精确到 0.01 为 0.70。</p>
+          <p><strong>答</strong>：样本相关系数约为 \(\boxed{0.70}\)（精确到 0.01）。</p>
+          <canvas id="canvas-q1" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>(i) 证明</strong>：\(\rho\) 为排名 \(R_i\) 与 \(S_i\) 的相关系数。因 \(R_i\) 是 \(1 \sim N\)
+            的排列，\(\bar{R}=\bar{S}=\frac{N+1}{2}\)，\(\sum(R_i-\bar{R})^2=\frac{N(N^2-1)}{12}\)。
+            <br>利用 \(\sum d_i^2=\sum(R_i-S_i)^2=\sum R_i^2+\sum S_i^2 - 2\sum R_i S_i\)，推导出 \(\sum R_i S_i\) 的表达式，代入
+            Pearson 公式化简即得 \(\rho=1-\frac{6\sum d_i^2}{N(N^2-1)}\)。
+          </p>
+          <p><strong>(ii) 优势</strong>：
+            <br>1. <strong>抗异常值</strong>：基于秩次，受极端值影响小。
+            <br>2. <strong>非线性</strong>：只要单调相关（如 \(y=x^3\)），\(\rho\) 就接近 1，而 \(r\) 可能显著小于 1。
+          </p>
+          <div class="tools-container">
+            <div class="tool-item">
+              <label>异常值位置: {{ params.outlierVal }}</label>
+              <input type="range" v-model.number="params.outlierVal" min="-50" max="150" step="5" @input="updateGraphs">
+            </div>
+            <p class="tool-desc">移动滑块改变这种红色异常值的 Y 坐标。观察 Pearson r（线性）急剧变化，而 Spearman ρ（排名）保持稳定。</p>
+          </div>
+          <canvas id="canvas-q2" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <p><strong>回顾</strong>：① 相关系数 \(r\approx 0.70\)；② 斯皮尔曼 \(\rho \approx 0.91\)；③ 斯皮尔曼抗异常值、刻画单调。</p>
+          <canvas id="canvas-summary" width="520" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+
+      var TABS = ['intro', 'q1', 'q2', 'summary'];
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath();
+        ctx.moveTo(40, cy); ctx.lineTo(w - 40, cy);
+        ctx.moveTo(cx, h - 40); ctx.lineTo(cx, 40);
+        ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Pearson vs Spearman', cx, 30);
+      }
+
+      function drawQ1(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('r ≈ 0.70', cx, cy);
+      }
+
+      function calculatePearson(x, y) {
+        var n = x.length;
+        var sumX = 0, sumY = 0;
+        for (var i = 0; i < n; i++) { sumX += x[i]; sumY += y[i]; }
+        var avgX = sumX / n, avgY = sumY / n;
+        var num = 0, denX = 0, denY = 0;
+        for (var i = 0; i < n; i++) {
+          var dx = x[i] - avgX;
+          var dy = y[i] - avgY;
+          num += dx * dy;
+          denX += dx * dx;
+          denY += dy * dy;
+        }
+        if (denX === 0 || denY === 0) return 0;
+        return num / (Math.sqrt(denX) * Math.sqrt(denY));
+      }
+
+      function calculateSpearman(x, y) {
+        var n = x.length;
+        var xIndices = x.map(function (v, i) { return { v: v, org: i }; }).sort(function (a, b) { return a.v - b.v; });
+        var yIndices = y.map(function (v, i) { return { v: v, org: i }; }).sort(function (a, b) { return a.v - b.v; });
+        var ranksX = new Array(n), ranksY = new Array(n);
+        xIndices.forEach(function (item, r) { ranksX[item.org] = r + 1; });
+        yIndices.forEach(function (item, r) { ranksY[item.org] = r + 1; });
+        var sumD2 = 0;
+        for (var i = 0; i < n; i++) sumD2 += Math.pow(ranksX[i] - ranksY[i], 2);
+        return 1 - (6 * sumD2) / (n * (n * n - 1));
+      }
+
+      function drawQ2(c, params) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        var outY = params ? params.outlierVal : 100;
+        ctx.clearRect(0, 0, w, h);
+
+        var xs = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+        var ys = [10, 20, 30, 40, 50, 60, 70, 80, outY];
+
+        var r = calculatePearson(xs, ys);
+        var rho = calculateSpearman(xs, ys);
+
+        ctx.strokeStyle = '#ccc'; ctx.beginPath();
+        ctx.moveTo(30, h - 30); ctx.lineTo(w - 30, h - 30);
+        ctx.moveTo(30, h - 30); ctx.lineTo(30, 30);
+        ctx.stroke();
+
+        function mapX(v) { return 30 + (v / 100) * (w - 60); }
+        function mapY(v) { return (h - 30) - ((v + 50) / 200) * (h - 60); }
+
+        for (var i = 0; i < xs.length; i++) {
+          var px = mapX(xs[i]);
+          var py = mapY(ys[i]);
+          ctx.beginPath();
+          if (i === xs.length - 1) {
+            ctx.fillStyle = '#e74c3c';
+            ctx.arc(px, py, 6, 0, 2 * Math.PI); ctx.fill();
+            ctx.fillText('异常值', px - 20, py - 10);
+          } else {
+            ctx.fillStyle = '#3498db';
+            ctx.arc(px, py, 4, 0, 2 * Math.PI); ctx.fill();
+          }
+        }
+
+        ctx.fillStyle = '#333'; ctx.font = '16px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText('Pearson r = ' + r.toFixed(3) + ' (受影响大)', 50, 40);
+        ctx.fillText('Spearman ρ = ' + rho.toFixed(3) + ' (受影响小)', 50, 65);
+      }
+
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center'; ctx.font = '14px sans-serif';
+        ctx.fillText('Spearman 更稳健', cx, cy);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () { return { activeTab: 'intro', params: { outlierVal: 100 } }; },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function') {
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              }
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            updateGraphs: function () { this.renderGraphs(); },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              var c = document.getElementById('canvas-' + n);
+              if (n === 'intro') drawIntro(c);
+              else if (n === 'q1') drawQ1(c);
+              else if (n === 'q2') drawQ2(c, this.params);
+              else if (n === 'summary') drawSummary(c);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

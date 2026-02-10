@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数列新定义（4）周期数列</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .result-box {
+      margin-top: 15px;
+      padding: 10px;
+      background: white;
+      border: 1px solid #eee;
+      font-family: monospace;
+    }
+  </style>
+  <meta name="description" content="周期数列定义、前 n 项和与参数范围、差分数列周期等价条件、递推求周期参数。">
+  <meta name="keywords" content="周期数列、前 n 项和、差分数列、递推、充要条件">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>数列新定义（4）周期数列</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·全国·高三专题练习) 对于无穷数列 \(\{a_n\}\)，若存在正整数 \(T\)，使得 \(a_{n+T} = a_n\) 对一切正整数 \(n\) 都成立，则称无穷数列 \(\{a_n\}\)
+            是<strong>周期为 \(T\) 的周期数列</strong>．</p>
+          <p><strong>(1)</strong> 已知无穷数列 \(\{a_n\}\) 是周期为 2 的周期数列，且 \(a_1 = 3\)，\(a_2 = 1\)，\(S_n\) 是数列 \(\{a_n\}\) 的前
+            \(n\) 项和，若 \(\frac{S_n}{n} \leq t\) 对一切正整数 \(n\) 恒成立，求常数 \(t\) 的取值范围；</p>
+          <p><strong>(2)</strong> 若无穷数列 \(\{a_n\}\) 和 \(\{b_n\}\) 满足 \(b_n = a_{n+1} - a_n\)，求证：“\(\{a_n\}\) 是周期为 \(T\)
+            的周期数列”的充要条件是“\(\{b_n\}\) 是周期为 \(T\) 的周期数列，且 \(\sum_{i=1}^{T} b_i = 0\)”；</p>
+          <p><strong>(3)</strong> 若无穷数列 \(\{a_n\}\) 和 \(\{b_n\}\) 满足 \(b_n = a_{n+1} - a_n\)，且 \(b_1 = 1,\, b_2 = a,\,
+            b_{n+2} = \frac{b_{n+1}}{b_n}\)（\(n \geq 1,\, n \in \mathbb{N}\)），是否存在非零常数 \(a\)，使得 \(\{a_n\}\)
+            是周期数列？若存在，请求出所有满足条件的常数 \(a\)；若不存在，请说明理由．</p>
+        </div>
+      </div>
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>周期概念</strong>：数列的值像时钟一样循环，即 <span class="math-inline">\(a_{n+T} = a_n\)</span>。
+            <br>本例：序列 3, 1, 3, 1, 3, 1…（周期 \(T=2\)）。
+          </p>
+          <p><strong>平均值</strong> <span class="math-inline">\(\dfrac{S_n}{n}\)</span>：
+            <br>\(n=1\)：\(\dfrac{S_1}{1}=\dfrac{3}{1}=3\)
+            <br>\(n=2\)：\(\dfrac{S_2}{2}=\dfrac{3+1}{2}=2\)
+            <br>\(n=3\)：\(\dfrac{S_3}{3}=\dfrac{7}{3}\approx 2.33\)
+            <br>随着 \(n\) 增大，\(\dfrac{S_n}{n}\) 趋于一个周期内的平均 \((3+1)/2=2\)，最大值在 \(n=1\) 时取得，为 3。
+          </p>
+          <canvas id="canvas-intro" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p>周期为 2，\(a_1=3,\,a_2=1\)，求使 \(\dfrac{S_n}{n}\le t\) 对一切 \(n\in\mathbb{N}^*\) 成立的常数 \(t\) 的取值范围。</p>
+          <div class="tools-container">
+            <p><strong>分析</strong>：\(a_n\) 以 3,1,3,1,… 循环，\(S_n\) 为前 \(n\) 项和。当 \(n=2m\) 时 \(S_n = 4m\)，\(\dfrac{S_n}{n}=2\)；当 \(n=2m-1\) 时 \(S_n = 4m-3\)，\(\dfrac{S_n}{n} = \dfrac{4m-3}{2m-1} = 2 - \dfrac{1}{2m-1}\)，随 \(m\) 增大趋于 2，在 \(m=1\) 时最大：\(\dfrac{S_1}{1}=3\)。</p>
+            <p>故 \(\dfrac{S_n}{n}\) 的最大值为 3（在 \(n=1\) 取到），要对一切 \(n\) 成立 \(\dfrac{S_n}{n}\le t\)，需 \(t\ge 3\)。</p>
+            <p><strong>答</strong>：\(t \in [3,+\infty)\)。可用下方滑块验证：\(t<3\) 时 \(n=1\) 不满足。</p>
+            <label>设定阈值 t: {{ params.t }}</label>
+            <input type="range" v-model.number="params.t" min="1" max="5" step="0.1" style="width:100%;">
+          </div>
+          <canvas id="canvas-q1" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p>\(b_n = a_{n+1}-a_n\)，求证：“\(\{a_n\}\) 为周期 \(T\) 的周期数列”当且仅当“\(\{b_n\}\) 为周期 \(T\) 的周期数列且 \(\sum_{i=1}^T b_i = 0\)”。</p>
+          <div class="tools-container">
+            <p><strong>充分性</strong>：若 \(a_{n+T}=a_n\)，则 \(b_{n+T}=a_{n+T+1}-a_{n+T}=a_{n+1}-a_n=b_n\)，且 \(a_{T+1}-a_1 = \sum_{i=1}^T b_i\)，由 \(a_{T+1}=a_1\) 得 \(\sum_{i=1}^T b_i=0\)。</p>
+            <p><strong>必要性</strong>：若 \(b_n\) 周期为 \(T\) 且 \(\sum_{i=1}^T b_i=0\)，则 \(a_{n+T} = a_n + \sum_{i=1}^T b_{n+i-1} = a_n + \sum_{i=1}^T b_i = a_n\)，故 \(\{a_n\}\) 周期为 \(T\)。</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+          <h2>第(3)问</h2>
+          <p>\(b_1=1,\,b_2=a,\,b_{n+2}=\dfrac{b_{n+1}}{b_n}\)，问是否存在非零常数 \(a\) 使 \(\{a_n\}\)（满足 \(b_n=a_{n+1}-a_n\)）为周期数列。</p>
+          <div class="tools-container">
+            <p><strong>递推</strong>：由 \(b_{n+2}=b_{n+1}/b_n\) 得 \(b_3=a,\,b_4=1,\,b_5=1/a,\,b_6=1/a,\,b_7=1,\,b_8=a,\ldots\)，\(b_n\) 呈周期 6（当 \(a\ne 0\)）。要使 \(\{a_n\}\) 周期，由 (2) 需 \(\sum_{i=1}^T b_i=0\)。对周期 6 计算 \(\sum_{i=1}^6 b_i = 1+a+a+1+1/a+1/a = 2+2a+2/a\)，令其为 0 得 \(a+1/a = -1\)，即 \(a^2+a+1=0\)，无实根。故<strong>不存在</strong>满足条件的非零实数 \(a\)（若允许复数则 \(a\) 为 \(a^2+a+1=0\) 的根）。</p>
+            <p>下方可调节 \(a\) 观察 \(b_n\) 前 12 项及前 6 项和。</p>
+            <div class="tool-item">
+              <label>参数 a (b₂):</label>
+              <input type="number" v-model.number="params.a" step="0.1">
+            </div>
+            <p>前 12 项：{{ bSeq.join(', ') }}</p>
+            <p>前 6 项和：{{ bSum.toFixed(3) }}</p>
+          </div>
+          <canvas id="canvas-q3" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>(1)</strong> 周期 2、\(a_1=3,a_2=1\) 时 \(\dfrac{S_n}{n}\) 最大为 3，故 \(t\ge 3\)。</p>
+            <p><strong>(2)</strong> \(b_n=a_{n+1}-a_n\) 时：\(\{a_n\}\) 周期 \(T\) \(\Leftrightarrow\) \(\{b_n\}\) 周期 \(T\) 且 \(\sum_{i=1}^T b_i=0\)。</p>
+            <p><strong>(3)</strong> \(b_{n+2}=b_{n+1}/b_n\) 且 \(b_1=1,\,b_2=a\) 时，\(b_n\) 周期 6；\(\sum_{i=1}^6 b_i=0\) 要求 \(a^2+a+1=0\)，无实根，故不存在使 \(\{a_n\}\) 为周期数列的非零实数 \(a\)。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Katex
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+
+      function drawQ1(c, t) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+
+        var N = 20;
+        var margin = 40;
+        var scaleX = (w - 2 * margin) / N;
+        // y range 0 to 4
+        var scaleY = (h - 2 * margin) / 4;
+
+        // Draw t line
+        var yt = h - margin - t * scaleY;
+        ctx.beginPath(); ctx.strokeStyle = '#e74c3c'; ctx.setLineDash([5, 5]);
+        ctx.moveTo(margin, yt); ctx.lineTo(w - margin, yt); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#e74c3c'; ctx.fillText('t = ' + t, w - margin - 40, yt - 5);
+
+        // Draw avg points
+        var sum = 0;
+        for (var i = 1; i <= N; i++) {
+          var val = (i % 2 !== 0) ? 3 : 1;
+          sum += val;
+          var avg = sum / i;
+          var x = margin + i * scaleX;
+          var y = h - margin - avg * scaleY;
+
+          ctx.beginPath();
+          ctx.fillStyle = (avg <= t) ? '#3498db' : '#e74c3c';
+          ctx.arc(x, y, 3, 0, 2 * Math.PI);
+          ctx.fill();
+
+          if (i < 5) ctx.fillText(avg.toFixed(2), x, y - 10);
+        }
+
+        ctx.fillStyle = '#333';
+        ctx.fillText("蓝色: 满足, 红色: 不满足", margin, 20);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              params: { t: 3.0, a: 1 }
+            };
+          },
+          computed: {
+            bSeq: function () {
+              var a = this.params.a;
+              if (a === 0) return ["无定义(a=0)"];
+              var b = [1, a];
+              // b(n+2) = b(n+1)/b(n)
+              for (var i = 2; i < 12; i++) { // Generate 12 terms
+                var prev1 = b[i - 1];
+                var prev2 = b[i - 2];
+                if (prev2 === 0) { b.push(NaN); break; }
+                var val = prev1 / prev2;
+                b.push(val);
+              }
+              return b.map(x => (typeof x === 'number') ? Number(x.toFixed(3)) : x);
+            },
+            bSum: function () {
+              // Sum first 6 terms
+              var arr = this.bSeq;
+              if (arr.length < 6) return 999;
+              var s = 0;
+              for (var i = 0; i < 6; i++) {
+                if (typeof arr[i] === 'number') s += arr[i];
+              }
+              return s;
+            }
+          },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              if (n === 'intro') this.drawIntro();
+              else if (n === 'q1') drawQ1(document.getElementById('canvas-q1'), this.params.t);
+              else if (n === 'q3') this.drawQ3();
+              else if (n === 'summary') this.drawSummary();
+            },
+            drawIntro: function () {
+              var c = document.getElementById('canvas-intro');
+              if (!c) return;
+              var ctx = c.getContext('2d'), w = c.width, h = c.height;
+              ctx.clearRect(0, 0, w, h);
+              // Draw concept: Cycle
+              ctx.beginPath(); ctx.arc(w / 2, h / 2, 50, 0, 2 * Math.PI); ctx.strokeStyle = '#3498db'; ctx.stroke();
+              ctx.fillText("周期性 T", w / 2 - 20, h / 2);
+            },
+            drawQ3: function () {
+              var c = document.getElementById('canvas-q3');
+              if (!c) return;
+              var ctx = c.getContext('2d'), w = c.width, h = c.height;
+              ctx.clearRect(0, 0, w, h);
+
+              var a = this.params.a;
+              if (!a) return; // a cannot be 0 for this sequence to be defined well initially distinct
+              var seq = [1, a, a, 1, 1 / a, 1 / a];
+
+              var margin = 40;
+              var maxVal = Math.max(...seq.map(Math.abs));
+              var scaleX = (w - 2 * margin) / 6;
+              var scaleY = (h / 2 - margin) / (maxVal || 1); // Center at h/2
+
+              // Axis
+              ctx.strokeStyle = '#ccc';
+              ctx.beginPath(); ctx.moveTo(margin, h / 2); ctx.lineTo(w - margin, h / 2); ctx.stroke();
+
+              ctx.strokeStyle = '#e74c3c';
+              ctx.fillStyle = '#e74c3c';
+              ctx.lineWidth = 2;
+
+              seq.forEach((val, i) => {
+                var x = margin + i * scaleX + scaleX / 2;
+                var y = h / 2 - val * scaleY;
+
+                ctx.beginPath();
+                ctx.moveTo(x, h / 2);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                ctx.beginPath(); ctx.arc(x, y, 4, 0, 2 * Math.PI); ctx.fill();
+
+                ctx.fillText(val.toFixed(2), x - 10, y - (val >= 0 ? 10 : -20));
+                ctx.fillText('b' + (i + 1), x - 5, h / 2 + (val >= 0 ? 20 : -10));
+              });
+
+              // Sum line?
+              var sum = seq.reduce((a, b) => a + b, 0);
+              ctx.fillStyle = '#333';
+              ctx.fillText('Sum ≈ ' + sum.toFixed(3), margin, 20);
+            },
+            drawSummary: function () {
+              var c = document.getElementById('canvas-summary');
+              if (!c) return;
+              var ctx = c.getContext('2d'), w = c.width, h = c.height;
+              ctx.clearRect(0, 0, w, h);
+              ctx.fillStyle = '#333'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+              ctx.fillText("周期性是数列的重要性质", w / 2, h / 2 - 20);
+              ctx.fillText("利用 Σb_i = 0 判定", w / 2, h / 2 + 20);
+            }
+          },
+          watch: {
+            'params.t': function (val) {
+              if (this.activeTab === 'q1') {
+                this.$nextTick(() => drawQ1(document.getElementById('canvas-q1'), val));
+              }
+            },
+            'params.a': function () {
+              // Update Q3 graph if implemented
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (typeof renderMathInElement !== 'undefined') {
+              try {
+                renderMathInElement(appEl, katexOpt);
+                var vm = this;
+                vm.$nextTick(function () {
+                  var panel = vm.$refs.activePanel;
+                  if (panel) renderMathInElement(panel, katexOpt);
+                });
+              } catch (e) { }
+            }
+            var vm = this;
+            this.$nextTick(function () {
+              vm.renderGraphs();
+            });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

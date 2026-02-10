@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数列新定义（2）集合 A+A 与 A−A</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .input-group {
+      margin-bottom: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .input-group input {
+      padding: 5px;
+      width: 60px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .result-box {
+      margin-top: 15px;
+      padding: 12px 16px;
+      background: white;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+    }
+
+    .result-box p {
+      margin: 8px 0;
+    }
+
+    .nA-result {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #f0f7ff;
+      border-left: 4px solid #3498db;
+      border-radius: 4px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .set-display {
+      font-family: 'Consolas', monospace;
+      color: #2c3e50;
+      word-break: break-all;
+    }
+
+    .tab-panel h3 {
+      font-size: 1rem;
+      color: #34495e;
+      margin-bottom: 12px;
+    }
+  </style>
+  <meta name="description" content="集合 A+A、A−A 与 n(A)=|A+A|-|A-A|、定值证明与数列通项。">
+  <meta name="keywords" content="A+A、A−A、n(A)、等差数列">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>数列新定义（2）集合 A+A 与 A−A</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·北京西城·北京师大附中校考模拟预测) 已知 \(A\) 为有限个实数构成的非空集合，设 \(A + A = \{a_i + a_j \mid a_i, a_j \in A\}\)，\(A - A =
+            \{a_i - a_j \mid a_i, a_j \in A\}\)，记集合 \(A+A\) 和 \(A-A\) 其元素个数分别为 \(|A+A|\)、\(|A-A|\)．设 \(n(A) = |A+A| -
+            |A-A|\)．例如当 \(A = \{1,2\}\) 时，\(A+A = \{2,3,4\}\)，\(A-A = \{-1,0,1\}\)，\(|A+A| = |A-A|\)，所以 \(n(A) = 0\)．
+          </p>
+          <p><strong>(1)</strong> 若 \(A = \{1,3,5\}\)，求 \(n(A)\) 的值；</p>
+          <p><strong>(2)</strong> 设 \(A\) 是由 3 个正实数组成的集合且 \((A+A) \cap A = \varnothing\)，\(A' = A \cup
+            \{0\}\)，证明：\(n(A') - n(A)\) 为定值；</p>
+          <p><strong>(3)</strong> 若 \(\{a_n\}\) 是一个各项互不相同的无穷递增正整数数列，对任意 \(n \in \mathbb{N}^*\)，设 \(A_n = \{a_1, a_2,
+            \cdots, a_n\}\)，\(b_n = n(A_n)\)．已知 \(a_1 = 1,\, a_2 = 2\)，且对任意 \(n \in \mathbb{N}^*,\, b_n \geq 0\)，求数列
+            \(\{a_n\}\) 的通项公式．</p>
+        </div>
+      </div>
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>定义</strong>：\(A+A = \{a_i+a_j \mid a_i,a_j\in A\}\)（所有两元之和，去重），\(A-A = \{a_i-a_j \mid a_i,a_j\in A\}\)（所有两元之差，去重），\(n(A)=|A+A|-|A-A|\)。</p>
+
+          <div class="tools-container">
+            <h3>集合计算器</h3>
+            <div class="input-group">
+              <label>集合 A（3 个实数）:</label>
+              <input type="number" v-model.number="nums[0]" step="any" placeholder="a₁">
+              <input type="number" v-model.number="nums[1]" step="any" placeholder="a₂">
+              <input type="number" v-model.number="nums[2]" step="any" placeholder="a₃">
+            </div>
+            <div class="input-group">
+              <label><input type="checkbox" v-model="addZero"> 令 \(A'=A\cup\{0\}\)（用于第(2)问）</label>
+            </div>
+
+            <div class="result-box" v-if="computedRes">
+              <p><strong>\(A\)</strong> = <span class="set-display">{{ formatSet(computedRes.A) }}</span></p>
+              <p><strong>\(A+A\)</strong>（{{ computedRes.sumSet.length }} 个）= <span class="set-display">{{ formatSet(computedRes.sumSet) }}</span></p>
+              <p><strong>\(A-A\)</strong>（{{ computedRes.diffSet.length }} 个）= <span class="set-display">{{ formatSet(computedRes.diffSet) }}</span></p>
+              <p class="nA-result">\(n(A)=|A+A|-|A-A|\) = {{ computedRes.sumSet.length }} − {{ computedRes.diffSet.length }} = {{ computedRes.nA }}</p>
+              <p v-if="addZero" style="color:#3498db; font-size:13px;">第(2)问：可先算 \(A=\{1,3,5\}\) 的 \(n(A)\)，再勾选上方得到 \(A'\)，观察 \(n(A')-n(A)=-2\)。</p>
+            </div>
+          </div>
+          <canvas id="canvas-intro" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>已知</strong>：\(A=\{1, 3, 5\}\)，\(n(A)=|A+A|-|A-A|\)。</p>
+          <div class="tools-container">
+            <p><strong>A+A</strong>：任取 \(a_i,a_j\in A\) 得 \(1+1,1+3,1+5,3+1,3+3,3+5,5+1,5+3,5+5\)，去重得 \(\{2,4,6,8,10\}\)，故 \(|A+A|=5\)。</p>
+            <p><strong>A-A</strong>：任取两元作差得 \(0,\pm2,\pm4\)，故 \(|A-A|=5\)。</p>
+            <p><strong>答</strong>：\(n(A)=5-5=0\)。</p>
+          </div>
+          <canvas id="canvas-q1" width="520" height="150"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p>设 \(A\) 为 3 个正实数，\((A+A)\cap A=\varnothing\)，\(A'=A\cup\{0\}\)，证 \(n(A')-n(A)\) 为定值。</p>
+          <div class="tools-container">
+            <p><strong>推导</strong>：\(A'=A\cup\{0\}\) 后，\(A'+A' = A+A \cup \{0+a,\,0+b,\,0+c,\,0+0\} = A+A \cup \{0,a,b,c\}\)。由 \((A+A)\cap A=\varnothing\) 知 \(a,b,c,0\) 均不在 \(A+A\) 中，故 \(|A'+A'| = |A+A| + 4\)。</p>
+            <p>\(A'-A' = A-A \cup \{a-0,b-0,c-0,0-a,0-b,0-c\} = A-A \cup \{\pm a,\pm b,\pm c\}\)，共新增 6 个元素，故 \(|A'-A'| = |A-A| + 6\)。</p>
+            <p>于是 \(n(A')-n(A) = (|A+A|+4)-(|A-A|+6) - (|A+A|-|A-A|) = 4-6 = -2\)。</p>
+            <p><strong>答</strong>：\(n(A')-n(A) = -2\)（定值）。</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+          <h2>第(3)问</h2>
+          <p>\(\{a_n\}\) 递增正整数列，\(a_1=1,\,a_2=2\)，\(A_n=\{a_1,\ldots,a_n\}\)，\(b_n=n(A_n)\ge 0\)，求 \(\{a_n\}\) 通项。</p>
+          <div class="tools-container">
+            <p><strong>结论</strong>：\(a_n = n\)。</p>
+            <p><strong>思路</strong>：对公差为 \(d\) 的等差数列，\(|A_n+A_n|\) 与 \(|A_n-A_n|\) 随 \(n\) 增长；当 \(d>1\) 时差集增长更快，会导致 \(b_n = |A_n+A_n|-|A_n-A_n| < 0\)。只有 \(d=1\) 时恒有 \(b_n\ge 0\)，结合 \(a_1=1,\,a_2=2\) 得 \(a_n=n\)。</p>
+            <p><strong>答</strong>：\(a_n = n\)（\(n\in\mathbb{N}^*\)）。</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>定义</strong>：\(n(A)=|A+A|-|A-A|\)，刻画“和集”与“差集”规模之差。</p>
+            <p><strong>(1)</strong> \(A=\{1,3,5\}\) 时 \(n(A)=0\)。</p>
+            <p><strong>(2)</strong> 三个正实数且 \((A+A)\cap A=\varnothing\) 时，\(A'=A\cup\{0\}\) 有 \(n(A')-n(A)=-2\)。</p>
+            <p><strong>(3)</strong> 满足题设的无穷递增正整数列唯一为 \(a_n=n\)。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+
+      function drawQ1(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('第(1)问：A={1,3,5} ⇒ A+A 与 A−A 各 5 个元素，n(A)=0', w / 2, h / 2);
+      }
+
+      function drawIntro(c, A, sumSet, diffSet) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        var all = (A || []).concat(sumSet || []).concat(diffSet || []);
+        if (all.length === 0) {
+          ctx.fillStyle = '#95a5a6';
+          ctx.font = '14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('输入 3 个实数后显示 A、A+A、A−A 在数轴上的位置', w / 2, h / 2);
+          return;
+        }
+        var min = Math.min(...all);
+        var max = Math.max(...all);
+        var range = max - min;
+        if (range === 0) range = 10;
+        var margin = 40;
+        var availW = w - 2 * margin;
+
+        function mapX(val) {
+          return margin + ((val - min) / range) * availW;
+        }
+
+        // Draw Axis
+        ctx.strokeStyle = '#ccc';
+        ctx.beginPath(); ctx.moveTo(margin, h / 2); ctx.lineTo(w - margin, h / 2); ctx.stroke();
+
+        // Plot DiffSet (Red, Below)
+        ctx.fillStyle = '#e74c3c';
+        diffSet.forEach(v => {
+          var x = mapX(v);
+          ctx.beginPath(); ctx.arc(x, h / 2 + 20, 3, 0, 2 * Math.PI); ctx.fill();
+        });
+        ctx.fillText("A-A (红)", w - margin, h / 2 + 35);
+
+        // Plot SumSet (Blue, Above)
+        ctx.fillStyle = '#3498db';
+        sumSet.forEach(v => {
+          var x = mapX(v);
+          ctx.beginPath(); ctx.arc(x, h / 2 - 20, 3, 0, 2 * Math.PI); ctx.fill();
+        });
+        ctx.fillText("A+A (蓝)", w - margin, h / 2 - 25);
+
+        // Plot A (Black, On line)
+        ctx.fillStyle = '#333';
+        A.forEach(v => {
+          var x = mapX(v);
+          ctx.beginPath(); ctx.arc(x, h / 2, 5, 0, 2 * Math.PI); ctx.fill();
+          ctx.fillText(String(v), x - 3, h / 2 - 8);
+        });
+        ctx.font = '12px sans-serif';
+        ctx.fillStyle = '#7f8c8d';
+        ctx.fillText('数轴：黑点 = A，蓝点 = A+A，红点 = A−A', margin, h - 8);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              nums: [1, 3, 5],
+              addZero: false
+            };
+          },
+          computed: {
+            computedRes: function () {
+              var rawA = this.nums.map(Number).filter(n => !isNaN(n));
+              if (this.addZero && !rawA.includes(0)) rawA.push(0);
+              rawA.sort((a, b) => a - b);
+
+              // Calc A+A
+              var sSet = new Set();
+              for (var i = 0; i < rawA.length; i++) {
+                for (var j = 0; j < rawA.length; j++) {
+                  sSet.add(rawA[i] + rawA[j]);
+                }
+              }
+              var sumArr = Array.from(sSet).sort((a, b) => a - b);
+
+              // Calc A-A
+              var dSet = new Set();
+              for (var i = 0; i < rawA.length; i++) {
+                for (var j = 0; j < rawA.length; j++) {
+                  dSet.add(rawA[i] - rawA[j]);
+                }
+              }
+              var diffArr = Array.from(dSet).sort((a, b) => a - b);
+
+              return {
+                A: rawA,
+                sumSet: sumArr,
+                diffSet: diffArr,
+                nA: sumArr.length - diffArr.length
+              };
+            }
+          },
+          watch: {
+            computedRes: {
+              handler: function (val) {
+                var vm = this;
+                this.$nextTick(function () {
+                  if (vm.activeTab === 'intro') {
+                    drawIntro(document.getElementById('canvas-intro'), val.A, val.sumSet, val.diffSet);
+                  }
+                });
+              },
+              deep: true
+            }
+          },
+          methods: {
+            formatSet: function (arr) {
+              if (!arr || !arr.length) return '∅';
+              return '{ ' + arr.join(', ') + ' }';
+            },
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              if (n === 'intro') drawIntro(document.getElementById('canvas-intro'), this.computedRes.A, this.computedRes.sumSet, this.computedRes.diffSet);
+              else if (n === 'q1') drawQ1(document.getElementById('canvas-q1'));
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (typeof renderMathInElement !== 'undefined') {
+              try {
+                renderMathInElement(appEl, katexOpt);
+                var vm = this;
+                vm.$nextTick(function () {
+                  var panel = vm.$refs.activePanel;
+                  if (panel) renderMathInElement(panel, katexOpt);
+                  vm.renderGraphs();
+                });
+              } catch (e) { }
+            } else {
+              this.$nextTick(function () { this.renderGraphs(); });
+            }
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

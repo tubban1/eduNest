@@ -24,7 +24,7 @@ function SignupPageInner() {
   const [mounted, setMounted] = useState(false); // 避免hydration错误
   const { signUpWithEmail, resendVerificationEmail, signInWithGoogle } = useAuth();
   const router = useRouter();
-  const { t } = useTranslation(['auth']);
+  const { t, i18n } = useTranslation(['auth']);
 
   // 避免hydration错误
   useEffect(() => {
@@ -65,7 +65,7 @@ function SignupPageInner() {
     }
     
     try {
-      const result = await signUpWithEmail(email, password, name);
+      const result = await signUpWithEmail(email, password, name, i18n.language);
       
       if (result.error) {
         setError(result.error);
@@ -128,7 +128,7 @@ function SignupPageInner() {
                     return;
                   }
                   
-                  const res = await resendVerificationEmail(email);
+                  const res = await resendVerificationEmail(email, i18n.language);
                   
                   if (res.error) {
                     alert(res.error);

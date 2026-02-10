@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>圆锥曲线新定义（3）曲面方程与双曲线旋转</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .problem-fig-wrap { margin: 16px 0; }
+    .fig-3d-wrap { width: 100%; min-width: 320px; max-width: 520px; height: 340px; min-height: 280px; background: #e8f4f2; border-radius: 8px; overflow: hidden; }
+    .fig-3d-wrap canvas { display: block; width: 100% !important; height: 100% !important; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tab-panel canvas { display: block; margin: 12px 0; border: 1px solid #eee; border-radius: 4px; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; margin: 0; max-width: 100%; } }
+  </style>
+  <meta name="description" content="空间曲面方程、单叶双曲面与直母线，旋转面与异面直线夹角。">
+  <meta name="keywords" content="曲面方程、单叶双曲面、直母线、旋转面、异面直线夹角、空间解析几何">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" onerror="var c=document.getElementById('hyperboloid-3d');if(c)c.innerHTML='&lt;p style=padding:20px;color:#888;&gt;3D 图加载失败&lt;/p&gt;';"></script>
+  <meta name="author" content="">
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>圆锥曲线新定义（3）曲面方程与双曲线旋转</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·重庆·高三重庆八中校考阶段练习) 类似平面解析几何中的曲线与方程，在空间直角坐标系中，可以定义曲面（含平面）\(S\) 的方程：若曲面 \(S\) 和三元方程 \(F(x,y,z) = 0\) 之间满足：① 曲面 \(S\) 上任意一点的坐标均为三元方程 \(F(x,y,z) = 0\) 的解；② 以三元方程 \(F(x,y,z) = 0\) 的任意解 \((x_0, y_0, z_0)\) 为坐标的点均在曲面 \(S\) 上，则称曲面 \(S\) 的方程为 \(F(x,y,z) = 0\)，方程 \(F(x,y,z) = 0\) 的曲面为 \(S\)．已知曲面 \(C\) 的方程为 \(\frac{x^2}{1} + \frac{y^2}{1} - \frac{z^2}{4} = 1\)．</p>
+          <p class="problem-fig-wrap"><!-- 单叶双曲面 x²+y²−z²/4=1 的 3D 图，可拖拽旋转 -->
+            <div class="fig-3d-wrap" id="hyperboloid-3d"><p style="padding:80px 20px;text-align:center;color:#666;">3D 图加载中…</p></div>
+            <p style="margin-top:6px; font-size:13px; color:#666;">拖动可旋转视角</p>
+          </p>
+          <p><strong>(1)</strong> 已知直线 \(l\) 过曲面 \(C\) 上一点 \(Q(1,1,2)\)，以 \(\vec{d} = (-2, 0, -4)\) 为方向向量，求证：直线 \(l\) 在曲面 \(C\) 上（即 \(l\) 上任意一点均在曲面 \(C\) 上）；</p>
+          <p><strong>(2)</strong> 已知曲面 \(C\) 可视为平面 \(xOz\) 中某双曲线的一支绕 \(z\) 轴旋转一周所得的旋转面；同时，过曲面 \(C\) 上任意一点，有且仅有两条直线，使得它们均在曲面 \(C\) 上．设直线 \(l'\) 在曲面 \(C\) 上，且过点 \(T(\sqrt{2},0,2)\)，求异面直线 \(l\) 与 \(l'\) 所成角的余弦值．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：题目给出空间曲面方程的定义和曲面 \(C:\ x^2+y^2-\frac{z^2}{4}=1\)（单叶双曲面）。(1) 证过 \(Q\) 且方向为 \(\vec{d}\) 的直线整条在 \(C\) 上；(2) 求过 \(T(\sqrt{2},0,2)\) 且在 \(C\) 上的直母线 \(l'\) 与 \(l\) 的异面直线夹角余弦。</p>
+        <p><strong>本题曲面</strong>：\(C:\ x^2+y^2-\frac{z^2}{4}=1\) 是<strong>单叶双曲面</strong>，可由 \(xOz\) 平面内双曲线 \(x^2-\frac{z^2}{4}=1\)（一支）绕 \(z\) 轴旋转得到。</p>
+        <p><strong>直母线</strong>：过单叶双曲面上任意一点，有且仅有两条直线整条都在曲面上。第(1)问代入参数方程恒为 1 即证；第(2)问用过 \(T\) 的另一直母线方向与 \(\vec{d}\) 求 \(\cos\theta\)。</p>
+        <p><strong>考点</strong>：空间解析几何、直线参数方程代入曲面、异面直线方向向量与夹角余弦。易错：异面直线夹角取锐角，用 \(|\vec{d}\cdot\vec{d'}|/(|\vec{d}||\vec{d'}|)\)。</p>
+        <div class="problem-fig-wrap">
+          <canvas id="canvas-intro" width="520" height="260"></canvas>
+          <p style="font-size:13px;color:#666;">xOz 平面内双曲线 \(x^2-\frac{z^2}{4}=1\) 绕 z 轴得曲面 C</p>
+        </div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(1)问</h2>
+        <p><strong>目标</strong>：证直线 \(l\)（过 \(Q(1,1,2)\)，方向 \(\vec{d}=(-2,0,-4)\)）上任意一点都在曲面 \(C:x^2+y^2-\frac{z^2}{4}=1\) 上。</p>
+        <p><strong>步骤 1</strong>：\(Q\) 在 \(C\) 上：\(1^2+1^2-\frac{2^2}{4}=2-1=1\)，成立。</p>
+        <p><strong>步骤 2</strong>：直线 \(l\) 参数方程：\(x=1-2t,\ y=1,\ z=2-4t\)。代入 \(x^2+y^2-\frac{z^2}{4}\) 得
+          \[ (1-2t)^2+1^2-\frac{(2-4t)^2}{4}=1-4t+4t^2+1-(1-4t+4t^2)=1. \]
+          对任意 \(t\) 恒为 1，故 \(l\) 上每点都在 \(C\) 上，即直线 \(l\) 在曲面 \(C\) 上。\(\square\)</p>
+        <div class="problem-fig-wrap">
+          <canvas id="canvas-q1" width="520" height="260"></canvas>
+        </div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(2)问</h2>
+        <p><strong>目标</strong>：求过 \(T(\sqrt{2},0,2)\) 且在曲面 \(C\) 上的直线 \(l'\) 与 \(l\)（方向 \(\vec{d}=(-2,0,-4)\)）所成角的余弦值。</p>
+        <p><strong>步骤 1：\(l'\) 的参数方程</strong> 设 \(l'\) 上动点 \(M(x_1,y_1,z_1)\)，方向向量 \(\vec{d'}=(a,b,c)\)。\(\overrightarrow{TM}\) 与 \(\vec{d'}\) 平行，故存在实数 \(t\) 使 \((x_1-\sqrt{2},\,y_1,\,z_1-2)=t(a,b,c)\)，得 \(x_1=\sqrt{2}+at\)，\(y_1=bt\)，\(z_1=2+ct\)。</p>
+        <p><strong>步骤 2：\(l'\) 整条在 \(C\) 上的条件</strong> 将 \(M(\sqrt{2}+at,\,bt,\,2+ct)\) 代入曲面 \(C:\ x^2+y^2-\frac{z^2}{4}=1\)：</p>
+        <p>\[ (\sqrt{2}+at)^2 + (bt)^2 - \frac{(2+ct)^2}{4} = 1. \]</p>
+        <p>展开：\(2+2\sqrt{2}at+a^2t^2 + b^2t^2 - \frac{4+4ct+c^2t^2}{4} = 1\)，即 \(2+2\sqrt{2}at+(a^2+b^2)t^2 - 1 - ct - \frac{c^2}{4}t^2 = 1\)，整理得</p>
+        <p>\[ \left(a^2+b^2-\frac{c^2}{4}\right)t^2 + (2\sqrt{2}a - c)t = 0. \]</p>
+        <p>要对任意实数 \(t\) 成立，系数须均为 0：\(a^2+b^2-\frac{c^2}{4}=0\)，\(2\sqrt{2}a-c=0\)。</p>
+        <p><strong>步骤 3：求方向向量</strong> 由 \(2\sqrt{2}a-c=0\) 得 \(c=2\sqrt{2}a\)。代入 \(a^2+b^2-\frac{c^2}{4}=0\) 得 \(a^2+b^2-\frac{8a^2}{4}=0\)，即 \(b^2-a^2=0\)，故 \(b=a\) 或 \(b=-a\)。不妨取 \(a=1\)：</p>
+        <ul style="margin-left:20px; margin-top:6px;">
+          <li>\(b=1\) 时 \(c=2\sqrt{2}\)，\(\vec{d'}=(1,1,2\sqrt{2})\)；</li>
+          <li>\(b=-1\) 时 \(c=2\sqrt{2}\)，\(\vec{d'}=(1,-1,2\sqrt{2})\)。</li>
+        </ul>
+        <p><strong>步骤 4：异面直线夹角余弦</strong> \(\vec{d}=(-2,0,-4)\)，\(|\vec{d}|=\sqrt{4+0+16}=2\sqrt{5}\)。对 \(\vec{d'}=(1,1,2\sqrt{2})\)：\(|\vec{d'}|=\sqrt{1+1+8}=\sqrt{10}\)，\(\vec{d}\cdot\vec{d'}=-2+0-8\sqrt{2}=-2-8\sqrt{2}\)，故 \(|\vec{d}\cdot\vec{d'}|=2+8\sqrt{2}\)。于是</p>
+        <p>\[ |\cos\theta| = \frac{|\vec{d}\cdot\vec{d'}|}{|\vec{d}||\vec{d'}|} = \frac{2+8\sqrt{2}}{2\sqrt{5}\cdot\sqrt{10}} = \frac{2+8\sqrt{2}}{2\sqrt{50}} = \frac{2+8\sqrt{2}}{10\sqrt{2}}. \]</p>
+        <p>分子分母同乘 \(\sqrt{2}\)：\(\frac{2\sqrt{2}+16}{20}=\frac{\sqrt{2}+8}{10}\)，即 \(\boxed{\dfrac{8+\sqrt{2}}{10}}\)。对 \(\vec{d'}=(1,-1,2\sqrt{2})\)，\(|\vec{d}\cdot\vec{d'}|=|-2-8\sqrt{2}|=2+8\sqrt{2}\) 相同，故两种 \(l'\) 与 \(l\) 所成角的余弦值均为 \(\dfrac{8+\sqrt{2}}{10}\)。</p>
+        <p><strong>答</strong>：异面直线 \(l\) 与 \(l'\) 所成角的余弦值为 \(\boxed{\dfrac{8+\sqrt{2}}{10}}\)。</p>
+        <div class="problem-fig-wrap">
+          <canvas id="canvas-q2" width="520" height="260"></canvas>
+        </div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：① 曲面方程的定义；② 单叶双曲面 \(x^2+y^2-\frac{z^2}{4}=1\) 由 \(xOz\) 内双曲线绕 \(z\) 轴旋转；③ 过曲面上每点有两条直母线；④ 第(1)问代入参数方程恒等即证；⑤ 第(2)问设 \(l'\) 方向 \(\vec{d'}=(a,b,c)\)，过 \(T(\sqrt{2},0,2)\) 参数代入 \(C\) 得 \(a^2+b^2-\frac{c^2}{4}=0\)、\(2\sqrt{2}a-c=0\)，得 \(\vec{d'}=(1,\pm1,2\sqrt{2})\)，夹角余弦均为 \(\dfrac{8+\sqrt{2}}{10}\)。</p>
+        <p><strong>易错</strong>：异面直线夹角取锐角，用 \(|\vec{d}\cdot\vec{d'}|/(|\vec{d}||\vec{d'}|)\)；\(l'\) 整条在 \(C\) 上要求参数代入后对任意 \(t\) 成立，故 \(t^2\)、\(t\) 的系数均为 0。</p>
+        <div class="problem-fig-wrap">
+          <canvas id="canvas-summary" width="520" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) {}
+      }
+      var TABS = ['intro', 'q1', 'q2', 'summary'];
+      function drawIntro(canvas) {
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        var cx = w / 2, cy = h / 2, scale = 45;
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.fillText('x', w - 16, cy - 6); ctx.fillText('z', cx - 6, 12);
+        ctx.strokeStyle = '#14b8a6'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var z = -3; z <= 3; z += 0.05) {
+          var x = Math.sqrt(1 + z * z / 4);
+          var px = cx + scale * x, pz = cy - scale * z / 2;
+          if (z === -3 || Math.abs(z - (-3)) < 0.06) ctx.moveTo(px, pz); else ctx.lineTo(px, pz);
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        for (var z = -3; z <= 3; z += 0.05) {
+          var x = -Math.sqrt(1 + z * z / 4);
+          var px = cx + scale * x, pz = cy - scale * z / 2;
+          if (z === -3 || Math.abs(z - (-3)) < 0.06) ctx.moveTo(px, pz); else ctx.lineTo(px, pz);
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '12px sans-serif'; ctx.fillText('x² − z²/4 = 1 (xOz)', cx - 50, 28);
+      }
+      function drawQ1(canvas) {
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        var cx = w / 2, cy = h / 2, scale = 50;
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.fillText('x', w - 16, cy - 6); ctx.fillText('z', cx - 6, 12);
+        ctx.strokeStyle = '#14b8a6'; ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]); ctx.beginPath();
+        for (var z = -2.5; z <= 2.5; z += 0.05) {
+          var r = Math.sqrt(1 + z * z / 4); if (r < 0.1) continue;
+          ctx.moveTo(cx + scale * r, cy - scale * z / 2); ctx.lineTo(cx - scale * r, cy - scale * z / 2);
+        }
+        ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(cx + scale * 1, cy - scale * 2 / 2); ctx.lineTo(cx + scale * (-1), cy - scale * (-2) / 2);
+        ctx.stroke();
+        ctx.fillStyle = '#dc2626'; ctx.fillText('l (Q→)', cx + scale * 0.2, cy - scale + 4);
+      }
+      function drawQ2(canvas) {
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        var cx = w / 2, cy = h / 2, scale = 55;
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(cx + scale * 0.5, cy - scale * 0.5); ctx.lineTo(cx - scale * 0.5, cy + scale * 0.5); ctx.stroke();
+        ctx.strokeStyle = '#2563eb'; ctx.beginPath(); ctx.moveTo(cx + scale * 0.6, cy - scale * 0.3); ctx.lineTo(cx - scale * 0.6, cy + scale * 0.3); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '12px sans-serif'; ctx.fillText('l', cx - scale * 0.6, cy + scale * 0.5 + 14); ctx.fillText("l'", cx + scale * 0.65, cy - scale * 0.35);
+        ctx.fillStyle = '#666'; ctx.font = '12px sans-serif'; ctx.fillText('cos θ = (8+√2)/10', cx - 55, 24);
+      }
+      function drawSummary(canvas) {
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        var cx = w / 2, cy = h / 2, scale = 42;
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.strokeStyle = '#14b8a6'; ctx.lineWidth = 1.5;
+        for (var z = -2; z <= 2; z += 0.08) {
+          var r = Math.sqrt(1 + z * z / 4); if (r < 0.1) continue;
+          ctx.beginPath(); ctx.moveTo(cx + scale * r, cy - scale * z / 2); ctx.lineTo(cx - scale * r, cy - scale * z / 2); ctx.stroke();
+        }
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.fillText('x² + y² − z²/4 = 1', cx - 70, 22);
+        ctx.fillStyle = '#666'; ctx.font = '12px sans-serif'; ctx.fillText('直母线 l, l\' → cos θ = (8+√2)/10', cx - 85, 42);
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function() { return { activeTab: 'intro' }; },
+          methods: {
+            setTab: function(name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function') {
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              }
+              var vm = this;
+              this.$nextTick(function() {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') {
+                  try { renderMathInElement(panel, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) {}
+                }
+              });
+            },
+            renderGraphs: function() {
+              var name = this.activeTab;
+              if (name === 'intro') drawIntro(document.getElementById('canvas-intro'));
+              else if (name === 'q1') drawQ1(document.getElementById('canvas-q1'));
+              else if (name === 'q2') drawQ2(document.getElementById('canvas-q2'));
+              else if (name === 'summary') drawSummary(document.getElementById('canvas-summary'));
+            }
+          },
+          mounted: function() {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') {
+              try { renderMathInElement(appEl, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) {}
+            }
+            this.$nextTick(function() { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+      // 3D 单叶双曲面 x²+y²−z²/4=1（延迟一帧确保容器已布局）
+      var container = document.getElementById('hyperboloid-3d');
+      if (!container) return;
+      if (typeof THREE === 'undefined') {
+        container.innerHTML = '<p style="padding:40px 20px;text-align:center;color:#c00;line-height:1.6;">3D 库未加载。<br>直接打开本地 HTML 时，浏览器可能禁止加载在线脚本。<br><strong>建议</strong>：在本文件所在目录打开终端，运行 <code style="background:#eee;padding:2px 6px;">npx serve .</code> 或 <code style="background:#eee;padding:2px 6px;">python3 -m http.server 8080</code>，再用浏览器访问给出的地址（如 http://localhost:3000）。</p>';
+        return;
+      }
+      function init3d() {
+        var width = container.offsetWidth || 520;
+        var height = Math.max(280, container.offsetHeight || 340);
+        if (width <= 0) { requestAnimationFrame(init3d); return; }
+        var scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xe8f4f2);
+        var camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+        camera.position.set(4.5, 4, 4.5);
+        camera.lookAt(0, 0, 0);
+        var renderer;
+        try {
+          renderer = new THREE.WebGLRenderer({ antialias: true });
+        } catch (e) {
+          container.innerHTML = '<p style="padding:60px 20px;text-align:center;color:#c00;">您的设备或浏览器暂不支持 WebGL，无法显示 3D 图。</p>';
+          return;
+        }
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.innerHTML = '';
+        container.appendChild(renderer.domElement);
+        // 单叶双曲面 x²+y²−z²/4=1：中间收细、两端开口放大（径向随 |z| 缩放）
+        var segU = 48, segV = 32;
+        var zMin = -1.6, zMax = 1.6;
+        var pos = [], idx = [];
+        for (var iv = 0; iv <= segV; iv++) {
+          var z = zMin + (zMax - zMin) * (iv / segV);
+          var r = Math.sqrt(1 + z * z / 4);
+          var t = (z / zMax) * (z / zMax);
+          var scale = 0.7 + 0.5 * t;
+          for (var iu = 0; iu <= segU; iu++) {
+            var angle = 2 * Math.PI * (iu / segU);
+            pos.push(r * scale * Math.cos(angle), r * scale * Math.sin(angle), z);
+          }
+        }
+        for (var j = 0; j < segV; j++)
+          for (var i = 0; i < segU; i++) {
+            var a = j * (segU + 1) + i, b = a + 1, c = a + (segU + 1), d = c + 1;
+            idx.push(a, c, b, b, c, d);
+          }
+        var geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geom.setIndex(idx);
+        geom.computeVertexNormals();
+        var mat = new THREE.MeshPhongMaterial({
+          color: 0x14b8a6,
+          shininess: 40,
+          specular: 0x0d9488,
+          side: THREE.DoubleSide
+        });
+        var mesh = new THREE.Mesh(geom, mat);
+        scene.add(mesh);
+        // 坐标轴 (红色箭头)
+        var axLen = 2.2, axCol = 0xdc2626;
+        scene.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), axLen, axCol));
+        scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), axLen, axCol));
+        scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), axLen, axCol));
+        // 光源
+        scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+        scene.add(new THREE.DirectionalLight(0xffffff, 0.8).position.set(5, 8, 6));
+        scene.add(new THREE.DirectionalLight(0x99ddcc, 0.25).position.set(-4, 4, -2));
+        // 鼠标拖拽旋转视角
+        var dragging = false, prevX = 0, prevY = 0;
+        var theta = 0.75 * Math.PI, phi = 0.4 * Math.PI;
+        var radius = 7;
+        function updateCamera() {
+          camera.position.x = radius * Math.sin(phi) * Math.cos(theta);
+          camera.position.y = radius * Math.cos(phi);
+          camera.position.z = radius * Math.sin(phi) * Math.sin(theta);
+          camera.lookAt(0, 0, 0);
+          camera.updateProjectionMatrix();
+        }
+        renderer.domElement.addEventListener('mousedown', function(e) { dragging = true; prevX = e.clientX; prevY = e.clientY; });
+        renderer.domElement.addEventListener('mouseup', function() { dragging = false; });
+        renderer.domElement.addEventListener('mouseleave', function() { dragging = false; });
+        renderer.domElement.addEventListener('mousemove', function(e) {
+          if (!dragging) return;
+          theta += (e.clientX - prevX) * 0.01;
+          phi = Math.max(0.15, Math.min(Math.PI - 0.15, phi + (prevY - e.clientY) * 0.01));
+          prevX = e.clientX; prevY = e.clientY;
+          updateCamera();
+        });
+        updateCamera();
+        function animate() {
+          requestAnimationFrame(animate);
+          renderer.render(scene, camera);
+        }
+        animate();
+        window.addEventListener('resize', function() {
+          var w = container.offsetWidth || 520;
+          var h = Math.max(280, container.offsetHeight || 340);
+          if (w <= 0) return;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        });
+      }
+      requestAnimationFrame(init3d);
+    });
+  </script>
+</body>
+</html>

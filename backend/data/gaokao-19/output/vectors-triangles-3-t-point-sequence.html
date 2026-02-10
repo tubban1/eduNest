@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>平面向量与解三角形新定义（3）T 点列</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tool-container { margin: 12px 0; border: 1px solid #eee; border-radius: 4px; min-height: 220px; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; margin: 0; max-width: 100%; } }
+  </style>
+  <meta name="description" content="T 点列定义、f(n) 单调性判断、连续三点钝角三角形、向量投影比较。">
+  <meta name="keywords" content="T 点列、向量、钝角三角形、单调性">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null;this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null;this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null;this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/auto-render.min.js'"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>平面向量与解三角形新定义（3）T 点列</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>将平面直角坐标系中的一列点 \(A_1(1,a_1)\)、\(A_2(2,a_2)\)、⋯、\(A_n(n,a_n)\)、⋯，记为 \(\{A_n\}\)，设 \(f(n) = \overrightarrow{A_n A_{n+1}} \cdot \vec{j}\)，其中 \(\vec{j}\) 为与 \(y\) 轴方向相同的单位向量．若对任意的正整数 \(n\)，都有 \(f(n+1) &gt; f(n)\)，则称 \(\{A_n\}\) 为<strong>T 点列</strong>．</p>
+          <p><strong>(1)</strong> 判断 \(A_1(1,1)\)、\(A_2\left(2, \frac{1}{2}\right)\)、\(A_3\left(3, \frac{1}{3}\right)\)、⋯、\(A_n\left(n, \frac{1}{n}\right)\)、⋯ 是否为 T 点列，并说明理由；</p>
+          <p><strong>(2)</strong> 若 \(\{A_n\}\) 为 T 点列，且 \(a_2 &gt; a_1\)．任取其中连续三点 \(A_k\)、\(A_{k+1}\)、\(A_{k+2}\)，证明 \(\triangle A_k A_{k+1} A_{k+2}\) 为钝角三角形；</p>
+          <p><strong>(3)</strong> 若 \(\{A_n\}\) 为 T 点列，对于正整数 \(k, l, m\)（\(k &lt; l &lt; m\)），比较 \(\overrightarrow{A_l A_{m+k}} \cdot \vec{j}\) 与 \(\overrightarrow{A_{l-k} A_m} \cdot \vec{j}\) 的大小，并说明理由．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：\(f(n)=\overrightarrow{A_n A_{n+1}}\cdot\vec{j}=a_{n+1}-a_n\)（纵坐标差）。T 点列即 \(\{a_{n+1}-a_n\}\) 严格递增。</p>
+        <p><strong>第(1)问</strong>：\(a_n=1/n\) 时 \(f(n)=1/(n+1)-1/n=-1/(n(n+1))\)，比较 \(f(n+1)\) 与 \(f(n)\) 即比较 \(-1/((n+1)(n+2))\) 与 \(-1/(n(n+1))\)，可得 \(f(n+1)&gt;f(n)\)。</p>
+        <p><strong>第(2)问</strong>：T 点列且 \(a_2&gt;a_1\) 则所有差 \(a_{n+1}-a_n&gt;0\) 且严格递增。证 \(\angle A_{k+1}\) 为钝角：\(\overrightarrow{A_{k+1}A_k}\cdot\overrightarrow{A_{k+1}A_{k+2}}=(-1)(1)+(a_k-a_{k+1})(a_{k+2}-a_{k+1})&lt;0\)。</p>
+        <p><strong>第(3)问</strong>：\(\overrightarrow{A_l A_{m+k}}\cdot\vec{j}=a_{m+k}-a_l\)，\(\overrightarrow{A_{l-k}A_m}\cdot\vec{j}=a_m-a_{l-k}\)。二者均为 \(m-l+k\) 个“差”之和，前者为 \(f(l),\ldots,f(m+k-1)\)，后者为 \(f(l-k),\ldots,f(m-1)\)。因 \(f\) 严格增，前者更大。</p>
+        <p><strong>拿分策略</strong>：(1) 先写 \(f(n)=a_{n+1}-a_n\) 再比较 \(f(n+1)\) 与 \(f(n)\)；(2) 证中间点 \(\angle A_{k+1}\) 为钝角，用两邻边向量点积 &lt; 0；(3) 把两项都写成 \(f(i)\) 的和，项数相同，由 \(f\) 严格增得下标大的一侧和更大。</p>
+        <p><strong>考点</strong>：向量投影、单调性、钝角判定（点积 &lt; 0）。<strong>易错</strong>：\(f(n)\) 是纵坐标差 \(a_{n+1}-a_n\) 不是 \(a_n\)；\(a_2&gt;a_1\) 保证 \(f(n)&gt;0\) 且严格递增；第(3)问两段和项数均为 \(m-l+k\)。</p>
+        <div id="container-intro" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(1)问</h2>
+        <p><strong>设元</strong>：\(A_n(n,1/n)\)，故 \(f(n)=\overrightarrow{A_n A_{n+1}}\cdot\vec{j}=a_{n+1}-a_n=\dfrac{1}{n+1}-\dfrac{1}{n}=\dfrac{n-(n+1)}{n(n+1)}=-\dfrac{1}{n(n+1)}\)。</p>
+        <p><strong>列式</strong>：\(f(n+1)=-\dfrac{1}{(n+1)(n+2)}\)。要证 \(f(n+1)&gt;f(n)\)，即 \(-\dfrac{1}{(n+1)(n+2)}&gt;-\dfrac{1}{n(n+1)}\)。</p>
+        <p><strong>化简</strong>：等价于 \(\dfrac{1}{(n+1)(n+2)}&lt;\dfrac{1}{n(n+1)}\)，即 \(n(n+1)&lt;(n+1)(n+2)\)，即 \(n&lt;n+2\)，对任意正整数 \(n\) 成立。</p>
+        <p><strong>答</strong>：\(\boxed{\text{是}}\) T 点列，理由：对任意正整数 \(n\) 均有 \(f(n+1)&gt;f(n)\)。</p>
+        <div id="container-q1" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(2)问</h2>
+        <p><strong>设元</strong>：\(\{A_n\}\) 为 T 点列且 \(a_2&gt;a_1\)，故 \(f(n)=a_{n+1}-a_n\) 严格递增且 \(f(1)=a_2-a_1&gt;0\)，从而对任意 \(n\) 有 \(a_{n+1}-a_n&gt;0\)。考虑 \(\triangle A_k A_{k+1} A_{k+2}\)，证 \(\angle A_{k+1}\) 为钝角。</p>
+        <p><strong>列式</strong>：\(\overrightarrow{A_{k+1}A_k}=(-1, a_k-a_{k+1})\)，\(\overrightarrow{A_{k+1}A_{k+2}}=(1, a_{k+2}-a_{k+1})\)。点积为 \((-1)\cdot 1+(a_k-a_{k+1})(a_{k+2}-a_{k+1})=-1+(a_k-a_{k+1})(a_{k+2}-a_{k+1})\)。</p>
+        <p><strong>化简</strong>：T 点列且 \(a_2&gt;a_1\) 故 \(f(n)=a_{n+1}-a_n&gt;0\) 且严格递增，于是 \(a_k-a_{k+1}&lt;0\)、\(a_{k+2}-a_{k+1}&gt;0\)，故 \((a_k-a_{k+1})(a_{k+2}-a_{k+1})&lt;0\)，点积 \(&lt;-1&lt;0\)，\(\angle A_{k+1}\) 为钝角。</p>
+        <p><strong>答</strong>：\(\angle A_{k+1}\) 为钝角，故 \(\triangle A_k A_{k+1} A_{k+2}\) 为钝角三角形。</p>
+        <div id="container-q2" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+        <h2>第(3)问</h2>
+        <p><strong>设元</strong>：\(\overrightarrow{A_l A_{m+k}}\cdot\vec{j}=a_{m+k}-a_l\)，\(\overrightarrow{A_{l-k} A_m}\cdot\vec{j}=a_m-a_{l-k}\)。</p>
+        <p><strong>列式</strong>：\(a_{m+k}-a_l=\sum_{i=l}^{m+k-1}f(i)\)（共 \(m+k-l\) 项），\(a_m-a_{l-k}=\sum_{i=l-k}^{m-1}f(i)\)（共 \(m-l+k\) 项），项数均为 \(m-l+k\)。</p>
+        <p><strong>化简</strong>：前者为 \(f(l), f(l+1), \ldots, f(m+k-1)\)，后者为 \(f(l-k), \ldots, f(m-1)\)。因 \(f\) 严格递增，\(f(l)&gt;f(l-k)\)，\(f(l+1)&gt;f(l-k+1)\)，…，逐项对应前者更大，故 \(\sum_{i=l}^{m+k-1}f(i)&gt;\sum_{i=l-k}^{m-1}f(i)\)。</p>
+        <p><strong>答</strong>：\(\overrightarrow{A_l A_{m+k}}\cdot\vec{j}&gt;\overrightarrow{A_{l-k} A_m}\cdot\vec{j}\)。</p>
+        <div id="container-q3" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：① \(f(n)=a_{n+1}-a_n\)，T 点列即 \(f(n+1)&gt;f(n)\)。② \(a_n=1/n\) 时满足 T 点列。③ 连续三点中中间点处两向量点积 &lt; 0 故为钝角。④ \(\overrightarrow{A_l A_{m+k}}\cdot\vec{j}&gt;\overrightarrow{A_{l-k} A_m}\cdot\vec{j}\)。</p>
+        <p><strong>易错</strong>：\(f(n)\) 是纵坐标差 \(a_{n+1}-a_n\) 不是 \(a_n\)；\(a_2&gt;a_1\) 保证所有 \(f(n)&gt;0\) 且严格递增；第(3)问两段和项数都是 \(m-l+k\)，下标大的一侧 \(f\) 值更大故和更大。</p>
+        <div id="container-summary" class="tool-container"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(el, katexOpt); } catch (e) {} }
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      function strategyTree(containerId, type) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        var div = document.createElement('div');
+        div.style.padding = '12px'; div.style.fontFamily = 'sans-serif'; div.style.fontSize = '14px';
+        if (type === 'q1') div.innerHTML = '<strong>T 点列判断</strong><br>f(n)=a_{n+1}-a_n → 比较 f(n+1) 与 f(n) → 得 f(n+1)&gt;f(n) ✓';
+        else if (type === 'q2') div.innerHTML = '<strong>钝角判定</strong><br>证 ∠A_{k+1} 钝角 → 两向量点积 &lt; 0 → (a_k-a_{k+1})(a_{k+2}-a_{k+1})&lt;0 ✓';
+        else if (type === 'q3') div.innerHTML = '<strong>比较</strong><br>两项和项数相同 → f 严格增 → 下标大的一侧和更大 → A_l A_{m+k}·j &gt; A_{l-k} A_m·j';
+        else div.innerHTML = '<strong>思路</strong><br>f(n)=纵坐标差；T 点列 ⇔ 差列严格递增';
+        container.appendChild(div);
+      }
+      function drawFunction(containerId) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        var c = document.createElement('canvas');
+        c.width = 520; c.height = 200; c.style.display = 'block';
+        container.appendChild(c);
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#3498db'; ctx.beginPath();
+        for (var n = 1; n <= 8; n++) {
+          var x = 40 + (n - 1) * (w - 80) / 7, y = h - 40 - (1 / n) * 120;
+          if (n === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '12px sans-serif'; ctx.fillText('点列 (n, 1/n) 示意', w - 120, 25);
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function() { return { activeTab: 'intro' }; },
+          methods: {
+            setTab: function(name) { this.activeTab = name; var idx = TABS.indexOf(name) + 1; if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function') window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length }); var vm = this; this.$nextTick(function() { vm.renderGraphs(); var panel = vm.$refs.activePanel; if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) {} } }); },
+            renderGraphs: function() {
+              var n = this.activeTab;
+              if (n === 'intro') strategyTree('container-intro', null);
+              else if (n === 'q1') { drawFunction('container-q1'); }
+              else if (n === 'q2') strategyTree('container-q2', 'q2');
+              else if (n === 'q3') strategyTree('container-q3', 'q3');
+              else if (n === 'summary') strategyTree('container-summary', null);
+            }
+          },
+          mounted: function() { var appEl = document.getElementById('app'); if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) {} } this.$nextTick(function() { this.renderGraphs(); }); }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>圆锥曲线新定义（6）切比雪夫距离</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tool-item label {
+      width: 140px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .tool-item input {
+      flex: 1;
+      margin-left: 10px;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+  </style>
+  <meta name="description" content="切比雪夫距离定义、最值、三角不等式与轨迹图形面积。">
+  <meta name="keywords" content="切比雪夫距离、最值、三角不等式、轨迹、面积">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>圆锥曲线新定义（6）切比雪夫距离</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·全国·高三专题练习) 在平面直角坐标系中，定义 \(d(A,B) = \max\{|x_1 - x_2|,\, |y_1 - y_2|\}\) 为两点 \(A(x_1, y_1)\)、\(B(x_2,
+            y_2)\) 的“<strong>切比雪夫距离</strong>”．例如：点 \(P_1(1,2)\)，点 \(P_2(3,5)\)，因为 \(|1-3| &lt; |2-5|\)，所以点 \(P_1\) 与点
+            \(P_2\) 的“切比雪夫距离”为 \(|2-5| = 3\)，记为 \(d(P_1, P_2) = 3\)．</p>
+          <p><strong>(1)</strong> 已知点 \(A\left(0, \frac{1}{2}\right)\)，\(B\) 为 \(x\) 轴上的一个动点，<br>
+            ① 若 \(d(A, B) = 3\)，写出点 \(B\) 的坐标；<br>
+            ② 直接写出 \(d(A, B)\) 的最小值；</p>
+          <p><strong>(2)</strong> 求证：对任意三点 \(A\)、\(B\)、\(C\)，都有 \(d(A, C) + d(C, B) \geq d(A, B)\)；</p>
+          <p><strong>(3)</strong> 定点 \(C(x_0, y_0)\)，动点 \(P(x, y)\) 满足 \(d(C, P) = r\)（\(r &gt; 0\)），若动点 \(P\)
+            所在的曲线所围成图形的面积是 36，求 \(r\) 的值．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：题目给出了“切比雪夫距离”定义（横纵坐标差的最大值）。涉及求动点的坐标（满足特定距离）、证明一般的三角不等式、以及求满足距离为定值的动点轨迹及其围成的面积。</p>
+        <p><strong>思路提示</strong>：
+          <br><strong>第(1)问</strong>：带入坐标计算。\(d(A,B)=\max(|x|, 1/2)=3\)，分情况讨论求解。
+          <br><strong>第(2)问</strong>：利用绝对值三角不等式 \(|a-b| \le |a-c| + |c-b|\)，分别证明横、纵坐标方向的不等式，再合并到 \(\max\) 形式。
+          <br><strong>第(3)问</strong>：将 \(d(C,P)=r\) 转化为 \(|x-x_0|\le r\) 且 \(|y-y_0|\le r\)，这描述了一个中心在 \(C\)、边长为 \(2r\)
+          的正方形的边界。面积即 \( (2r)^2 \)。
+        </p>
+        <p><strong>考点与易错</strong>：
+          <br><strong>考点</strong>：新定义理解、绝对值不等式性质、轨迹方程的几何意义。
+          <br><strong>易错</strong>：混淆切比雪夫距离与欧氏距离；在第(3)问中误以为轨迹是圆形或边界长度，实为求正方形面积。
+        </p>
+        <div class="canvas-wrap">
+          <canvas id="canvas-intro" width="520" height="260"></canvas>
+        </div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(1)问</h2>
+        <p>设 \(B(x,0)\)，则 \(d(A,B)=\max\{|x-0|,\,|0-\frac{1}{2}|\}=\max\{|x|,\,\frac{1}{2}\}\)。</p>
+        <p><strong>①</strong> \(d(A,B)=3\) 时，\(\max\{|x|,\frac{1}{2}\}=3\)，故 \(|x|=3\)，点 \(B\) 的坐标为 \(\boxed{(3,0)}\) 或
+          \(\boxed{(-3,0)}\)。</p>
+        <p><strong>②</strong> \(d(A,B)\geq \frac{1}{2}\)，当 \(B(0,0)\) 时 \(d(A,B)=\frac{1}{2}\)，故最小值为
+          \(\boxed{\dfrac{1}{2}}\)。</p>
+        <canvas id="canvas-q1" width="520" height="260"></canvas>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(2)问</h2>
+        <p><strong>设元</strong>：设 \(A(x_1,y_1)\)，\(B(x_2,y_2)\)，\(C(x_3,y_3)\) 为平面上任意三点。</p>
+        <p><strong>列式</strong>：由定义
+          \[ d(A,C)=\max\{|x_1-x_3|,\,|y_1-y_3|\},\quad d(C,B)=\max\{|x_3-x_2|,\,|y_3-y_2|\},\quad
+          d(A,B)=\max\{|x_1-x_2|,\,|y_1-y_2|\}. \]</p>
+        <p><strong>证明</strong>：由绝对值三角不等式有 \(|x_1-x_3|+|x_3-x_2|\geq |x_1-x_2|\) 与 \(|y_1-y_3|+|y_3-y_2|\geq
+          |y_1-y_2|\)。因此
+          \[ d(A,C)+d(C,B)=\max(|x_1-x_3|,|y_1-y_3|)+\max(|x_3-x_2|,|y_3-y_2|)\geq |x_1-x_3|+|x_3-x_2|\geq |x_1-x_2|, \]
+          同理 \(d(A,C)+d(C,B)\geq |y_1-y_2|\)。所以 \(d(A,C)+d(C,B)\geq \max(|x_1-x_2|,|y_1-y_2|)=d(A,B)\)。\(\square\)</p>
+        <canvas id="canvas-q2" width="520" height="260"></canvas>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+        <h2>第(3)问</h2>
+        <p><strong>设元</strong>：定点 \(C(x_0,y_0)\)，动点 \(P(x,y)\) 满足 \(d(C,P)=r\)（\(r>0\)），即
+          \(\max\{|x-x_0|,\,|y-y_0|\}=r\)。</p>
+        <p><strong>轨迹</strong>：上式等价于 \(|x-x_0|\leq r\) 且 \(|y-y_0|\leq r\) 且 \(\max(|x-x_0|,|y-y_0|)=r\)，即点 \(P\) 在以
+          \(C\) 为中心、边与坐标轴平行、边长为 \(2r\) 的正方形的<strong>边界</strong>上（四条边上）。该边界所围成的图形即为该正方形，面积等于 \((2r)^2=4r^2\)。</p>
+        <p><strong>列式与解</strong>：由题意面积为 36，故 \(4r^2=36\)，解得 \(r^2=9\)，\(r>0\)，故 \(r=3\)。</p>
+        <p><strong>答</strong>：\(\boxed{r=3}\)。</p>
+        <div class="tools-container">
+          <div class="tool-item">
+            <label>距离 r = {{ params.r }}</label>
+            <input type="range" v-model.number="params.r" min="1" max="5" step="0.5" @input="updateGraphs">
+          </div>
+          <p class="tool-desc">正方形边长为 2r，面积为 4r²。</p>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="canvas-q3" width="520" height="260"></canvas>
+        </div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：① \(d(A,B)=\max(|x_1-x_2|,|y_1-y_2|)\)；② (1) \(B\) 为 \((\pm 3,0)\)，最小值为 \(\frac{1}{2}\)；③
+          (2) 三角不等式 \(d(A,C)+d(C,B)\geq d(A,B)\)；④ (3) 轨迹为正方形，面积 \(4r^2=36\)，\(r=3\)。</p>
+        <p><strong>易错</strong>：\(\max\) 与绝对值要区分；第(2)问两边都要用“横坐标和 \(\geq\)”“纵坐标和 \(\geq\)”推出对 \(\max\)
+          成立；第(3)问“曲线所围成图形”指正方形内部，面积 \((2r)^2=4r^2\)。</p>
+        <canvas id="canvas-summary" width="520" height="260"></canvas>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2, s = 40;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.fillRect(cx - s * 1.5, cy - s * 0.5, s * 3, s); ctx.strokeStyle = '#14b8a6'; ctx.lineWidth = 2; ctx.strokeRect(cx - s * 1.5, cy - s * 0.5, s * 3, s);
+        ctx.fillStyle = '#666'; ctx.font = '12px sans-serif'; ctx.fillText('d(C,P)=r 为正方形', cx - 50, 24);
+      }
+      function drawQ1(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2, s = 35;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx, cy - 0.5 * s, 4, 0, 2 * Math.PI); ctx.fill(); ctx.fillText('A(0,1/2)', cx + 8, cy - 0.5 * s);
+        ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(cx + 3 * s, cy, 4, 0, 2 * Math.PI); ctx.fill(); ctx.fillText('B(3,0)', cx + 3 * s + 8, cy + 16);
+        ctx.fillStyle = '#666'; ctx.font = '12px sans-serif'; ctx.fillText('d(A,B)=3', cx - 30, 24);
+      }
+      function drawQ2(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.strokeStyle = '#14b8a6'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(80, 180); ctx.lineTo(260, 80); ctx.lineTo(440, 200); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '12px sans-serif'; ctx.fillText('d(A,C)+d(C,B) ≥ d(A,B)', cx - 80, 24);
+      }
+      function drawQ3(c, params) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        var rVal = params ? params.r : 3;
+
+        // Scale: 3 -> 60px
+        var scale = 20;
+        var rPx = rVal * scale;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+
+        ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2;
+        ctx.strokeRect(cx - rPx, cy - rPx, 2 * rPx, 2 * rPx);
+
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.1)';
+        ctx.fillRect(cx - rPx, cy - rPx, 2 * rPx, 2 * rPx);
+
+        ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, 2 * Math.PI); ctx.fill(); ctx.fillText('C', cx + 8, cy + 4);
+
+        ctx.fillStyle = '#666'; ctx.font = '12px sans-serif';
+        var area = (4 * rVal * rVal).toFixed(2);
+        ctx.fillText(`边长 2r=${(2 * rVal).toFixed(1)}, 面积 4r²=${area}`, cx - 70, 24);
+      }
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.fillText('切比雪夫距离: max(|Δx|,|Δy|)', cx - 110, cy - 20);
+        ctx.fillText('三角不等式; 轨迹正方形 r=3', cx - 100, cy + 20);
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              params: { r: 3 }
+            };
+          },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            updateGraphs: function () {
+              this.renderGraphs();
+            },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              if (n === 'intro') drawIntro(document.getElementById('canvas-intro'));
+              else if (n === 'q1') drawQ1(document.getElementById('canvas-q1'));
+              else if (n === 'q1') drawQ1(document.getElementById('canvas-q1'));
+              else if (n === 'q2') drawQ2(document.getElementById('canvas-q2'));
+              else if (n === 'q3') drawQ3(document.getElementById('canvas-q3'), this.params);
+              else if (n === 'summary') drawSummary(document.getElementById('canvas-summary'));
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

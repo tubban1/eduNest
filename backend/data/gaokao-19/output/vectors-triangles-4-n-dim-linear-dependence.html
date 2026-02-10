@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>平面向量与解三角形新定义（4）n 维向量线性相关</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tool-container { margin: 12px 0; border: 1px solid #eee; border-radius: 4px; min-height: 220px; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; margin: 0; max-width: 100%; } }
+  </style>
+  <meta name="description" content="n 维向量线性相关与线性无关判断、系数全零或全非零、比例相等。">
+  <meta name="keywords" content="线性相关、线性无关、n 维向量、系数">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null;this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null;this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null;this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/auto-render.min.js'"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>平面向量与解三角形新定义（4）n 维向量线性相关</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>对于给定的正整数 \(n\)，记集合 \(R_n = \{\vec{\alpha} \mid \vec{\alpha} = (x_1, x_2, x_3, \cdots, x_n),\, x_j \in \mathbb{R},\, j = 1,2,3,\cdots,n\}\)，其中元素 \(\vec{\alpha}\) 称为一个<strong>n 维向量</strong>．特别地，\(\vec{0} = (0,0,\cdots,0)\) 称为零向量．</p>
+          <p>设 \(k \in \mathbb{R}\)，\(\vec{\alpha} = (a_1, a_2, \cdots, a_n) \in R_n\)，\(\vec{\beta} = (b_1, b_2, \cdots, b_n) \in R_n\)，定义加法和数乘：\(\vec{\alpha} + \vec{\beta} = (a_1+b_1, a_2+b_2, \cdots, a_n+b_n)\)，\(k\vec{\alpha} = (ka_1, ka_2, \cdots, ka_n)\)．</p>
+          <p>对一组向量 \(\vec{\alpha_1}, \vec{\alpha_2}, \cdots, \vec{\alpha_s}\)（\(s \in \mathbb{N}^+,\, s \geq 2\)），若存在一组不全为零的实数 \(k_1, k_2, \cdots, k_s\)，使得 \(k_1\vec{\alpha_1} + k_2\vec{\alpha_2} + \cdots + k_s\vec{\alpha_s} = \vec{0}\)，则称这组向量<strong>线性相关</strong>；否则，称为<strong>线性无关</strong>．</p>
+          <p><strong>(Ⅰ)</strong> 对 \(n = 3\)，判断下列各组向量是线性相关还是线性无关，并说明理由．<br>
+          ① \(\vec{\alpha} = (1,1,1)\)，\(\vec{\beta} = (2,2,2)\)；<br>
+          ② \(\vec{\alpha} = (1,1,1)\)，\(\vec{\beta} = (2,2,2)\)，\(\vec{\gamma} = (5,1,4)\)；<br>
+          ③ \(\vec{\alpha} = (1,1,0)\)，\(\vec{\beta} = (1,0,1)\)，\(\vec{\gamma} = (0,1,1)\)，\(\vec{\delta} = (1,1,1)\)．</p>
+          <p><strong>(Ⅱ)</strong> 已知向量 \(\vec{\alpha}, \vec{\beta}, \vec{\gamma}\) 线性无关，判断向量 \(\vec{\alpha}+\vec{\beta}\)，\(\vec{\beta}+\vec{\gamma}\)，\(\vec{\alpha}+\vec{\gamma}\) 是线性相关还是线性无关，并说明理由．</p>
+          <p><strong>(Ⅲ)</strong> 已知 \(m\)（\(m \geq 2\)）个向量 \(\vec{\alpha_1}, \vec{\alpha_2}, \cdots, \vec{\alpha_m}\) 线性相关，但其中任意 \(m-1\) 个都线性无关，证明下列结论：<br>
+          (ⅰ) 如果存在等式 \(k_1\vec{\alpha_1} + k_2\vec{\alpha_2} + \cdots + k_m\vec{\alpha_m} = \vec{0}\)（\(k_i \in \mathbb{R},\, i = 1,2,3,\cdots,m\)），则这些系数 \(k_1, k_2, \cdots, k_m\) 或者全为零，或者全不为零；<br>
+          (ⅱ) 如果两个等式 \(k_1\vec{\alpha_1} + \cdots + k_m\vec{\alpha_m} = \vec{0}\)，\(l_1\vec{\alpha_1} + \cdots + l_m\vec{\alpha_m} = \vec{0}\)（\(k_i, l_i \in \mathbb{R},\, i = 1,2,\cdots,m\)）同时成立，其中 \(l_1 \neq 0\)，则 \(\frac{k_1}{l_1} = \frac{k_2}{l_2} = \cdots = \frac{k_m}{l_m}\)．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(Ⅰ) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(Ⅱ) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(Ⅲ) 第3问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：线性相关即存在不全为零的 \(k_1,\ldots,k_s\) 使 \(k_1\vec{\alpha_1}+\cdots+k_s\vec{\alpha_s}=\vec{0}\)；否则线性无关。</p>
+        <p><strong>(Ⅰ)</strong> ① 两向量成比例则相关。② 含成比例的两向量则整组相关。③ \(R_3\) 中 4 个向量必相关（维数 3）。</p>
+        <p><strong>(Ⅱ)</strong> 设 \(k_1(\vec{\alpha}+\vec{\beta})+k_2(\vec{\beta}+\vec{\gamma})+k_3(\vec{\alpha}+\vec{\gamma})=\vec{0}\)，整理成 \(\alpha,\beta,\gamma\) 的线性组合，由 \(\alpha,\beta,\gamma\) 无关得系数全为 0，解出 \(k_1=k_2=k_3=0\)。</p>
+        <p><strong>(Ⅲ)</strong> (ⅰ) 若某 \(k_i=0\) 则其余 \(m-1\) 个向量线性组合为 0，由“任意 \(m-1\) 个无关”得其余系数全 0。(ⅱ) 由两式用 \(l_1\neq 0\) 消元得 \(k_i/l_i\) 相等。</p>
+        <p><strong>拿分策略</strong>：(Ⅰ) 成比例⇒相关；含相关子集⇒整组相关；\(R_3\) 中 4 个向量必相关。(Ⅱ) 设组合为 0，整理成 \(\alpha,\beta,\gamma\) 的线性组合，由无关得系数全 0 解出 \(k_1=k_2=k_3=0\)。(Ⅲ)(ⅰ) 反证或分情况：某 \(k_i=0\)⇒其余全 0；(ⅱ) 用 \(l_1\neq 0\) 解出 \(\alpha_1\) 代入另一式得比例。</p>
+        <p><strong>考点</strong>：线性相关定义、维数、唯一表示。<strong>易错</strong>：线性相关是“存在不全为零的系数”，无关是“仅当系数全为零”；(Ⅲ)(ⅰ) 用“任意 \(m-1\) 个无关”推出若某 \(k_i=0\) 则其余必全 0。</p>
+        <div id="container-intro" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(Ⅰ)问</h2>
+        <p><strong>设元</strong>：\(n=3\)，按定义：存在不全为零的实数使线性组合为 \(\vec{0}\) 则相关，否则无关。</p>
+        <p><strong>① 列式与答</strong>：\(\vec{\beta}=(2,2,2)=2\vec{\alpha}\)，故 \(2\vec{\alpha}+(-1)\vec{\beta}=\vec{0}\)，系数不全为零，\(\boxed{\text{线性相关}}\)。</p>
+        <p><strong>② 列式与答</strong>：\(\vec{\alpha}\) 与 \(\vec{\beta}\) 线性相关，故存在不全为零的 \(k_1,k_2\) 使 \(k_1\vec{\alpha}+k_2\vec{\beta}=\vec{0}\)，取 \(k_3=0\) 即得 \(k_1\vec{\alpha}+k_2\vec{\beta}+0\cdot\vec{\gamma}=\vec{0}\)，整组 \(\boxed{\text{线性相关}}\)。</p>
+        <p><strong>③ 列式与答</strong>：\(R_3\) 维数为 3，至多 3 个向量线性无关，4 个向量必线性相关，故 \(\boxed{\text{线性相关}}\)。</p>
+        <div id="container-q1" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(Ⅱ)问</h2>
+        <p><strong>设元</strong>：设 \(k_1(\vec{\alpha}+\vec{\beta})+k_2(\vec{\beta}+\vec{\gamma})+k_3(\vec{\alpha}+\vec{\gamma})=\vec{0}\)。</p>
+        <p><strong>列式</strong>：整理得 \((k_1+k_3)\vec{\alpha}+(k_1+k_2)\vec{\beta}+(k_2+k_3)\vec{\gamma}=\vec{0}\)。因 \(\vec{\alpha},\vec{\beta},\vec{\gamma}\) 线性无关，故 \(k_1+k_3=0\)，\(k_1+k_2=0\)，\(k_2+k_3=0\)。</p>
+        <p><strong>化简</strong>：前两式得 \(k_2=k_3\)，代入 \(k_2+k_3=0\) 得 \(2k_2=0\)，故 \(k_2=k_3=0\)，进而 \(k_1=0\)。</p>
+        <p><strong>答</strong>：仅当 \(k_1=k_2=k_3=0\) 时成立，故 \(\vec{\alpha}+\vec{\beta}\)，\(\vec{\beta}+\vec{\gamma}\)，\(\vec{\alpha}+\vec{\gamma}\) \(\boxed{\text{线性无关}}\)。</p>
+        <div id="container-q2" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+        <h2>第(Ⅲ)问</h2>
+        <p><strong>设元</strong>：\(m\) 个向量线性相关，任意 \(m-1\) 个线性无关；存在 \(k_1,\ldots,k_m\) 不全为零使 \(k_1\vec{\alpha_1}+\cdots+k_m\vec{\alpha_m}=\vec{0}\)。</p>
+        <p><strong>(ⅰ) 列式与化简</strong>：若某 \(k_i=0\)（如 \(k_1=0\)），则 \(k_2\vec{\alpha_2}+\cdots+k_m\vec{\alpha_m}=\vec{0}\)。因 \(\vec{\alpha_2},\ldots,\vec{\alpha_m}\) 线性无关，故 \(k_2=\cdots=k_m=0\)，从而 \(k_1,\ldots,k_m\) 全为零。若存在非零系数，则不能只有部分为零（否则将非零项移到一边得少于 \(m\) 个向量的非零组合为 \(\vec{0}\)，与“任意 \(m-1\) 个无关”矛盾），故系数要么全为零要么全不为零。</p>
+        <p><strong>(ⅱ) 列式与化简</strong>：由 \(l_1\neq 0\) 得 \(\vec{\alpha_1}=-\frac{l_2}{l_1}\vec{\alpha_2}-\cdots-\frac{l_m}{l_1}\vec{\alpha_m}\)。代入 \(k_1\vec{\alpha_1}+\cdots+k_m\vec{\alpha_m}=\vec{0}\) 得 \(\bigl(k_2-k_1\frac{l_2}{l_1}\bigr)\vec{\alpha_2}+\cdots+\bigl(k_m-k_1\frac{l_m}{l_1}\bigr)\vec{\alpha_m}=\vec{0}\)。\(\vec{\alpha_2},\ldots,\vec{\alpha_m}\) 线性无关，故 \(k_2-k_1\frac{l_2}{l_1}=0,\ldots,k_m-k_1\frac{l_m}{l_1}=0\)，即 \(\frac{k_1}{l_1}=\frac{k_2}{l_2}=\cdots=\frac{k_m}{l_m}\)。</p>
+        <p><strong>答</strong>：(ⅰ) 系数 \(k_1,\ldots,k_m\) 全为零或全不为零；(ⅱ) \(\dfrac{k_1}{l_1}=\dfrac{k_2}{l_2}=\cdots=\dfrac{k_m}{l_m}\)。</p>
+        <div id="container-q3" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：(Ⅰ)① 成比例故相关；② 含相关子集故相关；③ 4 个三维向量必相关。(Ⅱ) 设组合为 0 推出 \(k_1=k_2=k_3=0\) 故无关。(Ⅲ)(ⅰ) 某系数为 0 则其余全 0；(ⅱ) 代入消元得 \(\frac{k_1}{l_1}=\cdots=\frac{k_m}{l_m}\)。</p>
+        <p><strong>易错</strong>：线性相关是“存在不全为零的系数”，无关是“仅当系数全为零”；(Ⅲ)(ⅰ) 用“任意 \(m-1\) 个无关”推出若某 \(k_i=0\) 则其余必全 0。</p>
+        <div id="container-summary" class="tool-container"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(el, katexOpt); } catch (e) {} }
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      function strategyTree(containerId, type) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        var div = document.createElement('div');
+        div.style.padding = '12px'; div.style.fontSize = '14px';
+        if (type === 'q1') div.innerHTML = '<strong>(Ⅰ) 判断</strong><br>① β=2α → 相关<br>② α,β 相关 → 整组相关<br>③ R₃ 中 4 个向量 → 必相关';
+        else if (type === 'q2') div.innerHTML = '<strong>(Ⅱ)</strong><br>k₁(α+β)+k₂(β+γ)+k₃(α+γ)=0<br>→ (k₁+k₃)α+(k₁+k₂)β+(k₂+k₃)γ=0<br>→ k₁=k₂=k₃=0 → 无关';
+        else if (type === 'q3') div.innerHTML = '<strong>(Ⅲ)</strong><br>(ⅰ) 某 k_i=0 → 其余 m-1 个组合=0 → 其余系数全 0<br>(ⅱ) 用 l₁≠0 消去 α₁ → 系数成比例';
+        else div.innerHTML = '<strong>线性相关</strong><br>存在不全为零的 k_i 使 Σk_i α_i = 0<br><strong>线性无关</strong><br>仅当全部 k_i=0 时成立';
+        container.appendChild(div);
+      }
+      function factorBreakdown(containerId) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        var div = document.createElement('div');
+        div.style.padding = '12px'; div.style.fontSize = '14px'; div.style.borderLeft = '3px solid #3498db';
+        div.innerHTML = 'k₁(α+β)+k₂(β+γ)+k₃(α+γ)<br>= (k₁+k₃)α + (k₁+k₂)β + (k₂+k₃)γ';
+        container.appendChild(div);
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function() { return { activeTab: 'intro' }; },
+          methods: {
+            setTab: function(name) { this.activeTab = name; var idx = TABS.indexOf(name) + 1; if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function') window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length }); var vm = this; this.$nextTick(function() { vm.renderGraphs(); var panel = vm.$refs.activePanel; if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) {} } }); },
+            renderGraphs: function() {
+              var n = this.activeTab;
+              if (n === 'intro') strategyTree('container-intro', null);
+              else if (n === 'q1') strategyTree('container-q1', 'q1');
+              else if (n === 'q2') factorBreakdown('container-q2');
+              else if (n === 'q3') strategyTree('container-q3', 'q3');
+              else if (n === 'summary') strategyTree('container-summary', null);
+            }
+          },
+          mounted: function() { var appEl = document.getElementById('app'); if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) {} } this.$nextTick(function() { this.renderGraphs(); }); }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+</html>

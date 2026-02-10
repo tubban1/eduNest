@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数列新定义（3）数列 S_n 与集合 P_t</title>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .seq-box {
+      font-family: monospace;
+      padding: 10px;
+      background: white;
+      border: 1px solid #eee;
+      overflow-x: auto;
+      white-space: nowrap;
+      margin-top: 10px;
+    }
+
+    .seq-item {
+      display: inline-block;
+      width: 30px;
+      text-align: center;
+      font-size: 12px;
+      border-right: 1px solid #eee;
+    }
+
+    .seq-item.highlight {
+      background: #fffacd;
+      font-weight: bold;
+    }
+  </style>
+  <meta name="description" content="分组数列 a_n、前 n 项和 S_n 与集合 P_t 元素个数。">
+  <meta name="keywords" content="分组数列、前 n 项和、整除、集合计数">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>数列新定义（3）数列 S_n 与集合 P_t</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·上海浦东新·华师大二附中校考模拟预测) 已知数列
+            \(\{a_n\}\)：1，−2，−2，3，3，3，−4，−4，−4，−4，⋯，\(\underbrace{(-1)^{k-1}k,\cdots,(-1)^{k-1}k}_{k\text{ 个}}\)，即当
+            \(\frac{(k-1)k}{2} < n \leq \frac{k(k+1)}{2}\)（\(k \in \mathbb{N}^*\)）时，\(a_n=(-1)^{k-1} k\)，记 \(S_n=a_1 +
+              a_2 + \cdots + a_n\)（\(n \in \mathbb{N}^*\)）．</p>
+              <p><strong>(1)</strong> 求 \(S_{2020}\) 的值；</p>
+              <p><strong>(2)</strong> 求当 \(\frac{k(k+1)}{2} < n \leq \frac{(k+1)(k+2)}{2}\)（\(k \in \mathbb{N}^*\)）时，试用
+                  \(n\)、\(k\) 的代数式表示 \(S_n\)（\(n \in \mathbb{N}^*\)）；</p>
+                  <p><strong>(3)</strong> 对于 \(t \in \mathbb{N}^*\)，定义集合 \(P_t = \{n \mid S_n \text{ 是 } a_n \text{
+                    的整数倍},\, n \in \mathbb{N}^*,\, \text{且 } 1 \leq n \leq t\}\)，求集合 \(P_{2020}\) 中元素的个数．</p>
+        </div>
+      </div>
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>数列结构</strong>：按“组”排列。第 k 组有 k 个元素，数值均为 \((-1)^{k-1}k\)。
+            <br> 例如：
+            <br> k=1 (1个): 1
+            <br> k=2 (2个): -2, -2
+            <br> k=3 (3个): 3, 3, 3
+            <br> k=4 (4个): -4, -4, -4, -4
+          </p>
+
+          <div class="tools-container">
+            <label>观察前 N 项 (滑动 N): {{ params.N }}</label>
+            <input type="range" v-model.number="params.N" min="1" max="50" step="1" style="width:100%;">
+
+            <div class="seq-box">
+              <span v-for="(val, idx) in seqData.arr" :key="idx" class="seq-item"
+                :class="{highlight: idx+1 === params.N}">
+                {{ val }}
+                <div style="font-size:9px; color:#999;">{{ idx+1 }}</div>
+              </span>
+            </div>
+
+            <div style="margin-top:15px;">
+              <p><strong>当前项 a<sub>{{ params.N }}</sub>:</strong> {{ seqData.currVal }} (第 {{ seqData.currK }} 组)</p>
+              <p><strong>前 {{ params.N }} 项和 S<sub>{{ params.N }}</sub>:</strong> {{ seqData.currSum }}</p>
+              <p><strong>整除判定 S/a:</strong> {{ seqData.currSum }} / {{ seqData.currVal }} = {{
+                (seqData.currSum/seqData.currVal).toFixed(2) }}
+                <span v-if="Number.isInteger(seqData.currSum/seqData.currVal)"
+                  style="color:green; font-weight:bold;">(是整数!)</span>
+                <span v-else style="color:red;">(非整数)</span>
+              </p>
+              <p><strong>累计整除次数 (|P<sub>{{ params.N }}</sub>|):</strong> {{ seqData.countP }}</p>
+            </div>
+          </div>
+          <canvas id="canvas-intro" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>目标</strong>：求 \(S_{2020}\)。</p>
+          <div class="tools-container">
+            <p><strong>步骤 1</strong>：确定 2020 所在组。前 \(k\) 组共 \(\dfrac{k(k+1)}{2}\) 项。令 \(\dfrac{k(k+1)}{2} < 2020 \le \dfrac{(k+1)(k+2)}{2}\)，得 \(k=63\) 时 \(\dfrac{63\cdot 64}{2}=2016\)，\(k=64\) 时 \(\dfrac{64\cdot 65}{2}=2080\)，故 2020 在第 <strong>64 组</strong>，该组通项为 \((-1)^{63}\cdot 64 = -64\)。</p>
+            <p><strong>步骤 2</strong>：前 2016 项和 \(S_{2016}\)。前 \(k\) 组完整和 \(S_{\frac{k(k+1)}{2}} = \sum_{i=1}^k (-1)^{i-1} i^2 = (-1)^{k-1}\dfrac{k(k+1)}{2}\)。代入 \(k=63\) 得 \(S_{2016} = \dfrac{63\cdot 64}{2} = 2016\)。</p>
+            <p><strong>步骤 3</strong>：\(S_{2020} = S_{2016} + 4\times(-64) = 2016 - 256 = 1760\)。</p>
+            <p><strong>答</strong>：\(S_{2020} = 1760\)。</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p>当 \(\dfrac{k(k+1)}{2} < n \le \dfrac{(k+1)(k+2)}{2}\)（\(k \in \mathbb{N}^*\)）时，\(n\) 落在第 \(k+1\) 组内，该组每项为 \((-1)^k (k+1)\)，从组首到当前项共 \(n - \dfrac{k(k+1)}{2}\) 项。</p>
+          <div class="tools-container">
+            <p><strong>推导</strong>：\(S_n = S_{\frac{k(k+1)}{2}} + (-1)^k (k+1)\left(n - \dfrac{k(k+1)}{2}\right)\)。利用 \(S_{\frac{k(k+1)}{2}} = (-1)^{k-1}\dfrac{k(k+1)}{2}\)，整理得</p>
+            <p>\[ S_n = (-1)^{k-1}(k+1)\left(n - \dfrac{k(k+1)}{2} + \dfrac{k}{2}\right) = (-1)^{k-1}(k+1)\left(n - \dfrac{k^2+1}{2}\right). \]</p>
+            <p>题设区间对应的是“第 \(k+1\) 组”，若将组号记为 \(k\)（即题中 \(k\) 为当前组号），则 \(S_n = (-1)^{k-1} k \left(n - \dfrac{k^2-1}{2}\right)\)（\(n\) 在 \(\dfrac{(k-1)k}{2} < n \le \dfrac{k(k+1)}{2}\) 内）。</p>
+            <p><strong>答</strong>：\(S_n = (-1)^{k-1} k \left(n - \dfrac{k^2-1}{2}\right)\)，其中 \(k\) 由 \(\dfrac{(k-1)k}{2} < n \le \dfrac{k(k+1)}{2}\) 确定。</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+          <h2>第(3)问</h2>
+          <p><strong>定义</strong>：\(P_t = \{n \mid 1\le n\le t,\, a_n \mid S_n\}\)，求 \(|P_{2020}|\)。</p>
+          <div class="tools-container">
+            <p><strong>规律</strong>：\(S_n\) 是 \(a_n\) 的整数倍当且仅当 \(a_n\) 所在组号为<strong>奇数</strong>（此时 \(a_n>0\) 且该组内 \(S_n\) 可被 \(a_n\) 整除）；偶数组内均不整除。</p>
+            <p><strong>计算</strong>：2020 以内，完整奇数组为第 1,3,5,…,63 组，每组项数分别为 1,3,5,…,63，故满足条件的 \(n\) 的个数为 \(1+3+5+\cdots+63 = 32^2 = 1024\)。第 64 组为偶数组，其内项均不满足。</p>
+            <p><strong>答</strong>：\(|P_{2020}| = 1024\)。</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>数列结构</strong>：第 \(k\) 组有 \(k\) 项，均为 \((-1)^{k-1}k\)；前 \(k\) 组共 \(\dfrac{k(k+1)}{2}\) 项。</p>
+            <p><strong>(1)</strong> \(S_{2020}=1760\)（先定组再算完整组和加尾段）。</p>
+            <p><strong>(2)</strong> \(\dfrac{(k-1)k}{2} < n \le \dfrac{k(k+1)}{2}\) 时 \(S_n = (-1)^{k-1} k \left(n - \dfrac{k^2-1}{2}\right)\)。</p>
+            <p><strong>(3)</strong> \(|P_t|\) 为 1 到 \(t\) 内所有<strong>奇数组</strong>的项数之和；\(|P_{2020}| = 1024\)。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Katex
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+
+      function drawSeq(c, N) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+
+        // Plot Sn trajectory
+        // Max Sn roughly grows with N (actually oscillates but grows).
+        // Let's generate data up to N
+        var pts = [];
+        var k = 1;
+        var count = 0;
+        var sum = 0;
+        var maxS = 0;
+        var minS = 0;
+
+        while (count < N) {
+          var val = (k % 2 === 1) ? k : -k;
+          for (var i = 0; i < k; i++) {
+            if (count >= N) break;
+            sum += val;
+            count++;
+            pts.push({ n: count, s: sum, k: k, valid: Number.isInteger(sum / val) });
+            if (sum > maxS) maxS = sum;
+            if (sum < minS) minS = sum;
+          }
+          k++;
+        }
+
+        var margin = 40;
+        var scaleX = (w - 2 * margin) / N;
+        var rangeY = Math.max(10, maxS - minS);
+        var scaleY = (h - 2 * margin) / rangeY;
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#ccc';
+        // Draw zero line
+        var y0 = margin + (maxS) * scaleY; // Top represents maxS
+        ctx.moveTo(margin, y0); ctx.lineTo(w - margin, y0); ctx.stroke();
+
+        // Draw curve
+        ctx.beginPath();
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 2;
+        pts.forEach((pt, i) => {
+          var x = margin + i * scaleX;
+          var y = margin + (maxS - pt.s) * scaleY;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Draw Points
+        pts.forEach((pt, i) => {
+          var x = margin + i * scaleX;
+          var y = margin + (maxS - pt.s) * scaleY;
+          ctx.beginPath();
+          ctx.fillStyle = pt.valid ? '#27ae60' : '#e74c3c';
+          ctx.arc(x, y, 3, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+
+        ctx.fillStyle = '#333';
+        ctx.fillText("S_n 走势 (绿点: 整除, 红点: 不整除)", w / 2 - 100, 20);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              params: { N: 20 }
+            };
+          },
+          computed: {
+            seqData: function () {
+              var N = this.params.N;
+              var arr = [];
+              var k = 1;
+              var count = 0;
+              var sum = 0;
+              var countP = 0;
+              var currVal = 0, currSum = 0, currK = 0;
+
+              while (count < N) {
+                var val = (k % 2 === 1) ? k : -k;
+                for (var i = 0; i < k; i++) {
+                  if (count >= N) break; // Only up to N for array display might be too heavy if large? No N<=50.
+                  sum += val;
+                  count++;
+
+                  // Check divisibility
+                  if (Number.isInteger(sum / val)) countP++;
+
+                  arr.push(val);
+                  if (count === N) {
+                    currVal = val;
+                    currSum = sum;
+                    currK = k;
+                  }
+                }
+                k++;
+              }
+              return { arr: arr, currVal: currVal, currSum: currSum, currK: currK, countP: countP };
+            }
+          },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            renderGraphs: function () {
+              if (this.activeTab === 'intro') {
+                drawSeq(document.getElementById('canvas-intro'), this.params.N);
+              }
+            }
+          },
+          watch: {
+            'params.N': function (val) {
+              var vm = this;
+              // If active tab is intro, redraw
+              if (this.activeTab === 'intro') {
+                this.$nextTick(() => vm.renderGraphs());
+              }
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            var vm = this;
+            this.$nextTick(function () {
+              vm.renderGraphs();
+            });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

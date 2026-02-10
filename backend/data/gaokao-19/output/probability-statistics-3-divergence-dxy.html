@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>概率与统计新定义（3）相似程度指标 D(X‖Y)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tool-item label {
+      width: 120px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .tool-item input {
+      flex: 1;
+      margin-left: 10px;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+  <meta name="description" content="KL 散度 D(X‖Y)、二项分布与最小值、非负性证明。">
+  <meta name="keywords" content="相似程度指标、KL 散度、二项分布、Jensen 不等式">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>概率与统计新定义（3）相似程度指标 D(X‖Y)</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·北京·高三阶段练习) 设离散型随机变量 \(X\) 和 \(Y\) 有相同的可能取值，它们的分布列分别为 \(P(X=a_k)=x_k\)，\(P(Y=a_k)=y_k\)，\(x_k >
+            0\)，\(y_k > 0\)，\(k=1, 2, \cdots, n\)，\(\sum_{k=1}^{n} x_k=\sum_{k=1}^{n} y_k=1\)．指标 \(D(X \| Y)\) 可用来刻画
+            \(X\) 和 \(Y\) 的相似程度，其定义为 \(D(X \| Y)=\sum_{k=1}^{n} x_k \ln \frac{x_k}{y_k}\)．设 \(X \sim B(n, p)\)，\(0 < p <
+              1\)．</p>
+              <p><strong>(1)</strong>若 \(Y \sim B(n, q)\)，\(0 < q < 1\)，求 \(D(X \| Y)\)；</p>
+                  <p><strong>(2)</strong>若 \(n=2\)，\(P(Y=k - 1)=\frac{1}{3}\)，\(k=1, 2, 3\)，求 \(D(X \| Y)\) 的最小值；</p>
+                  <p><strong>(3)</strong>对任意与 \(X\) 有相同可能取值的随机变量 \(Y\)，证明：\(D(X \| Y) \geq 0\)，并指出取等号的充要条件．</p>
+        </div>
+      </div>
+
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>问题背景</strong>：KL 散度（Kullback-Leibler Divergence），也称为相对熵，常用于衡量两个概率分布 \(X\) 和 \(Y\) 之间的差异。定义为
+            \(D(X\|Y)=\sum x_k \ln \frac{x_k}{y_k}\)。</p>
+          <p><strong>直观理解</strong>：
+            <br>1. <strong>非负性</strong>：\(D(X\|Y) \geq 0\)，当且仅当 \(X\) 和 \(Y\) 分布完全一致时取 0。
+            <br>2. <strong>不对称性</strong>：通常 \(D(X\|Y) \neq D(Y\|X)\)，所以它不是严格意义上的“距离”，而是“相似度指标”。
+            <br>3. <strong>物理意义</strong>：它衡量的是用分布 \(Y\) 来近似分布 \(X\) 时所损失的信息量。
+          </p>
+          <p><strong>本题思路</strong>：
+            <br><strong>第(1)问</strong>：代入二项分布公式，利用对数性质 \( \ln(ab)=\ln a+\ln b \) 拆分求和。
+            <br><strong>第(2)问</strong>：构建关于 \(p\) 的函数，利用导数求极值。注意 \(p \in (0, 1)\) 的范围。
+            <br><strong>第(3)问</strong>：利用 \(\ln x \leq x-1\) （切线不等式）放缩，证明 \(D \geq 0\)。
+          </p>
+          <canvas id="canvas-intro" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>设元</strong>：\(X\sim B(n, p)\)，\(Y\sim B(n, q)\)，取值为 \(0, 1, \cdots, n\)。</p>
+          <p><strong>列式与化简</strong>：代入 \(x_k\) 和 \(y_k\) 的二项分布公式，化简得：
+            \[ D(X\|Y)=n\left(p\ln\frac{p}{q}+(1-p)\ln\frac{1-p}{1-q}\right). \]</p>
+          <p><strong>答</strong>：\(\boxed{D(X\|Y)=n\left(p\ln\dfrac{p}{q}+(1-p)\ln\dfrac{1-p}{1-q}\right)}\)。</p>
+          <div class="tools-container">
+            <div class="tool-item">
+              <label>分布 X 的概率 p: {{ params.p }}</label>
+              <input type="range" v-model.number="params.p" min="0.01" max="0.99" step="0.01" @input="updateGraphs">
+            </div>
+            <div class="tool-item">
+              <label>分布 Y 的概率 q: {{ params.q }}</label>
+              <input type="range" v-model.number="params.q" min="0.01" max="0.99" step="0.01" @input="updateGraphs">
+            </div>
+            <div class="tool-item">
+              <label>试验次数 n: {{ params.n }}</label>
+              <input type="range" v-model.number="params.n" min="5" max="20" step="1" @input="updateGraphs">
+            </div>
+            <p class="tool-desc">观察：当 p=q 时，分布重合，D=0。当 p 与 q 差异越大，红蓝柱子差异越大，D 越大。</p>
+          </div>
+          <canvas id="canvas-q1" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>条件</strong>：\(n=2\)，\(X\sim B(2,p)\)，故 \(P(X=0)=(1-p)^2\)，\(P(X=1)=2p(1-p)\)，\(P(X=2)=p^2\)；\(Y\) 满足 \(P(Y=0)=P(Y=1)=P(Y=2)=\dfrac{1}{3}\)（均匀分布）。</p>
+          <p><strong>列式</strong>：由定义
+            \[ D(X\|Y) = \sum_{k=0}^{2} x_k \ln\frac{x_k}{y_k} = (1-p)^2\ln\frac{(1-p)^2}{1/3} + 2p(1-p)\ln\frac{2p(1-p)}{1/3} + p^2\ln\frac{p^2}{1/3}. \]
+            记 \(f(p)=D(X\|Y)\)（\(p\in(0,1)\)），展开并利用 \(\ln(ab)=\ln a+\ln b\) 可写成 \(f(p)\) 关于 \(p\) 的式子。</p>
+          <p><strong>求导</strong>：对 \(p\) 求导得 \(f'(p)\)。利用 \(\dfrac{\mathrm{d}}{\mathrm{d}p}\bigl[(1-p)^2\ln(1-p)\bigr]\) 等项合并后，\(f'(p)\) 可化简为形如 \((2p-1)\cdot g(p)\)（其中 \(g(p)>0\) 在 \((0,1)\) 内），故 \(f'(p)=0\) 在 \((0,1)\) 内仅有 \(p=\dfrac{1}{2}\)；又 \(f''\!\bigl(\tfrac{1}{2}\bigr)>0\)，故 \(p=\dfrac{1}{2}\) 时 \(f(p)\) 取最小值。</p>
+          <p><strong>代入求值</strong>：\(p=\dfrac{1}{2}\) 时 \(x_0=\dfrac{1}{4}\)，\(x_1=\dfrac{1}{2}\)，\(x_2=\dfrac{1}{4}\)，故
+            \[ f\!\left(\tfrac{1}{2}\right) = \frac{1}{4}\ln\frac{3}{4} + \frac{1}{2}\ln\frac{3}{2} + \frac{1}{4}\ln\frac{3}{4} = \frac{1}{2}\ln\frac{3}{4} + \frac{1}{2}\ln\frac{3}{2} = \frac{1}{2}\ln\frac{9}{8} = \ln 3 - \frac{3}{2}\ln 2. \]</p>
+          <p><strong>答</strong>：\(D(X\|Y)\) 的最小值为 \(\boxed{\ln 3 - \dfrac{3}{2}\ln 2}\)，当且仅当 \(p=\dfrac{1}{2}\) 时取得。</p>
+          <canvas id="canvas-q2" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+          <h2>第(3)问</h2>
+          <p><strong>结论</strong>：对任意与 \(X\) 同取值且 \(y_k>0\) 的 \(Y\)，有 \(D(X\|Y)\geq 0\)，等号成立当且仅当对一切 \(k\) 有 \(x_k=y_k\)（即 \(X\) 与 \(Y\) 同分布）。</p>
+          <p><strong>证明</strong>：利用不等式 \(\ln t \leq t-1\)（\(t>0\)），等号成立当且仅当 \(t=1\)。令 \(t=\dfrac{y_k}{x_k}\)，则 \(\ln\dfrac{y_k}{x_k} \leq \dfrac{y_k}{x_k}-1\)，即 \(\ln\dfrac{x_k}{y_k} \geq 1-\dfrac{y_k}{x_k}\)。两边同乘 \(x_k>0\) 得 \(x_k\ln\dfrac{x_k}{y_k} \geq x_k - y_k\)。对 \(k=1,\ldots,n\) 求和得
+            \[ D(X\|Y) = \sum_{k=1}^n x_k \ln\frac{x_k}{y_k} \geq \sum_{k=1}^n (x_k - y_k) = \sum_{k=1}^n x_k - \sum_{k=1}^n y_k = 1-1 = 0. \]</p>
+          <p><strong>等号条件</strong>：\(D(X\|Y)=0\) 当且仅当对每个 \(k\) 都有 \(\ln\dfrac{x_k}{y_k} = \dfrac{x_k}{y_k}-1\) 的等号成立，即 \(\dfrac{x_k}{y_k}=1\)，亦即 \(x_k=y_k\) 对所有 \(k\) 成立，故 \(X\) 与 \(Y\) 同分布。</p>
+          <p><strong>答</strong>：\(D(X\|Y)\geq 0\)；取等当且仅当 \(X\) 与 \(Y\) 的分布列相同。</p>
+          <canvas id="canvas-q3" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>定义</strong>：\(D(X\|Y)=\sum_{k=1}^n x_k \ln\dfrac{x_k}{y_k}\)，其中 \(x_k=P(X=a_k)\)，\(y_k=P(Y=a_k)\)，\(\sum x_k=\sum y_k=1\)。\(D\) 衡量用分布 \(Y\) 近似 \(X\) 时的“信息损失”，非对称。</p>
+            <p><strong>(1)</strong> \(X\sim B(n,p)\)，\(Y\sim B(n,q)\) 时 \(D(X\|Y)=n\left(p\ln\dfrac{p}{q}+(1-p)\ln\dfrac{1-p}{1-q}\right)\)；当 \(p=q\) 时 \(D=0\)。</p>
+            <p><strong>(2)</strong> \(n=2\) 且 \(Y\) 为取值 \(0,1,2\) 上的均匀分布（各 \(\dfrac{1}{3}\)）时，\(D(X\|Y)\) 在 \(p=\dfrac{1}{2}\) 时取最小值 \(\ln 3-\dfrac{3}{2}\ln 2\)。</p>
+            <p><strong>(3)</strong> 对任意与 \(X\) 同取值且 \(y_k>0\) 的 \(Y\)，有 \(D(X\|Y)\geq 0\)；等号当且仅当 \(x_k=y_k\)（\(\forall k\)），即 \(X\) 与 \(Y\) 同分布。证明核心为 \(\ln t \leq t-1\)（\(t>0\)）代入 \(t=x_k/y_k\) 后求和。</p>
+            <p><strong>易错</strong>：\(D(X\|Y)\neq D(Y\|X)\)；求最小值时注意 \(p\in(0,1)\) 为开区间，驻点 \(p=1/2\) 在区间内故有效。</p>
+          </div>
+          <canvas id="canvas-summary" width="520" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center'; ctx.font = '14px sans-serif';
+        ctx.fillText('KL 散度: 两个分布越像，D 越小', cx, cy);
+      }
+
+      function drawQ1(c, params) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        var p = params ? params.p : 0.5;
+        var q = params ? params.q : 0.5;
+        var n = params ? params.n : 10;
+
+        var D = 0;
+        if (Math.abs(p - q) > 1e-6) {
+          D = n * (p * Math.log(p / q) + (1 - p) * Math.log((1 - p) / (1 - q)));
+        } else {
+          D = 0;
+        }
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'left'; ctx.font = '16px sans-serif';
+        ctx.fillText('D(X||Y) = ' + D.toFixed(4), 20, 30);
+
+        // Draw Distributions
+        var margin = 40;
+        var gw = w - 2 * margin, gh = h - 60;
+
+        function binom(N, K, P) {
+          var res = 1;
+          for (var i = 0; i < K; i++) res *= (N - i) / (i + 1);
+          return res * Math.pow(P, K) * Math.pow(1 - P, N - K);
+        }
+
+        var maxP = 0;
+        var dataX = [], dataY = [];
+        for (var k = 0; k <= n; k++) {
+          var vx = binom(n, k, p);
+          var vy = binom(n, k, q);
+          dataX.push(vx); dataY.push(vy);
+          maxP = Math.max(maxP, vx, vy);
+        }
+
+        var barW = (gw / (n + 1)) * 0.4;
+
+        for (var k = 0; k <= n; k++) {
+          var x0 = margin + k * (gw / (n + 1));
+          var hx = (dataX[k] / maxP) * gh;
+          var hy = (dataY[k] / maxP) * gh;
+
+          ctx.fillStyle = 'rgba(52, 152, 219, 0.7)'; // Blue X
+          ctx.fillRect(x0, h - margin - hx, barW, hx);
+
+          ctx.fillStyle = 'rgba(231, 76, 60, 0.7)'; // Red Y
+          ctx.fillRect(x0 + barW, h - margin - hy, barW, hy);
+        }
+
+        // Legend
+        ctx.fillStyle = '#3498db'; ctx.fillRect(w - 150, 20, 10, 10); ctx.fillText('X (p)', w - 135, 30);
+        ctx.fillStyle = '#e74c3c'; ctx.fillRect(w - 90, 20, 10, 10); ctx.fillText('Y (q)', w - 75, 30);
+      }
+
+      function drawQ2(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+        ctx.fillText('最小 D 发生在 p=1/2', cx, cy);
+      }
+      function drawQ3(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+        ctx.fillText('证明 D ≥ 0', cx, cy);
+      }
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+        ctx.fillText('KL 散度非负', cx, cy);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () { return { activeTab: 'intro', params: { p: 0.6, q: 0.4, n: 10 } }; },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function') {
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              }
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            updateGraphs: function () { this.renderGraphs(); },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              var c = document.getElementById('canvas-' + n);
+              if (n === 'intro') drawIntro(c);
+              else if (n === 'q1') drawQ1(c, this.params);
+              else if (n === 'q2') drawQ2(c);
+              else if (n === 'q3') drawQ3(c);
+              else if (n === 'summary') drawSummary(c);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

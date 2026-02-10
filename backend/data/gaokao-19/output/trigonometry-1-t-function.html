@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="T函数定义 f(x+T)=Tf(x)，一次函数与指数函数判断、余弦为T函数时参数范围。">
+  <meta name="keywords" content="T函数、新定义、指数函数、余弦、周期、高考数学">
+  <title>三角函数新定义（1）T函数</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tool-container { margin: 12px 0; border: 1px solid #eee; border-radius: 4px; min-height: 220px; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; margin: 0; max-width: 100%; } }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/auto-render.min.js'"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>三角函数新定义（1）T 函数</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>对于定义域 \(\mathbb{R}\) 上的函数 \(f(x)\)，如果存在非零常数 \(T\)，对任意 \(x \in \mathbb{R}\)，都有 \(f(x + T) = T f(x)\) 成立，则称 \(f(x)\) 为“T 函数”．</p>
+          <p><strong>(1)</strong> 设函数 \(f(x) = x\)，判断 \(f(x)\) 是否为“T 函数”，说明理由；</p>
+          <p><strong>(2)</strong> 若函数 \(g(x) = a^x\)（\(a &gt; 0\) 且 \(a \neq 1\)）的图象与函数 \(y = x\) 的图象有公共点，证明：\(g(x)\) 为“T 函数”；</p>
+          <p><strong>(3)</strong> 若函数 \(h(x) = \cos(mx)\) 为“T 函数”，求实数 \(m\) 的取值范围．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：“T 函数”即存在非零常数 \(T\) 使 \(f(x+T)=T f(x)\) 对一切 \(x\in\mathbb{R}\) 成立。本质是平移后函数值成固定倍数关系。</p>
+        <p><strong>第(1)问</strong>：\(f(x)=x\) 代入得 \(x+T=T x\) 对一切 \(x\)，比较系数得 \(T=1\) 且 \(T=0\)，矛盾，故不是 T 函数。</p>
+        <p><strong>第(2)问</strong>：公共点 \((t,t)\) 满足 \(a^t=t\)。取 \(T=t\)，则 \(a^T=t=T\)，故 \(g(x+T)=a^T a^x=T g(x)\)，得证。</p>
+        <p><strong>第(3)问</strong>：\(\cos(m(x+T))=T\cos(mx)\) 对一切 \(x\)，左边有界 \([-1,1]\)，故 \(|T|\leq 1\)，非零则 \(T=\pm 1\)。分别讨论得 \(m=2k\pi\)（\(T=1\)）或 \(m=(2k+1)\pi\)（\(T=-1\)），即 \(m\in\{k\pi:k\in\mathbb{Z},\,k\neq 0\}\)。</p>
+        <p><strong>考点</strong>：新定义、恒等式与系数比较、有界性。易错：\(T\) 为常数，不能随 \(x\) 变。</p>
+        <div id="container-intro" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(1)问</h2>
+        <p><strong>设元</strong>：\(f(x)=x\)，若 \(f\) 为 T 函数，则存在非零常数 \(T\) 使 \(f(x+T)=T f(x)\) 对任意 \(x\in\mathbb{R}\) 成立。</p>
+        <p><strong>列式</strong>：代入得 \(x+T=T\cdot x\)，即 \((1-T)x+T=0\) 对一切 \(x\) 成立。故 \(1-T=0\) 且 \(T=0\)，即 \(T=1\) 且 \(T=0\)，矛盾。</p>
+        <p><strong>答</strong>：\(f(x)=x\) <strong>不是</strong> T 函数，理由如上。</p>
+        <div id="container-q1" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(2)问</h2>
+        <p><strong>设元</strong>：\(g(x)=a^x\)（\(a&gt;0,\,a\neq 1\)），与 \(y=x\) 有公共点，即存在 \(t\in\mathbb{R}\) 使 \(a^t=t\)。因 \(a^x&gt;0\) 且 \(y=x\) 过原点外有交点时通常 \(t&gt;0\)。</p>
+        <p><strong>列式</strong>：取 \(T=t\)（公共点横坐标）。则 \(a^T=a^t=t=T\)。对任意 \(x\)，\(g(x+T)=a^{x+T}=a^T\cdot a^x=T\cdot a^x=T g(x)\)，故 \(g(x+T)=T g(x)\) 成立。</p>
+        <p><strong>答</strong>：\(g(x)\) 为 T 函数，且可取 \(T=t\)（\(a^t=t\) 的根）。</p>
+        <div id="container-q2" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+        <h2>第(3)问</h2>
+        <p><strong>设元</strong>：\(h(x)=\cos(mx)\) 为 T 函数，即存在非零 \(T\) 使 \(\cos(m(x+T))=T\cos(mx)\) 对一切 \(x\) 成立。</p>
+        <p><strong>列式</strong>：左边 \(|\cos(m(x+T))|\leq 1\)，右边 \(T\cos(mx)\) 对任意 \(x\) 要能取遍左边。故 \(|T|\leq 1\)，又 \(T\neq 0\)，所以 \(T=1\) 或 \(T=-1\)。<br>
+        <strong>\(T=1\)</strong>：\(\cos(m(x+1))=\cos(mx)\) 对一切 \(x\)，即 \(\cos(mx+m)=\cos(mx)\)，故 \(m=2k\pi\)（\(k\in\mathbb{Z}\)）。此时 \(T\cos(mx)=\cos(mx)\) 成立，故 \(m=2k\pi\)（\(k\in\mathbb{Z},\,k\neq 0\) 时 \(m\neq 0\)）。<br>
+        <strong>\(T=-1\)</strong>：\(\cos(m(x+1))=-\cos(mx)\)，即 \(\cos(mx+m)=-\cos(mx)\)。由 \(\cos(m)=−1,\,\sin(m)=0\) 得 \(m=(2k+1)\pi\)。此时 \(-\cos(mx)=\cos(mx+m)\) 成立，故 \(m=(2k+1)\pi\)（\(k\in\mathbb{Z}\)）。</p>
+        <p><strong>答</strong>：\(m\in\{k\pi:k\in\mathbb{Z},\,k\neq 0\}\)。</p>
+        <p><strong>参数</strong>：拖动滑块观察 \(y=\cos(mx)\) 随 \(m\) 的变化（\(m=k\pi\) 时为 T 函数）：<br>
+          <input type="range" min="0.5" max="6" step="0.5" v-model.number="mVal" @input="onMInput" style="width:200px; vertical-align:middle;"> 当前 \(m=\) <span v-text="mVal"></span></p>
+        <div id="container-q3" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：① \(f(x)=x\) 不是 T 函数（系数矛盾）。② \(g(x)=a^x\) 与 \(y=x\) 有交点时取 \(T=t\)（\(a^t=t\)）即得 \(g(x+T)=T g(x)\)。③ \(h(x)=\cos(mx)\) 为 T 函数当且仅当 \(|T|=1\)，得 \(m=k\pi\)（\(k\in\mathbb{Z},\,k\neq 0\)）。</p>
+        <p><strong>易错</strong>：\(T\) 为常数不能随 \(x\) 变；有界性限定 \(|T|\leq 1\)；第(3)问 \(T=1\) 得 \(m=2k\pi\)，\(T=-1\) 得 \(m=(2k+1)\pi\)，合并为 \(m=k\pi\)（\(k\neq 0\)）。</p>
+        <p><strong>参数</strong>：\(m=\) <input type="range" min="0.5" max="6" step="0.5" v-model.number="mVal" @input="onMInput" style="width:120px; vertical-align:middle;"> <span v-text="mVal"></span> → \(y=\cos(mx)\)</p>
+        <div id="container-summary" class="tool-container"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(el, katexOpt); } catch (e) {} }
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      function drawFunction(containerId, type, mVal) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        var c = document.createElement('canvas');
+        c.width = 520; c.height = 240; c.style.display = 'block';
+        container.appendChild(c);
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        var m = (mVal != null && mVal !== '') ? Number(mVal) : 1;
+        if (isNaN(m) || m <= 0) m = 1;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(40, cy); ctx.lineTo(w - 40, cy); ctx.moveTo(cx, 20); ctx.lineTo(cx, h - 20); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '12px sans-serif';
+        if (type === 'x') {
+          ctx.strokeStyle = '#3498db'; ctx.lineWidth = 2; ctx.beginPath();
+          for (var i = 0; i <= w; i++) { var x = (i - cx) / 50; var y = -x * 50 + cy; if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y); }
+          ctx.stroke(); ctx.fillStyle = '#666'; ctx.fillText('y = x', w - 80, 30);
+        } else if (type === 'cos') {
+          ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2; ctx.beginPath();
+          for (var i = 0; i <= w; i++) { var x = (i - cx) / 80; var y = cy - Math.cos(m * x) * 60; if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y); }
+          ctx.stroke(); ctx.fillStyle = '#666'; ctx.fillText('y = cos(' + m + 'x) 示意', w - 120, 30);
+        } else {
+          ctx.fillStyle = '#666'; ctx.fillText('f(x+T)=T f(x)', cx - 50, cy);
+        }
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function() { return { activeTab: 'intro', mVal: 1 }; },
+          methods: {
+            onMInput: function() {
+              if (this.activeTab === 'q3') drawFunction('container-q3', 'cos', this.mVal);
+              if (this.activeTab === 'summary') drawFunction('container-summary', 'cos', this.mVal);
+            },
+            setTab: function(name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function() {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) {} }
+              });
+            },
+            renderGraphs: function() {
+              var n = this.activeTab, m = this.mVal;
+              if (n === 'intro') drawFunction('container-intro', 'default');
+              else if (n === 'q1') drawFunction('container-q1', 'x');
+              else if (n === 'q2') drawFunction('container-q2', 'x');
+              else if (n === 'q3') drawFunction('container-q3', 'cos', m);
+              else if (n === 'summary') drawFunction('container-summary', 'cos', m);
+            }
+          },
+          mounted: function() {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) {} }
+            this.$nextTick(function() { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+</html>

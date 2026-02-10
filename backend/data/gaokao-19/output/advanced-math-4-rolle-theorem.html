@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>题目4 罗尔中值定理（2024·安徽六安·舒城中学）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tab-panel canvas { display: block; margin: 12px 0; border: 1px solid #eee; border-radius: 4px; }
+    .tools-container { margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; }
+    .tool-item { display: flex; align-items: center; margin-bottom: 8px; }
+    .tool-item label { width: 140px; font-weight: 500; }
+    .tool-item input { flex: 1; margin-left: 10px; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; } }
+  </style>
+  <meta name="description" content="题目4：罗尔中值定理、方程实根、含参零点。">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>题目 4：罗尔中值定理</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·安徽六安·安徽省舒城中学校考模拟预测) 罗尔中值定理是微分学中一条重要的定理，是三大微分中值定理之一，其他两个分别为拉格朗日中值定理、柯西中值定理．</p>
+          <p>如果函数 \(f(x)\) 在实数集 \(\mathbf{R}\) 上满足以下条件：① 在闭区间 \([a,b]\) 上连续；② 在开区间 \((a,b)\) 内可导；③ \(f(a)=f(b)\)；则至少存在一个 \(\xi\in(a,b)\)，使得 \(f'(\xi)=0\)．</p>
+          <p>据此，解决以下问题：</p>
+          <p><strong>(1)</strong> 证明方程 \(4ax^3+3bx^2+2cx-(a+b+c)=0\) 在 \((0,1)\) 内至少有一个实根，其中 \(a,b,c\in\mathbf{R}\)；</p>
+          <p><strong>(2)</strong> 已知函数 \(f(x)=e^x-ax^2-(e-a-1)x-1\)，\(a\in\mathbf{R}\) 在区间 \((0,1)\) 内有零点，求 \(a\) 的取值范围．</p>
+        </div>
+      </div>
+
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>题意</strong>：罗尔定理：\([a,b]\) 上连续、\((a,b)\) 内可导、\(f(a)=f(b)\) ⇒ 存在 \(\xi\in(a,b)\) 使 \(f'(\xi)=0\)．</p>
+          <p><strong>思路</strong>：(1) 构造 \(F(x)\) 使 \(F'(x)\) 等于题设三次式，且 \(F(0)=F(1)\)，则由罗尔定理存在 \(\xi\in(0,1)\) 使 \(F'(\xi)=0\)；(2) 设 \(f\) 在 \((0,1)\) 内有零点 \(x_1\)，在 \([0,x_1]\) 与 \([x_1,1]\) 上分别用罗尔定理知 \(f'(x)=0\) 在 \((0,1)\) 内至少有两根；令 \(g(x)=f'(x)\)，对 \(g'(x)=e^x-2a\) 分 \(a\le\frac{1}{2}\)、\(a\ge\frac{e}{2}\)、\(\frac{1}{2}&lt;a&lt;\frac{e}{2}\) 讨论，由端点与最小值符号得 \(a\in(e-2,1)\)．</p>
+          <div class="tools-container">
+            <p>\(F(x)=ax^4+bx^3+cx^2-(a+b+c)x\) ⇒ \(F(0)=0,\,F(1)=0,\,F'(x)=4ax^3+3bx^2+2cx-(a+b+c)\)．</p>
+          </div>
+          <canvas id="canvas-intro" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>设元</strong>：令 \(F(x)=ax^4+bx^3+cx^2-(a+b+c)x\)，\(x\in[0,1]\)．则 \(F'(x)=4ax^3+3bx^2+2cx-(a+b+c)\)，即方程左边恰为 \(F'(x)\)．</p>
+          <p><strong>列式</strong>：\(F(0)=0\)，\(F(1)=a+b+c-(a+b+c)=0\)，故 \(F(0)=F(1)\)．\(F(x)\) 在 \([0,1]\) 上连续，在 \((0,1)\) 内可导，由罗尔中值定理，存在 \(\xi\in(0,1)\) 使得 \(F'(\xi)=0\)，即 \(4a\xi^3+3b\xi^2+2c\xi-(a+b+c)=0\)，故方程在 \((0,1)\) 内至少有一个实根 \(\xi\)．</p>
+          <p><strong>答</strong>：方程 \(4ax^3+3bx^2+2cx-(a+b+c)=0\) 在 \((0,1)\) 内至少有一个实根，得证．</p>
+          <canvas id="canvas-q1" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>设元</strong>：\(f(x)=e^x-ax^2-(e-a-1)x-1\)，\(a\in\mathbf{R}\)．题设 \(f(x)\) 在 \((0,1)\) 内有零点，设零点为 \(x_1\in(0,1)\)，即 \(f(x_1)=0\)．又 \(f(0)=0\)，\(f(1)=e-a-(e-a-1)-1=0\)，故 \(f(0)=f(1)=0\)．</p>
+          <p><strong>求导</strong>：\(f'(x)=e^x-2ax-(e-a-1)\)．</p>
+          <p><strong>应用罗尔定理</strong>：在 \([0,x_1]\) 上 \(f\) 连续、可导且 \(f(0)=f(x_1)=0\)，故存在 \(x_2\in(0,x_1)\) 使 \(f'(x_2)=0\)；在 \([x_1,1]\) 上 \(f(x_1)=f(1)=0\)，故存在 \(x_3\in(x_1,1)\) 使 \(f'(x_3)=0\)．因此方程 \(f'(x)=0\)，即 \(e^x-2ax-(e-a-1)=0\)，在 \((0,1)\) 内至少有两个不相等的实根．</p>
+          <p><strong>辅助函数</strong>：令 \(g(x)=e^x-2ax-(e-a-1)\)，则 \(g'(x)=e^x-2a\)．</p>
+          <p><strong>分情况讨论 \(g(x)\) 的单调性</strong>：</p>
+          <p>① 当 \(a\le\frac{1}{2}\) 时，\(2a\le 1\)，\(x\in(0,1)\) 时 \(e^x&gt;1\)，故 \(g'(x)=e^x-2a&gt;0\)，\(g(x)\) 在 \((0,1)\) 上单调递增，\(g(x)=0\) 至多一个根，与“至少两个根”矛盾，故不成立．</p>
+          <p>② 当 \(a\ge\frac{e}{2}\) 时，\(2a\ge e\)，\(x\in(0,1)\) 时 \(e^x&lt;e\)，故 \(g'(x)=e^x-2a&lt;0\)，\(g(x)\) 在 \((0,1)\) 上单调递减，\(g(x)=0\) 至多一个根，矛盾，故不成立．</p>
+          <p>③ 当 \(\frac{1}{2}&lt;a&lt;\frac{e}{2}\) 时，令 \(g'(x)=0\) 得 \(e^x=2a\)，即 \(x=\ln(2a)\)．由 \(1&lt;2a&lt;e\) 知 \(0&lt;\ln(2a)&lt;1\)．当 \(0&lt;x&lt;\ln(2a)\) 时 \(g'(x)&lt;0\)，当 \(\ln(2a)&lt;x&lt;1\) 时 \(g'(x)&gt;0\)，故 \(g(x)\) 在 \(x=\ln(2a)\) 处取得最小值．要使 \(g(x)=0\) 在 \((0,1)\) 上有两个不等实根，需最小值 \(g(\ln(2a))&lt;0\) 且 \(g(0)&gt;0\)、\(g(1)&gt;0\)．</p>
+          <p><strong>端点值</strong>：\(g(0)=1-(e-a-1)=2+a-e\)，\(g(1)=e-2a-(e-a-1)=1-a\)．由 \(g(0)&gt;0\) 得 \(a&gt;e-2\)；由 \(g(1)&gt;0\) 得 \(a&lt;1\)．又 \(g(\ln(2a))&lt;0\) 在 \(\frac{1}{2}&lt;a&lt;\frac{e}{2}\) 内可成立（例如 \(a\) 接近 1 时）．结合 \(\frac{1}{2}&lt;a&lt;\frac{e}{2}\)、\(a&gt;e-2\)、\(a&lt;1\)，且 \(e-2\approx0.718&gt;\frac{1}{2}\)，\(1&lt;\frac{e}{2}\)，得 \(e-2&lt;a&lt;1\)．</p>
+          <p><strong>答</strong>：\(a\) 的取值范围为 \(\boxed{(e-2,\,1)}\)．</p>
+          <div class="tools-container">
+            <p>\(g(0)=2+a-e&gt;0\Rightarrow a&gt;e-2\)；\(g(1)=1-a&gt;0\Rightarrow a&lt;1\)．综合得 \((e-2,1)\)．</p>
+          </div>
+          <canvas id="canvas-q2" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>(1)</strong> 令 \(F(x)=ax^4+bx^3+cx^2-(a+b+c)x\)，则 \(F(0)=F(1)=0\)，由罗尔定理 \(F'(\xi)=0\)，\(\xi\in(0,1)\)．</p>
+            <p><strong>(2)</strong> \(f(0)=f(1)=0\)，设 \(f(x_1)=0\)，\(x_1\in(0,1)\)；在 \([0,x_1]\)、\([x_1,1]\) 上用罗尔定理知 \(f'(x)=0\) 在 \((0,1)\) 内至少有两根．令 \(g(x)=f'(x)\)，讨论 \(g'(x)=e^x-2a\)：\(a\le\frac{1}{2}\) 或 \(a\ge\frac{e}{2}\) 时 \(g\) 单调，至多一根，矛盾；\(\frac{1}{2}&lt;a&lt;\frac{e}{2}\) 时由 \(g(0)&gt;0\)、\(g(1)&gt;0\)、\(g(\ln(2a))&lt;0\) 得 \(a\in(e-2,1)\)．</p>
+          </div>
+          <canvas id="canvas-summary" width="520" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var TABS = ['intro', 'q1', 'q2', 'summary'];
+
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('罗尔定理: f(a)=f(b) => 存在 ξ 使 f\'(ξ)=0', w/2, h/2);
+      }
+
+      function drawQ1(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('F(x)=ax^4+bx^3+cx^2-(a+b+c)x, F(0)=F(1)=0', w/2, h/2);
+      }
+
+      function drawQ2(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('f\'(x)=0 至少两根 => g(x)=f\'(x), 讨论得 a∈(e-2,1)', w/2, h/2);
+      }
+
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('题目4：罗尔定理应用', w/2, h/2);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () { return { activeTab: 'intro' }; },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              var c = document.getElementById('canvas-' + n);
+              if (n === 'intro') drawIntro(c);
+              else if (n === 'q1') drawQ1(c);
+              else if (n === 'q2') drawQ2(c);
+              else if (n === 'summary') drawSummary(c);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

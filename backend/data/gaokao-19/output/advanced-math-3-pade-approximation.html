@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>题目3 帕德近似（2024·山东济南·高三统考期末）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tab-panel canvas { display: block; margin: 12px 0; border: 1px solid #eee; border-radius: 4px; }
+    .tools-container { margin: 15px  0; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; }
+    .tool-item { display: flex; align-items: center; margin-bottom: 8px; }
+    .tool-item label { width: 140px; font-weight: 500; }
+    .tool-item input { flex: 1; margin-left: 10px; min-width: 80px; }
+    .tool-item .num { font-family: monospace; min-width: 80px; text-align: right; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; } }
+  </style>
+  <meta name="description" content="题目3：帕德近似、ln(x+1)、[1,1]阶、参数与不等式。">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>题目 3：帕德近似</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·山东济南·高三统考期末) 帕德近似是法国数学家亨利·帕德发明的一种用有理多项式近似特定函数的方法．给定两个正整数 \(m,n\)，函数 \(f(x)\) 在 \(x=0\) 处的 \([m,n]\) 阶帕德近似定义为：\[R(x)=\frac{a_0+a_1x+\cdots+a_mx^m}{1+b_1x+\cdots+b_nx^n}\] 且满足 \(f(0)=R(0),\,f'(0)=R'(0),\,f''(0)=R''(0),\,\ldots,\,f^{(m+n)}(0)=R^{(m+n)}(0)\)．</p>
+          <p>已知 \(f(x)=\ln(x+1)\)，该函数在 \(x=0\) 处的 \([1,1]\) 阶帕德近似为 \(R(x)=\frac{ax}{1+bx}\)．</p>
+          <p>注：\(f''(x)=[f'(x)]'\)，\(f'''(x)=[f''(x)]'\)，\(f^{(4)}(x)=[f'''(x)]'\)，\(f^{(5)}(x)=[f^{(4)}(x)]'\)，……</p>
+          <p><strong>(1)</strong> 求实数 \(a,b\) 的值；</p>
+          <p><strong>(2)</strong> 求证：\((x+b)f\bigl(\frac{1}{x}\bigr)&gt;1\)；</p>
+          <p><strong>(3)</strong> 求不等式 \(\bigl(1+\frac{1}{x}\bigr)^x&lt;e&lt;\bigl(1+\frac{1}{x}\bigr)^{x+\frac{1}{2}}\) 的解集，其中 \(e=2.71828\ldots\)．</p>
+        </div>
+      </div>
+
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>题意</strong>：\([1,1]\) 阶即 \(R(x)=\frac{ax}{1+bx}\)，满足 \(f(0)=R(0),\,f'(0)=R'(0),\,f''(0)=R''(0)\)（共 \(m+n=2\) 阶导数相等）．</p>
+          <p><strong>思路</strong>：(1) \(f(0)=0,\,f'(0)=1,\,f''(0)=-1\)；\(R(0)=0,\,R'(0)=a,\,R''(0)\) 用商法则求，联立得 \(a,b\)；(2) 代入 \(f(1/x)=\ln(1+1/x)\)，化 \((x+b)\ln(1+1/x)&gt;1\)，可构造函数或利用 (1) 的 \(R\)；(3) 取对数化为与 \(\ln(1+1/x)\) 相关的不等式，结合 (2) 或单调性求 \(x\) 范围．</p>
+          <div class="tools-container">
+            <p>下图：\(y=f(x)=\ln(1+x)\)（蓝）与 \(y=R(x)=x/(1+x/2)\)（橙）在 \(x\in[0,2]\) 上的对比．</p>
+            <div class="tool-item"><label>\(x\) 范围上限</label><input type="range" v-model.number="xMaxIntro" min="0.5" max="3" step="0.1" @input="renderGraphs"><span class="num">{{ xMaxIntro }}</span></div>
+          </div>
+          <canvas id="canvas-intro" width="520" height="220"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>设元</strong>：\(f(x)=\ln(1+x)\)，\(R(x)=\frac{ax}{1+bx}\)，满足 \(f^{(j)}(0)=R^{(j)}(0)\)，\(j=0,1,2\)．</p>
+          <p><strong>列式</strong>：</p>
+          <p>① \(f(0)=\ln 1=0\)，\(R(0)=\frac{0}{1}=0\)，成立．</p>
+          <p>② \(f'(x)=\frac{1}{1+x}\)，故 \(f'(0)=1\)．对 \(R(x)=\frac{ax}{1+bx}\) 用商法则：\(R'(x)=\frac{a(1+bx)-ax\cdot b}{(1+bx)^2}=\frac{a}{(1+bx)^2}\)，故 \(R'(0)=a\)．由 \(f'(0)=R'(0)\) 得 \(a=1\)．</p>
+          <p>③ \(f''(x)=\bigl(\frac{1}{1+x}\bigr)'=-\frac{1}{(1+x)^2}\)，故 \(f''(0)=-1\)．对 \(R'(x)=a(1+bx)^{-2}\) 求导：\(R''(x)=a\cdot(-2)(1+bx)^{-3}\cdot b=-\frac{2ab}{(1+bx)^3}\)，故 \(R''(0)=-2ab\)．由 \(f''(0)=R''(0)\) 得 \(-2ab=-1\)，即 \(ab=\frac{1}{2}\)，代入 \(a=1\) 得 \(b=\frac{1}{2}\)．</p>
+          <p><strong>答</strong>：\(\boxed{a=1,\,b=\frac{1}{2}}\)．</p>
+          <div class="tools-container">
+            <p>调节 \(a,\,b\) 观察 \(R(x)\) 与 \(f(x)\) 在 \(x=0\) 附近的拟合（仅 \(a=1,\,b=0.5\) 时 0 阶、1 阶、2 阶导数一致）．</p>
+            <div class="tool-item"><label>\(a\)</label><input type="range" v-model.number="aVal" min="0.2" max="2" step="0.1" @input="renderGraphs"><span class="num">{{ aVal }}</span></div>
+            <div class="tool-item"><label>\(b\)</label><input type="range" v-model.number="bVal" min="0.1" max="1.5" step="0.05" @input="renderGraphs"><span class="num">{{ bVal }}</span></div>
+            <p class="num">\(R'(0)=\) {{ aVal }}，\(R''(0)=\) {{ (-2*aVal*bVal).toFixed(2) }}；需 \(R'(0)=1,\,R''(0)=-1\)．</p>
+          </div>
+          <canvas id="canvas-q1" width="520" height="220"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>证明</strong>：要证 \((x+b)f\bigl(\frac{1}{x}\bigr)&gt;1\)，其中 \(b=\frac{1}{2}\)，即 \(\bigl(x+\frac{1}{2}\bigr)\ln\bigl(1+\frac{1}{x}\bigr)&gt;1\)（\(x&gt;0\)）．令 \(t=\frac{1}{x}&gt;0\)，则 \(x=\frac{1}{t}\)，不等式化为 \(\bigl(\frac{1}{t}+\frac{1}{2}\bigr)\ln(1+t)&gt;1\)，即 \(\frac{(2+t)\ln(1+t)}{2t}&gt;1\)，即 \((2+t)\ln(1+t)&gt;2t\)．</p>
+          <p>记 \(g(t)=(2+t)\ln(1+t)-2t\)（\(t&gt;0\)）．则 \(g(0)=\lim_{t\to 0^+}[(2+t)\ln(1+t)-2t]=0\)（可用洛必达或 \(\ln(1+t)\sim t\)）．求导：\(g'(t)=\ln(1+t)+(2+t)\cdot\frac{1}{1+t}-2=\ln(1+t)+\frac{2+t}{1+t}-2=\ln(1+t)-\frac{t}{1+t}\)．记 \(h(t)=\ln(1+t)-\frac{t}{1+t}\)，则 \(h(0)=0\)，\(h'(t)=\frac{1}{1+t}-\frac{(1+t)-t}{(1+t)^2}=\frac{1}{1+t}-\frac{1}{(1+t)^2}=\frac{t}{(1+t)^2}&gt;0\)（\(t&gt;0\)），故 \(h(t)&gt;0\)，即 \(g'(t)&gt;0\)，所以 \(g(t)\) 在 \(t&gt;0\) 上严格递增且 \(g(t)&gt;g(0)=0\)，即 \((2+t)\ln(1+t)&gt;2t\)，原式得证．</p>
+          <p><strong>答</strong>：\((x+b)f\bigl(\frac{1}{x}\bigr)&gt;1\) 得证（\(x&gt;0\)）．</p>
+          <div class="tools-container">
+            <p>左式 \((x+b)f(1/x)\)，右式 \(1\)．拖动 \(x&gt;0\) 验证数值．</p>
+            <div class="tool-item"><label>\(x\)</label><input type="range" v-model.number="xQ2" min="0.5" max="20" step="0.5" @input="renderGraphs"><span class="num">{{ xQ2 }}</span></div>
+            <p class="num">\((x+\frac{1}{2})\ln(1+\frac{1}{x})=\) {{ leftQ2.toFixed(4) }}，\(1=\) 1；大于 1：{{ leftQ2 > 1 ? '是' : '否' }}．</p>
+          </div>
+          <canvas id="canvas-q2" width="520" height="220"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+          <h2>第(3)问</h2>
+          <p><strong>设元</strong>：求 \(x\) 使 \(\bigl(1+\frac{1}{x}\bigr)^x&lt;e&lt;\bigl(1+\frac{1}{x}\bigr)^{x+\frac{1}{2}}\)．须 \(1+\frac{1}{x}&gt;0\) 且底为正，故 \(x&gt;0\) 或 \(x&lt;-1\)．</p>
+          <p><strong>列式</strong>：取对数（底 \(e&gt;1\)，保序）：左边等价于 \(x\ln\bigl(1+\frac{1}{x}\bigr)&lt;1\)，右边等价于 \(1&lt;\bigl(x+\frac{1}{2}\bigr)\ln\bigl(1+\frac{1}{x}\bigr)\)．即需同时满足 \(x\ln\bigl(1+\frac{1}{x}\bigr)&lt;1\) 与 \(\bigl(x+\frac{1}{2}\bigr)\ln\bigl(1+\frac{1}{x}\bigr)&gt;1\)．由第(2)问知对 \(x&gt;0\) 有 \(\bigl(x+\frac{1}{2}\bigr)\ln\bigl(1+\frac{1}{x}\bigr)&gt;1\)，故右边成立．下证对 \(x&gt;0\) 恒有 \(x\ln(1+1/x)&lt;1\)：记 \(\varphi(x)=x\ln(1+1/x)\)，则 \(\varphi'(x)=\ln(1+1/x)+x\cdot\frac{1}{1+1/x}\cdot\bigl(-\frac{1}{x^2}\bigr)=\ln(1+1/x)-\frac{1}{x+1}\)．可证 \(\varphi'(x)&gt;0\)（如令 \(\psi(u)=\ln u-\frac{u-1}{u}\)，\(u=1+1/x&gt;1\)，\(\psi(1)=0\)，\(\psi'(u)&gt;0\)），故 \(\varphi(x)\) 在 \(x&gt;0\) 上递增，且 \(\lim_{x\to+\infty}\varphi(x)=1^-\)，故 \(\varphi(x)&lt;1\) 对一切 \(x&gt;0\) 成立．因此不等式组在 \(x&gt;0\) 时成立．对 \(x&lt;-1\) 需单独讨论（通常题目取 \(x&gt;0\)），解集为 \((0,+\infty)\)．</p>
+          <p><strong>答</strong>：解集为 \(\boxed{(0,+\infty)}\)（或 \(x&gt;0\)）．</p>
+          <div class="tools-container">
+            <p>左 \((1+1/x)^x\)，中 \(e\)，右 \((1+1/x)^{x+1/2}\)．拖动 \(x&gt;0\) 验证左&lt;中&lt;右．</p>
+            <div class="tool-item"><label>\(x\)</label><input type="range" v-model.number="xQ3" min="0.5" max="15" step="0.5" @input="renderGraphs"><span class="num">{{ xQ3 }}</span></div>
+            <p class="num">左 = {{ leftQ3.toFixed(4) }}，\(e=\) {{ eVal.toFixed(4) }}，右 = {{ rightQ3.toFixed(4) }}；左&lt;e&lt;右：{{ leftQ3 < eVal && eVal < rightQ3 ? '是' : '否' }}．</p>
+          </div>
+          <canvas id="canvas-q3" width="520" height="220"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>(1)</strong> \(a=1,\,b=\frac{1}{2}\)（由 \(f(0)=R(0),\,f'(0)=R'(0),\,f''(0)=R''(0)\)）．</p>
+            <p><strong>(2)</strong> \((x+b)f(1/x)&gt;1\) 即 \((x+1/2)\ln(1+1/x)&gt;1\)，构造 \(g(t)=(2+t)\ln(1+t)-2t\) 证 \(g'(t)&gt;0,\,g(t)&gt;0\)．</p>
+            <p><strong>(3)</strong> 解集 \(x&gt;0\)（或 \((0,+\infty)\)）；\(\varphi(x)=x\ln(1+1/x)\) 递增且 \(\varphi(x)&lt;1\)．</p>
+            <div class="tool-item"><label>验证 \(x\)</label><input type="range" v-model.number="xSummary" min="0.5" max="10" step="0.5" @input="renderGraphs"><span class="num">{{ xSummary }}</span></div>
+            <p class="num">(2) 左式={{ leftSummary.toFixed(4) }}&gt;1；(3) 左={{ leftQ3Summary.toFixed(4) }}&lt;e&lt;右={{ rightQ3Summary.toFixed(4) }}．</p>
+          </div>
+          <canvas id="canvas-summary" width="520" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      var E = 2.718281828;
+
+      function toPx(c, x, y, xMin, xMax, yMin, yMax) {
+        var pad = { L: 44, R: 36, T: 20, B: 36 };
+        var w = c.width, h = c.height;
+        var px = pad.L + (x - xMin) / (xMax - xMin) * (w - pad.L - pad.R);
+        var py = h - pad.B - (y - yMin) / (yMax - yMin) * (h - pad.T - pad.B);
+        return { x: px, y: py };
+      }
+
+      function drawIntro(c, vm) {
+        if (!c || !vm) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        var xMax = Math.max(0.5, vm.xMaxIntro || 2);
+        var xMin = 0, yMin = 0, yMax = 1.2;
+        var ptsF = [], ptsR = [];
+        for (var i = 0; i <= 100; i++) {
+          var x = xMin + (xMax - xMin) * i / 100;
+          if (x >= 0) {
+            ptsF.push(toPx(c, x, Math.log(1 + x), xMin, xMax, yMin, yMax));
+            ptsR.push(toPx(c, x, x / (1 + x / 2), xMin, xMax, yMin, yMax));
+          }
+        }
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(44, h - 36); ctx.lineTo(w - 36, h - 36); ctx.lineTo(w - 36, 20); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '11px sans-serif';
+        ctx.fillText('0', 40, h - 22); ctx.fillText('x', w - 28, h - 22); ctx.fillText('y', 22, 26);
+        ctx.strokeStyle = '#1e88e5'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ptsF.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+        ctx.strokeStyle = '#f57c00'; ctx.lineWidth = 2;
+        ctx.beginPath(); ptsR.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+        ctx.fillStyle = '#1e88e5'; ctx.fillText('f(x)=ln(1+x)', w - 120, 32);
+        ctx.fillStyle = '#f57c00'; ctx.fillText('R(x)=x/(1+x/2)', w - 120, 46);
+      }
+
+      function drawQ1(c, vm) {
+        if (!c || !vm) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        var a = vm.aVal != null ? vm.aVal : 1, b = vm.bVal != null ? vm.bVal : 0.5;
+        var xMax = 2, xMin = 0, yMin = 0, yMax = 1.2;
+        var ptsF = [], ptsR = [];
+        for (var i = 0; i <= 100; i++) {
+          var x = xMin + (xMax - xMin) * i / 100;
+          ptsF.push(toPx(c, x, Math.log(1 + x), xMin, xMax, yMin, yMax));
+          var den = 1 + b * x;
+          ptsR.push(toPx(c, x, den !== 0 ? a * x / den : 0, xMin, xMax, yMin, yMax));
+        }
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(44, h - 36); ctx.lineTo(w - 36, h - 36); ctx.lineTo(w - 36, 20); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '11px sans-serif';
+        ctx.fillText('0', 40, h - 22); ctx.fillText('x', w - 28, h - 22);
+        ctx.strokeStyle = '#1e88e5'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ptsF.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+        ctx.strokeStyle = '#f57c00'; ctx.lineWidth = 2;
+        ctx.beginPath(); ptsR.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+        ctx.fillStyle = '#1e88e5'; ctx.fillText('f(x)', w - 80, 32);
+        ctx.fillStyle = '#f57c00'; ctx.fillText('R(x), a=' + a + ', b=' + b, w - 80, 46);
+      }
+
+      function drawQ2(c, vm) {
+        if (!c || !vm) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        var xMax = Math.min(20, Math.max(3, (vm.xQ2 != null ? vm.xQ2 : 5) + 2));
+        var xMin = 0.3, yMin = 0.85, yMax = 1.8;
+        var pts = [], pt1 = [];
+        for (var i = 0; i <= 80; i++) {
+          var x = xMin + (xMax - xMin) * i / 80;
+          var val = (x + 0.5) * Math.log(1 + 1 / x);
+          pts.push(toPx(c, x, val, xMin, xMax, yMin, yMax));
+          pt1.push(toPx(c, x, 1, xMin, xMax, yMin, yMax));
+        }
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(44, h - 36); ctx.lineTo(w - 36, h - 36); ctx.lineTo(w - 36, 20); ctx.stroke();
+        ctx.strokeStyle = '#9e9e9e'; ctx.setLineDash([4, 2]);
+        ctx.beginPath(); pt1.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.strokeStyle = '#2e7d32'; ctx.lineWidth = 2;
+        ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '11px sans-serif';
+        ctx.fillText('(x+1/2)ln(1+1/x)', 50, 32); ctx.fillText('y=1', 50, 46);
+      }
+
+      function drawQ3(c, vm) {
+        if (!c || !vm) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        var xMax = Math.min(15, Math.max(4, (vm.xQ3 != null ? vm.xQ3 : 5) + 3));
+        var xMin = 0.4, yMin = 2.2, yMax = 2.95;
+        var ptsL = [], ptsR = [], ptE = [];
+        for (var i = 0; i <= 80; i++) {
+          var x = xMin + (xMax - xMin) * i / 80;
+          var left = Math.pow(1 + 1 / x, x), right = Math.pow(1 + 1 / x, x + 0.5);
+          if (left >= yMin && left <= yMax) ptsL.push(toPx(c, x, left, xMin, xMax, yMin, yMax));
+          if (right >= yMin && right <= yMax) ptsR.push(toPx(c, x, right, xMin, xMax, yMin, yMax));
+          ptE.push(toPx(c, x, E, xMin, xMax, yMin, yMax));
+        }
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(44, h - 36); ctx.lineTo(w - 36, h - 36); ctx.lineTo(w - 36, 20); ctx.stroke();
+        ctx.strokeStyle = '#9e9e9e'; ctx.setLineDash([4, 2]);
+        ctx.beginPath(); ptE.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 2;
+        if (ptsL.length > 1) { ctx.beginPath(); ctx.moveTo(ptsL[0].x, ptsL[0].y); for (var j = 1; j < ptsL.length; j++) ctx.lineTo(ptsL[j].x, ptsL[j].y); ctx.stroke(); }
+        ctx.strokeStyle = '#c62828'; ctx.lineWidth = 2;
+        if (ptsR.length > 1) { ctx.beginPath(); ctx.moveTo(ptsR[0].x, ptsR[0].y); for (var j = 1; j < ptsR.length; j++) ctx.lineTo(ptsR[j].x, ptsR[j].y); ctx.stroke(); }
+        ctx.fillStyle = '#333'; ctx.font = '11px sans-serif';
+        ctx.fillText('(1+1/x)^x', 50, 28); ctx.fillText('e', 50, 42); ctx.fillText('(1+1/x)^{x+1/2}', 50, 56);
+      }
+
+      function drawSummary(c, vm) {
+        if (!c || !vm) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        var x = vm.xSummary != null ? vm.xSummary : 3;
+        var left2 = (x + 0.5) * Math.log(1 + 1 / x);
+        var left3 = Math.pow(1 + 1 / x, x), right3 = Math.pow(1 + 1 / x, x + 0.5);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText('x = ' + x + ' 时：', 20, 36);
+        ctx.fillText('(2) (x+1/2)ln(1+1/x) = ' + left2.toFixed(4) + ' > 1', 20, 58);
+        ctx.fillText('(3) (1+1/x)^x = ' + left3.toFixed(4) + ' < e < ' + right3.toFixed(4) + ' = (1+1/x)^{x+1/2}', 20, 80);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              xMaxIntro: 2,
+              aVal: 1,
+              bVal: 0.5,
+              xQ2: 5,
+              xQ3: 5,
+              xSummary: 3
+            };
+          },
+          computed: {
+            leftQ2: function () {
+              var x = this.xQ2;
+              return (x + 0.5) * Math.log(1 + 1 / x);
+            },
+            leftQ3: function () {
+              var x = this.xQ3;
+              return x > 0 ? Math.pow(1 + 1 / x, x) : 0;
+            },
+            rightQ3: function () {
+              var x = this.xQ3;
+              return x > 0 ? Math.pow(1 + 1 / x, x + 0.5) : 0;
+            },
+            eVal: function () { return E; },
+            leftSummary: function () {
+              var x = this.xSummary;
+              return (x + 0.5) * Math.log(1 + 1 / x);
+            },
+            leftQ3Summary: function () {
+              var x = this.xSummary;
+              return x > 0 ? Math.pow(1 + 1 / x, x) : 0;
+            },
+            rightQ3Summary: function () {
+              var x = this.xSummary;
+              return x > 0 ? Math.pow(1 + 1 / x, x + 0.5) : 0;
+            }
+          },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            renderGraphs: function () {
+              var vm = this;
+              var n = this.activeTab;
+              var c = document.getElementById('canvas-' + n);
+              if (n === 'intro') drawIntro(c, vm);
+              else if (n === 'q1') drawQ1(c, vm);
+              else if (n === 'q2') drawQ2(c, vm);
+              else if (n === 'q3') drawQ3(c, vm);
+              else if (n === 'summary') drawSummary(c, vm);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

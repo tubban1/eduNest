@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数列新定义（1）X 数列与伴随数列</title>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+
+    /* Interactive Tools */
+    .tools-container {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .seq-builder {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .seq-btn {
+      width: 40px;
+      height: 40px;
+      font-weight: bold;
+      border: 2px solid #bdc3c7;
+      border-radius: 4px;
+      background: white;
+      color: #7f8c8d;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .seq-btn.active {
+      border-color: #3498db;
+      background: #3498db;
+      color: white;
+    }
+
+    .seq-btn.fixed {
+      background: #2c3e50;
+      border-color: #2c3e50;
+      color: white;
+      cursor: not-allowed;
+    }
+
+    .seq-val {
+      font-size: 14px;
+      text-align: center;
+      margin-top: 5px;
+      color: #666;
+      width: 40px;
+    }
+
+    .b-val {
+      font-size: 12px;
+      color: #e74c3c;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+  <meta name="description" content="X 数列与伴随数列定义、递推 b_{n+1}=|a_n-a_{n+1}/2|b_n、充要条件与最值。">
+  <meta name="keywords" content="X 数列、伴随数列、充要条件、等比数列">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>数列新定义（1）X 数列与伴随数列</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·北京·高三北京市第五中学校考阶段练习) 若数列 \(\{a_n\}\) 满足：\(a_n \in \{0,1\},\, n \in \mathbb{N}^*\)，且 \(a_1 = 1\)，则称
+            \(\{a_n\}\) 为一个<strong>X 数列</strong>．对于一个 X 数列 \(\{a_n\}\)，若数列 \(\{b_n\}\) 满足：\(b_1 = 1\)，且 \(b_{n+1} =
+            \left|a_n - \dfrac{a_{n+1}}{2}\right| b_n,\, n \in \mathbb{N}^*\)，则称 \(\{b_n\}\) 为 \(\{a_n\}\)
+            的<strong>伴随数列</strong>．</p>
+          <p><strong>(1)</strong> 若 X 数列 \(\{a_n\}\) 中，\(a_2 = 1\)，\(a_3 = 0\)，\(a_4 = 1\)，写出其伴随数列 \(\{b_n\}\) 中 \(b_2,
+            b_3, b_4\) 的值；</p>
+          <p><strong>(2)</strong> 若 \(\{a_n\}\) 为一个 X 数列，\(\{b_n\}\) 为 \(\{a_n\}\) 的伴随数列．<br>
+            ① 证明：“\(\{a_n\}\) 为常数列”是“\(\{b_n\}\) 为等比数列”的充要条件；<br>
+            ② 求 \(b_{2019}\) 的最大值．</p>
+        </div>
+      </div>
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <!-- Intro Tab: Interactive Builder -->
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>核心机制</strong>：
+            <br>1. <strong>X 数列 \(a_n\)</strong>：只能取 0 或 1，且 \(a_1\) 必须为 1。
+            <br>2. <strong>伴随数列 \(b_n\)</strong>：
+          <ul>
+            <li>\(b_1 = 1\)；\(b_{n+1} = \left|a_n - \dfrac{a_{n+1}}{2}\right| b_n\)。</li>
+            <li>\(a_n,\,a_{n+1}\in\{0,1\}\) 时：\((1,1)\to \dfrac{1}{2}b_n\)；\((1,0)\to b_n\)；\((0,1)\to \dfrac{1}{2}b_n\)；\((0,0)\to 0\)。</li>
+          </ul>
+          </p>
+
+          <div class="tools-container">
+            <p style="margin-bottom:10px;"><strong>构造你的数列</strong>：点击下方按钮切换 \(a_n\) 的值（1 或 0），观察 \(b_n\) 的变化。</p>
+            <div class="seq-builder">
+              <div v-for="(val, idx) in demoSeq" :key="idx" style="text-align:center;">
+                <button class="seq-btn" :class="{active: val===1, fixed: idx===0}" @click="toggleSeq(idx)">
+                  {{ val }}
+                </button>
+                <div style="font-size:12px; margin-top:4px;">a<sub>{{ idx+1 }}</sub></div>
+              </div>
+            </div>
+            <div class="seq-builder" style="margin-top:20px;">
+              <div v-for="(bVal, idx) in calcB" :key="idx" style="text-align:center; width:40px;">
+                <div class="b-val">{{ formatB(bVal) }}</div>
+                <div style="height:60px; display:flex; align-items:flex-end; justify-content:center;">
+                  <div :style="{height: (bVal*50) + 'px', width: '20px', background: '#e74c3c'}"></div>
+                </div>
+                <div style="font-size:12px;">b<sub>{{ idx+1 }}</sub></div>
+              </div>
+            </div>
+          </div>
+          <canvas id="canvas-intro" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>已知</strong>：\(a_1=1,\,a_2=1,\,a_3=0,\,a_4=1\)。由题设 \(b_1=1\)，\(b_{n+1}=\left|a_n-\dfrac{a_{n+1}}{2}\right|b_n\)。</p>
+          <div class="tools-container">
+            <p><strong>代入公式计算</strong>：</p>
+            <ul style="list-style:none;">
+              <li>\(b_1 = 1\)。</li>
+              <li>\(b_2 = \left|a_1-\dfrac{a_2}{2}\right|b_1 = \left|1-\dfrac{1}{2}\right|\cdot 1 = \dfrac{1}{2}\)。</li>
+              <li>\(b_3 = \left|a_2-\dfrac{a_3}{2}\right|b_2 = \left|1-\dfrac{0}{2}\right|\cdot \dfrac{1}{2} = \dfrac{1}{2}\)。</li>
+              <li>\(b_4 = \left|a_3-\dfrac{a_4}{2}\right|b_3 = \left|0-\dfrac{1}{2}\right|\cdot \dfrac{1}{2} = \dfrac{1}{4}\)。</li>
+            </ul>
+            <p><strong>答</strong>：\(b_2=\dfrac{1}{2}\)，\(b_3=\dfrac{1}{2}\)，\(b_4=\dfrac{1}{4}\)。</p>
+          </div>
+          <canvas id="canvas-q1" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>① 证明（充要条件）</strong></p>
+          <p>由 \(b_{n+1}=\left|a_n-\dfrac{a_{n+1}}{2}\right|b_n\)：\((1,1)\) 与 \((0,1)\) 得 \(b_{n+1}=\dfrac{1}{2}b_n\)，\((1,0)\) 得 \(b_{n+1}=b_n\)，\((0,0)\) 得 \(b_{n+1}=0\)。</p>
+          <p><strong>充分性</strong>：若 \(\{a_n\}\) 为常数列，由 \(a_1=1\) 知 \(a_n\equiv 1\)，则 \(b_{n+1}=\left|1-\dfrac{1}{2}\right|b_n=\dfrac{1}{2}b_n\)，故 \(b_n=\dfrac{1}{2^{n-1}}\)，\(\{b_n\}\) 为公比 \(\dfrac{1}{2}\) 的等比数列。</p>
+          <p><strong>必要性</strong>：设 \(\{b_n\}\) 为等比数列且 \(b_1=1\)。若某步为 \((0,0)\) 则 \(b_{n+1}=0\)，之后恒为 0，与等比且 \(b_1=1\) 矛盾（或仅视为公比 0）。故不能出现 \((0,0)\)。若出现 \((1,0)\) 则 \(b_{n+1}=b_n\) 不衰减；若出现 \((1,1)\) 或 \((0,1)\) 则乘 \(\dfrac{1}{2}\)。要使 \(\{b_n\}\) 为等比，需递推形式一致：若 \(b_2=\dfrac{1}{2}\) 则每步均为乘 \(\dfrac{1}{2}\)，即不能出现 \((1,0)\)，故 \(a_n\) 不能有 0 后继 1 的交替中的“1,0”段，只能全为 1，即 \(\{a_n\}\) 为常数列。</p>
+          <p><strong>② 求 \(b_{2019}\) 的最大值</strong></p>
+          <p>\(b_{n+1}=\left|a_n-\dfrac{a_{n+1}}{2}\right|b_n \le b_n\)，等号当且仅当 \((a_n,a_{n+1})=(1,0)\) 时 \(b_{n+1}=b_n\)（不衰减）；\((1,1)\) 与 \((0,1)\) 时 \(b_{n+1}=\dfrac{1}{2}b_n\)。要使 \(b_{2019}\) 最大，应尽量多出现 \((1,0)\)。取 \(a_n\) 为 \(1,0,1,0,\dots\)：\(b_2=|1-0|b_1=b_1=1\)，\(b_3=\left|0-\dfrac{1}{2}\right|b_2=\dfrac{1}{2}\)，\(b_4=|1-0|b_3=b_3=\dfrac{1}{2}\)，\(b_5=\dfrac{1}{2}b_4=\dfrac{1}{4}\)，…，即 \(b_{2k}=b_{2k+1}=\dfrac{1}{2^k}\)。故 \(b_{2019}=b_{2\times 1009+1}=\dfrac{1}{2^{1009}}\)。</p>
+          <p><strong>答</strong>：\(b_{2019}\) 的最大值为 \(\dfrac{1}{2^{1009}}\)。</p>
+          <canvas id="canvas-q2" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>递推</strong>：\(b_{n+1}=\left|a_n-\dfrac{a_{n+1}}{2}\right|b_n\)。\(a_n,a_{n+1}\in\{0,1\}\) 时：\((1,1)\)、\((0,1)\) 得 \(b_{n+1}=\dfrac{1}{2}b_n\)；\((1,0)\) 得 \(b_{n+1}=b_n\)；\((0,0)\) 得 \(b_{n+1}=0\)。</p>
+            <p><strong>(1)</strong> \(a_1=1,\,a_2=1,\,a_3=0,\,a_4=1\) 时，\(b_2=\dfrac{1}{2},\,b_3=\dfrac{1}{2},\,b_4=\dfrac{1}{4}\)。</p>
+            <p><strong>(2)①</strong> “\(\{a_n\}\) 为常数列”当且仅当“\(\{b_n\}\) 为等比数列”：常数列（\(a_n\equiv 1\)）时 \(b_n=\dfrac{1}{2^{n-1}}\)（公比 \(\dfrac{1}{2}\)）；\(\{b_n\}\) 为等比且 \(b_1=1\) 时，\(\{a_n\}\) 必为常数列。</p>
+            <p><strong>(2)②</strong> \(b_{2019}\) 的最大值为 \(\dfrac{1}{2^{1009}}\)。在 \(a_n=1,0,1,0,\dots\) 时取得，此时 \(b_{2k}=b_{2k+1}=\dfrac{1}{2^k}\)（\(k\ge 1\)），故 \(b_{2019}=\dfrac{1}{2^{1009}}\)。</p>
+          </div>
+          <canvas id="canvas-summary" width="520" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Katex Support
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+
+      var TABS = ['intro', 'q1', 'q2', 'summary'];
+
+      function drawSeqGraph(c, data, color) {
+        if (!c || !data) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        var margin = 40;
+        var maxVal = Math.max(1, ...data);
+        var scaleX = (w - 2 * margin) / (data.length - 1 || 1);
+        var scaleY = (h - 2 * margin) / maxVal;
+
+        ctx.strokeStyle = '#ccc';
+        ctx.beginPath(); ctx.moveTo(margin, h - margin); ctx.lineTo(w - margin, h - margin); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(margin, margin); ctx.lineTo(margin, h - margin); ctx.stroke();
+
+        ctx.strokeStyle = color || '#3498db';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        data.forEach((val, i) => {
+          var x = margin + i * scaleX;
+          var y = h - margin - val * scaleY;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+
+          // dot
+          // ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 3, 0, 2*Math.PI); ctx.fill();
+        });
+        ctx.stroke();
+
+        // Draw dots separately to be on top
+        ctx.fillStyle = color || '#3498db';
+        data.forEach((val, i) => {
+          var x = margin + i * scaleX;
+          var y = h - margin - val * scaleY;
+          ctx.beginPath(); ctx.arc(x, y, 3, 0, 2 * Math.PI); ctx.fill();
+          if (data.length < 20) ctx.fillText(val.toFixed(3).replace(/[.]?0+$/, ''), x - 10, y - 10);
+        });
+      }
+
+      function drawQ1(c) {
+        // 题干公式 |a_n - a_{n+1}/2|：a=1,1,0,1 => b_2=1/2, b_3=1/2, b_4=1/4
+        var data = [1, 0.5, 0.5, 0.25];
+        drawSeqGraph(c, data, '#e74c3c');
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              demoSeq: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0] // 10 terms
+            };
+          },
+          computed: {
+            calcB: function () {
+              var b = [1];
+              for (var i = 0; i < this.demoSeq.length - 1; i++) {
+                var diff = Math.abs(this.demoSeq[i] - this.demoSeq[i + 1]);
+                var nextB = Math.abs(this.demoSeq[i] - this.demoSeq[i + 1] / 2) * b[i]; // b_{n+1}=|a_n-a_{n+1}/2|b_n
+                b.push(nextB);
+              }
+              return b;
+            }
+          },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            toggleSeq: function (idx) {
+              if (idx === 0) return;
+              this.demoSeq[idx] = this.demoSeq[idx] === 1 ? 0 : 1;
+              this.$nextTick(() => this.renderGraphs());
+            },
+            formatB: function (val) {
+              if (val === 0) return '0';
+              if (val === 1) return '1';
+              var den = Math.round(1 / val);
+              if (Math.abs(1 / den - val) < 0.0001) return '1/' + den;
+              return val.toFixed(3);
+            },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              if (n === 'intro') this.drawIntro();
+              else if (n === 'q1') drawQ1(document.getElementById('canvas-q1'));
+              else if (n === 'q2') this.drawQ2();
+              else if (n === 'summary') this.drawSummary();
+            },
+            drawIntro: function () {
+              var c = document.getElementById('canvas-intro');
+              if (!c) return;
+              drawSeqGraph(c, this.calcB, '#3498db');
+            },
+            drawQ2: function () {
+              var c = document.getElementById('canvas-q2');
+              if (!c) return;
+              // 1,0,1,0,... => b_{2k}=b_{2k+1}=1/2^k
+              var data = [];
+              for (var i = 0; i < 8; i++) data.push(1 / Math.pow(2, Math.floor(i / 2)));
+              drawSeqGraph(c, data, '#9b59b6');
+            },
+            drawSummary: function () {
+              var c = document.getElementById('canvas-summary');
+              if (!c) return;
+              var ctx = c.getContext('2d'), w = c.width, h = c.height;
+              ctx.clearRect(0, 0, w, h);
+              ctx.fillStyle = '#333'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+              ctx.fillText('b_n 随 a_n 的震荡而最大化', w / 2, h / 2);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            var vm = this;
+            this.$nextTick(function () {
+              vm.renderGraphs();
+            });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

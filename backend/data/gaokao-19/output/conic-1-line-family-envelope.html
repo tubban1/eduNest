@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>圆锥曲线新定义（1）直线族与包络</title>
+  <meta name="description" content="学习直线族的概念、包络曲线的定义与求解方法，掌握参数方程在几何问题中的应用，理解直线族与包络曲线的几何关系。">
+  <meta name="keywords" content="直线族,包络曲线,参数方程,圆锥曲线,切线,几何分析,高考数学">
+  <link id="katex-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script>(function(){var id='katex-css';var u='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css';setTimeout(function(){var el=document.getElementById(id);if(el&&el.href&&el.href.indexOf('jsdelivr')!==-1){var s=document.createElement('link');s.rel='stylesheet';s.href=u;document.head.appendChild(s);}},5000);})();</script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .k {
+      line-height: 2;
+      color: #333;
+    }
+    .ans {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+      color: #2e7d32;
+      font-weight: 700;
+    }
+    .step {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2980b9;
+      margin-bottom: 5px;
+    }
+    /* Tabs UI */
+    .tabs {
+      margin-top: 10px;
+    }
+    .tab-headers {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .tab-header {
+      cursor: pointer;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .tab-header:hover {
+      background: #2980b9;
+    }
+    .tab-header.active {
+      background: #2980b9;
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tab-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      margin: 15px 0;
+      display: block;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        padding: 10px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+      .card {
+        padding: 12px;
+        margin: 10px 0;
+      }
+      .tab-panel {
+        padding: 10px;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <script>(function(){var g="Vue";var u="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js";var t=setTimeout(function(){if(typeof window[g]==="undefined"){var s=document.createElement("script");s.src=u;(document.currentScript&&document.currentScript.parentNode||document.head).appendChild(s);}},5000);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script>(function(){var g="katex";var u="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js";var t=setTimeout(function(){if(typeof window[g]==="undefined"){var s=document.createElement("script");s.src=u;(document.currentScript&&document.currentScript.parentNode||document.head).appendChild(s);}},5000);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>圆锥曲线新定义（1）直线族与包络</h1>
+    
+    <!-- 题目部分 -->
+    <div id="static-math" class="card" v-pre>
+      <h2>题目</h2>
+      <div class="k">
+        <p>直线族是指具有某种共同性质的直线的全体．如：方程 \(y = kx + 1\) 中，当 \(k\) 取给定的实数时，表示一条直线；当 \(k\) 在实数范围内变化时，表示过点 \((0,1)\) 的直线族（不含 \(y\) 轴）．记直线族 \(2(a-2)x + 4y - 4a + a^2 = 0\)（其中 \(a \in \mathbb{R}\)）为 \(\Psi\)，直线族 \(y = 3t^2 x - 2t^3\)（其中 \(t > 0\)）为 \(\Omega\)．</p>
+        <p><strong>(1)</strong> 分别判断点 \(A(0,1)\)、\(B(1,2)\) 是否在 \(\Psi\) 的某条直线上，并说明理由；</p>
+        <p><strong>(2)</strong> 对于给定的正实数 \(x_0\)，点 \(P(x_0, y_0)\) 不在 \(\Omega\) 的任意一条直线上，求 \(y_0\) 的取值范围（用 \(x_0\) 表示）；</p>
+        <p><strong>(3)</strong> 直线族的<strong>包络</strong>被定义为这样一条曲线：直线族中的每一条直线都是该曲线上某点处的切线，且该曲线上每一点处的切线都是该直线族中的某条直线．求 \(\Omega\) 的包络和 \(\Psi\) 的包络．</p>
+      </div>
+    </div>
+
+    <!-- 解答部分（Tab版） -->
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 判断</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 取值范围</div>
+            <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 包络</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+          
+          <!-- 启发引导 -->
+          <div class="tab-panel" v-if="activeTab==='intro'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">题意拆解</h3>
+              <p>题目在问：给定两个直线族 \(\Psi\)、\(\Omega\)，(1) 判断点 \(A、B\) 是否在 \(\Psi\) 的某条直线上；(2) 求不在 \(\Omega\) 任意一条直线上的点 \(P(x_0,y_0)\) 中 \(y_0\) 的取值范围；(3) 求两直线族的包络曲线方程。</p>
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>本题涉及<strong>直线族</strong>和<strong>包络曲线</strong>两个核心概念：</p>
+              <ul style="margin-left:20px; margin-top:10px;">
+                <li><strong>直线族</strong>：具有共同性质的直线的集合，通常用含参数的方程表示</li>
+                <li><strong>包络</strong>：直线族中所有直线的"边界"，即与所有直线都相切的曲线</li>
+              </ul>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">关键线索</h3>
+              <div class="step">
+                <p><strong>直线族 \(\Psi\)</strong>：\(2(a-2)x + 4y - 4a + a^2 = 0\)，参数 \(a \in \mathbb{R}\)</p>
+                <p><strong>直线族 \(\Omega\)</strong>：\(y = 3t^2 x - 2t^3\)，参数 \(t > 0\)</p>
+                <p>需要判断点是否在直线族中，以及求包络曲线方程。</p>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li>参数方程与直线方程</li>
+                  <li>点与直线的位置关系</li>
+                  <li>包络曲线的定义与求法</li>
+                  <li>参数消元与曲线方程</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">考点与难点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>考点</strong>：直线族的概念、包络的定义、参数方程的应用</li>
+                  <li><strong>易错点</strong>：混淆直线族与单条直线，忽略参数范围限制</li>
+                  <li><strong>难点</strong>：包络曲线的求解需要消参技巧，理解包络的几何意义</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">拿分策略</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li><strong>第(1)问</strong>：将点坐标代入直线族方程，判断是否存在参数值使方程成立</li>
+                  <li><strong>第(2)问</strong>：利用参数方程，通过消参或判别式法确定点的取值范围</li>
+                  <li><strong>第(3)问</strong>：利用包络的定义，通过求导或判别式法消参得到包络方程</li>
+                </ul>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">图形辅助理解</h3>
+              <p>下面展示直线族 \(\Psi\) 和 \(\Omega\) 的图形，帮助理解直线族的概念：</p>
+              <canvas id="canvas-intro" width="800" height="500"></canvas>
+            </div>
+          </div>
+
+          <!-- (1) 判断 -->
+          <div class="tab-panel" v-if="activeTab==='q1'">
+            <div class="k" v-pre>
+              <h2>(1) 判断</h2>
+              
+              <div class="step">
+                <div class="step-title">分析</div>
+                <p>判断点是否在直线族 \(\Psi\) 的某条直线上，需要将点的坐标代入直线族方程，看是否存在参数 \(a\) 使方程成立。</p>
+                <p>直线族 \(\Psi\) 的方程为：\(2(a-2)x + 4y - 4a + a^2 = 0\)</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">解：判断点 \(A(0,1)\)</div>
+                <p>将 \(A(0,1)\) 代入方程：</p>
+                <p>\[2(a-2) \cdot 0 + 4 \cdot 1 - 4a + a^2 = 0\]</p>
+                <p>\[4 - 4a + a^2 = 0\]</p>
+                <p>\[a^2 - 4a + 4 = 0\]</p>
+                <p>\[(a-2)^2 = 0\]</p>
+                <p>解得：\(a = 2\)</p>
+                <p>因为 \(a = 2 \in \mathbb{R}\)，所以点 \(A(0,1)\) 在直线族 \(\Psi\) 的某条直线上（当 \(a = 2\) 时）。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">解：判断点 \(B(1,2)\)</div>
+                <p>将 \(B(1,2)\) 代入方程：</p>
+                <p>\[2(a-2) \cdot 1 + 4 \cdot 2 - 4a + a^2 = 0\]</p>
+                <p>\[2a - 4 + 8 - 4a + a^2 = 0\]</p>
+                <p>\[a^2 - 2a + 4 = 0\]</p>
+                <p>判别式：\(\Delta = (-2)^2 - 4 \cdot 1 \cdot 4 = 4 - 16 = -12 < 0\)</p>
+                <p>因为 \(\Delta < 0\)，所以方程无实数解，即不存在 \(a \in \mathbb{R}\) 使方程成立。</p>
+                <p>因此，点 \(B(1,2)\) 不在直线族 \(\Psi\) 的任意一条直线上。</p>
+              </div>
+
+              <div class="ans">
+                <strong>答：(1)</strong> 点 \(A(0,1)\) 在直线族 \(\Psi\) 的某条直线上（当 \(a = 2\) 时）；点 \(B(1,2)\) 不在直线族 \(\Psi\) 的任意一条直线上。
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">图形验证</h3>
+              <p>下面图形展示直线族 \(\Psi\) 中的部分直线，以及点 \(A(0,1)\) 和 \(B(1,2)\) 的位置：</p>
+              <canvas id="canvas-q1" width="800" height="500"></canvas>
+            </div>
+          </div>
+
+          <!-- (2) 取值范围 -->
+          <div class="tab-panel" v-if="activeTab==='q2'">
+            <div class="k" v-pre>
+              <h2>(2) 取值范围</h2>
+              
+              <div class="step">
+                <div class="step-title">分析</div>
+                <p>点 \(P(x_0, y_0)\) 不在直线族 \(\Omega\) 的任意一条直线上，意味着对于所有 \(t > 0\)，都有 \(y_0 \neq 3t^2 x_0 - 2t^3\)。</p>
+                <p>即方程 \(y_0 = 3t^2 x_0 - 2t^3\) 在 \(t > 0\) 时无解。</p>
+                <p>整理得：\(2t^3 - 3t^2 x_0 + y_0 = 0\)</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">解：构造函数</div>
+                <p>设函数 \(f(t) = 2t^3 - 3t^2 x_0 + y_0\)，\(t > 0\)</p>
+                <p>点 \(P\) 不在 \(\Omega\) 的任意一条直线上，等价于 \(f(t) = 0\) 在 \(t > 0\) 时无解。</p>
+                <p>对 \(f(t)\) 求导：</p>
+                <p>\[f'(t) = 6t^2 - 6t x_0 = 6t(t - x_0)\]</p>
+                <p>当 \(t > 0\) 时，\(f'(t) = 0\) 的解为 \(t = x_0\)（若 \(x_0 > 0\)）。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">解：讨论极值</div>
+                <p><strong>情况：</strong>当 \(x_0 > 0\) 时</p>
+                <ul style="margin-left:20px; margin-top:10px;">
+                  <li>若 \(0 < t < x_0\)，则 \(f'(t) < 0\)，\(f(t)\) 单调递减</li>
+                  <li>若 \(t > x_0\)，则 \(f'(t) > 0\)，\(f(t)\) 单调递增</li>
+                  <li>\(t = x_0\) 是极小值点，极小值为 \(f(x_0) = 2x_0^3 - 3x_0^2 \cdot x_0 + y_0 = -x_0^3 + y_0\)</li>
+                </ul>
+                <p>要使 \(f(t) = 0\) 在 \(t > 0\) 时无解，需要 \(f(x_0) > 0\)，即：</p>
+                <p>\[-x_0^3 + y_0 > 0\]</p>
+                <p>\[y_0 > x_0^3\]</p>
+                <p>同时，当 \(t \to 0^+\) 时，\(f(t) \to y_0\)；当 \(t \to +\infty\) 时，\(f(t) \to +\infty\)。</p>
+                <p>若 \(y_0 \leq 0\)，则 \(f(0^+) = y_0 \leq 0\)，且 \(f(x_0) = -x_0^3 + y_0 < 0\)（因为 \(x_0 > 0\)），由连续性知存在 \(t > 0\) 使 \(f(t) = 0\)，矛盾。</p>
+                <p>因此，需要 \(y_0 > x_0^3\)。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">解：验证边界</div>
+                <p>当 \(y_0 = x_0^3\) 时，\(f(x_0) = 0\)，此时点 \(P\) 在直线族 \(\Omega\) 的某条直线上（\(t = x_0\) 时），不符合题意。</p>
+                <p>因此，\(y_0\) 的取值范围为：\(y_0 > x_0^3\)</p>
+              </div>
+
+              <div class="ans">
+                <strong>答：(2)</strong> \(y_0\) 的取值范围为 \(y_0 > x_0^3\)。
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">图形说明</h3>
+              <p>下面图形展示直线族 \(\Omega\) 和包络曲线 \(y = x^3\)，以及不在直线族上的点的区域。拖动滑块可观察 \(\Omega\) 中单条直线随参数 \(t\) 的变化。</p>
+            </div>
+            <div class="graph-section" style="margin-top:12px;">
+              <p><strong>参数 t</strong>：<input type="range" min="0.3" max="2" step="0.1" v-model.number="tVal" @input="onTInput" style="width:180px; vertical-align:middle;"> 当前 t = <span v-text="tVal"></span></p>
+              <canvas id="canvas-q2" width="800" height="500"></canvas>
+            </div>
+          </div>
+
+          <!-- (3) 包络 -->
+          <div class="tab-panel" v-if="activeTab==='q3'">
+            <div class="k" v-pre>
+              <h2>(3) 包络</h2>
+              
+              <div class="step">
+                <div class="step-title">分析</div>
+                <p>包络曲线的定义：直线族中的每一条直线都是该曲线上某点处的切线，且该曲线上每一点处的切线都是该直线族中的某条直线。</p>
+                <p>求包络的方法：对参数求导，然后与原方程联立消参。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">解：求 \(\Omega\) 的包络</div>
+                <p>直线族 \(\Omega\)：\(y = 3t^2 x - 2t^3\)，其中 \(t > 0\)</p>
+                <p>将方程改写为：\(F(x, y, t) = 3t^2 x - 2t^3 - y = 0\)</p>
+                <p>对参数 \(t\) 求偏导：</p>
+                <p>\[\frac{\partial F}{\partial t} = 6tx - 6t^2 = 6t(x - t) = 0\]</p>
+                <p>因为 \(t > 0\)，所以 \(x - t = 0\)，即 \(t = x\)。</p>
+                <p>将 \(t = x\) 代入原方程：</p>
+                <p>\[y = 3x^2 \cdot x - 2x^3 = 3x^3 - 2x^3 = x^3\]</p>
+                <p>因此，\(\Omega\) 的包络为：\(y = x^3\)（\(x > 0\)）。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">解：求 \(\Psi\) 的包络</div>
+                <p>直线族 \(\Psi\)：\(2(a-2)x + 4y - 4a + a^2 = 0\)，其中 \(a \in \mathbb{R}\)</p>
+                <p>整理得：\(a^2 - 4a - 2(a-2)x + 4y = 0\)</p>
+                <p>即：\(a^2 - 4a - 2ax + 4x + 4y = 0\)</p>
+                <p>进一步整理：\(a^2 - 2a(2 + x) + 4x + 4y = 0\)</p>
+                <p>将方程看作关于 \(a\) 的二次方程：\(F(x, y, a) = a^2 - 2a(2 + x) + 4x + 4y = 0\)</p>
+                <p>对参数 \(a\) 求偏导：</p>
+                <p>\[\frac{\partial F}{\partial a} = 2a - 2(2 + x) = 0\]</p>
+                <p>解得：\(a = 2 + x\)</p>
+                <p>将 \(a = 2 + x\) 代入原方程：</p>
+                <p>\[(2+x)^2 - 2(2+x)(2+x) + 4x + 4y = 0\]</p>
+                <p>\[(2+x)^2 - 2(2+x)^2 + 4x + 4y = 0\]</p>
+                <p>\[-(2+x)^2 + 4x + 4y = 0\]</p>
+                <p>\[-4 - 4x - x^2 + 4x + 4y = 0\]</p>
+                <p>\[-x^2 + 4y - 4 = 0\]</p>
+                <p>\[4y = x^2 + 4\]</p>
+                <p>\[y = \frac{x^2}{4} + 1\]</p>
+                <p>因此，\(\Psi\) 的包络为：\(y = \frac{x^2}{4} + 1\)。</p>
+              </div>
+
+              <div class="step">
+                <div class="step-title">几何意义验证</div>
+                <p><strong>\(\Omega\) 的包络 \(y = x^3\)（\(x > 0\)）：</strong></p>
+                <p>这是一条三次曲线，在 \(x > 0\) 时单调递增，且过原点。</p>
+                <p><strong>\(\Psi\) 的包络 \(y = \frac{x^2}{4} + 1\)：</strong></p>
+                <p>这是一条开口向上的抛物线，顶点为 \((0, 1)\)，与第(1)问中点 \(A(0,1)\) 在包络上一致。</p>
+              </div>
+
+              <div class="ans">
+                <strong>答：(3)</strong> \(\Omega\) 的包络为 \(y = x^3\)（\(x > 0\)）；\(\Psi\) 的包络为 \(y = \frac{x^2}{4} + 1\)。
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">包络曲线可视化</h3>
+              <p>下面图形展示两个直线族及其包络曲线：</p>
+              <canvas id="canvas-q3" width="800" height="500"></canvas>
+            </div>
+          </div>
+
+          <!-- 总结与验证 -->
+          <div class="tab-panel" v-if="activeTab==='summary'">
+            <div class="k" v-pre>
+              <h2>总结与验证</h2>
+              
+              <div class="step">
+                <div class="step-title">解题思路总结</div>
+                <ol style="margin-left:20px;">
+                  <li><strong>第(1)问</strong>：将点坐标代入直线族方程，通过解关于参数的方程判断点是否在直线族中</li>
+                  <li><strong>第(2)问</strong>：利用函数的单调性和极值，确定使方程无解的参数范围</li>
+                  <li><strong>第(3)问</strong>：利用包络的定义，通过对参数求导并消参得到包络方程</li>
+                </ol>
+              </div>
+
+              <div class="step">
+                <div class="step-title">核心方法</div>
+                <ul style="margin-left:20px;">
+                  <li><strong>参数方程</strong>：用参数表示直线族，便于分析</li>
+                  <li><strong>消参技巧</strong>：通过求导或判别式法消去参数</li>
+                  <li><strong>函数分析</strong>：利用导数研究函数的单调性和极值</li>
+                  <li><strong>几何直观</strong>：理解包络的几何意义，验证结果的合理性</li>
+                </ul>
+              </div>
+
+              <div class="step">
+                <div class="step-title">拔高与拓展</div>
+                <p><strong>包络的应用：</strong></p>
+                <ul style="margin-left:20px;">
+                  <li>在物理学中，包络可以表示波的传播前沿</li>
+                  <li>在工程中，包络可以表示最优解的边界</li>
+                  <li>在几何中，包络是研究曲线族性质的重要工具</li>
+                </ul>
+                <p style="margin-top:10px;"><strong>相关概念：</strong></p>
+                <ul style="margin-left:20px;">
+                  <li>曲线族的包络</li>
+                  <li>参数曲线的切线族</li>
+                  <li>极值问题的几何解释</li>
+                </ul>
+              </div>
+
+              <div class="step">
+                <div class="step-title">易错提醒</div>
+                <p>直线族与“某一条直线”的区别；第(2)问 \(t>0\) 的范围不能丢，\(y_0>x_0^3\) 是严格不等号；第(3)问包络要对参数求导再与原方程联立消参，\(\Psi\) 的包络是抛物线 \(y=\frac{x^2}{4}+1\)，\(\Omega\) 的包络是 \(y=x^3\)（\(x>0\)）。</p>
+              </div>
+              <div class="step">
+                <div class="step-title">验证结果</div>
+                <p><strong>验证第(1)问：</strong></p>
+                <p>当 \(a = 2\) 时，\(\Psi\) 的方程为：\(2(2-2)x + 4y - 4 \cdot 2 + 2^2 = 4y - 8 + 4 = 4y - 4 = 0\)，即 \(y = 1\)。</p>
+                <p>点 \(A(0,1)\) 满足 \(y = 1\)，验证正确。</p>
+                <p style="margin-top:10px;"><strong>验证第(3)问：</strong></p>
+                <p>\(\Psi\) 的包络 \(y = \frac{x^2}{4} + 1\) 在 \(x = 0\) 时，\(y = 1\)，与点 \(A(0,1)\) 一致，验证合理。</p>
+              </div>
+
+              <h3 style="color:#34495e; margin:14px 0 6px;">综合图形验证</h3>
+              <canvas id="canvas-summary" width="800" height="500"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+  <script>
+    // 页面加载完成后立即渲染静态数学内容
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const staticEl = document.getElementById('static-math');
+        if(staticEl && typeof renderMathInElement !== 'undefined'){
+          try {
+            renderMathInElement(staticEl, {
+              delimiters: [
+                {left: '\\[', right: '\\]', display: true},
+                {left: '\\(', right: '\\)', display: false}
+              ],
+              throwOnError: false
+            });
+          } catch(e) { 
+            console.error('KaTeX render error in static:', e); 
+          }
+        }
+      }, 200);
+    });
+
+    const {createApp} = Vue;
+
+    const app = createApp({
+      data(){
+        return { 
+          activeTab: 'intro',
+          tVal: 1
+        }
+      },
+      mounted(){
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.renderMathInApp();
+            this.drawIntroGraph();
+          }, 200);
+        });
+      },
+      updated(){
+        this.$nextTick(() => {
+          this.renderMathInApp();
+        });
+      },
+      methods:{
+        setTab(tab) {
+          this.activeTab = tab;
+          const tabIndex = ['intro', 'q1', 'q2', 'q3', 'summary'].indexOf(tab) + 1;
+          if(window.eduNestRuntime && window.eduNestRuntime.dispatchLearningEvent) {
+            window.eduNestRuntime.dispatchLearningEvent('stage_change', {
+              stageIndex: tabIndex,
+              totalStages: 5
+            });
+          }
+          setTimeout(() => {
+            this.renderMathInApp();
+            if(tab === 'intro') this.drawIntroGraph();
+            else if(tab === 'q1') this.drawQ1Graph();
+            else if(tab === 'q2') this.drawQ2Graph(this.tVal);
+            else if(tab === 'q3') this.drawQ3Graph();
+            else if(tab === 'summary') this.drawSummaryGraph();
+          }, 50);
+        },
+        onTInput() {
+          const vm = this;
+          this.$nextTick(() => {
+            if(vm.activeTab === 'q2') vm.drawQ2Graph(vm.tVal);
+          });
+        },
+        renderMathInApp(){
+          const appEl = document.getElementById('app');
+          if(appEl && typeof renderMathInElement !== 'undefined') {
+            try {
+              renderMathInElement(appEl, {
+                delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false
+              });
+            } catch(e) {}
+          }
+        },
+        // 绘制启发引导图形
+        drawIntroGraph() {
+          const canvas = document.getElementById('canvas-intro');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          const padding = 60;
+          const xMin = -3, xMax = 3;
+          const yMin = -2, yMax = 4;
+          
+          const xToPixel = (x) => padding + (x - xMin) / (xMax - xMin) * (width - 2 * padding);
+          const yToPixel = (y) => height - padding - (y - yMin) / (yMax - yMin) * (height - 2 * padding);
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制网格
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for(let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+            const px = xToPixel(x);
+            ctx.beginPath();
+            ctx.moveTo(px, padding);
+            ctx.lineTo(px, height - padding);
+            ctx.stroke();
+          }
+          for(let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+            const py = yToPixel(y);
+            ctx.beginPath();
+            ctx.moveTo(padding, py);
+            ctx.lineTo(width - padding, py);
+            ctx.stroke();
+          }
+          
+          // 绘制坐标轴
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(xToPixel(xMin), yToPixel(0));
+          ctx.lineTo(xToPixel(xMax), yToPixel(0));
+          ctx.moveTo(xToPixel(0), yToPixel(yMin));
+          ctx.lineTo(xToPixel(0), yToPixel(yMax));
+          ctx.stroke();
+          
+          // 绘制直线族 Psi 的部分直线
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 1.5;
+          for(let a = -2; a <= 4; a += 0.5) {
+            // 2(a-2)x + 4y - 4a + a^2 = 0
+            // 4y = -2(a-2)x + 4a - a^2
+            // y = -0.5(a-2)x + a - a^2/4
+            const k = -0.5 * (a - 2);
+            const b = a - a*a/4;
+            ctx.beginPath();
+            const x1 = xMin, y1 = k * x1 + b;
+            const x2 = xMax, y2 = k * x2 + b;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+              ctx.stroke();
+            }
+          }
+          
+          // 绘制包络 y = x^2/4 + 1
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          let first = true;
+          for(let x = xMin; x <= xMax; x += 0.1) {
+            const y = x*x/4 + 1;
+            if(y >= yMin && y <= yMax) {
+              if(first) {
+                ctx.moveTo(xToPixel(x), yToPixel(y));
+                first = false;
+              } else {
+                ctx.lineTo(xToPixel(x), yToPixel(y));
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 绘制直线族 Omega 的部分直线 (x > 0)
+          ctx.strokeStyle = '#27ae60';
+          ctx.lineWidth = 1.5;
+          for(let t = 0.5; t <= 2; t += 0.3) {
+            // y = 3t^2 x - 2t^3
+            ctx.beginPath();
+            const x1 = 0, y1 = -2*t*t*t;
+            const x2 = xMax, y2 = 3*t*t*x2 - 2*t*t*t;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+              ctx.stroke();
+            }
+          }
+          
+          // 绘制包络 y = x^3 (x > 0)
+          ctx.strokeStyle = '#9b59b6';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          first = true;
+          for(let x = 0; x <= xMax; x += 0.1) {
+            const y = x*x*x;
+            if(y >= yMin && y <= yMax) {
+              if(first) {
+                ctx.moveTo(xToPixel(x), yToPixel(y));
+                first = false;
+              } else {
+                ctx.lineTo(xToPixel(x), yToPixel(y));
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 标注
+          ctx.fillStyle = '#333';
+          ctx.font = '14px Arial';
+          ctx.fillText('直线族 Ψ (蓝色)', xToPixel(1.5), yToPixel(3.5));
+          ctx.fillText('包络 y=x²/4+1 (红色)', xToPixel(1.5), yToPixel(3));
+          ctx.fillText('直线族 Ω (绿色)', xToPixel(1.5), yToPixel(2.5));
+          ctx.fillText('包络 y=x³ (紫色)', xToPixel(1.5), yToPixel(2));
+        },
+        // 绘制第(1)问图形
+        drawQ1Graph() {
+          const canvas = document.getElementById('canvas-q1');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          const padding = 60;
+          const xMin = -2, xMax = 3;
+          const yMin = -1, yMax = 3;
+          
+          const xToPixel = (x) => padding + (x - xMin) / (xMax - xMin) * (width - 2 * padding);
+          const yToPixel = (y) => height - padding - (y - yMin) / (yMax - yMin) * (height - 2 * padding);
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制网格和坐标轴
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for(let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+            const px = xToPixel(x);
+            ctx.beginPath();
+            ctx.moveTo(px, padding);
+            ctx.lineTo(px, height - padding);
+            ctx.stroke();
+          }
+          for(let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+            const py = yToPixel(y);
+            ctx.beginPath();
+            ctx.moveTo(padding, py);
+            ctx.lineTo(width - padding, py);
+            ctx.stroke();
+          }
+          
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(xToPixel(xMin), yToPixel(0));
+          ctx.lineTo(xToPixel(xMax), yToPixel(0));
+          ctx.moveTo(xToPixel(0), yToPixel(yMin));
+          ctx.lineTo(xToPixel(0), yToPixel(yMax));
+          ctx.stroke();
+          
+          // 绘制直线族 Psi 的部分直线
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 1;
+          for(let a = -1; a <= 4; a += 0.4) {
+            const k = -0.5 * (a - 2);
+            const b = a - a*a/4;
+            ctx.beginPath();
+            const x1 = xMin, y1 = k * x1 + b;
+            const x2 = xMax, y2 = k * x2 + b;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+              ctx.stroke();
+            }
+          }
+          
+          // 绘制 a=2 时的直线 (y=1)
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(xToPixel(xMin), yToPixel(1));
+          ctx.lineTo(xToPixel(xMax), yToPixel(1));
+          ctx.stroke();
+          
+          // 绘制点 A(0,1) 和 B(1,2)
+          ctx.fillStyle = '#27ae60';
+          ctx.beginPath();
+          ctx.arc(xToPixel(0), yToPixel(1), 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#e74c3c';
+          ctx.beginPath();
+          ctx.arc(xToPixel(1), yToPixel(2), 6, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 标注
+          ctx.fillStyle = '#333';
+          ctx.font = '14px Arial';
+          ctx.fillText('A(0,1)', xToPixel(0) + 10, yToPixel(1) - 10);
+          ctx.fillText('B(1,2)', xToPixel(1) + 10, yToPixel(2) - 10);
+          ctx.fillText('直线族 Ψ (蓝色)', xToPixel(1.5), yToPixel(2.5));
+          ctx.fillText('a=2时的直线 y=1 (红色)', xToPixel(1.5), yToPixel(2.2));
+        },
+        // 绘制第(2)问图形（可选传入 tVal 用于高亮当前 t 对应直线）
+        drawQ2Graph(tVal) {
+          const canvas = document.getElementById('canvas-q2');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          const padding = 60;
+          const xMin = 0, xMax = 2.5;
+          const yMin = -1, yMax = 8;
+          const tHighlight = (tVal != null && !isNaN(tVal)) ? Number(tVal) : null;
+          
+          const xToPixel = (x) => padding + (x - xMin) / (xMax - xMin) * (width - 2 * padding);
+          const yToPixel = (y) => height - padding - (y - yMin) / (yMax - yMin) * (height - 2 * padding);
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制网格和坐标轴
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for(let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+            const px = xToPixel(x);
+            ctx.beginPath();
+            ctx.moveTo(px, padding);
+            ctx.lineTo(px, height - padding);
+            ctx.stroke();
+          }
+          for(let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+            const py = yToPixel(y);
+            ctx.beginPath();
+            ctx.moveTo(padding, py);
+            ctx.lineTo(width - padding, py);
+            ctx.stroke();
+          }
+          
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(xToPixel(xMin), yToPixel(0));
+          ctx.lineTo(xToPixel(xMax), yToPixel(0));
+          ctx.moveTo(xToPixel(0), yToPixel(yMin));
+          ctx.lineTo(xToPixel(0), yToPixel(yMax));
+          ctx.stroke();
+          
+          // 绘制直线族 Omega 的部分直线
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 1;
+          for(let t = 0.3; t <= 2; t += 0.2) {
+            if(tHighlight != null && Math.abs(t - tHighlight) < 0.15) continue;
+            ctx.beginPath();
+            const x1 = 0, y1 = -2*t*t*t;
+            const x2 = xMax, y2 = 3*t*t*x2 - 2*t*t*t;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+              ctx.stroke();
+            }
+          }
+          if(tHighlight != null && tHighlight >= 0.3 && tHighlight <= 2) {
+            const t = tHighlight;
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            const x1 = 0, y1 = -2*t*t*t;
+            const x2 = xMax, y2 = 3*t*t*x2 - 2*t*t*t;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+            }
+            ctx.stroke();
+          }
+          
+          // 绘制包络 y = x^3
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          let first = true;
+          for(let x = 0; x <= xMax; x += 0.05) {
+            const y = x*x*x;
+            if(y >= yMin && y <= yMax) {
+              if(first) {
+                ctx.moveTo(xToPixel(x), yToPixel(y));
+                first = false;
+              } else {
+                ctx.lineTo(xToPixel(x), yToPixel(y));
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 填充不在直线族上的区域 (y > x^3)
+          ctx.fillStyle = 'rgba(39, 174, 96, 0.2)';
+          ctx.beginPath();
+          ctx.moveTo(xToPixel(0), yToPixel(0));
+          for(let x = 0; x <= xMax; x += 0.05) {
+            ctx.lineTo(xToPixel(x), yToPixel(x*x*x));
+          }
+          ctx.lineTo(xToPixel(xMax), yToPixel(yMax));
+          ctx.lineTo(xToPixel(0), yToPixel(yMax));
+          ctx.closePath();
+          ctx.fill();
+          
+          // 标注
+          ctx.fillStyle = '#333';
+          ctx.font = '14px Arial';
+          ctx.fillText('直线族 Ω (蓝色)', xToPixel(1.5), yToPixel(6));
+          ctx.fillText('包络 y=x³ (红色)', xToPixel(1.5), yToPixel(5.5));
+          ctx.fillText('不在直线族上的区域 y>x³ (绿色)', xToPixel(1.5), yToPixel(5));
+        },
+        // 绘制第(3)问图形
+        drawQ3Graph() {
+          const canvas = document.getElementById('canvas-q3');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          const padding = 60;
+          const xMin = -3, xMax = 3;
+          const yMin = -1, yMax = 5;
+          
+          const xToPixel = (x) => padding + (x - xMin) / (xMax - xMin) * (width - 2 * padding);
+          const yToPixel = (y) => height - padding - (y - yMin) / (yMax - yMin) * (height - 2 * padding);
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          // 绘制网格和坐标轴
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for(let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+            const px = xToPixel(x);
+            ctx.beginPath();
+            ctx.moveTo(px, padding);
+            ctx.lineTo(px, height - padding);
+            ctx.stroke();
+          }
+          for(let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+            const py = yToPixel(y);
+            ctx.beginPath();
+            ctx.moveTo(padding, py);
+            ctx.lineTo(width - padding, py);
+            ctx.stroke();
+          }
+          
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(xToPixel(xMin), yToPixel(0));
+          ctx.lineTo(xToPixel(xMax), yToPixel(0));
+          ctx.moveTo(xToPixel(0), yToPixel(yMin));
+          ctx.lineTo(xToPixel(0), yToPixel(yMax));
+          ctx.stroke();
+          
+          // 绘制直线族 Psi 的部分直线
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 1;
+          for(let a = -2; a <= 4; a += 0.3) {
+            const k = -0.5 * (a - 2);
+            const b = a - a*a/4;
+            ctx.beginPath();
+            const x1 = xMin, y1 = k * x1 + b;
+            const x2 = xMax, y2 = k * x2 + b;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+              ctx.stroke();
+            }
+          }
+          
+          // 绘制包络 y = x^2/4 + 1
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          let first = true;
+          for(let x = xMin; x <= xMax; x += 0.1) {
+            const y = x*x/4 + 1;
+            if(y >= yMin && y <= yMax) {
+              if(first) {
+                ctx.moveTo(xToPixel(x), yToPixel(y));
+                first = false;
+              } else {
+                ctx.lineTo(xToPixel(x), yToPixel(y));
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 绘制直线族 Omega 的部分直线 (x > 0)
+          ctx.strokeStyle = '#27ae60';
+          ctx.lineWidth = 1;
+          for(let t = 0.5; t <= 2; t += 0.25) {
+            ctx.beginPath();
+            const x1 = 0, y1 = -2*t*t*t;
+            const x2 = xMax, y2 = 3*t*t*x2 - 2*t*t*t;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+              ctx.stroke();
+            }
+          }
+          
+          // 绘制包络 y = x^3 (x > 0)
+          ctx.strokeStyle = '#9b59b6';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          first = true;
+          for(let x = 0; x <= xMax; x += 0.1) {
+            const y = x*x*x;
+            if(y >= yMin && y <= yMax) {
+              if(first) {
+                ctx.moveTo(xToPixel(x), yToPixel(y));
+                first = false;
+              } else {
+                ctx.lineTo(xToPixel(x), yToPixel(y));
+              }
+            }
+          }
+          ctx.stroke();
+          
+          // 标注
+          ctx.fillStyle = '#333';
+          ctx.font = '14px Arial';
+          ctx.fillText('直线族 Ψ (蓝色)', xToPixel(1.5), yToPixel(4));
+          ctx.fillText('包络 y=x²/4+1 (红色)', xToPixel(1.5), yToPixel(3.5));
+          ctx.fillText('直线族 Ω (绿色)', xToPixel(1.5), yToPixel(3));
+          ctx.fillText('包络 y=x³ (紫色)', xToPixel(1.5), yToPixel(2.5));
+        },
+        // 绘制总结图形（必须绘制到 canvas-summary，因 summary 切换时 canvas-q3 不在 DOM 中）
+        drawSummaryGraph() {
+          const canvas = document.getElementById('canvas-summary');
+          if(!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const width = canvas.width;
+          const height = canvas.height;
+          const padding = 60;
+          const xMin = -3, xMax = 3;
+          const yMin = -1, yMax = 5;
+          
+          const xToPixel = (x) => padding + (x - xMin) / (xMax - xMin) * (width - 2 * padding);
+          const yToPixel = (y) => height - padding - (y - yMin) / (yMax - yMin) * (height - 2 * padding);
+          
+          ctx.clearRect(0, 0, width, height);
+          
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          for(let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+            const px = xToPixel(x);
+            ctx.beginPath();
+            ctx.moveTo(px, padding);
+            ctx.lineTo(px, height - padding);
+            ctx.stroke();
+          }
+          for(let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+            const py = yToPixel(y);
+            ctx.beginPath();
+            ctx.moveTo(padding, py);
+            ctx.lineTo(width - padding, py);
+            ctx.stroke();
+          }
+          
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(xToPixel(xMin), yToPixel(0));
+          ctx.lineTo(xToPixel(xMax), yToPixel(0));
+          ctx.moveTo(xToPixel(0), yToPixel(yMin));
+          ctx.lineTo(xToPixel(0), yToPixel(yMax));
+          ctx.stroke();
+          
+          ctx.strokeStyle = '#3498db';
+          ctx.lineWidth = 1;
+          for(let a = -2; a <= 4; a += 0.3) {
+            const k = -0.5 * (a - 2);
+            const b = a - a*a/4;
+            ctx.beginPath();
+            const x1 = xMin, y1 = k * x1 + b;
+            const x2 = xMax, y2 = k * x2 + b;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+              ctx.stroke();
+            }
+          }
+          
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          let first = true;
+          for(let x = xMin; x <= xMax; x += 0.1) {
+            const y = x*x/4 + 1;
+            if(y >= yMin && y <= yMax) {
+              if(first) {
+                ctx.moveTo(xToPixel(x), yToPixel(y));
+                first = false;
+              } else {
+                ctx.lineTo(xToPixel(x), yToPixel(y));
+              }
+            }
+          }
+          ctx.stroke();
+          
+          ctx.strokeStyle = '#27ae60';
+          ctx.lineWidth = 1;
+          for(let t = 0.5; t <= 2; t += 0.25) {
+            ctx.beginPath();
+            const x1 = 0, y1 = -2*t*t*t;
+            const x2 = xMax, y2 = 3*t*t*x2 - 2*t*t*t;
+            if(y1 >= yMin && y1 <= yMax && y2 >= yMin && y2 <= yMax) {
+              ctx.moveTo(xToPixel(x1), yToPixel(y1));
+              ctx.lineTo(xToPixel(x2), yToPixel(y2));
+              ctx.stroke();
+            }
+          }
+          
+          ctx.strokeStyle = '#9b59b6';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          first = true;
+          for(let x = 0; x <= xMax; x += 0.1) {
+            const y = x*x*x;
+            if(y >= yMin && y <= yMax) {
+              if(first) {
+                ctx.moveTo(xToPixel(x), yToPixel(y));
+                first = false;
+              } else {
+                ctx.lineTo(xToPixel(x), yToPixel(y));
+              }
+            }
+          }
+          ctx.stroke();
+          
+          ctx.fillStyle = '#333';
+          ctx.font = '14px Arial';
+          ctx.fillText('直线族 Ψ (蓝色)', xToPixel(1.5), yToPixel(4));
+          ctx.fillText('包络 y=x²/4+1 (红色)', xToPixel(1.5), yToPixel(3.5));
+          ctx.fillText('直线族 Ω (绿色)', xToPixel(1.5), yToPixel(3));
+          ctx.fillText('包络 y=x³ (紫色)', xToPixel(1.5), yToPixel(2.5));
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

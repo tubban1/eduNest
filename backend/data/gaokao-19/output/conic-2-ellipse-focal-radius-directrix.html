@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>圆锥曲线新定义（2）椭圆焦半径与准线</title>
+  <meta name="description" content="学习椭圆第二定义、焦半径公式与准线，掌握焦点准线定义下的椭圆方程，理解重心与等差数列在解析几何中的应用。">
+  <meta name="keywords" content="椭圆,焦半径,准线,第二定义,离心率,重心,等差数列,高考数学">
+  <link id="katex-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script>(function(){var id='katex-css';var u='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css';setTimeout(function(){var el=document.getElementById(id);if(el&&el.href&&el.href.indexOf('jsdelivr')!==-1){var s=document.createElement('link');s.rel='stylesheet';s.href=u;document.head.appendChild(s);}},5000);})();</script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .card { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 20px; margin: 15px 0; }
+    .k { line-height: 2; color: #333; }
+    .ans { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin-top: 15px; border-radius: 4px; color: #2e7d32; font-weight: 700; }
+    .step { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; }
+    .step-title { font-weight: bold; color: #2980b9; margin-bottom: 5px; }
+    .tabs { margin-top: 10px; }
+    .tab-headers { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tab-header { cursor: pointer; background: #3498db; color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; transition: all .2s ease; }
+    .tab-header:hover { background: #2980b9; }
+    .tab-header.active { background: #2980b9; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .tab-panel { border: 1px solid #e0e0e0; border-radius: 6px; padding: 16px; background: #fafafa; }
+    canvas { border: 1px solid #ddd; border-radius: 8px; background: #fff; margin: 15px 0; display: block; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 10px; border-radius: 0; box-shadow: none; margin: 0; max-width: 100%; } .card { padding: 12px; } .tab-panel { padding: 10px; } }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <script>(function(){var g="Vue";var u="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js";var t=setTimeout(function(){if(typeof window[g]==="undefined"){var s=document.createElement("script");s.src=u;(document.currentScript&&document.currentScript.parentNode||document.head).appendChild(s);}},5000);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script>(function(){var g="katex";var u="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js";var t=setTimeout(function(){if(typeof window[g]==="undefined"){var s=document.createElement("script");s.src=u;(document.currentScript&&document.currentScript.parentNode||document.head).appendChild(s);}},5000);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.auto-render.min.js'"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>圆锥曲线新定义（2）椭圆焦半径与准线</h1>
+
+    <div id="static-math" class="card" v-pre>
+      <h2>题目</h2>
+      <div class="k">
+        <p>(2024·贵州贵阳·高三统考期末) 阅读材料：在平面直角坐标系中，若点 \(M(x,y)\) 与定点 \(F(c,0)\)（或 \(F'(-c,0)\)）的距离和它到定直线 \(l: x = \frac{a^2}{c}\)（或 \(l': x = -\frac{a^2}{c}\)）的距离之比是常数 \(\frac{c}{a}\)（\(0 < c < a\)），则 \(\frac{\sqrt{(x-c)^2+y^2}}{\frac{a^2}{c} - x} = \frac{c}{a}\)，化简可得 \(\frac{x^2}{a^2} + \frac{y^2}{a^2-c^2} = 1\)．设 \(b^2 = a^2 - c^2\)（\(b > 0\)），则得到方程 \(\frac{x^2}{a^2} + \frac{y^2}{b^2} = 1\)（\(a > b > 0\)），所以点 \(M\) 的轨迹是一个椭圆．这里定点 \(F(c,0)\) 是椭圆的一个焦点，直线 \(l: x = \frac{a^2}{c}\) 称为相应于焦点 \(F\) 的准线；定点 \(F'(-c,0)\) 是椭圆的另一个焦点，直线 \(l': x = -\frac{a^2}{c}\) 称为相应于焦点 \(F'\) 的准线．根据椭圆的这个定义，若点 \(M(x,y)\) 在椭圆 \(\frac{x^2}{a^2} + \frac{y^2}{b^2} = 1\)（\(a > b > 0\)）上，\(F(c,0)\) 是椭圆的右焦点，椭圆的离心率 \(e = \frac{c}{a}\)，则点 \(M\) 到准线 \(l: x = \frac{a^2}{c}\) 的距离为 \(\frac{a^2}{c} - x\)，所以 \(|MF| = \frac{c}{a}\left(\frac{a^2}{c} - x\right) = a - ex\)，我们把这个公式称为<strong>椭圆的焦半径公式</strong>．</p>
+        <p>结合阅读材料回答下面的问题：已知椭圆 \(C: \frac{x^2}{a^2} + \frac{y^2}{b^2} = 1\)（\(a > b > 0\)）的右焦点为 \(F\)，点 \(P\) 是该椭圆上第一象限的点，且 \(PF \perp x\) 轴，若直线 \(l: x = 9\) 是椭圆右准线方程，点 \(P\) 到直线 \(l\) 的距离为 8．</p>
+        <p><strong>(1)</strong> 求点 \(P\) 的坐标；</p>
+        <p><strong>(2)</strong> 若点 \(M\)、\(N\) 也在椭圆 \(C\) 上且 \(\triangle MNP\) 的重心为 \(F\)，判断 \(|FM|,\, |FP|,\, |FN|\) 是否能构成等差数列？如果能，求出该等差数列的公差，如果不能，说明理由．</p>
+      </div>
+    </div>
+
+    <div id="app">
+      <div class="card">
+        <h2>解题与引导（选项卡）</h2>
+        <div class="tabs">
+          <div class="tab-headers">
+            <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+            <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 求 P</div>
+            <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 等差数列</div>
+            <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+          </div>
+
+          <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+            <div class="k" v-pre>
+              <h3 style="color:#34495e; margin:8px 0 6px;">题意拆解</h3>
+              <p>题目在问：已知椭圆右准线 \(x=9\)、点 \(P\) 在椭圆上且 \(PF\perp x\) 轴、\(P\) 到准线距离为 8，(1) 求点 \(P\) 的坐标；(2) 判断 \(|FM|,\,|FP|,\,|FN|\) 能否成等差数列（\(M,N\) 在椭圆上且 \(\triangle MNP\) 的重心为 \(F\)），若能求公差。</p>
+              <h3 style="color:#34495e; margin:8px 0 6px;">启发思路</h3>
+              <p>本题考查<strong>椭圆第二定义</strong>（焦点、准线）与<strong>焦半径公式</strong> \(|MF| = a - ex\)，以及重心与等差数列。</p>
+              <ul style="margin-left:20px; margin-top:10px;">
+                <li><strong>右准线</strong>：\(x = \frac{a^2}{c}\)，题中为 \(x = 9\)</li>
+                <li><strong>P 在椭圆上且 PF ⊥ x 轴</strong>：P 与 F 横坐标相同，即 \(x_P = c\)</li>
+                <li><strong>P 到准线距离为 8</strong>：\(9 - x_P = 8 \Rightarrow c = 1\)，再由 \(a^2/c=9\) 得 \(a^2=9\)</li>
+              </ul>
+              <h3 style="color:#34495e; margin:14px 0 6px;">涉及知识点</h3>
+              <div class="step">
+                <ul style="margin-left:20px;">
+                  <li>椭圆第二定义（到焦点与到准线距离之比为离心率 \(e=c/a\)）</li>
+                  <li>焦半径公式 \(|MF| = a - ex\)（右焦点）</li>
+                  <li>三角形重心坐标公式</li>
+                  <li>等差数列的充要条件（三项成等差 \(\Leftrightarrow\) 中间项的二倍等于另两项之和）</li>
+                </ul>
+              </div>
+              <h3 style="color:#34495e; margin:14px 0 6px;">考点与易错</h3>
+              <p><strong>考点</strong>：椭圆第二定义、焦半径公式、重心坐标、等差数列。易错：\(P\) 到准线距离为 \(a^2/c-x_P\)，题中等于 8 得 \(c=1\)；公差 \(d\) 随 \(M,N\) 变化，答案中需说明或举例。</p>
+              <h3 style="color:#34495e; margin:14px 0 6px;">图形辅助</h3>
+              <p>椭圆 \(C\)、右焦点 \(F\)、右准线 \(x=9\)、点 \(P\) 位置示意：</p>
+              <canvas id="canvas-intro" width="700" height="420"></canvas>
+            </div>
+          </div>
+
+          <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+            <div class="k" v-pre>
+              <h2>(1) 求点 \(P\) 的坐标</h2>
+              <div class="step">
+                <div class="step-title">条件梳理</div>
+                <p>右准线 \(l: x = 9\)，即 \(\frac{a^2}{c} = 9\)．点 \(P\) 在第一象限且 \(PF \perp x\) 轴，故 \(P\) 与 \(F(c,0)\) 横坐标相同：\(x_P = c\)．点 \(P\) 到准线 \(l\) 的距离为 8，即 \(9 - x_P = 8\)，得 \(x_P = 1\)，所以 \(c = 1\)．</p>
+              </div>
+              <div class="step">
+                <div class="step-title">求 \(a,\,b\)</div>
+                <p>由 \(\frac{a^2}{c} = 9\) 且 \(c=1\) 得 \(a^2 = 9\)，\(a = 3\)．又 \(b^2 = a^2 - c^2 = 9 - 1 = 8\)，\(b = 2\sqrt{2}\)．椭圆方程为 \(\frac{x^2}{9} + \frac{y^2}{8} = 1\)．</p>
+              </div>
+              <div class="step">
+                <div class="step-title">求 \(y_P\)</div>
+                <p>\(P(c, y_P) = (1, y_P)\) 在椭圆上且 \(y_P > 0\)：</p>
+                <p>\[\frac{1}{9} + \frac{y_P^2}{8} = 1 \Rightarrow \frac{y_P^2}{8} = \frac{8}{9} \Rightarrow y_P^2 = \frac{64}{9} \Rightarrow y_P = \frac{8}{3}.\]</p>
+                <p>故点 \(P\) 的坐标为 \(\boxed{(1,\, \frac{8}{3})}\)．</p>
+              </div>
+              <div class="ans"><strong>答：(1)</strong> 点 \(P\) 的坐标为 \(\left(1,\, \frac{8}{3}\right)\)．</div>
+              <h3 style="color:#34495e; margin:14px 0 6px;">图形</h3>
+              <canvas id="canvas-q1" width="700" height="420"></canvas>
+            </div>
+          </div>
+
+          <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+            <div class="k" v-pre>
+              <h2>(2) \(|FM|,\,|FP|,\,|FN|\) 是否成等差数列</h2>
+              <div class="step">
+                <div class="step-title">重心条件</div>
+                <p>\(\triangle MNP\) 的重心为 \(F(1,0)\)，即</p>
+                <p>\[\frac{x_M + x_N + 1}{3} = 1,\quad \frac{y_M + y_N + \frac{8}{3}}{3} = 0,\]</p>
+                <p>得 \(x_M + x_N = 2\)，\(y_M + y_N = -\frac{8}{3}\)．</p>
+              </div>
+              <div class="step">
+                <div class="step-title">焦半径公式</div>
+                <p>\(e = \frac{c}{a} = \frac{1}{3}\)．对椭圆上任意点 \((x,y)\)，到右焦点 \(F(1,0)\) 的焦半径 \(|MF| = a - ex = 3 - \frac{x}{3}\)．故</p>
+                <p>\[|FM| = 3 - \frac{x_M}{3},\quad |FN| = 3 - \frac{x_N}{3},\quad |FP| = 3 - \frac{1}{3} = \frac{8}{3}.\]</p>
+              </div>
+              <div class="step">
+                <div class="step-title">是否成等差</div>
+                <p>三项 \(|FM|,\,|FP|,\,|FN|\) 成等差数列当且仅当 \(2|FP| = |FM| + |FN|\)．</p>
+                <p>\[|FM| + |FN| = \left(3 - \frac{x_M}{3}\right) + \left(3 - \frac{x_N}{3}\right) = 6 - \frac{x_M+x_N}{3} = 6 - \frac{2}{3} = \frac{16}{3},\]</p>
+                <p>而 \(2|FP| = 2 \cdot \frac{8}{3} = \frac{16}{3}\)，故 \(2|FP| = |FM| + |FN|\) 恒成立．所以<strong>能</strong>构成等差数列．</p>
+              </div>
+              <div class="step">
+                <div class="step-title">求直线 MN 与 M、N 坐标</div>
+                <p>延长 \(PF\) 交 \(MN\) 于 \(D\)，由重心及 \(P(1,\frac{8}{3})\)、\(F(1,0)\) 可知 \(D\) 为 \(MN\) 中点，且 \(|PF|=2|FD|\)，得 \(D(1,\,-\frac{4}{3})\)．由 \(y_M+y_N=-\frac{8}{3}\) 知 \(D\) 纵坐标为 \(\frac{y_M+y_N}{2}=-\frac{4}{3}\)，与上一致．</p>
+                <p>\(M(x_1,y_1)、N(x_2,y_2)\) 在椭圆上：\(\frac{x_1^2}{9}+\frac{y_1^2}{8}=1\)，\(\frac{x_2^2}{9}+\frac{y_2^2}{8}=1\)．两式相减得 \(\frac{x_1^2-x_2^2}{9}+\frac{y_1^2-y_2^2}{8}=0\)，即 \(\frac{(x_1+x_2)(x_1-x_2)}{9}+\frac{(y_1+y_2)(y_1-y_2)}{8}=0\)．代入 \(x_1+x_2=2\)、\(y_1+y_2=-\frac{8}{3}\) 得 \(\frac{2}{9}(x_1-x_2)-\frac{8/3}{8}(y_1-y_2)=0\)，故 \(\frac{y_1-y_2}{x_1-x_2}=\frac{2}{3}\)，即 \(k_{MN}=\frac{2}{3}\)．</p>
+                <p>直线 \(MN\) 过 \(D(1,-\frac{4}{3})\)，斜率 \(\frac{2}{3}\)：\(y+\frac{4}{3}=\frac{2}{3}(x-1)\)，即 \(y=\frac{2}{3}x-2\)．与椭圆 \(\frac{x^2}{9}+\frac{y^2}{8}=1\) 联立，代入 \(y=\frac{2}{3}x-2\) 得 \(\frac{x^2}{9}+\frac{(\frac{2}{3}x-2)^2}{8}=1\)，化简得 \(x^2-2x-3=0\)，解得 \(x=-1\) 或 \(x=3\)．即 \(M、N\) 的横坐标为 \(-1\) 与 \(3\)（顺序可互换）．</p>
+              </div>
+              <div class="step">
+                <div class="step-title">两种情况的公差</div>
+                <p>焦半径 \(|MF|=3-\frac{x}{3}\)．当 \(x=-1\) 时对应点到 \(F\) 的距离为 \(3-\frac{-1}{3}=\frac{10}{3}\)；当 \(x=3\) 时对应点到 \(F\) 的距离为 \(3-\frac{3}{3}=2\)．\(|FP|=\frac{8}{3}\)．</p>
+                <p>故 \(|FM|,\,|FP|,\,|FN|\) 成等差数列时，有两种可能：</p>
+                <ul style="margin-left:20px; margin-top:8px;">
+                  <li><strong>情况一</strong>：\(|FM|=\frac{10}{3},\,|FP|=\frac{8}{3},\,|FN|=2\)，公差 \(d = \frac{8}{3}-\frac{10}{3} = -\frac{2}{3}\)；</li>
+                  <li><strong>情况二</strong>：\(|FM|=2,\,|FP|=\frac{8}{3},\,|FN|=\frac{10}{3}\)，公差 \(d = \frac{8}{3}-2 = \frac{2}{3}\)．</li>
+                </ul>
+              </div>
+              <div class="ans"><strong>答：(2)</strong> 能构成等差数列．<strong>答案有两个</strong>：① \(|FM|=\frac{10}{3},\,|FP|=\frac{8}{3},\,|FN|=2\)，公差 \(d=-\frac{2}{3}\)；② \(|FM|=2,\,|FP|=\frac{8}{3},\,|FN|=\frac{10}{3}\)，公差 \(d=\frac{2}{3}\)．</div>
+              <h3 style="color:#34495e; margin:14px 0 6px;">图形（椭圆上满足重心为 F 的 M、N 与 P）</h3>
+              <canvas id="canvas-q2" width="700" height="420"></canvas>
+            </div>
+          </div>
+
+          <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+            <div class="k" v-pre>
+              <h2>总结与验证</h2>
+              <div class="step">
+                <div class="step-title">解题思路</div>
+                <ol style="margin-left:20px;">
+                  <li><strong>(1)</strong> 用准线 \(x=9\) 与 P 到准线距离 8 得到 \(c=1\)、\(a^2=9\)，再求 \(b^2\) 及 P 纵坐标．</li>
+                  <li><strong>(2)</strong> 用重心条件得 \(x_M+x_N=2,\,y_M+y_N=-8/3\)；由点差得 \(k_{MN}=2/3\)，直线 MN 过 \(D(1,-4/3)\) 与椭圆联立得 \(x=-1\) 或 \(3\)，故 \(|FM|,\,|FP|,\,|FN|\) 成等差数列，<strong>答案有两个</strong>：公差 \(d=-\frac{2}{3}\)（对应 10/3, 8/3, 2）或 \(d=\frac{2}{3}\)（对应 2, 8/3, 10/3）．</li>
+                </ol>
+              </div>
+              <div class="step">
+                <div class="step-title">易错提醒</div>
+                <p>准线方程 \(x=a^2/c=9\) 与 \(c=1\) 推出 \(a^2=9\)；焦半径是 \(a-ex\)（右焦点），不要写成 \(a+ex\)；三项成等差用 \(2|FP|=|FM|+|FN|\) 验证．<strong>易错</strong>：第(2)问 M、N 由直线与椭圆唯一确定，公差只有两种可能 \(d=\frac{2}{3}\) 或 \(d=-\frac{2}{3}\)，需写出两个答案．</p>
+              </div>
+              <div class="step">
+                <div class="step-title">验证</div>
+                <p>\(P(1,8/3)\) 在椭圆 \(\frac{x^2}{9}+\frac{y^2}{8}=1\) 上：\(\frac{1}{9}+\frac{64/9}{8}=\frac{1}{9}+\frac{8}{9}=1\)．\(|FP|=8/3\)，与焦半径 \(a-ex=3-1/3=8/3\) 一致．</p>
+              </div>
+              <h3 style="color:#34495e; margin:14px 0 6px;">综合图</h3>
+              <canvas id="canvas-summary" width="700" height="420"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        var staticEl = document.getElementById('static-math');
+        if (staticEl && typeof renderMathInElement !== 'undefined') {
+          try {
+            renderMathInElement(staticEl, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false });
+          } catch (e) {}
+        }
+      }, 200);
+    });
+
+    var a = 3, b = Math.sqrt(8), c = 1;
+    var Px = 1, Py = 8/3;
+
+    function drawEllipseFocusDirectrix(canvasId, showMN, showTriangle) {
+      var canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      var w = canvas.width, h = canvas.height, pad = 56;
+      var xMin = -4, xMax = 11, yMin = -4.5, yMax = 4.5;
+      var toX = function(x) { return pad + (x - xMin) / (xMax - xMin) * (w - 2 * pad); };
+      var toY = function(y) { return h - pad - (y - yMin) / (yMax - yMin) * (h - 2 * pad); };
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 1;
+      for (var x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+        ctx.beginPath();
+        ctx.moveTo(toX(x), pad);
+        ctx.lineTo(toX(x), h - pad);
+        ctx.stroke();
+      }
+      for (var y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+        ctx.beginPath();
+        ctx.moveTo(pad, toY(y));
+        ctx.lineTo(w - pad, toY(y));
+        ctx.stroke();
+      }
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(toX(xMin), toY(0));
+      ctx.lineTo(toX(xMax), toY(0));
+      ctx.moveTo(toX(0), toY(yMin));
+      ctx.lineTo(toX(0), toY(yMax));
+      ctx.stroke();
+      ctx.fillStyle = '#333';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('x', toX(xMax) - 16, toY(0) + 20);
+      ctx.fillText('y', toX(0) - 20, toY(yMax) + 16);
+      ctx.fillText('O', toX(0) - 12, toY(0) + 20);
+
+      var n = 200;
+      ctx.strokeStyle = '#2980b9';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (var i = 0; i <= n; i++) {
+        var t = (i / n) * 2 * Math.PI;
+        var x = a * Math.cos(t), y = b * Math.sin(t);
+        if (i === 0) ctx.moveTo(toX(x), toY(y));
+        else ctx.lineTo(toX(x), toY(y));
+      }
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fillText('C', toX(-a * 0.92), toY(b * 0.6));
+
+      ctx.strokeStyle = '#e74c3c';
+      ctx.setLineDash([6, 4]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(toX(9), toY(yMin));
+      ctx.lineTo(toX(9), toY(yMax));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#c0392b';
+      ctx.beginPath();
+      ctx.arc(toX(c), toY(0), 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillStyle = '#333';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('F', toX(c) + 10, toY(0) + 4);
+      ctx.fillText('l: x=9', toX(9) + 6, toY(yMax) - 8);
+
+      ctx.fillStyle = '#27ae60';
+      ctx.beginPath();
+      ctx.arc(toX(Px), toY(Py), 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillText('P(1, 8/3)', toX(Px) + 10, toY(Py) - 8);
+
+      ctx.strokeStyle = '#27ae60';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(toX(Px), toY(Py));
+      ctx.lineTo(toX(c), toY(0));
+      ctx.stroke();
+      ctx.fillStyle = '#666';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('PF\u22A5x', toX((Px + c) / 2) - 14, toY(Py / 2) - 6);
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(toX(Px), toY(Py));
+      ctx.lineTo(toX(9), toY(Py));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#333';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('8', (toX(Px) + toX(9)) / 2 - 6, toY(Py) + 18);
+
+      if (showMN) {
+        var xM = 3, yM = 0, xN = -1, yN = -8/3;
+        var xD = 1, yD = -4/3;
+        if (showTriangle) {
+          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(toX(Px), toY(Py));
+          ctx.lineTo(toX(xM), toY(yM));
+          ctx.lineTo(toX(xN), toY(yN));
+          ctx.closePath();
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(toX(xM), toY(yM));
+          ctx.lineTo(toX(xN), toY(yN));
+          ctx.stroke();
+        }
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = 'rgba(39, 174, 96, 0.7)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(toX(Px), toY(Py));
+        ctx.lineTo(toX(c), toY(0));
+        ctx.lineTo(toX(xD), toY(yD));
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#8e44ad';
+        ctx.beginPath();
+        ctx.arc(toX(xM), toY(yM), 5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillText('M', toX(xM) + 8, toY(yM) + 4);
+        ctx.beginPath();
+        ctx.arc(toX(xN), toY(yN), 5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillText('N', toX(xN) + 8, toY(yN) + 4);
+        ctx.fillStyle = '#d35400';
+        ctx.beginPath();
+        ctx.arc(toX(xD), toY(yD), 5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = '#333';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('D(1,-4/3)', toX(xD) + 10, toY(yD) + 4);
+      }
+    }
+
+    var app = Vue.createApp({
+      data: function() { return { activeTab: 'intro' }; },
+      mounted: function() {
+        var vm = this;
+        this.$nextTick(function() {
+          setTimeout(function() {
+            vm.renderMathInApp();
+            vm.drawIntro();
+          }, 200);
+        });
+      },
+      updated: function() { this.$nextTick(this.renderMathInApp); },
+      methods: {
+        setTab: function(tab) {
+          this.activeTab = tab;
+          var idx = ['intro', 'q1', 'q2', 'summary'].indexOf(tab) + 1;
+          if (window.eduNestRuntime && window.eduNestRuntime.dispatchLearningEvent) {
+            window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: 4 });
+          }
+          var vm = this;
+          this.$nextTick(function() {
+            setTimeout(function() {
+              if (tab === 'intro') vm.drawIntro();
+              else if (tab === 'q1') vm.drawQ1();
+              else if (tab === 'q2') vm.drawQ2();
+              else if (tab === 'summary') vm.drawSummary();
+              var panel = vm.$refs.activePanel;
+              if (panel && typeof renderMathInElement !== 'undefined') {
+                try {
+                  renderMathInElement(panel, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false });
+                } catch (e) {}
+              }
+            }, 50);
+          });
+        },
+        renderMathInApp: function() {
+          var appEl = document.getElementById('app');
+          if (appEl && typeof renderMathInElement !== 'undefined') {
+            try {
+              renderMathInElement(appEl, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false });
+            } catch (e) {}
+          }
+        },
+        drawIntro: function() { drawEllipseFocusDirectrix('canvas-intro', false, false); },
+        drawQ1: function() { drawEllipseFocusDirectrix('canvas-q1', false, false); },
+        drawQ2: function() {
+          var canvas = document.getElementById('canvas-q2');
+          if (!canvas) return;
+          drawEllipseFocusDirectrix('canvas-q2', true, true);
+        },
+        drawSummary: function() {
+          var canvas = document.getElementById('canvas-summary');
+          if (!canvas) return;
+          drawEllipseFocusDirectrix('canvas-summary', true, true);
+        }
+      }
+    });
+    app.mount('#app');
+  </script>
+</body>
+</html>

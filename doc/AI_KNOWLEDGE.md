@@ -376,6 +376,12 @@ The learning goal should stay clear and integrated into gameplay.
 
 含参函数画图时设定参数在符合数学逻辑的范围内可自由调节
 
+
+解题@04-trig-1-T-function.html 解题部分需要用Tab区分启发引导（解析题目，提炼线索，图像和动画辅助理解题目，整理出涉及的知识点，本题考点易错点与难点，最后给出拿分策略）。然后按步骤详细解答题目，每个问题有一个单独Tab，如需图像，图表，动画都实现出来。解题结束后有一个Tab做总结与验证（可以包含拔高与拓展，可调参数验证结果）。给页面添加Meta description和keywords，不要带有技术描述（例如vue，katex）。首选引用库 @supported-libraries.json fallback 引用库 @libraries_cn.json 
+引用和fallback写法如下
+  <script  src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script><script>(function(){var g="Vue";var u="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js";var t=setTimeout(function(){if(typeof window[g]==="undefined"){var s=document.createElement("script");s.src=u;(document.currentScript&&document.currentScript.parentNode||document.head).appendChild(s);}},5000);})();</script>
+并添加window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: currentStageIndex.value + 1, totalStages: stages.value.length });
+
 上一版本的SYSTEM PROMPT
 You are an expert Vue 3 educational interaction designer and frontend engineer.
 

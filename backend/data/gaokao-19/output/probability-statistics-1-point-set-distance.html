@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>概率与统计新定义（1）点集距离</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tool-item label {
+      width: 120px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .tool-item input {
+      flex: 1;
+      margin-left: 10px;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+  <meta name="description" content="点集上两点距离的随机变量、概率分布与古典概型。">
+  <meta name="keywords" content="点集距离、概率分布、古典概型、组合计数">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>概率与统计新定义（1）点集距离</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>在平面直角坐标系 \(xOy\) 中，设点集 \(A_n=\{(0, 0), (1, 0), (2, 0), \cdots, (n, 0)\}\)，\(B_n=\{(0, 1), (n,
+            1)\}\)，\(C_n=\{(0, 2), (1, 2), (2, 2), \cdots, (n, 2)\}\)，\(n \in \mathbb{N}^*\)．令 \(M_n=A_n \cup B_n \cup
+            C_n\)．从集合 \(M_n\) 中任取两个不同的点，用随机变量 \(X\) 表示它们之间的距离．</p>
+          <p><strong>(1)</strong>当 \(n=1\) 时，求 \(X\) 的概率分布；</p>
+          <p><strong>(2)</strong>对给定的正整数 \(n\)（\(n \geq 3\)），求概率 \(P(X \leq n)\)（用 \(n\) 表示）．</p>
+        </div>
+      </div>
+
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>问题描述</strong>：给定平面上的三个点集 \(A_n, B_n, C_n\)（分别位于 \(y=0, 1, 2\) 直线上），构成总集合 \(M_n\)。从中任取两点，随机变量 \(X\)
+            表示这两点间的距离。</p>
+          <p><strong>题意拆解</strong>：
+            <br>1. <strong>点集结构</strong>：\(M_n\) 包含三行点。\(y=0\) 和 \(y=2\) 行各有 \(n+1\) 个点（横坐标 \(0\) 到 \(n\)），\(y=1\) 行只有 2
+            个点（\((0, 1)\) 和 \((n, 1)\)）。总点数 \(2n+4\)。
+            <br>2. <strong>核心任务</strong>：(1) 当 \(n=1\) 时，列举所有点对并求距离分布；(2) 当 \(n \ge 3\) 时，求 \(X \le n\) 的概率。
+          </p>
+          <p><strong>思路提示</strong>：
+            <br><strong>第(1)问</strong>：\(n=1\) 时点数少（6个），直接枚举所有 \(C_6^2=15\) 种点对，计算距离并整理分布列。
+            <br><strong>第(2)问</strong>：使用<strong>正难则反</strong>策略。求 \(P(X \le n)\) 转化为 \(1 - P(X > n)\)。距离 \(X>n\)
+            的情况很少（仅当横向跨度很大且纵向有差距时），易于枚举。
+          </p>
+          <p><strong>考点与易错</strong>：古典概型、组合计数、补集思想。易错点在于漏数距离 \(>n\) 的点对，或重复计数。</p>
+          <canvas id="canvas-intro" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>设元</strong>：\(n=1\) 时 \(A_1=\{(0, 0), (1, 0)\}\)，\(B_1=\{(0, 1), (1, 1)\}\)，\(C_1=\{(0, 2), (1,
+            2)\}\)，故 \(M_1\) 共 6 个点，任取两点共 \(C(6, 2)=15\) 种等可能。</p>
+          <p><strong>列式</strong>：逐一计算 15 对点的距离。同一条水平线（\(\Delta y=0\)）：\((0, 0)-(1, 0)\) 距离 1；\((0, 1)-(1, 1)\) 距离
+            1；\((0, 2)-(1, 2)\) 距离 1。共 3 对，\(X=1\)。
+            <br>相邻水平线（\(|\Delta y|=1\)）：\((0, 0)-(0, 1)\)、\((0, 0)-(1, 1)\)、\((1, 0)-(0, 1)\)、\((1, 0)-(1, 1)\)、\((0,
+            1)-(0, 2)\)、\((0, 1)-(1, 2)\)、\((1, 1)-(0, 2)\)、\((1, 1)-(1, 2)\)，其中距离为 1 的为竖直线 4 条；距离为 \(\sqrt{2}\) 的为对角线 4
+            对。
+            <br>\(|\Delta y|=2\)：\((0, 0)-(0, 2)\)、\((0, 0)-(1, 2)\)、\((1, 0)-(0, 2)\)、\((1, 0)-(1, 2)\)，距离依次为
+            2、\(\sqrt{5}\)、\(\sqrt{5}\)、2。
+            <br>总计 15 对。\(P(X=1)=7/15\)，\(P(X=\sqrt{2})=4/15\)，\(P(X=2)=2/15\)，\(P(X=\sqrt{5})=2/15\)。
+          </p>
+          <p><strong>答</strong>：\(X\) 的概率分布为
+            \[ P(X=1)=\frac{7}{15}, \quad P(X=\sqrt{2})=\frac{4}{15}, \quad P(X=2)=\frac{2}{15}, \quad
+            P(X=\sqrt{5})=\frac{2}{15}. \]</p>
+          <canvas id="canvas-q1" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>设元</strong>：\(n\geq 3\)，\(M_n\) 共 \(N=(n+1)+2+(n+1)=2n+4\) 个点，总点对数 \(m=C(N,
+            2)=\frac{(2n+4)(2n+3)}{2}\)。\(P(X\leq n)=1-P(X>n)\)，只需求距离 \(>n\) 的点对个数 \(k\)。</p>
+          <p><strong>列式</strong>：两点距离 \(d=\sqrt{(\Delta x)^2+(\Delta y)^2}\)，\(d>n\) 等价于 \((\Delta x)^2+(\Delta
+            y)^2>n^2\)。
+            <br>\(\Delta y=0\) 时 \((\Delta x)^2\leq n^2\)，不成立。
+            <br>\(\Delta y=\pm 1\) 时需 \((\Delta x)^2>n^2-1\)，因 \(n\geq 3\) 得 \(|\Delta x|\geq n\)，即 \(\Delta x=\pm
+            n\)。满足的点对：\((0, 0)-(n, 1)\)、\((n, 0)-(0, 1)\)、\((0, 2)-(n, 1)\)、\((n, 2)-(0, 1)\)，共 4 对。
+            <br>\(\Delta y=\pm 2\) 时需 \((\Delta x)^2>n^2-4\)，\(n\geq 3\) 时 \(n^2-4\geq 5\)，故 \(|\Delta x|\geq n\)，即
+            \((0, 0)-(n, 2)\)、\((n, 0)-(0, 2)\) 共 2 对。
+            <br>综上 \(k=4+2=6\) 对。
+          </p>
+          <p><strong>化简</strong>：\(P(X>n)=\frac{6}{(2n+4)(2n+3)/2}=\frac{12}{(2n+4)(2n+3)}\)，故 \(P(X\leq
+            n)=1-\frac{12}{(2n+4)(2n+3)}\)。</p>
+          <p><strong>答</strong>：\(P(X\leq n)=\boxed{1-\frac{12}{(2n+4)(2n+3)}}\)（\(n\geq 3\)）。</p>
+          <div class="tools-container">
+            <div class="tool-item">
+              <label>n 的值: {{ params.n }}</label>
+              <input type="range" v-model.number="params.n" min="3" max="8" step="1" @input="updateGraphs">
+            </div>
+            <p class="tool-desc">改变 n，观察满足 X > n 的 6 对特殊点（红色连线）。</p>
+          </div>
+          <canvas id="canvas-q2" width="520" height="260"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <p><strong>回顾</strong>：① \(n=1\) 时枚举 15 对得 \(X\) 的分布列；② \(n\geq 3\) 时 \(P(X\leq
+            n)=1-\frac{12}{(2n+4)(2n+3)}\)，距离 \(>n\) 仅当 \(|\Delta y|=1\) 或 2 且 \(|\Delta x|=n\)，共 6 对。</p>
+          <p><strong>易错</strong>：\(M_n\) 点数 \(2n+4\) 不要算错；\(X>n\) 的点对必须按 \(\Delta y=0, \pm1, \pm2\) 分类讨论，且 \(n\geq 3\)
+            时只有 6 对。</p>
+          <canvas id="canvas-summary" width="520" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+
+      var TABS = ['intro', 'q1', 'q2', 'summary'];
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        var y0 = cy + 40, y1 = cy, y2 = cy - 40;
+        ctx.strokeStyle = '#ddd'; ctx.beginPath();
+        ctx.moveTo(40, y0); ctx.lineTo(w - 40, y0);
+        ctx.moveTo(40, y1); ctx.lineTo(w - 40, y1);
+        ctx.moveTo(40, y2); ctx.lineTo(w - 40, y2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#3498db';
+        for (var i = 0; i < 6; i++) {
+          ctx.beginPath(); ctx.arc(cx - 100 + i * 40, y0, 4, 0, 2 * Math.PI); ctx.fill();
+          ctx.beginPath(); ctx.arc(cx - 100 + i * 40, y2, 4, 0, 2 * Math.PI); ctx.fill();
+        }
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath(); ctx.arc(cx - 100, y1, 4, 0, 2 * Math.PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - 100 + 5 * 40, y1, 4, 0, 2 * Math.PI); ctx.fill();
+
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('A_n (y=0)', cx - 140, y0 + 5);
+        ctx.fillText('B_n (y=1)', cx - 140, y1 + 5);
+        ctx.fillText('C_n (y=2)', cx - 140, y2 + 5);
+      }
+
+      function drawQ1(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('n=1 时共 6 个点', cx, cy - 20);
+        ctx.fillText('X 取值: 1, √2, 2, √5', cx, cy + 20);
+      }
+
+      function drawQ2(c, params) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        var nVal = params ? params.n : 3;
+        ctx.clearRect(0, 0, w, h);
+        var margin = 50;
+        var availW = w - 2 * margin;
+        var step = availW / nVal;
+        var y0 = h - 60, y1 = h / 2, y2 = 60;
+
+        ctx.strokeStyle = '#eee'; ctx.lineWidth = 1; ctx.beginPath();
+        ctx.moveTo(margin, y0); ctx.lineTo(w - margin, y0);
+        ctx.moveTo(margin, y1); ctx.lineTo(w - margin, y1);
+        ctx.moveTo(margin, y2); ctx.lineTo(w - margin, y2);
+        ctx.stroke();
+
+        function getPos(x, yIdx) {
+          var vy = (yIdx === 0) ? y0 : (yIdx === 1 ? y1 : y2);
+          return { x: margin + x * step, y: vy };
+        }
+
+        ctx.fillStyle = '#3498db';
+        for (var i = 0; i <= nVal; i++) {
+          var p0 = getPos(i, 0); var p2 = getPos(i, 2);
+          ctx.beginPath(); ctx.arc(p0.x, p0.y, 4, 0, 2 * Math.PI); ctx.fill();
+          ctx.beginPath(); ctx.arc(p2.x, p2.y, 4, 0, 2 * Math.PI); ctx.fill();
+        }
+        ctx.fillStyle = '#e74c3c';
+        var pb1 = getPos(0, 1); var pb2 = getPos(nVal, 1);
+        ctx.beginPath(); ctx.arc(pb1.x, pb1.y, 4, 0, 2 * Math.PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(pb2.x, pb2.y, 4, 0, 2 * Math.PI); ctx.fill();
+
+        ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2;
+        var pairs = [
+          [getPos(0, 0), getPos(nVal, 1)], [getPos(nVal, 0), getPos(0, 1)],
+          [getPos(0, 2), getPos(nVal, 1)], [getPos(nVal, 2), getPos(0, 1)],
+          [getPos(0, 0), getPos(nVal, 2)], [getPos(nVal, 0), getPos(0, 2)]
+        ];
+        pairs.forEach(function (pair) {
+          ctx.beginPath(); ctx.moveTo(pair[0].x, pair[0].y); ctx.lineTo(pair[1].x, pair[1].y); ctx.stroke();
+        });
+
+        ctx.fillStyle = '#333'; ctx.textAlign = 'center'; ctx.font = '14px sans-serif';
+        ctx.fillText('n = ' + nVal + ', 显示 6 对距离 > n 的点对', w / 2, 30);
+      }
+
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('总结: P(X ≤ n) = 1 - 12 / [(2n+4)(2n+3)]', cx, cy);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () { return { activeTab: 'intro', params: { n: 3 } }; },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function') {
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              }
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            updateGraphs: function () { this.renderGraphs(); },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              var c = document.getElementById('canvas-' + n);
+              if (n === 'intro') drawIntro(c);
+              else if (n === 'q1') drawQ1(c);
+              else if (n === 'q2') drawQ2(c, this.params);
+              else if (n === 'summary') drawSummary(c);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

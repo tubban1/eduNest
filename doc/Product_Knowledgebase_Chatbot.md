@@ -338,7 +338,7 @@ GET /api/kb/recommend
 
 | 方式 | 适用场景 | 说明 |
 |------|----------|------|
-| **脚本**（`parse-kb-md.js`、`seed-kb-supplement.js`） | 批量导入：从培训文档 MD 解析、或预定义运营补充条目一次性写入 | 在服务器/本机执行 `node scripts/xxx.js --db`，适合初始化、大版本更新 |
+| **脚本**（`parse-kb-md.js`、`seed-kb-supplement.js`） | 批量导入：从培训文档 MD 解析、或预定义运营补充条目一次性写入 | 在服务器/本机执行 `node rag/xxx.js --db`，适合初始化、大版本更新 |
 | **管理 API**（`POST/PUT/DELETE /api/kb/entries`） | 单条增删改：运营随时新增/修改/删除一条（如新 FAQ、价格调整、纠错） | 需先登录获取 JWT，请求头带 `Authorization: Bearer <token>`，适合后台管理页或 curl/Postman |
 
 **管理 API 调用方式**：先调用登录接口（如 `POST /api/auth/login`）获取 JWT，再在请求头中携带：
@@ -455,7 +455,7 @@ curl -X POST 'https://your-backend/api/kb/entries' \
 | 1.3 `GET /api/kb/entries` | 后端 | 分类 + 关键词检索 | ✅ |
 | 1.4 `GET /api/kb/recommend` | 后端 | 场景映射 + 调 featured；支持 `language_code`（§ 十一） | ✅ |
 | 1.5 Help 页改造 | 前端 | 产品咨询 Tab + 搜索 + 列表 + 为你推荐；传 `i18n.language` 至 API | ✅ |
-| （额外）embedding 同步 | 后端 | `kbEmbeddingService` + `sync-kb-embeddings.js` 写入 embedding | ✅ |
+| （额外）embedding 同步 | 后端 | `kbEmbeddingService` + `rag/sync-kb-embeddings.js` 写入 embedding | ✅ |
 
 **Phase 2**
 
@@ -623,7 +623,7 @@ CREATE INDEX idx_kb_ask_feedback_helpful ON kb_ask_feedback(helpful);
 ### 13.2 解析脚本示例（Node.js）
 
 ```javascript
-// scripts/parse-kb-md.js
+// rag/parse-kb-md.js
 const fs = require('fs');
 const path = require('path');
 

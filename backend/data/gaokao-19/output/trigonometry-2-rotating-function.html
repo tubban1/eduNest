@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="回旋函数定义 f(x+a)+af(x)=0，正弦函数判断与零点个数求参数。">
+  <meta name="keywords" content="回旋函数、新定义、正弦、零点、ω 参数、高考数学">
+  <title>三角函数新定义（2）回旋函数</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tool-container { margin: 12px 0; border: 1px solid #eee; border-radius: 4px; min-height: 220px; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; margin: 0; max-width: 100%; } }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/auto-render.min.js'"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>三角函数新定义（2）回旋函数</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>若对于定义在 \(\mathbb{R}\) 上的连续函数 \(f(x)\)，存在常数 \(a\)（\(a \in \mathbb{R}\)），使得 \(f(x + a) + a f(x) = 0\) 对任意的实数 \(x\) 成立，则称 \(f(x)\) 是<strong>回旋函数</strong>，且阶数为 \(a\)．</p>
+          <p><strong>(1)</strong> 试判断函数 \(f(x) = \sin(\pi x)\) 是否是一个阶数为 1 的回旋函数，并说明理由；</p>
+          <p><strong>(2)</strong> 已知 \(f(x) = \sin(\omega x)\) 是回旋函数，求实数 \(\omega\) 的值；</p>
+          <p><strong>(3)</strong> 若回旋函数 \(f(x) = \sin(\omega x) - 1\)（\(\omega &gt; 0\)）在 \((0, 1)\) 恰有 100 个零点，求实数 \(\omega\) 的值．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：回旋函数即存在常数 \(a\) 使 \(f(x+a)+a f(x)=0\) 对一切 \(x\) 成立。阶数即该常数 \(a\)。</p>
+        <p><strong>第(1)问</strong>：代入 \(f(x)=\sin(\pi x)\) 与 \(a=1\)，用 \(\sin(\pi(x+1))=-\sin(\pi x)\) 验证 \(f(x+1)+f(x)=0\)。</p>
+        <p><strong>第(2)问</strong>：\(f(x)=\sin(\omega x)\) 代入得 \(\sin(\omega(x+a))+a\sin(\omega x)=0\)。对任意 \(x\) 成立需 \(\cos(\omega a)=-a\) 且 \(\sin(\omega a)=0\)，得 \(a=\pm 1\) 且 \(\omega a=k\pi\)，故 \(\omega=k\pi\)（\(k\in\mathbb{Z}\setminus\{0\}\)）。</p>
+        <p><strong>第(3)问</strong>：\(f(x)=0\) 即 \(\sin(\omega x)=1\)，在 \((0,1)\) 内零点为 \(x_k=(\pi/2+2k\pi)/\omega\)，\(k=0,1,\ldots\)。恰 100 个即 \(k=0,\ldots,99\) 均在 \((0,1)\) 且 \(k=100\) 不在，得 \(\omega\) 的范围，取一值即可。</p>
+        <p><strong>考点</strong>：三角恒等、对任意 \(x\) 成立的条件、零点个数。易错：\(\omega a=k\pi\) 与 \(a=\pm 1\) 的搭配。</p>
+        <div id="container-intro" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(1)问</h2>
+        <p><strong>设元</strong>：\(f(x)=\sin(\pi x)\)，判断是否为阶数 \(a=1\) 的回旋函数，即是否 \(f(x+1)+1\cdot f(x)=0\) 对一切 \(x\) 成立。</p>
+        <p><strong>列式</strong>：\(f(x+1)=\sin(\pi x+\pi)=-\sin(\pi x)\)，故 \(f(x+1)+f(x)=-\sin(\pi x)+\sin(\pi x)=0\)。</p>
+        <p><strong>答</strong>：\(f(x)=\sin(\pi x)\) <strong>是</strong>阶数为 1 的回旋函数，理由如上。</p>
+        <div id="container-q1" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(2)问</h2>
+        <p><strong>设元</strong>：\(f(x)=\sin(\omega x)\) 为回旋函数，即存在 \(a\in\mathbb{R}\) 使 \(\sin(\omega(x+a))+a\sin(\omega x)=0\) 对一切 \(x\) 成立。</p>
+        <p><strong>列式</strong>：由和角公式 \(\sin(\omega x+\omega a)+a\sin(\omega x)=\sin(\omega x)\cos(\omega a)+\cos(\omega x)\sin(\omega a)+a\sin(\omega x)=0\)。对任意 \(x\) 成立，则 \(\cos(\omega a)+a=0\) 且 \(\sin(\omega a)=0\)。由 \(\sin(\omega a)=0\) 得 \(\omega a=k\pi\)（\(k\in\mathbb{Z}\)），故 \(\cos(\omega a)=\cos(k\pi)=(-1)^k\)，所以 \(-a=(-1)^k\)，即 \(a=(-1)^{k+1}\)，故 \(a=\pm 1\)。由 \(\omega a=k\pi\) 得 \(\omega=k\pi\)（\(a=1\)）或 \(\omega=-k\pi\)（\(a=-1\)），即 \(\omega=n\pi\)，\(n\in\mathbb{Z}\setminus\{0\}\)。</p>
+        <p><strong>答</strong>：\(\omega=k\pi\)，\(k\in\mathbb{Z}\) 且 \(k\neq 0\)（通常取 \(\omega=\pi\) 等）。</p>
+        <div id="container-q2" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+        <h2>第(3)问</h2>
+        <p><strong>设元</strong>：\(f(x)=\sin(\omega x)-1\)（\(\omega&gt;0\)）为回旋函数，在 \((0,1)\) 内恰有 100 个零点。\(f(x)=0\) 即 \(\sin(\omega x)=1\)。</p>
+        <p><strong>列式</strong>：\(\sin(\omega x)=1\) 的解为 \(\omega x=\frac{\pi}{2}+2k\pi\)（\(k\in\mathbb{Z}\)），即 \(x_k=\frac{\pi/2+2k\pi}{\omega}\)。零点在 \((0,1)\) 内当且仅当 \(0&lt;x_k&lt;1\)，即 \(0&lt;\pi/2+2k\pi&lt;\omega\)。故 \(k=0,1,\ldots,99\) 时 \(x_k\in(0,1)\) 当且仅当 \(x_{99}&lt;1&lt;x_{100}\)，即 \(\frac{\pi/2+198\pi}{\omega}&lt;1\leq\frac{\pi/2+200\pi}{\omega}\)，得 \(\omega\in\bigl(\frac{397\pi}{2},\,\frac{401\pi}{2}\bigr]\)。</p>
+        <p><strong>答</strong>：取 \(\omega=\frac{401\pi}{2}\) 或 \(\omega=200\pi+\frac{\pi}{2}\) 等均可（满足上述区间即可，常见写 \(\omega=\frac{\pi}{2}+200\pi\)）。</p>
+        <div id="container-q3" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：① \(\sin(\pi x)\) 是阶数 1 的回旋函数。② \(\sin(\omega x)\) 为回旋函数时 \(\omega=k\pi\)（\(k\neq 0\)）。③ \(\sin(\omega x)-1\) 在 \((0,1)\) 恰 100 个零点时 \(\omega\in\bigl(\frac{397\pi}{2},\frac{401\pi}{2}\bigr]\)。</p>
+        <p><strong>易错</strong>：第(2)问要对 \(\sin(\omega a)=0\) 与 \(\cos(\omega a)=-a\) 同时成立得 \(a=\pm 1\)；第(3)问零点 \(x_k=(\pi/2+2k\pi)/\omega\)，恰 100 个即 \(x_{99}&lt;1\leq x_{100}\)。</p>
+        <div id="container-summary" class="tool-container"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(el, katexOpt); } catch (e) {} }
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      function drawFunction(containerId, type) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        var c = document.createElement('canvas');
+        c.width = 520; c.height = 240; c.style.display = 'block';
+        container.appendChild(c);
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(40, cy); ctx.lineTo(w - 40, cy); ctx.moveTo(cx, 20); ctx.lineTo(cx, h - 20); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '12px sans-serif';
+        if (type === 'sin') {
+          ctx.strokeStyle = '#3498db'; ctx.lineWidth = 2; ctx.beginPath();
+          for (var i = 0; i <= w; i++) { var x = (i - cx) / 60; var y = cy - Math.sin(Math.PI * x) * 60; if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y); }
+          ctx.stroke(); ctx.fillText('y = sin(πx)', w - 90, 30);
+        } else if (type === 'sinw') {
+          ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2; ctx.beginPath();
+          for (var i = 0; i <= w; i++) { var x = (i - cx) / 80; var y = cy - Math.sin(x) * 60; if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y); }
+          ctx.stroke(); ctx.fillText('y = sin(ωx) 示意', w - 100, 30);
+        } else {
+          ctx.fillStyle = '#666'; ctx.fillText('f(x+a)+a f(x)=0', cx - 60, cy);
+        }
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function() { return { activeTab: 'intro' }; },
+          methods: {
+            setTab: function(name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function() {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) {} }
+              });
+            },
+            renderGraphs: function() {
+              var n = this.activeTab;
+              if (n === 'intro') drawFunction('container-intro', 'default');
+              else if (n === 'q1') drawFunction('container-q1', 'sin');
+              else if (n === 'q2') drawFunction('container-q2', 'sinw');
+              else if (n === 'q3') drawFunction('container-q3', 'sinw');
+              else if (n === 'summary') drawFunction('container-summary', 'sin');
+            }
+          },
+          mounted: function() {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) {} }
+            this.$nextTick(function() { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+</html>

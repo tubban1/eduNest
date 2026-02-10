@@ -21,9 +21,9 @@ interface AuthContextType {
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
-  signUpWithEmail: (email: string, password: string, name?: string) => Promise<{ error: string | null; message?: string }>;
+  signUpWithEmail: (email: string, password: string, name?: string, languageCode?: string) => Promise<{ error: string | null; message?: string }>;
   sendResetPasswordEmail: (email: string) => Promise<{ error: string | null }>;
-  resendVerificationEmail: (email: string) => Promise<{ error: string | null; message?: string }>;
+  resendVerificationEmail: (email: string, languageCode?: string) => Promise<{ error: string | null; message?: string }>;
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<{ error: string | null }>;
 }
@@ -44,6 +44,21 @@ function fetchWithTimeout(
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), timeoutMs);
   return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(id));
+}
+
+// 将各种 BCP 47 语言代码归一化到我们邮件模板里使用的短代码
+// 例如：zh、zh-CN、zh-TW -> zh；de、de-DE、de-CH -> de
+function normalizeLanguageCode(raw?: string | null): string {
+  if (!raw) return 'en';
+  const lang = raw.toLowerCase();
+
+  if (lang === 'zh' || lang.startsWith('zh-')) return 'zh';
+  if (lang === 'de' || lang.startsWith('de-')) return 'de';
+  if (lang === 'fr' || lang.startsWith('fr-')) return 'fr';
+  if (lang === 'en' || lang.startsWith('en-')) return 'en';
+
+  // 兜底：其它语言统一按英文模板处理
+  return 'en';
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -356,7 +371,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUpWithEmail = async (email: string, password: string, name?: string) => {
+  const signUpWithEmail = async (email: string, password: string, name?: string, languageCode?: string) => {
     try {
       // 注册前强制清除所有可能的冲突session
       const keys = Object.keys(localStorage);
@@ -373,12 +388,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
       
+      // 优先使用调用方传入的语言，其次浏览器语言，最后英文
+      const normalizedLanguage = normalizeLanguageCode(
+        languageCode ||
+          (typeof navigator !== 'undefined' ? navigator.language : 'en')
+      );
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: name ? { name } : undefined
+          data: {
+            ...(name ? { name } : {}),
+            language: normalizedLanguage,
+          },
         }
       });
       
@@ -416,8 +440,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const resendVerificationEmail = async (email: string) => {
+  const resendVerificationEmail = async (email: string, languageCode?: string) => {
     try {
+      const normalizedLanguage = normalizeLanguageCode(
+        languageCode ||
+          (typeof navigator !== 'undefined' ? navigator.language : 'en')
+      );
       
       // 根据Supabase官方文档，重发验证邮件需要重新调用signUp
       // 对于已存在的用户，Supabase会重新发送验证邮件
@@ -425,7 +453,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password: 'temporary_password_for_resend', // 临时密码，仅用于重发
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            language: normalizedLanguage,
+          }
         }
       });
       

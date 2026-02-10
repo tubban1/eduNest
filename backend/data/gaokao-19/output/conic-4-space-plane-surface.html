@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>圆锥曲线新定义（4）空间平面与曲面方程</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+    }
+
+    .problem-section {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+
+    .k {
+      line-height: 2;
+    }
+
+    .tabs {
+      margin-top: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tab-headers {
+      display: flex;
+      flex-wrap: wrap;
+      background: #f0f4f8;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-header {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .tab-header:hover {
+      background: #e8eef4;
+    }
+
+    .tab-header.active {
+      background: #fff;
+      color: #3498db;
+      border-bottom: 2px solid #3498db;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 24px;
+      background: #fff;
+      min-height: 200px;
+    }
+
+    .tab-panel canvas {
+      display: block;
+      margin: 12px 0;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    .tools-container {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tool-item label {
+      width: 140px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .tool-item input {
+      flex: 1;
+      margin-left: 10px;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        background: white;
+      }
+
+      .container {
+        padding: 5px;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: 100%;
+      }
+    }
+  </style>
+  <meta name="description" content="空间平面方程、点法式、一般式与截距式；空间椭球面与两定点轨迹。">
+  <meta name="keywords" content="平面方程、法向量、截距式、空间椭球面、轨迹">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>圆锥曲线新定义（4）空间平面与曲面方程</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·广东中山·高三统考期末) 类比平面解析几何的观点，在空间中，空间平面和曲面可以看作是适合某种条件的动点的轨迹，在空间直角坐标系 \(O\text{-}xyz\) 中，空间平面和曲面的方程是一个三元方程
+            \(F(x,y,z) = 0\)．</p>
+          <p><strong>(1)</strong> 类比平面解析几何中直线的方程，直接写出：<br>
+            ① 过点 \(P(x_0, y_0, z_0)\)，法向量为 \(\vec{n} = (A, B, C)\) 的平面的方程；<br>
+            ② 平面的一般方程；<br>
+            ③ 在 \(x\)、\(y\)、\(z\) 轴上的截距分别为 \(a\)、\(b\)、\(c\) 的平面的截距式方程（\(abc \neq 0\)）；（不需要说明理由）</p>
+          <p><strong>(2)</strong> 设 \(F_1, F_2\) 为空间中的两个定点，\(|F_1 F_2| = 2c > 0\)，我们将曲面 \(\Gamma\) 定义为满足 \(|PF_1| +
+            |PF_2| = 2a\)（\(a > c\)）的动点 \(P\) 的轨迹，试建立一个适当的空间直角坐标系 \(O\text{-}xyz\)，并推导出曲面 \(\Gamma\) 的方程．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：题目给出了空间直角坐标系下平面的三元方程类比，要求写出平面的点法式、一般式、截距式方程；并定义了“空间中到两定点距离之和为定值 \(2a\)”的曲面
+          \(\Gamma\)，要求类比平面椭圆建立方程。</p>
+        <p><strong>思路提示</strong>：
+          <br><strong>第(1)问</strong>：直接类比平面直线方程。点法式 \(\vec{n}\cdot(\vec{r}-\vec{r}_0)=0\) 类比点斜式；一般式 \(Ax+By+Cz+D=0\) 类比
+          \(Ax+By+C=0\)；截距式 \(\frac{x}{a}+\frac{y}{b}+\frac{z}{c}=1\) 类比 \(\frac{x}{a}+\frac{y}{b}=1\)。
+          <br><strong>第(2)问</strong>：类比平面椭圆定义（\(|PF_1|+|PF_2|=2a\)），空间中该轨迹为<strong>旋转椭球面</strong>。建系时使 \(F_1,F_2\)
+          在坐标轴上（如 \(y\) 轴），列出距离和方程，通过两次移项平方消去根号，化简得标准方程。
+        </p>
+        <p><strong>考点与易错</strong>：
+          <br><strong>考点</strong>：空间平面方程形式、距离公式、根式化简技巧。
+          <br><strong>易错</strong>：截距式中截距不为 0；化简根式时平方运算易出错；标准方程中 \(a,b\) 对应关系（\(F_1F_2\) 在哪个轴，那个轴的分母就是 \(a^2\)）。
+        </p>
+        <div class="canvas-wrap">
+          <canvas id="canvas-intro" width="520" height="260"></canvas>
+        </div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(1)问</h2>
+        <p><strong>①</strong> 过点 \(P(x_0,y_0,z_0)\)，法向量 \(\vec{n}=(A,B,C)\) 的平面方程：\(A(x-x_0)+B(y-y_0)+C(z-z_0)=0\)。</p>
+        <p><strong>②</strong> 平面一般方程：\(Ax+By+Cz+D=0\)（\(A,B,C\) 不同时为零）。</p>
+        <p><strong>③</strong> 在 \(x,y,z\) 轴上截距分别为 \(a,b,c\)（\(abc\neq
+          0\)）的平面截距式方程：\(\frac{x}{a}+\frac{y}{b}+\frac{z}{c}=1\)。</p>
+        <canvas id="canvas-q1" width="520" height="260"></canvas>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(2)问</h2>
+        <p><strong>建系（与常见参考答案一致）</strong>：以 \(F_1,F_2\) 的中点为坐标原点 \(O\)，以 \(F_1F_2\) 所在直线为 \(y\) 轴，以线段 \(F_1F_2\) 的垂直平分线为
+          \(x\) 轴，以与 \(xOy\) 平面垂直的直线为 \(z\) 轴，建立空间直角坐标系 \(O\text{-}xyz\)。则 \(F_1(0,c,0)\)，\(F_2(0,-c,0)\)，设
+          \(P(x,y,z)\)，\(|F_1F_2|=2c>0\)，\(|PF_1|+|PF_2|=2a\)（\(a>c\)）。</p>
+        <p><strong>列式</strong>：
+          \[ \sqrt{x^2+(y-c)^2+z^2}+\sqrt{x^2+(y+c)^2+z^2}=2a. \]</p>
+        <p><strong>化简</strong>：移项得 \(\sqrt{x^2+(y-c)^2+z^2}=2a-\sqrt{x^2+(y+c)^2+z^2}\)。两边平方：
+          \[ x^2+(y-c)^2+z^2=4a^2-4a\sqrt{x^2+(y+c)^2+z^2}+x^2+(y+c)^2+z^2. \]
+          整理得 \((y-c)^2-(y+c)^2-4a^2=-4a\sqrt{x^2+(y+c)^2+z^2}\)，即
+          \((y^2-2cy+c^2)-(y^2+2cy+c^2)-4a^2=-4cy-4a^2=-4a\sqrt{x^2+(y+c)^2+z^2}\)，所以
+          \(4a\sqrt{x^2+(y+c)^2+z^2}=4a^2+4cy\)，即 \(a\sqrt{x^2+(y+c)^2+z^2}=a^2+cy\)。两边再平方：
+          \[ a^2\bigl(x^2+(y+c)^2+z^2\bigr)=(a^2+cy)^2=a^4+2a^2cy+c^2y^2. \]
+          展开：\(a^2x^2+a^2(y^2+2cy+c^2)+a^2z^2=a^4+2a^2cy+c^2y^2\)，即 \(a^2x^2+a^2y^2+a^2z^2+a^2c^2=a^4+c^2y^2\)，得
+          \(a^2x^2+(a^2-c^2)y^2+a^2z^2=a^2(a^2-c^2)\)。令 \(b^2=a^2-c^2\)（\(b>0\)），则 \(a^2x^2+b^2y^2+a^2z^2=a^2b^2\)，两边同除以
+          \(a^2b^2\) 得
+          \[ \frac{x^2}{b^2}+\frac{y^2}{a^2}+\frac{z^2}{b^2}=1. \]</p>
+        <p><strong>答</strong>：曲面 \(\Gamma\) 的方程为 \(\boxed{\dfrac{x^2}{b^2}+\dfrac{y^2}{a^2}+\dfrac{z^2}{b^2}=1}\)，其中
+          \(b^2=a^2-c^2\)。此为旋转椭球面（长轴在 \(y\) 轴方向）。</p>
+        <div class="tools-container">
+          <div class="tool-item">
+            <label>长半轴 a = {{ params.a }}</label>
+            <input type="range" v-model.number="params.a" min="3" max="8" step="0.1" @input="updateGraphs">
+          </div>
+          <div class="tool-item">
+            <label>半焦距 c = {{ params.c }}</label>
+            <input type="range" v-model.number="params.c" min="1" max="7" step="0.1" @input="updateGraphs">
+          </div>
+          <p class="tool-desc">短半轴 b ≈ {{ Math.sqrt(Math.max(0, params.a*params.a - params.c*params.c)).toFixed(2) }} (当
+            a > c 时有效)</p>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="canvas-q2" width="520" height="260"></canvas>
+        </div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：平面点法式、一般式、截距式；空间椭球面 \(|PF_1|+|PF_2|=2a\) 建系（\(F_1F_2\) 为 \(y\) 轴时
+          \(F_1(0,c,0),F_2(0,-c,0)\)）推导得 \(\frac{x^2}{b^2}+\frac{y^2}{a^2}+\frac{z^2}{b^2}=1\)，\(b^2=a^2-c^2\)。</p>
+        <p><strong>易错</strong>：截距式要求 \(abc\neq 0\)；椭球面化简时移项、平方两次要保证等价性，\(a>c\) 时 \(a^2-cx>0\) 在椭圆区域内成立。</p>
+        <canvas id="canvas-summary" width="520" height="260"></canvas>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var TABS = ['intro', 'q1', 'q2', 'summary'];
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2, s = 40;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.strokeStyle = '#3498db'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - 60, cy + 80); ctx.lineTo(cx + 50, cy - 60); ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '14px sans-serif'; ctx.fillText('法向量 n', cx + 55, cy - 65); ctx.fillText('平面', cx - 100, cy + 20);
+      }
+      function drawQ1(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2, s = 35;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.strokeStyle = '#14b8a6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(s * 2, cy - s); ctx.lineTo(cx + s * 1.2, cy + s * 0.8); ctx.lineTo(cx - s * 1.5, cy + s * 1.2); ctx.closePath(); ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '12px sans-serif'; ctx.fillText('x/a + y/b + z/c = 1', cx - 60, 24);
+      }
+      function drawQ2(c, params) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        var aVal = params ? params.a : 5;
+        var cVal = params ? params.c : 3;
+        var bVal = (aVal > cVal) ? Math.sqrt(aVal * aVal - cVal * cVal) : 0;
+
+        // Scale for drawing: aVal=5 -> 100px
+        var scale = 20;
+        var aPx = aVal * scale;
+        var bPx = bVal * scale;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+
+        if (aVal <= cVal) {
+          ctx.fillStyle = '#e74c3c'; ctx.font = '14px sans-serif'; ctx.fillText('需满足 a > c', cx - 40, cy - 20);
+          return;
+        }
+
+        ctx.strokeStyle = '#14b8a6'; ctx.lineWidth = 1.5;
+        // Draw ellipsoid contour layers
+        for (var z = -1; z <= 1; z += 0.2) {
+          var rFactor = Math.sqrt(1 - z * z);
+          var rx = bPx * rFactor; // x radius (b)
+          var ry = aPx * rFactor; // y radius (a)
+          if (rx < 1 || ry < 1) continue;
+
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#333'; ctx.font = '12px sans-serif';
+        ctx.fillText(`a=${aVal}, c=${cVal} => b≈${bVal.toFixed(2)}`, cx - 95, 24);
+      }
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.fillText('平面：点法式 / 一般式 / 截距式', cx - 120, cy - 30);
+        ctx.fillText('曲面 Γ：|PF₁|+|PF₂|=2a → 椭球面', cx - 100, cy + 20);
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              params: { a: 5, c: 3 }
+            };
+          },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            updateGraphs: function () {
+              this.renderGraphs();
+            },
+            renderGraphs: function () {
+              var n = this.activeTab;
+              if (n === 'intro') drawIntro(document.getElementById('canvas-intro'));
+              else if (n === 'q1') drawQ1(document.getElementById('canvas-q1'));
+              else if (n === 'q2') drawQ2(document.getElementById('canvas-q2'), this.params);
+              else if (n === 'summary') drawSummary(document.getElementById('canvas-summary'));
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

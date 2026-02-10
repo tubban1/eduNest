@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考点九 题目1 离散对数（高等数学背景下新定义）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tab-panel canvas { display: block; margin: 12px 0; border: 1px solid #eee; border-radius: 4px; }
+    .tools-container { margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; }
+    .tool-item { display: flex; align-items: center; margin-bottom: 8px; }
+    .tool-item label { width: 140px; font-weight: 500; }
+    .tool-item input { flex: 1; margin-left: 10px; }
+    .tool-item .num { font-family: monospace; min-width: 60px; text-align: right; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; } }
+  </style>
+  <meta name="description" content="考点九：离散对数、模 p 运算、⊕ 与证明。">
+  <meta name="keywords" content="离散对数、模运算、密码学、费马小定理">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>考点九 题目 1：离散对数（高等数学背景下新定义）</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·河南·统考模拟预测) 离散对数在密码学中有重要应用．设 \(p\) 为素数，\(X=\{1,2,\ldots,p-1\}\)．对 \(u,v\in X\)，\(m\in\mathbb{N}\)，定义 \(u\otimes v\) 为 \(uv\) 除以 \(p\) 的余数，\(u^{m,\otimes}\) 为 \(u^m\) 除以 \(p\) 的余数．设 \(a\in X\)，若 \(1,\,a,\,a^{2,\otimes},\,\ldots,\,a^{(p-2),\otimes}\) 两两不同，且对 \(n\in\{0,1,\ldots,p-2\}\) 有 \(a^{n,\otimes}=b\)，则称 \(n\) 为 \(b\) 的以 \(a\) 为底的离散对数，记为 \(n=\log_a^{(p)}b\)．</p>
+          <p><strong>(1)</strong> 若 \(p=11\)，\(a=2\)，求 \(a^{(p-1),\otimes}\)；</p>
+          <p><strong>(2)</strong> 对 \(m_1,m_2\in\{0,1,\ldots,p-2\}\)，记 \(m_1\oplus m_2\) 为 \(m_1+m_2\) 除以 \(p-1\) 的余数（当 \(m_1+m_2\) 能被 \(p-1\) 整除时，\(m_1\oplus m_2=0\)）．证明：\(\log_a^{(p)}(b\otimes c)=\log_a^{(p)}b\oplus\log_a^{(p)}c\)，其中 \(b,c\in X\)；</p>
+          <p><strong>(3)</strong> 已知 \(n=\log_a^{(p)}b\)．对 \(x\in X\)，\(k\in\{1,2,\ldots,p-2\}\)，令 \(y_1=a^{k,\otimes}\)，\(y_2=x\otimes b^{k,\otimes}\)．证明：\(x=y_2\otimes y_1^{n(p-2),\otimes}\)．</p>
+        </div>
+      </div>
+
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>题意拆解</strong>：在模 \(p\) 意义下，\(\otimes\) 即乘法，\(u^{m,\otimes}\) 即 \(u^m\bmod p\)；离散对数 \(\log_a^{(p)}b\) 满足 \(a^{\log_a^{(p)}b}\equiv b\pmod{p}\)；\(\oplus\) 为模 \(p-1\) 的加法（余数 \(0\) 表示整除时取 \(0\)）．</p>
+          <p><strong>思路</strong>：(1) 用费马小定理 \(a^{p-1}\equiv 1\pmod{p}\)；(2) 设 \(b\equiv a^{m_b}\)，\(c\equiv a^{m_c}\)，则 \(b\otimes c\equiv a^{m_b+m_c}\)，指数在模 \(p-1\) 下对应 \(\oplus\)；(3) \(y_2=x\cdot b^k\)，\(y_1=a^k\)，利用 \(b=a^n\) 与 \(a^{n(p-2)}\equiv a^{-n}\pmod{p}\) 消元得 \(x\)．</p>
+          <div class="tools-container">
+            <p>取 \(p=11,\,a=2\) 时，\(a^{(p-1),\otimes}=2^{10}\bmod 11=\) {{ powMod(2, 10, 11) }}．</p>
+          </div>
+          <canvas id="canvas-intro" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>设元</strong>：\(p=11\)，\(a=2\)，求 \(a^{(p-1),\otimes}=2^{10}\) 除以 \(11\) 的余数．</p>
+          <p><strong>列式</strong>：由<strong>费马小定理</strong>，\(p\) 为素数、\(a\) 与 \(p\) 互质时 \(a^{p-1}\equiv 1\pmod{p}\)．故 \(2^{10}\equiv 1\pmod{11}\)，即 \(a^{(p-1),\otimes}=1\)．</p>
+          <p><strong>答</strong>：\(\boxed{a^{(p-1),\otimes}=1}\)．</p>
+          <canvas id="canvas-q1" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>证明</strong>：记 \(m_b=\log_a^{(p)}b\)，\(m_c=\log_a^{(p)}c\)，则由离散对数定义有 \(b\equiv a^{m_b}\pmod{p}\)，\(c\equiv a^{m_c}\pmod{p}\)（且 \(m_b,m_c\in\{0,1,\ldots,p-2\}\)）．于是 \(b\otimes c=bc\bmod p\equiv a^{m_b}a^{m_c}=a^{m_b+m_c}\pmod{p}\)．</p>
+          <p>题设“\(1,a,a^{2,\otimes},\ldots,a^{(p-2),\otimes}\) 两两不同”等价于 \(a\) 在模 \(p\) 下的阶为 \(p-1\)，故 \(a^r\equiv a^s\pmod{p}\Leftrightarrow r\equiv s\pmod{p-1}\)（\(r,s\in\mathbb{Z}\)）．因此 \(a^{m_b+m_c}\equiv a^\ell\pmod{p}\) 当且仅当 \(m_b+m_c\equiv\ell\pmod{p-1}\)．取 \(\ell\) 为 \(m_b+m_c\) 除以 \(p-1\) 的余数（若 \(p-1\mid m_b+m_c\) 则规定余数为 \(0\)），即 \(\ell=m_b\oplus m_c\)，则 \(b\otimes c\equiv a^\ell\pmod{p}\) 且 \(\ell\in\{0,1,\ldots,p-2\}\)，由定义 \(\log_a^{(p)}(b\otimes c)=\ell=m_b\oplus m_c=\log_a^{(p)}b\oplus\log_a^{(p)}c\)．</p>
+          <p><strong>答</strong>：\(\log_a^{(p)}(b\otimes c)=\log_a^{(p)}b\oplus\log_a^{(p)}c\) 得证．</p>
+          <div class="tools-container">
+            <p>取 \(p=11,\,a=2\)（\(a\) 为模 11 的原根）．选 \(b,c\in X\) 验证 \(\log(b\otimes c)=\log b\oplus\log c\)．</p>
+            <div class="tool-item"><label>\(b\)</label><input type="range" v-model.number="bVal" min="1" max="10" step="1" @input="renderGraphs"><span class="num">{{ bVal }}</span></div>
+            <div class="tool-item"><label>\(c\)</label><input type="range" v-model.number="cVal" min="1" max="10" step="1" @input="renderGraphs"><span class="num">{{ cVal }}</span></div>
+            <p class="num">\(\log_2^{(11)}b=\) {{ log2b }}，\(\log_2^{(11)}c=\) {{ log2c }}；\(b\otimes c=\) {{ bTensorC }}；\(\log(b\otimes c)=\) {{ logBc }}，\(\log b\oplus\log c=\) {{ logbPlusLogc }}；相等：{{ logBc === logbPlusLogc ? '是' : '否' }}．</p>
+          </div>
+          <canvas id="canvas-q2" width="520" height="220"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+          <h2>第(3)问</h2>
+          <p><strong>设元</strong>：\(n=\log_a^{(p)}b\)，故 \(b\equiv a^n\pmod{p}\)；\(y_1=a^{k,\otimes}\equiv a^k\pmod{p}\)，\(y_2=x\otimes b^{k,\otimes}\equiv x\cdot b^k\equiv x\cdot a^{nk}\pmod{p}\)．要证 \(x=y_2\otimes y_1^{n(p-2),\otimes}\)，即证 \(y_2\cdot y_1^{n(p-2)}\equiv x\pmod{p}\)．</p>
+          <p><strong>证明</strong>：由费马小定理 \(a^{p-1}\equiv 1\pmod{p}\)，故 \(a\cdot a^{p-2}\equiv 1\)，即 \(a^{p-2}\equiv a^{-1}\pmod{p}\)．于是 \(y_1^{n(p-2),\otimes}=(a^k)^{n(p-2)}\bmod p=a^{kn(p-2)}\bmod p\)．在指数中，\(n(p-2)\equiv n\cdot(-1)=-n\pmod{p-1}\)，故 \(a^{kn(p-2)}=a^{k\cdot n(p-2)}=a^{-kn}\cdot(a^{p-1})^{kn/(p-1)}\)；由 \(p-1\mid kn(p-2)-(-kn)=kn(p-1)\) 知 \(a^{kn(p-2)}\equiv a^{-kn}\pmod{p}\)，即 \(y_1^{n(p-2),\otimes}\equiv a^{-kn}\pmod{p}\)．因此 \(y_2\cdot y_1^{n(p-2)}\equiv x\cdot a^{nk}\cdot a^{-kn}=x\pmod{p}\)，即 \(x=y_2\otimes y_1^{n(p-2),\otimes}\)．</p>
+          <p><strong>答</strong>：\(x=y_2\otimes y_1^{n(p-2),\otimes}\) 得证．</p>
+          <div class="tools-container">
+            <p>取 \(p=11,\,a=2\)．选 \(b\) 得 \(n=\log_a^{(p)}b\)，再选 \(x,k\) 验证 \(y_2\otimes y_1^{n(p-2),\otimes}=x\)．</p>
+            <div class="tool-item"><label>\(b\)</label><input type="range" v-model.number="bQ3" min="1" max="10" step="1" @input="renderGraphs"><span class="num">{{ bQ3 }}</span></div>
+            <div class="tool-item"><label>\(x\)</label><input type="range" v-model.number="xVal" min="1" max="10" step="1" @input="renderGraphs"><span class="num">{{ xVal }}</span></div>
+            <div class="tool-item"><label>\(k\)</label><input type="range" v-model.number="kVal" min="1" max="9" step="1" @input="renderGraphs"><span class="num">{{ kVal }}</span></div>
+            <p class="num">\(n=\log b=\) {{ nLogB }}；\(y_1=\) {{ y1Val }}，\(y_2=\) {{ y2Val }}；\(y_2\otimes y_1^{n(p-2)}=\) {{ rhs }}；等于 \(x\)：{{ rhs === xVal ? '是' : '否' }}．</p>
+          </div>
+          <canvas id="canvas-q3" width="520" height="220"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>定义</strong>：\(\otimes\) 为模 \(p\) 乘法，\(u^{m,\otimes}=u^m\bmod p\)；\(\log_a^{(p)}b\) 满足 \(a^{\log_a^{(p)}b}\equiv b\pmod{p}\)；\(\oplus\) 为模 \(p-1\) 加法（整除时取 0）．</p>
+            <p><strong>(1)</strong> \(a^{(p-1),\otimes}=1\)（费马小定理）．</p>
+            <p><strong>(2)</strong> \(\log_a^{(p)}(b\otimes c)=\log_a^{(p)}b\oplus\log_a^{(p)}c\)（指数加法定理）．</p>
+            <p><strong>(3)</strong> \(x=y_2\otimes y_1^{n(p-2),\otimes}\)（用 \(a^{n(p-2)}\equiv a^{-n}\) 消元）．</p>
+          </div>
+          <canvas id="canvas-summary" width="520" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+
+      function powMod(base, exp, mod) {
+        var r = 1; base = base % mod;
+        while (exp) { if (exp & 1) r = (r * base) % mod; exp >>= 1; base = (base * base) % mod; }
+        return r;
+      }
+
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('离散对数：a^{log b} ≡ b (mod p)；费马小定理 a^{p-1} ≡ 1', w/2, h/2);
+      }
+
+      function drawQ1(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('(1) 2^{10} mod 11 = 1', w/2, h/2);
+      }
+
+      function drawQ2(c, vm) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '13px sans-serif'; ctx.textAlign = 'left';
+        if (vm && vm.logBc !== undefined && vm.logbPlusLogc !== undefined) {
+          ctx.fillText('log(b⊗c) = ' + vm.logBc + '，log b ⊕ log c = ' + vm.logbPlusLogc + '；相等：' + (vm.logBc === vm.logbPlusLogc ? '是' : '否'), 20, 36);
+          ctx.fillText('b = ' + (vm.bVal != null ? vm.bVal : '') + '，c = ' + (vm.cVal != null ? vm.cVal : '') + '，b⊗c = ' + (vm.bTensorC != null ? vm.bTensorC : ''), 20, 56);
+        } else {
+          ctx.fillText('(2) log(b⊗c) = log b ⊕ log c', w/2, h/2);
+        }
+      }
+
+      function drawQ3(c, vm) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '13px sans-serif'; ctx.textAlign = 'left';
+        if (vm && vm.rhs !== undefined) {
+          ctx.fillText('y₂ ⊗ y₁^{n(p-2)} = ' + vm.rhs + '，x = ' + (vm.xVal != null ? vm.xVal : '') + '；相等：' + (vm.rhs === vm.xVal ? '是' : '否'), 20, 36);
+          ctx.fillText('n = ' + (vm.nLogB != null ? vm.nLogB : '') + '，y₁ = ' + (vm.y1Val != null ? vm.y1Val : '') + '，y₂ = ' + (vm.y2Val != null ? vm.y2Val : ''), 20, 56);
+        } else {
+          ctx.fillText('(3) x = y₂ ⊗ y₁^{n(p-2)}', w/2, h/2);
+        }
+      }
+
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('考点九 题目1：离散对数与模 p 运算', w/2, h/2);
+      }
+
+      var P = 11, A = 2;
+      var pow2 = [];
+      var log2Map = {};
+      (function () {
+        var v = 1;
+        for (var j = 0; j < P - 1; j++) {
+          pow2[j] = v;
+          log2Map[v] = j;
+          v = (v * A) % P;
+        }
+      })();
+
+      function discLog2(x) {
+        x = ((x % P) + P) % P;
+        return log2Map[x] !== undefined ? log2Map[x] : null;
+      }
+
+      function addMod10(m, n) {
+        var s = m + n;
+        if (s % (P - 1) === 0) return 0;
+        return s % (P - 1);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              bVal: 3,
+              cVal: 5,
+              bQ3: 2,
+              xVal: 4,
+              kVal: 3
+            };
+          },
+          computed: {
+            log2b: function () { return discLog2(this.bVal); },
+            log2c: function () { return discLog2(this.cVal); },
+            bTensorC: function () { return ((this.bVal * this.cVal) % P + P) % P; },
+            logBc: function () { return discLog2(this.bTensorC); },
+            logbPlusLogc: function () {
+              var mb = discLog2(this.bVal), mc = discLog2(this.cVal);
+              return mb == null || mc == null ? '-' : addMod10(mb, mc);
+            },
+            nLogB: function () { return discLog2(this.bQ3); },
+            y1Val: function () {
+              var k = this.kVal;
+              return k >= 0 && k < P - 1 ? pow2[k] : null;
+            },
+            y2Val: function () {
+              var x = this.xVal, b = this.bQ3, k = this.kVal;
+              var bk = pow2[(discLog2(b) * k) % (P - 1)];
+              return bk != null ? (x * bk) % P : null;
+            },
+            rhs: function () {
+              var n = discLog2(this.bQ3), k = this.kVal;
+              if (n == null) return null;
+              var nk = (n * k) % (P - 1);
+              var y2 = (this.xVal * pow2[nk]) % P;
+              var expNeg = ((P - 1) - nk) % (P - 1);
+              var y1np2 = pow2[expNeg];
+              return (y2 * y1np2) % P;
+            }
+          },
+          methods: {
+            powMod: function (base, exp, mod) {
+              var r = 1; base = base % mod;
+              while (exp) { if (exp & 1) r = (r * base) % mod; exp >>= 1; base = (base * base) % mod; }
+              return r;
+            },
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            renderGraphs: function () {
+              var vm = this;
+              var n = this.activeTab;
+              var c = document.getElementById('canvas-' + n);
+              if (n === 'intro') drawIntro(c);
+              else if (n === 'q1') drawQ1(c);
+              else if (n === 'q2') drawQ2(c, vm);
+              else if (n === 'q3') drawQ3(c, vm);
+              else if (n === 'summary') drawSummary(c);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

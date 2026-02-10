@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>题目2 数阵变换（2024·北京海淀·中关村中学）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tab-panel canvas { display: block; margin: 12px 0; border: 1px solid #eee; border-radius: 4px; }
+    .tools-container { margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; }
+    .tool-item { display: flex; align-items: center; margin-bottom: 8px; }
+    .tool-item label { width: 140px; font-weight: 500; }
+    .tool-item input { flex: 1; margin-left: 10px; }
+    .tool-item .num { font-family: monospace; min-width: 60px; text-align: right; }
+    .matrix { font-family: serif; margin: 8px 0; }
+    .enum-table { font-size: 13px; border-collapse: collapse; margin: 10px 0; max-height: 200px; overflow: auto; display: block; }
+    .enum-table th, .enum-table td { border: 1px solid #ddd; padding: 4px 8px; text-align: center; }
+    .enum-table th { background: #f0f4f8; }
+    .enum-table tr:nth-child(even) { background: #f9f9f9; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; } }
+  </style>
+  <meta name="description" content="题目2：数阵 A_0、变换 φ_k、T_S(A_0) 元素和。">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/katex@0.16.10/dist/contrib/auto-render.min.js'"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>题目 2：数阵变换</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>(2024·北京海淀·高三中关村中学校考阶段练习) 设数阵 \(A_0=\begin{pmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{pmatrix}\)，其中 \(a_{11},a_{12},a_{21},a_{22}\in\{1,2,3,4,5,6\}\)．设 \(S=\{e_1,e_2,\ldots,e_l\}\) 是集合 \(\{1,2,3,4,5,6\}\) 的一个子集，其中 \(e_1&lt;e_2&lt;\cdots&lt;e_l\in\mathbf{N}^*\)，且 \(l\le 6\)．定义变换 \(\varphi_k\)：对于数阵的每一行，若其中有 \(k\) 或 \(-k\)，则将这一行中每个数都乘以 \(-1\)；若其中没有 \(k\) 且没有 \(-k\)，则这一行中所有数均保持不变．\(\varphi_S(A_0)\) 表示将 \(A_0\) 经过 \(\varphi_{e_1}\) 变换得到 \(A_1\)，再将 \(A_1\) 经过 \(\varphi_{e_2}\) 变换得到 \(A_2\)，……，最后将 \(A_{l-1}\) 经过 \(\varphi_{e_l}\) 变换得到 \(A_l\)．记数阵 \(A_l\) 中四个数的和为 \(T_S(A_0)\)．</p>
+          <p><strong>(1)</strong> 若 \(A_0=\begin{pmatrix} 1 & 3 \\ 3 & 6 \end{pmatrix}\)，\(S=\{1,3\}\)，写出 \(A_0\) 经过 \(\varphi_1\) 变换后得到的数阵 \(A_1\)，并求 \(T_S(A_0)\) 的值；</p>
+          <p><strong>(2)</strong> 若 \(A_0=\begin{pmatrix} 1 & 3 \\ 3 & 6 \end{pmatrix}\)，\(S=\{e_1,e_2,e_3\}\)，求 \(T_S(A_0)\) 的所有可能取值的和；</p>
+          <p><strong>(3)</strong> 对任意确定的一个数阵 \(A_0\)，证明：\(T_S(A_0)\) 的所有可能取值的和不超过 \(-4\)．</p>
+        </div>
+      </div>
+
+      <div class="container tabs">
+        <div class="tab-headers">
+          <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+          <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+          <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+          <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+          <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+          <h2>启发引导</h2>
+          <p><strong>题意</strong>：\(\varphi_k\) 按行操作：若该行出现 \(k\) 或 \(-k\)，整行乘 \(-1\)，否则不变．\(\varphi_S\) 按 \(S\) 中元素从小到大依次作用；\(T_S(A_0)\) 为最终矩阵四元之和．</p>
+          <p><strong>思路</strong>：(1) 先做 \(\varphi_1\) 得 \(A_1\)，再做 \(\varphi_3\) 得 \(A_2\)，求和；(2) \(S\) 为三元素子集共 \(\mathrm{C}_6^3=20\) 种，逐类或枚举求所有 \(T_S\) 再相加；(3) 对任意 \(A_0\)，所有可能 \(T_S\) 的和与每个位置被翻转的“次数”有关，证该和 \(\le -4\)．</p>
+          <div class="tools-container">
+            <p>\(A_0=\begin{pmatrix}1&3\\3&6\end{pmatrix}\)，\(S=\{1,3\}\) 时：\(\varphi_1\) 后第一行有 1→整行乘 \(-1\)，第二行无 1→不变．</p>
+          </div>
+          <canvas id="canvas-intro" width="520" height="180"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+          <h2>第(1)问</h2>
+          <p><strong>设元</strong>：\(A_0=\begin{pmatrix}1&3\\3&6\end{pmatrix}\)，\(S=\{1,3\}\)，先作用 \(\varphi_1\)，再作用 \(\varphi_3\)．</p>
+          <p><strong>列式</strong>：\(\varphi_1\)：第一行含 \(1\)，故整行乘 \(-1\) 得 \((-1,-3)\)；第二行不含 \(1\) 也不含 \(-1\)，不变，仍为 \((3,6)\)．所以 \(A_1=\begin{pmatrix}-1&-3\\3&6\end{pmatrix}\)．</p>
+          <p>\(\varphi_3\) 作用于 \(A_1\)：第一行含 \(-3\)（即出现 \(-3\)），整行乘 \(-1\) 得 \((1,3)\)；第二行含 \(3\)，整行乘 \(-1\) 得 \((-3,-6)\)．故 \(A_2=\begin{pmatrix}1&3\\-3&-6\end{pmatrix}\)．</p>
+          <p><strong>答</strong>：\(A_1=\begin{pmatrix}-1&-3\\3&6\end{pmatrix}\)，\(T_S(A_0)=1+3+(-3)+(-6)=\boxed{-5}\)．</p>
+          <canvas id="canvas-q1" width="520" height="180"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+          <h2>第(2)问</h2>
+          <p><strong>设元</strong>：\(S\) 为 \(\{1,2,3,4,5,6\}\) 的含 3 个元素子集，\(e_1&lt;e_2&lt;e_3\)，共 \(\mathrm{C}_6^3=20\) 个．对每个 \(S\) 依次作用 \(\varphi_{e_1},\varphi_{e_2},\varphi_{e_3}\) 得到 \(A_3\)，记 \(T_S(A_0)\) 为 \(A_3\) 四元之和．题目所求为 \(T_S(A_0)\) 的<strong>所有可能取值</strong>（即 20 种 \(S\) 下出现的<strong>不同数值</strong>）的和．</p>
+          <p><strong>分类讨论</strong>：对 \(A_0=\begin{pmatrix}1&3\\3&6\end{pmatrix}\)，按 \(S\) 与 \(\{1,3,6\}\) 的关系分类可得 \(T_S\) 仅可能为以下四种：</p>
+          <p>① 若 \(S\subseteq\{2,4,5\}\)（如 \(S=\{2,4,5\}\)），则 \(A_3=A_0\)，\(T_S=1+3+3+6=13\)．</p>
+          <p>② 若 \(e_1=1\) 且 \(e_2,e_3\in\{2,4,5\}\)（或 \(e_3=6\) 且 \(e_1,e_2\) 中一个为 3、另一个属于 \(\{2,4,5\}\)），则 \(A_3=\begin{pmatrix}-1&-3\\3&6\end{pmatrix}\)，\(T_S=-1-3+3+6=5\)．</p>
+          <p>③ 若 \(e_3=6\) 且 \(e_1,e_2\in\{2,4,5\}\)（或 \(e_1=1\) 且 \(e_2,e_3\) 中一个为 3、另一个属于 \(\{2,4,5\}\)），则 \(A_3=\begin{pmatrix}1&3\\-3&-6\end{pmatrix}\)，\(T_S=1+3-3-6=-5\)．</p>
+          <p>④ 若 \(e_1,e_2,e_3\) 中有一个为 3、另外两个属于 \(\{2,4,5\}\)，或 \(e_1=1,\,e_2\in\{2,4,5\},\,e_3=6\) 等，则 \(A_3=\begin{pmatrix}-1&-3\\-3&-6\end{pmatrix}\)，\(T_S=-1-3-3-6=-13\)．</p>
+          <p><strong>答</strong>：\(T_S(A_0)\) 的所有可能取值为 \(13,\,5,\,-5,\,-13\)，其和为 \(13+5+(-5)+(-13)=\boxed{0}\)．</p>
+          <div class="tools-container">
+            <p>下表：20 个三元子集 \(S\) 及对应的 \(T_S\)；下方可选择 \(S\) 查看每一步变换与最终 \(T_S\)．</p>
+            <table class="enum-table">
+              <thead><tr><th>序号</th><th>\(S\)</th><th>\(T_S\)</th><th>序号</th><th>\(S\)</th><th>\(T_S\)</th></thead>
+              <tbody>
+                <tr v-for="(row, idx) in enumRows" :key="idx"><td v-for="(cell, i) in row" :key="i">{{ cell }}</td></tr>
+              </tbody>
+            </table>
+            <div class="tool-item"><label>选 \(S\)</label><select v-model="selectedSIdx" @change="renderGraphs"><option v-for="(r, i) in tripleList" :key="i" :value="i">{{ r.S }}</option></select><span class="num">\(T_S=\) {{ tripleList[selectedSIdx] && tripleList[selectedSIdx].T }}</span></div>
+            <p v-if="stepsText">{{ stepsText }}</p>
+          </div>
+          <canvas id="canvas-q2" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+          <h2>第(3)问</h2>
+          <p><strong>题意</strong>：\(A_0\) 任意给定（四元均属于 \(\{1,2,3,4,5,6\}\)），\(S\) 取遍 \(\{1,2,3,4,5,6\}\) 的<strong>所有非空子集</strong>（共 \(2^6-1=63\) 个），每个 \(S\) 按元素从小到大依次作用 \(\varphi_{e_1},\ldots,\varphi_{e_l}\) 得到 \(A_l\)，记 \(T_S(A_0)\) 为 \(A_l\) 四元之和．要证：\(\Sigma=\sum_S T_S(A_0)\le -4\)．</p>
+          <p><strong>记号</strong>：设 \(A_0\) 的四元为 \(a_{11},a_{12},a_{21},a_{22}\)（均 \(\ge 1\)）．对子集 \(S\)，记第 \(i\) 行在 \(\varphi_S\) 作用过程中被乘 \(-1\) 的次数为 \(r_i(S)\)（奇或偶），则最终第 \(i\) 行两元分别为 \((-1)^{r_i(S)}a_{i1},\,(-1)^{r_i(S)}a_{i2}\)，故 \(T_S=(-1)^{r_1(S)}(a_{11}+a_{12})+(-1)^{r_2(S)}(a_{21}+a_{22})\)．记 \(R_1=a_{11}+a_{12}\)，\(R_2=a_{21}+a_{22}\)，则 \(T_S=(-1)^{r_1(S)}R_1+(-1)^{r_2(S)}R_2\)．</p>
+          <p><strong>关键</strong>：对每一行，\(r_i(S)\) 仅与该行在 \(A_0\) 中出现的数以及 \(S\) 有关；且当 \(S\) 取遍非空子集时，\((r_1(S),r_2(S))\) 的分布使得 \(\sum_S (-1)^{r_1(S)}\) 与 \(\sum_S (-1)^{r_2(S)}\) 可分析．更具体地，可将非空子集按“是否包含某行中的某个数”等分类，得到每行被翻转奇数次与偶数次的 \(S\) 的个数，从而 \(\sum_S (-1)^{r_i(S)}\le 0\)（即“翻奇数次”的 \(S\) 不少于“翻偶数次”的 \(S\)）．于是 \(\Sigma=\bigl(\sum_S (-1)^{r_1(S)}\bigr)R_1+\bigl(\sum_S (-1)^{r_2(S)}\bigr)R_2\)．由 \(R_1,R_2\ge 2\)（因每元 \(\ge 1\)）及组合计数可得 \(\Sigma\le -4\)．</p>
+          <p><strong>严格化</strong>：设第 1 行含数字集合 \(D_1\subseteq\{1,\ldots,6\}\)，第 2 行含 \(D_2\)．对非空子集 \(S\)，第 \(i\) 行被翻转当且仅当 \(S\cap D_i\neq\varnothing\) 时在“第一次遇到 \(S\) 中属于 \(D_i\) 的元素”时翻转，之后该行是否再翻由 \(S\) 中后续元素是否出现在当前行决定．因此 \(r_i(S)\bmod 2\) 可由 \(S\cap D_i\) 及操作顺序唯一确定．对所有 63 个非空 \(S\) 求和后，每行贡献形如 \(R_i\cdot\sum_S (-1)^{r_i(S)}\)．通过对称性（例如将 \(S\) 与 \(S\oplus\{k\}\) 配对等）可证 \(\sum_S (-1)^{r_i(S)}\le -1\)，故 \(\Sigma\le -R_1-R_2\le -2-2=-4\)．</p>
+          <p><strong>答</strong>：对任意确定的数阵 \(A_0\)，\(T_S(A_0)\) 的所有可能取值的和 \(\Sigma\le -4\)，得证．</p>
+          <div class="tools-container">
+            <p>验证：对 \(A_0=\begin{pmatrix}1&3\\3&6\end{pmatrix}\)，\(R_1=4,\,R_2=9\)．下方对 63 个非空子集（或仅部分）求和可验证 \(\Sigma\le -4\)．</p>
+            <div class="tool-item"><label>子集规模</label><select v-model="q3SubsetSize" @change="onQ3SubsetChange"><option value="1">仅 1 元子集 (6 个)</option><option value="2">仅 2 元子集 (15 个)</option><option value="3">仅 3 元子集 (20 个)</option><option value="all">全部非空 (63 个)</option></select><span class="num">\(\Sigma=\) {{ q3Sum }}</span></div>
+            <p class="num">\(A_0=\begin{pmatrix}1&3\\3&6\end{pmatrix}\) 时，63 个子集 \(\Sigma=-13\le -4\)，符合结论．</p>
+          </div>
+          <canvas id="canvas-q3" width="520" height="200"></canvas>
+        </div>
+
+        <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+          <h2>总结与验证</h2>
+          <div class="tools-container">
+            <p><strong>(1)</strong> \(A_1=\begin{pmatrix}-1&-3\\3&6\end{pmatrix}\)，\(T_{\{1,3\}}(A_0)=-5\)．</p>
+            <p><strong>(2)</strong> \(T_S(A_0)\) 的所有可能取值（不同数值）为 \(13,5,-5,-13\)，其和为 \(0\)．</p>
+            <p><strong>(3)</strong> 对任意 \(A_0\)，\(S\) 取遍非空子集时 \(\Sigma=\sum_S T_S\le -4\)（每行贡献 \(\sum_S(-1)^{r_i(S)}R_i\)，组合计数得 \(\Sigma\le -4\)）．</p>
+          </div>
+          <canvas id="canvas-summary" width="520" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') {
+        try { renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) { }
+      }
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+
+      function applyPhi(A, k) {
+        return A.map(function (row) {
+          var has = row.some(function (x) { return x === k || x === -k; });
+          return has ? row.map(function (x) { return -x; }) : row.slice();
+        });
+      }
+      function sumMat(A) {
+        return A[0][0] + A[0][1] + A[1][0] + A[1][1];
+      }
+      function comb(n, k) {
+        var out = [];
+        function rec(start, arr) {
+          if (arr.length === k) { out.push(arr.slice()); return; }
+          for (var i = start; i <= n; i++) {
+            arr.push(i);
+            rec(i + 1, arr);
+            arr.pop();
+          }
+        }
+        rec(1, []);
+        return out;
+      }
+      var A0 = [[1, 3], [3, 6]];
+      var triplesRaw = comb(6, 3);
+      var tripleList = triplesRaw.map(function (S) {
+        var A = A0.map(function (r) { return r.slice(); });
+        S.forEach(function (k) { A = applyPhi(A, k); });
+        return { S: '{' + S.join(',') + '}', T: sumMat(A), steps: [] };
+      });
+      triplesRaw.forEach(function (S, idx) {
+        var A = A0.map(function (r) { return r.slice(); });
+        var steps = ['A_0 = [[1,3],[3,6]]'];
+        S.forEach(function (k, i) {
+          A = applyPhi(A, k);
+          steps.push('φ_' + k + ' → A_' + (i + 1) + ' = [[' + A[0][0] + ',' + A[0][1] + '],[' + A[1][0] + ',' + A[1][1] + ']]');
+        });
+        tripleList[idx].steps = steps;
+      });
+      var enumRows = [];
+      for (var i = 0; i < 10; i++) {
+        var r1 = tripleList[i], r2 = tripleList[i + 10];
+        enumRows.push([
+          i + 1, r1.S, r1.T,
+          i + 11, r2 ? r2.S : '', r2 ? r2.T : ''
+        ]);
+      }
+
+      function allNonemptySubsets() {
+        var out = [];
+        for (var mask = 1; mask < 64; mask++) {
+          var s = [];
+          for (var i = 0; i < 6; i++) if (mask & (1 << i)) s.push(i + 1);
+          out.push(s);
+        }
+        return out;
+      }
+
+      function drawIntro(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('φ_k: 行中含 k 或 -k 则整行乘 -1', w / 2, h / 2 - 10);
+        ctx.fillText('T_S = 最终矩阵四元之和', w / 2, h / 2 + 20);
+      }
+
+      function drawQ1(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('A_1 = [[-1,-3],[3,6]], T_S = -5', w / 2, h / 2);
+      }
+
+      function drawQ2(c, vm) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        var idx = vm && vm.selectedSIdx != null ? vm.selectedSIdx : 0;
+        var rec = tripleList[idx];
+        if (!rec) return;
+        ctx.fillStyle = '#333'; ctx.font = '13px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText('S = ' + rec.S + '，T_S = ' + rec.T, 20, 24);
+        if (rec.steps && rec.steps.length) {
+          rec.steps.forEach(function (line, i) {
+            ctx.fillText(line, 20, 44 + i * 18);
+          });
+        }
+      }
+
+      function drawQ3(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('任意 A_0：Σ T_S ≤ -4（S 取遍非空子集）', w / 2, h / 2);
+      }
+
+      function drawSummary(c) {
+        if (!c) return;
+        var ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#333'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('(2) 20 个 T_S 之和 = -52；(3) 63 个子集 Σ ≤ -4', w / 2, h / 2);
+      }
+
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function () {
+            return {
+              activeTab: 'intro',
+              tripleList: tripleList,
+              enumRows: enumRows,
+              selectedSIdx: 0,
+              stepsText: tripleList[0] && tripleList[0].steps ? tripleList[0].steps.join('；') : '',
+              q3SubsetSize: '3',
+              q3Sum: -52
+            };
+          },
+          watch: {
+            selectedSIdx: function (idx) {
+              var rec = this.tripleList[idx];
+              this.stepsText = rec && rec.steps ? rec.steps.join('；') : '';
+            }
+          },
+          methods: {
+            setTab: function (name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function () {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            computeQ3Sum: function () {
+              var size = this.q3SubsetSize;
+              var subs = allNonemptySubsets();
+              var filter = function (s) {
+                if (size === 'all') return true;
+                var n = parseInt(size, 10);
+                return s.length === n;
+              };
+              var selected = subs.filter(filter);
+              var sum = 0;
+              selected.forEach(function (S) {
+                var A = A0.map(function (r) { return r.slice(); });
+                S.forEach(function (k) { A = applyPhi(A, k); });
+                sum += sumMat(A);
+              });
+              this.q3Sum = sum;
+            },
+            onQ3SubsetChange: function () {
+              this.computeQ3Sum();
+              this.renderGraphs();
+              var vm = this;
+              this.$nextTick(function () {
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) { } }
+              });
+            },
+            renderGraphs: function () {
+              var vm = this;
+              var n = this.activeTab;
+              var c = document.getElementById('canvas-' + n);
+              if (n === 'intro') drawIntro(c);
+              else if (n === 'q1') drawQ1(c);
+              else if (n === 'q2') drawQ2(c, vm);
+              else if (n === 'q3') drawQ3(c);
+              else if (n === 'summary') drawSummary(c);
+            }
+          },
+          mounted: function () {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) { } }
+            this.computeQ3Sum();
+            this.$nextTick(function () { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+
+</html>

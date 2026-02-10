@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>平面向量与解三角形新定义（2）半圆与托勒密定理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tool-container { margin: 12px 0; border: 1px solid #eee; border-radius: 4px; min-height: 220px; }
+    .slider-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+    .slider-row label { min-width: 90px; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; margin: 0; max-width: 100%; } }
+  </style>
+  <meta name="description" content="半圆上等边三角形、托勒密定理求 OC 最大与 ∠AOC、四边形面积最大。">
+  <meta name="keywords" content="半圆、托勒密、等边三角形、面积最值">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null;this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null;this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null;this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/auto-render.min.js'"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>平面向量与解三角形新定义（2）半圆与托勒密定理</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p>如图，半圆 \(O\) 的直径为 2 cm，\(A\) 为直径延长线上的点，\(OA = 2\) cm，\(B\) 为半圆上任意一点，以 \(AB\) 为一边作等边三角形 \(ABC\)．设 \(\angle AOB = \alpha\)．</p>
+          <p><strong>(1)</strong> 当 \(\alpha = \frac{\pi}{3}\) 时，求四边形 \(OACB\) 的周长；</p>
+          <p><strong>(2)</strong> 克罗狄斯·托勒密 (Ptolemy) 所著的《天文集》中讲述了制作弦表的原理，其中涉及如下定理：任意凸四边形中，两条对角线的乘积小于或等于两组对边乘积之和，当且仅当对角互补时取等号．根据以上材料，则当线段 \(OC\) 的长取最大值时，求 \(\angle AOC\)；</p>
+          <p><strong>(3)</strong> 问：\(B\) 在什么位置时，四边形 \(OACB\) 的面积最大，并求出面积的最大值．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：半圆直径 2，半径 \(OB=1\)；\(OA=2\)，\(A\) 在直径延长线上；\(B\) 在半圆上，\(\angle AOB=\alpha\)；以 \(AB\) 为边作等边 \(\triangle ABC\)。四边形 \(OACB\) 为 O→A→C→B→O。</p>
+        <p><strong>第(1)问</strong>：\(\alpha=\pi/3\) 时用余弦定理求 \(AB\)，则 \(AC=BC=AB\)，周长 \(=OA+AC+CB+BO=2+AB+AB+1\)。</p>
+        <p><strong>第(2)问</strong>：托勒密不等式 \(OC\cdot AB\leq OA\cdot CB+OB\cdot AC\)，等号当且仅当四点共圆。取等时 \(OC=3\)；由共圆得 \(\cos\angle OBC+\cos\angle OAC=0\) 可解出 \(AB=\sqrt{7}\)，再在 \(\triangle AOC\) 中用余弦定理得 \(\cos\angle AOC=1/2\)，即 \(\angle AOC=60°\)。</p>
+        <p><strong>第(3)问</strong>：面积 \(S=\) 面积 \(\triangle OAB+\) 面积 \(\triangle ABC\)（或减，视 \(C\) 在何侧）。\(S(\alpha)=\frac{1}{2}\cdot OA\cdot OB\cdot\sin\alpha+\frac{\sqrt{3}}{4}AB^2\)，\(AB^2=OA^2+OB^2-2\cdot OA\cdot OB\cos\alpha\)，对 \(\alpha\) 求导求最值。</p>
+        <p><strong>拿分策略</strong>：(1) 余弦定理求 \(AB\) 后直接加周长；(2) 托勒密取等⇔四点共圆，用 \(\cos\angle OBC+\cos\angle OAC=0\) 求 \(AB\)，再在 \(\triangle AOC\) 中用余弦定理求 \(\angle AOC\)；(3) 把 \(S(\alpha)\) 表成 \(\alpha\) 的函数后求导，\(\tan\alpha=-1/\sqrt{3}\) 在 \((0,\pi)\) 取 \(\alpha=5\pi/6\)。</p>
+        <p><strong>考点</strong>：余弦定理、托勒密取等条件、面积与导数。<strong>易错</strong>：\(\angle AOC\) 必须用 \(\triangle AOC\) 的余弦定理算得 60°，不能误用互补得 120°；面积求导后 \(\alpha=5\pi/6\) 在 \((0,\pi)\) 内。</p>
+        <div id="container-intro" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(1)问</h2>
+        <p><strong>设元</strong>：\(OA=2\)，\(OB=1\)，\(\angle AOB=\alpha=\pi/3\)。等边 \(\triangle ABC\) 故 \(AC=BC=AB\)。</p>
+        <p><strong>列式</strong>：在 \(\triangle OAB\) 中由余弦定理 \(AB^2=OA^2+OB^2-2\cdot OA\cdot OB\cdot\cos\alpha=4+1-2\cdot 2\cdot 1\cdot\frac{1}{2}=3\)，故 \(AB=\sqrt{3}\)，\(AC=BC=\sqrt{3}\)。</p>
+        <p><strong>化简</strong>：四边形 \(OACB\) 周长 \(=OA+AC+CB+BO=2+\sqrt{3}+\sqrt{3}+1=3+2\sqrt{3}\)。</p>
+        <p><strong>答</strong>：\(\boxed{3+2\sqrt{3}}\)（单位：cm）。</p>
+        <div id="container-q1" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(2)问</h2>
+        <p><strong>设元</strong>：托勒密定理：凸四边形 \(OACB\) 中 \(OC\cdot AB\leq OA\cdot CB+OB\cdot AC\)，等号当且仅当四边形对角互补（即四点共圆）时成立。题中 \(OA=2\)，\(OB=1\)，\(AC=CB=AB\)。</p>
+        <p><strong>步骤一（\(OC\) 的最大值）</strong>：代入得 \(OC\cdot AB\leq 2\cdot CB+1\cdot AC=2AB+AB=3AB\)，故 \(OC\leq 3\)。等号成立当且仅当 \(O,A,B,C\) 四点共圆，此时 \(OC=3\)。</p>
+        <p><strong>步骤二（取等时求 \(AB\)）</strong>：取等时设 \(AB=AC=BC=x\)。四点共圆时 \(\angle OBC+\angle OAC=\pi\)（对角互补），故 \(\cos\angle OBC+\cos\angle OAC=0\)。在 \(\triangle OBC\) 中由余弦定理：
+          \[ \cos\angle OBC=\frac{OB^2+BC^2-OC^2}{2\cdot OB\cdot BC}=\frac{1+x^2-9}{2x}=\frac{x^2-8}{2x}. \]
+          在 \(\triangle OAC\) 中：
+          \[ \cos\angle OAC=\frac{OA^2+AC^2-OC^2}{2\cdot OA\cdot AC}=\frac{4+x^2-9}{2\cdot 2\cdot x}=\frac{x^2-5}{4x}. \]
+          由 \(\cos\angle OBC+\cos\angle OAC=0\) 得 \(\dfrac{x^2-8}{2x}+\dfrac{x^2-5}{4x}=0\)，即 \(\dfrac{2(x^2-8)+(x^2-5)}{4x}=0\)，故 \(3x^2-21=0\)，\(x^2=7\)，\(x=\sqrt{7}\)（\(x&gt;0\)）。</p>
+        <p><strong>步骤三（求 \(\angle AOC\)）</strong>：在 \(\triangle AOC\) 中，\(OA=2\)，\(OC=3\)，\(AC=\sqrt{7}\)。由余弦定理：
+          \[ \cos\angle AOC=\frac{OA^2+OC^2-AC^2}{2\cdot OA\cdot OC}=\frac{4+9-7}{2\times 2\times 3}=\frac{6}{12}=\frac{1}{2}, \]
+          所以 \(\angle AOC=\dfrac{\pi}{3}\)（即 60°）。</p>
+        <p><strong>答</strong>：当 \(OC\) 取最大值时 \(\angle AOC=\boxed{\dfrac{\pi}{3}}\)（即 60°）。</p>
+        <div id="container-q2" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+        <h2>第(3)问</h2>
+        <p><strong>设元</strong>：四边形 \(OACB\) 面积 \(S=\) 面积 \(\triangle OAB+\) 面积 \(\triangle ABC\)。\(\triangle OAB=\frac{1}{2}\cdot OA\cdot OB\cdot\sin\alpha=\sin\alpha\)。\(AB^2=OA^2+OB^2-2\cdot OA\cdot OB\cdot\cos\alpha=5-4\cos\alpha\)，\(\triangle ABC=\frac{\sqrt{3}}{4}AB^2=\frac{\sqrt{3}}{4}(5-4\cos\alpha)\)。</p>
+        <p><strong>列式</strong>：\(S(\alpha)=\sin\alpha+\frac{\sqrt{3}}{4}(5-4\cos\alpha)=\sin\alpha+\frac{5\sqrt{3}}{4}-\sqrt{3}\cos\alpha\)。</p>
+        <p><strong>化简</strong>：\(S'(\alpha)=\cos\alpha+\sqrt{3}\sin\alpha=0\) 得 \(\tan\alpha=-\frac{1}{\sqrt{3}}\)。\(\alpha\in(0,\pi)\) 时 \(\alpha=\pi-\frac{\pi}{6}=\frac{5\pi}{6}\)。代入得 \(S_{\max}=S(5\pi/6)=\frac{1}{2}+\frac{5\sqrt{3}}{4}-\sqrt{3}\cdot\bigl(-\frac{\sqrt{3}}{2}\bigr)=\frac{1}{2}+\frac{5\sqrt{3}}{4}+\frac{3}{2}=2+\frac{5\sqrt{3}}{4}\)。</p>
+        <p><strong>答</strong>：当 \(\angle AOB=\alpha=\dfrac{5\pi}{6}\) 时面积最大，最大值为 \(\boxed{2+\dfrac{5\sqrt{3}}{4}}\)。</p>
+        <div class="slider-row"><label>α (弧度)</label><input type="range" v-model.number="alphaVal" min="0.2" max="3" step="0.05" style="flex:1; max-width:300px" @input="onAlphaSliderInput"><span>{{ alphaVal.toFixed(2) }}</span></div>
+        <p class="k"><strong>当前面积 S(α) = {{ areaVal.toFixed(3) }}</strong>；α = 5π/6 ≈ 2.62 时最大，S_max ≈ {{ maxAreaStr }}。</p>
+        <div id="container-q3" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：① 周长 \(3+2\sqrt{3}\)。② 托勒密取等时四点共圆，\(OC\) 最大，\(\angle AOC=60°\)。③ 面积 \(S=\sin\alpha+\frac{\sqrt{3}}{4}(5-4\cos\alpha)\)，\(\alpha=5\pi/6\) 时最大值为 \(2+\frac{5\sqrt{3}}{4}\)。</p>
+        <p><strong>易错</strong>：等号条件为对角互补（共圆）；\(\angle AOC\) 必须用 \(\triangle AOC\) 的余弦定理算得 60°，不能误用“与 \(\angle ABC\) 互补”得 120°；面积求导时 \(\tan\alpha=-1/\sqrt{3}\) 在 \((0,\pi)\) 上取 \(\alpha=5\pi/6\)。</p>
+        <div id="container-summary" class="tool-container"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(el, katexOpt); } catch (e) {} }
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      function areaS(alpha) { return Math.sin(alpha) + (Math.sqrt(3) / 4) * (5 - 4 * Math.cos(alpha)); }
+      function geometrySketch(containerId, type, alpha) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        var c = document.createElement('canvas');
+        c.width = 520; c.height = 220; c.style.display = 'block';
+        container.appendChild(c);
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w * 0.32, cy = h / 2, R = 65;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy, R, Math.PI / 2, -Math.PI / 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R + 90, cy); ctx.stroke();
+        var a = typeof alpha === 'number' ? alpha : 2.6;
+        var bx = cx + R * Math.cos(a);
+        var by = cy - R * Math.sin(a);
+        ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#333'; ctx.font = '12px sans-serif';
+        ctx.fillText('O', cx - R - 8, cy + 5); ctx.fillText('A', cx + R + 95, cy + 5); ctx.fillText('B', bx + 8, by);
+        if (typeof alpha === 'number') {
+          var s = areaS(alpha);
+          ctx.fillStyle = '#3498db'; ctx.font = '14px sans-serif';
+          ctx.fillText('S(α) = ' + s.toFixed(3), cx + R + 10, 25);
+          var alphaOpt = 5 * Math.PI / 6;
+          if (Math.abs(alpha - alphaOpt) < 0.08) ctx.fillText('← 此时面积最大', cx + R + 10, 45);
+        }
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function() { return { activeTab: 'intro', alphaVal: 2.6 }; },
+          computed: {
+            areaVal: function() { return areaS(this.alphaVal); },
+            maxAreaStr: function() { return (2 + 5 * Math.sqrt(3) / 4).toFixed(3); }
+          },
+          methods: {
+            setTab: function(name) { this.activeTab = name; var idx = TABS.indexOf(name) + 1; if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function') window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length }); var vm = this; this.$nextTick(function() { vm.renderGraphs(); var panel = vm.$refs.activePanel; if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) {} } }); },
+            onAlphaSliderInput: function() { if (this.activeTab === 'q3') geometrySketch('container-q3', null, this.alphaVal); },
+            renderGraphs: function() {
+              var n = this.activeTab;
+              if (n === 'intro') geometrySketch('container-intro', null);
+              else if (n === 'q1') geometrySketch('container-q1', null);
+              else if (n === 'q2') geometrySketch('container-q2', null);
+              else if (n === 'q3') geometrySketch('container-q3', null, this.alphaVal);
+              else if (n === 'summary') geometrySketch('container-summary', null);
+            }
+          },
+          mounted: function() { var appEl = document.getElementById('app'); if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) {} } this.$nextTick(function() { this.renderGraphs(); }); }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+</html>

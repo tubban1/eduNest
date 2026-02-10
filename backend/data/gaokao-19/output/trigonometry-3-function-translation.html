@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="按向量平移得 g(x)、区间至少 30 个零点求最小长度、二次不等式恒成立求 m。">
+  <meta name="keywords" content="函数平移、正弦、零点、不等式恒成立、高考数学">
+  <title>三角函数新定义（3）函数图像平移</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 25px; }
+    h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #3498db; }
+    .problem-section { background: #f9f9f9; border: 2px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: 20px 0; }
+    .k { line-height: 2; }
+    .tabs { margin-top: 28px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .tab-headers { display: flex; flex-wrap: wrap; background: #f0f4f8; border-bottom: 1px solid #e0e0e0; }
+    .tab-header { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #555; }
+    .tab-header:hover { background: #e8eef4; }
+    .tab-header.active { background: #fff; color: #3498db; border-bottom: 2px solid #3498db; margin-bottom: -1px; }
+    .tab-panel { padding: 24px; background: #fff; min-height: 200px; }
+    .tool-container { margin: 12px 0; border: 1px solid #eee; border-radius: 4px; min-height: 220px; }
+    @media (max-width: 768px) { body { padding: 0; background: white; } .container { padding: 5px; border-radius: 0; box-shadow: none; margin: 0; max-width: 100%; } }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" onerror="this.onerror=null; this.href='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.css'">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js" onerror="this.onerror=null;this.src='https://unpkg.com/vue@3.5.20/dist/vue.global.prod.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/auto-render.min.js'"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>三角函数新定义（3）函数图像平移</h1>
+      <div class="problem-section" v-pre>
+        <h2>题目</h2>
+        <div class="k">
+          <p><strong>7.</strong> 将函数 \(f(x)\) 的图象按向量 \(\vec{a} = (m, n)\) 平移指的是：当 \(m &gt; 0\) 时，\(f(x)\) 图形向右平移 \(m\) 个单位；当 \(m &lt; 0\) 时，\(f(x)\) 图形向左平移 \(|m|\) 个单位；当 \(n &gt; 0\) 时，\(f(x)\) 图形向上平移 \(n\) 个单位；当 \(n &lt; 0\) 时，\(f(x)\) 图形向下平移 \(|n|\) 个单位．</p>
+          <p>已知 \(f(x) = 2\sin(2x)\)，将 \(f(x)\) 的图象按 \(\vec{a} = \left(-\frac{\pi}{3}, 1\right)\) 平移得到函数 \(g(x)\) 的图象．</p>
+          <p><strong>(1)</strong> 求 \(g(x)\) 的解析式；</p>
+          <p><strong>(2)</strong> 若函数 \(g(x)\) 在区间 \([a, b]\) 上至少含 30 个零点，在所有满足上述条件的 \([a, b]\) 中，求 \(b - a\) 的最小值；</p>
+          <p><strong>(3)</strong> 对任意的 \(x \in \left[-\frac{\pi}{6}, \frac{\pi}{12}\right]\)，不等式 \(g^2(x) - m g(x) - 1 \leq 0\) 恒成立，求实数 \(m\) 的取值范围．</p>
+        </div>
+      </div>
+    </div>
+    <div class="container tabs">
+      <div class="tab-headers">
+        <div class="tab-header" :class="{active: activeTab==='intro'}" @click="setTab('intro')">启发引导</div>
+        <div class="tab-header" :class="{active: activeTab==='q1'}" @click="setTab('q1')">(1) 第1问</div>
+        <div class="tab-header" :class="{active: activeTab==='q2'}" @click="setTab('q2')">(2) 第2问</div>
+        <div class="tab-header" :class="{active: activeTab==='q3'}" @click="setTab('q3')">(3) 第3问</div>
+        <div class="tab-header" :class="{active: activeTab==='summary'}" @click="setTab('summary')">总结与验证</div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='intro'">
+        <h2>启发引导</h2>
+        <p><strong>题意拆解</strong>：按 \(\vec{a}=(-\pi/3,1)\) 平移即向左 \(\pi/3\)、向上 1，故 \(g(x)=f(x+\pi/3)+1\)。</p>
+        <p><strong>第(1)问</strong>：\(g(x)=2\sin(2(x+\pi/3))+1=2\sin(2x+2\pi/3)+1\)。</p>
+        <p><strong>第(2)问</strong>：\(g(x)=0\) 即 \(\sin(2x+2\pi/3)=-1/2\)，解出零点通式，按大小排成序列，相邻零点间隔为 \(\pi/3\) 与 \(2\pi/3\) 交替。含至少 30 个零点的最短区间长为从某零点到第 30 个零点的距离，即 29 个间隔的最小和。</p>
+        <p><strong>第(3)问</strong>：令 \(t=g(x)\)，先求 \(x\in[-\pi/6,\pi/12]\) 时 \(t\) 的取值范围；\(t^2-mt-1\leq 0\) 对 \(t\) 在该范围内恒成立，即 \(m\geq (t^2-1)/t\) 的最大值。</p>
+        <p><strong>考点</strong>：平移公式、正弦零点、二次不等式在区间上恒成立。易错：平移方向；零点间隔交替。</p>
+        <div id="container-intro" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q1'">
+        <h2>第(1)问</h2>
+        <p><strong>设元</strong>：\(f(x)=2\sin(2x)\)，按 \(\vec{a}=(-\pi/3,1)\) 平移：向左 \(\pi/3\)、向上 1。</p>
+        <p><strong>列式</strong>：平移后曲线上点 \((x,y)\) 由原曲线 \((x+\pi/3,\,y-1)\) 得到，即 \(y-1=f(x+\pi/3)\)，故 \(y=g(x)=f(x+\pi/3)+1=2\sin(2(x+\pi/3))+1=2\sin(2x+2\pi/3)+1\)。</p>
+        <p><strong>答</strong>：\(\boxed{g(x)=2\sin(2x+2\pi/3)+1}\)。</p>
+        <div id="container-q1" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q2'">
+        <h2>第(2)问</h2>
+        <p><strong>设元</strong>：\(g(x)=0\) 即 \(2\sin(2x+2\pi/3)+1=0\)，\(\sin(2x+2\pi/3)=-1/2\)。\(2x+2\pi/3=\frac{7\pi}{6}+2k\pi\) 或 \(\frac{11\pi}{6}+2k\pi\)（\(k\in\mathbb{Z}\)），故 \(x=\frac{7\pi}{12}-\frac{\pi}{3}+k\pi=\frac{\pi}{4}+k\pi\) 或 \(x=\frac{11\pi}{12}-\frac{\pi}{3}+k\pi=\frac{7\pi}{12}+k\pi\)。</p>
+        <p><strong>列式</strong>：两族零点交错排列，相邻零点间隔依次为 \(\pi/3\)、\(2\pi/3\)、\(\pi/3\)、\(2\pi/3\)、…。要区间 \([a,b]\) 内至少 30 个零点且 \(b-a\) 最小，则取从某零点到第 30 个零点的区间。29 个间隔中 15 个为 \(\pi/3\)、14 个为 \(2\pi/3\) 时总长最小（或 14 个 \(\pi/3\)、15 个 \(2\pi/3\)，取较小者）。\(15\cdot\frac{\pi}{3}+14\cdot\frac{2\pi}{3}=\frac{15\pi+28\pi}{3}=\frac{43\pi}{3}\)；\(14\cdot\frac{\pi}{3}+15\cdot\frac{2\pi}{3}=\frac{14\pi+30\pi}{3}=\frac{44\pi}{3}\)。故最小值为 \(\frac{43\pi}{3}\)。</p>
+        <p><strong>答</strong>：\(\boxed{b-a\text{ 的最小值为 }\dfrac{43\pi}{3}}\)。</p>
+        <div id="container-q2" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='q3'">
+        <h2>第(3)问</h2>
+        <p><strong>设元</strong>：\(x\in[-\pi/6,\pi/12]\) 时，\(2x+2\pi/3\in[-\pi/3+2\pi/3,\pi/6+2\pi/3]=[\pi/3,5\pi/6]\)，故 \(\sin(2x+2\pi/3)\in[1/2,1]\)，\(g(x)=2\sin(\cdots)+1\in[2,3]\)。令 \(t=g(x)\)，则 \(t\in[2,3]\)。不等式 \(g^2(x)-m g(x)-1\leq 0\) 即 \(t^2-mt-1\leq 0\) 对 \(t\in[2,3]\) 恒成立。</p>
+        <p><strong>列式</strong>：\(t^2-mt-1\leq 0\) 即 \(mt\geq t^2-1\)。\(t&gt;0\) 时即 \(m\geq \frac{t^2-1}{t}=t-\frac{1}{t}\)。函数 \(t-\frac{1}{t}\) 在 \([2,3]\) 上单调递增，故最大值为 \(3-\frac{1}{3}=\frac{8}{3}\)。所以 \(m\geq \frac{8}{3}\) 时不等式恒成立。</p>
+        <p><strong>答</strong>：\(\boxed{m\in\left[\dfrac{8}{3},+\infty\right)}\)。</p>
+        <div id="container-q3" class="tool-container"></div>
+      </div>
+      <div class="tab-panel" ref="activePanel" v-if="activeTab==='summary'">
+        <h2>总结与验证</h2>
+        <p><strong>回顾</strong>：① \(g(x)=2\sin(2x+2\pi/3)+1\)。② 零点间隔 \(\pi/3\) 与 \(2\pi/3\) 交替，至少 30 个零点的最短区间长 \(\frac{43\pi}{3}\)。③ \(x\in[-\pi/6,\pi/12]\) 时 \(g(x)\in[2,3]\)，\(g^2-mg-1\leq 0\) 恒成立 \(\Leftrightarrow\) \(m\geq 8/3\)。</p>
+        <p><strong>易错</strong>：平移方向“左加右减、上加下减”，\(g(x)=f(x+\pi/3)+1\)；零点排序后间隔交替，29 个间隔中 15 个 \(\pi/3\)、14 个 \(2\pi/3\) 得最小长度；第(3)问 \(t\in[2,3]\) 时 \(t-\frac{1}{t}\) 最大为 \(\frac{8}{3}\)。</p>
+        <div id="container-summary" class="tool-container"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var katexOpt = { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false };
+      var el = document.querySelector('.problem-section');
+      if (el && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(el, katexOpt); } catch (e) {} }
+      var TABS = ['intro', 'q1', 'q2', 'q3', 'summary'];
+      function drawFunction(containerId, type) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        var c = document.createElement('canvas');
+        c.width = 520; c.height = 240; c.style.display = 'block';
+        container.appendChild(c);
+        var ctx = c.getContext('2d'), w = c.width, h = c.height, cx = w / 2, cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(40, cy); ctx.lineTo(w - 40, cy); ctx.moveTo(cx, 20); ctx.lineTo(cx, h - 20); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '12px sans-serif';
+        if (type === 'g') {
+          ctx.strokeStyle = '#3498db'; ctx.lineWidth = 2; ctx.beginPath();
+          for (var i = 0; i <= w; i++) {
+            var x = (i - cx) / 80; var phi = 2 * x + 2 * Math.PI / 3; var y = cy - (2 * Math.sin(phi) + 1) * 30;
+            if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
+          }
+          ctx.stroke(); ctx.fillText('g(x)=2sin(2x+2π/3)+1', w - 160, 30);
+        } else if (type === 'range') {
+          ctx.fillStyle = 'rgba(52,152,219,0.2)'; ctx.fillRect(cx - 40, 20, 80, h - 40);
+          ctx.strokeStyle = '#3498db'; ctx.setLineDash([4,2]); ctx.strokeRect(cx - 40, 20, 80, h - 40);
+          ctx.setLineDash([]); ctx.fillStyle = '#333'; ctx.fillText('t ∈ [2,3]', cx - 25, 35);
+        } else {
+          ctx.fillStyle = '#666'; ctx.fillText('按 (-π/3, 1) 平移', cx - 50, cy);
+        }
+      }
+      if (typeof Vue !== 'undefined') {
+        Vue.createApp({
+          data: function() { return { activeTab: 'intro' }; },
+          methods: {
+            setTab: function(name) {
+              this.activeTab = name;
+              var idx = TABS.indexOf(name) + 1;
+              if (window.eduNestRuntime && typeof window.eduNestRuntime.dispatchLearningEvent === 'function')
+                window.eduNestRuntime.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: TABS.length });
+              var vm = this;
+              this.$nextTick(function() {
+                vm.renderGraphs();
+                var panel = vm.$refs.activePanel;
+                if (panel && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(panel, katexOpt); } catch (e) {} }
+              });
+            },
+            renderGraphs: function() {
+              var n = this.activeTab;
+              if (n === 'intro') drawFunction('container-intro', 'default');
+              else if (n === 'q1') drawFunction('container-q1', 'g');
+              else if (n === 'q2') drawFunction('container-q2', 'g');
+              else if (n === 'q3') drawFunction('container-q3', 'range');
+              else if (n === 'summary') drawFunction('container-summary', 'g');
+            }
+          },
+          mounted: function() {
+            var appEl = document.getElementById('app');
+            if (appEl && typeof renderMathInElement !== 'undefined') { try { renderMathInElement(appEl, katexOpt); } catch (e) {} }
+            this.$nextTick(function() { this.renderGraphs(); });
+          }
+        }).mount('#app');
+      }
+    });
+  </script>
+</body>
+</html>
