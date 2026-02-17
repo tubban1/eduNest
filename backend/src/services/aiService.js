@@ -528,6 +528,7 @@ const COMMON_SYSTEM_PROMPT = {
 };
 
 // 交互式内容骨架：AI 按此填空，head 中自行添加 KaTeX/Tailwind 等依赖
+// uiState 约定：__eduNestUIStateProvider 返回 { stageIndex, totalStages, currentStage }，与后端/teaching_snapshot 一致
 const INTERACTIVE_CODE_FRAMEWORK = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -537,7 +538,7 @@ const INTERACTIVE_CODE_FRAMEWORK = `<!DOCTYPE html>
   <!-- AI adds: katex, tailwind, three, gsap, etc. as needed -->
 </head>
 <body class="bg-slate-50"><div id="app" class="max-w-4xl mx-auto p-6">
-  <div v-for="(s, i) in stages" :key="i" v-show="currentStageIndex === i" class="bg-white p-6 rounded-xl">
+  <div v-for="(s, i) in stages" :key="i" v-show="step === i + 1" class="bg-white p-6 rounded-xl">
     <h2 v-if="s.title">{{ s.title }}</h2>
     <div v-if="s.content" v-html="s.content"></div>
     <button v-if="i < stages.length - 1" @click="nextStage">Next</button>
@@ -548,10 +549,11 @@ const INTERACTIVE_CODE_FRAMEWORK = `<!DOCTYPE html>
 const { createApp, ref, nextTick } = Vue;
 createApp({ setup() {
   const stages = ref([{ title: '{{STAGE_1_TITLE}}', content: '{{STAGE_1_CONTENT}}' }]);
-  const currentStageIndex = ref(0);
-  const nextStage = () => { currentStageIndex.value = Math.min(currentStageIndex.value + 1, stages.value.length - 1); window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: currentStageIndex.value + 1, totalStages: stages.value.length }); };
-  const reset = () => { currentStageIndex.value = 0; nextTick(()=>{}); };
-  return { stages, currentStageIndex, nextStage, reset };
+  const step = ref(1);
+  const nextStage = () => { step.value = Math.min(step.value + 1, stages.value.length); window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length }); };
+  const reset = () => { step.value = 1; nextTick(()=>{}); };
+  if (typeof window !== 'undefined') window.__eduNestUIStateProvider = function() { return { stageIndex: step.value, totalStages: stages.value.length, currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || '' }; };
+  return { stages, step, nextStage, reset };
 } }).mount('#app');
 </script></body></html>`;
 
@@ -592,9 +594,10 @@ const TYPE_SPECIFIC_PROMPTS = {
     },
     
     "technical_constraints": {
-      "code": "Base full_html on the skeleton below. Fill placeholders only. Do not add MutationObserver, renderMathInElement(document.body), MathRenderManager, or mount('body').",
-      "stages": "stages array length is content-driven: use 1–5+ stages as appropriate (intro, steps, summary, etc.); each stage may have different structure (title, content, step list, formulas).",
-      "libraries": "Three/GSAP/D3/p5/etc allowed; load via CDN; target Vue refs only."
+      "code": "Base full_html on the skeleton below. Fill placeholders only. Do not add MutationObserver, renderMathInElement(document.body), MathRenderManager, or mount('body'). For math formulas, write TeX directly in the HTML using $...$, $$...$$, or data-tex/data-katex attributes and let the host platform handle rendering; do not create empty math container divs (like <div id=\"math-1\"></div>) with separate renderMath or katex.render loops for stage changes.",
+      "stages": "stages array length is content-driven: use 1–5 or more stages as appropriate (intro, steps, summary, etc.); each stage may have different structure (title, content, step list, formulas).",
+      "libraries": "Three/GSAP/D3/p5/etc allowed; load via CDN; target Vue refs only.",
+      "runtime_ui_state": "REQUIRED: Expose window.__eduNestUIStateProvider as a function that returns the current uiState (object). Learn page only reads uiState; keep the same shape as in the skeleton (stageIndex, totalStages, currentStage). Call window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex, totalStages }) when the user advances (e.g. in nextStage)."
     },
     
     "ux_ui_requirements": {
@@ -1250,6 +1253,7 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
     - full_html: A complete, standalone HTML file that includes DOCTYPE, <html>, <head>, and <body> tags
     - All CSS must be in <style> tags within <head>
     - All JavaScript must be in <script> tags (before closing </body>)
+    - For math formulas, keep TeX directly in the HTML (e.g. $...$, $$...$$, or data-tex/data-katex attributes) and let the host platform handle rendering; do not introduce new global math managers, MutationObserver-based math auto-renderers, or empty math container divs that are later filled by custom renderMath/katex.render loops.
     - CRITICAL: DO NOT use overflow: hidden on body element. Ensure vertical scrolling is available on small screens.
     - All external libraries must be loaded via CDN in <head> or before </body>
     - fixed: A short non-technical summary of what was changed or fixed (1-2 sentences)

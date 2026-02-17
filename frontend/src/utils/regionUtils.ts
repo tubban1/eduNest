@@ -239,10 +239,41 @@ export const formatCurrency = (amount: number, currency: string): string => {
   }
 };
 
-// 获取地区显示名称
+// 获取地区显示名称（兼容旧逻辑，仅限 REGIONS 内）
 export const getRegionDisplayName = (regionCode: string): string => {
   return REGIONS[regionCode]?.name || regionCode;
 };
+
+/** 按当前界面语言显示国家/地区名（全量列表用），使用 Intl.DisplayNames */
+export function getRegionDisplayNameI18n(regionCode: string, locale: string): string {
+  try {
+    const dn = new Intl.DisplayNames([locale], { type: 'region' });
+    return dn.of(regionCode) ?? regionCode;
+  } catch {
+    return regionCode;
+  }
+}
+
+/** 国家/地区代码 → 应用支持的 locale（选地区时可自动带出语言） */
+export const REGION_DEFAULT_LOCALE: Record<string, string> = {
+  CN: 'zh-CN', HK: 'zh-CN', TW: 'zh-CN', MO: 'zh-CN',
+  US: 'en-US', GB: 'en-US', AU: 'en-US', CA: 'en-US', IE: 'en-US', IN: 'en-US', SG: 'en-US',
+  DE: 'de-DE', AT: 'de-DE', CH: 'de-DE', LI: 'de-DE',
+  FR: 'fr-FR', BE: 'fr-FR', LU: 'fr-FR', MC: 'fr-FR',
+  NL: 'nl-NL', IT: 'it-IT', ES: 'es-ES', PT: 'pt-PT', BR: 'pt-BR', JP: 'ja-JP', KR: 'ko-KR',
+};
+
+/** 根据浏览器语言前 2 字符匹配应用 locale（zh→中文, en→English, …） */
+export function getLocaleFromBrowser(): string {
+  if (typeof navigator === 'undefined') return 'en-US';
+  const raw = navigator.language || (navigator as any).languages?.[0] || '';
+  const prefix = raw.slice(0, 2).toLowerCase();
+  const map: Record<string, string> = {
+    zh: 'zh-CN', en: 'en-US', de: 'de-DE', fr: 'fr-FR',
+    nl: 'nl-NL', it: 'it-IT', es: 'es-ES', pt: 'pt-PT', ja: 'ja-JP', ko: 'ko-KR',
+  };
+  return map[prefix] || 'en-US';
+}
 
 // 检查支付方式是否在地区可用
 export const isPaymentMethodAvailable = (methodId: string, regionCode: string): boolean => {

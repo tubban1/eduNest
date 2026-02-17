@@ -300,6 +300,8 @@ function svgToDataUrl(svg: SVGElement): string {
 export function extractThumbnailFromHTML(htmlContent: string): {
   type: 'canvas' | 'svg' | 'none';
   data: string | null;
+  /** 原始 SVG 字符串，用于内联渲染（对话历史栏等） */
+  rawSvg?: string | null;
 } {
   // 尝试提取 SVG
   const svgMatch = htmlContent.match(/<svg[^>]*>[\s\S]*?<\/svg>/i);
@@ -310,7 +312,9 @@ export function extractThumbnailFromHTML(htmlContent: string): {
     if (!processedSvg.includes('width=') || !processedSvg.includes('height=')) {
       const viewBoxMatch = processedSvg.match(/viewBox=["']([^"']+)["']/i);
       if (viewBoxMatch) {
-        const [, , w, h] = viewBoxMatch[1].split(/\s+|,/).map(parseFloat);
+        const parts = viewBoxMatch[1].split(/\s+|,/).map(parseFloat);
+        const w = parts[2];
+        const h = parts[3];
         if (w && h) {
           processedSvg = processedSvg.replace(/<svg/i, `<svg width="${w}" height="${h}"`);
         }
@@ -319,7 +323,8 @@ export function extractThumbnailFromHTML(htmlContent: string): {
     const svg64 = btoa(unescape(encodeURIComponent(processedSvg)));
     return {
       type: 'svg',
-      data: `data:image/svg+xml;base64,${svg64}`
+      data: `data:image/svg+xml;base64,${svg64}`,
+      rawSvg: processedSvg,
     };
   }
 
@@ -328,13 +333,13 @@ export function extractThumbnailFromHTML(htmlContent: string): {
   if (canvasMatch) {
     return {
       type: 'canvas',
-      data: null // Canvas 需要运行时渲染
+      data: null, // Canvas 需要运行时渲染
     };
   }
 
   return {
     type: 'none',
-    data: null
+    data: null,
   };
 }
 

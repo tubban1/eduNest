@@ -49,10 +49,10 @@ const Callout: React.FC<CalloutProps> = ({ type, children }) => {
   const style = styles[type];
 
   return (
-    <div className={`${style.bg} ${style.border} border-l-4 p-4 my-4 rounded-r-lg`}>
-      <div className="flex items-start">
-        <span className="text-lg mr-2">{style.icon}</span>
-        <div className={`${style.text} text-sm leading-relaxed`}>
+    <div className={`${style.bg} ${style.border} border-l-4 p-2.5 my-1 rounded-r-lg`}>
+      <div className="flex items-start gap-2">
+        <span className="text-base">{style.icon}</span>
+        <div className={`${style.text} text-sm leading-none`}>
           {children}
         </div>
       </div>
@@ -74,7 +74,7 @@ const CodeBlock: React.FC<{ language?: string; value: string }> = ({ language, v
   };
 
   return (
-    <div className="relative my-4">
+    <div className="relative my-1">
       <div className="absolute top-2 right-2 z-10">
         <button
           onClick={copyToClipboard}
@@ -89,8 +89,9 @@ const CodeBlock: React.FC<{ language?: string; value: string }> = ({ language, v
         style={tomorrow}
         customStyle={{
           margin: 0,
-          borderRadius: '0.5rem',
-          fontSize: '0.875rem'
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+          lineHeight: 1
         }}
       >
         {value}
@@ -135,7 +136,7 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
       
       if (inline) {
         return (
-          <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+          <code className="bg-white/15 px-1 py-0.5 rounded text-sm font-mono" {...props}>
             {children}
           </code>
         );
@@ -146,7 +147,7 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
     
     table({ children }: any) {
       return (
-        <div className="overflow-x-auto my-4">
+        <div className="overflow-x-auto my-1">
           <table className="min-w-full border-collapse border border-gray-300">
             {children}
           </table>
@@ -156,7 +157,7 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
     
     th({ children }: any) {
       return (
-        <th className="border border-gray-300 px-4 py-2 bg-gray-50 font-semibold text-left">
+        <th className="border border-gray-300 px-3 py-1.5 bg-gray-50 font-semibold text-left text-sm">
           {children}
         </th>
       );
@@ -164,7 +165,7 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
     
     td({ children }: any) {
       return (
-        <td className="border border-gray-300 px-4 py-2">
+        <td className="border border-gray-300 px-3 py-1.5 text-sm">
           {children}
         </td>
       );
@@ -197,32 +198,32 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
       }
       
       return (
-        <blockquote className="border-l-4 border-gray-300 pl-4 my-4 italic text-gray-700">
+        <blockquote className="border-l-4 border-gray-400 pl-3 my-0.5 py-0 italic text-inherit opacity-90 text-sm leading-none">
           {children}
         </blockquote>
       );
     },
     
-    h1: ({ children }: any) => <h1 className="text-2xl font-bold my-4">{children}</h1>,
-    h2: ({ children }: any) => <h2 className="text-xl font-bold my-3">{children}</h2>,
-    h3: ({ children }: any) => <h3 className="text-lg font-bold my-2">{children}</h3>,
-    h4: ({ children }: any) => <h4 className="text-base font-bold my-2">{children}</h4>,
+    h1: ({ children }: any) => <h1 className="text-sm font-bold mt-1 mb-0 first:mt-0">{children}</h1>,
+    h2: ({ children }: any) => <h2 className="text-sm font-bold mt-1 mb-0 first:mt-0">{children}</h2>,
+    h3: ({ children }: any) => <h3 className="text-sm font-bold mt-0.5 mb-0 first:mt-0">{children}</h3>,
+    h4: ({ children }: any) => <h4 className="text-sm font-bold mt-0.5 mb-0 first:mt-0">{children}</h4>,
     
-    p: ({ children }: any) => <p className="my-3 leading-relaxed">{children}</p>,
+    p: ({ children }: any) => <p className="my-0.5 text-sm leading-none first:mt-0 last:mb-0">{children}</p>,
     
     ul: ({ children }: any) => (
-      <ul className="list-disc list-inside my-3 space-y-1">
+      <ul className="list-disc list-inside my-0.5 space-y-0 pl-1">
         {children}
       </ul>
     ),
     
     ol: ({ children }: any) => (
-      <ol className="list-decimal list-inside my-3 space-y-1">
+      <ol className="list-decimal list-inside my-0.5 space-y-0 pl-1">
         {children}
       </ol>
     ),
     
-    li: ({ children }: any) => <li className="leading-relaxed">{children}</li>,
+    li: ({ children }: any) => <li className="text-sm leading-none py-0">{children}</li>,
     
     strong: ({ children }: any) => <strong className="font-bold">{children}</strong>,
     
@@ -243,7 +244,7 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
       <img
         src={src}
         alt={alt}
-        className="max-w-full h-auto rounded-lg my-4"
+        className="max-w-full h-auto rounded-lg my-1"
       />
     )
   };
@@ -251,7 +252,7 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`ai-guide-message ${isLatest ? 'latest-message' : ''} prose prose-sm max-w-none`}
+      className={`ai-guide-message text-sm leading-none ${isLatest ? 'latest-message' : ''} prose prose-sm max-w-none prose-p:my-0.5 prose-p:leading-none prose-headings:my-0.5 prose-headings:leading-none prose-ul:my-0.5 prose-ol:my-0.5 prose-li:my-0 prose-li:leading-none prose-blockquote:my-0.5 prose-blockquote:leading-none prose-pre:my-1 prose-pre:leading-none prose-table:my-0.5`}
       data-message-id={messageId}
     >
       {(() => {

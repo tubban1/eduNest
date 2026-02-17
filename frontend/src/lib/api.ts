@@ -276,6 +276,15 @@ class ApiClient {
         email, password,
       });
     },
+    /**
+     * 更新当前登录用户的角色（student / parent / teacher）
+     */
+    updateRole: async (role: 'student' | 'parent' | 'teacher') => {
+      return this.request('/auth/me/role', {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      });
+    },
   };
 
   // Content API
@@ -810,6 +819,18 @@ class ApiClient {
     },
   };
 
+  // Onboard API（初始化身份与偏好）
+  onboard = {
+    /** 登录用户：保存到 user_init_context */
+    saveContext: async (context: { role: string; region: string; subjects: string[]; age?: number; teachingAgeRanges?: string[] }) => {
+      return this.post('/onboard/context', { context });
+    },
+    /** 访客：保存到 visitor_init_context（注册后 merge-on-login 会并入 user） */
+    saveVisitorContext: async (context: { role: string; region?: string; subjects: string[]; age?: number; teachingAgeRanges?: string[] }) => {
+      return this.post('/onboard/visitor-context', { context });
+    },
+  };
+
   // Page Views API
   pageViews = {
     // 记录页面访问
@@ -834,16 +855,16 @@ class ApiClient {
 
   // AI Guided Learning API
   aiGuide = {
-    init: async (contentId: string) => {
-      const data = await this.post('/ai-guide/init', { content_id: contentId });
+    init: async (contentId: string, forceNew = false) => {
+      const data = await this.post('/ai-guide/init', { content_id: contentId, force_new: forceNew });
       return data.success ? data.data : null;
     },
     // 免费初始化会话（无需认证，需要 visitor_id）
-    initFree: async (contentId: string) => {
-      const data = await this.post('/ai-guide/init-free', { content_id: contentId });
+    initFree: async (contentId: string, forceNew = false) => {
+      const data = await this.post('/ai-guide/init-free', { content_id: contentId, force_new: forceNew });
       return data.success ? data.data : null;
     },
-    chatStream: async (conversationId: string, message: string, uiState?: any, onChunk?: (text: string) => void) => {
+    chatStream: async (conversationId: string, message: string, uiState?: any, onChunk?: (text: string) => void, images?: Array<{ mime_type: string; data: string }>) => {
       const token = await new ApiClient().getLatestToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -868,7 +889,7 @@ class ApiClient {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'}/ai-guide/chat`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ conversation_id: conversationId, message, ui_state: uiState }),
+        body: JSON.stringify({ conversation_id: conversationId, message, ui_state: uiState, images: images || undefined }),
       });
 
       if (!response.ok) {
@@ -919,6 +940,11 @@ class ApiClient {
       const data = await this.get(`/ai-guide/conversations?content_id=${contentId}`);
       return data.success ? data.data.conversations : [];
     },
+    /** 从数据库 ai_conversations 表查询最近一次 conversation */
+    getLastConversation: async () => {
+      const data = await this.get('/ai-guide/last-conversation');
+      return data.success ? data.data : null;
+    },
     /** 获取当前用户/访客在 ai_conversations 中的对话数（3 次以上不显示气泡提示） */
     getConversationCount: async () => {
       const data = await this.get('/ai-guide/conversation-count');
@@ -929,7 +955,7 @@ class ApiClient {
       return data.success ? data.data.messages : [];
     },
     // 免费对话接口（无需认证，需要 visitor_id）
-    chatStreamFree: async (conversationId: string, message: string, uiState?: any, onChunk?: (text: string) => void) => {
+    chatStreamFree: async (conversationId: string, message: string, uiState?: any, onChunk?: (text: string) => void, images?: Array<{ mime_type: string; data: string }>) => {
       const visitorId = typeof window !== 'undefined' ? getVisitorId() : null;
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'}/ai-guide/chat-free`, {
         method: 'POST',
@@ -937,7 +963,7 @@ class ApiClient {
           'Content-Type': 'application/json',
           ...(visitorId ? { 'X-Visitor-Id': visitorId } : {}),
         },
-        body: JSON.stringify({ conversation_id: conversationId, message, ui_state: uiState }),
+        body: JSON.stringify({ conversation_id: conversationId, message, ui_state: uiState, images: images || undefined }),
       });
 
       if (!response.ok) {

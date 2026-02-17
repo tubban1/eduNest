@@ -244,8 +244,8 @@ export default function ContentForm({
     }
   }, [initialContent, mode, contentId]);
   
-  // 检查用户是否为普通用户（role === 'user'）
-  const isRegularUser = user?.role === 'user';
+  // 检查用户是否为普通用户（非 admin，含 student/parent/teacher/user）
+  const isRegularUser = user?.role !== 'admin';
 
   // 统一的表单禁用状态
   const isFormDisabled = loading || aiGenerating || fixLoading;

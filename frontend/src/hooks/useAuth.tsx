@@ -19,6 +19,10 @@ interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
+  // 是否需要先选择角色（role 仍为 'user' 或空）
+  needChooseRole: boolean;
+  /** 重新拉取当前用户信息（含 role），用于 onboard 更新角色后同步侧栏等 */
+  refreshUser: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signUpWithEmail: (email: string, password: string, name?: string, languageCode?: string) => Promise<{ error: string | null; message?: string }>;
@@ -64,6 +68,7 @@ function normalizeLanguageCode(raw?: string | null): string {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needChooseRole, setNeedChooseRole] = useState(false);
   const router = useRouter();
 
   // 检查用户认证状态 - 带超时，避免三星等设备上永久 loading
@@ -118,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
       };
       setUser(authUser);
+      setNeedChooseRole(!['student', 'parent', 'teacher', 'admin'].includes(role));
       setLoading(false);
     } catch (error) {
       console.error('Auth check error:', error);
@@ -218,6 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role,
               };
               setUser(authUser);
+              setNeedChooseRole(!['student', 'parent', 'teacher', 'admin'].includes(role));
               setLoading(false);
 
               // 首次登录处理：合并游客数据并发放初始积分（仅在 SIGNED_IN 时执行，TOKEN_REFRESHED 不执行）
@@ -528,6 +535,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ 
       user, 
       loading, 
+      needChooseRole,
+      refreshUser: checkAuthStatus,
       signInWithEmail, 
       signInWithGoogle, 
       signUpWithEmail, 

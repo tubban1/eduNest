@@ -28,6 +28,8 @@ const referralsRoutes = require('./api/referrals');
 const subscriptionsRoutes = require("./api/subscriptions");
 const paymentsRoutes = require("./api/payments");
 const visitorRoutes = require('./api/visitor');
+const parentRoutes = require('./api/parent');
+const onboardRoutes = require('./api/onboard');
 const pageViewsRoutes = require('./api/page_views');
 const testSharpThumbnailRoutes = require('./api/test-sharp-thumbnail');
 const earlyUserBonusRoutes = require('./api/early_user_bonus');
@@ -60,7 +62,8 @@ console.log('CORS 配置的允许源:', config.ALLOWED_ORIGINS);
 app.use(cors({
   origin: config.ALLOWED_ORIGINS,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  // 需要支持 PATCH，供 /auth/me/role 等接口使用
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Visitor-Id']
 }));
 
@@ -162,6 +165,8 @@ app.use("/api/ai-guide", aiGuideRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/ai", aiServiceRoutes);
 app.use("/api/visitor", visitorRoutes);
+app.use("/api/parent", parentRoutes);
+app.use("/api/onboard", onboardRoutes);
 app.use("/api/page-views", pageViewsRoutes);
 app.use("/api/test-sharp-thumbnail", testSharpThumbnailRoutes);
 app.use("/api/early-user-bonus", earlyUserBonusRoutes);

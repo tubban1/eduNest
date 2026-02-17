@@ -33,5 +33,19 @@ const validateVisitorId = (req, res, next) => {
   next();
 };
 
-module.exports = { validateVisitorId };
+/**
+ * 可选 Visitor ID 中间件（不强制要求 visitor_id）
+ * 如果有 visitor_id 则验证并设置，没有也不报错
+ */
+const optionalVisitorId = (req, res, next) => {
+  const visitorId = req.headers['x-visitor-id'] || req.body.visitor_id || req.query.visitor_id;
+  
+  if (visitorId && isValidVisitorId(visitorId)) {
+    req.visitorId = visitorId;
+  }
+  
+  next();
+};
+
+module.exports = { validateVisitorId, optionalVisitorId };
 

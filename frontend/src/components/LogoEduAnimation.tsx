@@ -263,7 +263,6 @@ export default function LogoEduAnimation({ className = '' }: { className?: strin
   }, [phase]);
 
   const durationMs = phase === 'drawing' ? letterMs : phase === 'undrawing' ? letterMs : 300;
-  const transition = `stroke-dashoffset ${durationMs}ms ${EASE}`;
 
   const isFourier = phase === 'fourier';
   const isSigmoid = phase === 'sigmoid';
@@ -301,7 +300,12 @@ export default function LogoEduAnimation({ className = '' }: { className?: strin
                     pathLength={1}
                     strokeDasharray={1}
                     strokeDashoffset={offset}
-                    style={{ transition, transitionDelay: `${delay}ms` }}
+                    style={{
+                      transitionProperty: 'stroke-dashoffset',
+                      transitionDuration: `${durationMs}ms`,
+                      transitionTimingFunction: EASE,
+                      transitionDelay: `${delay}ms`,
+                    }}
                   />
                 </g>
               );

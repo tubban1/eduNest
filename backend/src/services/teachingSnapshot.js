@@ -30,10 +30,12 @@ function buildTeachingSnapshot({ meta, currentStage, uiState }) {
   // 推断当前学习目标
   const learningGoalNow = inferLearningGoal(currentStage, stageFromMeta, meta);
 
-  // 构建 current_stage 对象
+  // 构建 current_stage 对象（currentStage 已由调用方规范为 { stageIndex, stageId }）
+  const stageIndex = currentStage?.stageIndex;
+  const stageId = currentStage?.stageId;
   const currentStageObj = currentStage ? {
-    index: currentStage.stageIndex,
-    title: stageFromMeta?.title || currentStage.stageId || `阶段 ${currentStage.stageIndex}`,
+    index: stageIndex,
+    title: stageFromMeta?.title || (stageId != null && String(stageId).trim() !== '') ? String(stageId) : (stageIndex != null ? `阶段 ${stageIndex}` : '当前阶段'),
     visible_expression: uiState?.visibleExpression || 
                        uiState?.formula || 
                        stageFromMeta?.formula || 

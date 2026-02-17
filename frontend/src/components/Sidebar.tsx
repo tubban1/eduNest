@@ -88,25 +88,31 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
     return (plan === 'monthly' || plan === 'yearly') && (status === 'active' || isActive);
   }, [subscription]);
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
   // 使用 useMemo 确保在 mounted 之前使用默认值，避免 hydration 错误
   const menuItems = useMemo(() => {
     if (!mounted) {
       // 服务器端渲染时使用默认英语文本
-      return [
+      const items = [
         { href: '/', label: 'Home', icon: Home },
+        { href: '/learn', label: 'Learn', icon: Sparkles },
         { href: '/c', label: 'My Creations', icon: BookOpen },
         { href: '/collections', label: 'My Collections', icon: Heart },
         { href: '/help', label: 'Help', icon: HelpCircle },
       ];
+      return isProduction ? items.filter((item) => item.href !== '/learn') : items;
     }
     // 客户端挂载后使用翻译
-    return [
+    const items = [
       { href: '/', label: t('home', { ns: 'navigation', defaultValue: 'Home' }), icon: Home },
+      { href: '/learn', label: t('learnWorkspace', { ns: 'navigation', defaultValue: '学习工作台' }), icon: Sparkles },
       { href: '/c', label: t('myContent', { ns: 'navigation', defaultValue: 'My Creations' }), icon: BookOpen },
       { href: '/collections', label: t('myCollections', { ns: 'navigation', defaultValue: 'My Collections' }), icon: Heart },
       { href: '/help', label: t('help', { ns: 'navigation', defaultValue: 'Help' }), icon: HelpCircle },
     ];
-  }, [mounted, t]);
+    return isProduction ? items.filter((item) => item.href !== '/learn') : items;
+  }, [mounted, t, isProduction]);
 
   const handleSignOut = async () => {
     try {
@@ -249,9 +255,15 @@ export default function Sidebar({ isOpen = true, onClose, variant = 'desktop' }:
                         }
                       </span>
                     ) : (
-                      user.role === 'admin' 
-                        ? (mounted ? t('admin', { ns: 'auth', defaultValue: 'Admin' }) : 'Admin') 
-                        : (mounted ? t('user', { ns: 'auth', defaultValue: 'User' }) : 'User')
+                      user.role === 'admin'
+                        ? (mounted ? t('admin', { ns: 'auth', defaultValue: 'Admin' }) : 'Admin')
+                        : user.role === 'student'
+                        ? (mounted ? t('student', { ns: 'auth', defaultValue: '学生' }) : 'Student')
+                        : user.role === 'parent'
+                        ? (mounted ? t('parent', { ns: 'auth', defaultValue: '家长' }) : 'Parent')
+                        : user.role === 'teacher'
+                        ? (mounted ? t('teacher', { ns: 'auth', defaultValue: '老师' }) : 'Teacher')
+                        : (mounted ? t('user', { ns: 'auth', defaultValue: '用户' }) : 'User')
                     )}
                   </div>
                   

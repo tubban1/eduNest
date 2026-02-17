@@ -18,6 +18,7 @@ const logger = require('../../../utils/logger');
 // 缓存
 let supportedLibrariesCache = null;
 let libraryEntriesCache = null;
+let librariesCnCache = null;
 
 /**
  * 加载 JSON 文件
@@ -30,6 +31,31 @@ const loadJsonFile = (filePath) => {
     logger.warn(`[LibraryFixer] Failed to load ${filePath}: ${error.message}`);
     return null;
   }
+};
+
+/**
+ * 获取 libraries_cn.json（超时 fallback 的库链接来源）
+ */
+const getLibrariesCn = () => {
+  if (!librariesCnCache) {
+    const librariesCnPath = path.join(__dirname, '../../../../config/libraries_cn.json');
+    librariesCnCache = loadJsonFile(librariesCnPath);
+  }
+  return librariesCnCache;
+};
+
+/**
+ * 从 libraries_cn.json 获取某库的 fallback 完整 URL（取第一个版本）
+ */
+const getFallbackUrlFromLibrariesCn = (libraryName) => {
+  const cn = getLibrariesCn();
+  if (!cn || !cn.libraries || !cn.libraries[libraryName]) return null;
+  const lib = cn.libraries[libraryName];
+  if (lib.versions && typeof lib.versions === 'object') {
+    const firstVersion = Object.values(lib.versions)[0];
+    return typeof firstVersion === 'string' ? firstVersion : null;
+  }
+  return null;
 };
 
 /**
@@ -108,16 +134,43 @@ const getFallbackBaseUrl = () => {
 
 /**
  * 库名 → 加载成功后挂载的全局变量名（用于超时检测：中国区 CDN 可能不触发 onerror，仅靠 onerror 无法回退）
+ * 与 libraries_cn.json 中的库对应，超时后注入的 fallback 链接来自 libraries_cn.json
  */
 const LIBRARY_GLOBAL_CHECK = {
   vue: 'Vue',
   'vue-router': 'VueRouter',
   vuex: 'Vuex',
+  redux: 'Redux',
   gsap: 'gsap',
   three: 'THREE',
-  katex: 'katex',
+  animejs: 'anime',
+  babylon: 'BABYLON',
+  tone: 'Tone',
+  howler: 'Howler',
+  chartjs: 'Chart',
+  d3: 'd3',
+  echarts: 'echarts',
+  phaser: 'Phaser',
+  matter: 'Matter',
+  p5: 'p5',
+  lodash: '_',
+  moment: 'moment',
+  dayjs: 'dayjs',
+  bootstrap: 'bootstrap',
+  fabric: 'fabric',
+  rough: 'rough',
   konva: 'Konva',
+  katex: 'katex',
   tailwindcss: 'tailwind',
+  'three-orbit-controls': 'THREE',
+  'three-gltfloader': 'THREE',
+  'three-fontloader': 'THREE',
+  'three-textgeometry': 'THREE',
+  'cannon-es': 'CANNON',
+  yuka: 'YUKA',
+  'three-mesh-ui': 'THREE',
+  noisejs: 'noise',
+  desmos: 'Desmos',
 };
 const FALLBACK_TIMEOUT_MS = 5000;
 
@@ -127,8 +180,9 @@ const FALLBACK_TIMEOUT_MS = 5000;
  * @param {string} fallbackUrl - 回退 URL
  * @returns {string} 内联 <script>...</script> 字符串
  */
+// 超时 fallback：短写法，回调时 currentScript 已无效故直接用 document.head
 const buildTimeoutFallbackScript = (globalName, fallbackUrl) =>
-  `<script>(function(){var g=${JSON.stringify(globalName)};var u=${JSON.stringify(fallbackUrl)};var t=setTimeout(function(){if(typeof window[g]==="undefined"){var s=document.createElement("script");s.src=u;(document.currentScript&&document.currentScript.parentNode||document.head).appendChild(s);}},${FALLBACK_TIMEOUT_MS});})();<\/script>`;
+  `<script>(function(){var g=${JSON.stringify(globalName)},u=${JSON.stringify(fallbackUrl)};setTimeout(function(){if(window[g]===void 0){var s=document.createElement("script");s.src=u;document.head.appendChild(s);}},${FALLBACK_TIMEOUT_MS});})();<\/script>`;
 
 /**
  * 从 URL 中提取库信息
@@ -576,14 +630,16 @@ class LibraryFixer {
       }
       
       const fallbackUrl = fallbackFile ? `${baseUrl}/${fallbackFile}` : null;
+      const timeoutFallbackUrl = getFallbackUrlFromLibrariesCn(lib.name) || fallbackUrl;
       
-      // 构建 script 标签（带 onerror + 超时检测，与 replaceScriptsWithFallback 行为一致）
+      // 构建 script 标签（带 onerror + 超时检测，超时后注入的库链接优先来自 libraries_cn.json）
       let scriptTag;
-      if (fallbackUrl) {
-        scriptTag = `<script src="${url}" onerror="this.onerror=null; this.src='${fallbackUrl}'"></script>`;
+      if (fallbackUrl || timeoutFallbackUrl) {
+        const onerrorUrl = fallbackUrl || timeoutFallbackUrl;
+        scriptTag = `<script src="${url}" onerror="this.onerror=null; this.src='${onerrorUrl.replace(/'/g, "\\'")}'"></script>`;
         const globalName = LIBRARY_GLOBAL_CHECK[lib.name];
-        if (globalName) {
-          scriptTag += buildTimeoutFallbackScript(globalName, fallbackUrl);
+        if (globalName && timeoutFallbackUrl) {
+          scriptTag += buildTimeoutFallbackScript(globalName, timeoutFallbackUrl);
         }
       } else {
         scriptTag = `<script src="${url}"></script>`;
@@ -747,8 +803,10 @@ class LibraryFixer {
           const entry = findEntryByUrl(primary, 'js');
           const fallbackMatch = match.match(/this\.src='(https?:\/\/[^']+)'/);
           const fallbackUrl = fallbackMatch ? fallbackMatch[1] : null;
-          if (entry && fallbackUrl && LIBRARY_GLOBAL_CHECK[entry.name]) {
-            return match + buildTimeoutFallbackScript(LIBRARY_GLOBAL_CHECK[entry.name], fallbackUrl);
+          const globalName = entry && LIBRARY_GLOBAL_CHECK[entry.name] ? LIBRARY_GLOBAL_CHECK[entry.name] : null;
+          const timeoutFallbackUrl = (entry && getFallbackUrlFromLibrariesCn(entry.name)) || fallbackUrl;
+          if (globalName && timeoutFallbackUrl) {
+            return match + buildTimeoutFallbackScript(globalName, timeoutFallbackUrl);
           }
           return match;
         }
@@ -787,6 +845,7 @@ class LibraryFixer {
         }
         
         if (fallbackUrl) {
+          const timeoutFallbackUrl = (entry && getFallbackUrlFromLibrariesCn(entry.name)) || fallbackUrl;
           if (primary === src) {
             changes.push({
               type: 'insert',
@@ -798,7 +857,7 @@ class LibraryFixer {
           const scriptWithOnerror = `<script${beforeAttrs || ''} src="${primary}" onerror="this.onerror=null; this.src='${fallbackUrl.replace(/'/g, "\\'")}'"${afterAttrs || ''}></script>`;
           const globalName = entry && LIBRARY_GLOBAL_CHECK[entry.name];
           if (globalName) {
-            return scriptWithOnerror + buildTimeoutFallbackScript(globalName, fallbackUrl);
+            return scriptWithOnerror + buildTimeoutFallbackScript(globalName, timeoutFallbackUrl);
           }
           return scriptWithOnerror;
         }

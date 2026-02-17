@@ -157,22 +157,57 @@ const mergeVisitorDataToUser = async (visitorId, userId) => {
     .eq('visitor_id', visitorId);
   
   // 更新 ai_usage_logs 表：将 visitor_id 替换为真实的 user_id
-  // 将 visitor_id 字段设置为 NULL，user_id 设置为真实的 user_id
   const { error: logsError } = await DatabaseService.supabase
     .from('ai_usage_logs')
     .update({ 
       user_id: userId,
-      visitor_id: null // 清除 visitor_id
+      visitor_id: null
     })
     .eq('visitor_id', visitorId);
   
   if (contentError || logsError) {
     throw new Error('合并游客数据失败');
   }
-  
-  // 注意：初始积分发放已移至 /api/visitor/merge-on-login 中统一处理
-  // 这里不再发放积分，避免重复发放
-  
+
+  // 将 visitor_init_context 并入 user_init_context，并同步 context.role 到 users.role
+  try {
+    const { data: visitorContextRow } = await DatabaseService.supabase
+      .from('visitor_init_context')
+      .select('id, context')
+      .eq('visitor_id', visitorId)
+      .maybeSingle();
+
+    if (visitorContextRow && visitorContextRow.context && typeof visitorContextRow.context === 'object') {
+      const ctx = visitorContextRow.context;
+      const allowedRoles = ['student', 'parent', 'teacher'];
+      const role = ctx.role && allowedRoles.includes(ctx.role) ? ctx.role : null;
+
+      await DatabaseService.supabase
+        .from('user_init_context')
+        .upsert({
+          user_id: userId,
+          context: ctx,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+
+      if (role) {
+        await DatabaseService.supabase
+          .from('users')
+          .update({ role, updated_at: new Date().toISOString() })
+          .eq('id', userId);
+      }
+
+      await DatabaseService.supabase
+        .from('visitor_init_context')
+        .delete()
+        .eq('visitor_id', visitorId);
+    }
+  } catch (initCtxErr) {
+    // 表不存在或合并失败不影响 content/logs 合并结果，仅记录
+    const logger = require('../utils/logger');
+    logger.warn('合并 visitor_init_context 到 user 失败（已忽略）', { visitorId, userId, error: initCtxErr?.message });
+  }
+
   return { 
     success: true,
     contentCount: contentCount || 0,

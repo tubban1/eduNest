@@ -269,6 +269,8 @@ export default function ContentAIGenerator({
   }, [user]);
 
   const isRegularUser = user && user.role !== 'admin';
+  // 所有用户统一允许 10000 字（后端已放宽）
+  const maxKnowledgeLength = 10000;
   const isAiFormDisabled = aiGenerating === true;
 
   // 选择语言
@@ -1060,7 +1062,7 @@ export default function ContentAIGenerator({
       if (!user) {
         // 未登录用户：使用免费生成接口
         // 注意：这个接口会创建 content 并添加任务，所以只需要调用一次
-        const idempotencyKey = [
+        let idempotencyKey = [
           'free',
           currentKnowledgePoint,
           outputType,
@@ -1068,6 +1070,11 @@ export default function ContentAIGenerator({
           currentDescription || '',
           currentUploadedImage ? currentUploadedImage.mimeType : 'noimg'
         ].join('|');
+
+        // 防止 idempotency_key 超过后端 4096 字符限制
+        if (idempotencyKey.length > 4000) {
+          idempotencyKey = idempotencyKey.slice(0, 4000);
+        }
 
         generateResponse = await api.generateContentFree({
           knowledgePoint: currentKnowledgePoint,
@@ -1129,7 +1136,7 @@ export default function ContentAIGenerator({
           throw new Error('创建内容记录失败');
         }
 
-        const idempotencyKey = [
+        let idempotencyKey = [
           'gen',
           contentResponse.id,
           currentKnowledgePoint,
@@ -1138,6 +1145,11 @@ export default function ContentAIGenerator({
           currentDescription || '',
           currentUploadedImage ? currentUploadedImage.mimeType : 'noimg'
         ].join('|');
+
+        // 防止 idempotency_key 超过后端 4096 字符限制
+        if (idempotencyKey.length > 4000) {
+          idempotencyKey = idempotencyKey.slice(0, 4000);
+        }
 
         generateResponse = await api.generateContentAsync(contentResponse.id, {
           knowledge_point: currentKnowledgePoint,
@@ -1334,7 +1346,7 @@ export default function ContentAIGenerator({
               })()}
               required
               disabled={isAiFormDisabled}
-              maxLength={1500}
+              maxLength={maxKnowledgeLength}
             />
             </div>
             {/* 底部左侧按钮区域（语言选择、输出类型和图片上传，并排显示） */}
@@ -1403,8 +1415,14 @@ export default function ContentAIGenerator({
             </div>
           </div>
           <div className="flex justify-end items-center mt-1">
-            <span className={`text-xs ${knowledgePoint.length > 1350 ? 'text-destructive' : knowledgePoint.length > 1200 ? 'text-warning' : 'text-muted-foreground'}`}>
-              {knowledgePoint.length}/1500
+            <span className={`text-xs ${
+              knowledgePoint.length > maxKnowledgeLength * 0.9
+                ? 'text-destructive'
+                : knowledgePoint.length > maxKnowledgeLength * 0.8
+                  ? 'text-warning'
+                  : 'text-muted-foreground'
+            }`}>
+              {knowledgePoint.length}/{maxKnowledgeLength}
             </span>
           </div>
         </div>

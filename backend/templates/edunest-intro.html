@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eduNest 介绍 – 学生 · 家长 · 老师</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+    }
+    /* 顶部留白收紧：避免首屏空白过多 */
+    #app { padding: 14px 16px 24px; max-width: 900px; margin: 0 auto; }
+    .hero { margin-bottom: 16px; }
+    h1 {
+      font-size: 1.65rem;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, #38bdf8, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      /* 默认可见：避免直接打开 HTML 时因脚本失败导致标题不可见 */
+      opacity: 1;
+    }
+    /* 默认可见：脚本若加载失败也能看到副标题 */
+    .subtitle { color: #94a3b8; font-size: 0.95rem; opacity: 1; }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .tabs button {
+      padding: 10px 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.06);
+      color: #e2e8f0;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+    .tabs button:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.3);
+      transform: translateY(-1px);
+    }
+    .tabs button.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .panel {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 24px;
+      min-height: 300px;
+      overflow: hidden;
+    }
+    .panel-inner { outline: none; }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .panel-fig {
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+    .panel-fig svg { width: 100%; height: 100%; }
+    .panel h2 { font-size: 1.2rem; color: #38bdf8; }
+    .panel p { margin-bottom: 12px; line-height: 1.7; color: #cbd5e1; }
+    .panel ul { margin-left: 20px; line-height: 1.8; color: #cbd5e1; }
+    .panel ul li { margin-bottom: 6px; }
+    .example-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .example-section h3 { font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; font-weight: 600; }
+    .example-prompt {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      margin-bottom: 12px;
+    }
+    .example-prompt strong { color: #38bdf8; }
+    .example-result {
+      background: rgba(56,189,248,0.08);
+      border: 1px solid rgba(56,189,248,0.2);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.9rem;
+    }
+    .example-result label { display: block; color: #94a3b8; font-size: 0.75rem; margin-bottom: 4px; }
+    .example-result input[type="range"] { width: 100%; margin: 4px 0; accent-color: #38bdf8; }
+    .example-result .range-val { color: #38bdf8; font-variant-numeric: tabular-nums; }
+    .parabola-svg { width: 100%; height: 160px; display: block; }
+    .suggestion-card { padding: 12px; border-radius: 8px; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.2); min-height: 60px; }
+    .suggestion-card p { margin: 0; font-size: 0.9rem; }
+    .analysis-chart { margin: 12px 0; }
+    .analysis-chart .dim-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 0.8rem; }
+    .analysis-chart .dim-label { width: 72px; color: #94a3b8; flex-shrink: 0; }
+    .analysis-chart .dim-bar-wrap { flex: 1; height: 14px; background: rgba(0,0,0,0.2); border-radius: 7px; overflow: hidden; }
+    .analysis-chart .dim-bar { height: 100%; border-radius: 7px; transition: width 0.3s ease; }
+    .analysis-chart .dim-val { width: 28px; text-align: right; color: #38bdf8; font-variant-numeric: tabular-nums; margin-left: 6px; }
+    .summary-box { margin-top: 12px; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; }
+    .summary-box .health-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-weight: 600; margin-bottom: 6px; }
+    .summary-box .health-badge.at-risk { background: rgba(251,191,36,0.25); color: #fbbf24; }
+    .summary-box strong { color: #e2e8f0; }
+    .example-result select {
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #e2e8f0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+    .problem-box { font-family: ui-monospace, monospace; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px; }
+    .problem-box .blank { color: #38bdf8; text-decoration: underline; text-decoration-style: dotted; }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; border: 1px solid rgba(56,189,248,0.5); background: rgba(56,189,248,0.15); color: #e2e8f0; cursor: pointer; margin-top: 6px; }
+    .btn-sm:hover { background: rgba(56,189,248,0.25); }
+    .loading-err {
+      text-align: center;
+      padding: 48px 24px;
+      color: #94a3b8;
+    }
+    .loading-err.error { color: #f87171; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="hero">
+      <h1 ref="titleRef">eduNest 用户指南</h1>
+      <p class="subtitle" ref="subtitleRef">AI 原生学习内容平台 – 面向学生、家长与老师 · <span id="dateLabelText"></span></p>
+    </div>
+    <div id="loadingIndicator" v-if="!ready" class="loading-err">加载中…</div>
+    <template v-else>
+      <div class="tabs">
+        <button
+          v-for="(tab, idx) in tabs"
+          :key="tab.id"
+          :class="{ active: currentTab === tab.id }"
+          @click="setTab(tab.id, idx)"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      <div class="panel">
+        <div class="panel-inner" :key="currentTab" ref="panelContent">
+          <!-- 学生 -->
+          <template v-if="currentTab === 'student'">
+            <div class="panel-header">
+              <div class="panel-fig" ref="figRef">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="32" cy="20" r="10" stroke="rgba(56,189,248,0.8)" stroke-width="2"/>
+                  <path d="M16 58c0-10 7.2-18 16-18s16 8 16 18" stroke="rgba(56,189,248,0.6)" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M32 38v-6l8 4-4 8-4-2-2 4" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+                  <rect x="24" y="44" width="16" height="4" rx="1" fill="rgba(56,189,248,0.2)"/>
+                </svg>
+              </div>
+              <h2>学生</h2>
+            </div>
+            <p>eduNest 把每道题变成一步步的思考过程，而不是冷冰冰的答案。你可以：</p>
+            <ul ref="listRef">
+              <li>在互动中看到「为什么这样想」、公式与直觉的对应；</li>
+              <li>卡住时获得 AI 老师的提问、提示和针对性反馈；</li>
+              <li>系统会记住你的薄弱点，越用越懂你，学习路径更清晰。</li>
+            </ul>
+            <div class="example-section">
+              <h3>示例</h3>
+              <div class="example-prompt"><strong>输入提示词：</strong>讲解二次函数 y=a(x-h)²+k 的顶点与开口方向</div>
+              <div class="example-result">
+                <p style="margin-bottom:10px;font-size:0.85rem;color:#94a3b8;">得到结果：可调节 a、h、k 观察抛物线变化</p>
+                <label>a（开口与宽窄） <span class="range-val">{{ studentEx.a }}</span></label>
+                <input type="range" v-model.number="studentEx.a" min="-2" max="2" step="0.5">
+                <label>h（顶点横坐标） <span class="range-val">{{ studentEx.h }}</span></label>
+                <input type="range" v-model.number="studentEx.h" min="-2" max="2" step="0.5">
+                <label>k（顶点纵坐标） <span class="range-val">{{ studentEx.k }}</span></label>
+                <input type="range" v-model.number="studentEx.k" min="-2" max="2" step="0.5">
+                <svg class="parabola-svg" viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg">
+                  <defs><line id="ax-x" x1="20" y1="80" x2="220" y2="80" stroke="rgba(255,255,255,0.2)" stroke-width="1"/><line id="ax-y" x1="120" y1="10" x2="120" y2="150" stroke="rgba(255,255,255,0.2)" stroke-width="1"/></defs>
+                  <use href="#ax-x"/><use href="#ax-y"/>
+                  <path :d="parabolaPath" fill="none" stroke="rgba(56,189,248,0.9)" stroke-width="2" stroke-linecap="round"/>
+                  <circle :cx="120 + studentEx.h * 40" :cy="80 - studentEx.k * 40" r="4" fill="#38bdf8"/>
+                </svg>
+              </div>
+            </div>
+          </template>
+          <!-- 家长 -->
+          <template v-else-if="currentTab === 'parent'">
+            <div class="panel-header">
+              <div class="panel-fig" ref="figRef">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="24" cy="22" r="8" stroke="rgba(56,189,248,0.8)" stroke-width="2"/>
+                  <circle cx="40" cy="22" r="8" stroke="rgba(56,189,248,0.8)" stroke-width="2"/>
+                  <path d="M18 54c0-8 2.7-14 6-18 3.2-4 7.2-6 12-6s8.8 2 12 6c3.3 4 6 10 6 18" stroke="rgba(56,189,248,0.6)" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M32 36v16M26 44h12" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+                  <circle cx="32" cy="32" r="14" stroke="rgba(167,139,250,0.3)" stroke-width="1" stroke-dasharray="4 2"/>
+                </svg>
+              </div>
+              <h2>家长</h2>
+            </div>
+            <p>了解孩子学什么、卡在哪，用数据说话：</p>
+            <ul ref="listRef">
+              <li>看到孩子在哪些步骤停留、哪些概念易错；</li>
+              <li>AI 辅导相当于一位随时在线的老师，减少「不会问、问不到」的焦虑；</li>
+              <li>内容多语言、可随年级与进度调整，一次制作多端使用。</li>
+            </ul>
+            <div class="example-section">
+              <h3>示例</h3>
+              <div class="example-prompt"><strong>输入提示词：</strong>我的孩子最近学习怎么样？</div>
+              <div class="example-result">
+                <p style="margin-bottom:10px;font-size:0.85rem;color:#94a3b8;">得到结果：多维度学习分析图 + 简要总结</p>
+                <div class="analysis-chart">
+                  <div class="dim-row" v-for="(v, key) in parentAnalysisDims" :key="key">
+                    <span class="dim-label">{{ v.label }}</span>
+                    <div class="dim-bar-wrap">
+                      <div class="dim-bar" :style="{ width: (v.value / 10 * 100) + '%', background: v.color }"></div>
+                    </div>
+                    <span class="dim-val">{{ v.value }}</span>
+                  </div>
+                </div>
+                <div class="summary-box">
+                  <div class="health-badge at-risk">学习健康指数：需关注</div>
+                  <p><strong>优势：</strong>一次方程与分数运算掌握较好，学习态度积极、情绪稳定。</p>
+                  <p><strong>待加强：</strong>二次函数、三角函数理解偏慢，存在前置知识缺口。</p>
+                  <p><strong>建议：</strong>先巩固一次函数基础，再配合可视化内容加强二次函数理解；2 周内介入效果最佳。</p>
+                </div>
+              </div>
+            </div>
+          </template>
+          <!-- 老师 -->
+          <template v-else>
+            <div class="panel-header">
+              <div class="panel-fig" ref="figRef">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <rect x="8" y="14" width="48" height="32" rx="2" stroke="rgba(56,189,248,0.8)" stroke-width="2"/>
+                  <path d="M20 24h24M20 30h16M20 36h24" stroke="rgba(56,189,248,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+                  <circle cx="32" cy="48" r="6" stroke="#a78bfa" stroke-width="2" opacity="0.9"/>
+                  <path d="M32 42v4M30 46h4" stroke="#a78bfa" stroke-width="1" stroke-linecap="round" opacity="0.8"/>
+                </svg>
+              </div>
+              <h2>老师</h2>
+            </div>
+            <p>从重复劳动中解放，把精力放在教学本身：</p>
+            <ul ref="listRef">
+              <li>几秒生成互动课件与练习，支持多语言与多学段；</li>
+              <li>AI 负责提示、反馈与答疑，实现可规模化的「一对一」辅导；</li>
+              <li>学习数据反馈到内容与教学决策，形成「教–学–测–改」闭环。</li>
+            </ul>
+            <div class="example-section">
+              <h3>示例</h3>
+              <div class="example-prompt"><strong>输入提示词：</strong>生成一道勾股定理填空题，直角边可调</div>
+              <div class="example-result">
+                <p style="margin-bottom:10px;font-size:0.85rem;color:#94a3b8;">得到结果：调节 AC、BC 自动更新题目与答案</p>
+                <div class="problem-box">
+                  在 Rt△ABC 中，∠C=90°，AC=<span class="blank">{{ teacherEx.a }}</span>，BC=<span class="blank">{{ teacherEx.b }}</span>，则 AB= <span class="blank">{{ teacherEx.c }}</span>
+                </div>
+                <label>AC <span class="range-val">{{ teacherEx.a }}</span></label>
+                <input type="range" v-model.number="teacherEx.a" min="1" max="12" @input="teacherUpdateC">
+                <label>BC <span class="range-val">{{ teacherEx.b }}</span></label>
+                <input type="range" v-model.number="teacherEx.b" min="1" max="12" @input="teacherUpdateC">
+                <button type="button" class="btn-sm" @click="teacherRandom">换一道</button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Vue -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+  <script>(function(){var g="Vue",u="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js";setTimeout(function(){if(window[g]===void 0){var s=document.createElement("script");s.src=u;document.head.appendChild(s);}},5000);})();</script>
+  <!-- dayjs -->
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/dayjs.min.js'"></script>
+  <script>(function(){var g="dayjs",u="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/dayjs.min.js";setTimeout(function(){if(window[g]===void 0){var s=document.createElement("script");s.src=u;document.head.appendChild(s);}},5000);})();</script>
+  <!-- GSAP -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+  <script>(function(){var g="gsap",u="https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js";setTimeout(function(){if(window[g]===void 0){var s=document.createElement("script");s.src=u;document.head.appendChild(s);}},5000);})();</script>
+
+  <script>
+  (function() {
+    var totalStages = 3;
+    var currentStageIndex = 1;
+
+    if (typeof window.eduNestRuntime === 'undefined') {
+      window.eduNestRuntime = {
+        dispatchLearningEvent: function(eventType, data) {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'EDUNEST_EVENT', data: { eventType: eventType, data: data || {}, timestamp: new Date().toISOString() } }, '*');
+          }
+        },
+        requestAIGuideHelp: function(payload) {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'EDUNEST_AI_GUIDE_REQUEST', data: payload || {} }, '*');
+          }
+        },
+        getUIState: function() {
+          return (typeof window.__eduNestUIStateProvider === 'function' ? window.__eduNestUIStateProvider() : null) || {};
+        }
+      };
+    }
+
+    var Vue = window.Vue;
+    if (!Vue || !Vue.createApp) {
+      var loadingEl = document.getElementById('loadingIndicator');
+      if (loadingEl) {
+        loadingEl.textContent = '无法加载 Vue，请检查网络后刷新。';
+        loadingEl.classList.add('error');
+      }
+      return;
+    }
+
+    window.__eduNestUIStateProvider = function() {
+      var el = document.getElementById('app');
+      return {
+        currentStage: el && el.__vueCurrentTab ? el.__vueCurrentTab : 'student',
+        stageIndex: el && el.__vueStageIndex != null ? el.__vueStageIndex : 1,
+        totalStages: totalStages
+      };
+    };
+
+    var dateLabel = '';
+    try { dateLabel = typeof dayjs === 'function' ? dayjs().format('YYYY-MM-DD') : new Date().toISOString().slice(0, 10); } catch (e) { dateLabel = new Date().toISOString().slice(0, 10); }
+    var dateEl = document.getElementById('dateLabelText');
+    if (dateEl) dateEl.textContent = dateLabel;
+
+    Vue.createApp({
+      data: function() {
+        return {
+          ready: false,
+          dateLabel: dateLabel,
+          currentTab: 'student',
+          tabs: [
+            { id: 'student', label: '学生' },
+            { id: 'parent', label: '家长' },
+            { id: 'teacher', label: '老师' }
+          ],
+          studentEx: { a: 1, h: 0, k: 0 },
+          parentAnalysisDims: [
+            { label: '理解水平', value: 7.5, color: 'linear-gradient(90deg, #38bdf8, #0ea5e9)' },
+            { label: '学习行为', value: 8, color: 'linear-gradient(90deg, #38bdf8, #0ea5e9)' },
+            { label: '元认知', value: 6.5, color: 'linear-gradient(90deg, #a78bfa, #8b5cf6)' },
+            { label: '情绪动机', value: 8.5, color: 'linear-gradient(90deg, #34d399, #10b981)' },
+            { label: '掌握效率', value: 6.8, color: 'linear-gradient(90deg, #fbbf24, #f59e0b)' }
+          ],
+          teacherEx: { a: 3, b: 4, c: 5 }
+        };
+      },
+      computed: {
+        parabolaPath: function() {
+          var a = this.studentEx.a, h = this.studentEx.h, k = this.studentEx.k;
+          if (a === 0) {
+            var sy = 80 - k * 40;
+            return 'M 20 ' + sy + ' L 220 ' + sy;
+          }
+          var pts = [];
+          for (var x = -3; x <= 3; x += 0.12) {
+            var y = a * (x - h) * (x - h) + k;
+            if (y >= -3 && y <= 5) pts.push([120 + x * 40, 80 - y * 40]);
+          }
+          if (pts.length < 2) return 'M 120 80 L 120 80';
+          return 'M ' + pts[0][0] + ' ' + pts[0][1] + ' L ' + pts.slice(1).map(function(p) { return p[0] + ' ' + p[1]; }).join(' L ');
+        },
+        parentSuggestion: function() {
+          var g = this.parentEx.grade, w = this.parentEx.weak;
+          var map = {
+            '初一-代数': '建议先巩固有理数、整式运算，再过渡到方程与不等式。',
+            '初一-几何': '从线段与角、平行线性质入手，多画图理解。',
+            '初一-函数': '先建立“变量-对应关系”的直观，再学坐标系。',
+            '初一-统计': '结合生活数据做统计图，理解平均数、方差。',
+            '初二-代数': '重点突破因式分解与分式，为二次根式打基础。',
+            '初二-几何': '全等三角形与轴对称是核心，多练证明书写。',
+            '初二-函数': '一次函数图像与 k、b 的关系要练熟。',
+            '初二-统计': '理解方差与频数分布，会读统计图。',
+            '初三-代数': '二次方程与根与系数关系、二次函数是重点。',
+            '初三-几何': '相似与圆结合压轴，多练综合题。',
+            '初三-函数': '二次函数图像、顶点、与方程结合要熟练。',
+            '初三-统计': '概率与统计综合，会设计简单实验。'
+          };
+          return map[g + '-' + w] || '根据年级与薄弱模块，系统会给出分步学习建议与推荐练习。';
+        }
+      },
+      mounted: function() {
+        var vm = this;
+        vm.ready = true;
+        if (typeof dayjs === 'function') vm.dateLabel = dayjs().format('YYYY-MM-DD');
+        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: currentStageIndex, totalStages: totalStages, stageId: vm.currentTab });
+
+        if (typeof gsap !== 'undefined') {
+          gsap.fromTo(vm.$refs.titleRef, { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
+          gsap.fromTo(vm.$refs.subtitleRef, { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.15, ease: 'power2.out' });
+        } else {
+          if (vm.$refs.titleRef) vm.$refs.titleRef.style.opacity = '1';
+          if (vm.$refs.subtitleRef) vm.$refs.subtitleRef.style.opacity = '1';
+        }
+      },
+      methods: {
+        setTab: function(id, idx) {
+          var vm = this;
+          vm.currentTab = id;
+          currentStageIndex = idx + 1;
+          var el = document.getElementById('app');
+          if (el) { el.__vueCurrentTab = id; el.__vueStageIndex = currentStageIndex; }
+          window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: currentStageIndex, totalStages: totalStages, stageId: id });
+
+          if (typeof gsap !== 'undefined') {
+            vm.$nextTick(function() {
+              var content = vm.$refs.panelContent;
+              var fig = vm.$refs.figRef;
+              var list = vm.$refs.listRef;
+              if (content) {
+                gsap.fromTo(content, { opacity: 0, x: 24 }, { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' });
+                if (fig) gsap.fromTo(fig, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, delay: 0.05, ease: 'back.out(1.2)' });
+                if (list && list.children && list.children.length) {
+                  gsap.fromTo(list.children, { opacity: 0, x: 12 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.06, delay: 0.12, ease: 'power2.out' });
+                }
+              }
+            });
+          }
+        },
+        teacherUpdateC: function() {
+          var a = this.teacherEx.a, b = this.teacherEx.b;
+          this.teacherEx.c = Math.round(Math.sqrt(a * a + b * b) * 10) / 10;
+        },
+        teacherRandom: function() {
+          var triples = [[3,4,5],[5,12,13],[6,8,10],[8,15,17],[7,24,25]];
+          var t = triples[Math.floor(Math.random() * triples.length)];
+          this.teacherEx.a = t[0];
+          this.teacherEx.b = t[1];
+          this.teacherEx.c = t[2];
+        }
+      }
+    }).mount('#app');
+  })();
+  </script>
+</body>
+</html>

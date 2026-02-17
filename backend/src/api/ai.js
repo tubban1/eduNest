@@ -486,9 +486,9 @@ router.get('/reload', authenticateToken, async (req, res) => {
 router.post('/generate-async', [
   authenticateToken,
   body('content_id').isUUID().withMessage('content_id 必须是有效的UUID'),
-  body('knowledge_point').isString().isLength({ min: 1, max: 1500 }).withMessage('知识点不能为空且长度不能超过1500字'),
+  body('knowledge_point').isString().isLength({ min: 1, max: 10000 }).withMessage('知识点不能为空且长度不能超过10000字'),
   body('output_type').optional().isIn(['interactive', 'animated']).withMessage('output_type 必须是 interactive 或 animated'),
-  body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
+  body('description').optional().isString().isLength({ max: 10000 }).withMessage('描述长度不能超过10000字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
   body('idempotency_key').optional().isString().isLength({ max: 4096 }).withMessage('idempotency_key 不合法'),
@@ -1119,9 +1119,9 @@ const visitorUsageService = require('../services/visitorUsageService');
 
 router.post('/generate-free', [
   validateVisitorId,
-  body('knowledgePoint').isString().isLength({ min: 1, max: 1500 }).withMessage('知识点不能为空且长度不能超过1500字'),
+  body('knowledgePoint').isString().isLength({ min: 1, max: 10000 }).withMessage('知识点不能为空且长度不能超过10000字'),
   body('output_type').optional().isIn(['interactive', 'animated']).withMessage('output_type 必须是 interactive 或 animated'),
-  body('description').optional().isString().isLength({ max: 1500 }).withMessage('描述长度不能超过1500字'),
+  body('description').optional().isString().isLength({ max: 10000 }).withMessage('描述长度不能超过10000字'),
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
   body('idempotency_key').optional().isString().isLength({ max: 4096 }).withMessage('idempotency_key 不合法'),

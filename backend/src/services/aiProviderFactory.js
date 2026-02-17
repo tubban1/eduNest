@@ -150,16 +150,33 @@ class AIProviderFactory {
           // 构建 parts 数组，包含文本和可能的图片
           const parts = [];
           
-          // 如果有图片，先添加图片
+          // 支持单张图片（向后兼容）
           if (msg.image && msg.image.mime_type && msg.image.data) {
-            console.log(`[AI Provider Factory] 添加图片到 Gemini parts: mime_type=${msg.image.mime_type}, data_length=${msg.image.data.length}`);
+            console.log(`[AI Provider Factory] 添加单张图片到 Gemini parts: mime_type=${msg.image.mime_type}, data_length=${msg.image.data.length}`);
             parts.push({
               inline_data: {
                 mime_type: msg.image.mime_type,
                 data: msg.image.data
               }
             });
-          } else {
+          }
+          
+          // 支持多张图片（images 数组，最多3张）
+          if (msg.images && Array.isArray(msg.images) && msg.images.length > 0) {
+            console.log(`[AI Provider Factory] 添加 ${msg.images.length} 张图片到 Gemini parts`);
+            for (const img of msg.images) {
+              if (img.mime_type && img.data) {
+                parts.push({
+                  inline_data: {
+                    mime_type: img.mime_type,
+                    data: img.data
+                  }
+                });
+              }
+            }
+          }
+          
+          if (parts.length === 0) {
             console.log(`[AI Provider Factory] 消息中没有图片数据`);
           }
           

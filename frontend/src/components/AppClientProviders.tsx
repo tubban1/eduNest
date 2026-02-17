@@ -3,6 +3,7 @@ import { LanguageProvider } from '../contexts/LanguageContext';
 import { AuthProvider } from '@/hooks/useAuth';
 import SessionConflictAlert from './SessionConflictAlert';
 import { ToastContainer } from './ui/Toast';
+import RoleGuard from './RoleGuard';
 
 export default function AppClientProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -10,6 +11,7 @@ export default function AppClientProviders({ children }: { children: React.React
       <LanguageProvider>
         <SessionConflictAlert />
         <ToastContainer />
+        <RoleGuard />
         {children}
       </LanguageProvider>
     </AuthProvider>
