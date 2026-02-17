@@ -326,6 +326,7 @@ export default function LearnPage() {
 
   const ensureSession = async (): Promise<string> => {
     if (conversationId) return conversationId;
+    if (!shortId) throw new Error(t('initSessionFailed'));
     const result = user
       ? await api.aiGuide.init(shortId, false)
       : await api.aiGuide.initFree(shortId, false);
