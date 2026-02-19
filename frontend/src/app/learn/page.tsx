@@ -1178,7 +1178,15 @@ export default function LearnPage() {
                     placeholder={placeholder}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitInput(); } }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        // 避免中文/拼音输入法组合中按回车直接发送
+                        const anyEvent = e.nativeEvent as any;
+                        if (anyEvent.isComposing) return;
+                        e.preventDefault();
+                        handleSubmitInput();
+                      }
+                    }}
                     onPaste={handlePaste}
                     disabled={isGeneratingNewContent || (!isAwaitingNewContent && !shortId) || isLoading || (freeTrialUsed && !user)}
                   />
@@ -1315,6 +1323,10 @@ export default function LearnPage() {
                         if (c.short_id) {
                           autoFitOnNextInitRef.current = true;
                           const isSame = c.short_id === shortId;
+                          // 立刻让对话框与 iframe 对应：先重置对话框，再切换 iframe
+                          setMessages([{ role: 'assistant', content: t('learnInitialMessage') }]);
+                          // 用户手动切换内容，不再跳过下一次 shortId init
+                          skipNextShortIdLoad.current = false;
                           setShortId(c.short_id);
                           setConversationId(null);
                           setHasInit(false);
@@ -1370,6 +1382,10 @@ export default function LearnPage() {
                         if (c.short_id) {
                           autoFitOnNextInitRef.current = true;
                           const isSame = c.short_id === shortId;
+                          // 立刻让对话框与 iframe 对应：先重置对话框，再切换 iframe
+                          setMessages([{ role: 'assistant', content: t('learnInitialMessage') }]);
+                          // 用户手动切换内容，不再跳过下一次 shortId init
+                          skipNextShortIdLoad.current = false;
                           setShortId(c.short_id);
                           setConversationId(null);
                           setHasInit(false);
@@ -1420,7 +1436,23 @@ export default function LearnPage() {
                         const sid = c?.short_id;
                         if (!sid) return null;
                         return (
-                          <button key={item.id} type="button" onClick={() => { setShortId(sid); setConversationId(null); setHasInit(false); setCollectionsOpen(false); }} className="w-full text-left block rounded-lg border border-white/10 hover:border-blue-500/50 bg-slate-800/50 px-2 py-2">
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              // 立刻让对话框与 iframe 对应：先重置对话框，再切换 iframe
+                              setMessages([{ role: 'assistant', content: t('learnInitialMessage') }]);
+                              // 用户手动切换内容，不再跳过下一次 shortId init
+                              skipNextShortIdLoad.current = false;
+                              setShortId(sid);
+                              setConversationId(null);
+                              setHasInit(false);
+                              setIsAwaitingNewContent(false);
+                              setIsGeneratingNewContent(false);
+                              setCollectionsOpen(false);
+                            }}
+                            className="w-full text-left block rounded-lg border border-white/10 hover:border-blue-500/50 bg-slate-800/50 px-2 py-2"
+                          >
                             <span className="text-xs text-slate-300 line-clamp-2">{c?.title || sid}</span>
                           </button>
                         );
