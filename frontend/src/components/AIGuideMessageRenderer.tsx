@@ -49,7 +49,7 @@ const Callout: React.FC<CalloutProps> = ({ type, children }) => {
   const style = styles[type];
 
   return (
-    <div className={`${style.bg} ${style.border} border-l-4 p-2.5 my-1 rounded-r-lg`}>
+    <div className={`${style.bg} ${style.border} border-l-4 p-2.5 rounded-r-lg`} style={{ marginTop: '-0.2rem', marginBottom: '-0.2rem' }}>
       <div className="flex items-start gap-2">
         <span className="text-base">{style.icon}</span>
         <div className={`${style.text} text-sm leading-none`}>
@@ -74,7 +74,7 @@ const CodeBlock: React.FC<{ language?: string; value: string }> = ({ language, v
   };
 
   return (
-    <div className="relative my-1">
+    <div className="relative" style={{ marginTop: '-0.2rem', marginBottom: '-0.2rem' }}>
       <div className="absolute top-2 right-2 z-10">
         <button
           onClick={copyToClipboard}
@@ -147,7 +147,7 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
     
     table({ children }: any) {
       return (
-        <div className="overflow-x-auto my-1">
+        <div className="overflow-x-auto" style={{ marginTop: '-0.2rem', marginBottom: '-0.2rem' }}>
           <table className="min-w-full border-collapse border border-gray-300">
             {children}
           </table>
@@ -198,32 +198,32 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
       }
       
       return (
-        <blockquote className="border-l-4 border-gray-400 pl-3 my-0.5 py-0 italic text-inherit opacity-90 text-sm leading-none">
+        <blockquote className="border-l-4 border-gray-400 pl-3 py-0 italic text-inherit opacity-90 text-sm leading-none" style={{ marginTop: '-0.3rem', marginBottom: '-0.3rem' }}>
           {children}
         </blockquote>
       );
     },
     
-    h1: ({ children }: any) => <h1 className="text-sm font-bold mt-1 mb-0 first:mt-0">{children}</h1>,
-    h2: ({ children }: any) => <h2 className="text-sm font-bold mt-1 mb-0 first:mt-0">{children}</h2>,
-    h3: ({ children }: any) => <h3 className="text-sm font-bold mt-0.5 mb-0 first:mt-0">{children}</h3>,
-    h4: ({ children }: any) => <h4 className="text-sm font-bold mt-0.5 mb-0 first:mt-0">{children}</h4>,
+    h1: ({ children }: any) => <h1 className="text-sm font-bold" style={{ marginTop: '-0.2rem', marginBottom: '-0.2rem' }}>{children}</h1>,
+    h2: ({ children }: any) => <h2 className="text-sm font-bold" style={{ marginTop: '-0.2rem', marginBottom: '-0.2rem' }}>{children}</h2>,
+    h3: ({ children }: any) => <h3 className="text-sm font-bold" style={{ marginTop: '-0.2rem', marginBottom: '-0.2rem' }}>{children}</h3>,
+    h4: ({ children }: any) => <h4 className="text-sm font-bold" style={{ marginTop: '-0.2rem', marginBottom: '-0.2rem' }}>{children}</h4>,
     
-    p: ({ children }: any) => <p className="my-0.5 text-sm leading-none first:mt-0 last:mb-0">{children}</p>,
+    p: ({ children }: any) => <p className="text-sm leading-relaxed" style={{ marginTop: '-0.4rem', marginBottom: '-0.4rem' }}>{children}</p>,
     
     ul: ({ children }: any) => (
-      <ul className="list-disc list-inside my-0.5 space-y-0 pl-1">
+      <ul className="list-disc list-inside space-y-0 pl-1" style={{ marginTop: '-0.4rem', marginBottom: '-0.4rem' }}>
         {children}
       </ul>
     ),
     
     ol: ({ children }: any) => (
-      <ol className="list-decimal list-inside my-0.5 space-y-0 pl-1">
+      <ol className="list-decimal list-inside space-y-0 pl-1" style={{ marginTop: '-0.4rem', marginBottom: '-0.4rem' }}>
         {children}
       </ol>
     ),
     
-    li: ({ children }: any) => <li className="text-sm leading-none py-0">{children}</li>,
+    li: ({ children }: any) => <li className="text-sm leading-relaxed py-0" style={{ marginTop: '-0.2rem', marginBottom: '-0.3rem' }}>{children}</li>,
     
     strong: ({ children }: any) => <strong className="font-bold">{children}</strong>,
     
@@ -244,7 +244,8 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
       <img
         src={src}
         alt={alt}
-        className="max-w-full h-auto rounded-lg my-1"
+        className="max-w-full h-auto rounded-lg"
+        style={{ marginTop: '-0.2rem', marginBottom: '-0.2rem' }}
       />
     )
   };
@@ -252,9 +253,19 @@ const AIGuideMessageRenderer: React.FC<AIGuideMessageRendererProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`ai-guide-message text-sm leading-none ${isLatest ? 'latest-message' : ''} prose prose-sm max-w-none prose-p:my-0.5 prose-p:leading-none prose-headings:my-0.5 prose-headings:leading-none prose-ul:my-0.5 prose-ol:my-0.5 prose-li:my-0 prose-li:leading-none prose-blockquote:my-0.5 prose-blockquote:leading-none prose-pre:my-1 prose-pre:leading-none prose-table:my-0.5`}
+      className={`ai-guide-message text-sm ${isLatest ? 'latest-message' : ''}`}
       data-message-id={messageId}
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        .ai-guide-message p { margin-top: -0.4rem !important; margin-bottom: -0.4rem !important; }
+        .ai-guide-message ol { margin-top: -0.4rem !important; margin-bottom: -0.4rem !important; }
+        .ai-guide-message ul { margin-top: -0.4rem !important; margin-bottom: -0.4rem !important; }
+        .ai-guide-message li { margin-top: -0.2rem !important; margin-bottom: -0.3rem !important; }
+        .ai-guide-message p + ol, .ai-guide-message p + ul { margin-top: -0.5rem !important; }
+        .ai-guide-message ol + p, .ai-guide-message ul + p { margin-top: -0.5rem !important; }
+        .ai-guide-message p + p { margin-top: -0.4rem !important; }
+        .ai-guide-message h3, .ai-guide-message h4 { margin-top: -0.2rem !important; }
+      `}} />
       {(() => {
         const processedContent = preprocessContent(content);
         

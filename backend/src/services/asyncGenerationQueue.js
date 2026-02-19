@@ -1,5 +1,7 @@
 const aiService = require('./aiService');
 const DatabaseService = require('./database');
+const { logAIUsage } = require('./database');
+const { isVisitorId } = require('../utils/visitorId');
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
 const { getDefaultEngine } = require('./rendererEngine');
@@ -1038,17 +1040,57 @@ class AsyncGenerationQueue {
         }
 
         if (!hasAssistant && assistantContent) {
-          const { error: assistantMsgError } = await DatabaseService.supabase
+          const { data: insertedAssistant, error: assistantMsgError } = await DatabaseService.supabase
             .from('ai_messages')
             .insert({
               conversation_id: conversationId,
               role: 'assistant',
               content: assistantContent,
               metadata: null
-            });
+            })
+            .select('id')
+            .single();
 
           if (assistantMsgError) {
             logger.error('[ensureGenerationConversation] 创建 start-session assistant 消息失败:', assistantMsgError);
+          } else if (initial?.source === 'generated') {
+            // 异步生成流程中首次调用 AI 生成欢迎语，需记录 ai_guide_init（否则用户后续打开 AI Guide 时走缓存，不会落表）
+            const estimateTokens = (text) => Math.ceil((text || '').length / 3);
+            const systemPrompt = `SYSTEM_PROMPT\n\nMETADATA:\n${JSON.stringify(metadata || {}, null, 2)}`;
+            const inputTokens = initial?.usage?.prompt_tokens || estimateTokens(systemPrompt + 'Start the session.');
+            const outputTokens = initial?.usage?.completion_tokens || estimateTokens(assistantContent);
+            const totalTokens = initial?.usage?.total_tokens || (inputTokens + outputTokens);
+            try {
+              await logAIUsage({
+                user_id: userId || null,
+                visitor_id: visitorId || null,
+                request_id: conversationId,
+                conversation_id: conversationId,
+                message_id: insertedAssistant?.id || null,
+                action_type: 'ai_guide_init',
+                content_id: contentId,
+                user_query: 'Start the session.',
+                request_payload: {
+                  messages: [{ role: 'system', content: 'SYSTEM_PROMPT_TEMPLATE' }, { role: 'user', content: 'Start the session.' }],
+                  max_tokens: 1500,
+                  temperature: 0.7,
+                  source: 'generated',
+                  entry_point: 'ai_generate',
+                  metadata_summary: {
+                    title: metadata?.canonical?.topic || metadata?.meta?.title || metadata?.title || 'Unknown',
+                    content_type: metadata?.canonical?.content_type || metadata?.meta?.contentType || 'Unknown'
+                  }
+                },
+                response_metadata: { reply: assistantContent, role: 'assistant', source: 'generated' },
+                model_name: initial?.model || 'unknown',
+                input_tokens: inputTokens,
+                output_tokens: outputTokens,
+                total_tokens: totalTokens,
+                is_render_success: true
+              });
+            } catch (logErr) {
+              logger.warn('[ensureGenerationConversation] 记录 ai_guide_init 失败（不影响主流程）:', logErr?.message || logErr);
+            }
           }
         }
 

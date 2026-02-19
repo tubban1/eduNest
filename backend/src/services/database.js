@@ -1962,11 +1962,12 @@ const getUserLikedContent = async (userId) => {
 // 记录AI使用日志
 const logAIUsage = async (log) => {
   try {
-    // 判断是 visitor_id 还是 user_id
+    // 判断是 visitor_id 还是 user_id（支持显式传 visitor_id，或通过 user_id 传入 visitor 格式）
     const { isVisitorId } = require('../utils/visitorId');
     const userId = log.user_id || null;
-    const visitorId = userId && isVisitorId(userId) ? userId : null;
-    const actualUserId = userId && !isVisitorId(userId) ? userId : null;
+    const explicitVisitorId = log.visitor_id || null;
+    const visitorId = (userId && isVisitorId(userId)) ? userId : (explicitVisitorId && isVisitorId(explicitVisitorId) ? explicitVisitorId : null);
+    const actualUserId = (userId && !isVisitorId(userId)) ? userId : null;
 
     const { data, error } = await supabase
       .from('ai_usage_logs')
