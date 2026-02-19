@@ -563,43 +563,47 @@ const initConversation = async (contentId, userId, options = {}) => {
     const systemPrompt = `${SYSTEM_PROMPT_TEMPLATE}\n\nMETADATA:\n${JSON.stringify(metadata, null, 2)}`;
     // 如果是 content 缓存复用，则不应重复计入 token 成本（这次 init 没有调用模型）
     const isCached = source === 'content_cached';
-    const inputTokens = isCached ? 0 : (usage.prompt_tokens || estimateTokens(systemPrompt + 'Start the session.'));
-    const outputTokens = isCached ? 0 : (usage.completion_tokens || estimateTokens(initialMessage));
-    const totalTokens = isCached ? 0 : (usage.total_tokens || (inputTokens + outputTokens));
-    
-    await logAIUsage({
-      user_id: !isVisitor ? userId : null,
-      visitor_id: isVisitor ? userId : null,
-      request_id: conversation.id,
-      conversation_id: conversation.id,
-      message_id: assistantMessage.id,
-      action_type: 'ai_guide_init',
-      content_id: resolvedId,
-      user_query: 'Start the session.',
-      request_payload: {
-        messages: [
-          { role: 'system', content: 'SYSTEM_PROMPT_TEMPLATE' },
-          { role: 'user', content: 'Start the session.' }
-        ],
-        max_tokens: 1500,
-        temperature: 0.7,
-        source,
-        metadata_summary: {
-          title: metadata?.meta?.title || metadata?.title || 'Unknown',
-          content_type: metadata?.meta?.contentType || metadata?.content_type || 'Unknown'
-        }
-      },
-      response_metadata: { 
-        reply: initialMessage,
-        role: 'assistant',
-        source
-      },
-      model_name: modelName, // 使用实际的模型名称
-      input_tokens: inputTokens,
-      output_tokens: outputTokens,
-      total_tokens: totalTokens,
-      is_render_success: true
-    });
+    // 只有真正向大模型发起生成时才写入 ai_usage_logs；
+    // 后续从 content.ai_guide_initial_message 复用（source='content_cached'）的 init 不再落表。
+    if (!isCached) {
+      const inputTokens = usage.prompt_tokens || estimateTokens(systemPrompt + 'Start the session.');
+      const outputTokens = usage.completion_tokens || estimateTokens(initialMessage);
+      const totalTokens = usage.total_tokens || (inputTokens + outputTokens);
+
+      await logAIUsage({
+        user_id: !isVisitor ? userId : null,
+        visitor_id: isVisitor ? userId : null,
+        request_id: conversation.id,
+        conversation_id: conversation.id,
+        message_id: assistantMessage.id,
+        action_type: 'ai_guide_init',
+        content_id: resolvedId,
+        user_query: 'Start the session.',
+        request_payload: {
+          messages: [
+            { role: 'system', content: 'SYSTEM_PROMPT_TEMPLATE' },
+            { role: 'user', content: 'Start the session.' }
+          ],
+          max_tokens: 1500,
+          temperature: 0.7,
+          source,
+          metadata_summary: {
+            title: metadata?.meta?.title || metadata?.title || 'Unknown',
+            content_type: metadata?.meta?.contentType || metadata?.content_type || 'Unknown'
+          }
+        },
+        response_metadata: { 
+          reply: initialMessage,
+          role: 'assistant',
+          source
+        },
+        model_name: modelName, // 使用实际的模型名称
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: totalTokens,
+        is_render_success: true
+      });
+    }
     
     // 初始化对话不扣分
     

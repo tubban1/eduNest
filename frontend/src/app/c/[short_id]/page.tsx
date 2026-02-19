@@ -606,12 +606,12 @@ export default function FullHTMLContentPage() {
             setError(error);
           }}
         />
-        {/* AI Guided Learning - Hide for animated content type */}
-        {content?.id && content?.content_type !== 'animated' && (
-          <AIGuidedLearning 
+        {/* AI Guided Learning：仅 admin 可见，并且排除 animated 类型 */}
+        {user?.role === 'admin' && content?.id && content?.content_type !== 'animated' && (
+          <AIGuidedLearning
             contentId={content.id}
             content={content}
-            onUIStateChange={(state) => console.log('UI State:', state)} 
+            onUIStateChange={(state) => console.log('UI State:', state)}
           />
         )}
       </div>
