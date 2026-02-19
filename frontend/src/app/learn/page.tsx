@@ -181,12 +181,21 @@ export default function LearnPage() {
   }, []);
 
   const LAYOUT_KEY = 'edu_learn_layout';
+  const LAYOUT_HORIZONTAL_MIN_WIDTH = 768; // 窄屏（含手机竖屏）禁止左右排列，避免顶部按钮无法点击
   const [layoutVertical, setLayoutVertical] = useState(true);
+  const [isNarrowScreen, setIsNarrowScreen] = useState(true);
+  useEffect(() => {
+    const check = () => setIsNarrowScreen(typeof window !== 'undefined' && window.innerWidth < LAYOUT_HORIZONTAL_MIN_WIDTH);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
   useEffect(() => {
     try {
       setLayoutVertical(typeof window !== 'undefined' && localStorage.getItem(LAYOUT_KEY) !== 'horizontal');
     } catch (_) {}
   }, []);
+  const effectiveLayoutVertical = layoutVertical || isNarrowScreen;
   const toggleLayout = useCallback(() => {
     setLayoutVertical((v) => {
       const next = !v;
@@ -1003,13 +1012,13 @@ export default function LearnPage() {
         <div className="flex-1 flex flex-col min-h-0 relative">
             <div
               ref={workspaceRef}
-              className={`flex-1 flex min-h-0 px-2 sm:px-4 lg:px-6 py-2 lg:py-4 ${layoutVertical ? 'flex-col' : 'flex-row gap-2 lg:gap-3'}`}
+              className={`flex-1 flex min-h-0 px-2 sm:px-4 lg:px-6 py-2 lg:py-4 ${effectiveLayoutVertical ? 'flex-col' : 'flex-row gap-2 lg:gap-3'}`}
             >
             <div
               ref={iframeBoxRef}
-              className={`flex flex-col min-h-0 rounded-xl border border-white/15 bg-black/10 overflow-hidden relative ${!layoutVertical ? 'flex-none min-w-0 shrink-0' : ''}`}
+              className={`flex flex-col min-h-0 rounded-xl border border-white/15 bg-black/10 overflow-hidden relative ${!effectiveLayoutVertical ? 'flex-none min-w-0 shrink-0' : ''}`}
               style={
-                layoutVertical
+                effectiveLayoutVertical
                   ? { ['--iframe-h' as any]: `${iframeHeight}px` } as React.CSSProperties
                   : { width: `${splitLeftPercent}%` }
               }
@@ -1027,12 +1036,12 @@ export default function LearnPage() {
                         : `/learn/loading?kp=${encodeURIComponent(t('loadingMessages'))}`
                 }
                 title={t('iframeTitle')}
-                className={`w-full border-0 rounded-t-xl ${layoutVertical ? 'shrink-0' : 'flex-1 min-h-0'}`}
-                style={layoutVertical ? { height: 'var(--iframe-h)' } : { height: '100%', minHeight: 0 }}
+                className={`w-full border-0 rounded-t-xl ${effectiveLayoutVertical ? 'shrink-0' : 'flex-1 min-h-0'}`}
+                style={effectiveLayoutVertical ? { height: 'var(--iframe-h)' } : { height: '100%', minHeight: 0 }}
               />
             </div>
             {/* iframe 下边缘拖动条（仅上下排列时显示） */}
-            {layoutVertical && (
+            {effectiveLayoutVertical && (
             <div
               className="relative h-6 cursor-row-resize z-30 flex items-center justify-center px-2 sm:px-4 lg:px-6 select-none touch-none"
               onPointerDown={handleDragPointerDown}
@@ -1047,7 +1056,7 @@ export default function LearnPage() {
             </div>
             )}
             {/* 左右排列时：中间垂直拖动条，调节 iframe 与对话框宽度 */}
-            {!layoutVertical && (
+            {!effectiveLayoutVertical && (
             <div
               className="relative w-2 flex-shrink-0 flex items-center justify-center cursor-col-resize z-30 select-none touch-none group"
               onPointerDown={handleHorizontalDragStart}
@@ -1062,8 +1071,9 @@ export default function LearnPage() {
               }`} />
             </div>
             )}
-            <div className={`rounded-xl border border-white/15 bg-slate-950/95 backdrop-blur-sm flex flex-col overflow-hidden ${layoutVertical ? 'h-[400px] flex-none' : 'flex-1 min-w-0 min-h-0'}`}>
+            <div className={`rounded-xl border border-white/15 bg-slate-950/95 backdrop-blur-sm flex flex-col overflow-hidden ${effectiveLayoutVertical ? 'h-[400px] flex-none' : 'flex-1 min-w-0 min-h-0'}`}>
               <div className="flex items-center justify-end gap-3 px-3 py-2 border-b border-white/10 shrink-0">
+                {!isNarrowScreen && (
                 <button
                   type="button"
                   onClick={toggleLayout}
@@ -1074,6 +1084,7 @@ export default function LearnPage() {
                   {layoutVertical ? <PanelLeft className="w-4 h-4" /> : <PanelTop className="w-4 h-4" />}
                   <span className="hidden sm:inline">{layoutVertical ? t('layoutHorizontal') : t('layoutVertical')}</span>
                 </button>
+                )}
                 <button type="button" onClick={handleStartNewConversation} className="flex items-center gap-1.5 text-slate-300 hover:text-white text-xs">
                   <MessageSquarePlus className="w-4 h-4" />{t('newConversation')}
                 </button>
