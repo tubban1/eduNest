@@ -174,6 +174,14 @@ export const AIGuidedLearning: React.FC<AIGuidedLearningProps> = ({ contentId, c
     }
   }, [user]);
 
+  // contentId 变化时重置会话状态，确保 iframe 与对话框内容一致
+  useEffect(() => {
+    setConversationId(null);
+    setHasInit(false);
+    setMessages([]);
+    setInitFailed(false);
+  }, [contentId]);
+
   // Initialize conversation when opening for the first time
   const initSession = async () => {
     if (hasInit && !initFailed) return;

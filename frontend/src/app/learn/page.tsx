@@ -115,7 +115,7 @@ function buildNewConversationIframeHtml(t: (key: string) => string, role: LearnR
 
 export default function LearnPage() {
   const { t } = useTranslation(['aiGuide', 'onboard', 'content', 'common']);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const learnRole: LearnRole = ['student', 'parent', 'teacher'].includes(user?.role || '') ? (user!.role as LearnRole) : 'student';
   const [shortId, setShortId] = useState<string | null>(null);
   const [iframeHeight, setIframeHeight] = useState<number>(IFRAME_DEFAULT_H);
@@ -156,6 +156,8 @@ export default function LearnPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   /** 从 last-session 恢复时跳过一次 shortId 的 init，避免用 init 结果覆盖已恢复的 conversation + messages */
   const skipNextShortIdLoad = useRef(false);
+  /** 已通过 getLastConversation 加载过，需忽略后续 loadConversationForContent 的延迟回调（避免竞态覆盖） */
+  const lastConversationLoadedRef = useRef(false);
   /** 当从历史对话导入/恢复后，自动把 iframe+对话框填满视口 */
   const autoFitOnNextInitRef = useRef(false);
   /** 拖动 iframe / 对话框分隔条的状态 */
@@ -494,8 +496,11 @@ export default function LearnPage() {
 
   // 约定：iframe 显示「当前用户最新 ai_conversation 对应内容」，对话框显示该会话的 ai_messages；无历史则按语言显示默认内容（SHORT_ID_BY_LOCALE）
   // 依赖 user?.id：登录态就绪后再拉一次最近对话，避免首屏时 auth 未就绪导致拿到 null/访客会话、iframe 显示错误内容
+  // 必须等 auth 加载完成后再决定 shortId，否则会出现 loadConversationForContent 与 getLastConversation 竞态、iframe 与对话框内容错位
   useEffect(() => {
+    if (authLoading) return;
     let cancelled = false;
+    lastConversationLoadedRef.current = false;
     // 非登录用户：不请求 last-conversation，直接按当前语言用默认 iframe，后续由 loadConversationForContent 调 init-free
     if (!user?.id) {
       setShortId(getShortIdForLocale());
@@ -506,6 +511,7 @@ export default function LearnPage() {
       try {
         const last = await api.aiGuide.getLastConversation();
         if (cancelled) return;
+        lastConversationLoadedRef.current = true;
         if (last?.conversation_id) {
           // 有历史：用最新会话的 content_short_id 作为 iframe 内容，对话框显示该会话的 messages
           autoFitOnNextInitRef.current = true;
@@ -528,13 +534,15 @@ export default function LearnPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [t, user?.id]);
+  }, [t, user?.id, authLoading]);
 
   const loadConversationForContent = useCallback(async (contentShortId: string) => {
     try {
       const result = user
         ? await api.aiGuide.init(contentShortId, false)
         : await api.aiGuide.initFree(contentShortId, false);
+      // 若 getLastConversation 已先完成并设置状态，忽略本次延迟回调，避免 iframe 与对话框内容错位
+      if (lastConversationLoadedRef.current) return;
       if (!result?.conversation_id) {
         setConversationId(null);
         setHasInit(false);
@@ -549,6 +557,7 @@ export default function LearnPage() {
         setMessages([{ role: 'assistant', content: result.initial_message || t('learnInitialMessage') }]);
       }
     } catch {
+      if (lastConversationLoadedRef.current) return;
       setConversationId(null);
       setHasInit(false);
       setMessages([{ role: 'assistant', content: t('learnInitialMessage') }]);
@@ -561,6 +570,7 @@ export default function LearnPage() {
       skipNextShortIdLoad.current = false;
       return;
     }
+    lastConversationLoadedRef.current = false;
     autoFitOnNextInitRef.current = true;
     setMessages([]);
     setConversationId(null);
