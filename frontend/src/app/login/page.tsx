@@ -68,8 +68,8 @@ function LoginForm() {
           setMessage(t('emailNotVerified', { ns: 'auth', defaultValue: '检测到邮箱尚未验证，您可以点击下方按钮重发验证邮件。' }));
         }
       } else {
-        // 登录成功，跳转到内容页面
-        router.push('/c');
+        // 登录成功，跳转到学习工作台
+        router.push('/learn');
       }
     } catch (error: any) {
       setError(error.message || t('loginFailed', { ns: 'auth', defaultValue: '登录失败' }));

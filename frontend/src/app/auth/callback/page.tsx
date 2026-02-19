@@ -104,7 +104,7 @@ export default function AuthCallback() {
             setStatus(t('callback.loginSuccessRedirecting', { defaultValue: '登录成功，正在跳转...' }));
             await api.logAuth('info', '登录成功，准备跳转（通过 getSession 获取 token）');
             setTimeout(() => {
-              router.replace('/c');
+              router.replace('/learn');
             }, 800);
             return;
           }
@@ -163,7 +163,7 @@ export default function AuthCallback() {
           setStatus(t('callback.loginSuccessRedirecting', { defaultValue: '登录成功，正在跳转...' }));
           // 使用 router.replace 而不是 window.location.href，更可靠
           setTimeout(() => {
-            router.replace('/c');
+            router.replace('/learn');
           }, 800);
           return;
         }
@@ -183,7 +183,7 @@ export default function AuthCallback() {
           window.dispatchEvent(new Event('sessionChanged'));
           setStatus(t('callback.loginSuccessRedirecting', { defaultValue: '登录成功，正在跳转...' }));
           setTimeout(() => {
-            router.replace('/c');
+            router.replace('/learn');
           }, 800);
           return;
         }
@@ -251,7 +251,7 @@ export default function AuthCallback() {
         setStatus(t('callback.loginSuccessRedirecting', { defaultValue: '登录成功，正在跳转...' }));
         // 使用 router.replace 而不是 window.location.href，更可靠
         setTimeout(() => {
-          router.replace('/c');
+          router.replace('/learn');
         }, 800);
       } catch (error) {
         const errorMessage = (error as Error).message || '未知错误';

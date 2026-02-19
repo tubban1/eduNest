@@ -487,6 +487,12 @@ export default function LearnPage() {
   // 依赖 user?.id：登录态就绪后再拉一次最近对话，避免首屏时 auth 未就绪导致拿到 null/访客会话、iframe 显示错误内容
   useEffect(() => {
     let cancelled = false;
+    // 非登录用户：不请求 last-conversation，直接按当前语言用默认 iframe，后续由 loadConversationForContent 调 init-free
+    if (!user?.id) {
+      setShortId(getShortIdForLocale());
+      skipNextShortIdLoad.current = false;
+      return;
+    }
     (async () => {
       try {
         const last = await api.aiGuide.getLastConversation();
