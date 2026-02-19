@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { api, Content } from '../lib/api';
@@ -13,8 +14,9 @@ import { cache, generateCacheKey } from '@/lib/cache';
 
 export default function HomePage() {
   const { t, i18n } = useTranslation(['home', 'common', 'content', 'navigation']);
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [contents, setContents] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -32,6 +34,14 @@ export default function HomePage() {
   const MAX_CONTENT_COUNT = 100; // 最多显示 100 个内容
 
   useEffect(() => { setMounted(true); }, []);
+
+  // 仅 admin 可访问首页（最新内容）；其他用户与未登录用户默认跳转到 Learn
+  useEffect(() => {
+    if (!mounted || authLoading) return;
+    if (!user || user.role !== 'admin') {
+      router.replace('/learn');
+    }
+  }, [mounted, authLoading, user, router]);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
@@ -371,7 +381,19 @@ export default function HomePage() {
     );
   }
 
-  // 不阻塞于 auth：卡片（公开内容）与 auth 并行加载，避免三星等设备上 auth 慢导致永远 loading
+  // 非 admin 或未登录：仅可访问 Learn，不渲染首页内容
+  if (!authLoading && (!user || user.role !== 'admin')) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 以下仅 admin 可见：首页最新内容
   return (
     <div className="flex min-h-screen bg-background">
       {/* 桌面端侧边栏 */}

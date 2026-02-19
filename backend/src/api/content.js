@@ -240,6 +240,32 @@ router.get('/', optionalAuth, async (req, res) => {
   }
 });
 
+// 获取当前登录用户的历史内容列表（用于 Learn 页侧边栏历史对话）
+// 仅返回轻量字段，支持 offset 分页/滚动加载
+router.get('/history', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limit = req.query.limit ? Math.max(1, Math.min(parseInt(req.query.limit, 10), 100)) : 50;
+    const offset = req.query.offset ? Math.max(0, parseInt(req.query.offset, 10)) : 0;
+
+    const { data, error } = await DatabaseService.supabase
+      .from('content')
+      .select('id, short_id, title, svg_thumbnail, thumbnail_url')
+      .eq('created_by', userId)
+      .order('updated_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    const list = data || [];
+    res.json({ success: true, data: list, hasMore: list.length === limit });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 获取单个内容
 router.get('/:id', authenticateToken, async (req, res) => {
   try {

@@ -3,6 +3,7 @@ const DatabaseService = require('./database');
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
 const { getDefaultEngine } = require('./rendererEngine');
+const { getOrGenerateMetadata, getOrGenerateContentInitialMessage } = require('./aiGuideService');
 
 class AsyncGenerationQueue {
   constructor() {
@@ -139,44 +140,54 @@ class AsyncGenerationQueue {
       const visitorId = userId && isVisitorId(userId) ? userId : null;
       const actualUserId = userId && !isVisitorId(userId) ? userId : null;
       
-      // 如果有图片，上传到freeimage.host获取URL
+      // 多图：规范为数组（兼容单图 image）
+      const imagesList = Array.isArray(generationParams.images) && generationParams.images.length > 0
+        ? generationParams.images
+        : (generationParams.image && generationParams.image.data && generationParams.image.mime_type ? [generationParams.image] : []);
+
       let imageUrl = null;
-      if (generationParams.image && generationParams.image.data && generationParams.image.mime_type) {
-        try {
-          const { uploadToFreeimageHost } = require('./freeimage_upload_service');
-          const filename = `image_${Date.now()}.${generationParams.image.mime_type.split('/')[1]}`;
-          const uploadResult = await uploadToFreeimageHost(
-            generationParams.image.data,
-            filename,
-            generationParams.image.mime_type
-          );
-          imageUrl = uploadResult.displayUrl || uploadResult.url;
-          logger.info(`[AsyncGenerationQueue] 图片上传成功，DisplayURL: ${imageUrl}`);
-        } catch (uploadError) {
-          logger.error('[AsyncGenerationQueue] 图片上传失败:', uploadError);
-          // 上传失败不影响任务创建，只记录错误
+      const imageUrlResults = [];
+      if (imagesList.length > 0) {
+        const { uploadToFreeimageHost } = require('./freeimage_upload_service');
+        for (let i = 0; i < imagesList.length; i++) {
+          const img = imagesList[i];
+          try {
+            const ext = (img.mime_type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+            const filename = `image_${Date.now()}_${i}.${ext}`;
+            const uploadResult = await uploadToFreeimageHost(img.data, filename, img.mime_type);
+            const url = uploadResult.displayUrl || uploadResult.url;
+            imageUrlResults.push({
+              url: uploadResult.url,
+              displayUrl: uploadResult.displayUrl || uploadResult.url,
+              mime_type: img.mime_type
+            });
+            if (!imageUrl) imageUrl = url;
+            logger.info(`[AsyncGenerationQueue] 图片 ${i + 1}/${imagesList.length} 上传成功`);
+          } catch (uploadError) {
+            logger.error(`[AsyncGenerationQueue] 图片 ${i + 1} 上传失败:`, uploadError.message);
+          }
         }
       }
-      
+
       const { data: log, error } = await DatabaseService.supabase
         .from('ai_usage_logs')
         .insert({
           content_id: contentId,
-          user_id: actualUserId, // 如果是 visitor_id，则设置为 NULL
-          visitor_id: visitorId, // 如果是 visitor_id，则存储在这里
+          user_id: actualUserId,
+          visitor_id: visitorId,
           user_query: generationParams.knowledge_point,
           action_type: 'generate',
           status: 'pending',
           request_id: requestId,
-          image_url: imageUrl, // 保存图片URL
+          image_url: imageUrl,
           generation_params: {
             knowledge_point: generationParams.knowledge_point,
             output_type: generationParams.output_type || 'interactive',
             description: generationParams.description,
             language_code: generationParams.language_code,
             provider: generationParams.provider,
-            image: generationParams.image || null, // 保存图片数据
-            // 将幂等键保存在 JSON 里，便于 contains 查询，无需表结构变更
+            images: imagesList.length ? imagesList : null,
+            image_urls: imageUrlResults.length ? imageUrlResults : null,
             idempotency_key: idempotencyKey
           },
           request_payload: {
@@ -185,8 +196,7 @@ class AsyncGenerationQueue {
             description: generationParams.description,
             language_code: generationParams.language_code,
             provider: generationParams.provider,
-            image: generationParams.image || null, // 保存图片数据
-            // 将幂等键保存在 JSON 里，便于 contains 查询，无需表结构变更
+            images: imagesList.length ? imagesList : null,
             idempotency_key: idempotencyKey
           }
         })
@@ -716,56 +726,34 @@ class AsyncGenerationQueue {
       this.runningTasks.add(taskId);
       this.runningContent.add(contentId);
 
-      // 调试日志：检查从数据库读取的图片数据
-      let imageData = task.generation_params?.image || null;
-      
-      // 如果generation_params中没有图片数据，但image_url存在，则从URL下载并转换为base64
-      if (!imageData && task.image_url) {
+      // 多图：从 generation_params.images 或兼容单图 image / image_url
+      let imagesData = task.generation_params?.images && Array.isArray(task.generation_params.images)
+        ? task.generation_params.images.filter((img) => img && img.mime_type && img.data)
+        : [];
+      if (imagesData.length === 0 && task.generation_params?.image?.mime_type && task.generation_params?.image?.data) {
+        imagesData = [task.generation_params.image];
+      }
+      if (imagesData.length === 0 && task.image_url) {
         try {
-          logger.info(`[Process Task] 从image_url下载图片: ${task.image_url}`);
+          logger.info(`[Process Task] 从 image_url 下载单张图片`);
           const response = await fetch(task.image_url);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const imageArrayBuffer = await response.arrayBuffer();
-          const base64ImageData = Buffer.from(imageArrayBuffer).toString('base64');
-          
-          // 从Content-Type推断mime_type，如果没有则从URL推断
-          let mimeType = response.headers.get('content-type') || 'image/jpeg';
-          if (!mimeType.startsWith('image/')) {
-            // 如果Content-Type不是图片类型，尝试从URL推断
-            const urlLower = task.image_url.toLowerCase();
-            if (urlLower.includes('.png')) {
-              mimeType = 'image/png';
-            } else if (urlLower.includes('.gif')) {
-              mimeType = 'image/gif';
-            } else if (urlLower.includes('.webp')) {
-              mimeType = 'image/webp';
-            } else {
-              mimeType = 'image/jpeg'; // 默认使用jpeg
+          if (response.ok) {
+            const buf = Buffer.from(await response.arrayBuffer()).toString('base64');
+            let mimeType = response.headers.get('content-type') || 'image/jpeg';
+            if (!mimeType.startsWith('image/')) {
+              const u = task.image_url.toLowerCase();
+              mimeType = u.includes('.png') ? 'image/png' : u.includes('.gif') ? 'image/gif' : u.includes('.webp') ? 'image/webp' : 'image/jpeg';
             }
+            imagesData = [{ mime_type: mimeType, data: buf }];
           }
-          
-          imageData = {
-            mime_type: mimeType,
-            data: base64ImageData
-          };
-          
-          logger.info(`[Process Task] 图片下载并转换为base64成功: mime_type=${mimeType}, data_length=${base64ImageData.length}`);
-        } catch (downloadError) {
-          logger.error(`[Process Task] 从image_url下载图片失败: ${task.image_url}`, downloadError);
-          // 下载失败不影响任务执行，只是没有图片数据
-          imageData = null;
+        } catch (e) {
+          logger.warn('[Process Task] 从 image_url 下载失败:', e.message);
         }
       }
-      
-      if (imageData) {
-        logger.info(`[Process Task] 将使用图片数据: mime_type=${imageData.mime_type}, data_length=${imageData.data ? imageData.data.length : 0}`);
-      } else {
-        logger.info(`[Process Task] 没有图片数据`);
+      if (imagesData.length > 0) {
+        logger.info(`[Process Task] 使用 ${imagesData.length} 张图片`);
       }
-      
-      // 调用 AI 生成服务（异步模式）+ 超时保护
+
       const aiPromise = aiService.generateEducationalContent(
         task.generation_params.knowledge_point,
         task.generation_params.output_type || 'interactive',
@@ -775,8 +763,8 @@ class AsyncGenerationQueue {
         'generate',
         task.generation_params.provider,
         task.request_id,
-        true, // isAsyncMode = true
-        imageData // 传递图片数据（可能是从URL下载的）
+        true,
+        imagesData.length ? imagesData : null
       );
 
       const timeoutPromise = new Promise((_, reject) => {
@@ -797,6 +785,15 @@ class AsyncGenerationQueue {
           // 即使 content 更新失败，也要更新任务状态，避免状态卡在 processing
         }
         
+        // 在内容更新成功后绑定/创建会话，并写入生成起点的对话消息（用户提示词 + 图片 + start-session assistant）
+        if (contentUpdateSuccess) {
+          try {
+            await this.ensureGenerationConversation(task, contentId);
+          } catch (convError) {
+            logger.error('[Process Task] 绑定生成会话失败（不影响生成本身）:', convError);
+          }
+        }
+
         // 在内容更新成功后扣除积分（仅已登录用户，非 Pro 订阅）
         if (contentUpdateSuccess && task.user_id) {
           try {
@@ -904,6 +901,167 @@ class AsyncGenerationQueue {
       // 从运行中任务集合移除
       this.runningTasks.delete(taskId);
       this.runningContent.delete(contentId);
+    }
+  }
+
+  /**
+   * 为生成任务绑定/创建会话，并写入首条用户提示词 + 图片消息，以及 start-session assistant 消息。
+   * - 会话按 user_id / visitor_id + content_id 唯一；
+   * - 若已存在会话，则不重复创建（保持幂等）。
+   */
+  async ensureGenerationConversation(task, contentId) {
+    try {
+      const userId = task.user_id || null;
+      const visitorId = task.visitor_id || null;
+      const ownerId = userId || visitorId;
+      if (!ownerId || !contentId) return;
+
+      // 1) 获取该用户/访客 + content 的会话（若已存在则复用；否则创建新会话）
+      let query = DatabaseService.supabase
+        .from('ai_conversations')
+        .select('id')
+        .eq('content_id', contentId)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      if (userId) {
+        query = query.eq('user_id', userId).is('visitor_id', null);
+      } else {
+        query = query.eq('visitor_id', visitorId).is('user_id', null);
+      }
+
+      const { data: existing, error: existingError } = await query;
+      if (existingError) {
+        logger.error('[ensureGenerationConversation] 查询 existing conversation 失败:', existingError);
+        return;
+      }
+      let conversationId = existing && existing.length > 0 ? existing[0].id : null;
+      if (!conversationId) {
+        // 创建新的会话（entry_point 标记为 ai_generate，便于后续分析）
+        const { data: convRows, error: convError } = await DatabaseService.supabase
+          .from('ai_conversations')
+          .insert({
+            id: task.request_id, // 与 ai_usage_logs.request_id 对齐，便于追踪
+            user_id: userId,
+            visitor_id: visitorId,
+            content_id: contentId,
+            entry_point: 'ai_generate'
+          })
+          .select('id')
+          .single();
+
+        if (convError || !convRows) {
+          logger.error('[ensureGenerationConversation] 创建 conversation 失败:', convError);
+          return;
+        }
+        conversationId = convRows.id;
+      }
+
+      // 3) 写入首条用户消息：生成提示词 + 图片
+      const gp = task.generation_params || {};
+      const knowledgePoint = gp.knowledge_point || task.user_query || '';
+      const description = gp.description || '';
+      let userContent = knowledgePoint || '';
+      if (description && description.trim()) {
+        userContent = userContent
+          ? `${userContent}\n\n${description}`
+          : description;
+      }
+
+      const imageUrls = Array.isArray(gp.image_urls) ? gp.image_urls : [];
+      const imageMeta = imageUrls.map((item) => ({
+        url: item.url,
+        displayUrl: item.displayUrl || item.url,
+        mime_type: item.mime_type || 'image/jpeg'
+      }));
+
+      const userMetadata = {};
+      if (imageMeta.length > 0) {
+        userMetadata.image_urls = imageMeta;
+        userMetadata.image_count = imageMeta.length;
+        userMetadata.images_pending = false;
+      }
+
+      // 幂等：同一个生成 request_id 只写一次生成起点 user 消息
+      const generationRequestId = task.request_id || null;
+      const idempotencyKey = generationRequestId ? { generation_request_id: generationRequestId } : null;
+      let alreadyHasGenUserMsg = false;
+      if (idempotencyKey) {
+        const { data: existedMsgs, error: existedMsgsError } = await DatabaseService.supabase
+          .from('ai_messages')
+          .select('id')
+          .eq('conversation_id', conversationId)
+          .eq('role', 'user')
+          .contains('metadata', idempotencyKey)
+          .limit(1);
+        if (existedMsgsError) {
+          logger.warn('[ensureGenerationConversation] 检查生成起点 user 消息失败（将继续尝试插入）:', existedMsgsError);
+        } else {
+          alreadyHasGenUserMsg = !!(existedMsgs && existedMsgs.length > 0);
+        }
+      }
+
+      if (!alreadyHasGenUserMsg && (userContent || imageMeta.length > 0)) {
+        const finalUserMetadata = Object.keys(userMetadata).length ? { ...userMetadata, ...(idempotencyKey || {}) } : (idempotencyKey || null);
+        const { error: userMsgError } = await DatabaseService.supabase
+          .from('ai_messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'user',
+            content: userContent || '(生成请求)',
+            metadata: finalUserMetadata
+          });
+
+        if (userMsgError) {
+          logger.error('[ensureGenerationConversation] 创建用户生成消息失败:', userMsgError);
+        }
+      }
+
+      // 4) 写入 start-session assistant 消息（与 AI Guide 初始问候保持一致）
+      try {
+        const metadata = await getOrGenerateMetadata(contentId, ownerId);
+        const initial = await getOrGenerateContentInitialMessage(contentId, metadata, ownerId);
+        const assistantContent = initial?.content;
+
+        // 幂等：若会话已存在任何 assistant 消息，则认为 start-session 已写入过，不重复插入
+        let hasAssistant = false;
+        const { data: assistantCheck, error: assistantCheckError } = await DatabaseService.supabase
+          .from('ai_messages')
+          .select('id')
+          .eq('conversation_id', conversationId)
+          .eq('role', 'assistant')
+          .limit(1);
+        if (assistantCheckError) {
+          logger.warn('[ensureGenerationConversation] 检查 assistant 消息失败（将继续尝试插入）:', assistantCheckError);
+        } else {
+          hasAssistant = !!(assistantCheck && assistantCheck.length > 0);
+        }
+
+        if (!hasAssistant && assistantContent) {
+          const { error: assistantMsgError } = await DatabaseService.supabase
+            .from('ai_messages')
+            .insert({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: assistantContent,
+              metadata: null
+            });
+
+          if (assistantMsgError) {
+            logger.error('[ensureGenerationConversation] 创建 start-session assistant 消息失败:', assistantMsgError);
+          }
+        }
+
+        // 更新会话活跃时间
+        await DatabaseService.supabase
+          .from('ai_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', conversationId);
+      } catch (e) {
+        logger.error('[ensureGenerationConversation] 生成初始 assistant 消息失败:', e);
+      }
+    } catch (e) {
+      logger.error('[ensureGenerationConversation] 异常:', e);
     }
   }
 
@@ -1427,45 +1585,29 @@ class AsyncGenerationQueue {
         provider: gp.provider ?? failedTask.request_payload?.provider ?? process.env.DEFAULT_AI_PROVIDER ?? 'qenda'
       };
       
-      // 如果有image_url但没有image数据，尝试从URL下载并转换为base64
-      if (!generationParams.image && failedTask.image_url) {
+      // 多图：优先 generation_params.images / request_payload.images，否则单图 image / image_url 下载
+      let imagesForRetry = gp.images && Array.isArray(gp.images) ? gp.images : (failedTask.request_payload?.images && Array.isArray(failedTask.request_payload.images) ? failedTask.request_payload.images : null);
+      if (!imagesForRetry?.length && failedTask.image_url) {
         try {
-          logger.info(`[Retry Failed Task] 从image_url下载图片: ${failedTask.image_url}`);
           const response = await fetch(failedTask.image_url);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const imageArrayBuffer = await response.arrayBuffer();
-          const base64ImageData = Buffer.from(imageArrayBuffer).toString('base64');
-          
-          // 从Content-Type推断mime_type，如果没有则从URL推断
-          let mimeType = response.headers.get('content-type') || 'image/jpeg';
-          if (!mimeType.startsWith('image/')) {
-            const urlLower = failedTask.image_url.toLowerCase();
-            if (urlLower.includes('.png')) {
-              mimeType = 'image/png';
-            } else if (urlLower.includes('.gif')) {
-              mimeType = 'image/gif';
-            } else if (urlLower.includes('.webp')) {
-              mimeType = 'image/webp';
-            } else {
-              mimeType = 'image/jpeg';
+          if (response.ok) {
+            const base64ImageData = Buffer.from(await response.arrayBuffer()).toString('base64');
+            let mimeType = response.headers.get('content-type') || 'image/jpeg';
+            if (!mimeType.startsWith('image/')) {
+              const u = failedTask.image_url.toLowerCase();
+              mimeType = u.includes('.png') ? 'image/png' : u.includes('.gif') ? 'image/gif' : u.includes('.webp') ? 'image/webp' : 'image/jpeg';
             }
+            imagesForRetry = [{ mime_type: mimeType, data: base64ImageData }];
           }
-          
-          generationParams.image = {
-            mime_type: mimeType,
-            data: base64ImageData
-          };
-          
-          logger.info(`[Retry Failed Task] 图片下载并转换为base64成功: mime_type=${mimeType}, data_length=${base64ImageData.length}`);
-        } catch (downloadError) {
-          logger.error(`[Retry Failed Task] 从image_url下载图片失败: ${failedTask.image_url}`, downloadError);
-          // 下载失败不影响重试，只是没有图片数据
+        } catch (e) {
+          logger.warn('[Retry Failed Task] 从 image_url 下载失败:', e.message);
         }
-      } else if (failedTask.request_payload?.image) {
-        // 如果request_payload中有图片数据，直接使用
-        generationParams.image = failedTask.request_payload.image;
+      }
+      if (!imagesForRetry?.length && failedTask.request_payload?.image?.mime_type && failedTask.request_payload?.image?.data) {
+        imagesForRetry = [failedTask.request_payload.image];
+      }
+      if (imagesForRetry?.length) {
+        generationParams.images = imagesForRetry;
       }
 
       // 直接调用 addTask，重新开始整个生成流程

@@ -20,7 +20,10 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const desktopDropdownRef = useRef<HTMLUListElement | null>(null);
   const mobileModalRef = useRef<HTMLDivElement | null>(null);
 
   // 监听窗口尺寸，判定移动端（与 Tailwind sm 断点一致）
@@ -51,10 +54,10 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
           setIsOpen(false);
         }
       } else {
-        // 桌面端：检查是否点击在按钮容器外部
-        if (containerRef.current && target && !containerRef.current.contains(target)) {
-          setIsOpen(false);
-        }
+        // 桌面端：点击在按钮或下拉内容外则关闭（下拉在 portal 里，需单独判断）
+        const inTrigger = containerRef.current && target && containerRef.current.contains(target);
+        const inDropdown = desktopDropdownRef.current && target && desktopDropdownRef.current.contains(target);
+        if (!inTrigger && !inDropdown) setIsOpen(false);
       }
     };
     const onKey = (ev: KeyboardEvent) => {
@@ -70,10 +73,20 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
     };
   }, [isOpen, isMobile]);
 
+  // 桌面端下拉打开时，用 trigger 的位置渲染到 body，避免被侧栏 overflow 裁切
+  useEffect(() => {
+    if (!isOpen || isMobile) {
+      setDropdownRect(null);
+      return;
+    }
+    const el = triggerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setDropdownRect({ top: rect.bottom + 8, left: rect.left });
+  }, [isOpen, isMobile]);
+
   const handleSelect = (code: string) => {
-    // 只调用 setLanguage，它会处理所有同步和页面刷新
     setLanguage(code);
-    // 不需要手动关闭弹窗，因为页面会刷新
   };
 
   if (variant === 'inline') {
@@ -87,6 +100,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
   return (
     <div ref={containerRef} className="relative inline-block">
       <button
+        ref={triggerRef}
         className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="listbox"
@@ -96,15 +110,17 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
       >
         <span aria-hidden>🌐</span>
       </button>
-      {isOpen && !isMobile && (
+      {isOpen && !isMobile && dropdownRect != null && createPortal(
         <ul
-          className="absolute left-0 z-50 mt-2 min-w-[10rem] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg py-1"
+          ref={desktopDropdownRef}
+          className="fixed z-[9998] w-max min-w-[8.5rem] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg py-1"
           role="listbox"
+          style={{ top: dropdownRect.top, left: dropdownRect.left }}
         >
           {supportedLanguages.map(lang => (
             <li
               key={lang.code}
-              className={`flex items-center px-3 py-2 cursor-pointer text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-600 ${lang.code === currentLanguage ? 'font-semibold bg-gray-50 dark:bg-slate-700' : ''}`}
+              className={`flex items-center px-3 py-2 cursor-pointer text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-600 whitespace-nowrap ${lang.code === currentLanguage ? 'font-semibold bg-gray-50 dark:bg-slate-700' : ''}`}
               onClick={() => handleSelect(lang.code)}
               role="option"
               aria-selected={lang.code === currentLanguage}
@@ -113,7 +129,8 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'button' 
               <span>{lang.label}</span>
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
 
       {isOpen && isMobile && createPortal(

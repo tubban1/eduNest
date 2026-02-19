@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Sidebar from '@/components/Sidebar';
+import Sidebar, { SidebarWidthContext, SIDEBAR_COLLAPSED_KEY } from '@/components/Sidebar';
 import MobileHeader from '@/components/MobileHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import AIGuideMessageRenderer from '@/components/AIGuideMessageRenderer';
 import LearnPageImageEditor, { type AttachedImage } from '@/components/LearnPageImageEditor';
-import { ImagePlus, MessageSquarePlus, History, Heart } from 'lucide-react';
+import { ImagePlus, MessageSquarePlus, History, Heart, PanelTop, PanelLeft } from 'lucide-react';
 import i18n from '@/i18n/config';
 
 const MAX_ATTACH_IMAGES = 3;
@@ -70,6 +70,7 @@ const IFRAME_DEFAULT_H = 420;
 const DRAG_BAR_H = 24; // h-6
 const CHAT_MIN_H = 260;
 const CHAT_DESIRED_H = 400;
+/** 无历史对话时 iframe 按语言显示的默认内容 short_id（中文/英文/德文/法文） */
 const SHORT_ID_BY_LOCALE: Record<string, string> = {
   'zh-CN': 'm245mkdm',
   'en-US': 'pipttt1g',
@@ -81,7 +82,11 @@ type ChatRole = 'user' | 'assistant';
 interface ChatMessage {
   role: ChatRole;
   content: string;
-  metadata?: { image_urls?: Array<{ url: string }>; image_placeholders?: Array<{ dataUrl: string }>; images_pending?: boolean };
+  metadata?: {
+    image_urls?: Array<{ url: string; displayUrl?: string }>;
+    image_placeholders?: Array<{ dataUrl: string }>;
+    images_pending?: boolean;
+  };
 }
 
 function getShortIdForLocale(): string {
@@ -89,9 +94,29 @@ function getShortIdForLocale(): string {
   return SHORT_ID_BY_LOCALE[code] || SHORT_ID_BY_LOCALE['zh-CN'];
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+type LearnRole = 'student' | 'parent' | 'teacher';
+
+function buildNewConversationIframeHtml(t: (key: string) => string, role: LearnRole): string {
+  const title = escapeHtml(t('newConversation'));
+  const hint = escapeHtml(t(`newTaskPrompt.${role}`));
+  const examples = escapeHtml(t(`newTaskPromptPlaceholder.${role}`));
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:rgba(255,255,255,0.9);font-family:system-ui,sans-serif;padding:24px;box-sizing:border-box"><div style="max-width:420px;text-align:center"><h2 style="margin:0 0 16px;font-size:1.25rem;font-weight:600;color:rgba(255,255,255,0.95)">${title}</h2><p style="margin:0 0 20px;font-size:0.9375rem;line-height:1.6;color:rgba(255,255,255,0.8)">${hint}</p><p style="margin:0;font-size:0.8125rem;line-height:1.5;color:rgba(255,255,255,0.5)">${examples}</p></div></body></html>`;
+  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+}
+
 export default function LearnPage() {
   const { t } = useTranslation(['aiGuide', 'onboard', 'content', 'common']);
   const { user } = useAuth();
+  const learnRole: LearnRole = ['student', 'parent', 'teacher'].includes(user?.role || '') ? (user!.role as LearnRole) : 'student';
   const [shortId, setShortId] = useState<string | null>(null);
   const [iframeHeight, setIframeHeight] = useState<number>(IFRAME_DEFAULT_H);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -105,6 +130,10 @@ export default function LearnPage() {
   const [historyList, setHistoryList] = useState<
     Array<{ id: string; short_id?: string; title?: string; svg_thumbnail?: string; thumbnail_url?: string }>
   >([]);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+  const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
+  const historyScrollRef = useRef<HTMLDivElement>(null);
+  const HISTORY_PAGE_SIZE = 50;
   const [historyViewMode, setHistoryViewMode] = useState<'svg' | 'title'>('svg');
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [collectionLists, setCollectionLists] = useState<Array<{ id: string; name: string }>>([]);
@@ -118,6 +147,8 @@ export default function LearnPage() {
   const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
   const [imageUploading, setImageUploading] = useState(false);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
+  /** 对话框内点击图片时，页面内弹窗预览的图片 URL（null 表示关闭） */
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const iframeBoxRef = useRef<HTMLDivElement>(null);
@@ -133,8 +164,140 @@ export default function LearnPage() {
   const iframeHeightRef = useRef(iframeHeight);
   const pendingIframeHeightRef = useRef<number | null>(null);
   const dragRafRef = useRef<number | null>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
+  /** 向 iframe 请求 UI 状态时的 Promise 解析与超时（与 AIGuidedLearning 一致） */
+  const pendingUIStateResolveRef = useRef<
+    ((value: { currentStage: { stageId: string; stageIndex: number } | null; uiState: Record<string, unknown> | null }) => void) | null
+  >(null);
+  const pendingUIStateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  /** 最近一次从 iframe 拿到的 uiState / stage（超时或无 iframe 时作为 fallback） */
+  const [currentUIState, setCurrentUIState] = useState<Record<string, unknown> | null>(null);
+  const [currentStage, setCurrentStage] = useState<{ stageId: string; stageIndex: number } | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  useEffect(() => {
+    try {
+      setSidebarCollapsed(typeof window !== 'undefined' && localStorage.getItem(SIDEBAR_COLLAPSED_KEY) !== 'false');
+    } catch (_) {}
+  }, []);
+
+  const LAYOUT_KEY = 'edu_learn_layout';
+  const [layoutVertical, setLayoutVertical] = useState(true);
+  useEffect(() => {
+    try {
+      setLayoutVertical(typeof window !== 'undefined' && localStorage.getItem(LAYOUT_KEY) !== 'horizontal');
+    } catch (_) {}
+  }, []);
+  const toggleLayout = useCallback(() => {
+    setLayoutVertical((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem(LAYOUT_KEY, next ? 'vertical' : 'horizontal');
+      } catch (_) {}
+      return next;
+    });
+  }, []);
+
+  const SPLIT_RATIO_KEY = 'edu_learn_split_ratio';
+  const SPLIT_MIN = 25;
+  const SPLIT_MAX = 75;
+  const [splitLeftPercent, setSplitLeftPercent] = useState(50);
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      const raw = localStorage.getItem(SPLIT_RATIO_KEY);
+      if (raw != null) {
+        const n = Number(raw);
+        if (!Number.isNaN(n) && n >= SPLIT_MIN && n <= SPLIT_MAX) setSplitLeftPercent(n);
+      }
+    } catch (_) {}
+  }, []);
+  const horizontalDragStateRef = useRef<{ pointerId: number; startX: number; startPercent: number } | null>(null);
+  const [isHorizontalDragging, setIsHorizontalDragging] = useState(false);
+  const pendingSplitRef = useRef<number | null>(null);
+  const splitRafRef = useRef<number | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // 监听 iframe 内 eduNestRuntime 上报的 UI 状态与阶段变化，供发送对话时带上 ui_state
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'EDUNEST_UI_STATE_RESPONSE') {
+        const uiState = (data.data ?? {}) as Record<string, unknown>;
+        setCurrentUIState(uiState);
+        const stage =
+          currentStage ??
+          (typeof uiState.stageIndex === 'number' && uiState.stageIndex > 0
+            ? {
+                stageId: String(uiState.currentStage ?? uiState['data-current-stage'] ?? `STAGE_${uiState.stageIndex}`),
+                stageIndex: uiState.stageIndex as number,
+              }
+            : null);
+        if (stage) setCurrentStage(stage);
+        if (pendingUIStateResolveRef.current) {
+          const resolveFn = pendingUIStateResolveRef.current;
+          pendingUIStateResolveRef.current = null;
+          if (pendingUIStateTimeoutRef.current) {
+            clearTimeout(pendingUIStateTimeoutRef.current);
+            pendingUIStateTimeoutRef.current = null;
+          }
+          resolveFn({ currentStage: stage, uiState });
+        }
+      }
+      if (data.type === 'EDUNEST_EVENT' && data.data?.eventType === 'stage_change') {
+        const payload = data.data?.data ?? {};
+        const stageId = payload?.stage ?? payload?.stageId ?? '';
+        const stageIndex = Number(payload?.stageIndex ?? 0) || 0;
+        if (stageId && stageIndex > 0) {
+          setCurrentStage({ stageId, stageIndex });
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [currentStage]);
+
+  /** 向当前 iframe 请求 UI 状态（standalone 内容会通过 EDUNEST_GET_UI_STATE 响应），超时 800ms 用当前缓存 */
+  const refreshUIState = useCallback((): Promise<{
+    currentStage: { stageId: string; stageIndex: number } | null;
+    uiState: Record<string, unknown> | null;
+  }> => {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) {
+      return Promise.resolve({ currentStage, uiState: currentUIState });
+    }
+    win.postMessage({ type: 'EDUNEST_GET_UI_STATE' }, '*');
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        pendingUIStateTimeoutRef.current = null;
+        if (pendingUIStateResolveRef.current) {
+          pendingUIStateResolveRef.current({ currentStage, uiState: currentUIState });
+          pendingUIStateResolveRef.current = null;
+        }
+        resolve({ currentStage, uiState: currentUIState });
+      }, 800);
+      pendingUIStateTimeoutRef.current = timeout;
+      pendingUIStateResolveRef.current = (value) => {
+        if (pendingUIStateTimeoutRef.current) {
+          clearTimeout(pendingUIStateTimeoutRef.current);
+          pendingUIStateTimeoutRef.current = null;
+        }
+        pendingUIStateResolveRef.current = null;
+        resolve(value);
+      };
+    });
+  }, [currentStage, currentUIState]);
+
+  // 对话有新内容或初次加载完消息时，滚动到底部
+  useEffect(() => {
+    const el = messagesScrollRef.current;
+    if (!el) return;
+    const run = () => {
+      el.scrollTo({ top: el.scrollHeight - el.clientHeight, behavior: 'smooth' });
+    };
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  }, [messages, isLoading]);
 
   const applyIframeHeightVar = useCallback((h: number) => {
     iframeBoxRef.current?.style.setProperty('--iframe-h', `${h}px`);
@@ -236,6 +399,78 @@ export default function LearnPage() {
     endDrag(true);
   }, [endDrag]);
 
+  const flushSplitRatio = useCallback(() => {
+    splitRafRef.current = null;
+    const p = pendingSplitRef.current;
+    if (p == null) return;
+    setSplitLeftPercent(p);
+  }, []);
+  const endHorizontalDrag = useCallback((finalize: boolean) => {
+    horizontalDragStateRef.current = null;
+    if (splitRafRef.current != null) {
+      cancelAnimationFrame(splitRafRef.current);
+      splitRafRef.current = null;
+    }
+    if (finalize) {
+      const p = pendingSplitRef.current ?? splitLeftPercent;
+      setSplitLeftPercent(p);
+      try {
+        localStorage.setItem(SPLIT_RATIO_KEY, String(Math.round(p)));
+      } catch (_) {}
+    }
+    pendingSplitRef.current = null;
+    setIsHorizontalDragging(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, [splitLeftPercent]);
+  const handleHorizontalDragStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const el = e.currentTarget;
+    try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+    horizontalDragStateRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startPercent: pendingSplitRef.current ?? splitLeftPercent,
+    };
+    pendingSplitRef.current = splitLeftPercent;
+    setIsHorizontalDragging(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [splitLeftPercent]);
+  const handleHorizontalDragMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const st = horizontalDragStateRef.current;
+    if (!st || st.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    const workspace = workspaceRef.current;
+    if (!workspace) return;
+    const rect = workspace.getBoundingClientRect();
+    const totalW = rect.width;
+    if (totalW <= 0) return;
+    const deltaX = e.clientX - st.startX;
+    const deltaPercent = (deltaX / totalW) * 100;
+    let next = st.startPercent + deltaPercent;
+    next = Math.max(SPLIT_MIN, Math.min(SPLIT_MAX, next));
+    pendingSplitRef.current = next;
+    if (splitRafRef.current == null) {
+      splitRafRef.current = requestAnimationFrame(flushSplitRatio);
+    }
+  }, [flushSplitRatio]);
+  const handleHorizontalDragUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const st = horizontalDragStateRef.current;
+    if (!st || st.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    endHorizontalDrag(true);
+  }, [endHorizontalDrag]);
+  const handleHorizontalDragCancel = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const st = horizontalDragStateRef.current;
+    if (!st || st.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    endHorizontalDrag(true);
+  }, [endHorizontalDrag]);
+
   // 读取内容后：自动调节 iframe 高度，使 iframe + 拖动条 + 对话框整体刚好适配当前浏览器高度
   useEffect(() => {
     if (!mounted) return;
@@ -248,7 +483,8 @@ export default function LearnPage() {
     requestAnimationFrame(() => requestAnimationFrame(() => fitToViewport()));
   }, [mounted, hasInit, conversationId, isAwaitingNewContent, isGeneratingNewContent, fitToViewport]);
 
-  // 从数据库 ai_conversations 表查询最近一次 conversation，导入到工作台（iframe + 消息）
+  // 约定：iframe 显示「当前用户最新 ai_conversation 对应内容」，对话框显示该会话的 ai_messages；无历史则按语言显示默认内容（SHORT_ID_BY_LOCALE）
+  // 依赖 user?.id：登录态就绪后再拉一次最近对话，避免首屏时 auth 未就绪导致拿到 null/访客会话、iframe 显示错误内容
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -256,23 +492,16 @@ export default function LearnPage() {
         const last = await api.aiGuide.getLastConversation();
         if (cancelled) return;
         if (last?.conversation_id) {
-          // 有上次对话：导入到工作台
+          // 有历史：用最新会话的 content_short_id 作为 iframe 内容，对话框显示该会话的 messages
           autoFitOnNextInitRef.current = true;
-          // 1. 设置 conversationId（当前会话）
           setConversationId(last.conversation_id);
           setHasInit(true);
           skipNextShortIdLoad.current = true;
-          // 2. 设置 iframe 内容（如果有 content_short_id）
-          if (last.content_short_id) {
-            setShortId(last.content_short_id);
-          } else {
-            setShortId(getShortIdForLocale());
-          }
-          // 3. 导入消息列表（从数据库 ai_messages 表）
+          setShortId(last.content_short_id || getShortIdForLocale());
           const mapped = (last.messages || []).map((m: any) => ({ role: m.role as ChatRole, content: m.content || '', metadata: m.metadata }));
           setMessages(mapped.length > 0 ? mapped : [{ role: 'assistant', content: t('learnInitialMessage') }]);
         } else {
-          // 无上次对话：使用默认 shortId
+          // 无历史：iframe 显示当前语言默认内容（中文 m245mkdm / 英文 pipttt1g / 德文 qdr90188 / 法文 kf808khv）
           setShortId(getShortIdForLocale());
           skipNextShortIdLoad.current = false;
         }
@@ -284,7 +513,7 @@ export default function LearnPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [t]);
+  }, [t, user?.id]);
 
   const loadConversationForContent = useCallback(async (contentShortId: string) => {
     try {
@@ -342,11 +571,12 @@ export default function LearnPage() {
   };
 
   const fetchHistoryList = useCallback(async () => {
-    if (!user?.id) { setHistoryList([]); return; }
+    if (!user?.id) { setHistoryList([]); setHistoryHasMore(false); return; }
     try {
-      const list = await api.content.getFiltered({ created_by: user.id, limit: 50, offset: 0 } as any);
+      const res = await api.get(`/content/history?limit=${HISTORY_PAGE_SIZE}&offset=0`);
+      const list = res?.success && Array.isArray(res.data) ? res.data : [];
       setHistoryList(
-        (list || []).map((c: any) => ({
+        list.map((c: any) => ({
           id: c.id,
           short_id: c.short_id,
           title: c.title,
@@ -354,10 +584,44 @@ export default function LearnPage() {
           thumbnail_url: c.thumbnail_url,
         })),
       );
+      setHistoryHasMore(!!(res as any)?.hasMore);
     } catch {
       setHistoryList([]);
+      setHistoryHasMore(false);
     }
   }, [user?.id]);
+
+  const fetchMoreHistory = useCallback(async () => {
+    if (!user?.id || historyLoadingMore || !historyHasMore) return;
+    setHistoryLoadingMore(true);
+    try {
+      const offset = historyList.length;
+      const res = await api.get(`/content/history?limit=${HISTORY_PAGE_SIZE}&offset=${offset}`);
+      const list = res?.success && Array.isArray(res.data) ? res.data : [];
+      const next = list.map((c: any) => ({
+        id: c.id,
+        short_id: c.short_id,
+        title: c.title,
+        svg_thumbnail: c.svg_thumbnail,
+        thumbnail_url: c.thumbnail_url,
+      }));
+      setHistoryList((prev) => [...prev, ...next]);
+      setHistoryHasMore(!!(res as any)?.hasMore);
+    } catch {
+      setHistoryHasMore(false);
+    } finally {
+      setHistoryLoadingMore(false);
+    }
+  }, [user?.id, historyLoadingMore, historyHasMore, historyList.length]);
+
+  const onHistoryScroll = useCallback(() => {
+    const el = historyScrollRef.current;
+    if (!el || historyLoadingMore || !historyHasMore) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    if (scrollHeight - scrollTop - clientHeight < 120) {
+      fetchMoreHistory();
+    }
+  }, [historyLoadingMore, historyHasMore, fetchMoreHistory]);
 
   const fetchCollectionLists = useCallback(async () => {
     if (!user?.id) return;
@@ -402,9 +666,12 @@ export default function LearnPage() {
 
   const handleStartNewConversation = () => {
     setHasInit(false);
+    setShortId(null);
     setConversationId(null);
-    setMessages([{ role: 'assistant', content: t('newTaskPrompt') }]);
+    setMessages([{ role: 'assistant', content: t(`newTaskPrompt.${learnRole}`) }]);
     setIsAwaitingNewContent(true);
+    setIsGeneratingNewContent(false);
+    setGeneratingKnowledgePoint('');
     setHistoryOpen(false);
     setCollectionsOpen(false);
     setInputValue('');
@@ -480,6 +747,145 @@ export default function LearnPage() {
     setEditingImageIndex(null);
   }, []);
 
+  const handleGenerateFromInput = useCallback(async () => {
+    const knowledgePoint = inputValue.trim();
+    if (!knowledgePoint || isGeneratingNewContent) return;
+    if (freeTrialUsed && !user) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: t('pleaseLoginToContinue') }]);
+      return;
+    }
+    const lang = (i18n.language || 'zh-CN').split('-')[0] === 'zh' ? 'zh-CN' : (i18n.language || 'en-US');
+    const imagePayload = attachedImages[0]
+      ? { mime_type: attachedImages[0].mimeType, data: attachedImages[0].base64 }
+      : undefined;
+    setGeneratingKnowledgePoint(knowledgePoint);
+    setInputValue('');
+    setAttachedImages([]);
+    setMessages((prev) => [...prev, { role: 'user', content: knowledgePoint }, { role: 'assistant', content: '' }]);
+    setIsGeneratingNewContent(true);
+    setIsAwaitingNewContent(false);
+    let contentId: string;
+    let newShortId: string;
+    try {
+      if (!user) {
+        const res = await api.generateContentFree({
+          knowledgePoint,
+          output_type: 'interactive',
+          language_code: lang,
+          image: imagePayload,
+        });
+        const data = (res as any)?.data;
+        if (!(res as any)?.success || !data?.id) {
+          const err = (res as any)?.error || (res as any)?.message || '生成失败';
+          const replaceLastWith = (content: string) => setMessages((prev) => {
+            const p = [...prev];
+            if (p.length && p[p.length - 1].role === 'assistant' && !p[p.length - 1].content) p.pop();
+            return [...p, { role: 'assistant', content }];
+          });
+          if (err === 'FREE_TRIAL_USED' || (err && String(err).includes('FREE_TRIAL'))) {
+            setFreeTrialUsed(true);
+            replaceLastWith(t('pleaseLoginToContinue'));
+          } else {
+            replaceLastWith(err);
+          }
+          return;
+        }
+        if ((res as any)?.freeTrialUsed) setFreeTrialUsed(true);
+        contentId = data.id;
+        newShortId = data.short_id;
+        if (!newShortId) {
+          setMessages((prev) => {
+            const p = [...prev];
+            if (p.length && p[p.length - 1].role === 'assistant' && !p[p.length - 1].content) p.pop();
+            return [...p, { role: 'assistant', content: t('initSessionFailed') }];
+          });
+          return;
+        }
+        setShortId(newShortId);
+      } else {
+        const safeTitle = knowledgePoint.length > 200 ? knowledgePoint.slice(0, 200) : knowledgePoint;
+        const content = await api.content.create({
+          title: safeTitle,
+          description: '',
+          language_code: lang,
+          content_type: 'vue',
+          full_html: '<div class="p-4 text-slate-400">内容生成中…</div>',
+          tags: [],
+        });
+        if (!content?.id) {
+          setMessages((prev) => {
+            const p = [...prev];
+            if (p.length && p[p.length - 1].role === 'assistant' && !p[p.length - 1].content) p.pop();
+            return [...p, { role: 'assistant', content: '创建内容失败' }];
+          });
+          return;
+        }
+        contentId = content.id;
+        newShortId = content.short_id;
+        if (!newShortId) {
+          setMessages((prev) => {
+            const p = [...prev];
+            if (p.length && p[p.length - 1].role === 'assistant' && !p[p.length - 1].content) p.pop();
+            return [...p, { role: 'assistant', content: t('initSessionFailed') }];
+          });
+          return;
+        }
+        await api.generateContentAsync(contentId, {
+          knowledge_point: knowledgePoint,
+          output_type: 'interactive',
+          language_code: lang,
+          image: imagePayload,
+        });
+        setShortId(newShortId);
+      }
+      const maxAttempts = 120;
+      for (let i = 0; i < maxAttempts; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const statusRes = await api.getContentGenerationStatus(contentId);
+        const status = (statusRes as any)?.data?.status ?? (statusRes as any)?.status;
+        if (status === 'done') {
+          setIsGeneratingNewContent(false);
+          // 不在此处再调 loadConversationForContent：setShortId(newShortId) 已触发 useEffect 调过一次 init，避免 start session 被保存两次
+          return;
+        }
+        if (status === 'failed') {
+          const errMsg = (statusRes as any)?.data?.error_message ?? (statusRes as any)?.error_message ?? '生成失败';
+          setMessages((prev) => {
+            const p = [...prev];
+            if (p.length && p[p.length - 1].role === 'assistant' && !p[p.length - 1].content) p.pop();
+            return [...p, { role: 'assistant', content: errMsg }];
+          });
+          break;
+        }
+      }
+      setIsGeneratingNewContent(false);
+      setMessages((prev) => {
+        const p = [...prev];
+        if (p.length && p[p.length - 1].role === 'assistant' && !p[p.length - 1].content) p.pop();
+        return [...p, { role: 'assistant', content: t(`newTaskPromptPlaceholder.${learnRole}`) }];
+      });
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      setMessages((prev) => {
+        const p = [...prev];
+        if (p.length && p[p.length - 1].role === 'assistant' && !p[p.length - 1].content) p.pop();
+        return [...p, { role: 'assistant', content: msg }];
+      });
+      if (msg.includes('FREE_TRIAL')) setFreeTrialUsed(true);
+    } finally {
+      setIsGeneratingNewContent(false);
+    }
+  }, [
+    inputValue,
+    attachedImages,
+    isGeneratingNewContent,
+    freeTrialUsed,
+    user,
+    learnRole,
+    t,
+    loadConversationForContent,
+  ]);
+
   const handleSendMessage = async () => {
     const text = inputValue.trim();
     if (!text || isLoading) return;
@@ -487,15 +893,31 @@ export default function LearnPage() {
       attachedImages.length > 0
         ? attachedImages.map((img) => ({ mime_type: img.mimeType, data: img.base64 }))
         : undefined;
+    const imagePlaceholders = attachedImages.length > 0
+      ? attachedImages.map((img) => ({ dataUrl: img.dataUrl }))
+      : undefined;
     setInputValue('');
     setAttachedImages([]);
-    setMessages((prev) => [...prev, { role: 'user', content: text }, { role: 'assistant', content: '' }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'user',
+        content: text,
+        metadata: imagePlaceholders?.length
+          ? { images_pending: true, image_placeholders: imagePlaceholders }
+          : undefined
+      },
+      { role: 'assistant', content: '' }
+    ]);
     setIsLoading(true);
+    let convId: string | null = null;
     try {
-      const convId = await ensureSession();
+      convId = await ensureSession();
+      const { currentStage: stage, uiState: uiStateFromIframe } = await refreshUIState();
+      const ui_state = stage || uiStateFromIframe ? { currentStage: stage, uiState: uiStateFromIframe } : undefined;
       let fullReply = '';
       if (user) {
-        await api.aiGuide.chatStream(convId, text, undefined, (chunk) => {
+        await api.aiGuide.chatStream(convId, text, ui_state, (chunk) => {
           fullReply += chunk;
           setMessages((prev) => {
             const next = [...prev];
@@ -505,7 +927,7 @@ export default function LearnPage() {
           });
         }, imagesPayload);
       } else {
-        const result = await api.aiGuide.chatStreamFree(convId, text, undefined, (chunk) => {
+        const result = await api.aiGuide.chatStreamFree(convId, text, ui_state, (chunk) => {
           fullReply += chunk;
           setMessages((prev) => {
             const next = [...prev];
@@ -515,6 +937,19 @@ export default function LearnPage() {
           });
         }, imagesPayload);
         if ((result as any)?.freeTrialUsed) setFreeTrialUsed(true);
+      }
+      if (imagesPayload?.length && convId) {
+        setTimeout(() => {
+          api.aiGuide.getMessages(convId!).then((list: any[]) => {
+            if (Array.isArray(list) && list.length > 0) {
+              setMessages(list.map((msg: any) => ({
+                role: msg.role as ChatRole,
+                content: msg.content || '',
+                metadata: msg.metadata ?? undefined
+              })));
+            }
+          }).catch(() => {});
+        }, 2500);
       }
     } catch (e: any) {
       const msg = e?.message || String(e);
@@ -530,9 +965,17 @@ export default function LearnPage() {
     }
   };
 
+  const handleSubmitInput = useCallback(() => {
+    if (isAwaitingNewContent) {
+      handleGenerateFromInput();
+    } else {
+      handleSendMessage();
+    }
+  }, [isAwaitingNewContent, handleGenerateFromInput, handleSendMessage]);
+
   const placeholder = isAwaitingNewContent
-    ? t('learnPlaceholder.student')
-    : (isGeneratingNewContent || !shortId ? t('newTaskPromptPlaceholder') : t('inputPlaceholder'));
+    ? t(`learnPlaceholder.${learnRole}`)
+    : (isGeneratingNewContent || !shortId ? t(`newTaskPromptPlaceholder.${learnRole}`) : t('inputPlaceholder'));
 
   if (!mounted) {
     return (
@@ -543,41 +986,47 @@ export default function LearnPage() {
   }
 
   return (
+    <SidebarWidthContext.Provider value={{ collapsed: sidebarCollapsed, setCollapsed: setSidebarCollapsed }}>
     <div className="flex bg-background" suppressHydrationWarning>
       <div className="hidden lg:block fixed top-0 left-0 h-screen z-30">
         <Sidebar variant="desktop" />
       </div>
       <Sidebar variant="mobile" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="flex-1 flex flex-col min-h-screen bg-slate-950 lg:ml-64">
+      <main className={`flex-1 flex flex-col min-h-screen bg-slate-950 transition-[margin] duration-200 ease-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         <MobileHeader onMenuClick={() => setSidebarOpen(true)} className="shrink-0" />
         <div className="flex-1 flex flex-col min-h-0 relative">
             <div
               ref={workspaceRef}
-              className="flex-1 flex flex-col min-h-0 px-2 sm:px-4 lg:px-6 py-2 lg:py-4"
+              className={`flex-1 flex min-h-0 px-2 sm:px-4 lg:px-6 py-2 lg:py-4 ${layoutVertical ? 'flex-col' : 'flex-row gap-2 lg:gap-3'}`}
             >
             <div
               ref={iframeBoxRef}
-              className="flex flex-col min-h-0 rounded-xl border border-white/15 bg-black/10 overflow-hidden relative"
-              style={{ ['--iframe-h' as any]: `${iframeHeight}px` } as React.CSSProperties}
+              className={`flex flex-col min-h-0 rounded-xl border border-white/15 bg-black/10 overflow-hidden relative ${!layoutVertical ? 'flex-none min-w-0 shrink-0' : ''}`}
+              style={
+                layoutVertical
+                  ? { ['--iframe-h' as any]: `${iframeHeight}px` } as React.CSSProperties
+                  : { width: `${splitLeftPercent}%` }
+              }
             >
               <iframe
                 ref={iframeRef}
                 key={isGeneratingNewContent ? 'loading' : isAwaitingNewContent ? 'blank' : shortId ?? 'loading'}
                 src={
                   isGeneratingNewContent
-                    ? `/learn/loading?kp=${encodeURIComponent(generatingKnowledgePoint || t('newTaskPromptPlaceholder'))}`
+                    ? `/learn/loading?kp=${encodeURIComponent(generatingKnowledgePoint || t(`newTaskPromptPlaceholder.${learnRole}`))}`
                     : isAwaitingNewContent
-                      ? `data:text/html,<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:rgba(255,255,255,0.7);font-family:system-ui;padding:16px"><p>${t('newTaskPromptHintBelow')}</p></body>`
+                      ? buildNewConversationIframeHtml(t, learnRole)
                       : shortId
                         ? `/standalone/${shortId}`
                         : `/learn/loading?kp=${encodeURIComponent(t('loadingMessages'))}`
                 }
                 title={t('iframeTitle')}
-                className="w-full border-0 rounded-t-xl shrink-0"
-                style={{ height: 'var(--iframe-h)' }}
+                className={`w-full border-0 rounded-t-xl ${layoutVertical ? 'shrink-0' : 'flex-1 min-h-0'}`}
+                style={layoutVertical ? { height: 'var(--iframe-h)' } : { height: '100%', minHeight: 0 }}
               />
             </div>
-            {/* iframe 下边缘拖动条 */}
+            {/* iframe 下边缘拖动条（仅上下排列时显示） */}
+            {layoutVertical && (
             <div
               className="relative h-6 cursor-row-resize z-30 flex items-center justify-center px-2 sm:px-4 lg:px-6 select-none touch-none"
               onPointerDown={handleDragPointerDown}
@@ -590,8 +1039,35 @@ export default function LearnPage() {
                 isDragging ? 'bg-blue-500' : 'bg-slate-500/50 hover:bg-slate-500/70'
               }`} />
             </div>
-            <div className="rounded-xl border border-white/15 bg-slate-950/95 backdrop-blur-sm flex flex-col h-[400px] overflow-hidden flex-none">
+            )}
+            {/* 左右排列时：中间垂直拖动条，调节 iframe 与对话框宽度 */}
+            {!layoutVertical && (
+            <div
+              className="relative w-2 flex-shrink-0 flex items-center justify-center cursor-col-resize z-30 select-none touch-none group"
+              onPointerDown={handleHorizontalDragStart}
+              onPointerMove={handleHorizontalDragMove}
+              onPointerUp={handleHorizontalDragUp}
+              onPointerCancel={handleHorizontalDragCancel}
+              onLostPointerCapture={() => endHorizontalDrag(true)}
+              aria-label={t('resizeHandleLabel', { ns: 'aiGuide', defaultValue: '调整左右宽度' })}
+            >
+              <div className={`w-1.5 h-16 rounded-full transition-colors ${
+                isHorizontalDragging ? 'bg-blue-500' : 'bg-slate-500/50 group-hover:bg-slate-500/70'
+              }`} />
+            </div>
+            )}
+            <div className={`rounded-xl border border-white/15 bg-slate-950/95 backdrop-blur-sm flex flex-col overflow-hidden ${layoutVertical ? 'h-[400px] flex-none' : 'flex-1 min-w-0 min-h-0'}`}>
               <div className="flex items-center justify-end gap-3 px-3 py-2 border-b border-white/10 shrink-0">
+                <button
+                  type="button"
+                  onClick={toggleLayout}
+                  className="flex items-center gap-1.5 text-slate-300 hover:text-white text-xs"
+                  title={layoutVertical ? t('layoutToggleToHorizontal') : t('layoutToggleToVertical')}
+                  aria-label={layoutVertical ? t('layoutToggleToHorizontal') : t('layoutToggleToVertical')}
+                >
+                  {layoutVertical ? <PanelLeft className="w-4 h-4" /> : <PanelTop className="w-4 h-4" />}
+                  <span className="hidden sm:inline">{layoutVertical ? t('layoutHorizontal') : t('layoutVertical')}</span>
+                </button>
                 <button type="button" onClick={handleStartNewConversation} className="flex items-center gap-1.5 text-slate-300 hover:text-white text-xs">
                   <MessageSquarePlus className="w-4 h-4" />{t('newConversation')}
                 </button>
@@ -606,11 +1082,42 @@ export default function LearnPage() {
                   <History className="w-4 h-4" />{t('conversationHistory')}
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+              <div ref={messagesScrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
                 {messages.map((m, idx) => (
                   <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800/80 text-slate-50'}`}>
-                      <AIGuideMessageRenderer content={m.content} messageId={String(idx)} />
+                      {idx === messages.length - 1 && m.role === 'assistant' && !m.content && (isLoading || isGeneratingNewContent) ? (
+                        <div className="py-1">
+                          <div className="flex items-center gap-1" aria-label={isGeneratingNewContent ? t('generating') : t('sending')}>
+                            <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce [animation-delay:0ms]" />
+                            <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce [animation-delay:150ms]" />
+                            <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce [animation-delay:300ms]" />
+                          </div>
+                          {isGeneratingNewContent && (
+                            <p className="text-slate-400 text-xs mt-2">{t('generatingPanelTitle')}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <AIGuideMessageRenderer content={m.content} messageId={String(idx)} />
+                      )}
+                      {m.role === 'user' && (m.metadata?.image_urls?.length || m.metadata?.image_placeholders?.length) ? (
+                        <div className="flex flex-wrap gap-1.5 mt-2 justify-end">
+                          {(m.metadata.image_urls?.length ? m.metadata.image_urls : m.metadata.image_placeholders!).map((item, i) => {
+                            const thumbSrc = 'displayUrl' in item ? (item.displayUrl || (item as { url: string }).url) : (item as { dataUrl: string }).dataUrl;
+                            const fullUrl = 'url' in item ? (item as { url: string }).url : (item as { dataUrl: string }).dataUrl;
+                            return (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setImagePreviewUrl(fullUrl)}
+                                className="block rounded-lg overflow-hidden border border-white/20 w-14 h-14 flex-shrink-0 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                              >
+                                <img src={thumbSrc} alt="" className="w-full h-full object-cover pointer-events-none" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -654,9 +1161,9 @@ export default function LearnPage() {
                     placeholder={placeholder}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitInput(); } }}
                     onPaste={handlePaste}
-                    disabled={!shortId || isLoading || (freeTrialUsed && !user)}
+                    disabled={isGeneratingNewContent || (!isAwaitingNewContent && !shortId) || isLoading || (freeTrialUsed && !user)}
                   />
                   <div className="flex flex-col gap-1 items-center">
                     <input
@@ -665,7 +1172,7 @@ export default function LearnPage() {
                       accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                       multiple
                       onChange={handleImageSelect}
-                      disabled={!shortId || isLoading || imageUploading || attachedImages.length >= MAX_ATTACH_IMAGES || (freeTrialUsed && !user)}
+                      disabled={isGeneratingNewContent || (!isAwaitingNewContent && !shortId) || isLoading || imageUploading || attachedImages.length >= MAX_ATTACH_IMAGES || (freeTrialUsed && !user)}
                       className="hidden"
                       id="learn-page-image-input"
                     />
@@ -682,11 +1189,16 @@ export default function LearnPage() {
                     </label>
                     <button
                       type="button"
-                      onClick={handleSendMessage}
-                      disabled={!shortId || !inputValue.trim() || isLoading || (freeTrialUsed && !user)}
+                      onClick={handleSubmitInput}
+                      disabled={
+                        isGeneratingNewContent ||
+                        (isAwaitingNewContent ? !inputValue.trim() : (!shortId || !inputValue.trim())) ||
+                        isLoading ||
+                        (freeTrialUsed && !user)
+                      }
                       className="h-9 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium disabled:opacity-60"
                     >
-                      {isLoading ? t('sending') : t('send')}
+                      {isGeneratingNewContent ? t('generating') : isLoading ? t('sending') : t('send')}
                     </button>
                   </div>
                 </div>
@@ -703,6 +1215,33 @@ export default function LearnPage() {
               }}
               onClose={() => setEditingImageIndex(null)}
             />
+          )}
+
+          {imagePreviewUrl && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={() => setImagePreviewUrl(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label={t('imagePreview', { ns: 'content', defaultValue: '图片预览' })}
+            >
+              <button
+                type="button"
+                onClick={() => setImagePreviewUrl(null)}
+                className="absolute top-3 right-3 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label={t('close', { ns: 'common', defaultValue: '关闭' })}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <img
+                src={imagePreviewUrl}
+                alt=""
+                className="max-w-full max-h-[90vh] w-auto h-auto object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           )}
 
           {historyOpen && <div className="fixed inset-0 bg-black/50 z-10" onClick={() => setHistoryOpen(false)} aria-hidden />}
@@ -740,10 +1279,14 @@ export default function LearnPage() {
                 {t('listViewTitle')}
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-3 py-3">
+            <div
+              ref={historyScrollRef}
+              onScroll={onHistoryScroll}
+              className="flex-1 overflow-y-auto px-3 py-3"
+            >
               {!user ? (
-                <p className="text-slate-500 text-xs">{t('visitorChooseRolePlaceholder', { ns: 'aiGuide' })}</p>
-              ) : historyList.length === 0 ? (
+                <p className="text-slate-500 text-xs">{t('loginToViewHistory', { ns: 'aiGuide', defaultValue: '登录后查看历史对话' })}</p>
+              ) : historyList.length === 0 && !historyLoadingMore ? (
                 <p className="text-slate-500 text-xs">{t('noMyContent', { ns: 'aiGuide' })}</p>
               ) : historyViewMode === 'svg' ? (
                 <div className="grid grid-cols-2 gap-2">
@@ -793,6 +1336,12 @@ export default function LearnPage() {
                       </div>
                     </button>
                   ))}
+                  {historyLoadingMore && (
+                    <div className="col-span-2 py-2 text-center text-slate-400 text-xs">{t('loadingMessages', { ns: 'aiGuide', defaultValue: '加载中...' })}</div>
+                  )}
+                  {historyHasMore && !historyLoadingMore && historyList.length > 0 && (
+                    <div className="col-span-2 py-1 text-center text-slate-500 text-[11px]">{t('scrollForMore', { ns: 'aiGuide', defaultValue: '下滑加载更多' })}</div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -821,6 +1370,12 @@ export default function LearnPage() {
                       <span className="text-xs text-slate-300 line-clamp-2">{c.title || c.short_id}</span>
                     </button>
                   ))}
+                  {historyLoadingMore && (
+                    <div className="py-2 text-center text-slate-400 text-xs">{t('loadingMessages', { ns: 'aiGuide', defaultValue: '加载中...' })}</div>
+                  )}
+                  {historyHasMore && !historyLoadingMore && historyList.length > 0 && (
+                    <div className="py-1 text-center text-slate-500 text-[11px]">{t('scrollForMore', { ns: 'aiGuide', defaultValue: '下滑加载更多' })}</div>
+                  )}
                 </div>
               )}
             </div>
@@ -862,5 +1417,6 @@ export default function LearnPage() {
         </div>
       </main>
     </div>
+    </SidebarWidthContext.Provider>
   );
 }

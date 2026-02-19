@@ -8,9 +8,10 @@ import { api } from '@/lib/api';
 import { getOrderedRegionCodes } from '@/data/regionCodes';
 import {
   getInitContext,
-  hasInitContext,
   setInitContext,
+  SUBJECT_GROUPS,
   SUBJECT_OPTIONS,
+  SUBJECT_OTHER_PREFIX,
   TEACHING_AGE_RANGES,
   type InitContext,
   type SubjectKey,
@@ -28,8 +29,9 @@ export default function OnboardRolePage() {
   const [regionCode, setRegionCode] = useState<string>('');
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const [birthYear, setBirthYear] = useState<number | ''>(currentYear - 12);
-  const [teachingAgeRanges, setTeachingAgeRanges] = useState<string[]>(['junior']);
+  const [teachingAgeRanges, setTeachingAgeRanges] = useState<string[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
+  const [otherSubjectText, setOtherSubjectText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -59,10 +61,7 @@ export default function OnboardRolePage() {
         router.replace('/login');
         return;
       }
-      if (hasRole && hasInitContext()) {
-        router.replace('/');
-        return;
-      }
+      // 允许用户再次进入修改 role，不再强制重定向
       if (hasRole) setSelectedRole(existingRole as RoleType);
     }
   }, [user, authLoading, hasRole, existingRole, router]);
@@ -71,6 +70,22 @@ export default function OnboardRolePage() {
     const init = getInitContext();
     if (init?.birthYear != null) setBirthYear(init.birthYear);
     else if (init?.age != null) setBirthYear(currentYear - init.age);
+    if (init?.subjects?.length) {
+      const list: string[] = [];
+      const otherParts: string[] = [];
+      for (const s of init.subjects) {
+        if (s.startsWith(SUBJECT_OTHER_PREFIX)) {
+          otherParts.push(s.slice(SUBJECT_OTHER_PREFIX.length).trim());
+        } else {
+          list.push(s);
+        }
+      }
+      setSubjects(list);
+      setOtherSubjectText(otherParts.join('，'));
+    }
+    if (init?.teachingAgeRanges?.length) {
+      setTeachingAgeRanges(init.teachingAgeRanges);
+    }
   }, [currentYear]);
 
   const handleToggleSubject = (s: string) => {
@@ -97,22 +112,29 @@ export default function OnboardRolePage() {
     setRoleError(null);
     setSubmitting(true);
     try {
-      if (!hasRole) {
+      // 如果用户还没有 role，或者选择的 role 与当前不同，则更新 role
+      if (!hasRole || existingRole !== role) {
         const res = await api.auth.updateRole(role);
         if (!res?.success) throw new Error(res?.message || res?.error || '更新角色失败');
       }
       const finalRegion =
         regionCode || (typeof window !== 'undefined' ? detectUserRegion().code : 'CN');
+      const otherEntries = otherSubjectText
+        .split(/[,，、;；\s]+/)
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .map((x) => SUBJECT_OTHER_PREFIX + x);
+      const allSubjects = [
+        ...(subjects.length ? subjects : [SUBJECT_OPTIONS[0]]),
+        ...otherEntries,
+      ];
       const ctx: InitContext = {
         role,
         region: finalRegion,
-        subjects: subjects.length ? subjects : [SUBJECT_OPTIONS[0]],
+        subjects: allSubjects,
       };
       if (isTeacher) {
-        ctx.teachingAgeRanges =
-          teachingAgeRanges.length > 0
-            ? teachingAgeRanges
-            : [TEACHING_AGE_RANGES[0].value];
+        ctx.teachingAgeRanges = teachingAgeRanges;
       } else {
         const year = birthYear === '' ? currentYear - 12 : Number(birthYear);
         ctx.birthYear = year;
@@ -142,15 +164,15 @@ export default function OnboardRolePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 relative">
-      <div className="absolute top-4 right-4">
-        <LanguageSelector variant="button" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-sm relative"
       >
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">
+        <div className="absolute top-4 right-4">
+          <LanguageSelector variant="button" />
+        </div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-1 pr-20">
           {t('title')}
         </h2>
         <p className="text-sm text-gray-500 mb-6">
@@ -167,14 +189,11 @@ export default function OnboardRolePage() {
               <button
                 key={r}
                 type="button"
-                onClick={() => !hasRole && setSelectedRole(r)}
-                disabled={hasRole}
+                onClick={() => setSelectedRole(r)}
                 className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
                   effectiveRole === r
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : hasRole
-                      ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-default'
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 {r === 'student' && t('roleStudent')}
@@ -257,21 +276,42 @@ export default function OnboardRolePage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {isTeacher ? t('subjectsLabelTeacher') : t('subjectsLabelOther')}
               </label>
-              <div className="flex flex-wrap gap-2">
-                {SUBJECT_OPTIONS.map((s: SubjectKey) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => handleToggleSubject(s)}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                      subjects.includes(s)
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {t(`subjects.${s}`)}
-                  </button>
+              <div className="space-y-4">
+                {SUBJECT_GROUPS.map((group) => (
+                  <div key={group.key}>
+                    <div className="text-xs font-medium text-gray-500 mb-1.5">
+                      {t(`subjectGroups.${group.key}`)}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {group.subjects.map((s: SubjectKey) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => handleToggleSubject(s)}
+                          className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                            subjects.includes(s)
+                              ? 'border-blue-500 bg-blue-50 text-blue-700'
+                              : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {t(`subjects.${s}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
+                <div>
+                  <div className="text-xs font-medium text-gray-500 mb-1.5">
+                    {t('subjectGroups.other')}
+                  </div>
+                  <input
+                    type="text"
+                    value={otherSubjectText}
+                    onChange={(e) => setOtherSubjectText(e.target.value)}
+                    placeholder={t('subjectsOtherPlaceholder')}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
           </>

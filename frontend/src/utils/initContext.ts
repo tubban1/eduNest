@@ -11,9 +11,9 @@ export interface InitContext {
   region: string;
   /** 可选，可由浏览器/region 推断 */
   language?: string;
-  /** 学生/家长：出生年份，一次填写长期有效；用于按当前年计算年龄 */
+  /** 学生：本人出生年；家长：被辅导孩子的出生年。一次填写长期有效，用于按当前年计算年龄 */
   birthYear?: number;
-  /** 学生/家长：年龄（若存在 birthYear 则应由 getAgeFromContext 计算，此字段仅作向后兼容） */
+  /** 学生：本人年龄；家长：被辅导孩子的年龄。若存在 birthYear 则应由 getAgeFromContext 计算，此字段仅作向后兼容。提示词中须按 role 区分：student=本人，parent=孩子 */
   age?: number;
   /** 老师：关注的教学对象年龄段（多选） */
   teachingAgeRanges?: string[];
@@ -62,22 +62,41 @@ export const SUBJECT_OPTIONS = [
   'physics',
   'chemistry',
   'biology',
+  'science',
+  'astronomy',
+  'medicine',
+  'programming',
   'chinese',
   'english',
+  'french',
+  'japanese',
+  'german',
+  'spanish',
   'geography',
   'history',
   'politics',
-  'science',
   'social_studies',
+  'economics',
+  'philosophy',
   'art',
   'music',
-  'programming',
   'sports',
   'drama',
   'life_skills',
 ] as const;
 
 export type SubjectKey = (typeof SUBJECT_OPTIONS)[number];
+
+/** 用于 UI 分组展示，未在分组中的科目会归入「其他」 */
+export const SUBJECT_GROUPS: { key: string; subjects: SubjectKey[] }[] = [
+  { key: 'languages', subjects: ['chinese', 'english', 'french', 'japanese', 'german', 'spanish'] },
+  { key: 'stem', subjects: ['math', 'physics', 'chemistry', 'biology', 'science', 'astronomy', 'medicine', 'programming'] },
+  { key: 'humanities', subjects: ['geography', 'history', 'politics', 'social_studies', 'economics', 'philosophy'] },
+  { key: 'arts_others', subjects: ['art', 'music', 'sports', 'drama', 'life_skills'] },
+];
+
+/** 自定义科目前缀，存储时用 other:xxx，展示时只显示 xxx */
+export const SUBJECT_OTHER_PREFIX = 'other:';
 
 /** 老师教学对象年龄段（可多选），范围更宽、更灵活 */
 export const TEACHING_AGE_RANGES = [

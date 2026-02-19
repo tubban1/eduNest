@@ -7,6 +7,34 @@ const router = express.Router();
 const { supabase } = require('./database');
 const AIProviderFactory = require('./aiProviderFactory');
 const logger = require('../utils/logger');
+const { uploadToFreeimageHost } = require('./freeimage_upload_service');
+
+/** 生成内容时：按 user_id 读取 user_init_context（仅登录用户会调生成接口）。 */
+async function getInitContextForUser(userId) {
+  if (!userId) return { role: null, context: null };
+  const { data: row } = await supabase.from('user_init_context').select('context').eq('user_id', userId).maybeSingle();
+  const context = row?.context || null;
+  const role = context?.role || null;
+  return { role, context };
+}
+
+/** 将 init_context + role 转成 JSON 可嵌入的「目标受众」对象，供 system prompt 的 target_audience 字段使用。使用 audience_role 避免与 identity（AI 身份）混淆。 */
+function buildTargetAudience(ctx, role) {
+  if (!ctx || typeof ctx !== 'object') return null;
+  const roleStr = role || ctx.role;
+  if (!roleStr) return null;
+  const currentYear = new Date().getFullYear();
+  const age = ctx.age ?? (ctx.birthYear != null ? currentYear - ctx.birthYear : null);
+  const out = { audience_role: roleStr };
+  if (roleStr === 'student' && age != null) {
+    out.learner_age = age;
+  } else if (roleStr === 'parent' && age != null) {
+    out.child_age = age;
+  } else if (roleStr === 'teacher' && Array.isArray(ctx.teachingAgeRanges) && ctx.teachingAgeRanges.length) {
+    out.teaching_age_ranges = ctx.teachingAgeRanges;
+  }
+  return Object.keys(out).length > 1 ? out : (out.audience_role ? out : null);
+}
 
 // loadSupportedLibraries 函数已删除（不再需要，因为已切换到 full_html 模式）
 
@@ -732,7 +760,7 @@ const TYPE_SPECIFIC_PROMPTS = {
 };
 
 // 3. 动态生成系统提示词函数
-const getSystemPrompt = (knowledgePoint, languageCode, outputType = 'interactive') => {
+const getSystemPrompt = (knowledgePoint, languageCode, outputType = 'interactive', targetAudience = null) => {
   // 深拷贝通用部分
   const systemPrompt = JSON.parse(JSON.stringify(COMMON_SYSTEM_PROMPT));
   
@@ -758,6 +786,10 @@ const getSystemPrompt = (knowledgePoint, languageCode, outputType = 'interactive
         systemPrompt[key] = typeSpecific[key];
       }
     });
+  }
+
+  if (targetAudience && typeof targetAudience === 'object' && Object.keys(targetAudience).length) {
+    systemPrompt.target_audience = targetAudience;
   }
   
   // 替换占位符
@@ -801,10 +833,17 @@ const OUTPUT_TYPE_CONFIGS = {
   }
 };
 
-// 生成教育交互内容
-const generateEducationalContent = async (knowledgePoint, outputType = 'interactive', description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null, isAsyncMode = false, image = null) => {
+const MAX_IMAGES = 3;
+
+// 生成教育交互内容（支持多图，最多 MAX_IMAGES 张）
+const generateEducationalContent = async (knowledgePoint, outputType = 'interactive', description = '', languageCode = '', userId = null, actionType = 'generate', provider = null, requestId = null, isAsyncMode = false, images = null) => {
   let logId = null;
   let logParams = {};
+  // 兼容单图入参：image 或 images[单元素]
+  const imagesList = Array.isArray(images) && images.length > 0
+    ? images.slice(0, MAX_IMAGES).filter((img) => img && img.mime_type && img.data)
+    : (images && images.mime_type && images.data ? [images] : []);
+
   try {
     // 验证 outputType
     if (!OUTPUT_TYPE_CONFIGS[outputType]) {
@@ -817,24 +856,42 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
     const userPromptTemplate = config.userPrompt;
     const userPrompt = safeReplace(userPromptTemplate, '{{knowledge_point}}', knowledgePoint);
     
-    // 动态生成系统提示词（只包含当前类型需要的配置）
-    const systemPromptWithKnowledge = getSystemPrompt(knowledgePoint, languageCode || 'en-US', outputType);
-    
-    // 构建用户消息，如果提供了图片，则包含图片数据
+    // 动态生成系统提示词（含 target_audience 时融入 JSON）
+    let targetAudience = null;
+    if (userId) {
+      const { role: userRole, context: initContext } = await getInitContextForUser(userId);
+      targetAudience = buildTargetAudience(initContext, userRole);
+    }
+    const systemPromptWithKnowledge = getSystemPrompt(knowledgePoint, languageCode || 'en-US', outputType, targetAudience);
+
     const userMessage = {
       role: 'user',
       content: userPrompt
     };
-    
-    // 如果有图片，添加到消息中（用于 Gemini 格式）
-    if (image && image.mime_type && image.data) {
-      console.log(`[AI Service] 添加图片到消息: mime_type=${image.mime_type}, data_length=${image.data.length}`);
-      userMessage.image = {
-        mime_type: image.mime_type,
-        data: image.data
-      };
-    } else {
-      console.log(`[AI Service] 未提供图片数据或图片数据无效`);
+
+    // 多图：统一通过 freeimage 上传并保存链接（同步模式下在此上传；异步模式下由队列在添加任务时已上传）
+    const imageUrlResults = [];
+    if (imagesList.length > 0) {
+      if (!isAsyncMode) {
+        for (let i = 0; i < imagesList.length; i++) {
+          const img = imagesList[i];
+          try {
+            const ext = (img.mime_type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+            const filename = `ai-gen-${Date.now()}-${i}.${ext}`;
+            const uploadResult = await uploadToFreeimageHost(img.data, filename, img.mime_type);
+            imageUrlResults.push({
+              url: uploadResult.url,
+              displayUrl: uploadResult.displayUrl || uploadResult.url,
+              mime_type: img.mime_type
+            });
+            logger.info(`[AI Service] 图片 ${i + 1}/${imagesList.length} 已上传至 freeimage`);
+          } catch (uploadErr) {
+            logger.warn(`[AI Service] 图片 ${i + 1} 上传 freeimage 失败:`, uploadErr.message);
+          }
+        }
+      }
+      userMessage.images = imagesList.map((img) => ({ mime_type: img.mime_type, data: img.data }));
+      logger.info(`[AI Service] 添加 ${imagesList.length} 张图片到消息`);
     }
     
     const messages = [
@@ -967,10 +1024,15 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
             status: 'done' // 同步模式下，成功生成时状态为 done
           });
         }
+    if (imageUrlResults.length > 0) {
+      parsedData.image_urls = imageUrlResults;
+      parsedData.image_url = imageUrlResults[0].url;
+      parsedData.image_displayUrl = imageUrlResults[0].displayUrl;
+    }
     return {
       success: true,
-          data: parsedData
-        };
+      data: parsedData
+    };
       } catch (parseError) {
         if (isAsyncMode && requestId) {
           // 异步模式：更新现有记录

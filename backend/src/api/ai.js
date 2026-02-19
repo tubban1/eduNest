@@ -10,6 +10,41 @@ const { mapValidationErrorsToCodes } = require('../utils/validationErrors');
 const router = express.Router();
 const DatabaseService = require('../services/database');
 
+const MAX_IMAGES = 3;
+const VALID_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+function validateImageItem(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (!value.mime_type || typeof value.mime_type !== 'string') return false;
+  if (!value.data || typeof value.data !== 'string') return false;
+  return VALID_MIME_TYPES.includes(value.mime_type);
+}
+
+/** 从 body 规范化为最多 MAX_IMAGES 张的图片数组：支持 image（单张）或 images（数组） */
+function normalizeImages(body) {
+  if (body.images && Array.isArray(body.images)) {
+    return body.images.filter(validateImageItem).slice(0, MAX_IMAGES);
+  }
+  if (body.image && validateImageItem(body.image)) {
+    return [body.image];
+  }
+  return [];
+}
+
+const imageOrImagesValidator = [
+  body('image').optional().custom((value) => {
+    if (value && typeof value === 'object') {
+      if (!value.mime_type || typeof value.mime_type !== 'string') throw new Error('image.mime_type 必须是字符串');
+      if (!value.data || typeof value.data !== 'string') throw new Error('image.data 必须是 base64 字符串');
+      if (!VALID_MIME_TYPES.includes(value.mime_type)) throw new Error('不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP');
+    }
+    return true;
+  }),
+  body('images').optional().isArray({ max: MAX_IMAGES }).withMessage(`images 最多 ${MAX_IMAGES} 张`),
+  body('images.*.mime_type').optional().isString().isIn(VALID_MIME_TYPES),
+  body('images.*.data').optional().isString()
+];
+
 // AI生成教育内容
 router.post('/generate', [
   authenticateToken,
@@ -19,22 +54,7 @@ router.post('/generate', [
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
   body('requestId').optional().isUUID().withMessage('requestId 必须是有效的UUID'),
-  body('image').optional().custom((value) => {
-    if (value && typeof value === 'object') {
-      if (!value.mime_type || typeof value.mime_type !== 'string') {
-        throw new Error('image.mime_type 必须是字符串');
-      }
-      if (!value.data || typeof value.data !== 'string') {
-        throw new Error('image.data 必须是 base64 字符串');
-      }
-      // 验证 MIME 类型
-      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validMimeTypes.includes(value.mime_type)) {
-        throw new Error('不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP');
-      }
-    }
-    return true;
-  })
+  ...imageOrImagesValidator
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -46,7 +66,8 @@ router.post('/generate', [
       });
     }
 
-    const { knowledgePoint, output_type = 'interactive', description, language_code, provider, requestId, image } = req.body;
+    const { knowledgePoint, output_type = 'interactive', description, language_code, provider, requestId } = req.body;
+    const images = normalizeImages(req.body);
 
     // 订阅豁免与积分预校验（先校验，成功后再在成功渲染时扣减）
     const CREDITS_COST = 10; // AI 内容生成消耗 10 积分
@@ -65,7 +86,7 @@ router.post('/generate', [
       }
     }
 
-    const result = await aiService.generateEducationalContent(knowledgePoint, output_type, description, language_code, userId, 'generate', provider, requestId, false, image || null);
+    const result = await aiService.generateEducationalContent(knowledgePoint, output_type, description, language_code, userId, 'generate', provider, requestId, false, images.length ? images : null);
 
     if (result.success) {
       // 在生成成功后扣减积分（仅当需要且用户存在）
@@ -492,22 +513,7 @@ router.post('/generate-async', [
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
   body('idempotency_key').optional().isString().isLength({ max: 4096 }).withMessage('idempotency_key 不合法'),
-  body('image').optional().custom((value) => {
-    if (value && typeof value === 'object') {
-      if (!value.mime_type || typeof value.mime_type !== 'string') {
-        throw new Error('image.mime_type 必须是字符串');
-      }
-      if (!value.data || typeof value.data !== 'string') {
-        throw new Error('image.data 必须是 base64 字符串');
-      }
-      // 验证 MIME 类型
-      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validMimeTypes.includes(value.mime_type)) {
-        throw new Error('不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP');
-      }
-    }
-    return true;
-  })
+  ...imageOrImagesValidator
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -521,14 +527,12 @@ router.post('/generate-async', [
       });
     }
 
-    const { content_id, knowledge_point, output_type = 'interactive', description, language_code, provider, image, idempotency_key } = req.body;
+    const { content_id, knowledge_point, output_type = 'interactive', description, language_code, provider, idempotency_key } = req.body;
+    const images = normalizeImages(req.body);
     const userId = req.user?.id;
     
-    // 调试日志：检查图片数据
-    if (image) {
-      logger.info(`[Generate Async] 收到图片数据: mime_type=${image.mime_type}, data_length=${image.data ? image.data.length : 0}`);
-    } else {
-      logger.info(`[Generate Async] 未收到图片数据`);
+    if (images.length > 0) {
+      logger.info(`[Generate Async] 收到 ${images.length} 张图片`);
     }
 
     // 验证 content 是否存在且属于当前用户
@@ -565,7 +569,7 @@ router.post('/generate-async', [
       }
     }
 
-    // 添加生成任务到队列
+    // 添加生成任务到队列（支持多图）
     const { log, requestId } = await asyncGenerationQueue.addTask(content_id, {
       user_id: userId,
       knowledge_point,
@@ -573,7 +577,7 @@ router.post('/generate-async', [
       description,
       language_code,
       provider,
-      image: image || undefined,
+      images: images.length ? images : undefined,
       idempotency_key
     });
 
@@ -1125,22 +1129,7 @@ router.post('/generate-free', [
   body('language_code').optional().isString().isLength({ min: 2, max: 35 }).withMessage('language_code 不合法'),
   body('provider').optional().isIn(['ark', 'kimi', 'qenda']).withMessage('provider 必须是 ark、kimi 或 qenda'),
   body('idempotency_key').optional().isString().isLength({ max: 4096 }).withMessage('idempotency_key 不合法'),
-  body('image').optional().custom((value) => {
-    if (value && typeof value === 'object') {
-      if (!value.mime_type || typeof value.mime_type !== 'string') {
-        throw new Error('image.mime_type 必须是字符串');
-      }
-      if (!value.data || typeof value.data !== 'string') {
-        throw new Error('image.data 必须是 base64 字符串');
-      }
-      // 验证 MIME 类型
-      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validMimeTypes.includes(value.mime_type)) {
-        throw new Error('不支持的图片格式，请使用 JPEG、PNG、GIF 或 WebP');
-      }
-    }
-    return true;
-  })
+  ...imageOrImagesValidator
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -1154,13 +1143,11 @@ router.post('/generate-free', [
     }
 
     const visitorId = req.visitorId;
-    const { knowledgePoint, output_type = 'interactive', description, language_code, provider, image, idempotency_key } = req.body;
+    const { knowledgePoint, output_type = 'interactive', description, language_code, provider, idempotency_key } = req.body;
+    const images = normalizeImages(req.body);
     
-    // 调试日志：检查图片数据
-    if (image) {
-      logger.info(`[Generate Free] 收到图片数据: mime_type=${image.mime_type}, data_length=${image.data ? image.data.length : 0}`);
-    } else {
-      logger.info(`[Generate Free] 未收到图片数据`);
+    if (images.length > 0) {
+      logger.info(`[Generate Free] 收到 ${images.length} 张图片`);
     }
 
     // 检查免费试用状态
@@ -1201,7 +1188,7 @@ router.post('/generate-free', [
       });
     }
     
-    // 添加生成任务到队列（异步模式）
+    // 添加生成任务到队列（异步模式，支持多图）
     const { log, requestId } = await asyncGenerationQueue.addTask(createdContent.id, {
       user_id: visitorId,
       knowledge_point: knowledgePoint,
@@ -1209,7 +1196,7 @@ router.post('/generate-free', [
       description: description,
       language_code: language_code,
       provider: provider,
-      image: image || undefined,
+      images: images.length ? images : undefined,
       idempotency_key
     });
     

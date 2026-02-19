@@ -746,7 +746,7 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
       }
       systemPrompt += `\n\nRECENT MESSAGE METADATA (ui_state / teaching_snapshot when these messages were sent):\n${JSON.stringify(recentMeta, null, 2)}`;
     }
-    
+
     const llmMessages = [
       { role: 'system', content: systemPrompt }
     ];
@@ -785,12 +785,38 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
     // 保存用户消息ID的引用，用于后续更新metadata（图片上传完成后）
     let savedUserMessageId = null;
     
-    // 异步上传图片到 freeimage.host（不阻塞LLM响应）
+    // 在开流前插入用户消息，这样图片上传完成后能立即用 savedUserMessageId 更新 metadata，避免 30s 拿不到 id
+    const userMessageMetadataForDb = {};
+    if (canonicalUiState || teachingSnapshot) {
+      userMessageMetadataForDb.ui_state = canonicalUiState || null;
+      userMessageMetadataForDb.teaching_snapshot = teachingSnapshot || null;
+    }
     if (images && Array.isArray(images) && images.length > 0) {
-      // 启动异步上传任务（不等待完成）
+      userMessageMetadataForDb.images_pending = true;
+      userMessageMetadataForDb.image_count = images.length;
+    }
+    const { data: insertedUserMessage, error: userMsgInsertError } = await supabase
+      .from('ai_messages')
+      .insert({
+        conversation_id: conversationId,
+        role: 'user',
+        content: message,
+        ui_state: canonicalUiState || uiState || null,
+        metadata: Object.keys(userMessageMetadataForDb).length > 0 ? userMessageMetadataForDb : null
+      })
+      .select()
+      .single();
+    if (userMsgInsertError) {
+      console.error('[AI Guide Service] 开流前保存用户消息失败:', userMsgInsertError);
+    } else if (insertedUserMessage?.id) {
+      savedUserMessageId = insertedUserMessage.id;
+    }
+    
+    // 有图片时统一通过 freeimage_upload_service 上传，并将链接保存到该条用户消息的 ai_message.metadata
+    if (images && Array.isArray(images) && images.length > 0) {
       (async () => {
         try {
-          console.log(`[AI Guide Service] 开始异步上传 ${images.length} 张图片到 freeimage.host`);
+          console.log(`[AI Guide Service] 开始上传 ${images.length} 张图片到 freeimage.host，完成后写入 ai_message.metadata`);
           
           // 并行上传所有图片
           const uploadPromises = images.map(async (img, index) => {
@@ -834,29 +860,14 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
           const successCount = imageMarkdownLinks.filter(link => link.url).length;
           console.log(`[AI Guide Service] 图片上传完成，成功 ${successCount}/${images.length} 张`);
           
-          // 上传完成后，更新用户消息的metadata
+          // 上传完成后，只更新「本条」用户消息的 metadata，必须用插入后拿到的 id，避免错位到上一条
           if (successCount > 0) {
-            // 等待用户消息保存完成（最多等待5秒）
+            // 等待本条用户消息插入并拿到 id（流式结束后才插入），最多等 30 秒，不查「最新一条」避免错位
             let userMsgId = savedUserMessageId;
-            let retries = 10;
+            let retries = 60;
             while (!userMsgId && retries > 0) {
               await new Promise(resolve => setTimeout(resolve, 500));
               retries--;
-            }
-            
-            // 如果还没有userMsgId，尝试查找最新的user消息
-            if (!userMsgId) {
-              const { data: userMessages } = await supabase
-                .from('ai_messages')
-                .select('id, metadata')
-                .eq('conversation_id', conversationId)
-                .eq('role', 'user')
-                .order('created_at', { ascending: false })
-                .limit(1);
-              
-              if (userMessages && userMessages.length > 0) {
-                userMsgId = userMessages[0].id;
-              }
             }
             
             if (userMsgId) {
@@ -868,36 +879,37 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
                 .single();
               
               const currentMetadata = currentMsg?.metadata || {};
-              
-              // 更新metadata，添加图片链接
+
+              // 多图链接保存到 ai_message.metadata：统一结构为 image_urls（数组）+ image_count + images_pending
+              const urlsWithMeta = imageMarkdownLinks.filter(link => link.url).map(link => ({
+                url: link.url,
+                displayUrl: link.displayUrl,
+                mime_type: link.mime_type
+              }));
               const updatedMetadata = {
                 ...currentMetadata,
-                images_pending: false, // 标记上传完成
-                image_links: imageMarkdownLinks
-                  .filter(link => link.markdown)
-                  .map(link => link.markdown),
-                image_urls: imageMarkdownLinks
-                  .filter(link => link.url)
-                  .map(link => ({
-                    url: link.url,
-                    displayUrl: link.displayUrl,
-                    mime_type: link.mime_type
-                  }))
+                images_pending: false,
+                image_urls: urlsWithMeta,
+                image_count: urlsWithMeta.length
               };
               
-              const { error: updateError } = await supabase
+              const { data: updatedRows, error: updateError } = await supabase
                 .from('ai_messages')
                 .update({ metadata: updatedMetadata })
-                .eq('id', userMsgId);
+                .eq('id', userMsgId)
+                .select('id, metadata');
               
               if (updateError) {
                 console.error('[AI Guide Service] 更新消息metadata失败:', updateError);
+              } else if (!updatedRows || updatedRows.length === 0) {
+                const { data: checkRow } = await supabase.from('ai_messages').select('id, metadata').eq('id', userMsgId).single();
+                console.error('[AI Guide Service] 更新消息metadata未命中任何行，messageId=', userMsgId, '存在=', !!checkRow, '当前metadata=', checkRow?.metadata);
               } else {
                 console.log(`[AI Guide Service] ✅ 已更新消息metadata (id: ${userMsgId})，添加了 ${updatedMetadata.image_links.length} 个图片链接`);
                 console.log(`[AI Guide Service] 图片链接:`, updatedMetadata.image_links);
               }
             } else {
-              console.warn('[AI Guide Service] 无法找到用户消息ID，无法更新metadata');
+              console.warn('[AI Guide Service] 未在 30s 内拿到本条用户消息 id，跳过写入图片链接（避免错位到上一条）');
             }
           }
         } catch (error) {
@@ -936,46 +948,12 @@ const handleChat = async (conversationId, message, uiState, userId, shouldConsum
         console.error('Stream error:', error);
         throw error;
       } finally {
-        // 5. Save interaction (after stream completes)
+        // 5. Save interaction (after stream completes)（用户消息已在开流前插入，此处只保存助手消息）
         if (fullReply) {
           const { content: assistantContent, intent: taskIntent } = stripTaskTag(fullReply);
 
-          // 5.1. 保存用户消息到 ai_messages
-          // 构建消息元数据，包含 UI 状态（规范格式）、教学快照
-          // 注意：图片链接将在异步上传完成后更新到metadata
-          const messageMetadata = {};
-          if (canonicalUiState || teachingSnapshot) {
-            messageMetadata.ui_state = canonicalUiState || null;
-            messageMetadata.teaching_snapshot = teachingSnapshot || null;
-          }
-          // 如果有图片，先保存图片的base64数据引用（用于前端临时显示）
-          // 上传完成后会更新为markdown链接
-          if (images && Array.isArray(images) && images.length > 0) {
-            messageMetadata.images_pending = true; // 标记图片正在上传
-            messageMetadata.image_count = images.length; // 保存图片数量
-          }
-          
-          const { data: userMessage, error: userMsgError } = await supabase
-            .from('ai_messages')
-            .insert({
-              conversation_id: conversationId,
-              role: 'user',
-              content: message,
-              ui_state: canonicalUiState || uiState || null,
-              metadata: Object.keys(messageMetadata).length > 0 ? messageMetadata : null
-            })
-            .select()
-            .single();
-          
-          if (userMsgError) {
-            console.error('Failed to save user message:', userMsgError);
-          } else if (userMessage && userMessage.id) {
-            // 保存用户消息ID，供图片上传完成后更新metadata使用
-            savedUserMessageId = userMessage.id;
-          }
-          
-          // 5.2. 保存助手消息到 ai_messages（存剥离标签后的内容；intent 写入 metadata 供前端判断是否换内容）
-          const assistantMetadata = { ...messageMetadata, task_intent: taskIntent };
+          // 5.1. 保存助手消息到 ai_messages（存剥离标签后的内容；intent 写入 metadata 供前端判断是否换内容）
+          const assistantMetadata = { ...userMessageMetadataForDb, task_intent: taskIntent };
           const { data: assistantMessage, error: assistantMsgError } = await supabase
             .from('ai_messages')
             .insert({
@@ -1181,31 +1159,63 @@ const getConversationCount = async (userId) => {
 };
 
 /**
- * 从数据库 ai_conversations 表查询最近一次 conversation
- * 返回 conversation_id、content_short_id 和 ai_messages 消息列表
+ * 从数据库查询「最近有对话记录」的 conversation：按最后一条消息时间（ai_messages.created_at）判定，
+ * 而不是按 ai_conversations.updated_at（init 恢复会话也会更新该字段，会误判）。
+ * 返回 conversation_id、content_short_id 和 ai_messages 消息列表。
  */
 const getLastConversationFromDB = async (userId) => {
   if (!userId) return null;
   try {
     const isVisitor = isVisitorId(userId);
-    
-    let query = supabase
+    // 1) 先取该用户/访客的所有会话 id（用于按消息时间找「最近有对话」的会话）
+    let convQuery = supabase
+      .from('ai_conversations')
+      .select('id');
+    if (isVisitor) {
+      convQuery = convQuery.eq('visitor_id', userId).is('user_id', null);
+    } else {
+      convQuery = convQuery.eq('user_id', userId).is('visitor_id', null);
+    }
+    const { data: convIds, error: convError } = await convQuery;
+    if (convError) throw convError;
+    if (!convIds || convIds.length === 0) return null;
+    const ids = convIds.map((c) => c.id);
+    // 2) 在 ai_messages 中找这些会话里「最后一条消息」对应的 conversation_id
+    const { data: lastMsg, error: msgError } = await supabase
+      .from('ai_messages')
+      .select('conversation_id, created_at')
+      .in('conversation_id', ids)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (msgError) throw msgError;
+    let convIdToUse = null;
+    if (lastMsg && lastMsg.length > 0) {
+      convIdToUse = lastMsg[0].conversation_id;
+    }
+    // 3) 若没有任何消息，退化为按会话 updated_at 取最近一条（兼容老数据/空会话）
+    if (!convIdToUse) {
+      let fallbackQuery = supabase
+        .from('ai_conversations')
+        .select('id, content_id, updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      if (isVisitor) {
+        fallbackQuery = fallbackQuery.eq('visitor_id', userId).is('user_id', null);
+      } else {
+        fallbackQuery = fallbackQuery.eq('user_id', userId).is('visitor_id', null);
+      }
+      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+      if (fallbackError || !fallbackData || fallbackData.length === 0) return null;
+      convIdToUse = fallbackData[0].id;
+    }
+    // 4) 取该会话的 content_id、updated_at 等
+    const { data: convRows, error: convRowError } = await supabase
       .from('ai_conversations')
       .select('id, content_id, updated_at')
-      .order('updated_at', { ascending: false })
+      .eq('id', convIdToUse)
       .limit(1);
-    
-    if (isVisitor) {
-      query = query.eq('visitor_id', userId).is('user_id', null);
-    } else {
-      query = query.eq('user_id', userId).is('visitor_id', null);
-    }
-    
-    const { data, error } = await query;
-    if (error) throw error;
-    if (!data || data.length === 0) return null;
-    
-    const conv = data[0];
+    if (convRowError || !convRows || convRows.length === 0) return null;
+    const conv = convRows[0];
     
     // 直接从数据库读取该 conversation 的所有消息
     const { data: messages, error: messagesError } = await supabase
@@ -1265,6 +1275,8 @@ const getLastConversationFromDB = async (userId) => {
 
 module.exports = {
   getOrGenerateMetadata,
+  // 导出初始问候生成函数，供生成流程复用「start session」assistant 消息
+  getOrGenerateContentInitialMessage,
   initConversation,
   handleChat,
   getMessages,

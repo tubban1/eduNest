@@ -16,7 +16,7 @@ export default function Logo({ className = '', size = 'md' }: LogoProps) {
   };
 
   return (
-    <Link href="/" className={`inline-flex items-center ${className}`}>
+    <Link href="/learn" className={`inline-flex items-center ${className}`}>
       <Image
         src="/favicon.png"
         alt="EduNest AI"
