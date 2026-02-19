@@ -50,6 +50,17 @@ export function getVisitorIdFromCookie(): string | null {
 }
 
 /**
+ * 清除 Visitor ID（登录后调用，避免与用户会话混淆）
+ */
+export function clearVisitorId(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('visitor_user_id');
+    document.cookie = 'visitor_user_id=; path=/; max-age=0';
+  } catch (_) {}
+}
+
+/**
  * 验证 Visitor ID 格式
  */
 export function isValidVisitorId(visitorId: string): boolean {
