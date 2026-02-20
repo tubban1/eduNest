@@ -1250,7 +1250,8 @@ class AsyncGenerationQueue {
         const rendererEngine = getDefaultEngine();
         const renderResult = await rendererEngine.process(aiData.full_html, {
           autoFix: true,
-          // 启用库检查 + Fallback 由 LibraryChecker + LibraryFixer 统一处理
+          // 队列异步入库：在后台完整跑库 / 数学 / 运行时 / ESLint 检查
+          // 不影响前端首屏，但保证最终落库版本经过全面质量检查
           checkers: ['library', 'math', 'runtime', 'eslint']
         });
         

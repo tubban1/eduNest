@@ -27,6 +27,12 @@ class MathFixer {
       'LATEX_SINGLE_BACKSLASH_IN_SCRIPT'
     ];
     
+    this.FALLBACK_TIMEOUT_MS = 5000;
+    this.KATEX_CDN_JS = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js';
+    this.KATEX_OSS_JS = 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/katex.min.js';
+    this.AUTO_RENDER_CDN_JS = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js';
+    this.AUTO_RENDER_OSS_JS = 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/auto-render.min.js';
+    
     // 需要在 JS 字符串中用双反斜杠的 LaTeX 命令和特殊字符
     // 注意：特殊字符（\{, \}等）需要单独处理，不在此列表中
     this.latexCommands = [
@@ -107,9 +113,31 @@ class MathFixer {
     let fixedHtml = html;
     const hasMathRenderManager = html.includes('MathRenderManager');
     
+    // 先确保存在 KaTeX JS：MathRenderManager + auto-render 都依赖 katex.min.js
+    if (!fixedHtml.includes('katex.min.js')) {
+      const baseScript = `<script src="${this.KATEX_CDN_JS}" onerror="this.onerror=null; this.src='${this.KATEX_OSS_JS}'"></script>`;
+      const timeoutScript = this.buildTimeoutFallbackScript('katex', this.KATEX_OSS_JS);
+      const katexBlock = `${baseScript}\n${timeoutScript}`;
+      
+      if (fixedHtml.includes('</body>')) {
+        fixedHtml = fixedHtml.replace('</body>', `${katexBlock}\n</body>`);
+      } else {
+        fixedHtml += `\n${katexBlock}`;
+      }
+      
+      changes.push({
+        type: 'insert',
+        location: '</body>',
+        after: katexBlock,
+        reason: '注入 KaTeX JavaScript 库（含 fallback 与超时兜底，MathRenderManager 依赖）'
+      });
+    }
+    
     // MathRenderManager 依赖 auto-render.min.js，即使 MathRenderManager 已存在也要检查依赖
-    if (!html.includes('auto-render') && !html.includes('auto-render.min.js')) {
-      const autoRenderJS = '<script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" onerror="this.onerror=null; this.src=\'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/auto-render.min.js\'"></script>';
+    if (!fixedHtml.includes('auto-render') && !fixedHtml.includes('auto-render.min.js')) {
+      const baseScript = `<script src="${this.AUTO_RENDER_CDN_JS}" onerror="this.onerror=null; this.src='${this.AUTO_RENDER_OSS_JS}'"></script>`;
+      const timeoutScript = this.buildTimeoutFallbackScript('renderMathInElement', this.AUTO_RENDER_OSS_JS);
+      const autoRenderJS = `${baseScript}\n${timeoutScript}`;
       
       // 找到 katex.min.js 后面插入
       if (fixedHtml.includes('katex.min.js')) {
@@ -219,7 +247,7 @@ class MathFixer {
     let fixedHtml = html;
     
     // 1. 检查并注入 KaTeX CSS
-    if (!html.includes('katex') || !html.includes('.css')) {
+    if (!fixedHtml.includes('katex.min.css')) {
       const katexCSS = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">';
       
       if (fixedHtml.includes('</head>')) {
@@ -237,24 +265,30 @@ class MathFixer {
     }
     
     // 2. 检查并注入 KaTeX JS
-    if (!html.includes('katex.min.js')) {
-      const katexJS = '<script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>';
+    if (!fixedHtml.includes('katex.min.js')) {
+      const baseScript = `<script src="${this.KATEX_CDN_JS}" onerror="this.onerror=null; this.src='${this.KATEX_OSS_JS}'"></script>`;
+      const timeoutScript = this.buildTimeoutFallbackScript('katex', this.KATEX_OSS_JS);
+      const katexJS = `${baseScript}\n${timeoutScript}`;
       
       if (fixedHtml.includes('</body>')) {
         fixedHtml = fixedHtml.replace('</body>', `${katexJS}\n</body>`);
+      } else {
+        fixedHtml += `\n${katexJS}`;
       }
       
       changes.push({
         type: 'insert',
         location: '</body>',
         after: katexJS,
-        reason: '注入 KaTeX JavaScript 库'
+        reason: '注入 KaTeX JavaScript 库（含 fallback 与超时兜底）'
       });
     }
     
     // 3. 单独检查并注入 auto-render.min.js（MathRenderManager 依赖它）
-    if (!html.includes('auto-render')) {
-      const autoRenderJS = '<script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>';
+    if (!fixedHtml.includes('auto-render')) {
+      const baseScript = `<script src="${this.AUTO_RENDER_CDN_JS}" onerror="this.onerror=null; this.src='${this.AUTO_RENDER_OSS_JS}'"></script>`;
+      const timeoutScript = this.buildTimeoutFallbackScript('renderMathInElement', this.AUTO_RENDER_OSS_JS);
+      const autoRenderJS = `${baseScript}\n${timeoutScript}`;
       
       // 找到 katex.min.js 后面插入，或者插入到 </body> 前
       if (fixedHtml.includes('katex.min.js')) {
@@ -285,6 +319,17 @@ class MathFixer {
       changes,
       explanation: '自动注入 KaTeX 数学公式渲染库和 MathRenderManager'
     };
+  }
+  
+  /**
+   * 生成「超时未加载则用 fallback」的内联脚本
+   */
+  buildTimeoutFallbackScript(globalName, fallbackUrl) {
+    return `<script>(function(){var g=${JSON.stringify(
+      globalName
+    )},u=${JSON.stringify(
+      fallbackUrl
+    )};setTimeout(function(){if(typeof window[g]==='undefined'){var s=document.createElement("script");s.src=u;document.head.appendChild(s);}},${this.FALLBACK_TIMEOUT_MS});})();<\/script>`;
   }
   
   /**
@@ -695,6 +740,9 @@ class MathFixer {
       if (this.initialized) return;
       this.initialized = true;
       
+      // 0. 注入 CSS 修复规则（处理 bg-clip-text 等样式导致的可见性问题）
+      this.injectCSSFixes();
+      
       // 1. 初始渲染
       this.renderAll();
       
@@ -703,6 +751,48 @@ class MathFixer {
       
       ${isVue ? '// 3. Vue 集成\n      this.setupVueIntegration();' : ''}
       
+    },
+    
+    // 注入 CSS 修复规则
+    injectCSSFixes: function() {
+      // 检查是否已注入
+      if (document.getElementById('katex-bg-clip-fix')) return;
+      
+      var style = document.createElement('style');
+      style.id = 'katex-bg-clip-fix';
+      style.textContent = \`
+        /* 修复 bg-clip-text text-transparent 导致 KaTeX 数学符号不可见的问题 */
+        /* KaTeX 渲染的数学符号是 SVG，不受 text-transparent 影响，但需要确保 SVG fill 颜色可见 */
+        
+        /* 移除 text-transparent 对 KaTeX 元素的影响 */
+        .bg-clip-text .katex,
+        .bg-clip-text.text-transparent .katex {
+          -webkit-text-fill-color: unset !important;
+          text-fill-color: unset !important;
+        }
+        
+        /* 确保 KaTeX 的 SVG 元素有明确的 fill 颜色 */
+        /* 对于 blue-400 to emerald-400 渐变，使用起始色 */
+        .bg-clip-text.bg-gradient-to-r.from-blue-400.to-emerald-400 .katex svg,
+        .bg-clip-text.bg-gradient-to-r.from-blue-400.to-emerald-400 .katex path {
+          fill: #60a5fa !important; /* blue-400 */
+        }
+        
+        /* 通用规则：如果父元素有 bg-clip-text，确保 KaTeX SVG 可见 */
+        /* 使用渐变的起始色（通常是第一个颜色类） */
+        .bg-clip-text.bg-gradient-to-r .katex svg,
+        .bg-clip-text.bg-gradient-to-r .katex path {
+          /* 尝试从父元素获取颜色，如果失败则使用默认色 */
+          fill: currentColor !important;
+        }
+        
+        /* 回退方案：如果 currentColor 不可用，使用白色（在深色背景上可见） */
+        .bg-clip-text .katex svg:not([fill]),
+        .bg-clip-text .katex path:not([fill]) {
+          fill: #ffffff !important;
+        }
+      \`;
+      document.head.appendChild(style);
     },
     
     // 渲染指定元素或全局

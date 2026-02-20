@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sidebar, { SidebarWidthContext, SIDEBAR_COLLAPSED_KEY } from '@/components/Sidebar';
 import MobileHeader from '@/components/MobileHeader';
@@ -10,6 +10,7 @@ import AIGuideMessageRenderer from '@/components/AIGuideMessageRenderer';
 import LearnPageImageEditor, { type AttachedImage } from '@/components/LearnPageImageEditor';
 import { ImagePlus, MessageSquarePlus, History, Heart, PanelTop, PanelLeft } from 'lucide-react';
 import i18n from '@/i18n/config';
+import MathText from '@/components/MathText';
 
 const MAX_ATTACH_IMAGES = 3;
 
@@ -160,6 +161,20 @@ export default function LearnPage() {
   const lastConversationLoadedRef = useRef(false);
   /** 当从历史对话导入/恢复后，自动把 iframe+对话框填满视口 */
   const autoFitOnNextInitRef = useRef(false);
+  
+  // 为每个 shortId 生成稳定的版本号，避免同一会话中重复加载
+  // 当 shortId 变化时，版本号会更新，强制重新加载内容
+  const iframeVersion = useMemo(() => {
+    if (!shortId) return Date.now();
+    // 基于 shortId 生成稳定的版本号（使用 shortId 的 hash）
+    let hash = 0;
+    for (let i = 0; i < shortId.length; i++) {
+      const char = shortId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+  }, [shortId]);
   /** 拖动 iframe / 对话框分隔条的状态 */
   const dragStateRef = useRef<{ pointerId: number; startY: number; startHeight: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -1029,10 +1044,25 @@ export default function LearnPage() {
               className={`flex flex-col min-h-0 rounded-xl border border-white/15 bg-black/10 overflow-hidden relative ${!effectiveLayoutVertical ? 'flex-none min-w-0 shrink-0' : ''}`}
               style={
                 effectiveLayoutVertical
-                  ? { ['--iframe-h' as any]: `${iframeHeight}px` } as React.CSSProperties
+                  ? ({ ['--iframe-h' as any]: `${iframeHeight}px` } as React.CSSProperties)
                   : { width: `${splitLeftPercent}%` }
               }
             >
+              <div className="absolute top-2 right-2 z-20 flex gap-1 pointer-events-none">
+                {shortId && !isGeneratingNewContent && !isAwaitingNewContent && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(`/c/${shortId}`, '_blank', 'noopener,noreferrer');
+                    }}
+                    className="pointer-events-auto px-1.5 py-0.5 rounded-full bg-slate-900/70 border border-white/15 text-[10px] text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                    title={t('openInNewTab', { ns: 'aiGuide', defaultValue: '在新标签页打开完整内容' })}
+                  >
+                    ↗
+                  </button>
+                )}
+              </div>
               <iframe
                 ref={iframeRef}
                 key={isGeneratingNewContent ? 'loading' : isAwaitingNewContent ? 'blank' : shortId ?? 'loading'}
@@ -1042,7 +1072,7 @@ export default function LearnPage() {
                     : isAwaitingNewContent
                       ? buildNewConversationIframeHtml(t, learnRole)
                       : shortId
-                        ? `/standalone/${shortId}`
+                        ? `/standalone/${shortId}?v=${iframeVersion}`
                         : `/learn/loading?kp=${encodeURIComponent(t('loadingMessages'))}`
                 }
                 title={t('iframeTitle')}
@@ -1371,7 +1401,11 @@ export default function LearnPage() {
                             </div>
                           )}
                         </div>
-                        <span className="text-xs text-slate-200 line-clamp-2">{c.title || c.short_id}</span>
+                        <MathText
+                          text={c.title || c.short_id || ''}
+                          className="text-xs text-slate-200 line-clamp-2"
+                          as="span"
+                        />
                       </div>
                     </button>
                   ))}
@@ -1410,7 +1444,11 @@ export default function LearnPage() {
                       }}
                       className="w-full text-left block rounded-lg border border-white/10 hover:border-blue-500/50 bg-slate-800/50 p-2"
                     >
-                      <span className="text-xs text-slate-300 line-clamp-2">{c.title || c.short_id}</span>
+                      <MathText
+                        text={c.title || c.short_id || ''}
+                        className="text-xs text-slate-300 line-clamp-2"
+                        as="span"
+                      />
                     </button>
                   ))}
                   {historyLoadingMore && (
@@ -1463,7 +1501,11 @@ export default function LearnPage() {
                             }}
                             className="w-full text-left block rounded-lg border border-white/10 hover:border-blue-500/50 bg-slate-800/50 px-2 py-2"
                           >
-                            <span className="text-xs text-slate-300 line-clamp-2">{c?.title || sid}</span>
+                            <MathText
+                              text={c?.title || sid}
+                              className="text-xs text-slate-300 line-clamp-2"
+                              as="span"
+                            />
                           </button>
                         );
                       })}

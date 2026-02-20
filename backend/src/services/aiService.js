@@ -617,7 +617,7 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
     const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
       if (isAsyncMode && requestId) {
-        // 异步模式：更新现有记录
+        // 异步模式：更新现有记录（允许略微阻塞队列）
         await updateExistingLog(requestId, {
           model_name: result.model,
           input_tokens: inputTokens,
@@ -637,8 +637,8 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
           is_render_success: false
         });
       } else {
-        // 同步模式：创建新记录
-        await logAIUsageWithDefaults({
+        // 同步模式：创建新记录（日志尽量异步写入，不阻塞请求）
+        logAIUsageWithDefaults({
           user_id: userId,
           model_name: result.model,
           user_query: knowledgePoint,
@@ -650,6 +650,8 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
           response_metadata: { provider: result.provider, model: result.model },
           error_message: 'AI返回内容为空',
           request_id: requestId
+        }).catch(err => {
+          logger.warn('[generateEducationalContent] logAIUsageWithDefaults 记录失败(空响应)', { error: err.message });
         });
       }
       throw new Error('AI返回内容为空');
@@ -701,13 +703,11 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
             error_message: null
           });
         } else {
-          // 同步模式：创建新记录（只有在 full_html 验证通过后才记录）
-          // 注意：同步模式下，content_id 会在调用方创建 content 后更新
-          // 生成 request_id（如果为 null）
+          // 同步模式：创建新记录（只做最小化日志，且异步写入）
           const { v4: uuidv4 } = require('uuid');
           const finalRequestId = requestId || uuidv4();
           
-          await logAIUsageWithDefaults({
+          logAIUsageWithDefaults({
             user_id: userId,
             model_name: result.model,
             user_query: knowledgePoint,
@@ -722,8 +722,10 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
             is_render_success: true,
             error_message: null,
             request_id: finalRequestId,
-            content_id: null, // 将在调用方创建 content 后更新
-            status: 'done' // 同步模式下，成功生成时状态为 done
+            content_id: null,
+            status: 'done'
+          }).catch(err => {
+            logger.warn('[generateEducationalContent] logAIUsageWithDefaults 记录失败(成功路径)', { error: err.message });
           });
         }
     if (imageUrlResults.length > 0) {
@@ -758,8 +760,8 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
             error_message: `JSON解析失败: ${parseError.message}`
           });
         } else {
-          // 同步模式：创建新记录
-          await logAIUsageWithDefaults({
+          // 同步模式：创建新记录（JSON 解析失败），日志异步写入
+          logAIUsageWithDefaults({
             user_id: userId,
             model_name: result.model,
             user_query: knowledgePoint,
@@ -773,6 +775,8 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
             is_json_valid: false,
             error_message: `JSON解析失败: ${parseError.message}`,
             request_id: requestId
+          }).catch(err => {
+            logger.warn('[generateEducationalContent] logAIUsageWithDefaults 记录失败(JSON 解析失败路径)', { error: err.message });
           });
         }
         return {
@@ -806,8 +810,8 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
           error_message: '未找到JSON格式'
         });
       } else {
-        // 同步模式：创建新记录
-        await logAIUsageWithDefaults({
+        // 同步模式：创建新记录（未找到 JSON），日志异步写入
+        logAIUsageWithDefaults({
           user_id: userId,
           model_name: result.model,
           user_query: knowledgePoint,
@@ -821,6 +825,8 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
           is_json_valid: false,
           error_message: '未找到JSON格式',
           request_id: requestId
+        }).catch(err => {
+          logger.warn('[generateEducationalContent] logAIUsageWithDefaults 记录失败(未找到 JSON)', { error: err.message });
         });
       }
       return {
@@ -849,12 +855,11 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
         is_render_success: false
       });
     } else {
-      // 同步模式：创建新记录
-      // 生成 request_id（如果为 null）
+      // 同步模式：创建新记录（失败），日志异步写入
       const { v4: uuidv4 } = require('uuid');
       const finalRequestId = requestId || uuidv4();
       
-      await logAIUsageWithDefaults({
+      logAIUsageWithDefaults({
         user_id: userId,
         model_name: result?.model || null,
         user_query: knowledgePoint,
@@ -869,8 +874,10 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
         is_json_valid: isJsonValid,
         is_render_success: false,
         request_id: finalRequestId,
-        content_id: null, // 同步模式下，如果失败，content 还没有创建
-        status: 'failed' // 同步模式下，失败时状态为 failed
+        content_id: null,
+        status: 'failed'
+      }).catch(err => {
+        logger.warn('[generateEducationalContent] logAIUsageWithDefaults 记录失败(失败路径)', { error: err.message });
       });
     }
     return {
@@ -932,7 +939,8 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
     const completionTokens = usage.completion_tokens || 0;
     const totalTokens = usage.total_tokens || 0;
     if (!aiResponse) {
-      await logAIUsageWithDefaults({
+      // 同步调用：日志异步写入，避免阻塞接口
+      logAIUsageWithDefaults({
         user_id,
         model_name: result.model,
         user_query: note,
@@ -944,6 +952,8 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
         response_metadata: { provider: result.provider, model: result.model, raw: result.response },
         error_message: 'AI返回内容为空',
         request_id: requestId
+      }).catch(err => {
+        logger.warn('[fixEducationalContent] logAIUsageWithDefaults 记录失败(空响应)', { error: err.message });
       });
       return { success: false, error: 'AI返回内容为空' };
     }
@@ -983,7 +993,8 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
           const rendererEngine = getDefaultEngine();
           const renderResult = await rendererEngine.process(parsed.full_html, {
             autoFix: true,
-            checkers: ['library', 'math', 'runtime', 'eslint']
+            // 修复场景：默认也只跑 library + math，runtime/ESLint 留给专门质量检查
+            checkers: ['library', 'math']
           });
           if (renderResult && renderResult.html && typeof renderResult.html === 'string') {
             parsed.full_html = renderResult.html;
@@ -994,7 +1005,7 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
           });
         }
         
-        await logAIUsageWithDefaults({
+        logAIUsageWithDefaults({
           user_id,
           model_name: result.model,
           user_query: note,
@@ -1008,6 +1019,8 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
           is_json_valid: true,
           error_message: null,
           request_id: requestId
+        }).catch(err => {
+          logger.warn('[fixEducationalContent] logAIUsageWithDefaults 记录失败(成功路径)', { error: err.message });
         });
       } else {
         logger.error(`[fixEducationalContent JSON解析] 未找到JSON格式`);
@@ -1017,7 +1030,8 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
       logger.error(`[fixEducationalContent JSON解析失败]`, {
         error_message: e.message
       });
-      await logAIUsage({
+      // 失败路径：日志同样异步写入
+      logAIUsage({
         user_id,
         model_name: result.model,
         user_query: note,
@@ -1031,17 +1045,21 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
         is_json_valid: false,
         is_render_success: false,
         error_message: `JSON解析失败: ${e.message}`
+      }).catch(err => {
+        logger.warn('[fixEducationalContent] logAIUsage 记录失败(JSON 解析失败路径)', { error: err.message });
       });
       return { success: false, error: `AI返回内容格式错误: ${e.message}` };
     }
     return { success: true, data: parsed };
   } catch (e) {
-    await logAIUsageWithDefaults({
+    logAIUsageWithDefaults({
       user_id,
       user_query: note,
       action_type: 'fix',
       error_message: e.message || 'AI修复失败',
       request_id: requestId
+    }).catch(err => {
+      logger.warn('[fixEducationalContent] logAIUsageWithDefaults 记录失败(外层错误)', { error: err.message });
     });
     return { success: false, error: e.message };
   }
