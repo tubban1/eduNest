@@ -763,6 +763,13 @@ class ApiClient {
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
+      // 始终传 visitor_id（设备标识），供密钥解锁判定
+      if (typeof window !== 'undefined') {
+        try {
+          const visitorId = getVisitorId();
+          if (visitorId) headers['X-Visitor-Id'] = visitorId;
+        } catch (_) {}
+      }
       
       const response = await fetch(`${this.baseUrl}/collection_lists/by-short-id/${shortId}`, {
         method: 'GET',
@@ -785,10 +792,11 @@ class ApiClient {
         throw new Error(data.error || '获取列表失败');
       }
       
-      // 存入缓存
-      cache.set(cacheKey, data, CACHE_CONFIG.COLLECTION_DETAIL);
+      const listData = data.data;
+      // 缓存与返回值一致，避免缓存命中时返回 { success, data } 而期望 { list, user_access, ... }
+      cache.set(cacheKey, listData, CACHE_CONFIG.COLLECTION_DETAIL);
       
-      return data.data;
+      return listData;
     },
 
     /**
@@ -801,8 +809,52 @@ class ApiClient {
       pricing_mode?: 'free' | 'premium' | 'free_preview';
       price?: number;
       currency?: string;
+      language_code?: string | null;
     }) => {
       return this.put(`/collection_lists/${listId}/settings`, settings);
+    },
+
+    /** 批量生成密钥（仅创建者） */
+    batchGenerateKeys: async (listId: string, params: { channel_name?: string; count: number; max_devices?: number }) => {
+      const res = await this.post(`/collection_lists/${listId}/access-keys/batch`, params);
+      return res;
+    },
+
+    /** 获取密钥列表（仅创建者） */
+    getAccessKeys: async (listId: string) => {
+      const res = await this.get(`/collection_lists/${listId}/access-keys`);
+      return res;
+    },
+
+    /** 验证并绑定密钥（公开，用于用户输入密钥解锁） */
+    validateAccessKey: async (listId: string, key: string, deviceId: string) => {
+      const res = await this.post(`/collection_lists/${listId}/access-keys/validate`, { key, device_id: deviceId });
+      return res;
+    },
+
+    /** 使列表缓存失效（密钥解锁成功后调用） */
+    invalidateCache: (shortId: string) => {
+      cache.delete(`collection_list:short:${shortId}`);
+    },
+
+    /**
+     * 批量导入 HTML 内容到列表（仅列表创建者）
+     * @param listId 列表 UUID
+     * @param items 每条必填 full_html；可选 title/description/tags/language_code/content_type（未传则从 HTML 内 edu-meta 解析）、svg_thumbnail（不能放 HTML 内，由 manifest 或请求提供）
+     */
+    importItems: async (
+      listId: string,
+      items: Array<{
+        full_html: string;
+        title?: string;
+        description?: string;
+        tags?: string[];
+        language_code?: string;
+        content_type?: string;
+        svg_thumbnail?: string;
+      }>
+    ) => {
+      return this.post(`/collection_lists/${listId}/import`, { items });
     },
   };
 

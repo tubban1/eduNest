@@ -1,5 +1,145 @@
 [
   {
+    "table_name": "access_key_devices",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "access_key_devices",
+    "column_name": "access_key_id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "access_key_devices",
+    "column_name": "device_id",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "access_key_devices",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "access_key_devices",
+    "column_name": "activated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "access_key_devices",
+    "column_name": "user_agent",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "access_key_devices",
+    "column_name": "ip_address",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "access_key_devices",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "key_hash",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "key_display",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "list_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "product_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "max_devices",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "3"
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "status",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": "'active'::text"
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "created_by",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "revoked_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "access_keys",
+    "column_name": "revoked_reason",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "ai_conversations",
     "column_name": "id",
     "data_type": "uuid",
@@ -315,6 +455,13 @@
     "column_default": null
   },
   {
+    "table_name": "ai_usage_logs",
+    "column_name": "image_urls",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
     "table_name": "collection_lists",
     "column_name": "id",
     "data_type": "uuid",
@@ -408,6 +555,13 @@
   {
     "table_name": "collection_lists",
     "column_name": "description",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "collection_lists",
+    "column_name": "language_code",
     "data_type": "text",
     "is_nullable": "YES",
     "column_default": null
@@ -1354,6 +1508,55 @@
     "table_name": "learning_events",
     "column_name": "time_in_session_seconds",
     "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_device_access",
+    "column_name": "device_id",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_device_access",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_device_access",
+    "column_name": "list_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_device_access",
+    "column_name": "key_status",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_device_access",
+    "column_name": "activated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_device_access",
+    "column_name": "max_devices",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "list_device_access",
+    "column_name": "bound_device_count",
+    "data_type": "bigint",
     "is_nullable": "YES",
     "column_default": null
   },

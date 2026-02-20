@@ -9,6 +9,11 @@ config({ path: path.resolve(process.cwd(), '../.env') });
 const nextConfig = {
   /* config options here */
   // 环境变量会自动从 .env.local 和 ../.env 文件加载
+  async redirects() {
+    return [
+      { source: '/collections/lists', destination: '/collections/manage', permanent: true },
+    ];
+  },
 };
 
 module.exports = nextConfig;

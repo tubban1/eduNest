@@ -7,6 +7,7 @@ const router = express.Router();
 const { supabase } = require('./database');
 const AIProviderFactory = require('./aiProviderFactory');
 const logger = require('../utils/logger');
+const { getDefaultEngine } = require('./rendererEngine');
 const { uploadToFreeimageHost } = require('./freeimage_upload_service');
 
 /** 生成内容时：按 user_id 读取 user_init_context（仅登录用户会调生成接口）。 */
@@ -182,304 +183,6 @@ const safeReplace = (template, placeholder, value) => {
   return template.replace(new RegExp(escapedPlaceholder, 'g'), escapedValue);
 };
 
-const supportedLibrariesPath = path.join(__dirname, '../..', 'config', 'supported-libraries.json');
-const fallbackLibrariesPath = path.join(__dirname, '../..', 'config', 'libraries_cn.json');
-
-const loadJsonFile = (filePath) => {
-  try {
-    if (!fs.existsSync(filePath)) {
-      console.warn('[aiService] Library config not found:', filePath);
-      return null;
-    }
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(raw);
-  } catch (error) {
-    console.error('[aiService] Failed to load JSON config:', filePath, error);
-    return null;
-  }
-};
-
-const buildLibraryEntries = (config) => {
-  if (!config || !config.libraries) return [];
-  const entries = [];
-  for (const [name, details] of Object.entries(config.libraries)) {
-    const basePatterns = Array.isArray(details.patterns) ? details.patterns : [];
-    const addEntry = (type, url, patterns = basePatterns) => {
-      if (!url) return;
-      entries.push({
-        name,
-        type,
-        url,
-        patterns: Array.isArray(patterns) ? patterns : []
-      });
-    };
-
-    if (details.versions) {
-      const versionUrl = Object.values(details.versions)[0];
-      addEntry('js', versionUrl);
-    }
-
-    if (details.css) {
-      const cssUrl = Object.values(details.css)[0];
-      addEntry('css', cssUrl);
-    }
-
-    if (details.extras) {
-      for (const [extraName, extraDetails] of Object.entries(details.extras)) {
-        const extraUrl = extraDetails?.versions ? Object.values(extraDetails.versions)[0] : null;
-        const extraPatterns = extraDetails?.patterns?.length ? extraDetails.patterns : basePatterns;
-        addEntry('js', extraUrl, extraPatterns);
-      }
-    }
-  }
-  return entries;
-};
-
-let supportedLibraryEntriesCache = null;
-let fallbackLibraryEntriesCache = null;
-
-const getSupportedLibraryEntries = () => {
-  if (!supportedLibraryEntriesCache) {
-    supportedLibraryEntriesCache = buildLibraryEntries(loadJsonFile(supportedLibrariesPath));
-  }
-  return supportedLibraryEntriesCache;
-};
-
-const getFallbackLibraryEntries = () => {
-  if (!fallbackLibraryEntriesCache) {
-    fallbackLibraryEntriesCache = buildLibraryEntries(loadJsonFile(fallbackLibrariesPath));
-  }
-  return fallbackLibraryEntriesCache;
-};
-
-// 从 URL 中提取库名和文件名
-const extractLibraryInfo = (url) => {
-  if (!url || typeof url !== 'string') return null;
-  
-  // 特殊处理：tailwindcss.com 等没有文件名的 CDN
-  if (url.includes('cdn.tailwindcss.com')) {
-    return {
-      name: 'tailwindcss',
-      version: null,
-      file: 'tailwindcss.js' // 使用通用文件名
-    };
-  }
-  
-  // 提取文件名（URL 最后一段，去掉查询参数）
-  const fileName = url.split('/').pop()?.split('?')[0];
-  
-  // 如果没有文件名或文件名不是 .js/.css，尝试从 URL 路径推断
-  if (!fileName || (!fileName.endsWith('.js') && !fileName.endsWith('.css'))) {
-    // 尝试从 URL 路径中提取文件名（例如 /dist/katex.min.js）
-    const pathMatch = url.match(/\/([^/]+\.(js|css))(?:\?|$)/i);
-    if (pathMatch) {
-      const inferredFileName = pathMatch[1];
-      return {
-        name: null,
-        version: null,
-        file: inferredFileName
-      };
-    }
-    return null;
-  }
-  
-  // 尝试从 URL 中提取库名和版本
-  // 模式1: package@version/path/file.js 或 @scope/package@version/path/file.js
-  const versionMatch = url.match(/(?:@([^/]+)\/)?([^/@]+)@([^/]+)/);
-  if (versionMatch) {
-    const scope = versionMatch[1];
-    const packageName = versionMatch[2];
-    const version = versionMatch[3];
-    const fullName = scope ? `${scope}/${packageName}` : packageName;
-    return {
-      name: fullName,
-      version: version,
-      file: fileName
-    };
-  }
-  
-  // 模式2: 从文件名推断库名（去掉 .min.js, .js, .min.css, .css 等后缀）
-  // 例如: vue.global.prod.js -> vue, katex.min.js -> katex, auto-render.min.js -> auto-render
-  const nameFromFile = fileName
-    .replace(/\.(min\.)?(js|css)$/i, '')
-    .replace(/\.(global|prod|dev|bundle)/i, '')
-    .split('.')[0]; // 取第一部分（例如 vue.global.prod.js -> vue）
-  
-  return {
-    name: nameFromFile || null,
-    version: null,
-    file: fileName
-  };
-};
-
-// 生成阿里云 OSS fallback URL
-const generateFallbackUrl = (libraryInfo, type) => {
-  if (!libraryInfo || !libraryInfo.file) return null;
-  
-  const baseUrl = 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib';
-  return `${baseUrl}/${libraryInfo.file}`;
-};
-
-const findReplacementUrl = (url, type) => {
-  if (!url || typeof url !== 'string') return null;
-
-  const matchFromEntries = (entries) => {
-    if (!entries || !entries.length) return null;
-    
-    // 优先匹配最精确的 pattern（最长的 pattern 优先）
-    const matches = [];
-    for (const entry of entries) {
-      if (entry.type !== type) continue;
-      if (!entry.patterns || !entry.patterns.length) continue;
-      
-      // 检查每个 pattern，找到最精确的匹配
-      for (const pattern of entry.patterns) {
-        if (pattern && url.includes(pattern)) {
-          matches.push({
-            entry,
-            pattern,
-            patternLength: pattern.length,
-            url: entry.url
-          });
-        }
-      }
-    }
-    
-    if (matches.length === 0) return null;
-    
-    // 按 pattern 长度降序排序，优先选择最精确的匹配
-    matches.sort((a, b) => b.patternLength - a.patternLength);
-    
-    // 返回最精确匹配的 URL（如果与原始 URL 不同）
-    const bestMatch = matches[0];
-    if (bestMatch.url && bestMatch.url !== url) {
-      return bestMatch.url;
-    }
-    
-    return null;
-  };
-
-  return matchFromEntries(getSupportedLibraryEntries());
-};
-
-const replaceLibrariesInHtml = (html) => {
-  if (typeof html !== 'string' || !html.trim()) return html;
-
-  let updatedHtml = html;
-  
-  // 先收集所有 script 标签，用于检测重复和纠正
-  const scriptMatches = [];
-  const scriptPattern = /<script\b([^>]*)\bsrc=["']([^"']+)["']([^>]*)><\/script>/gi;
-  let match;
-  while ((match = scriptPattern.exec(html)) !== null) {
-    scriptMatches.push({
-      fullMatch: match[0],
-      beforeAttrs: match[1],
-      src: match[2],
-      afterAttrs: match[3],
-      index: match.index
-    });
-  }
-  
-  // 检测重复的 katex.min.js，并标记第二个应该替换为 auto-render.min.js
-  const katexMatches = scriptMatches.filter(m => {
-    const fileName = m.src.split('/').pop()?.split('?')[0];
-    return fileName === 'katex.min.js' && !m.src.includes('auto-render');
-  });
-  
-  // 如果发现两个 katex.min.js，第二个应该替换为 auto-render.min.js
-  const duplicateKatexMap = new Map();
-  if (katexMatches.length > 1) {
-    // 从第二个开始，都应该替换为 auto-render.min.js
-    for (let i = 1; i < katexMatches.length; i++) {
-      duplicateKatexMap.set(katexMatches[i].src, true);
-    }
-    logger.warn(`[Library Replacement] 检测到 ${katexMatches.length} 个重复的 katex.min.js，将自动纠正第二个及之后的为 auto-render.min.js`);
-  }
-
-  // 替换 <script src="...">，优先使用 supported-libraries，失败回退到阿里云 OSS（通过 onerror）
-  updatedHtml = updatedHtml.replace(
-    /<script\b([^>]*)\bsrc=["']([^"']+)["']([^>]*)><\/script>/gi,
-    (match, beforeAttrs, src, afterAttrs) => {
-      // 如果已经有 onerror，跳过处理（避免重复处理）
-      if (/onerror=/i.test(match)) {
-        return match;
-      }
-      
-      // 1. 尝试从 supported-libraries.json 中找到匹配的 URL
-      let primary = findReplacementUrl(src, 'js');
-      
-      // 2. 特殊处理：如果检测到重复的 katex.min.js，第二个及之后的应该替换为 auto-render.min.js
-      if (duplicateKatexMap.has(src)) {
-        const autoRenderUrl = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js';
-        primary = autoRenderUrl;
-        logger.info(`[Library Replacement] 自动纠正重复的 katex.min.js 为 auto-render.min.js: ${src}`);
-      }
-      
-      // 3. 提取库信息用于生成 fallback URL
-      // 如果 primary 存在，使用 primary 的 URL 来提取文件名（更准确）
-      const sourceUrlForExtraction = primary || src;
-      const libraryInfo = extractLibraryInfo(sourceUrlForExtraction);
-      
-      // 4. 生成阿里云 OSS fallback URL（基于实际文件名）
-      const fallback = libraryInfo ? generateFallbackUrl(libraryInfo, 'js') : null;
-      
-      // 如果 primary 存在，使用 primary + fallback
-      if (primary) {
-        if (fallback) {
-          return `<script${beforeAttrs || ''} src="${primary}" onerror="this.onerror=null; this.src='${fallback}'"${afterAttrs || ''}></script>`;
-        }
-        return `<script${beforeAttrs || ''} src="${primary}"${afterAttrs || ''}></script>`;
-      }
-      
-      // 如果 primary 不存在但能生成 fallback，使用原始 URL + fallback
-      if (fallback) {
-        return `<script${beforeAttrs || ''} src="${src}" onerror="this.onerror=null; this.src='${fallback}'"${afterAttrs || ''}></script>`;
-      }
-
-      // 未匹配到任何替换，保持原样
-      return match;
-    }
-  );
-
-  // 替换 <link href="...">
-  updatedHtml = updatedHtml.replace(
-    /<link\b([^>]*)\bhref=["']([^"']+)["']([^>]*)>/gi,
-    (match, beforeAttrs, href, afterAttrs) => {
-      // 如果已经有 onerror，跳过处理（CSS link 标签不支持 onerror，但为了统一处理）
-      if (/onerror=/i.test(match)) {
-        return match;
-      }
-      
-      const relMatch = match.match(/\brel=["']([^"']+)["']/i);
-      const rel = relMatch ? relMatch[1].toLowerCase() : '';
-      if (rel && rel !== 'stylesheet' && rel !== 'preload' && rel !== 'prefetch') {
-        return match;
-      }
-      
-      // 1. 尝试从 supported-libraries.json 中找到匹配的 URL
-      const primary = findReplacementUrl(href, 'css');
-      
-      // 2. 提取库信息用于生成 fallback URL
-      const libraryInfo = extractLibraryInfo(href);
-      
-      // 3. 生成阿里云 OSS fallback URL
-      const fallback = libraryInfo ? generateFallbackUrl(libraryInfo, 'css') : null;
-      
-      if (primary) {
-        // CSS link 标签不支持 onerror，但我们可以添加一个备用 link 标签
-        // 或者直接使用 primary（因为 CSS 通常不需要 fallback）
-        return `<link${beforeAttrs || ''} href="${primary}"${afterAttrs || ''}>`;
-      }
-      
-      // 如果 primary 不存在但能生成 fallback，保持原样（CSS 不支持 onerror）
-      // 或者可以考虑添加一个备用 link 标签，但为了简单，这里保持原样
-      return match;
-    }
-  );
-
-  return updatedHtml;
-};
 
 // AI服务配置
 const ARK_API_KEY = process.env.ARK_API_KEY;
@@ -972,8 +675,7 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
           logger.warn(`[generateEducationalContent] tags 字段格式无效，使用空数组`, { tags: parsedData.tags, type: typeof parsedData.tags });
           parsedData.tags = [];
         }
-
-        parsedData.full_html = replaceLibrariesInHtml(parsedData.full_html);
+        // 库 CDN / fallback / 超时兜底统一交给 RendererEngine + LibraryFixer 处理
         
         // 日志：成功解析JSON并验证 full_html
         // 注意：只有在 full_html 验证通过后才记录成功日志
@@ -1178,131 +880,7 @@ const generateEducationalContent = async (knowledgePoint, outputType = 'interact
   }
 };
 
-// 简化的AI生成测试
-const generateSimpleContent = async (knowledgePoint, learningStage) => {
-  try {
-    if (!ARK_API_KEY || ARK_API_KEY === 'your_ark_api_key_here') {
-      throw new Error('ARK_API_KEY未配置或使用默认值，请在.env文件中配置真实的API密钥');
-    }
-
-    // 简化的提示词
-    const simplePrompt = safeReplace(`请为知识点"{{knowledge_point}}"创建一个简单的Vue 3交互式教育项目。学习阶段：{{learning_stage}}。
-
-请返回一个简单的JSON格式：
-{
-  "title": "项目标题",
-  "description": "项目描述",
-  "full_html": "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>项目标题</title><script src='https://unpkg.com/vue@3/dist/vue.global.prod.js'></script><style>body { font-family: sans-serif; } #app { padding: 20px; }</style></head><body><div id='app'>{{ message }}</div><script>const { createApp } = Vue; createApp({ data() { return { message: 'Hello World!' } } }).mount('#app');</script></body></html>",
-  "tags": ["测试", "Vue3"],
-  "content_type": "vue",
-  "language_code": "zh-CN"
-}
-
-注意：tags 必须是 JSON 数组格式，例如 ["数学", "几何"]。如果格式不正确，请返回空数组 []。`, '{{knowledge_point}}', knowledgePoint);
-
-    const finalPrompt = safeReplace(simplePrompt, '{{learning_stage}}', learningStage);
-
-    const response = await fetch(ARK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ARK_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: ARK_MODEL,
-        messages: [
-          { role: 'user', content: finalPrompt }
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI API错误:', errorText);
-      throw new Error(`AI API请求失败: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('AI API返回格式错误');
-    }
-
-    const aiResponse = data.choices[0].message.content;
-
-    // 解析AI返回的JSON
-    let parsedData;
-    let jsonMatch = null; // 声明在外部作用域
-    try {
-      // 尝试多种JSON匹配模式
-      jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      
-      if (!jsonMatch) {
-        // 尝试找到包含JSON的代码块
-        const codeBlockMatch = aiResponse.match(/```json\s*(\{[\s\S]*?\})\s*```/);
-        if (codeBlockMatch) {
-          jsonMatch = [codeBlockMatch[1]];
-        }
-      }
-      
-      if (!jsonMatch) {
-        // 尝试找到最后一个完整的JSON对象
-        const matches = aiResponse.match(/\{[\s\S]*?\}/g);
-        if (matches && matches.length > 0) {
-          jsonMatch = [matches[matches.length - 1]];
-        }
-      }
-      
-      if (!jsonMatch) {
-        // 最后尝试：查找任何可能的JSON结构
-        const possibleJson = aiResponse.match(/\{[^{}]*"[^{}]*"[^{}]*\}/);
-        if (possibleJson) {
-          jsonMatch = [possibleJson[0]];
-        }
-      }
-      
-      if (jsonMatch) {
-        const jsonString = jsonMatch[0];
-        parsedData = tryParseAiJson(jsonString);
-        
-        // 验证 full_html 是否存在
-        if (!parsedData.full_html || typeof parsedData.full_html !== 'string' || parsedData.full_html.trim().length === 0) {
-          throw new Error('AI返回的 full_html 字段为空或无效');
-        }
-        
-        // 验证 tags 格式，如果不是数组则设为空数组（不影响主体内容）
-        if (parsedData.tags !== undefined && !Array.isArray(parsedData.tags)) {
-          logger.warn(`[generateSimpleContent] tags 字段格式无效，使用空数组`, { tags: parsedData.tags, type: typeof parsedData.tags });
-          parsedData.tags = [];
-        }
-        
-        parsedData.full_html = replaceLibrariesInHtml(parsedData.full_html);
-        
-        return {
-          success: true,
-          data: parsedData,
-          learningStage: LEARNING_STAGE_NAMES[learningStage]
-        };
-      } else {
-        logger.error(`[generateSimpleContent JSON解析] 未找到JSON格式`);
-        throw new Error('无法解析AI返回的JSON，请检查AI返回的格式');
-      }
-    } catch (parseError) {
-      logger.error(`[generateSimpleContent JSON解析失败]`, {
-        error_message: parseError.message
-      });
-      
-      throw new Error(`AI返回内容格式错误: ${parseError.message}`);
-    }
-
-  } catch (error) {
-    console.error('简化AI生成错误:', error);
-    return {
-      success: false,
-      error: error.message || '简化AI生成失败'
-    };
-  }
-};
+// 简化的AI生成测试已废弃（generateSimpleContent），保留空占位避免误用
 
 // AI修复接口（已接入多提供商）
 const fixEducationalContent = async ({ full_html, note, content_type, language_code, title, description, user_id = null, provider = null, requestId = null }) => {
@@ -1399,8 +977,22 @@ const fixEducationalContent = async ({ full_html, note, content_type, language_c
         if (!parsed.full_html || typeof parsed.full_html !== 'string' || parsed.full_html.trim().length === 0) {
           throw new Error('AI返回的 full_html 字段为空或无效');
         }
-        
-        parsed.full_html = replaceLibrariesInHtml(parsed.full_html);
+
+        // 使用 RendererEngine + LibraryFixer 统一处理库 CDN / fallback / 超时兜底等问题
+        try {
+          const rendererEngine = getDefaultEngine();
+          const renderResult = await rendererEngine.process(parsed.full_html, {
+            autoFix: true,
+            checkers: ['library', 'math', 'runtime', 'eslint']
+          });
+          if (renderResult && renderResult.html && typeof renderResult.html === 'string') {
+            parsed.full_html = renderResult.html;
+          }
+        } catch (renderError) {
+          logger.warn('[fixEducationalContent] RendererEngine 处理失败，使用 AI 返回的原始 full_html', {
+            error: renderError.message
+          });
+        }
         
         await logAIUsageWithDefaults({
           user_id,

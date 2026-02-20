@@ -373,7 +373,7 @@ function generateShortId() {
 
 const createContent = async (contentData, userId) => {
   try {
-    const { title, full_html, tags, description, content_type, language_code } = contentData;
+    const { title, full_html, tags, description, content_type, language_code, svg_thumbnail } = contentData;
     
     // 只接受 full_html，不再使用代码块字段
     if (!full_html || typeof full_html !== 'string' || full_html.trim().length === 0) {
@@ -386,21 +386,28 @@ const createContent = async (contentData, userId) => {
     const actualUserId = isVisitor ? null : userId;
     const visitorId = isVisitor ? userId : null;
     
+    const insertPayload = {
+      title,
+      full_html,
+      tags: tags || [],
+      description: description || '',
+      content_type: content_type || 'vue',
+      language_code: language_code || 'zh-CN',
+      created_by: actualUserId, // 如果是 visitor_id，则设置为 NULL
+      visitor_id: visitorId, // 如果是 visitor_id，则存储在这里
+      short_id: generateShortId(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    if (svg_thumbnail != null && typeof svg_thumbnail === 'string' && svg_thumbnail.trim()) {
+      insertPayload.svg_thumbnail = svg_thumbnail.trim();
+      insertPayload.thumbnail_status = 'ready';
+      insertPayload.thumbnail_updated_at = new Date().toISOString();
+    }
+    
     const result = await supabase
       .from('content')
-      .insert({
-        title,
-        full_html,
-        tags: tags || [],
-        description: description || '',
-        content_type: content_type || 'vue',
-        language_code: language_code || 'zh-CN',
-        created_by: actualUserId, // 如果是 visitor_id，则设置为 NULL
-        visitor_id: visitorId, // 如果是 visitor_id，则存储在这里
-        short_id: generateShortId(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .insert(insertPayload)
       .select()
       .single();
     if (result.error) {
@@ -1549,9 +1556,10 @@ const getUserLikedCollections = async (userId) => {
  * 根据 short_id 获取 collection_list 及其内容
  * @param {string} shortId - collection_list 的 short_id
  * @param {string} userId - 当前用户ID（可选）
+ * @param {string} deviceId - 设备ID（可选，用于密钥解锁判定，如 visitor-{uuid}）
  * @returns {Promise<{data: object, error: Error}>}
  */
-const getCollectionListByShortId = async (shortId, userId = null) => {
+const getCollectionListByShortId = async (shortId, userId = null, deviceId = null) => {
   try {
     // 1. 查询 collection_list
     const { data: list, error: listError } = await supabase
@@ -1611,14 +1619,28 @@ const getCollectionListByShortId = async (shortId, userId = null) => {
     
     // 4. 判断访问权限
     const FREE_PREVIEW_COUNT = 3;  // 免费预览数量
+
+    // 4.1 检查设备是否已通过密钥解锁此列表
+    let hasKeyUnlock = false;
+    if (deviceId && (list.pricing_mode === 'premium' || list.pricing_mode === 'free_preview')) {
+      const { data: deviceAccess } = await supabase
+        .from('list_device_access')
+        .select('device_id')
+        .eq('list_id', list.id)
+        .eq('device_id', deviceId)
+        .limit(1)
+        .maybeSingle();
+      hasKeyUnlock = !!deviceAccess;
+    }
     
     // 访问权限逻辑：
     // - 创建者：始终可访问全部
     // - 免费列表（pricing_mode = 'free'）：所有人可访问全部
-    // - 付费列表（pricing_mode = 'premium'）：已购买或平台订阅用户可访问全部，其他用户只能看前3条
-    // - 预览列表（pricing_mode = 'free_preview'）：平台订阅用户可访问全部，其他用户只能看前3条
+    // - 付费列表（pricing_mode = 'premium'）：已购买或平台订阅或密钥解锁用户可访问全部，其他用户只能看前3条
+    // - 预览列表（pricing_mode = 'free_preview'）：平台订阅或密钥解锁用户可访问全部，其他用户只能看前3条
     const canAccessAll = isOwner || 
                         (list.pricing_mode === 'free') ||
+                        hasKeyUnlock ||
                         (list.pricing_mode === 'premium' && (hasPurchasedList || isPlatformPremium)) ||
                         (list.pricing_mode === 'free_preview' && isPlatformPremium);
     

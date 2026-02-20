@@ -1250,7 +1250,8 @@ class AsyncGenerationQueue {
         const rendererEngine = getDefaultEngine();
         const renderResult = await rendererEngine.process(aiData.full_html, {
           autoFix: true,
-          checkers: ['math', 'runtime', 'eslint'] // 添加 eslint 检查器
+          // 启用库检查 + Fallback 由 LibraryChecker + LibraryFixer 统一处理
+          checkers: ['library', 'math', 'runtime', 'eslint']
         });
         
         if (renderResult.success || renderResult.fixes.length > 0) {

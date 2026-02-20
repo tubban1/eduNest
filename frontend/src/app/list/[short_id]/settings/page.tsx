@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
+import { SUPPORTED_LANGUAGES } from '@/i18n/config';
 
 interface ListSettings {
   name: string;
@@ -16,6 +17,7 @@ interface ListSettings {
   pricing_mode: 'free' | 'premium' | 'free_preview';
   price?: number;
   currency?: string;
+  language_code?: string | null;
 }
 
 export default function ListSettingsPage() {
@@ -29,6 +31,7 @@ export default function ListSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listData, setListData] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
   const [settings, setSettings] = useState<ListSettings>({
     name: '',
     description: '',
@@ -36,13 +39,28 @@ export default function ListSettingsPage() {
     pricing_mode: 'free',
     price: undefined,
     currency: 'USD',
+    language_code: null,
   });
+
+  // 密钥管理
+  const [channelName, setChannelName] = useState('');
+  const [keyCount, setKeyCount] = useState(10);
+  const [generating, setGenerating] = useState(false);
+  const [accessKeys, setAccessKeys] = useState<Array<{ id: string; key_display: string; channel_name?: string; max_devices: number; bound_device_count: number; status: string; created_at: string }>>([]);
+  const [keysLoading, setKeysLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchListData = async () => {
+      // 等待 mounted 和 user 都准备好
+      if (!mounted) return;
+      
       // 检查用户是否已登录
-      if (!user) {
-        setError(t('collections:list.pleaseLogin'));
+      if (!user?.id) {
+        setError(mounted ? t('collections:list.pleaseLogin') : 'Please login');
         setLoading(false);
         return;
       }
@@ -53,15 +71,17 @@ export default function ListSettingsPage() {
         const shortId = params.short_id as string;
         const data = await api.collectionList.getByShortId(shortId);
         
-        // 检查是否为创建者
-        if (!data || !data.user_access || !data.user_access.is_owner) {
-          setError(`${t('collections:list.noPermission')}。${t('collections:list.noPermissionDesc')}`);
-          console.error('权限检查失败:', {
-            user_id: user?.id,
-            list_user_id: data?.list?.user_id,
-            is_owner: data?.user_access?.is_owner,
-            data: data
-          });
+        // 检查是否为创建者（data 结构应为 { list, user_access, ... }）
+        if (!data || !data.user_access || data.user_access.is_owner !== true) {
+          const errorMsg = mounted 
+            ? `${t('collections:list.noPermission')}。${t('collections:list.noPermissionDesc')}`
+            : 'No permission';
+          setError(errorMsg);
+          // 仅在数据结构异常时打日志（如 list/user_access 缺失，可能是缓存格式错误）
+          if (data && !data.list) {
+            console.error('权限检查失败: API 返回数据缺少 list 字段，请清除缓存后重试', { keys: data ? Object.keys(data) : [] });
+          }
+          setLoading(false);
           return;
         }
         
@@ -73,9 +93,14 @@ export default function ListSettingsPage() {
           pricing_mode: data.list.pricing_mode || 'free',
           price: data.list.price || undefined,
           currency: data.list.currency || 'USD',
+          language_code: data.list.language_code ?? null,
         });
+        // 加载密钥列表（付费/预览模式时）
+        if (data.list && (data.list.pricing_mode === 'premium' || data.list.pricing_mode === 'free_preview')) {
+          fetchAccessKeys(data.list.id);
+        }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : t('collections:list.loadFailed');
+        const errorMessage = err instanceof Error ? err.message : (mounted ? t('collections:list.loadFailed') : 'Load failed');
         setError(errorMessage);
         console.error('获取列表数据失败:', err);
       } finally {
@@ -83,13 +108,83 @@ export default function ListSettingsPage() {
       }
     };
 
-    if (params.short_id && user) {
-      fetchListData();
-    } else if (params.short_id && !user) {
-      setLoading(false);
-      setError(t('collections:list.pleaseLogin'));
+    if (params.short_id && mounted) {
+      if (user?.id) {
+        fetchListData();
+      } else {
+        setLoading(false);
+        setError(mounted ? t('collections:list.pleaseLogin') : 'Please login');
+      }
     }
-  }, [params.short_id, user]);
+  }, [params.short_id, user, mounted, t]);
+
+  const fetchAccessKeys = async (listId: string) => {
+    try {
+      setKeysLoading(true);
+      const res = await api.collectionList.getAccessKeys(listId);
+      if (res?.success && res.keys) {
+        setAccessKeys(res.keys);
+      }
+    } catch (_) {
+      setAccessKeys([]);
+    } finally {
+      setKeysLoading(false);
+    }
+  };
+
+  const handleBatchGenerate = async () => {
+    if (!listData?.list?.id) return;
+    const cnt = Math.min(Math.max(keyCount, 1), 100);
+    try {
+      setGenerating(true);
+      setError(null);
+      const res = await api.collectionList.batchGenerateKeys(listData.list.id, {
+        channel_name: channelName.trim() || undefined,
+        count: cnt,
+        max_devices: 3,
+      });
+      if (res?.success && res.keys?.length) {
+        setAccessKeys(prev => [...(res.keys || []), ...prev]);
+        setError(null);
+      } else {
+        throw new Error(res?.error || '生成失败');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '生成失败');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const copyKey = (keyDisplay: string) => {
+    navigator.clipboard.writeText(keyDisplay).then(() => {
+      // 简单提示可后续用 toast
+    });
+  };
+
+  // 按渠道复制：选中的渠道（__all__ = 全部，'' = 未分类，其它 = 渠道名）
+  const [copyChannelFilter, setCopyChannelFilter] = useState<string>('__all__');
+  const channelOptions = React.useMemo(() => {
+    const set = new Set<string>();
+    accessKeys.forEach((k) => set.add(k.channel_name ?? ''));
+    return ['__all__', ...Array.from(set).sort((a, b) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)))];
+  }, [accessKeys]);
+
+  const copyKeysByChannel = () => {
+    const filtered =
+      copyChannelFilter === '__all__'
+        ? accessKeys
+        : accessKeys.filter((k) => (k.channel_name ?? '') === copyChannelFilter);
+    if (filtered.length === 0) return;
+    const text = filtered.map((k) => k.key_display).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      toast.textContent = t('collections:settings.copiedAll', { count: filtered.length });
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +210,7 @@ export default function ListSettingsPage() {
         pricing_mode: settings.pricing_mode,
         price: settings.pricing_mode === 'premium' ? settings.price : undefined,
         currency: settings.pricing_mode === 'premium' ? settings.currency : undefined,
+        language_code: settings.language_code === '' ? null : settings.language_code,
       });
       
       // 检查响应
@@ -138,8 +234,8 @@ export default function ListSettingsPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t('collections:list.loading')}</p>
-          <p className="text-sm text-muted-foreground/70 mt-2">{t('collections:list.loadingListInfo')}</p>
+          <p className="text-muted-foreground">{mounted ? t('collections:list.loading') : 'Loading...'}</p>
+          <p className="text-sm text-muted-foreground/70 mt-2">{mounted ? t('collections:list.loadingListInfo') : 'Loading list information'}</p>
         </div>
       </div>
     );
@@ -150,7 +246,7 @@ export default function ListSettingsPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-4">
           <div className="text-6xl mb-4">😕</div>
-          <div className="text-destructive text-xl font-semibold mb-2">{t('collections:list.loadFailed')}</div>
+          <div className="text-destructive text-xl font-semibold mb-2">{mounted ? t('collections:list.loadFailed') : 'Load failed'}</div>
           <p className="text-muted-foreground mb-6">{error}</p>
           <div className="flex gap-3 justify-center">
             <button
@@ -179,11 +275,12 @@ export default function ListSettingsPage() {
                       pricing_mode: data.list.pricing_mode || 'free',
                       price: data.list.price || undefined,
                       currency: data.list.currency || 'USD',
+                      language_code: data.list.language_code ?? null,
                     });
                     setLoading(false);
                   })
                   .catch(err => {
-                    setError(err instanceof Error ? err.message : t('collections:list.loadFailed'));
+                    setError(err instanceof Error ? err.message : (mounted ? t('collections:list.loadFailed') : 'Load failed'));
                     setLoading(false);
                   });
               }}
@@ -211,6 +308,13 @@ export default function ListSettingsPage() {
             </button>
             
             <h1 className="flex-1 font-bold text-gray-900 text-xl">{t('collections:list.listSettingsTitle')}</h1>
+
+            <Link
+              href={`/list/${params.short_id}/import`}
+              className="px-3 py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors mr-2"
+            >
+              📥 {t('collections:settings.batchImport')}
+            </Link>
             
             <Link href="/" className="ml-3">
               <Image
@@ -261,6 +365,23 @@ export default function ListSettingsPage() {
               rows={4}
               placeholder={t('collections:settings.listDescriptionPlaceholder')}
             />
+          </div>
+
+          {/* 列表语言 */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('collections:settings.listLanguage')}
+            </label>
+            <select
+              value={settings.language_code ?? ''}
+              onChange={(e) => setSettings({ ...settings, language_code: e.target.value || null })}
+              className="w-full px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            >
+              <option value="">{t('collections:settings.listLanguageOptional')}</option>
+              {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+                <option key={code} value={code}>{label}</option>
+              ))}
+            </select>
           </div>
 
           {/* 可见性 */}
@@ -372,6 +493,116 @@ export default function ListSettingsPage() {
               </label>
             </div>
           </div>
+
+          {/* 访问密钥（仅付费/预览模式显示） */}
+          {(settings.pricing_mode === 'premium' || settings.pricing_mode === 'free_preview') && listData?.list?.id && (
+            <div className="mb-6 pt-6 border-t">
+              <h3 className="text-base font-semibold text-gray-800 mb-2">{t('collections:settings.accessKeys')}</h3>
+              <p className="text-sm text-gray-500 mb-4">{t('collections:settings.accessKeysDesc')}</p>
+              <div className="flex flex-wrap gap-4 mb-4">
+                <div className="flex-1 min-w-[140px]">
+                  <label className="block text-xs text-gray-600 mb-1">{t('collections:settings.channelName')}</label>
+                  <input
+                    type="text"
+                    value={channelName}
+                    onChange={(e) => setChannelName(e.target.value)}
+                    placeholder={t('collections:settings.channelNamePlaceholder')}
+                    className="w-full px-3 py-2 border border-input rounded-lg text-sm"
+                  />
+                </div>
+                <div className="w-24">
+                  <label className="block text-xs text-gray-600 mb-1">{t('collections:settings.keyCount')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={keyCount}
+                    onChange={(e) => setKeyCount(Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)))}
+                    className="w-full px-3 py-2 border border-input rounded-lg text-sm"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={handleBatchGenerate}
+                    disabled={generating}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 disabled:opacity-60"
+                  >
+                    {generating ? t('collections:settings.generating') : t('collections:settings.batchGenerate')}
+                  </button>
+                </div>
+              </div>
+              {keysLoading ? (
+                <p className="text-sm text-gray-500 py-4">加载中...</p>
+              ) : accessKeys.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">{t('collections:settings.noKeys')}</p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 justify-end">
+                    <span className="text-sm text-gray-600">{t('collections:settings.copyByChannel')}</span>
+                    <select
+                      value={copyChannelFilter}
+                      onChange={(e) => setCopyChannelFilter(e.target.value)}
+                      className="text-sm px-3 py-1.5 border border-input rounded-lg bg-white"
+                    >
+                      <option value="__all__">{t('collections:settings.channelAll')}</option>
+                      {channelOptions
+                        .filter((c) => c !== '__all__')
+                        .map((ch) => (
+                          <option key={ch || '__empty__'} value={ch}>
+                            {ch === '' ? t('collections:settings.channelUnset') : ch}
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={copyKeysByChannel}
+                      disabled={
+                        copyChannelFilter === '__all__'
+                          ? accessKeys.length === 0
+                          : !accessKeys.some((k) => (k.channel_name ?? '') === copyChannelFilter)
+                      }
+                      className="text-sm px-3 py-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      📋 {t('collections:settings.copyAllKeys')}
+                    </button>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-4 py-2 font-medium">{t('collections:settings.keyDisplay')}</th>
+                        <th className="text-left px-4 py-2 font-medium">{t('collections:settings.channelName')}</th>
+                        <th className="text-left px-4 py-2 font-medium">{t('collections:settings.boundDevices')}</th>
+                        <th className="text-left px-4 py-2 font-medium">{t('collections:settings.keyStatus')}</th>
+                        <th className="w-16"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {accessKeys.map((k) => (
+                        <tr key={k.id} className="border-t">
+                          <td className="px-4 py-2 font-mono">{k.key_display}</td>
+                          <td className="px-4 py-2 text-gray-600">{k.channel_name || '-'}</td>
+                          <td className="px-4 py-2">{k.bound_device_count} / {k.max_devices}</td>
+                          <td className="px-4 py-2">{k.status === 'active' ? t('collections:settings.keyStatusActive') : t('collections:settings.keyStatusRevoked')}</td>
+                          <td className="px-4 py-2">
+                            <button
+                              type="button"
+                              onClick={() => copyKey(k.key_display)}
+                              className="text-primary hover:underline text-xs"
+                            >
+                              {t('collections:settings.copyKey')}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 提交按钮 */}
           <div className="flex justify-end gap-3 pt-4 border-t">

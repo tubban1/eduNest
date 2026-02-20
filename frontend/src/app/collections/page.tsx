@@ -238,7 +238,7 @@ export default function CollectionsPage() {
             {/* 列表管理按钮 */}
             <div className="flex gap-2">
               <a
-                href="/collections/lists"
+                href="/collections/manage"
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors text-sm font-medium"
               >
                 📋 {mounted ? t('collections:list.manageListsButton', { ns: 'collections', defaultValue: 'Manage Lists' }) : 'Manage Lists'}

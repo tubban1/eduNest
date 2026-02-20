@@ -1,8 +1,26 @@
 const express = require('express');
 const DatabaseService = require('../services/database');
 const { authenticateToken, optionalAuth } = require('../middleware/auth');
+const { optionalVisitorId } = require('../middleware/visitorId');
+const accessKeysRoutes = require('./access_keys');
 
 const router = express.Router();
+
+/**
+ * 从 HTML 中解析 <script type="application/edu-content-meta" id="edu-meta">...</script> 的 JSON
+ * 约定见 Interactive_HTML_Skill_Workflow.md §2.1
+ */
+function parseEduMetaFromHtml(html) {
+  if (!html || typeof html !== 'string') return null;
+  const match = html.match(/<script[^>]*type=["']application\/edu-content-meta["'][^>]*id=["']edu-meta["'][^>]*>([\s\S]*?)<\/script>/i)
+    || html.match(/<script[^>]*id=["']edu-meta["'][^>]*type=["']application\/edu-content-meta["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (!match || !match[1]) return null;
+  try {
+    return JSON.parse(match[1].trim());
+  } catch {
+    return null;
+  }
+}
 
 // 创建列表
 router.post('/', authenticateToken, async (req, res) => {
@@ -82,13 +100,93 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// 根据 short_id 获取列表及其内容（支持未登录用户访问 public 列表）
-router.get('/by-short-id/:short_id', optionalAuth, async (req, res) => {
+// 挂载密钥管理子路由（/:id/access-keys）
+router.use('/:id/access-keys', accessKeysRoutes);
+
+// 批量导入 HTML 内容到列表（仅列表创建者）
+// POST /api/collection_lists/:id/import
+// Body: { items: [ { full_html, title?, description?, tags?, language_code?, content_type?, svg_thumbnail? }, ... ] }
+// 若未传 title/description/tags/language_code/content_type，则从 HTML 内 <script type="application/edu-content-meta" id="edu-meta">...</script> 解析
+router.post('/:id/import', authenticateToken, async (req, res) => {
+  try {
+    const listId = req.params.id;
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'items 不能为空，且必须为数组' });
+    }
+    if (items.length > 100) {
+      return res.status(400).json({ error: '单次最多导入 100 条' });
+    }
+
+    const { data: list, error: listError } = await DatabaseService.supabase
+      .from('collection_lists')
+      .select('id, user_id')
+      .eq('id', listId)
+      .single();
+
+    if (listError || !list || list.user_id !== req.user.id) {
+      return res.status(403).json({ error: '无权限向此列表导入' });
+    }
+
+    const results = [];
+    const errors = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const full_html = it.full_html != null ? String(it.full_html) : '';
+      if (!full_html.trim()) {
+        errors.push({ index: i, title: '(无标题)', error: 'full_html 必填' });
+        continue;
+      }
+      const meta = parseEduMetaFromHtml(full_html);
+      const title = (it.title != null && String(it.title).trim()) ? String(it.title).trim() : (meta?.title && String(meta.title).trim()) || '';
+      if (!title) {
+        errors.push({ index: i, title: '(无标题)', error: 'title 必填，请传参或在 HTML 内提供 <script type="application/edu-content-meta" id="edu-meta">{"title":"..."}</script>' });
+        continue;
+      }
+      const description = (it.description != null ? String(it.description) : (meta?.description != null ? String(meta.description) : '')).trim();
+      const tags = Array.isArray(it.tags) ? it.tags : (Array.isArray(meta?.tags) ? meta.tags : []);
+      const language_code = (it.language_code != null && String(it.language_code).trim()) ? String(it.language_code).trim() : (meta?.language_code && String(meta.language_code).trim()) || 'zh-CN';
+      const content_type = (it.content_type != null && String(it.content_type).trim()) ? String(it.content_type).trim() : (meta?.content_type && String(meta.content_type).trim()) || 'vue';
+      const svg_thumbnail = (it.svg_thumbnail != null && typeof it.svg_thumbnail === 'string' && it.svg_thumbnail.trim()) ? it.svg_thumbnail.trim() : undefined;
+      try {
+        const content = await DatabaseService.createContent({
+          title,
+          full_html,
+          description: description || '',
+          tags,
+          content_type,
+          language_code,
+          svg_thumbnail,
+        }, req.user.id);
+        const addResult = await DatabaseService.addContentToList(req.user.id, content.id, listId);
+        if (addResult.error) throw addResult.error;
+        results.push({ index: i, id: content.id, short_id: content.short_id, title: content.title });
+      } catch (err) {
+        errors.push({ index: i, title: title || '(无标题)', error: err.message || '创建失败' });
+      }
+    }
+
+    res.json({
+      success: true,
+      created: results.length,
+      failed: errors.length,
+      results,
+      errors: errors.length ? errors : undefined,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 根据 short_id 获取列表及其内容（支持未登录用户访问 public 列表，可选传 visitor_id 供后续密钥绑定）
+router.get('/by-short-id/:short_id', optionalAuth, optionalVisitorId, async (req, res) => {
   try {
     const { short_id } = req.params;
-    const userId = req.user?.id || null; // 可选：如果已登录则获取用户ID
+    const userId = req.user?.id || null;
+    const deviceId = req.visitorId || null; // 用于密钥解锁判定
     
-    const result = await DatabaseService.getCollectionListByShortId(short_id, userId);
+    const result = await DatabaseService.getCollectionListByShortId(short_id, userId, deviceId);
     
     if (result.error) {
       if (result.error.message === '列表不存在') {
@@ -110,7 +208,7 @@ router.get('/by-short-id/:short_id', optionalAuth, async (req, res) => {
 router.put('/:id/settings', authenticateToken, async (req, res) => {
   try {
     const listId = req.params.id;
-    const { pricing_mode, price, currency, description, visibility, name } = req.body;
+    const { pricing_mode, price, currency, description, visibility, name, language_code } = req.body;
     
     // 验证权限：仅创建者可修改
     const { data: list, error: listError } = await DatabaseService.supabase
@@ -151,7 +249,10 @@ router.put('/:id/settings', authenticateToken, async (req, res) => {
     if (currency !== undefined && pricing_mode === 'premium') {
       updateData.currency = currency;
     }
-    
+    if (language_code !== undefined) {
+      updateData.language_code = language_code === '' || language_code == null ? null : language_code;
+    }
+
     const { error: updateError } = await DatabaseService.supabase
       .from('collection_lists')
       .update(updateData)

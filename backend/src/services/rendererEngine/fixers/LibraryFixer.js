@@ -623,14 +623,20 @@ class LibraryFixer {
     for (const lib of missingLibraries) {
       const url = getLibraryUrl(lib.name);
       const fallbackFile = getLibraryFallback(lib.name);
-      
+      const cnFallbackUrl = getFallbackUrlFromLibrariesCn(lib.name);
+
       if (!url) {
         logger.warn(`[LibraryFixer] 无法找到库 ${lib.name} 的 URL`);
         continue;
       }
       
-      const fallbackUrl = fallbackFile ? `${baseUrl}/${fallbackFile}` : null;
-      const timeoutFallbackUrl = getFallbackUrlFromLibrariesCn(lib.name) || fallbackUrl;
+      // 优先使用 libraries_cn.json 中的 URL 作为 fallback（阿里云 OSS）
+      // 若该库未在 libraries_cn.json 中配置，则退回到 supported-libraries 的 fallback 文件或基于文件名推断
+      let fallbackUrl = cnFallbackUrl;
+      if (!fallbackUrl) {
+        fallbackUrl = fallbackFile ? `${baseUrl}/${fallbackFile}` : null;
+      }
+      const timeoutFallbackUrl = cnFallbackUrl || fallbackUrl;
       
       // 构建 script 标签（带 onerror + 超时检测，超时后注入的库链接优先来自 libraries_cn.json）
       let scriptTag;
@@ -801,13 +807,21 @@ class LibraryFixer {
         if (/onerror=/i.test(match)) {
           const primary = src;
           const entry = findEntryByUrl(primary, 'js');
-          const fallbackMatch = match.match(/this\.src='(https?:\/\/[^']+)'/);
+          const fallbackMatch = match.match(/this\.src='([^']+)'/);
           const fallbackUrl = fallbackMatch ? fallbackMatch[1] : null;
-          const globalName = entry && LIBRARY_GLOBAL_CHECK[entry.name] ? LIBRARY_GLOBAL_CHECK[entry.name] : null;
-          const timeoutFallbackUrl = (entry && getFallbackUrlFromLibrariesCn(entry.name)) || fallbackUrl;
-          if (globalName && timeoutFallbackUrl) {
-            return match + buildTimeoutFallbackScript(globalName, timeoutFallbackUrl);
+
+          // 已有 onerror 时，认为 fallbackUrl 已经是期望的阿里云链接，超时兜底直接复用这个 URL
+          if (!fallbackUrl) {
+            return match;
           }
+
+          // 尝试根据 entry.name 映射全局变量名，用于超时检测
+          const libName = entry && entry.name ? entry.name : null;
+          const globalName = libName && LIBRARY_GLOBAL_CHECK[libName] ? LIBRARY_GLOBAL_CHECK[libName] : null;
+          if (globalName) {
+            return match + buildTimeoutFallbackScript(globalName, fallbackUrl);
+          }
+
           return match;
         }
         
@@ -823,9 +837,15 @@ class LibraryFixer {
         // URL 已是推荐地址时 replacement 为 null，用 findEntryByUrl 仍可拿到 entry 以追加超时检测
         if (!entry) entry = findEntryByUrl(primary, 'js');
         
-        // 获取 fallback
+        // 获取 fallback：优先使用 libraries_cn.json 中的 URL（阿里云），否则退回 supported-libraries 的 fallback 或按文件名推断
         let fallbackUrl = null;
-        if (entry && entry.fallback) {
+        let cnFallbackUrl = null;
+        if (entry && entry.name) {
+          cnFallbackUrl = getFallbackUrlFromLibrariesCn(entry.name);
+        }
+        if (cnFallbackUrl) {
+          fallbackUrl = cnFallbackUrl;
+        } else if (entry && entry.fallback) {
           fallbackUrl = `${baseUrl}/${entry.fallback}`;
         } else {
           const libraryInfo = extractLibraryInfo(primary);
@@ -845,7 +865,7 @@ class LibraryFixer {
         }
         
         if (fallbackUrl) {
-          const timeoutFallbackUrl = (entry && getFallbackUrlFromLibrariesCn(entry.name)) || fallbackUrl;
+          const timeoutFallbackUrl = fallbackUrl;
           if (primary === src) {
             changes.push({
               type: 'insert',
