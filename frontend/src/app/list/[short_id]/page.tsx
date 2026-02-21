@@ -34,6 +34,7 @@ interface CollectionListData {
       tags?: string[];
       language_code?: string;
       created_at: string;
+      svg_thumbnail?: string | null;
     };
     added_at: string;
     index: number;
@@ -480,6 +481,18 @@ export default function CollectionListPage() {
                     </div>
                   )}
                   
+                  {/* SVG 预览图 */}
+                  {item.content.svg_thumbnail && (
+                    <div
+                      className="relative w-full aspect-[640/360] rounded-lg overflow-hidden bg-muted/50 mb-3 flex items-center justify-center [&>div]:w-full [&>div]:h-full [&_svg]:w-full [&_svg]:h-full"
+                      aria-hidden
+                    >
+                      <div
+                        className="w-full h-full flex items-center justify-center"
+                        dangerouslySetInnerHTML={{ __html: item.content.svg_thumbnail }}
+                      />
+                    </div>
+                  )}
                   {/* 内容信息 */}
                   <div className="relative z-0">
                     <MathText

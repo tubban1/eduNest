@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火山爆发的时候我在山顶</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --lava-orange: #f97316;
+            --lava-red: #ef4444;
+            --ash-gray: #475569;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: white;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Fiery Glass UI */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 40px;
+            padding: 35px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.2);
+            text-align: left;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .glass-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.2rem;
+            color: var(--lava-orange);
+            margin-bottom: 12px;
+            text-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+        }
+
+        .parent-words {
+            background: rgba(249, 115, 22, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--lava-orange);
+            font-size: 0.9rem;
+            color: #ffedd5;
+        }
+
+        .btn-erupt {
+            background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+            color: white;
+            padding: 16px 50px;
+            border-radius: 20px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
+            transition: all 0.3s;
+        }
+
+        .btn-erupt:hover {
+            transform: scale(1.05) translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .toggle-btn {
+            float: right;
+            color: var(--lava-orange);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Pressure Meter */
+        .meter-container {
+            width: 100%;
+            height: 10px;
+            background: #334155;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(to right, #f97316, #ef4444);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '【展开】' : '【收起说明】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 探险导读：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-slate-300 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <!-- Pressure Interaction for Stage 3 -->
+                    <div v-if="step === 3" class="mb-6">
+                        <div class="meter-container">
+                            <div class="meter-fill" :style="{ width: pressure + '%' }"></div>
+                        </div>
+                        <p class="text-xs text-center text-orange-400 font-bold uppercase tracking-widest">地底压力累计: {{
+                            pressure }}%</p>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button v-if="step === 3" @click="increasePressure" class="btn-erupt">
+                            {{ pressure < 100 ? '点击加压！🌋' : '见证爆发时刻！' }} </button>
+                                <button v-else-if="step < 5" @click="nextStage" class="btn-erupt">
+                                    {{ step === 4 ? '查看新大地' : '进入下一步' }}
+                                </button>
+                                <button v-else @click="reset"
+                                    class="bg-slate-700 text-slate-300 px-8 py-3 rounded-2xl font-bold">
+                                    回到沉睡期 💤
+                                </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-orange-500 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-slate-400">点击【展开】查看互动引导</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-orange-900/40 text-[10px] tracking-[0.5em] uppercase text-center mb-4">
+            🔥 {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const pressure = ref(0);
+
+                const parentWords = [
+                    "引导观察：看这面大山，它的肚子（地心）里其实有很多红红的、烫烫的岩浆在翻滚。",
+                    "大胆预测：如果岩浆太多太挤，它们想找个地方钻出来，从哪钻最好呢？",
+                    "动手快进：帮地底下的气泡一把力！连续点击加压，看看顶部的烟雾变化。",
+                    "见证奇迹：火山喷发啦！这就是地球在‘排气’。岩浆流过的地方，旧的草木没了，但过几年土会变得更肥沃。",
+                    "总结：火山是地球的排气阀，也是创造新陆地的建筑师，大自然真神奇。"
+                ];
+
+                const stages = [
+                    { title: '沉睡的巨兽', content: '在高入云端的部分，有一座看起来安静的山峰。由于岩浆还在地壳深处，它现在正处于沉睡状态。' },
+                    { title: '沸腾的地心', content: '随着地壳板块的运动，滚烫的岩浆开始向上涌。如果你靠近火山口，已经能闻到刺鼻的硫磺味了。' },
+                    { title: '壮丽的喷发', content: '压力已经到达了极限！地底的力量需要释放。请你通过点击，模拟最后的一点推力。' },
+                    { title: '红色的河流', content: '轰！岩浆带着浓烟直冲云霄。看，灿烂的熔岩像红色的河水一样，正在山坡上缓缓流淌。' },
+                    { title: '新大地的诞生', content: '虽然喷发很惊险，但冷却后的岩浆会变成坚硬的岩石，它们是地球长大的‘养料’。' }
+                ];
+
+                const techHints = [
+                    "初始化：地形置换贴图渲染 (Displacement Map)",
+                    "模拟：热对流压力物理模型",
+                    "交互：离散触发粒子动力学系统 (GPU Particles)",
+                    "实时：岩浆流向场模拟 (Flow Map)",
+                    "总结：星球循环动力学验证"
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls;
+                let volcano, lavaMesh, smokeParticles;
+                let lavaY = 0;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x0f172a);
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(25, 15, 25);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+                    const sun = new THREE.PointLight(0xf97316, 1.5, 100);
+                    sun.position.set(0, 30, 0);
+                    scene.add(sun);
+
+                    // Volcano (Cone with a crater)
+                    const volcanoGeo = new THREE.CylinderGeometry(2, 20, 15, 32, 1, true);
+                    const volcanoMat = new THREE.MeshPhongMaterial({ color: 0x475569 });
+                    volcano = new THREE.Mesh(volcanoGeo, volcanoMat);
+                    volcano.position.y = -7.5;
+                    scene.add(volcano);
+
+                    // Lava Inside/Flowing
+                    const lavaGeo = new THREE.CylinderGeometry(1.5, 1.5, 15, 16);
+                    const lavaMat = new THREE.MeshPhongMaterial({
+                        color: 0xef4444, emissive: 0xf97316, emissiveIntensity: 2
+                    });
+                    lavaMesh = new THREE.Mesh(lavaGeo, lavaMat);
+                    lavaMesh.position.y = -15; // Hidden initially
+                    scene.add(lavaMesh);
+
+                    // Smoke Particles
+                    const pGeo = new THREE.BufferGeometry();
+                    const pCount = 300;
+                    const pPos = new Float32Array(pCount * 3);
+                    for (let i = 0; i < pCount * 3; i++) pPos[i] = 0;
+                    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+                    smokeParticles = new THREE.Points(pGeo, new THREE.PointsMaterial({
+                        color: 0x64748b, size: 0.8, transparent: true, opacity: 0
+                    }));
+                    scene.add(smokeParticles);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    if (step.value >= 3) {
+                        const pPos = smokeParticles.geometry.attributes.position.array;
+                        for (let i = 0; i < pPos.length; i += 3) {
+                            pPos[i + 1] += 0.1; // Rise up
+                            pPos[i] += (Math.random() - 0.5) * 0.1;
+                            pPos[i + 2] += (Math.random() - 0.5) * 0.1;
+                            if (pPos[i + 1] > 20) { pPos[i + 1] = 0; pPos[i] = 0; pPos[i + 2] = 0; }
+                        }
+                        smokeParticles.geometry.attributes.position.needsUpdate = true;
+
+                        // Flickering light
+                        scene.children.forEach(c => {
+                            if (c instanceof THREE.PointLight) c.intensity = 1.5 + Math.random() * 1.5;
+                        });
+                    }
+
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const increasePressure = () => {
+                    pressure.value += 10;
+                    if (pressure.value >= 100) {
+                        pressure.value = 100;
+                        erupt();
+                    } else {
+                        // Increase smoke opacity
+                        gsap.to(smokeParticles.material, { opacity: pressure.value / 200, duration: 0.5 });
+                    }
+                };
+
+                const erupt = () => {
+                    gsap.to(lavaMesh.position, { y: 0, duration: 2, ease: "power2.out" });
+                    gsap.to(smokeParticles.material, { opacity: 0.8, size: 2, duration: 1 });
+                    setTimeout(() => nextStage(), 3000);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    if (typeof window !== 'undefined') {
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                    }
+                    if (step.value === 4) {
+                        gsap.to(lavaMesh.scale, { x: 1.5, z: 1.5, duration: 2 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    pressure.value = 0;
+                    lavaMesh.position.y = -15;
+                    lavaMesh.scale.set(1, 1, 1);
+                    smokeParticles.material.opacity = 0;
+                    nextTick(() => { });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                // Runtime State Provider
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: 5,
+                            currentStage: (stages[step.value - 1] && stages[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                return { step, isMinimized, pressure, parentWords, stages, techHints, nextStage, reset, increasePressure };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

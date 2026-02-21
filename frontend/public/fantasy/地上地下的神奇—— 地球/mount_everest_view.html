@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>站在珠穆朗玛峰上会有什么感觉</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --frost-blue: #0ea5e9;
+            --snow-white: #f8fafc;
+            --peak-blue: #0369a1;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f0f9ff;
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: background 2s ease;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Frosty Glass UI */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(30px);
+            border: 2px solid #fff;
+            border-radius: 40px;
+            padding: 35px;
+            max-width: 580px;
+            margin: 0 auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .glass-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.2rem;
+            color: var(--peak-blue);
+            margin-bottom: 12px;
+        }
+
+        .parent-words {
+            background: #f0f9ff;
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--frost-blue);
+            font-size: 0.9rem;
+            color: #0369a1;
+        }
+
+        .btn-climb {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+            color: white;
+            padding: 14px 45px;
+            border-radius: 20px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-climb:active {
+            transform: scale(0.95);
+        }
+
+        .toggle-btn {
+            float: right;
+            color: var(--frost-blue);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Altimeter */
+        .altimeter {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 25px;
+            border: 2px solid var(--frost-blue);
+            text-align: right;
+            z-index: 20;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .alt-value {
+            font-family: monospace;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--peak-blue);
+        }
+
+        .alt-unit {
+            font-size: 0.8rem;
+            color: var(--frost-blue);
+            font-weight: bold;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-root">
+        <!-- Altimeter Display -->
+        <div class="altimeter">
+            <div class="text-[10px] text-sky-400 font-bold tracking-widest uppercase">当前海拔</div>
+            <div class="flex items-baseline">
+                <span class="alt-value">{{ Math.floor(currentAlt) }}</span>
+                <span class="alt-unit">M</span>
+            </div>
+        </div>
+
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '【展开】' : '【收起引导】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 亲子导读：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-slate-700 leading-relaxed mb-8">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button v-if="step === 3" @mousedown="isClimbing = true" @mouseup="isClimbing = false"
+                            @touchstart="isClimbing = true" @touchend="isClimbing = false"
+                            class="btn-climb select-none">
+                            {{ currentAlt >= 8848 ? '任务完成！' : (isClimbing ? '正在努力向上爬...' : '按住不放：努力向上爬！') }}
+                        </button>
+                        <button v-else-if="step < 5" @click="nextStage" class="btn-climb">
+                            {{ step === 4 ? '领取奖章' : '继续出发' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-slate-100 text-slate-500 px-8 py-3 rounded-2xl font-bold">
+                            回到大本营 ⛺
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-sky-900 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-sky-600">点击【展开】查看互动引导</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-sky-900/30 text-[10px] tracking-[0.5em] uppercase text-center mb-4">
+            🏔️ {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const currentAlt = ref(5200); // Start at base camp
+                const isClimbing = ref(false);
+
+                const parentWords = [
+                    "引导观察：我们现在在海拔 5200 米的大本营。看远处的那个尖尖，那就是地球最高的地方。",
+                    "试着猜想：如果我们要爬到云层上面去，那里会比这儿冷吗？呼吸会变轻吗？",
+                    "动手时间：按住按钮不放，就像我们在雪地里深呼吸、使劲踩雪一样。看海拔表在跳动！",
+                    "发现蓝天：看！当海拔破了 8000 米，天变得深蓝深蓝的，甚至能隐约看到宇宙的黑背景，云彩都在我们脚下。",
+                    "总结：攀登珠峰不只是为了高度，更是为了看到这个星球最纯净的样子。"
+                ];
+
+                const stages = [
+                    { title: '向山顶进发', content: '欢迎来到珠峰大本营。即使在这里，由于海拔很高，你已经能感觉到空气中的氧气比平原少了。' },
+                    { title: '寒冷的挑战', content: '越高的地方，阳光虽然刺眼，但空气留不住热量。现在的温度已经在零下 20 度以下了。' },
+                    { title: '冲刺 8848', content: '最艰难的最后五百米！请你长按攀登按钮，模拟登山者通过坚韧的毅力克服重重困难的过程。' },
+                    { title: '云端俯瞰', content: '天哪！我们成功了！在 8848.86 米的顶峰。在这里，你能清晰地看到地平线的弧度。' },
+                    { title: '小小登山家', content: '你征服了世界之巅！记住这种广阔的感觉，它会让你在面对未来的困难时更加自信。' }
+                ];
+
+                const techHints = [
+                    "渲染：高动态范围天空盒 (HDR Skybox)",
+                    "预测：海拔高度压强梯度模型",
+                    "交互：定步长数值积分模拟攀登",
+                    "实时：视口曲率增强技术 (Curvature Effect)",
+                    "总结：地理科学精神培养"
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls;
+                let mountain;
+                let cloudParticles;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xbae6fd);
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.set(0, 5, 20);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(10, 20, 10);
+                    scene.add(sun);
+
+                    // Mountain (Simplified Peak)
+                    const mGeo = new THREE.ConeGeometry(50, 100, 4, 1);
+                    const mMat = new THREE.MeshPhongMaterial({
+                        color: 0xf8fafc, flatShading: true, shininess: 50
+                    });
+                    mountain = new THREE.Mesh(mGeo, mMat);
+                    mountain.position.y = -50;
+                    scene.add(mountain);
+
+                    // Add some rock detail at lower parts
+                    const rockGeo = new THREE.ConeGeometry(50.5, 40, 4, 1);
+                    const rockMat = new THREE.MeshPhongMaterial({ color: 0x475569 });
+                    const rock = new THREE.Mesh(rockGeo, rockMat);
+                    rock.position.y = -35;
+                    mountain.add(rock);
+
+                    // Cloud layer at 7000m altitude (relative)
+                    const cGeo = new THREE.BufferGeometry();
+                    const cCount = 1000;
+                    const cPos = new Float32Array(cCount * 3);
+                    for (let i = 0; i < cCount * 3; i++) {
+                        cPos[i] = (Math.random() - 0.5) * 400;
+                        if (i % 3 === 1) cPos[i] = 10 + (Math.random() * 5); // Cloud height
+                    }
+                    cGeo.setAttribute('position', new THREE.BufferAttribute(cPos, 3));
+                    cloudParticles = new THREE.Points(cGeo, new THREE.PointsMaterial({
+                        color: 0xffffff, size: 4, transparent: true, opacity: 0.5
+                    }));
+                    scene.add(cloudParticles);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    if (isClimbing.value && currentAlt.value < 8848) {
+                        currentAlt.value += 15;
+                        // Move camera up and slightly tilt
+                        camera.position.y += 0.05;
+                        camera.lookAt(0, 50, 0);
+
+                        // Darken sky
+                        const darkFactor = (currentAlt.value - 5200) / (8848 - 5200);
+                        const c = new THREE.Color(0xbae6fd).lerp(new THREE.Color(0x020617), darkFactor * 0.8);
+                        scene.background = c;
+                        document.body.style.background = `#${c.getHexString()}`;
+
+                        if (currentAlt.value >= 8848) {
+                            currentAlt.value = 8848;
+                            isClimbing.value = false;
+                            nextStage();
+                        }
+                    }
+
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    if (typeof window !== 'undefined') {
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    currentAlt.value = 5200;
+                    isClimbing.value = false;
+                    camera.position.set(0, 5, 20);
+                    scene.background = new THREE.Color(0xbae6fd);
+                    nextTick(() => { });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                // Runtime State Provider
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: 5,
+                            currentStage: (stages[step.value - 1] && stages[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                return { step, isMinimized, currentAlt, isClimbing, parentWords, stages, techHints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

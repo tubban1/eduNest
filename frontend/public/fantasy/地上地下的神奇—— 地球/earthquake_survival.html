@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地震在我脚下发生该怎么办</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --earth-brown: #78350f;
+            --caution-orange: #f59e0b;
+            --danger-red: #dc2626;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #fef2f2;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 20;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Danger Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 2px solid #fee2e2;
+            border-radius: 35px;
+            padding: 30px;
+            max-width: 580px;
+            margin: 0 auto;
+            box-shadow: 0 15px 35px rgba(220, 38, 38, 0.1);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .glass-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2rem;
+            color: #991b1b;
+            margin-bottom: 12px;
+        }
+
+        .parent-words {
+            background: #fff5f5;
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid #ef4444;
+            font-size: 0.9rem;
+            color: #b91c1c;
+        }
+
+        .btn-panic {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            color: white;
+            padding: 14px 45px;
+            border-radius: 20px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(220, 38, 38, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-panic:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
+        .toggle-btn {
+            float: right;
+            color: #dc2626;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Safety Choices */
+        .choice-btn {
+            background: #fff;
+            border: 2px solid #fee2e2;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            pointer-events: auto;
+        }
+
+        .choice-btn:hover {
+            background: #fef2f2;
+            border-color: #f87171;
+        }
+
+        .choice-correct {
+            border-color: #10b981;
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .choice-wrong {
+            border-color: #ef4444;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .shaking {
+            animation: shake 0.1s infinite;
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translate(1px, 1px) rotate(0deg);
+            }
+
+            10% {
+                transform: translate(-1px, -2px) rotate(-1deg);
+            }
+
+            20% {
+                transform: translate(-3px, 0px) rotate(1deg);
+            }
+
+            30% {
+                transform: translate(3px, 2px) rotate(0deg);
+            }
+
+            40% {
+                transform: translate(1px, -1px) rotate(1deg);
+            }
+
+            50% {
+                transform: translate(-1px, 2px) rotate(-1deg);
+            }
+
+            60% {
+                transform: translate(-3px, 1px) rotate(0deg);
+            }
+
+            70% {
+                transform: translate(3px, 1px) rotate(-1deg);
+            }
+
+            80% {
+                transform: translate(-1px, -1px) rotate(1deg);
+            }
+
+            90% {
+                transform: translate(1px, 2px) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(1px, -2px) rotate(-1deg);
+            }
+        }
+    </style>
+</head>
+
+<body :class="{ 'shaking': isShaking }">
+    <div id="three-canvas"></div>
+
+    <div id="app" class="ui-root">
+        <transition name="fade" mode="out-in">
+            <div :key="step" :class="['glass-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '【展开】' : '【收起说明】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 防灾指南：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-slate-700 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <!-- Stage 4 Interactive Choices -->
+                    <div v-if="step === 4" class="grid grid-cols-2 gap-4 mb-6">
+                        <div v-for="c in choices" :key="c.id" @click="makeChoice(c)"
+                            :class="['choice-btn', { 'choice-correct': c.result === 'correct', 'choice-wrong': c.result === 'wrong' }]">
+                            <span class="text-2xl block mb-2">{{ c.icon }}</span>
+                            <span class="text-sm font-bold">{{ c.label }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button v-if="step === 3" @click="startEarthquake" class="btn-panic">
+                            释放板块能量！🌋
+                        </button>
+                        <button v-else-if="step < 5" @click="nextStage"
+                            class="bg-slate-100 text-slate-600 px-10 py-3 rounded-full font-bold">
+                            {{ step === 4 && !choiceMade ? '先选一个躲避点' : '下一步' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-slate-100 text-slate-500 px-8 py-3 rounded-2xl font-bold">
+                            恢复宁静 💚
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-red-900 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-red-600">点击【展开】查看避险要点</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-red-900/30 text-[10px] tracking-[0.4em] uppercase text-center mb-4">
+            ⚠️ {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const isShaking = ref(false);
+                const choiceMade = ref(false);
+
+                const parentWords = [
+                    "引导观察：看地下的两块‘大石板’（板块），它们平时会互相挤压，就像两个小朋友在推手。",
+                    "试着猜想：如果它们推得太用力，‘咔哒’一声断了，地面会发生什么？",
+                    "动手快进：点击按钮释放能量。感受背景的震动，这就是地震波传到了地表。",
+                    "救命知识：快问孩子，如果家里摇晃起来，我们要躲在哪最安全？不要去电梯或窗边哦！",
+                    "总结：地震并不可怕，只要掌握了‘伏地、遮挡、手抓牢’，我们就能保护好自己。"
+                ];
+
+                const stages = [
+                    { title: '平静的地壳', content: '我们的脚下并不是整块石头，而是由许多巨大的‘板块’拼成的。它们一直在悄悄移动。' },
+                    { title: '积聚的能量', content: '当两个板块互相推挤却又卡住时，巨大的力量就在地底下悄悄积攒，就像拉满的弓弦。' },
+                    { title: '震动时刻', content: '咔嚓！力量爆发了！岩层断裂产生的震动像波浪一样传向四方，地面开始剧烈晃动。' },
+                    { title: '避险小能手', content: '地震发生时，要在附近寻找坚固的依靠。如果是你，你会选择躲在哪里呢？' },
+                    { title: '地心的预警', content: '记住：不惊慌、不乱跑。地震是地球的呼吸，而知识是我们的保护伞。' }
+                ];
+
+                const techHints = [
+                    "初始化：地质板块 PBR 材质加载",
+                    "模拟：岩应力累积算法",
+                    "触发：三轴高频震荡控制方案",
+                    "决策：防灾逻辑节点判定",
+                    "总结：全连接科普知识链"
+                ];
+
+                const choices = ref([
+                    { id: 1, label: '坚固的桌子下', icon: '🪑', isCorrect: true, result: '' },
+                    { id: 2, label: '靠近窗户边', icon: '🪟', isCorrect: false, result: '' },
+                    { id: 3, label: '承重墙三角区', icon: '📐', isCorrect: true, result: '' },
+                    { id: 4, label: '快冲进电梯', icon: '🛗', isCorrect: false, result: '' }
+                ]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls;
+                let plates = [], house, furniture = [];
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xfef2f2);
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(20, 15, 20);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+                    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                    directionalLight.position.set(10, 20, 10);
+                    scene.add(directionalLight);
+
+                    // Ground Plates
+                    const p1Geo = new THREE.BoxGeometry(20, 5, 20);
+                    const p1Mat = new THREE.MeshPhongMaterial({ color: 0x78350f });
+                    const p1 = new THREE.Mesh(p1Geo, p1Mat);
+                    p1.position.set(-10, -2.5, 0);
+                    scene.add(p1); plates.push(p1);
+
+                    const p2Geo = new THREE.BoxGeometry(20, 5, 20);
+                    const p2Mat = new THREE.MeshPhongMaterial({ color: 0x92400e });
+                    const p2 = new THREE.Mesh(p2Geo, p2Mat);
+                    p2.position.set(10, -2.5, 0);
+                    scene.add(p2); plates.push(p2);
+
+                    // Tiny House
+                    house = new THREE.Group();
+                    const base = new THREE.Mesh(new THREE.BoxGeometry(8, 0.5, 8), new THREE.MeshPhongMaterial({ color: 0xffffff }));
+                    house.add(base);
+
+                    // Simple furniture
+                    const table = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 1.5), new THREE.MeshPhongMaterial({ color: 0xd97706 }));
+                    table.position.set(-2, 0.75, 0);
+                    house.add(table); furniture.push(table);
+
+                    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2), new THREE.MeshPhongMaterial({ color: 0xfacc15 }));
+                    lamp.position.set(2, 1.25, -2);
+                    house.add(lamp); furniture.push(lamp);
+
+                    house.position.y = 0.25;
+                    scene.add(house);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    if (isShaking.value) {
+                        // Shake the house and plates slightly
+                        const s = 0.1;
+                        house.position.x = (Math.random() - 0.5) * s;
+                        house.position.z = (Math.random() - 0.5) * s;
+
+                        furniture.forEach(f => {
+                            f.rotation.z = (Math.random() - 0.5) * 0.2;
+                            f.position.x += (Math.random() - 0.5) * 0.05;
+                        });
+                    }
+
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const startEarthquake = () => {
+                    isShaking.value = true;
+                    // Move plates apart or clash
+                    gsap.to(plates[0].position, { x: -10.5, duration: 1, repeat: 5, yoyo: true });
+                    gsap.to(plates[1].position, { x: 10.5, duration: 1, repeat: 5, yoyo: true });
+
+                    setTimeout(() => {
+                        isShaking.value = false;
+                        nextStage();
+                    }, 5000);
+                };
+
+                const makeChoice = (choice) => {
+                    choiceMade.value = true;
+                    choice.result = choice.isCorrect ? 'correct' : 'wrong';
+                };
+
+                const nextStage = () => {
+                    if (step.value === 4 && !choiceMade.value) return;
+                    step.value = Math.min(step.value + 1, 5);
+                    if (typeof window !== 'undefined') {
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    isShaking.value = false;
+                    choiceMade.value = false;
+                    choices.value.forEach(c => c.result = '');
+                    house.position.set(0, 0.25, 0);
+                    nextTick(() => { });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                // Runtime State Provider
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: 5,
+                            currentStage: (stages[step.value - 1] && stages[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                return { step, isMinimized, isShaking, choices, choiceMade, makeChoice, parentWords, stages, techHints, nextStage, reset, startEarthquake };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { useSmartBack } from '@/utils/navigation';
 import { SUPPORTED_LANGUAGES } from '@/i18n/config';
 
+const LIST_LINK_PREFIX = 'https://www.edunest.app';
+
 interface ListSettings {
   name: string;
   description?: string;
@@ -48,6 +50,7 @@ export default function ListSettingsPage() {
   const [generating, setGenerating] = useState(false);
   const [accessKeys, setAccessKeys] = useState<Array<{ id: string; key_display: string; channel_name?: string; max_devices: number; bound_device_count: number; status: string; created_at: string }>>([]);
   const [keysLoading, setKeysLoading] = useState(false);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -152,9 +155,16 @@ export default function ListSettingsPage() {
     }
   };
 
-  const copyKey = (keyDisplay: string) => {
-    navigator.clipboard.writeText(keyDisplay).then(() => {
-      // 简单提示可后续用 toast
+  const copyKey = (keyId: string, keyDisplay: string) => {
+    const listName = listData?.list?.name || settings.name || '';
+    const link = `${LIST_LINK_PREFIX}/list/${params.short_id || ''}`;
+    const nameLabel = t('collections:settings.listNameLabel', '列表');
+    const keyLabel = t('collections:settings.keyLabel', '密钥');
+    const linkLabel = t('collections:settings.linkLabel', '链接');
+    const text = `${nameLabel}：${listName}\n${linkLabel}：${link}\n${keyLabel}：${keyDisplay}`;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKeyId(keyId);
+      setTimeout(() => setCopiedKeyId(null), 1800);
     });
   };
 
@@ -334,6 +344,116 @@ export default function ListSettingsPage() {
             </div>
           )}
 
+          {/* 访问密钥（仅付费/预览模式显示，放在最上方便于频繁配置） */}
+          {(settings.pricing_mode === 'premium' || settings.pricing_mode === 'free_preview') && listData?.list?.id && (
+            <div className="mb-6 pt-6 border-t">
+              <h3 className="text-base font-semibold text-gray-800 mb-2">{t('collections:settings.accessKeys')}</h3>
+              <p className="text-sm text-gray-500 mb-4">{t('collections:settings.accessKeysDesc')}</p>
+              <div className="flex flex-wrap gap-4 mb-4">
+                <div className="flex-1 min-w-[140px]">
+                  <label className="block text-xs text-gray-600 mb-1">{t('collections:settings.channelName')}</label>
+                  <input
+                    type="text"
+                    value={channelName}
+                    onChange={(e) => setChannelName(e.target.value)}
+                    placeholder={t('collections:settings.channelNamePlaceholder')}
+                    className="w-full px-3 py-2 border border-input rounded-lg text-sm"
+                  />
+                </div>
+                <div className="w-24">
+                  <label className="block text-xs text-gray-600 mb-1">{t('collections:settings.keyCount')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={keyCount}
+                    onChange={(e) => setKeyCount(Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)))}
+                    className="w-full px-3 py-2 border border-input rounded-lg text-sm"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={handleBatchGenerate}
+                    disabled={generating}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 disabled:opacity-60"
+                  >
+                    {generating ? t('collections:settings.generating') : t('collections:settings.batchGenerate')}
+                  </button>
+                </div>
+              </div>
+              {keysLoading ? (
+                <p className="text-sm text-gray-500 py-4">加载中...</p>
+              ) : accessKeys.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">{t('collections:settings.noKeys')}</p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 justify-end">
+                    <span className="text-sm text-gray-600">{t('collections:settings.copyByChannel')}</span>
+                    <select
+                      value={copyChannelFilter}
+                      onChange={(e) => setCopyChannelFilter(e.target.value)}
+                      className="text-sm px-3 py-1.5 border border-input rounded-lg bg-white"
+                    >
+                      <option value="__all__">{t('collections:settings.channelAll')}</option>
+                      {channelOptions
+                        .filter((c) => c !== '__all__')
+                        .map((ch) => (
+                          <option key={ch || '__empty__'} value={ch}>
+                            {ch === '' ? t('collections:settings.channelUnset') : ch}
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={copyKeysByChannel}
+                      disabled={
+                        copyChannelFilter === '__all__'
+                          ? accessKeys.length === 0
+                          : !accessKeys.some((k) => (k.channel_name ?? '') === copyChannelFilter)
+                      }
+                      className="text-sm px-3 py-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      📋 {t('collections:settings.copyAllKeys')}
+                    </button>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm table-fixed">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium w-[28%] min-w-0">{t('collections:settings.keyDisplay')}</th>
+                        <th className="text-left px-3 py-2 font-medium w-[18%] min-w-0">{t('collections:settings.channelName')}</th>
+                        <th className="text-left px-3 py-2 font-medium w-[14%] min-w-0">{t('collections:settings.boundDevices')}</th>
+                        <th className="text-left px-3 py-2 font-medium w-[14%] min-w-0">{t('collections:settings.keyStatus')}</th>
+                        <th className="text-left px-3 py-2 font-medium w-[26%] min-w-[5.5rem]">{t('collections:settings.copyKey')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {accessKeys.map((k) => (
+                        <tr key={k.id} className="border-t">
+                          <td className="px-3 py-2 font-mono truncate min-w-0" title={k.key_display}>{k.key_display}</td>
+                          <td className="px-3 py-2 text-gray-600 min-w-0">{k.channel_name || '-'}</td>
+                          <td className="px-3 py-2 min-w-0">{k.bound_device_count} / {k.max_devices}</td>
+                          <td className="px-3 py-2 min-w-0">{k.status === 'active' ? t('collections:settings.keyStatusActive') : t('collections:settings.keyStatusRevoked')}</td>
+                          <td className="px-3 py-2 min-w-[5.5rem]">
+                            <button
+                              type="button"
+                              onClick={() => copyKey(k.id, k.key_display)}
+                              className="text-xs px-2 py-1 rounded transition-all duration-200 text-primary hover:bg-primary/10 active:scale-95"
+                            >
+                              {copiedKeyId === k.id ? (t('common:copied', '已复制') || '已复制') : (t('collections:settings.copyKey') || '复制')}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 列表名称 */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -489,116 +609,6 @@ export default function ListSettingsPage() {
               </label>
             </div>
           </div>
-
-          {/* 访问密钥（仅付费/预览模式显示） */}
-          {(settings.pricing_mode === 'premium' || settings.pricing_mode === 'free_preview') && listData?.list?.id && (
-            <div className="mb-6 pt-6 border-t">
-              <h3 className="text-base font-semibold text-gray-800 mb-2">{t('collections:settings.accessKeys')}</h3>
-              <p className="text-sm text-gray-500 mb-4">{t('collections:settings.accessKeysDesc')}</p>
-              <div className="flex flex-wrap gap-4 mb-4">
-                <div className="flex-1 min-w-[140px]">
-                  <label className="block text-xs text-gray-600 mb-1">{t('collections:settings.channelName')}</label>
-                  <input
-                    type="text"
-                    value={channelName}
-                    onChange={(e) => setChannelName(e.target.value)}
-                    placeholder={t('collections:settings.channelNamePlaceholder')}
-                    className="w-full px-3 py-2 border border-input rounded-lg text-sm"
-                  />
-                </div>
-                <div className="w-24">
-                  <label className="block text-xs text-gray-600 mb-1">{t('collections:settings.keyCount')}</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={keyCount}
-                    onChange={(e) => setKeyCount(Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)))}
-                    className="w-full px-3 py-2 border border-input rounded-lg text-sm"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={handleBatchGenerate}
-                    disabled={generating}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 disabled:opacity-60"
-                  >
-                    {generating ? t('collections:settings.generating') : t('collections:settings.batchGenerate')}
-                  </button>
-                </div>
-              </div>
-              {keysLoading ? (
-                <p className="text-sm text-gray-500 py-4">加载中...</p>
-              ) : accessKeys.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4">{t('collections:settings.noKeys')}</p>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2 justify-end">
-                    <span className="text-sm text-gray-600">{t('collections:settings.copyByChannel')}</span>
-                    <select
-                      value={copyChannelFilter}
-                      onChange={(e) => setCopyChannelFilter(e.target.value)}
-                      className="text-sm px-3 py-1.5 border border-input rounded-lg bg-white"
-                    >
-                      <option value="__all__">{t('collections:settings.channelAll')}</option>
-                      {channelOptions
-                        .filter((c) => c !== '__all__')
-                        .map((ch) => (
-                          <option key={ch || '__empty__'} value={ch}>
-                            {ch === '' ? t('collections:settings.channelUnset') : ch}
-                          </option>
-                        ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={copyKeysByChannel}
-                      disabled={
-                        copyChannelFilter === '__all__'
-                          ? accessKeys.length === 0
-                          : !accessKeys.some((k) => (k.channel_name ?? '') === copyChannelFilter)
-                      }
-                      className="text-sm px-3 py-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      📋 {t('collections:settings.copyAllKeys')}
-                    </button>
-                  </div>
-                  <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-left px-4 py-2 font-medium">{t('collections:settings.keyDisplay')}</th>
-                        <th className="text-left px-4 py-2 font-medium">{t('collections:settings.channelName')}</th>
-                        <th className="text-left px-4 py-2 font-medium">{t('collections:settings.boundDevices')}</th>
-                        <th className="text-left px-4 py-2 font-medium">{t('collections:settings.keyStatus')}</th>
-                        <th className="w-16"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {accessKeys.map((k) => (
-                        <tr key={k.id} className="border-t">
-                          <td className="px-4 py-2 font-mono">{k.key_display}</td>
-                          <td className="px-4 py-2 text-gray-600">{k.channel_name || '-'}</td>
-                          <td className="px-4 py-2">{k.bound_device_count} / {k.max_devices}</td>
-                          <td className="px-4 py-2">{k.status === 'active' ? t('collections:settings.keyStatusActive') : t('collections:settings.keyStatusRevoked')}</td>
-                          <td className="px-4 py-2">
-                            <button
-                              type="button"
-                              onClick={() => copyKey(k.key_display)}
-                              className="text-primary hover:underline text-xs"
-                            >
-                              {t('collections:settings.copyKey')}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* 提交按钮 */}
           <div className="flex justify-end gap-3 pt-4 border-t">

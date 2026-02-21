@@ -1679,7 +1679,8 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
           description,
           tags,
           language_code,
-          created_at
+          created_at,
+          svg_thumbnail
         )
       `)
       .eq('list_id', list.id)

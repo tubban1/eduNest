@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海水把陆地都淹没了会怎样</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --deep-sea: #083344;
+            --submerged-cyan: #22d3ee;
+            --land-green: #22c55e;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #ecfeff;
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: background 1.5s ease;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Cyber Deep Sea Glass UI */
+        .glass-panel {
+            background: rgba(8, 51, 68, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-radius: 40px;
+            padding: 35px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            text-align: left;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #ecfeff;
+        }
+
+        .glass-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+            opacity: 0.9;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.2rem;
+            color: var(--submerged-cyan);
+            margin-bottom: 12px;
+        }
+
+        .parent-words {
+            background: rgba(34, 211, 238, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--submerged-cyan);
+            font-size: 0.9rem;
+            color: #a5f3fc;
+        }
+
+        .btn-flood {
+            background: linear-gradient(135deg, #0ea5e9 0%, #083344 100%);
+            color: white;
+            padding: 14px 45px;
+            border-radius: 20px;
+            font-weight: 800;
+            border: 1px solid var(--submerged-cyan);
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(8, 51, 68, 0.5);
+            transition: all 0.3s;
+        }
+
+        .btn-flood:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(34, 211, 238, 0.4);
+        }
+
+        .toggle-btn {
+            float: right;
+            color: var(--submerged-cyan);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Water Level Control */
+        .flood-control {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slider-flood {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            background: #164e63;
+            border-radius: 3px;
+        }
+
+        .slider-flood::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--submerged-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--submerged-cyan);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '【展开】' : '【收起引导】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 探秘引导：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-cyan-100/80 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <!-- Water Level Interaction for Stage 3 -->
+                    <div v-if="step >= 3 && step < 5" class="flood-control">
+                        <div class="flex justify-between text-[10px] uppercase font-bold text-cyan-400 mb-2">
+                            <span>正常水位</span>
+                            <span>深海模式</span>
+                        </div>
+                        <input type="range" class="slider-flood" v-model="waterLevel" min="0" max="100" step="0.5">
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button v-if="step < 5" @click="nextStage" class="btn-flood">
+                            {{ step === 3 ? '进入海洋时代' : '继续探索' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-cyan-950 text-cyan-300 border border-cyan-700 px-8 py-3 rounded-2xl font-bold">
+                            恢复海陆平衡 🌏
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-cyan-400 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-cyan-600">点击【展开】查看模拟细节</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-cyan-700/50 text-[10px] tracking-[0.5em] uppercase text-center mb-4">
+            🐳 {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const waterLevel = ref(0);
+
+                const parentWords = [
+                    "引导观察：看地表那些绿色的地方，那是我们的家。旁边的蓝色就是海洋。大家相处得很和谐。",
+                    "试着猜想：如果所有的海水都涨上来，把最高的山也盖住了。我们的小车和房子会去哪？",
+                    "动手时间：拉动滑块，让海水淹没陆地。看！原本绿色的陆地在蓝色水幕下一点点消失了。",
+                    "进入深蓝：现在地球变成了一个百分之百的水球。虽然鱼儿们很大胆，但我们要住在船上啦。",
+                    "总结：大地是生命的根，海洋是生命的源。海陆并存，才是我们最美丽的家园。"
+                ];
+
+                const stages = [
+                    { title: '珍贵的陆地', content: '现在，地球是一个海陆交织的世界。陆地虽然只占三成，但它承载了几乎所有的陆生文明和繁茂的森林。' },
+                    { title: '淹没的预想', content: '由于大陆架的平均海拔并不高，一旦全球水量剧增，陆地将变得支离破碎。想看看那样的世界吗？' },
+                    { title: '水之行星', content: '现在，请你扮演‘大海之神’，提升海平面的高度。直到最后的一个岛屿也消失在波涛之中。' },
+                    { title: '海洋的统领', content: '看哪！地球现在成了一颗真正的‘蓝宝石’。没有了陆地的阻隔，洋流在全星球自由奔跑。' },
+                    { title: '多彩的家园', content: '陆地不仅是我们的立足之地，它还影响着气候。海陆的平衡，是地球生命能够存续的精妙契约。' }
+                ];
+
+                const techHints = [
+                    "加载：高精度全球陆壳高度图数据",
+                    "预测：球面几何体积排开演算法",
+                    "交互：半透明 Alpha 叠加水位控制系统",
+                    "实时：折射 Shader 增强水下视觉模拟",
+                    "总结：生态位与栖息地重要性认知"
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls;
+                let earth, waterShell;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xecfeff);
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 50);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(30, 20, 20);
+                    scene.add(sun);
+
+                    // Earth Sphere
+                    const eGeo = new THREE.SphereGeometry(20, 64, 64);
+                    // Standard Earth Colors
+                    const eMat = new THREE.MeshPhongMaterial({
+                        color: 0x22c55e, // Land
+                        emissive: 0x064e3b, emissiveIntensity: 0.1
+                    });
+                    earth = new THREE.Mesh(eGeo, eMat);
+                    scene.add(earth);
+
+                    // Add Continent Decals (Fake logic with wireframe and colors)
+                    const ocean = new THREE.Mesh(
+                        new THREE.SphereGeometry(19.9, 64, 64),
+                        new THREE.MeshBasicMaterial({ color: 0x0ea5e9 })
+                    );
+                    earth.add(ocean);
+
+                    // Water Shell (Dynamic)
+                    const wGeo = new THREE.SphereGeometry(20.1, 64, 64);
+                    const wMat = new THREE.MeshPhongMaterial({
+                        color: 0x22d3ee, transparent: true, opacity: 0.4, shininess: 100
+                    });
+                    waterShell = new THREE.Mesh(wGeo, wMat);
+                    scene.add(waterShell);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    earth.rotation.y += 0.001;
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                // Watch water level
+                watch(waterLevel, (val) => {
+                    const norm = val / 100;
+                    // Increase shell radius
+                    const newRadius = 20.1 + (norm * 5);
+                    waterShell.scale.set(newRadius / 20.1, newRadius / 20.1, newRadius / 20.1);
+                    waterShell.material.opacity = 0.4 + (norm * 0.4);
+
+                    // Darken background
+                    const c = new THREE.Color(0xecfeff).lerp(new THREE.Color(0x083344), norm);
+                    scene.background = c;
+                    document.body.style.background = `#${c.getHexString()}`;
+                });
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    if (typeof window !== 'undefined') {
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                    }
+                    if (step.value === 4) {
+                        gsap.to(waterLevel, { value: 100, duration: 3 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    waterLevel.value = 0;
+                    scene.background = new THREE.Color(0xecfeff);
+                    nextTick(() => { });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                // Runtime State Provider
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: 5,
+                            currentStage: (stages[step.value - 1] && stages[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                return { step, isMinimized, waterLevel, parentWords, stages, techHints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

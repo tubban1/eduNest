@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地球要是一下子没有了吸引力会怎样</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --primary-blue: #3b82f6;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --neon-glow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f0f9ff;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Premium Glassmorphism UI */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 2px solid #fff;
+            border-radius: 40px;
+            padding: 35px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), var(--neon-glow);
+            text-align: left;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .glass-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.2rem;
+            color: #1e3a8a;
+            margin-bottom: 12px;
+        }
+
+        .parent-words {
+            background: #eff6ff;
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3b82f6;
+            font-size: 0.9rem;
+            color: #1e40af;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 14px 45px;
+            border-radius: 20px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-action:active {
+            transform: translateY(1px);
+        }
+
+        .toggle-btn {
+            float: right;
+            color: #3b82f6;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .gravity-badge {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid #3b82f6;
+            font-weight: 800;
+            color: #3b82f6;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gravity-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .gravity-off .gravity-indicator {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas"></div>
+
+    <div id="app" class="ui-root">
+        <!-- Gravity Status Indicator -->
+        <div :class="['gravity-badge', { 'gravity-off': !gravityOn }]">
+            <div class="gravity-indicator"></div>
+            <span>地球引力: {{ gravityOn ? 'ON (正常)' : 'OFF (消失)' }}</span>
+        </div>
+
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '【展开】' : '【收起】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 亲子导读：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-slate-700 leading-relaxed mb-8">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <div class="flex justify-center flex-col items-center gap-4">
+                        <button v-if="step === 3" @click="toggleGravity" class="btn-action w-full">
+                            {{ gravityOn ? '关掉地球引力！' : '恢复引力' }}
+                        </button>
+                        <button v-if="step < 5" @click="nextStage" class="btn-action">
+                            {{ step === 3 ? (gravityOn ? '先尝试关掉引力' : '进入下一阶段') : '下一步' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-slate-100 text-slate-600 px-8 py-3 rounded-2xl font-bold">
+                            重置模拟 🌍
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-blue-900 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-blue-600">点击【展开】查看互动引导</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-blue-900/30 text-[10px] tracking-[0.4em] uppercase text-center mb-4">
+            🚀 {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick, computed } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const gravityOn = ref(true);
+
+                const parentWords = [
+                    "让孩子跳一跳，问问他：为什么我们总会掉回地面？这就是引力的功劳。",
+                    "大胆想象：如果引力突然‘咔哒’一声关掉了，你第一反应会抓住什么？",
+                    "动手时间：点击按钮关掉引力，看看地面上的小车和房子会怎么样？",
+                    "深入观察：不仅是房子，看那边的‘云朵粒子’，连大气层都保不住啦！",
+                    "总结：引力是地球妈妈抱住我们的手，让万物各就其位，生命才能安稳。"
+                ];
+
+                const stages = [
+                    { title: '踏实的基础', content: '引力像一层无形的胶水，把我们、房子还有海水都牢牢地‘粘’在地球表面。' },
+                    { title: '大胆的预测', content: '如果这层‘胶水’突然失效了呢？所有没有被固定在地面深处的东西，都会开始不安分起来。' },
+                    { title: '失重挑战', content: '现在，请你扮演‘上帝’，亲手关掉这一区域的地球引力开关。准备好了吗？' },
+                    { title: '逃逸的大气', content: '天哪！没有了引力，连维持生命的大气层也像散开的烟雾一样飘向了外太空，地球正在变秃！' },
+                    { title: '重心的意义', content: '重新开启引力吧。你看，万物回归原位。这种‘踏实’的感觉，才是最珍贵的礼物。' }
+                ];
+
+                const techHints = [
+                    "观察：Three.js 刚体状态模拟",
+                    "预测：引力常数 G 趋向于 0",
+                    "操作：实时物理模拟动态切换",
+                    "发现：粒子系统逃逸效果",
+                    "总结：万有引力定律初探"
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls;
+                let worldGroup, objects = [];
+                let atmosphereParticles;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xdbeafe); // 浅蓝色天空
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(30, 25, 40);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // Lights
+                    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+                    scene.add(ambientLight);
+                    const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+                    sunLight.position.set(50, 50, 50);
+                    scene.add(sunLight);
+
+                    // World Group
+                    worldGroup = new THREE.Group();
+                    scene.add(worldGroup);
+
+                    // Ground
+                    const groundGeo = new THREE.CylinderGeometry(20, 20, 2, 64);
+                    const groundMat = new THREE.MeshPhongMaterial({ color: 0x10b981 });
+                    const ground = new THREE.Mesh(groundGeo, groundMat);
+                    ground.position.y = -1;
+                    worldGroup.add(ground);
+
+                    // Scatter Objects
+                    const colors = [0xef4444, 0xf59e0b, 0x3b82f6, 0x8b5cf6, 0xec4899];
+                    for (let i = 0; i < 30; i++) {
+                        const size = 0.5 + Math.random() * 1.5;
+                        const geo = Math.random() > 0.5 ? new THREE.BoxGeometry(size, size, size) : new THREE.SphereGeometry(size / 2, 16, 16);
+                        const mat = new THREE.MeshPhongMaterial({ color: colors[i % colors.length] });
+                        const mesh = new THREE.Mesh(geo, mat);
+
+                        // Random pos on ground
+                        const r = Math.random() * 15;
+                        const theta = Math.random() * Math.PI * 2;
+                        mesh.position.set(Math.cos(theta) * r, size / 2, Math.sin(theta) * r);
+
+                        mesh.userData = {
+                            originalY: mesh.position.y,
+                            velocity: new THREE.Vector3((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1),
+                            rotSpeed: new THREE.Vector3(Math.random() * 0.02, Math.random() * 0.02, Math.random() * 0.02)
+                        };
+
+                        worldGroup.add(mesh);
+                        objects.push(mesh);
+                    }
+
+                    // Atmosphere Particles
+                    const pGeo = new THREE.BufferGeometry();
+                    const pCount = 500;
+                    const pPos = new Float32Array(pCount * 3);
+                    for (let i = 0; i < pCount * 3; i++) pPos[i] = (Math.random() - 0.5) * 60;
+                    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+                    atmosphereParticles = new THREE.Points(pGeo, new THREE.PointsMaterial({
+                        color: 0xffffff, size: 0.2, transparent: true, opacity: 0.4
+                    }));
+                    scene.add(atmosphereParticles);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    if (!gravityOn.value) {
+                        objects.forEach(obj => {
+                            // Rise up and drift
+                            obj.position.y += 0.05;
+                            obj.position.x += obj.userData.velocity.x;
+                            obj.position.z += obj.userData.velocity.z;
+                            obj.rotation.x += obj.userData.rotSpeed.x;
+                            obj.rotation.y += obj.userData.rotSpeed.y;
+                        });
+
+                        if (step.value >= 4) {
+                            // Atmosphere Escaping
+                            const pPos = atmosphereParticles.geometry.attributes.position.array;
+                            for (let i = 0; i < pPos.length; i += 3) {
+                                pPos[i + 1] += 0.2; // Move up fast
+                                if (pPos[i + 1] > 50) pPos[i + 1] = -50;
+                            }
+                            atmosphereParticles.geometry.attributes.position.needsUpdate = true;
+                            scene.background.lerp(new THREE.Color(0x020617), 0.01); // Fade to space black
+                        }
+                    } else if (step.value === 5) {
+                        // Returning to normalcy logic would go here if needed, 
+                        // but reset() handles it better.
+                    }
+
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const toggleGravity = () => {
+                    gravityOn.value = !gravityOn.value;
+                    if (gravityOn.value) {
+                        // Instant return for simplicity in this demo stage
+                        objects.forEach(obj => {
+                            gsap.to(obj.position, { y: obj.userData.originalY, duration: 2, ease: "bounce.out" });
+                            gsap.to(obj.rotation, { x: 0, y: 0, z: 0, duration: 2 });
+                        });
+                        scene.background = new THREE.Color(0xdbeafe);
+                    }
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.length);
+                    if (typeof window !== 'undefined') {
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.length });
+                    }
+                    if (step.value === 4 && gravityOn.value) {
+                        // Force gravity off if they didn't do it
+                        toggleGravity();
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    gravityOn.value = true;
+                    objects.forEach(obj => {
+                        obj.position.y = obj.userData.originalY;
+                        obj.rotation.set(0, 0, 0);
+                    });
+                    scene.background = new THREE.Color(0xdbeafe);
+                    nextTick(() => { });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                // Runtime State Provider
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.length,
+                            currentStage: (stages[step.value - 1] && stages[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                return { step, isMinimized, gravityOn, parentWords, stages, techHints, nextStage, reset, toggleGravity };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冰川都融化了会怎样</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --sea-blue: #0ea5e9;
+            --ice-white: #f8fafc;
+            --danger-red: #ef4444;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #e0f2fe;
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: background 1s ease;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Modern Glass UI */
+        .glass-ui {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 35px;
+            padding: 30px;
+            max-width: 550px;
+            margin: 0 auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .glass-ui.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2rem;
+            color: #0284c7;
+            margin-bottom: 12px;
+        }
+
+        .parent-words {
+            background: #f0f9ff;
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid #0ea5e9;
+            font-size: 0.9rem;
+            color: #0369a1;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 12px 40px;
+            border-radius: 18px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(2, 132, 199, 0.2);
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(2, 132, 199, 0.3);
+        }
+
+        .toggle-btn {
+            float: right;
+            color: #0ea5e9;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Control Panel for Temperature */
+        .temp-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .slider {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #0ea5e9;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .temp-display {
+            font-weight: 800;
+            font-family: monospace;
+            font-size: 1.2rem;
+            width: 80px;
+            text-align: right;
+        }
+
+        .temp-low {
+            color: #0ea5e9;
+        }
+
+        .temp-high {
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas"></div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-ui', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '【展开】' : '【收起引导】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 亲子共学：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-slate-600 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <!-- Temperature Slider for Stage 3 & 4 -->
+                    <div v-if="step >= 3 && step < 5" class="temp-panel">
+                        <span class="text-xs font-bold text-slate-400 capitalize">地球温度</span>
+                        <input type="range" class="slider" v-model="temperature" min="0" max="100" step="1">
+                        <div :class="['temp-display', temperature < 50 ? 'temp-low' : 'temp-high']">
+                            {{ (15 + (temperature * 0.2)).toFixed(1) }}°C
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mt-8">
+                        <button v-if="step < 5" @click="nextStage" class="btn-action">
+                            {{ step === 3 ? '查看影响' : '下一步' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-slate-100 text-slate-500 px-8 py-3 rounded-2xl font-bold">
+                            恢复清凉世界 ❄️
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-blue-700 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-blue-400">点击【展开】查看互动引导</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-blue-900/20 text-[10px] tracking-[0.5em] uppercase text-center mb-4">
+            🌊 {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const temperature = ref(0);
+
+                const parentWords = [
+                    "引导孩子观察：这些白色的‘大冰块’漂在海上，它们给地球降温。看那边的红色小房子，那是人类的家。",
+                    "试着猜想：如果太阳特别晒，冰块化了成水，那红房子会怎么样？",
+                    "动手时间：试着移动滑块提高温度。看，冰山在变小，水面在一点点盖过海滩。",
+                    "快看红房子：海水已经淹到门口了！这就是为什么我们要少开车、多植树，保护环境。",
+                    "总结：冰川是地球的‘空调’，保护它们就是保护我们自己的家园。"
+                ];
+
+                const stages = [
+                    { title: '白色宝库', content: '在地球的两端，巨大的冰川像亮晶晶的奶油蛋糕，储存着世界上大部分的淡水。' },
+                    { title: '发烫的空气', content: '如果我们不爱护环境，地球就会像发烧了一样越来越热。你想看看冰川在高温下的反应吗？' },
+                    { title: '融化模拟', content: '现在，请你提升地球的‘温控滑块’。观察那些白色的冰川是怎样慢慢消失在海里的。' },
+                    { title: '上涨的海水', content: '不好了！化掉的冰变成了海水，海平面升得太高了，低矮的陆地正在被渐渐淹没。' },
+                    { title: '守护我们的清凉', content: '让我们一起做地球的小卫士，减少排放，让冰川重新回到它们守护的位置吧。' }
+                ];
+
+                const techHints = [
+                    "加载：高精度水体 Shader 布尔模拟",
+                    "预测：流体体积补偿计算",
+                    "操作：实时几何体形变插值",
+                    "发现：海平面动态逻辑计算",
+                    "总结：可持续发展意识建立"
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls;
+                let water, icebergs = [], island, houses = [];
+                let sun;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xe0f2fe);
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(25, 18, 25);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                    sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(20, 30, 10);
+                    scene.add(sun);
+
+                    // Island
+                    const landGeo = new THREE.CylinderGeometry(15, 18, 4, 32);
+                    const landMat = new THREE.MeshPhongMaterial({ color: 0xeab308 }); // Sand color
+                    island = new THREE.Mesh(landGeo, landMat);
+                    island.position.y = -1;
+                    scene.add(island);
+
+                    // Houses on Island
+                    const hColors = [0xef4444, 0x10b981];
+                    for (let i = 0; i < 3; i++) {
+                        const hGroup = new THREE.Group();
+                        const body = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 2), new THREE.MeshPhongMaterial({ color: hColors[i % 2] }));
+                        const roof = new THREE.Mesh(new THREE.ConeGeometry(2, 1.5, 4), new THREE.MeshPhongMaterial({ color: 0x451a03 }));
+                        roof.position.y = 1.5; roof.rotation.y = Math.PI / 4;
+                        hGroup.add(body); hGroup.add(roof);
+                        hGroup.position.set(Math.random() * 8 - 4, 1.7, Math.random() * 8 - 4);
+                        island.add(hGroup);
+                        houses.push(hGroup);
+                    }
+
+                    // Water
+                    const waterGeo = new THREE.BoxGeometry(100, 10, 100);
+                    const waterMat = new THREE.MeshPhongMaterial({
+                        color: 0x0ea5e9, transparent: true, opacity: 0.6
+                    });
+                    water = new THREE.Mesh(waterGeo, waterMat);
+                    water.position.y = -6; // Normal level
+                    scene.add(water);
+
+                    // Icebergs
+                    for (let i = 0; i < 5; i++) {
+                        const iGeo = new THREE.OctahedronGeometry(2 + Math.random() * 3, 0);
+                        const iMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 100 });
+                        const berg = new THREE.Mesh(iGeo, iMat);
+                        const angle = (i / 5) * Math.PI * 2;
+                        berg.position.set(Math.cos(angle) * 18, -1, Math.sin(angle) * 18);
+                        scene.add(berg);
+                        icebergs.push(berg);
+                    }
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    // Gentle water sway
+                    water.position.y += Math.sin(Date.now() * 0.002) * 0.01;
+
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                // Watch temperature change
+                watch(temperature, (val) => {
+                    const norm = val / 100;
+
+                    // Shrink icebergs
+                    icebergs.forEach(berg => {
+                        const s = 1 - norm;
+                        berg.scale.set(s, s, s);
+                        berg.position.y = -1 - norm * 2;
+                    });
+
+                    // Rise sea level
+                    water.position.y = -6 + (norm * 7);
+
+                    // Transition background/sun color
+                    const skyColor = new THREE.Color().lerpColors(new THREE.Color(0xe0f2fe), new THREE.Color(0xffedd5), norm);
+                    scene.background = skyColor;
+                    document.body.style.background = `#${skyColor.getHexString()}`;
+                });
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    if (typeof window !== 'undefined') {
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    temperature.value = 0;
+                    nextTick(() => { });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                // Runtime State Provider
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: 5,
+                            currentStage: (stages[step.value - 1] && stages[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                return { step, isMinimized, temperature, parentWords, stages, techHints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

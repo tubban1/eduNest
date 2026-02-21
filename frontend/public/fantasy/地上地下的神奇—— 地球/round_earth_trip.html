@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如果一直往前走应该能回到原地吧?</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --accent-gold: #fbbf24;
+            --space-dark: #020617;
+            --glass-panel: rgba(15, 23, 42, 0.8);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--space-dark);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #f8fafc;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Dark Mode Premium Glassmorphism */
+        .glass-card {
+            background: var(--glass-panel);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            padding: 35px;
+            max-width: 580px;
+            margin: 0 auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: left;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .glass-card.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+            opacity: 0.8;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.2rem;
+            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        .parent-words {
+            background: rgba(251, 191, 36, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--accent-gold);
+            font-size: 0.9rem;
+            color: #fbbf24;
+        }
+
+        .btn-magical {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #020617;
+            padding: 14px 45px;
+            border-radius: 50px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-magical:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 25px rgba(245, 158, 11, 0.5);
+        }
+
+        .btn-magical:active {
+            transform: scale(0.98);
+        }
+
+        .toggle-btn {
+            float: right;
+            color: #fbbf24;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Compass 装饰 */
+        .compass {
+            position: fixed;
+            top: 40px;
+            left: 40px;
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .compass-needle {
+            width: 2px;
+            height: 50px;
+            background: var(--accent-gold);
+            position: relative;
+            transition: transform 0.1s;
+        }
+
+        .compass-needle::after {
+            content: 'N';
+            position: absolute;
+            top: -15px;
+            left: -4px;
+            font-size: 10px;
+            color: var(--accent-gold);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div class="compass">
+        <div id="needle" class="compass-needle"></div>
+    </div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-card', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '【展开】' : '【收起内容】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 亲子引导：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-slate-300 leading-relaxed mb-10">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button v-if="step < 5" @click="nextStage" class="btn-magical">
+                            {{ step === 3 ? (isAutoWalking ? '正在全速前进...' : '启动自动环球模式') : '继续探索' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-slate-800 text-amber-400 border border-amber-400 px-10 py-4 rounded-full font-bold">
+                            重新环球一圈 🗺️
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-amber-400 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-slate-400">点击【展开】查看互动引导</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-amber-500/30 text-[10px] tracking-[5px] uppercase text-center mb-4">
+            ✨ {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const isAutoWalking = ref(false);
+
+                const parentWords = [
+                    "问问孩子：如果我们一直往屏幕上方走，你觉得会走到宇宙的尽头吗？",
+                    "鼓励预测：如果地球是平的，我们会掉下去；如果是圆的，会发生什么奇异的事？",
+                    "动手快进：看，小红点正在跨越大洋。它没有回头，但背景似乎在重复？",
+                    "奇迹时刻：看！小红点回到了出发时的那面小红旗那儿。这就是地球的‘圆圈魔法’。",
+                    "总结：地球是个大皮球，怎么走都没有边沿。只要坚持，家就在终点等着你。"
+                ];
+
+                const stages = [
+                    { title: '起点站：出发', content: '我们在这个名为‘地球’的巨大蓝色星球上，面向正前方。现在，让我们开启一场不回头的远征！' },
+                    { title: '漫长的旅途', content: '你会遇到高山、跨过大海。如果你觉得路永远走不完，那是正常的，因为这颗星球很大很大。' },
+                    { title: '跨越经纬', content: '现在，我们要按下‘时间加速器’。看！由于地球是圆的，你原本以为的‘直线’其实是一个巨大的弧线。' },
+                    { title: '奇迹的回归', content: '嘿！快看仪表板！我们没有掉转方向，但前面的那座山是不是很眼熟？我们回到了最初出发的地方！' },
+                    { title: '探险家的勋章', content: '恭喜你完成了环球航行。这证明了我们居住的世界是球形的，它温情地包裹着所有的生命。' }
+                ];
+
+                const techHints = [
+                    "观察：三维球面投影与切向量空间",
+                    "预测：封闭拓扑结构的路径演变",
+                    "操作：球面大圆路径（Great Circle）模拟",
+                    "发现：测地线闭合现象验证",
+                    "总结：大地水准面概念初探"
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls, earth, walker;
+                let pathLine;
+                let walkAngle = 0;
+                let startFlag;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 50, 80);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const sun = new THREE.PointLight(0xffffff, 1);
+                    sun.position.set(100, 100, 100);
+                    scene.add(sun);
+
+                    // Earth
+                    const geo = new THREE.SphereGeometry(30, 64, 64);
+                    const mat = new THREE.MeshPhongMaterial({
+                        color: 0x156285,
+                        emissive: 0x072534,
+                        specular: 0x60a5fa,
+                        shininess: 50,
+                        wireframe: false
+                    });
+                    earth = new THREE.Mesh(geo, mat);
+                    scene.add(earth);
+
+                    // Surface Detail (Grid lines)
+                    const wireframe = new THREE.Mesh(
+                        new THREE.SphereGeometry(30.1, 32, 16),
+                        new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.1 })
+                    );
+                    earth.add(wireframe);
+
+                    // Start Flag
+                    const flagGeo = new THREE.BoxGeometry(2, 4, 1);
+                    const flagMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+                    startFlag = new THREE.Mesh(flagGeo, flagMat);
+                    startFlag.position.set(31, 0, 0); // At equator
+                    earth.add(startFlag);
+
+                    // Global Walker (The small red point)
+                    const walkerGeo = new THREE.SphereGeometry(1, 16, 16);
+                    const walkerMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+                    walker = new THREE.Mesh(walkerGeo, walkerMat);
+                    walker.position.set(31, 0, 0);
+                    earth.add(walker);
+
+                    // Stars
+                    const starGeo = new THREE.BufferGeometry();
+                    const starPos = new Float32Array(2000 * 3);
+                    for (let i = 0; i < 2000 * 3; i++) starPos[i] = (Math.random() - 0.5) * 1000;
+                    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+                    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.5 }));
+                    scene.add(stars);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    if (isAutoWalking.value) {
+                        walkAngle += 0.02;
+                        // Rotate earth to simulate child walking "forward" relative to view
+                        // OR move walker relative to earth
+                        walker.position.x = Math.cos(walkAngle) * 31;
+                        walker.position.z = Math.sin(walkAngle) * 31;
+
+                        // Compass needle rotation
+                        document.getElementById('needle').style.transform = `rotate(${walkAngle * 100}deg)`;
+                    }
+
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.length);
+                    if (typeof window !== 'undefined') {
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.length });
+                    }
+                    if (step.value === 3) {
+                        isAutoWalking.value = true;
+                    } else if (step.value === 4) {
+                        // Slow down as we reach start
+                        gsap.to({ val: 0.02 }, {
+                            val: 0,
+                            duration: 3,
+                            onUpdate: function () {
+                                // walkAngle approach exact 2PI multiple
+                            },
+                            onComplete: () => {
+                                // Snap walker to flag precisely
+                                walkAngle = Math.PI * 2;
+                                walker.position.set(31, 0, 0);
+                            }
+                        });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    isAutoWalking.value = false;
+                    walkAngle = 0;
+                    walker.position.set(31, 0, 0);
+                    gsap.to(camera.position, { x: 0, y: 50, z: 80, duration: 2 });
+                    nextTick(() => { });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                // Runtime State Provider
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.length,
+                            currentStage: (stages[step.value - 1] && stages[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                return { step, isMinimized, isAutoWalking, parentWords, stages, techHints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

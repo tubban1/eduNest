@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地球的表面像鸡蛋壳一样平滑该多好</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --earth-tan: #f5f5f4;
+            --river-blue: #0ea5e9;
+            --forest-green: #15803d;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #e7e5e4;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Elegant Neutral Glass UI */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(25px);
+            border: 1px solid #d6d3d1;
+            border-radius: 40px;
+            padding: 35px;
+            max-width: 580px;
+            margin: 0 auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            transition: all 0.5s;
+        }
+
+        .glass-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2rem;
+            color: #57534e;
+            margin-bottom: 12px;
+        }
+
+        .parent-words {
+            background: #fafaf9;
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border-left: 5px solid #a8a29e;
+            font-size: 0.9rem;
+            color: #78716c;
+        }
+
+        .btn-action {
+            background: #57534e;
+            color: white;
+            padding: 12px 40px;
+            border-radius: 20px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            background: #44403c;
+            transform: translateY(-1px);
+        }
+
+        .toggle-btn {
+            float: right;
+            color: #a8a29e;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Smoothing Control */
+        .control-box {
+            background: #f5f5f4;
+            border-radius: 20px;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .slider-smooth {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: #d6d3d1;
+            border-radius: 3px;
+        }
+
+        .slider-smooth::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #57534e;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas"></div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '【展开】' : '【收起内容】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 亲子共读：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-stone-600 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <!-- Stage 3 Control -->
+                    <div v-if="step >= 3 && step < 5" class="control-box">
+                        <span class="text-xs font-bold text-stone-400">平坦程度</span>
+                        <input type="range" class="slider-smooth" v-model="smoothness" min="0" max="1" step="0.01">
+                        <span class="text-xs font-bold text-stone-500">{{ smoothness > 0.9 ? '像颗蛋' : '崇山峻岭' }}</span>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button v-if="step < 5" @click="nextStage" class="btn-action">
+                            {{ step === 3 ? '查看影响' : '下一步' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-stone-100 text-stone-500 px-8 py-3 rounded-2xl font-bold">
+                            恢复大地的起伏 ⛰️
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-stone-700 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-stone-400">点击【展开】查看互动引导</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-stone-400/30 text-[10px] tracking-[0.5em] uppercase text-center mb-4">
+            🌍 {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const smoothness = ref(0.2); // 0 = rugged, 1 = perfectly smooth
+
+                const parentWords = [
+                    "引导观察：我们现在看的是一段有山、有谷、有河流的大地。这就是我们真实的世界。",
+                    "试着猜想：如果这些大山都被‘磨平’了，变成一个超级滑的大球，会发生什么有趣的事？",
+                    "动手时间：滑动滑块，看大山是怎么一点点‘缩’进地底下的。河流是不是也变窄了？",
+                    "发现真理：看！当一切都平了，雨水没地方流，就会聚成一汪汪不动的死水。这就是‘崎岖’的价值。",
+                    "总结：因为有了高低，才有了流动的生命。原来不完美的地表，才是最完美的舞台。"
+                ];
+
+                const stages = [
+                    { title: '家园的样子', content: '看看真实的地球：山脉是脊梁，盆地是盛水的杯子。这种凹凸不平，是地球最美的表情。' },
+                    { title: '平滑的猜想', content: '很多人觉得山路难走，地不平很麻烦。如果地球变成一颗完美的、像玻璃球一样平滑的球体呢？' },
+                    { title: '磨平地表', content: '现在，请你动动手指，把这块区域的高度差距缩减为 0。看看当大山消失，大地会是什么样子？' },
+                    { title: '凝固的水循环', content: '由于没有了高低差，水无法从高处流向低处。河流停止了奔跑，森林也因为得不到新鲜活水而变得枯燥。' },
+                    { title: '错落有致的美', content: '我们要感谢山脉和河谷。正是这些‘崎岖不平’的部分，让阳光和雨水可以流动，孕育了千万种家园。' }
+                ];
+
+                const techHints = [
+                    "初始化：地形高度贴图应用 (Height Map)",
+                    "模拟：分形布朗运动 (FBM) 地貌生成",
+                    "交互：顶点高度倍率线性插值 (Lerp)",
+                    "实时：流体流动动力学受地形梯度控制",
+                    "总结：地理均衡论与生命动力学"
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls;
+                let terrainMesh;
+                let waterPlane;
+                let originalPositions;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xe7e5e4);
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(20, 20, 20);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+                    sun.position.set(20, 30, 10);
+                    scene.add(sun);
+
+                    // Rugged Terrain
+                    const size = 30;
+                    const segments = 64;
+                    const tGeo = new THREE.PlaneGeometry(size, size, segments, segments);
+                    tGeo.rotateX(-Math.PI / 2);
+
+                    // Generate procedural terrain
+                    const posAttr = tGeo.attributes.position;
+                    originalPositions = new Float32Array(posAttr.array);
+                    for (let i = 0; i < posAttr.count; i++) {
+                        const x = posAttr.getX(i);
+                        const z = posAttr.getZ(i);
+                        // Procedural noise (Simple sim)
+                        const h = (Math.sin(x * 0.3) * Math.cos(z * 0.3) * 4) +
+                            (Math.sin(x * 0.8 + z * 0.5) * 1.5);
+                        posAttr.setY(i, h);
+                        originalPositions[i * 3 + 1] = h;
+                    }
+
+                    const tMat = new THREE.MeshPhongMaterial({
+                        color: 0x15803d, shininess: 0, flatShading: true, vertexColors: false
+                    });
+                    terrainMesh = new THREE.Mesh(tGeo, tMat);
+                    scene.add(terrainMesh);
+
+                    // Water Plane
+                    const waterGeo = new THREE.PlaneGeometry(size, size);
+                    waterGeo.rotateX(-Math.PI / 2);
+                    const waterMat = new THREE.MeshPhongMaterial({
+                        color: 0x0ea5e9, transparent: true, opacity: 0.6
+                    });
+                    waterPlane = new THREE.Mesh(waterGeo, waterMat);
+                    waterPlane.position.y = -0.5;
+                    scene.add(waterPlane);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    // Subtle water movement
+                    if (smoothness.value < 0.9) {
+                        waterPlane.position.y = -0.5 + Math.sin(Date.now() * 0.002) * 0.1;
+                    }
+
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                // Watch smoothness change
+                watch(smoothness, (val) => {
+                    const factor = 1 - val;
+                    const posAttr = terrainMesh.geometry.attributes.position;
+                    for (let i = 0; i < posAttr.count; i++) {
+                        posAttr.setY(i, originalPositions[i * 3 + 1] * factor);
+                    }
+                    posAttr.needsUpdate = true;
+
+                    // Change land color to brownish as it flattens (simulating loss of life)
+                    const baseColor = new THREE.Color(0x15803d);
+                    const dryColor = new THREE.Color(0xa8a29e);
+                    terrainMesh.material.color.lerpColors(baseColor, dryColor, val);
+                });
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    if (typeof window !== 'undefined') {
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                    }
+                    if (step.value === 4) {
+                        gsap.to(smoothness, { value: 1.0, duration: 2 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    smoothness.value = 0.2;
+                    nextTick(() => { });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                // Runtime State Provider
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: 5,
+                            currentStage: (stages[step.value - 1] && stages[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                return { step, isMinimized, smoothness, parentWords, stages, techHints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
