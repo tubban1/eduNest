@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地球上来了外星人会怎样</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Fredoka:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #02040a;
+            font-family: 'Fredoka', 'ZCOOL XiaoWei', serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-main {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 5vh;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Mysterious Glassmorphism */
+        .glass-ui {
+            background: rgba(5, 10, 20, 0.4);
+            backdrop-filter: blur(25px) saturate(160%);
+            border: 1px solid rgba(0, 255, 150, 0.2);
+            border-radius: 40px;
+            padding: 30px 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        .glass-ui.minimized {
+            max-width: 280px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .toggle-btn {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+            background: rgba(0, 255, 150, 0.1);
+            border: 1px solid rgba(0, 255, 150, 0.2);
+            color: #bbf7d0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .parent-words {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid #22C55E;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            color: #DCFCE7;
+            text-align: left;
+        }
+
+        .btn-alien {
+            background: linear-gradient(135deg, #22C55E 0%, #065F46 100%);
+            color: white;
+            font-weight: 800;
+            border: none;
+            transition: all 0.4s;
+        }
+
+        .btn-alien:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(34, 197, 94, 0.4);
+        }
+
+        /* Color Memory Game Visuals */
+        .color-pads {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .pad {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .pad:active {
+            transform: scale(0.9);
+        }
+
+        .pad-red {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+        }
+
+        .pad-blue {
+            background: #3b82f6;
+            box-shadow: 0 0 10px #3b82f6;
+        }
+
+        .pad-green {
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        .pad-yellow {
+            background: #eab308;
+            box-shadow: 0 0 10px #eab308;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-main">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-ui', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <button @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '观察飞船' : '收起' }}
+                </button>
+
+                <div v-if="!isMinimized" class="parent-words">
+                    <strong>👨‍👩‍👧 亲子观察：</strong> {{ parentTips[step-1] }}
+                </div>
+
+                <h1
+                    :class="['text-white font-bold tracking-tight', isMinimized ? 'text-lg mb-2' : 'text-3xl md:text-4xl mb-6']">
+                    {{ stages[step-1].title }}
+                </h1>
+
+                <div v-if="!isMinimized" class="text-xl text-green-100 leading-relaxed mb-6">
+                    <p v-html="stages[step-1].content"></p>
+                </div>
+
+                <!-- Interaction Game -->
+                <div v-if="!isMinimized && step === 3" class="color-pads">
+                    <div class="pad pad-red" @click="handlePadClick('red')"></div>
+                    <div class="pad pad-blue" @click="handlePadClick('blue')"></div>
+                    <div class="pad pad-green" @click="handlePadClick('green')"></div>
+                    <div class="pad pad-yellow" @click="handlePadClick('yellow')"></div>
+                </div>
+
+                <div class="flex justify-center mt-6">
+                    <button v-if="step < 5" @click="nextStage"
+                        :class="['btn-alien rounded-full shadow-xl font-bold', isMinimized ? 'px-8 py-2 text-md' : 'px-14 py-5 text-xl']">
+                        {{ buttonLabel }}
+                    </button>
+                    <button v-else @click="reset"
+                        class="bg-green-950/40 text-green-200 border border-green-700 px-10 py-4 rounded-full transition">
+                        保持联络，再见朋友 👋
+                    </button>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-green-400/40 text-xs italic tracking-widest uppercase mb-4">
+            👽 {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const stages = ref([
+                    { title: '后院的流光', content: '快看！草丛里有一个发光的蛋形飞船。它没有火，却在空中轻轻旋转。这是谁送来的‘信件’？' },
+                    { title: '谁在里面？', content: '如果走出来一个小绿人，或者一个像云朵一样的客气。他会跟我们打招呼吗？他是用嘴巴说话吗？' },
+                    { title: '文明翻译官', content: '试试点击这些发光的晶体。我们要用‘色彩序列’来回应朋友的问候。' },
+                    { title: '共同的星图', content: '快看！飞船打开了全息投影。那是他们的故乡。原来他们也像我们一样，热衷于探索未知的世界。' },
+                    { title: '星际外交官礼仪', content: '地球并不孤单。对待远方的客人，包容与友谊是我们送给外星朋友最好的礼物。' }
+                ]);
+                const step = ref(1);
+                const isMinimized = ref(false);
+
+                const parentTips = [
+                    "和孩子一起‘躲藏’观察。问问他：你觉得它是在找路，还是来串门的？",
+                    "抛出猜想：外星人也会喜欢吃巧克力吗？我们要送给他们什么礼物？",
+                    "让孩子按顺序点击彩色球。告诉他：这是宇宙通用的色彩语言。",
+                    "引导观察飞船展示的地图。告诉孩子：看，他们的家也有一颗漂亮的太阳。",
+                    "总结：虽然形状不同，但对宇宙的热爱是相通的。友谊是最强大的武器。"
+                ];
+
+
+                const buttonLabel = computed(() => ["靠近观察", "发送友好信号", "开始翻译交流", "接收投影", "礼貌告别"][step.value - 1]);
+                const techHints = computed(() => ["💡 观察动态发光着色器", "💡 设置夜间森林体积雾特效", "💡 启动逻辑序列感应", "💡 渲染 3D 全息星图建模", "🛸 友谊信号已发射至深空"][step.value - 1]);
+
+                // --- Alien UFO Three.js ---
+                let scene, camera, renderer, controls, ufo, starMap, clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x050b2e); // Visible deep blue
+                    scene.fog = new THREE.Fog(0x050b2e, 20, 250);
+
+                    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.set(0, 10, 60);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    const canvasBox = document.getElementById('three-canvas');
+                    if (canvasBox) canvasBox.appendChild(renderer.domElement);
+
+                    // Controls
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = false;
+                    controls.enabled = true; // Let user move around to find objects
+
+                    // 1. UFO (Opaline Ship)
+                    const uGeo = new THREE.SphereGeometry(8, 32, 16);
+                    uGeo.scale(1, 0.35, 1);
+                    const uMat = new THREE.MeshStandardMaterial({
+                        color: 0xffffff,
+                        emissive: 0x00ff99,
+                        emissiveIntensity: 2.0, // Strong glow
+                        metalness: 0.8,
+                        roughness: 0.2
+                    });
+                    ufo = new THREE.Mesh(uGeo, uMat);
+                    ufo.position.set(0, 20, -20); // Closer and higher
+                    scene.add(ufo);
+
+                    // Add a light that follows the UFO
+                    const ufoLight = new THREE.PointLight(0x00ff99, 1.5, 40);
+                    ufo.add(ufoLight);
+
+                    // Light ring
+                    const rGeo = new THREE.TorusGeometry(10, 0.2, 16, 100);
+                    const rMat = new THREE.MeshBasicMaterial({ color: 0x00ff99, transparent: true, opacity: 0.8 });
+                    const ring = new THREE.Mesh(rGeo, rMat);
+                    ring.rotation.x = Math.PI / 2; // Correct: rotate the Mesh, not the Geometry
+                    ufo.add(ring);
+
+                    // 2. Stars
+                    const sGeo = new THREE.BufferGeometry();
+                    const sCount = 3000;
+                    const sPos = new Float32Array(sCount * 3);
+                    for (let i = 0; i < sCount * 3; i++) sPos[i] = (Math.random() - 0.5) * 1000;
+                    sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+                    const starfield = new THREE.Points(sGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.5 }));
+                    scene.add(starfield);
+
+                    // 3. Ground
+                    const gGeo = new THREE.PlaneGeometry(500, 500);
+                    const gMat = new THREE.MeshStandardMaterial({ color: 0x011a05, roughness: 1 });
+                    const ground = new THREE.Mesh(gGeo, gMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    ground.position.y = -20;
+                    scene.add(ground);
+
+                    // 4. Holographic Map (Invisible initially)
+                    const mGeo = new THREE.IcosahedronGeometry(5, 2);
+                    starMap = new THREE.Group();
+                    for (let i = 0; i < 50; i++) {
+                        const p = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 }));
+                        p.position.set((Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15);
+                        starMap.add(p);
+                    }
+                    starMap.position.y = 12;
+                    starMap.visible = false;
+                    scene.add(starMap);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.8)); // High ambient for visibility
+                    const sun = new THREE.PointLight(0x00ff99, 5, 200);
+                    sun.position.set(20, 30, 20);
+                    scene.add(sun);
+
+                    // Entrance Animation
+                    gsap.from(ufo.position, { y: 100, z: -200, duration: 2.5, ease: "back.out(1.2)" });
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (ufo && step.value < 5) {
+                        ufo.position.y = 12 + Math.sin(t * 1.5) * 1.5;
+                        ufo.rotation.y += 0.015;
+                        ufo.rotation.z = Math.sin(t * 0.5) * 0.05; // Keep this for subtle wobble
+                    }
+
+                    if (starMap && starMap.visible) {
+                        starMap.rotation.y += 0.01;
+                        starMap.rotation.x += 0.005; // Keep this for subtle rotation
+                    }
+
+                    if (controls) controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const handlePadClick = (color) => {
+                    gsap.to(ufo.material.emissive, {
+                        r: color === 'red' ? 1 : 0,
+                        g: color === 'green' ? 1 : 1,
+                        b: color === 'blue' ? 1 : 0,
+                        duration: 0.5,
+                        yoyo: true, repeat: 1
+                    });
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.value.length);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length });
+                    if (step.value === 2) {
+                        if (camera) gsap.to(camera.position, { y: 15, z: 35, duration: 2 });
+                    } else if (step.value === 4) {
+                        if (starMap) {
+                            starMap.visible = true;
+                            gsap.from(starMap.scale, { x: 0, y: 0, z: 0, duration: 1.5 });
+                        }
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    nextTick(() => { });
+                    if (starMap) starMap.visible = false;
+                    if (camera) gsap.to(camera.position, { x: 0, y: 10, z: 60, duration: 2 });
+                    if (ufo) gsap.to(ufo.position, { x: 0, y: 12, z: 0, duration: 2 });
+                };
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.value.length,
+                            currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                onMounted(() => {
+                    setTimeout(() => {
+                        initThree();
+                    }, 100);
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, stages, parentTips, nextStage, reset, buttonLabel, techHints, handlePadClick };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

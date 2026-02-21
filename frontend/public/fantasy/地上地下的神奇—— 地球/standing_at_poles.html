@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>站在地球极点会怎样</title>
+    <!-- 核心技术栈 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --pole-ice: #F8FAFC;
+            --aurora-green: #4ADE80;
+            --polar-night: #0F172A;
+            --polar-day: #E0F2FE;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--polar-night);
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: background 2s ease;
+        }
+
+        /* 极地景观容器 */
+        .pole-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+        }
+
+        /* 天空容器 */
+        .sky {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 75%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* 圆形星轨容器 */
+        .star-trails {
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            width: 200%;
+            height: 200%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+        }
+
+        .star-dot {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px white;
+        }
+
+        /* 极光 */
+        .aurora {
+            position: absolute;
+            top: 0;
+            width: 200%;
+            height: 300px;
+            background: linear-gradient(to bottom, transparent, var(--aurora-green), transparent);
+            filter: blur(40px);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2;
+            transform: translateX(-25%);
+        }
+
+        /* 冰盖地面 */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30%;
+            background: var(--pole-ice);
+            z-index: 5;
+            clip-path: ellipse(80% 100% at 50% 100%);
+            box-shadow: 0 -20px 50px rgba(255, 255, 255, 0.5);
+        }
+
+        /* UI Panel */
+        .ui-root {
+            position: relative;
+            z-index: 20;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 4px solid #38BDF8;
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 550px;
+            margin: 0 auto;
+            box-shadow: 0 20px 0 #BAE6FD;
+            text-align: left;
+            transition: all 0.4s;
+            pointer-events: auto;
+        }
+
+        .info-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.2rem;
+            color: #0C4A6E;
+            margin-bottom: 15px;
+        }
+
+        .parent-words {
+            background: #F0F9FF;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 6px solid #0EA5E9;
+            font-size: 0.95rem;
+            color: #0369A1;
+        }
+
+        .btn-polar {
+            background: #0EA5E9;
+            color: white;
+            padding: 12px 40px;
+            border-radius: 15px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #0284C7;
+            transition: all 0.2s;
+        }
+
+        .btn-polar:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #0284C7;
+        }
+
+        /* 时间加倍条 */
+        .time-control {
+            margin-top: 20px;
+            padding: 15px;
+            background: #F0F9FF;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: #BAE6FD;
+            border-radius: 4px;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #0EA5E9;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pole-view">
+        <div class="sky" id="skyBox">
+            <div class="aurora" id="northLight"></div>
+            <div class="star-trails" id="trailBox">
+                <!-- JS 生成圆形星迹 -->
+            </div>
+
+            <!-- 极地太阳 (极昼阶段显示) -->
+            <div id="polarSun"
+                style="position: absolute; width: 80px; height: 80px; border-radius: 50%; background: #FFD700; box-shadow: 0 0 50px #FFD700; top: 40%; left: 100%; opacity: 0.8;">
+            </div>
+        </div>
+        <div class="ground"></div>
+    </div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['info-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <div @click="isMinimized = !isMinimized"
+                    class="text-right text-[10px] text-sky-600 cursor-pointer mb-2">
+                    {{ isMinimized ? '【显示故事】' : '【收起】' }}
+                </div>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 极地向导：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-sky-900/80 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <!-- 互动：加速时间 -->
+                    <div v-if="step === 3" class="time-control">
+                        <span class="text-xs font-bold text-sky-700">时间流逝</span>
+                        <input type="range" class="slider" min="1" max="100" v-model="timeSpeed">
+                        <span class="text-xs font-bold text-sky-700">x{{ timeSpeed }}</span>
+                    </div>
+
+                    <div class="flex justify-center mt-6">
+                        <button v-if="step < 5" @click="nextStage" class="btn-polar">
+                            {{ step === 3 ? '查看极昼现象' : '进入下一步' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-blue-50 text-sky-700 px-6 py-2 rounded-xl border border-sky-200">
+                            回到赤道 🌴
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-sky-950/40 text-[10px] tracking-widest uppercase text-center mb-2">
+            ✨ {{ hints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const timeSpeed = ref(1);
+
+                const parentWords = [
+                    "问问孩子：在北极点，太阳也会像在我们家那样东升西落吗？",
+                    "抛出猜想：如果这一天里太阳一直不落山，我们该什么时候睡觉呢？",
+                    "动手时间：拉动滑块加速。看！星星在头顶‘画圈圈’，太阳也在不停绕圈。",
+                    "引导观察：看天空那跳动的彩带，那就是极光，是地球大气层在捕捉魔法粉末。",
+                    "总结：科学告诉我们，站在不同的位置看世界，世界就会展示出完全不同的风景。"
+                ];
+
+                const stages = [
+                    { title: '地球的顶点', content: '如果你站在北极点，那里就是地球旋转的圆心。在那里，无论往哪走，都是“向南”走！' },
+                    { title: '旋转的天空', content: '在极点，星星不再升起落下，而是在你头顶打转。哪怕过了一天，太阳也没下山。' },
+                    { title: '极速自转体验', content: '现在，你是时间的主人。加速自转，观察天空的变化跟平时有什么不一样？' },
+                    { title: '半年白天，半年黑夜', content: '这就是奇妙的“极昼”。当然，还有梦幻的极光，像流动的裙摆在天空伴舞。' },
+                    { title: '神奇的轴心', content: '极点是地球最稳定的定点。虽然寒冷，但它记录着地球最原始的律动。' }
+                ];
+
+                const hints = ["观察：地球定轴中心的 POV 视角", "预测：永不落山的太阳轨迹", "互动：时间流逝调节器", "发现：极昼与极光的绚丽协作", "总结：多维角度重识地球"];
+
+                let trailLoop, sunAnim;
+
+                const initPoleView = () => {
+                    const box = document.getElementById('trailBox');
+                    for (let i = 0; i < 40; i++) {
+                        const star = document.createElement('div');
+                        star.className = 'star-dot';
+                        const radius = 200 + Math.random() * 800;
+                        const angle = Math.random() * Math.PI * 2;
+                        star.style.left = `calc(50% + ${Math.cos(angle) * radius}px)`;
+                        star.style.top = `calc(50% + ${Math.sin(angle) * radius}px)`;
+                        box.appendChild(star);
+                    }
+
+                    trailLoop = gsap.to("#trailBox", {
+                        rotate: 360, duration: 20, repeat: -1, ease: "none"
+                    });
+
+                    // 太阳绕圈动画 (螺旋感)
+                    sunAnim = gsap.to("#polarSun", {
+                        x: -2000,
+                        duration: 8,
+                        repeat: -1,
+                        ease: "none",
+                        modifiers: {
+                            x: gsap.utils.unitize(x => {
+                                const t = Date.now() * 0.001 * (timeSpeed.value / 10);
+                                return Math.cos(t) * 800 - 400;
+                            }),
+                            y: gsap.utils.unitize(y => {
+                                const t = Date.now() * 0.001 * (timeSpeed.value / 10);
+                                return Math.sin(t) * 100;
+                            })
+                        }
+                    });
+                };
+
+                watch(timeSpeed, (nv) => {
+                    trailLoop.timeScale(nv);
+                });
+
+                const nextStage = () => {
+                    step.value++;
+                    if (step.value === 4) {
+                        // 触发极光和极昼视觉
+                        document.body.style.background = "#E0F2FE";
+                        gsap.to("#northLight", { opacity: 0.6, y: 50, duration: 2 });
+                        gsap.to("#northLight", { x: "20%", duration: 5, repeat: -1, yoyo: true });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1; timeSpeed.value = 1;
+                    document.body.style.background = "#0F172A";
+                    gsap.to("#northLight", { opacity: 0, duration: 1 });
+                };
+
+                onMounted(() => {
+                    initPoleView();
+                });
+
+                return { step, isMinimized, timeSpeed, parentWords, stages, hints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

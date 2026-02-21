@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我想知道天到底有多高</title>
+    <!-- Standard Elite Dependencies -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Fredoka:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #87CEEB;
+            font-family: 'Fredoka', 'ZCOOL XiaoWei', serif;
+            transition: background 2s;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: auto;
+            cursor: crosshair;
+        }
+
+        .ui-main {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 50px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Elite Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 45px;
+            padding: 35px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        .glass-panel.minimized {
+            max-width: 250px;
+            padding: 15px 20px;
+            border-radius: 25px;
+        }
+
+        .btn-toggle {
+            position: absolute;
+            right: 20px;
+            top: -45px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            pointer-events: auto;
+            font-size: 0.8rem;
+        }
+
+        .parent-words-box {
+            background: rgba(79, 172, 254, 0.2);
+            border-left: 4px solid #4facfe;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            color: #1e3a8a;
+            text-align: left;
+        }
+
+        .stage-title {
+            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .altitude-meter {
+            position: fixed;
+            left: 40px;
+            bottom: 50px;
+            height: 300px;
+            width: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .altitude-fill {
+            width: 100%;
+            background: #FFE66D;
+            border-radius: 10px;
+            box-shadow: 0 0 15px #FFE66D;
+            transition: height 0.3s ease;
+        }
+
+        .meter-text {
+            position: absolute;
+            left: 25px;
+            bottom: 0;
+            color: white;
+            font-weight: bold;
+            font-family: monospace;
+            white-space: nowrap;
+        }
+
+        .btn-evolve {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            font-weight: 900;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-evolve:hover {
+            transform: scale(1.08) rotate(1deg);
+            filter: brightness(1.1);
+            box-shadow: 0 10px 25px rgba(79, 172, 254, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-main">
+        <div class="altitude-meter pointer-events-auto">
+            <div class="altitude-fill" :style="{ height: (distPercent) + '%' }"></div>
+            <div class="meter-text">高度: {{ distAnim }} m</div>
+        </div>
+
+        <transition name="fade-slide" mode="out-in">
+            <div :key="step"
+                :class="['glass-panel', 'pointer-events-auto', 'text-center', { 'minimized': isMinimized }]">
+                <button @click="isMinimized = !isMinimized" class="btn-toggle">
+                    {{ isMinimized ? '显示文字' : '隐藏' }}
+                </button>
+
+                <div v-if="!isMinimized" class="parent-words-box">
+                    <strong>👨‍👩‍👧 观察引导：</strong> {{ parentTips[step-1] }}
+                </div>
+
+                <h1 :class="['font-black mb-4', isMinimized ? 'text-lg' : 'text-3xl md:text-4xl']">
+                    <span v-if="!isMinimized" class="opacity-40 text-sm block tracking-widest uppercase mb-1">阶段 {{ step
+                        }} / 5</span>
+                    <span class="stage-title uppercase tracking-tighter">{{ stages[step-1].title }}</span>
+                </h1>
+
+                <div v-if="!isMinimized" class="text-xl text-slate-700 leading-relaxed mb-10"
+                    v-html="stages[step-1].content"></div>
+
+                <div class="flex justify-center flex-col items-center gap-4">
+                    <button v-if="step < 5" @click="nextStage"
+                        :class="['btn-evolve rounded-full shadow-2xl', isMinimized ? 'px-8 py-2 text-md' : 'px-16 py-5 text-2xl']">
+                        {{ buttonLabel }}
+                    </button>
+                    <button v-else @click="reset"
+                        class="text-slate-500 font-bold hover:text-slate-800 transition">回到草地重飞一遍 🌍</button>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-slate-400 text-xs italic tracking-widest">
+            💡 {{ tips[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const stages = ref([
+                    { title: '出发：草地上的秘密', content: '我们站在大地上，云朵像巨大的棉花糖在几千米外飘动。这时候的天，看起来触不可及，又就在眼前。' },
+                    { title: '猜想：飞得比云还高？', content: '如果我们的火箭冲破云层，天会变成什么样？有人说明天会变黑，有人说会更蓝。你来飞飞看？' },
+                    { title: '冲刺：对流层的飞跃', content: '轰——！我们正以惊人的速度穿过大气层。看，原本蓝色的天空慢慢变成了深邃的紫罗兰色，空气也变稀薄了。' },
+                    { title: '发现：宇宙的门票', content: '哇！现在高度 100 公里！在这个被称作卡底门线的地方，天彻底黑了。你看地平线——地球原来真的是圆的！' },
+                    { title: '感悟：生命的被子', content: '天到底有多高？其实天没有顶。它只是几十公里厚的一层保护气，它让我们能呼吸，让地球变得温暖。' }
+                ]);
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const distance = ref(0);
+                const distAnim = ref(0);
+                const distPercent = computed(() => Math.min((distance.value / 100000) * 100, 100));
+
+                const parentTips = [
+                    "看，这就是我们住的地方。让孩子找找看，云朵是在我们脚下还是头顶？",
+                    "抛出猜想：如果天一直往上涨，空气会变厚还是变薄？天还会这么蓝吗？",
+                    "让孩子按住按钮感受攀升。问他：你看云层是不是被我们甩在下面了？",
+                    "快看！这就是大气层的终点。看地平线是不是弯曲了？这就是宇宙的入口。",
+                    "总结环节：天其实是地球的盾牌。我们要爱护环境，保护这层珍贵的大气伞。"
+                ];
+
+
+                const buttonLabel = computed(() => ["准备向天冲", "即刻出发吧", "再高一点点", "见证奇迹", "完成探索"][step.value - 1]);
+                const tips = computed(() => ["点击地面草丛可以发现惊喜", "点击云朵看它弹开的样子", "感受 3D 相机的垂直上升", "拖动屏幕 360 度观察星空边界", "探险成功！恭喜小小宇航员"][step.value - 1]);
+
+                // --- Improved Elite Three.js Scene ---
+                let scene, camera, renderer, globeGroup, clouds = [], starBuffer, ground, atmosphere;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x87CEEB);
+                    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 5000);
+                    camera.position.set(0, 5, 25);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    const gGeo = new THREE.CircleGeometry(150, 64);
+                    const gMat = new THREE.MeshToonMaterial({ color: 0x4caf50 });
+                    ground = new THREE.Mesh(gGeo, gMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    scene.add(ground);
+
+                    const cGeo = new THREE.SphereGeometry(2.5, 32, 16);
+                    const cMat = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+                    for (let i = 0; i < 40; i++) {
+                        const m = new THREE.Mesh(cGeo, cMat);
+                        m.position.set((Math.random() - 0.5) * 200, 30 + i * 15, (Math.random() - 0.5) * 200);
+                        m.scale.set(3, 0.6, 2);
+                        scene.add(m);
+                        clouds.push(m);
+                    }
+
+                    const sGeo = new THREE.BufferGeometry();
+                    const sPos = new Float32Array(5000 * 3);
+                    for (let i = 0; i < 5000 * 3; i++) sPos[i] = (Math.random() - 0.5) * 2000;
+                    sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+                    starBuffer = new THREE.Points(sGeo, new THREE.PointsMaterial({ size: 1.2, color: 0xffffff, transparent: true, opacity: 0 }));
+                    starBuffer.position.y = 1500;
+                    scene.add(starBuffer);
+
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                    const l = new THREE.PointLight(0xffffff, 1.2, 1000);
+                    l.position.set(50, 200, 50);
+                    scene.add(l);
+
+                    render();
+                };
+
+                const render = () => {
+                    requestAnimationFrame(render);
+                    const t = clock.getElapsedTime();
+                    clouds.forEach((c, idx) => {
+                        c.position.x += Math.sin(t + idx) * 0.01;
+                        c.rotation.y += 0.002;
+                    });
+                    if (starBuffer) starBuffer.rotation.y += 0.0001;
+                    renderer.render(scene, camera);
+                };
+
+                watch(distance, (nv) => {
+                    gsap.to(distAnim, { value: nv, duration: 2.5, roundProps: "value" });
+                });
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.value.length);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length });
+                    if (step.value === 3) {
+                        distance.value = 15000;
+                        gsap.to(camera.position, { y: 200, z: 120, duration: 4, ease: "power2.inOut" });
+                        gsap.to(scene.background, { r: 0.1, g: 0.35, b: 0.75, duration: 4 });
+                    } else if (step.value === 4) {
+                        distance.value = 100000;
+                        gsap.to(camera.position, { y: 1200, z: 300, duration: 5, ease: "power4.inOut" });
+                        gsap.to(scene.background, { r: 0, g: 0.01, b: 0.04, duration: 5 });
+                        gsap.to(starBuffer.material, { opacity: 1, duration: 3 });
+                        gsap.to(ground.position, { y: -800, duration: 6 });
+                        gsap.to(ground.scale, { x: 5, z: 5, duration: 6 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    nextTick(() => { });
+                    distance.value = 0;
+                    gsap.to(camera.position, { x: 0, y: 5, z: 25, duration: 3, ease: "expo.out" });
+                    gsap.to(scene.background, { r: 0.53, g: 0.81, b: 0.92, duration: 2 });
+                    gsap.to(starBuffer.material, { opacity: 0, duration: 1 });
+                    gsap.to(ground.position, { y: 0, duration: 2 });
+                    gsap.to(ground.scale, { x: 1, z: 1, duration: 2 });
+                };
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.value.length,
+                            currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, distance, stages, parentTips, nextStage, reset, distAnim, distPercent, buttonLabel, tips };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

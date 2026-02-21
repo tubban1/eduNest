@@ -23,7 +23,22 @@ export default function ListImportPage() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ created: number; failed: number; results?: any[]; errors?: any[] } | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [pairedItems, setPairedItems] = useState<Array<{ baseName: string; full_html: string; title?: string; description?: string; tags?: string[]; language_code?: string; content_type?: string; svg_thumbnail?: string }>>([]);
+  const [pairedItems, setPairedItems] = useState<
+    Array<{
+      baseName: string;
+      full_html: string;
+      // 约定：除 full_html 外的字段全部来自同名 JSON
+      title: string;
+      description?: string;
+      tags?: string[];
+      knowledge_points?: string[];
+      language_code?: string;
+      content_type?: string;
+      svg_thumbnail?: string;
+      metadata_json?: any;
+      tech_stack?: any;
+    }>
+  >([]);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,24 +93,57 @@ export default function ListImportPage() {
         }
       }
     }
-    const paired: Array<{ baseName: string; full_html: string; title?: string; description?: string; tags?: string[]; language_code?: string; content_type?: string; svg_thumbnail?: string }> = [];
+    const missingJson: string[] = [];
+    const missingTitle: string[] = [];
+    const paired: Array<{
+      baseName: string;
+      full_html: string;
+      title: string;
+      description?: string;
+      tags?: string[];
+      knowledge_points?: string[];
+      language_code?: string;
+      content_type?: string;
+      svg_thumbnail?: string;
+      metadata_json?: any;
+      tech_stack?: any;
+    }> = [];
     for (const [baseName, v] of Object.entries(byBase)) {
       if (!v.html?.trim()) continue;
+      if (!v.json) {
+        missingJson.push(baseName);
+        continue;
+      }
       const j = v.json || {};
+      const title = typeof j.title === 'string' ? j.title.trim() : '';
+      if (!title) {
+        missingTitle.push(baseName);
+        continue;
+      }
       paired.push({
         baseName,
         full_html: v.html,
-        title: typeof j.title === 'string' ? j.title.trim() : undefined,
+        title,
         description: typeof j.description === 'string' ? j.description : undefined,
         tags: Array.isArray(j.tags) ? j.tags.map(String) : undefined,
+        knowledge_points: Array.isArray((j as any).knowledge_points) ? (j as any).knowledge_points.map(String) : undefined,
         language_code: typeof j.language_code === 'string' ? j.language_code : undefined,
         content_type: typeof j.content_type === 'string' ? j.content_type : undefined,
         svg_thumbnail: typeof j.svg_thumbnail === 'string' ? j.svg_thumbnail : undefined,
+        metadata_json: (j as any).metadata_json != null ? (j as any).metadata_json : undefined,
+        tech_stack: (j as any).tech_stack != null ? (j as any).tech_stack : undefined,
       });
     }
     paired.sort((a, b) => a.baseName.localeCompare(b.baseName));
     setPairedItems(paired);
-    setError(null);
+    if (missingJson.length || missingTitle.length) {
+      const msgs: string[] = [];
+      if (missingJson.length) msgs.push(`以下条目缺少同名 .json（已跳过）：${missingJson.slice(0, 10).join(', ')}${missingJson.length > 10 ? ` 等 ${missingJson.length} 条` : ''}`);
+      if (missingTitle.length) msgs.push(`以下条目 JSON 缺少 title（已跳过）：${missingTitle.slice(0, 10).join(', ')}${missingTitle.length > 10 ? ` 等 ${missingTitle.length} 条` : ''}`);
+      setError(msgs.join('\n'));
+    } else {
+      setError(null);
+    }
     setResult(null);
   };
 
@@ -187,7 +235,7 @@ export default function ListImportPage() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <p className="text-sm text-gray-500 mb-4">
-            Skill 输出为成对文件：<code className="bg-gray-100 px-1 rounded">abc.html</code> + <code className="bg-gray-100 px-1 rounded">abc.json</code>。选择包含这些文件的文件夹（或同时多选所有 .html/.json），系统会按主文件名自动配对，单次最多 100 条。
+            Skill 输出为成对文件：<code className="bg-gray-100 px-1 rounded">abc.html</code> + <code className="bg-gray-100 px-1 rounded">abc.json</code>。导入时 <b>HTML 仅用于 full_html</b>，其它字段（title/description/tags/knowledge_points/metadata_json/svg_thumbnail 等）<b>一律从同名 JSON 读取</b>。系统会按主文件名自动配对，单次最多 100 条。
           </p>
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">

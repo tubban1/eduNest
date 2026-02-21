@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>只有白天没有黑夜该多好</title>
+    <!-- 核心技术栈 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --day-bg: #E0F2FE;
+            --night-bg: #0F172A;
+            --sun-color: #FACC15;
+            --earth-blue: #3B82F6;
+            --earth-green: #22C55E;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--day-bg);
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: background 1s ease;
+        }
+
+        .animation-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+
+        /* 插画风格地球 */
+        .earth-wrapper {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+            background: var(--earth-blue);
+        }
+
+        .continent {
+            position: absolute;
+            background: var(--earth-green);
+            border-radius: 40%;
+            opacity: 0.8;
+        }
+
+        /* 昼夜阴影蒙层 */
+        .day-night-overlay {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(2px);
+            pointer-events: none;
+            transition: transform 0.1s linear;
+        }
+
+        /* 太阳 */
+        .sun {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: var(--sun-color);
+            border-radius: 50%;
+            box-shadow: 0 0 40px var(--sun-color);
+            z-index: 2;
+        }
+
+        .sun-ray {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 2px;
+            background: rgba(250, 204, 21, 0.3);
+            transform-origin: left center;
+        }
+
+        /* UI 根节点 */
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* 平面插画风 UI */
+        .info-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 4px solid #FDE68A;
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 550px;
+            margin: 0 auto;
+            box-shadow: 0 15px 0 #FEF3C7;
+            text-align: left;
+            transition: all 0.4s;
+            pointer-events: auto;
+        }
+
+        .info-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.2rem;
+            color: #92400e;
+            margin-bottom: 15px;
+        }
+
+        .parent-words {
+            background: #FFFBEB;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 6px solid #F59E0B;
+            font-size: 0.95rem;
+            color: #78350f;
+        }
+
+        .btn-flat {
+            background: #F59E0B;
+            color: white;
+            padding: 12px 40px;
+            border-radius: 15px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #B45309;
+            transition: all 0.2s;
+        }
+
+        .btn-flat:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #B45309;
+        }
+
+        .minimize-btn {
+            float: right;
+            color: #F59E0B;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* 互动控件块 */
+        .interaction-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #FEF3C7;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #FDE68A;
+            border-radius: 4px;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #F59E0B;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* 装饰背景 */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 2.5D/Flat Animation Layer -->
+    <div class="animation-container" id="animationLayout">
+        <!-- 装饰云朵 -->
+        <div class="cloud" style="width: 120px; height: 40px; top: 15%; left: 10%;"></div>
+        <div class="cloud" style="width: 150px; height: 50px; top: 20%; right: 15%;"></div>
+        <div class="cloud" style="width: 100px; height: 35px; bottom: 30%; left: 20%;"></div>
+
+        <!-- 太阳 -->
+        <div id="mainSun" class="sun" style="top: 100px; left: 150px;">
+            <div v-for="i in 12" class="sun-ray" :style="{ transform: 'rotate(' + (i*30) + 'deg)' }"></div>
+        </div>
+
+        <!-- 第二个太阳 (实验阶段出现) -->
+        <div id="extraSun" class="sun" style="bottom: 100px; right: 150px; opacity: 0; transform: scale(0);">
+            <div v-for="i in 12" class="sun-ray" :style="{ transform: 'rotate(' + (i*30) + 'deg)' }"></div>
+        </div>
+
+        <!-- 地球 -->
+        <div class="earth-wrapper" id="earth">
+            <!-- 陆地斑块 -->
+            <div class="continent" style="width: 100px; height: 80px; top: 20px; left: 30px;"></div>
+            <div class="continent" style="width: 120px; height: 90px; top: 120px; left: 150px;"></div>
+            <div class="continent" style="width: 80px; height: 60px; top: 180px; left: 40px;"></div>
+            <div class="continent" style="width: 60px; height: 40px; top: 50px; left: 200px;"></div>
+
+            <!-- 昼夜遮罩 -->
+            <div id="nightOverlay" class="day-night-overlay"></div>
+        </div>
+    </div>
+
+    <!-- UI Layer -->
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['info-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="minimize-btn">
+                    {{ isMinimized ? '【展开】' : '【收起内容】' }}
+                </span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 亲子共学：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-amber-900/80 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <!-- 互动控件：滑块控制自转速度 -->
+                    <div v-if="step === 3" class="interaction-box">
+                        <span class="text-xs font-bold text-amber-700">自转快慢</span>
+                        <input type="range" class="slider" min="0" max="10" step="0.1" v-model="rotateSpeed">
+                        <span class="text-xs font-bold text-amber-700">{{ rotateSpeed == 0 ? '已锁定' : '模拟中' }}</span>
+                    </div>
+
+                    <div class="flex justify-center mt-6">
+                        <button v-if="step < 5" @click="nextStage" class="btn-flat">
+                            {{ step === 3 ? '查看发现' : '下一步' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-amber-100 text-amber-700 px-6 py-2 rounded-xl text-sm border-2 border-amber-200">
+                            返回现实世界 🕰️
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 极简模式标题 -->
+                <div v-else>
+                    <h2 class="text-amber-800 font-bold">{{ stages[step-1].title }}</h2>
+                    <p class="text-xs text-amber-600">点击【展开】查看互动引导</p>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-amber-900/40 text-[10px] tracking-widest uppercase text-center mb-2">
+            ✨ {{ hints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const rotateSpeed = ref(1.0); // 自转速度
+
+                const parentWords = [
+                    "引导孩子观察：影子在哪边？为什么转到背面就变黑了？",
+                    "试着引导猜想：如果我们每天只能在阳光下，你会想念睡觉吗？",
+                    "动手时间：试着滑动滑块，让地球停下来。或者点击下一步，看看双日现象。",
+                    "看看画面：地面变红了，植物都垂头丧气啦，这就是太热的结果。",
+                    "总结：因为有了黑夜，地球才能休息降温。我们要珍惜每一个美好的晚安。"
+                ];
+
+                const stages = [
+                    { title: '日出而作', content: '每天，地球悠闲地旋转着。当你的家转向太阳，就是白天；转离太阳，就是黑夜。' },
+                    { title: '永恒的正午', content: '想象一下，要是太阳永远不落山？影子再也不会拉长，你的风筝可以飞一整天。' },
+                    { title: '控制昼夜', content: '现在，你可以手动左右地球的转动。试着把自转速度降为0，让阳光永远照在这个位置。' },
+                    { title: '滚滚热力', content: '哎呀！没有黑夜降温，大地变得像烤箱一样烫。看，连白云都被晒干了，我们需要黑暗。' },
+                    { title: '温柔的晚安', content: '原来黑夜是地球的呼吸。它让我们凉爽，让小草喝水。让我们把夜色请回来吧。' }
+                ];
+
+                const hints = [
+                    "观察：平面风格昼夜更替模拟",
+                    "预测：如果光芒永不消散...",
+                    "互动：手动调节地球旋转频率",
+                    "发现：极高温下的生态变化",
+                    "总结：自然的平衡最美丽"
+                ];
+
+                // --- GSAP 动画逻辑 ---
+                let earthLoop, overlayAnim;
+
+                const initAnimations = () => {
+                    // 背景装饰动画
+                    gsap.to(".cloud", {
+                        x: 50, duration: 8, repeat: -1, yoyo: true, ease: "sine.inOut"
+                    });
+
+                    // 地球自转模拟 (移动陆地斑块)
+                    earthLoop = gsap.to(".continent", {
+                        x: 300,
+                        duration: 5,
+                        repeat: -1,
+                        ease: "none",
+                        modifiers: {
+                            x: gsap.utils.unitize(x => parseFloat(x) % 300)
+                        }
+                    });
+
+                    // 昼夜遮罩同步移位
+                    overlayAnim = gsap.to("#nightOverlay", {
+                        x: -150,
+                        duration: 5,
+                        repeat: -1,
+                        ease: "none"
+                    });
+                };
+
+                // 监听速度变化
+                watch(rotateSpeed, (newVal) => {
+                    if (newVal == 0) {
+                        earthLoop.pause();
+                        overlayAnim.pause();
+                    } else {
+                        earthLoop.play();
+                        overlayAnim.play();
+                        earthLoop.timeScale(newVal);
+                        overlayAnim.timeScale(newVal);
+                    }
+                });
+
+                const nextStage = () => {
+                    step.value++;
+                    if (step.value === 3) {
+                        // 准备进入控制阶段
+                        gsap.to("#earth", { scale: 1.2, duration: 1 });
+                    } else if (step.value === 4) {
+                        // 进入“太热”阶段
+                        rotateSpeed.value = 0;
+                        // 背景变红
+                        document.body.style.background = "#FFEDD5";
+                        // 出现第二个太阳
+                        gsap.to("#extraSun", { opacity: 1, scale: 1, duration: 1 });
+                        // 地面发红效果 (模拟)
+                        gsap.to(".continent", { background: "#D97706", duration: 2 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    rotateSpeed.value = 1.0;
+                    document.body.style.background = "#E0F2FE";
+                    gsap.to("#extraSun", { opacity: 0, scale: 0, duration: 1 });
+                    gsap.to("#earth", { scale: 1, duration: 1 });
+                    gsap.to(".continent", { background: "#22C55E", duration: 1 });
+                };
+
+                onMounted(() => {
+                    initAnimations();
+                });
+
+                return { step, isMinimized, rotateSpeed, parentWords, stages, hints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

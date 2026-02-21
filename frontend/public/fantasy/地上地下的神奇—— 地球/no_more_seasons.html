@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一年之中四季不分会怎样</title>
+    <!-- 核心技术栈 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --spring-bg: #ECFDF5;
+            --summer-bg: #FEFCE8;
+            --autumn-bg: #FFF7ED;
+            --winter-bg: #F0F9FF;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--spring-bg);
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: background 1s ease;
+        }
+
+        .canvas-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 50px;
+        }
+
+        /* 插画风格树木 */
+        .tree-container {
+            position: relative;
+            width: 300px;
+            height: 350px;
+            transform-origin: bottom center;
+            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .trunk {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 100px;
+            background: #78350f;
+            border-radius: 5px;
+        }
+
+        .leaves {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: #22C55E;
+            transition: all 1s ease;
+            box-shadow: inset -20px -20px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        /* 季节视觉状态 */
+        .leaves.winter {
+            background: #E2E8F0;
+            transform: translateX(-50%) scale(0.8);
+        }
+
+        .leaves.autumn {
+            background: #EA580C;
+        }
+
+        .leaves.summer {
+            background: #15803D;
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .snow-flake {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        /* UI Panel */
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            pointer-events: auto;
+            text-align: left;
+            border: 2px solid #E5E7EB;
+        }
+
+        .info-panel.minimized {
+            max-width: 280px;
+            padding: 15px 20px;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2rem;
+            color: #111827;
+            margin-bottom: 15px;
+        }
+
+        .parent-words {
+            background: #F9FAFB;
+            border-left: 4px solid #3B82F6;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #4B5563;
+        }
+
+        .btn-modern {
+            background: #111827;
+            color: white;
+            padding: 12px 35px;
+            border-radius: 12px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-modern:hover {
+            transform: scale(1.05);
+        }
+
+        /* 滑块控件 */
+        .control-box {
+            margin-top: 20px;
+            padding: 15px 20px;
+            background: #F3F4F6;
+            border-radius: 15px;
+        }
+
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #D1D5DB;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #3B82F6;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .toggle-txt {
+            float: right;
+            font-size: 0.75rem;
+            color: #3B82F6;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="canvas-area">
+        <!-- 装饰性远山 -->
+        <div
+            style="position: absolute; bottom: 0; width: 100%; height: 100px; background: #D1FAE5; border-radius: 100% 100% 0 0; transform: scaleX(1.5);">
+        </div>
+
+        <div class="tree-container" id="visual-tree">
+            <div class="trunk"></div>
+            <div :class="['leaves', seasonClass]"></div>
+        </div>
+
+        <!-- 装饰雪花 -->
+        <div v-for="i in 20" :key="i" class="snow-flake"></div>
+    </div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['info-panel', { 'minimized': isMinimized }]">
+                <span @click="isMinimized = !isMinimized" class="toggle-txt">{{ isMinimized ? '【展开内容】' : '【收起】'
+                    }}</span>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 亲子共读引导：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-gray-600 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <div v-if="step === 3" class="control-box">
+                        <div class="flex justify-between text-xs font-bold text-gray-400 mb-2">
+                            <span>地轴竖直 (无四季)</span>
+                            <span>地轴倾斜 (四季轮转)</span>
+                        </div>
+                        <input type="range" min="0" max="23.5" step="0.1" v-model="tilt" class="custom-slider">
+                        <div class="text-center text-xs mt-2 text-blue-500 font-bold">当前倾角：{{ tilt }}°</div>
+                    </div>
+
+                    <div class="flex justify-center mt-6">
+                        <button v-if="step < 5" @click="nextStage" class="btn-modern">
+                            {{ step === 3 ? '查看结论' : '进入下一步' }}
+                        </button>
+                        <button v-else @click="reset" class="bg-gray-100 text-gray-800 border px-8 py-2 rounded-xl">
+                            重新体验
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="font-bold text-gray-800">{{ stages[step-1].title }}</h2>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-gray-400 text-[10px] tracking-widest text-center mb-2 uppercase">
+            {{ hints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const tilt = ref(23.5); // 地轴倾角
+
+                const parentWords = [
+                    "让孩子闭上眼感受一下，问问他：你最喜欢在白天做的时刻是什么？",
+                    "猜一猜：如果一直都是夏天，我们还能打雪仗吗？红叶还会变色吗？",
+                    "动手时间：试着拉动滑块把地轴‘扶正’。看看树木的季节循环是不是停了？",
+                    "引导观察：看那些候鸟，如果没有季节的变化，它们是不是不知道该往哪飞了？",
+                    "总结：有时候，那一点点‘倾斜’，才是生命活力的源泉。"
+                ];
+
+                const stages = [
+                    { title: '旋转的斜陀螺', content: '我们的地球是“歪着脑袋”旋转的。正是因为这 23.5 度的倾斜，阳光才能在南北半球之间跑动。' },
+                    { title: '如果地轴站直了？', content: '想象一下，如果地球把脑袋“扶正”了，不再倾斜。阳光永远直射在中间，世界会变成什么样？' },
+                    { title: '调节地轴倾角', content: '现在，你是地球的管理员！左右拖动滑块试试。看看当地轴变为 0° 时，树木还会变色吗？' },
+                    { title: '凝固的时间线', content: '哇！地轴变直后，季节消失了。北半球陷入了永恒的微凉，而四季的变幻魔法彻底失灵了。' },
+                    { title: '斜脑袋的好处', content: '原来，这小小的倾斜让地球充满了生命力。有冬天的宁静，才有春天的勃发。' }
+                ];
+
+                const hints = [
+                    "观察：地球倾斜产生的四季美景",
+                    "预测：如果地轴不再倾斜...",
+                    "互动：手动调节地轴的倾斜角度",
+                    "发现：季节循环消失的奇观",
+                    "总结：理解自然界的不平衡美"
+                ];
+
+                const seasonClass = computed(() => {
+                    if (tilt.value < 5) return 'summer'; // 锁定某一种状态
+                    // 模拟循环
+                    const time = Date.now() * 0.001;
+                    const cycle = (time % 12) / 12;
+                    if (cycle < 0.25) return '';
+                    if (cycle < 0.5) return 'summer';
+                    if (cycle < 0.75) return 'autumn';
+                    return 'winter';
+                });
+
+                // 核心动画：雪花
+                watch(seasonClass, (val) => {
+                    if (val === 'winter') {
+                        gsap.to(".snow-flake", {
+                            y: 400, opacity: 1, duration: 2, stagger: 0.1, repeat: -1,
+                            x: "random(-20, 20)", ease: "none"
+                        });
+                        document.body.style.background = "#F0F9FF";
+                    } else {
+                        gsap.killTweensOf(".snow-flake");
+                        gsap.set(".snow-flake", { y: -20, opacity: 0 });
+                        if (val === 'summer') document.body.style.background = "#FEFCE8";
+                        else if (val === 'autumn') document.body.style.background = "#FFF7ED";
+                        else document.body.style.background = "#ECFDF5";
+                    }
+                });
+
+                const nextStage = () => {
+                    step.value++;
+                    if (step.value === 3) {
+                        gsap.to("#visual-tree", { scale: 1.2, duration: 1 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    tilt.value = 23.5;
+                    gsap.to("#visual-tree", { scale: 1, duration: 1 });
+                };
+
+                onMounted(() => {
+                    // 随机平衡雪花位置
+                    gsap.set(".snow-flake", {
+                        left: (i) => i * 5 + "%",
+                        top: -20
+                    });
+                });
+
+                return { step, isMinimized, tilt, seasonClass, parentWords, stages, hints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

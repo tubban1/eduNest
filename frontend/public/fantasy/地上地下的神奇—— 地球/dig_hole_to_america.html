@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能在地上钻洞去美国吗</title>
+    <!-- 核心技术栈 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E0F2FE;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        /* 探险层容器 */
+        .exploration-wall {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+            transition: background 1s ease;
+        }
+
+        /* 钻头主体 */
+        .drill {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 120px;
+            z-index: 10;
+        }
+
+        .drill-head {
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-top: 60px solid #475569;
+            transform-origin: top center;
+        }
+
+        .drill-body {
+            width: 60px;
+            height: 60px;
+            background: #64748b;
+            margin: -10px auto 0;
+            border-radius: 5px;
+        }
+
+        /* 圈层背景系统 */
+        .layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 8rem;
+            font-weight: 900;
+            opacity: 0.1;
+            letter-spacing: 2rem;
+            pointer-events: none;
+        }
+
+        /* 深度数据面板 */
+        .data-hud {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-family: monospace;
+            border: 1px solid #00ff00;
+            opacity: 0.8;
+        }
+
+        /* UI Panel */
+        .ui-root {
+            position: relative;
+            z-index: 30;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 4px solid #FB923C;
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 550px;
+            margin: 0 auto;
+            box-shadow: 0 15px 0 #FFEDD5;
+            text-align: left;
+            transition: all 0.4s;
+            pointer-events: auto;
+        }
+
+        .info-panel.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.2rem;
+            color: #7c2d12;
+            margin-bottom: 15px;
+        }
+
+        .parent-words {
+            background: #FFF7ED;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 6px solid #EA580C;
+            font-size: 0.95rem;
+            color: #9a3412;
+        }
+
+        .btn-drill {
+            background: #EA580C;
+            color: white;
+            padding: 12px 40px;
+            border-radius: 15px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #9a3412;
+            transition: all 0.2s;
+        }
+
+        .btn-drill:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #9a3412;
+        }
+
+        .drill-effect {
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(0, 0, 0, 0.05) 51px);
+            z-index: 2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="exploration-wall" id="wall">
+        <div class="drill-effect" id="scrollingLines"></div>
+
+        <!-- 动态文本提示 -->
+        <div class="layer" id="layerName">地壳</div>
+
+        <!-- 钻头 -->
+        <div class="drill" id="drill">
+            <div class="drill-head" id="drillHead"></div>
+            <div class="drill-body"></div>
+        </div>
+
+        <div class="data-hud" v-show="isDrilling || depth > 0">
+            <div>深度: {{ depth.toLocaleString() }} KM</div>
+            <div>温度: {{ temp.toLocaleString() }} ℃</div>
+            <div>目标: 美国</div>
+        </div>
+    </div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['info-panel', { 'minimized': isMinimized }]">
+                <div @click="isMinimized = !isMinimized" class="text-right text-xs text-orange-500 cursor-pointer mb-2">
+                    {{ isMinimized ? '【展开剧情】' : '【隐藏】' }}
+                </div>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 探险小助手：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-orange-900/80 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button v-if="step < 5" @mousedown="startDrilling" @touchstart="startDrilling"
+                            class="btn-drill">
+                            {{ buttonLabel }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-orange-100 text-orange-700 px-6 py-2 rounded-xl border border-orange-200">
+                            回到地表 🏡
+                        </button>
+                    </div>
+                    <div v-if="step === 3" class="text-center text-xs text-orange-400 mt-2">（请长按按钮向下钻探）</div>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-orange-950/40 text-[10px] tracking-widest uppercase text-center mb-2">
+            ✨ {{ hints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const depth = ref(0);
+                const temp = ref(25);
+                const isDrilling = ref(false);
+
+                const parentWords = [
+                    "问问孩子：你觉得地底下只有土吗？越往下钻，会变得更冷还是更热？",
+                    "抛出猜想：如果我们钻到了地心，我们是会浮起来，还是被压扁？",
+                    "动手时间：让孩子长按按钮。快看，我们已经穿过了地壳，进入岩浆地带了！",
+                    "引导观察：看地心的液态金属，它们在流动，正是因为它们，地球才有了磁场。",
+                    "总结：虽然没法钻洞过去，但我们可以坐飞机飞过去呀！"
+                ];
+
+                const stages = [
+                    { title: '脚下的大地', content: '我们每天踩着坚硬的地面，能否带上钻头，直接钻穿它去地球另一边的美国呢？' },
+                    { title: '地底探险记', content: '这是一场深入 12742 公里的旅行。我们会穿过像岩石衣服的地壳，和滚烫的地核。' },
+                    { title: '启动超强钻头', content: '长按下方按钮，向下出发！看看你能钻到多深。' },
+                    { title: '熔化的梦想', content: '哎呀！地心太热了（6000度！），钻头都化掉啦。虽然没到美国，但我们见识了地球的心脏。' },
+                    { title: '大地的守护', content: '地球内部的热量维持着这颗星球的生命，虽然我们不能钻穿它，但它一直在守护我们。' }
+                ];
+
+                const hints = ["观察：层层递进的地球内部结构", "预测：深入万里的奇幻之旅", "互动：长按钻探模拟", "发现：地核温度的震撼", "总结：感恩家园的馈赠"];
+
+                const buttonLabel = computed(() => ["准备探险", "开始钻探", "按住不放，冲！", "查看结果"][step.value - 1]);
+
+                // --- 动画逻辑 ---
+                let drillAnim, scrollAnim;
+
+                const startDrilling = () => {
+                    if (step.value < 3 || step.value === 4) return nextStage();
+                    if (step.value > 4) return;
+
+                    isDrilling.value = true;
+                    drillAnim = gsap.to("#drillHead", { rotateZ: 360, duration: 0.2, repeat: -1 });
+                    scrollAnim = gsap.to("#scrollingLines", { y: 200, duration: 0.5, repeat: -1, ease: "none" });
+
+                    const interval = setInterval(() => {
+                        if (!isDrilling.value) {
+                            clearInterval(interval);
+                            return;
+                        }
+                        depth.value += 50;
+                        temp.value = Math.floor(depth.value * 0.5) + 25;
+
+                        updateVisuals();
+
+                        if (depth.value >= 6371) { // 抵达地心附近
+                            clearInterval(interval);
+                            stopDrilling();
+                            nextStage();
+                        }
+                    }, 50);
+
+                    // 绑定全局鼠标抬起
+                    window.addEventListener('mouseup', stopDrilling, { once: true });
+                    window.addEventListener('touchend', stopDrilling, { once: true });
+                };
+
+                const stopDrilling = () => {
+                    isDrilling.value = false;
+                    if (drillAnim) drillAnim.pause();
+                    if (scrollAnim) scrollAnim.pause();
+                };
+
+                const updateVisuals = () => {
+                    const wall = document.getElementById('wall');
+                    const layerTxt = document.getElementById('layerName');
+
+                    if (depth.value < 35) {
+                        wall.style.background = "#E0F2FE";
+                        layerTxt.innerText = "地壳";
+                    } else if (depth.value < 2900) {
+                        wall.style.background = "#FB923C";
+                        layerTxt.innerText = "地幔";
+                    } else {
+                        wall.style.background = "#FEF08A";
+                        layerTxt.innerText = "地核";
+                    }
+                };
+
+                const nextStage = () => {
+                    step.value++;
+                    if (step.value === 4) stopDrilling();
+                };
+
+                const reset = () => {
+                    step.value = 1; depth.value = 0; temp.value = 25;
+                    updateVisuals();
+                };
+
+                onMounted(() => {
+                    gsap.set("#drillHead", { rotateZ: 0 });
+                });
+
+                return { step, isMinimized, depth, temp, isDrilling, parentWords, stages, hints, buttonLabel, startDrilling, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

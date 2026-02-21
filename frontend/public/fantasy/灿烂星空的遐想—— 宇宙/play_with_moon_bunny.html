@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>想到月宫里和小兔子一起玩</title>
+    <!-- Standard Elite Dependencies -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Fredoka:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #050510;
+            font-family: 'Fredoka', 'ZCOOL XiaoWei', serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 5vh;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Moonlit Glassmorphism */
+        .glass-ui {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            padding: 30px 40px;
+            max-width: 600px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        .glass-ui.minimized {
+            max-width: 280px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .btn-toggle-ui {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .parent-callout {
+            background: rgba(255, 217, 61, 0.15);
+            border-left: 4px solid #FFD93D;
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            color: #FFD93D;
+            text-align: left;
+        }
+
+        .btn-jump {
+            background: linear-gradient(135deg, #B0C4DE 0%, #4682B4 100%);
+            color: white;
+            font-weight: 800;
+            border: none;
+            transition: all 0.4s;
+        }
+
+        .btn-jump:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 10px 20px rgba(70, 130, 180, 0.4);
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 40px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.4s;
+        }
+
+        .dot.active {
+            background: #B0C4DE;
+            box-shadow: 0 0 15px #B0C4DE;
+            transform: scale(1.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-overlay">
+        <div class="progress-bar">
+            <div v-for="n in 5" :key="n" class="dot" :class="{ active: step === n }"></div>
+        </div>
+
+        <transition name="fade" mode="out-in">
+            <div :key="step" :class="['glass-ui', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <button @click="isMinimized = !isMinimized" class="btn-toggle-ui">
+                    {{ isMinimized ? '展开' : '收起' }}
+                </button>
+
+                <div v-if="!isMinimized" class="parent-callout">
+                    <strong>👨‍👩‍👧 亲子聊聊天：</strong> {{ parentTips[step-1] }}
+                </div>
+
+                <h1
+                    :class="['text-white font-bold tracking-tight', isMinimized ? 'text-lg mb-2' : 'text-3xl md:text-4xl mb-6']">
+                    {{ stages[step-1].title }}
+                </h1>
+
+                <div v-if="!isMinimized" class="text-xl text-blue-100 leading-relaxed mb-10">
+                    <p v-html="stages[step-1].content"></p>
+                </div>
+
+                <div class="flex justify-center">
+                    <button v-if="step < 5" @click="nextStage"
+                        :class="['btn-jump rounded-full shadow-xl font-bold', isMinimized ? 'px-8 py-2 text-md' : 'px-14 py-5 text-xl']">
+                        {{ buttonLabel }}
+                    </button>
+                    <button v-else @click="reset"
+                        class="bg-white/10 text-white border border-white/30 px-10 py-4 rounded-full hover:bg-white/20 transition">
+                        回到家乡再看一眼月亮 🏠
+                    </button>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-blue-300/40 text-xs italic tracking-widest uppercase mb-4">
+            💡 {{ hints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const { nextTick } = Vue;
+                const stages = ref([
+                    { title: '望着月亮出发', content: '月亮挂在树梢，像一盏温暖的灯。如果你能跳得很高很高，是不是就能飞上天去找小兔子？' },
+                    { title: '月亮上的秘密', content: '月球上没有空气，也没有云。那里的地面到处都是陨石撞出来的‘麻子脸’环形山。' },
+                    { title: '月球漫步机', content: '准备好了吗？在月球上，同样的力气你能跳得高六倍！就像在大海里漂浮一样。' },
+                    { title: '寻找“月兔”', content: '看！那些黑色的阴影其实不是森林，是平坦的‘月海’。那个像兔子的形状，是古老的岩石。' },
+                    { title: '月宫的真面目', content: '月亮是地球的影子。因为它一直陪着我们，黑夜才不再孤单。长大后，我们也去上面造房子吧！' }
+                ]);
+                const step = ref(1);
+                const isMinimized = ref(false);
+
+                const parentTips = [
+                    "指指月亮，问问孩子：你觉得月球上的小兔子在吃什么？草地是绿色的吗？",
+                    "抛出猜想：在月球上走路会像在蹦床上一样吗？我们要穿很重的鞋子吗？",
+                    "鼓励孩子‘跳跃’：告诉他这里的引力很弱，他现在是个超级英雄！",
+                    "引导孩子观察月球全景：找到那个‘兔子影子’，看看远处的蓝色地球。",
+                    "总结：月球虽然荒凉，但它是我们探索宇宙的第一站，也是我们的守护者。"
+                ];
+
+
+                const buttonLabel = computed(() => ["准备飞翔", "穿好宇航服", "开始低重力跳跃", "寻找礼物", "完成探索"][step.value - 1]);
+                const hints = computed(() => ["观察星星的闪烁", "思考空间的颜色", "滑动屏幕感受惯性", "寻找那个发光的点", "愿你的好奇如月光永恒"][step.value - 1]);
+
+                // --- Three.js Moon Reality ---
+                let scene, camera, renderer, controls, moon, starfield, earthModel, clock = new THREE.Clock();
+                let bunnyRocks = [];
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x050510);
+
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 5, 30);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    // Orbit Controls
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.enabled = false;
+
+                    // 1. Moon Surface (Large Sphere)
+                    const mGeo = new THREE.SphereGeometry(60, 64, 64);
+                    const mMat = new THREE.MeshStandardMaterial({
+                        color: 0xcccccc, roughness: 1, metalness: 0,
+                        flatShading: true
+                    });
+                    moon = new THREE.Mesh(mGeo, mMat);
+                    moon.position.y = -65;
+                    scene.add(moon);
+
+                    // 2. Earth in Distance
+                    const eGeo = new THREE.SphereGeometry(4, 32, 32);
+                    const eMat = new THREE.MeshPhongMaterial({ color: 0x2233ff, emissive: 0x000033 });
+                    earthModel = new THREE.Mesh(eGeo, eMat);
+                    earthModel.position.set(50, 40, -100);
+                    scene.add(earthModel);
+
+                    // 3. Stars
+                    const sGeo = new THREE.BufferGeometry();
+                    const sPos = new Float32Array(3000 * 3);
+                    for (let i = 0; i < 3000 * 3; i++) sPos[i] = (Math.random() - 0.5) * 1000;
+                    sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+                    starfield = new THREE.Points(sGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1 }));
+                    scene.add(starfield);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+                    sun.position.set(10, 20, 10);
+                    scene.add(sun);
+
+                    // Bunny Rocks (Easter Egg)
+                    for (let i = 0; i < 3; i++) {
+                        const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                        r.position.set(5 + i * 2, -4.5, 0);
+                        r.visible = false;
+                        scene.add(r);
+                        bunnyRocks.push(r);
+                    }
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    starfield.rotation.y += 0.0001;
+                    earthModel.rotation.y += 0.005;
+
+                    if (controls.enabled) controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.value.length);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length });
+                    if (step.value === 2) {
+                        gsap.to(camera.position, { y: 2, z: 15, duration: 3, ease: "slow" });
+                    } else if (step.value === 3) {
+                        // Moon Landing Jump Animation
+                        const tl = gsap.timeline({ repeat: -1 });
+                        tl.to(camera.position, { y: 15, duration: 2, ease: "power1.out" })
+                            .to(camera.position, { y: 2, duration: 2, ease: "power1.in" });
+                    } else if (step.value === 4) {
+                        gsap.killTweensOf(camera.position);
+                        gsap.to(camera.position, { x: 10, y: 5, z: 25, duration: 2 });
+                        bunnyRocks.forEach(r => r.visible = true);
+                        controls.enabled = true;
+                        controls.target.set(5, 0, 0);
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    nextTick(() => { });
+                    controls.enabled = false;
+                    gsap.killTweensOf(camera.position);
+                    gsap.to(camera.position, { x: 0, y: 5, z: 30, duration: 2 });
+                    bunnyRocks.forEach(r => r.visible = false);
+                };
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.value.length,
+                            currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, stages, parentTips, nextStage, reset, buttonLabel, hints };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

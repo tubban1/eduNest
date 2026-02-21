@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天上没有太阳会怎样</title>
+    <!-- Standard Elite Dependencies -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Fredoka:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Fredoka', 'ZCOOL XiaoWei', serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-main {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding-bottom: 5vh;
+            align-items: center;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Premium Glassmorphism */
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(25px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            padding: 30px 40px;
+            max-width: 620px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            color: white;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        .glass-panel.minimized {
+            max-width: 280px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .btn-toggle-ui {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .parent-callout {
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #60A5FA;
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            color: #93C5FD;
+            text-align: left;
+        }
+
+        .btn-glow {
+            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            border: none;
+            transition: all 0.4s;
+        }
+
+        .btn-glow:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .segment {
+            width: 50px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .segment.active {
+            background: #FBBF24;
+            box-shadow: 0 0 10px #FBBF24;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-main">
+        <div class="progress-bar">
+            <div v-for="n in 5" :key="n" class="segment" :class="{ active: step >= n }"></div>
+        </div>
+
+        <transition name="fade" mode="out-in">
+            <div :key="step" :class="['glass-panel', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <button @click="isMinimized = !isMinimized" class="btn-toggle-ui">
+                    {{ isMinimized ? '展开' : '隐藏' }}
+                </button>
+
+                <div v-if="!isMinimized" class="parent-callout">
+                    <strong> Couch 🛋️ 陪学指点：</strong> {{ parentWords[step-1] }}
+                </div>
+
+                <h1 :class="['font-black tracking-tight', isMinimized ? 'text-lg mb-2' : 'text-3xl md:text-4xl mb-6']">
+                    {{ stages[step-1].title }}
+                </h1>
+
+                <div v-if="!isMinimized" class="text-xl text-white/90 leading-relaxed mb-10">
+                    <p v-html="stages[step-1].content"></p>
+                </div>
+
+                <div class="flex justify-center">
+                    <button @click="nextStage"
+                        :class="['btn-glow rounded-full shadow-xl', isMinimized ? 'px-8 py-2 text-sm' : 'px-14 py-5 text-xl']">
+                        {{ step === 5 ? '让太阳重新光 ✨' : buttonLabel }}
+                    </button>
+                </div>
+            </div>
+        </transition>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const { nextTick } = Vue;
+                const stages = ref([
+                    { title: '起始：金色能量球', content: '太阳是地球的头号英雄！它不停地向外发射温暖的光芒，让地球生机勃勃，让我们可以快乐奔跑。' },
+                    { title: '猜想：当灯灭了以后', content: '如果太阳公公突然‘请假’了，天再也不会亮。你觉得我们会一直生活在像黑夜一样的世界里吗？' },
+                    { title: '模拟：大自然的停电', content: '太阳熄灭后，地球表面的温度会飞快下降。美丽的森林会枯萎，城市也会变得冰冷寂静。' },
+                    { title: '发现：冰河世纪', content: '快看！海洋结成了厚厚的冰，整个地球变成了一个亮晶晶的大雪球。没有太阳，生命就没法生存。' },
+                    { title: '感悟：生命的恩赐', content: '正是因为有太阳不停地‘工作’，我们才有香喷喷的饭菜、暖暖的被窝。太阳就是守护我们的超人！' }
+                ]);
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const parentWords = [
+                    "引导孩子看窗外，问问他：太阳公公照在花朵上，花朵是什么心情？",
+                    "抛出猜想：如果太阳去度假了，世界变黑了，我们需要穿几件羽绒服才不会冷？",
+                    "让孩子参与调整光线。告诉他，没有光，植物就不能制造养分，会肚子饿的。",
+                    "看啊！地球变白了，因为它被冻成了冰球。解释一下，这就是为什么我们要珍惜太阳。",
+                    "总结环节：再次点亮太阳，告诉孩子阳光是生命的能量之源，我们要多运动，多晒太阳！"
+                ];
+
+
+                const buttonLabel = computed(() => ["来看看太阳的力量", "假设太阳熄灭...", "观察世界变化", "看到最终结果", "点亮希望"][step.value - 1]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, earth, sunSphere, ambientLight, sunLight, starfield;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.set(0, 5, 25);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    // 1. Earth (Stylized)
+                    const gGeo = new THREE.SphereGeometry(8, 64, 64);
+                    const gMat = new THREE.MeshStandardMaterial({
+                        color: 0x4B9CD3, roughness: 0.8, metalness: 0.1
+                    });
+                    earth = new THREE.Mesh(gGeo, gMat);
+                    scene.add(earth);
+
+                    // 2. Sun (Glowing Sphere)
+                    const sGeo = new THREE.SphereGeometry(4, 32, 32);
+                    const sMat = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                    sunSphere = new THREE.Mesh(sGeo, sMat);
+                    sunSphere.position.set(30, 15, -20);
+                    scene.add(sunSphere);
+
+                    // 3. Stars
+                    const starGeo = new THREE.BufferGeometry();
+                    const starPos = new Float32Array(5000 * 3);
+                    for (let i = 0; i < 5000 * 3; i++) starPos[i] = (Math.random() - 0.5) * 1500;
+                    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+                    starfield = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.8 }));
+                    scene.add(starfield);
+
+                    // Lights
+                    ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+                    scene.add(ambientLight);
+
+                    sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+                    sunLight.position.set(30, 15, -20);
+                    scene.add(sunLight);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    earth.rotation.y += 0.005;
+                    starfield.rotation.y += 0.0002;
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < stages.value.length) {
+                        step.value = Math.min(step.value + 1, stages.value.length);
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length });
+                        updateVisuals();
+                    } else {
+                        reset();
+                    }
+                };
+
+                const updateVisuals = () => {
+                    if (step.value === 3) {
+                        gsap.to(sunSphere.scale, { x: 0, y: 0, z: 0, duration: 2 });
+                        gsap.to(ambientLight, { intensity: 0.1, duration: 3 });
+                        gsap.to(sunLight, { intensity: 0, duration: 3 });
+                        gsap.to(earth.material.color, { r: 0.1, g: 0.1, b: 0.2, duration: 4 });
+                    } else if (step.value === 4) {
+                        gsap.to(earth.material.color, { r: 1, g: 1, b: 1, duration: 5 }); // Ice planet
+                        gsap.to(camera.position, { z: 20, duration: 3 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    nextTick(() => { });
+                    gsap.to(sunSphere.scale, { x: 1, y: 1, z: 1, duration: 1.5 });
+                    gsap.to(ambientLight, { intensity: 0.8, duration: 1.5 });
+                    gsap.to(sunLight, { intensity: 1.2, duration: 1.5 });
+                    gsap.to(earth.material.color, { r: 0.29, g: 0.61, b: 0.83, duration: 2 });
+                    gsap.to(camera.position, { z: 25, duration: 2 });
+                };
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.value.length,
+                            currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, stages, parentWords, nextStage, buttonLabel };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

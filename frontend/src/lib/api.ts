@@ -840,7 +840,8 @@ class ApiClient {
     /**
      * 批量导入 HTML 内容到列表（仅列表创建者）
      * @param listId 列表 UUID
-     * @param items 每条必填 full_html；可选 title/description/tags/language_code/content_type（未传则从 HTML 内 edu-meta 解析）、svg_thumbnail（不能放 HTML 内，由 manifest 或请求提供）
+     * @param items 每条必填 full_html；其它字段建议由同名 JSON manifest 提供并直传后端。
+     *              兼容：若未传 title/description/tags/language_code/content_type，后端仍会尝试从 HTML 内 edu-meta 解析。
      */
     importItems: async (
       listId: string,
@@ -849,9 +850,12 @@ class ApiClient {
         title?: string;
         description?: string;
         tags?: string[];
+        knowledge_points?: string[];
         language_code?: string;
         content_type?: string;
         svg_thumbnail?: string;
+        metadata_json?: any;
+        tech_stack?: any;
       }>
     ) => {
       return this.post(`/collection_lists/${listId}/import`, { items });

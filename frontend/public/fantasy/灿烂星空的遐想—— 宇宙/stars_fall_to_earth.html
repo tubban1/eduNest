@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星星掉到地上会怎样</title>
+    <!-- Standard Elite Dependencies -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Fredoka:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #01040a;
+            font-family: 'Fredoka', 'ZCOOL XiaoWei', serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-container {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 5vh;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Premium Glassmorphism */
+        .glass-ui {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            padding: 30px 40px;
+            max-width: 600px;
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        .glass-ui.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .btn-toggle-ui {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .parent-words {
+            background: rgba(255, 217, 61, 0.15);
+            border-left: 4px solid #FFD93D;
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            color: #FFD93D;
+            text-align: left;
+        }
+
+        .stage-dot-container {
+            display: flex;
+            gap: 8px;
+            position: fixed;
+            top: 30px;
+        }
+
+        .stage-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .stage-dot.active {
+            background: #FFD93D;
+            box-shadow: 0 0 10px #FFD93D;
+            transform: scale(1.3);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%);
+            color: white;
+            font-weight: 800;
+            border: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.08) rotate(-1deg);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.5);
+        }
+
+        .fade-move-enter-active,
+        .fade-move-leave-active {
+            transition: all 0.6s ease;
+        }
+
+        .fade-move-enter-from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .fade-move-leave-to {
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-container">
+        <!-- Persistent Stage dots -->
+        <div class="stage-dot-container">
+            <div v-for="n in 5" :key="n" class="stage-dot" :class="{ active: step === n }"></div>
+        </div>
+
+        <transition name="fade-move" mode="out-in">
+            <div :key="step" :class="['glass-ui', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <button @click="isMinimized = !isMinimized" class="btn-toggle-ui">
+                    {{ isMinimized ? '展开' : '隐藏' }}
+                </button>
+
+                <div v-if="!isMinimized" class="parent-words">
+                    <strong>👨‍👩‍👧 亲子引导：</strong> {{ parentGuides[step-1] }}
+                </div>
+
+                <h1
+                    :class="['text-white font-bold tracking-tight', isMinimized ? 'text-lg mb-2' : 'text-3xl md:text-4xl mb-6']">
+                    {{ stages[step-1].title }}
+                </h1>
+
+                <div v-if="!isMinimized" class="text-xl text-white/90 leading-relaxed mb-10">
+                    <p v-html="stages[step-1].content"></p>
+                </div>
+
+                <div class="flex justify-center">
+                    <button v-if="step < 5" @click="nextStage"
+                        :class="['btn-action rounded-full shadow-xl font-800', isMinimized ? 'px-8 py-2 text-sm' : 'px-14 py-5 text-xl']">
+                        {{ buttonLabel }}
+                    </button>
+                    <button v-else @click="reset"
+                        class="bg-indigo-600/30 text-white border border-indigo-400 px-10 py-4 rounded-full hover:bg-indigo-600/50 transition">
+                        回到星空再看一次 ✨
+                    </button>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-white/30 text-xs italic tracking-widest uppercase mb-4">
+            💡 {{ hints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const { nextTick } = Vue;
+                const stages = ref([
+                    { title: '起始：夜空的流星', content: '快看！有一颗小星星划破了夜空。它好像觉得天上太冷了，想要来地球上看看我们呢！' },
+                    { title: '预测：家里的客人', content: '如果这颗‘小星星’真的掉到了地上，你觉得它会像发光的皮球吗？还是会像一颗滚烫的热土豆？' },
+                    { title: '操作：陨落的火花', content: '星星进入大气层啦！因为它跑得太快了，和空气击掌的时候摩擦出了火花。我们要帮它安全降落。' },
+                    { title: '发现：星星的真身', content: '它落地了！看啊，原本闪光的星星变成了一块黑乎乎、亮晶晶的‘陨石’。原来它是一块来自宇宙深处的岩石！' },
+                    { title: '感悟：遥年的恒星', content: '真正的星星（恒星）比地球还要大很多很多，它们离我们太远太远，永远不会掉下来。陨石是它们送来的礼物。' }
+                ]);
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const parentGuides = [
+                    "和孩子一起数数天上有多少流星落下来？问问他：星星掉下来会是暖烘烘的吗？",
+                    "抛出猜想：如果星星落在了咱们家后花园，它会长大吗？还是会缩成一个小石头？",
+                    "让孩子按住屏幕‘保护’星星降落，告诉他空气摩擦会让星星‘着火’，这叫大气层保护伞。",
+                    "快看降落的‘星星’！引导孩子摸摸它（点击模型），看看这块‘宇宙石头’和路边的石头有什么不一样？",
+                    "总结：天上的恒星太伟大了，它们永远不会真正掉下来。掉下来的是星际小使者——陨石。"
+                ];
+
+
+                const buttonLabel = computed(() => ["我要看它飞下", "准备迎接它", "控制降落速度", "去看看它是啥", "记录科学发现"][step.value - 1]);
+                const hints = computed(() => ["点击屏幕触发更多流星", "开启想象力", "长按屏幕模拟空气阻力", "点击旋转陨石查看细节", "恭喜你成为了落星发现家"][step.value - 1]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, controls, starfield, meteor, landingGround, clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x01040a);
+
+                    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.z = 50;
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    // Orbit Controls
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.enabled = false;
+
+                    // 1. Starfield
+                    const sGeo = new THREE.BufferGeometry();
+                    const sPos = new Float32Array(3000 * 3);
+                    for (let i = 0; i < 3000 * 3; i++) sPos[i] = (Math.random() - 0.5) * 500;
+                    sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+                    starfield = new THREE.Points(sGeo, new THREE.PointsMaterial({ size: 1, color: 0xffffff }));
+                    scene.add(starfield);
+
+                    // 2. Meteor (Rock)
+                    const mGeo = new THREE.DodecahedronGeometry(2, 0);
+                    const mMat = new THREE.MeshStandardMaterial({
+                        color: 0x333333, roughness: 1,
+                        emissive: 0xffaa00, emissiveIntensity: 0
+                    });
+                    meteor = new THREE.Mesh(mGeo, mMat);
+                    meteor.position.set(20, 30, -50);
+                    meteor.visible = false;
+                    scene.add(meteor);
+
+                    // 3. Landing Ground
+                    const gGeo = new THREE.CircleGeometry(40, 32);
+                    const gMat = new THREE.MeshStandardMaterial({ color: 0x0a1a0a });
+                    landingGround = new THREE.Mesh(gGeo, gMat);
+                    landingGround.rotation.x = -Math.PI / 2;
+                    landingGround.position.y = -20;
+                    landingGround.visible = false;
+                    scene.add(landingGround);
+
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const l = new THREE.PointLight(0xffffff, 1, 100);
+                    l.position.set(10, 10, 10);
+                    scene.add(l);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    starfield.rotation.y += 0.0005;
+                    meteor.rotation.x += 0.01; meteor.rotation.y += 0.01;
+                    if (meteor.visible && step.value === 3) {
+                        meteor.material.emissiveIntensity = Math.abs(Math.sin(t * 5));
+                    }
+                    if (controls.enabled) controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.value.length);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length });
+                    if (step.value === 2) {
+                        meteor.visible = true;
+                        gsap.from(meteor.scale, { x: 0, y: 0, z: 0, duration: 1 });
+                    } else if (step.value === 3) {
+                        gsap.to(meteor.position, { x: 0, y: 10, z: 0, duration: 3, ease: "power2.in" });
+                    } else if (step.value === 4) {
+                        landingGround.visible = true;
+                        gsap.to(meteor.position, { y: -18, duration: 1.5, ease: "bounce.out" });
+                        gsap.to(camera.position, {
+                            y: -10, z: 15, duration: 2, onComplete: () => {
+                                controls.enabled = true;
+                                controls.target.set(meteor.position.x, meteor.position.y, meteor.position.z);
+                            }
+                        });
+                        gsap.to(meteor.material, { emissiveIntensity: 0, duration: 2 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    nextTick(() => { });
+                    controls.enabled = false;
+                    gsap.to(camera.position, { y: 0, z: 50, duration: 2 });
+                    meteor.visible = false;
+                    meteor.position.set(20, 30, -50);
+                    landingGround.visible = false;
+                };
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.value.length,
+                            currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, stages, parentGuides, nextStage, reset, buttonLabel, hints };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

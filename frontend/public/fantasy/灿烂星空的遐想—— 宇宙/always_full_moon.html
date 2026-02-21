@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月亮要是夜夜都是圆的该多好啊</title>
+    <!-- Standard Elite Dependencies -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Fredoka:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #050a1b;
+            font-family: 'Fredoka', 'ZCOOL XiaoWei', serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-float {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 5vh;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Premium Aesthetic: Moonlit Glassmorphism */
+        .moon-glass {
+            background: rgba(15, 25, 45, 0.4);
+            backdrop-filter: blur(20px) saturate(140%);
+            border: 1px solid rgba(176, 196, 222, 0.2);
+            border-radius: 40px;
+            padding: 30px 45px;
+            max-width: 600px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        .moon-glass.minimized {
+            max-width: 280px;
+            padding: 15px 25px;
+            background: rgba(15, 25, 45, 0.8);
+            transform: translateY(20px);
+        }
+
+        .btn-toggle-view {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.3s;
+        }
+
+        .btn-toggle-view:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .parent-words {
+            background: rgba(176, 196, 222, 0.1);
+            border-left: 4px solid #B0C4DE;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            color: #E6E6FA;
+            text-align: left;
+        }
+
+        .btn-moon {
+            background: linear-gradient(135deg, #B0C4DE 0%, #4682B4 100%);
+            color: white;
+            font-weight: 800;
+            border: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-moon:hover {
+            transform: scale(1.05);
+            filter: contrast(1.1);
+            box-shadow: 0 10px 20px rgba(70, 130, 180, 0.4);
+        }
+
+        .phase-indicator {
+            position: fixed;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .dot.active {
+            background: #E6E6FA;
+            box-shadow: 0 0 10px #B0C4DE;
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-float">
+        <div class="phase-indicator">
+            <div v-for="n in 5" :key="n" class="dot" :class="{ active: step === n }"></div>
+        </div>
+
+        <transition name="fade-up" mode="out-in">
+            <div :key="step" :class="['moon-glass', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <button @click="isMinimized = !isMinimized" class="btn-toggle-view">
+                    {{ isMinimized ? '展开文字' : '隐藏文字' }}
+                </button>
+
+                <div v-if="!isMinimized" class="parent-words">
+                    <strong>👨‍👩‍👧 亲子聊聊天：</strong> {{ parentTips[step-1] }}
+                </div>
+
+                <h1
+                    :class="['text-white font-bold tracking-tight', isMinimized ? 'text-lg mb-2' : 'text-3xl md:text-4xl mb-6']">
+                    {{ stages[step-1].title }}
+                </h1>
+
+                <div v-if="!isMinimized" class="text-xl text-blue-100 leading-relaxed mb-10">
+                    <p v-html="stages[step-1].content"></p>
+                </div>
+
+                <div class="flex justify-center">
+                    <button v-if="step < 5" @click="nextStage"
+                        :class="['btn-moon rounded-full shadow-xl font-800', isMinimized ? 'px-6 py-2 text-sm' : 'px-12 py-5 text-xl']">
+                        {{ buttonText }}
+                    </button>
+                    <button v-else @click="reset"
+                        class="bg-blue-900/30 text-blue-200 border border-blue-400 px-10 py-4 rounded-full">
+                        陪月亮姐姐再跳一支舞 🏮
+                    </button>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-blue-300/40 text-xs italic tracking-widest uppercase mb-4">
+            💡 {{ hints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const stages = ref([
+                    { title: '起始：多变的月亮', content: '月亮姐姐是天上的魔术师。有时候她是细细的眉毛，有时候是弯弯的小船，有时候才是圆圆的玉盘。' },
+                    { title: '预测：恒定的幻想', content: '如果月亮夜夜都是圆圆的，永远不‘变脸’。你觉得世界会变得更简单吗？还是会少了很多梦幻的惊喜？' },
+                    { title: '操作：影子的舞蹈', content: '月亮并没有变小，它只是在围着地球跳舞。我们的太阳公公是‘舞台灯光’，不同的角度照出了不同的影子。' },
+                    { title: '发现：永恒的圆满', content: '看！从太空中看，月亮始终是一个圆圆的球体。只是因为它的背光面藏在了黑暗里，我们才以为它缺了一块。' },
+                    { title: '感悟：缺憾的诗意', content: '月亮的‘缺’是为了下一次圆满。正如我们的生活，有了对比和变化，每一个圆满的夜晚才显得格外珍贵。' }
+                ]);
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const parentTips = [
+                    "指指天上的月亮方向，问问孩子：你觉得月亮姐姐在睡觉吗？她的被子是不是盖歪了？",
+                    "抛出猜想：要是月亮每天都像个大元宵，我们就分不清今天是十五还是初一了，对吗？",
+                    "让孩子手动‘推’一下月亮（滑动操作），告诉他月相其实是太阳照出来的影子戏。",
+                    "快看！换个角度（点击切换），月亮一直是圆圆的大球。我们只看到了它发光的一面。",
+                    "总结环节：告诉孩子自然的变化也是一种美。就像我们的心情，有开心也有小难过，都是完整的自己。"
+                ];
+
+
+                const buttonText = computed(() => ["我要看月亮变脸", "准备开始实验", "操控月亮转动", "揭开影子真相", "收藏这份美"][step.value - 1]);
+                const hints = computed(() => ["观察星星和月亮的对话", "放飞你的想象力", "尝试拖动鼠标旋转场景", "切换多角度观察球体", "愿你内心总有一轮明月"][step.value - 1]);
+
+                // --- Three.js Moon Magic ---
+                let scene, camera, renderer, controls, moon, sunLight, moonPivot, starfield, clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x050a1b);
+
+                    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 40);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    // Orbit Controls
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.enabled = false; // Disabled initially
+
+                    // 1. Moon
+                    const mGeo = new THREE.SphereGeometry(10, 64, 64);
+                    const mMat = new THREE.MeshStandardMaterial({
+                        color: 0xE6E6FA, roughness: 1, metalness: 0
+                    });
+                    moon = new THREE.Mesh(mGeo, mMat);
+
+                    moonPivot = new THREE.Group();
+                    moonPivot.add(moon);
+                    scene.add(moonPivot);
+
+                    // 2. Stars
+                    const starGeo = new THREE.BufferGeometry();
+                    const starPos = new Float32Array(4000 * 3);
+                    for (let i = 0; i < 4000 * 3; i++) starPos[i] = (Math.random() - 0.5) * 1000;
+                    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+                    starfield = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.7 }));
+                    scene.add(starfield);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.15));
+                    sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                    sunLight.position.set(50, 0, 50);
+                    scene.add(sunLight);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    starfield.rotation.y += 0.0002;
+                    if (step.value === 1) {
+                        moonPivot.rotation.y += 0.005;
+                    }
+                    if (controls.enabled) controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.value.length);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length });
+                    if (step.value === 3) {
+                        gsap.to(camera.position, { z: 60, duration: 2 });
+                        gsap.to(moonPivot.rotation, { y: Math.PI / 1.5, duration: 2.5, ease: "slow" });
+                    } else if (step.value === 4) {
+                        gsap.to(camera.position, {
+                            x: 40, y: 10, z: 30, duration: 3, onComplete: () => {
+                                controls.enabled = true;
+                                controls.target.set(0, 0, 0);
+                            }
+                        });
+                        gsap.to(sunLight.position, { x: 50, y: 20, z: 50, duration: 2 });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    nextTick(() => { });
+                    controls.enabled = false;
+                    gsap.to(camera.position, { x: 0, y: 0, z: 40, duration: 2 });
+                    gsap.to(moonPivot.rotation, { y: 0, duration: 2 });
+                };
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.value.length,
+                            currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, stages, parentTips, nextStage, reset, buttonText, hints };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

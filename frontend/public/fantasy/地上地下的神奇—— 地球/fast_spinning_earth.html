@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如果脚下的地球飞快地旋转会怎样</title>
+    <!-- 核心技术栈 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --neon-blue: #00f2fe;
+            --neon-purple: #7000ff;
+            --cyber-bg: #030014;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--cyber-bg);
+            font-family: 'Noto Sans SC', 'ZCOOL XiaoWei', sans-serif;
+            color: white;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 25px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* 赛博科幻信息卡片 */
+        .info-card {
+            background: rgba(3, 0, 20, 0.75);
+            border-left: 5px solid var(--neon-blue);
+            box-shadow: 10px 0 30px rgba(0, 242, 254, 0.2);
+            border-radius: 0 20px 20px 0;
+            padding: 25px 35px;
+            max-width: 450px;
+            backdrop-filter: blur(20px);
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+            align-self: flex-start;
+            pointer-events: auto;
+        }
+
+        .info-card.minimized {
+            transform: translateX(-85%);
+            opacity: 0.6;
+        }
+
+        .toggle-tab {
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--neon-blue);
+            color: #000;
+            width: 25px;
+            height: 80px;
+            border-radius: 0 10px 10px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            writing-mode: vertical-lr;
+            letter-spacing: 2px;
+            font-size: 0.7rem;
+        }
+
+        .parent-guide {
+            background: rgba(112, 0, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #b1a1ff;
+            border: 1px hide solid rgba(112, 0, 255, 0.2);
+        }
+
+        .stage-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, #00f2fe, #7000ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-modern {
+            background: linear-gradient(135deg, #00f2fe 0%, #0072ff 100%);
+            color: #000;
+            font-weight: 800;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0, 242, 254, 0.3);
+        }
+
+        .btn-modern:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0, 242, 254, 0.5);
+        }
+
+        /* 独立控制面板：防止拖动时影响对话框 */
+        .control-panel {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 20px 40px;
+            border-radius: 100px;
+            width: 400px;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speed-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #222;
+            outline: none;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            cursor: grabbing;
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .data-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.15;
+            background-image: radial-gradient(circle at 2px 2px, #00f2fe 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas"></div>
+    <div class="data-overlay"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 顶部信息栏 -->
+        <div class="flex justify-between items-center w-full">
+            <div class="text-[10px] tracking-[0.3em] text-[#00f2fe]/60">地球动力学模拟系统 // 启动正常</div>
+            <div class="flex gap-1">
+                <div v-for="n in 5" :key="n" class="w-10 h-1"
+                    :style="{ background: step >= n ? '#00f2fe' : '#111', opacity: step >= n ? '1' : '0.3' }"></div>
+            </div>
+        </div>
+
+        <!-- 主内容卡片 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" :class="['info-card', { 'minimized': isMinimized }]">
+                <div @click="isMinimized = !isMinimized" class="toggle-tab">
+                    {{ isMinimized ? '点击展开说明' : '隐藏' }}
+                </div>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-guide">
+                        <span class="text-xs font-bold block mb-1">👨‍👩‍👧 家长引导</span>
+                        {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-blue-50/80 leading-relaxed mb-8">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <div class="flex justify-start">
+                        <button v-if="step < 5" @click="nextStage" class="btn-modern">
+                            进入下一阶段
+                        </button>
+                        <button v-else @click="reset" class="bg-gray-800 text-blue-300 px-6 py-2 rounded-full text-sm">
+                            重新开始模拟
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- 独立操作滑块 (仅在第3、4阶段显示) -->
+        <transition name="up">
+            <div v-if="step >= 3 && step < 5" class="control-panel">
+                <div class="flex justify-between w-full text-xs font-bold text-[#00f2fe]">
+                    <span>正常速度 (1倍)</span>
+                    <span>超限旋转 ({{ rotationSpeed }}倍)</span>
+                </div>
+                <input type="range" min="1" max="100" v-model="rotationSpeed" class="speed-slider">
+                <div class="text-[10px] text-white/40 tracking-widest mt-1">⚠️ 警报：检测到赤道离心力异常 ⚠️</div>
+            </div>
+        </transition>
+
+        <!-- 底部装饰 -->
+        <div class="flex justify-end items-end w-full h-8">
+            <div class="text-white/20 text-[10px] italic">💡 {{ hints[step-1] }}</div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const rotationSpeed = ref(1);
+
+                const parentWords = [
+                    "让孩子闭上眼感受一下，问问他：你觉得我们现在是在飞吗？",
+                    "抛出猜想：如果地球转得飞快，我们每天还能睡足午觉吗？",
+                    "引导观察：看赤道是不是鼓起来了？大气层像不像被甩飞的丝绸？",
+                    "问问孩子：如果我们被甩到宇宙中，你最想去哪颗星星探险？",
+                    "总结：恰好的速度给了我们稳定的生活。宇宙的平衡真奇妙。"
+                ];
+
+                const stages = [
+                    { title: '宁静的摇篮', content: '现在，地球正以刚才好的速度旋转。因为非常平稳，我们甚至感觉不到它在动。' },
+                    { title: '疯狂的猜想', content: '如果地球突然加速，像被抽打的陀螺一样飞转？重力会减弱，连时间都会变得混乱。' },
+                    { title: '掌控旋转力', content: '现在，掌控权在你手中！拖动下方的【加速滑块】，看看当地球转速推向极限时会发生什么？' },
+                    { title: '离心的震慑', content: '看哪！因为转得太快，地球的赤道被无情地甩出。大地变扁了，大气层正在脱离我们的星球！' },
+                    { title: '平衡的珍贵', content: '让我们恢复正常。现在你知道了吧？恰如其分的旋转速度，才是保护生命最重要的力量。' }
+                ];
+
+                const hints = [
+                    "观察安静旋转的蓝色家园",
+                    "思考重力消失的后果",
+                    "左右滑动下方滑块查看形变",
+                    "捕捉地球变扁的瞬间",
+                    "模拟完成，掌握重力算法"
+                ];
+
+                // --- Three.js 逻辑 ---
+                let scene, camera, renderer, controls, earth, sun, particles;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 10, 45);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    // 1. 地球模型 (使用更稳健的主题材质)
+                    const geometry = new THREE.SphereGeometry(12, 64, 64);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: 0x156285,
+                        emissive: 0x072534,
+                        specular: 0x00f2fe,
+                        shininess: 100
+                    });
+                    earth = new THREE.Mesh(geometry, material);
+                    scene.add(earth);
+
+                    // 添加经纬线装饰
+                    const wireframe = new THREE.Mesh(
+                        new THREE.SphereGeometry(12.05, 32, 32),
+                        new THREE.MeshBasicMaterial({ color: 0x00f2fe, wireframe: true, transparent: true, opacity: 0.15 })
+                    );
+                    earth.add(wireframe);
+
+                    // 2. 环境粒子 (加速时可见)
+                    const pGeo = new THREE.BufferGeometry();
+                    const pCount = 1200;
+                    const pPos = new Float32Array(pCount * 3);
+                    for (let i = 0; i < pCount * 3; i++) {
+                        const r = 16 + Math.random() * 8;
+                        const a = Math.random() * Math.PI * 2;
+                        pPos[i * 3] = Math.cos(a) * r;
+                        pPos[i * 3 + 1] = (Math.random() - 0.5) * 50;
+                        pPos[i * 3 + 2] = Math.sin(a) * r;
+                    }
+                    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+                    particles = new THREE.Points(pGeo, new THREE.PointsMaterial({
+                        color: 0x7000ff, size: 0.2, transparent: true, opacity: 0
+                    }));
+                    scene.add(particles);
+
+                    // 3. 光照
+                    sun = new THREE.DirectionalLight(0xffffff, 2);
+                    sun.position.set(30, 10, 20);
+                    scene.add(sun);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 0.5;
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const speed = parseFloat(rotationSpeed.value);
+
+                    // 地球旋转逻辑
+                    earth.rotation.y += 0.005 * speed;
+
+                    // 核心交互：物理形变模拟
+                    // 当转速增加，Y轴缩短（压扁），XZ轴伸长（甩圆）
+                    const flatten = 1 + (speed - 1) * 0.004;
+                    earth.scale.set(flatten, 1 / Math.sqrt(flatten), flatten);
+
+                    // 粒子可见度和旋转速度随倍率变化
+                    particles.material.opacity = Math.min((speed - 1) / 40, 0.5);
+                    particles.rotation.y += 0.02 * speed;
+
+                    // 高速下的光影波动效果
+                    if (speed > 40) {
+                        sun.intensity = 2 + Math.sin(Date.now() * 0.005 * speed) * 1.5;
+                    } else {
+                        sun.intensity = 2.5;
+                    }
+
+                    if (controls) controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    step.value++;
+                    if (step.value === 3) {
+                        gsap.to(camera.position, { z: 50, duration: 2 });
+                        controls.autoRotate = false;
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    rotationSpeed.value = 1;
+                    controls.autoRotate = true;
+                    gsap.to(camera.position, { x: 0, y: 10, z: 45, duration: 2 });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, rotationSpeed, stages, parentWords, hints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

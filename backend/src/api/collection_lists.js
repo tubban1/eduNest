@@ -105,7 +105,7 @@ router.use('/:id/access-keys', accessKeysRoutes);
 
 // 批量导入 HTML 内容到列表（仅列表创建者）
 // POST /api/collection_lists/:id/import
-// Body: { items: [ { full_html, title?, description?, tags?, language_code?, content_type?, svg_thumbnail? }, ... ] }
+// Body: { items: [ { full_html, title?, description?, tags?, knowledge_points?, metadata_json?, tech_stack?, language_code?, content_type?, svg_thumbnail? }, ... ] }
 // 若未传 title/description/tags/language_code/content_type，则从 HTML 内 <script type="application/edu-content-meta" id="edu-meta">...</script> 解析
 router.post('/:id/import', authenticateToken, async (req, res) => {
   try {
@@ -146,6 +146,9 @@ router.post('/:id/import', authenticateToken, async (req, res) => {
       }
       const description = (it.description != null ? String(it.description) : (meta?.description != null ? String(meta.description) : '')).trim();
       const tags = Array.isArray(it.tags) ? it.tags : (Array.isArray(meta?.tags) ? meta.tags : []);
+      const knowledge_points = Array.isArray(it.knowledge_points) ? it.knowledge_points : (Array.isArray(meta?.knowledge_points) ? meta.knowledge_points : undefined);
+      const metadata_json = it.metadata_json != null ? it.metadata_json : (meta?.metadata_json != null ? meta.metadata_json : undefined);
+      const tech_stack = it.tech_stack != null ? it.tech_stack : (meta?.tech_stack != null ? meta.tech_stack : undefined);
       const language_code = (it.language_code != null && String(it.language_code).trim()) ? String(it.language_code).trim() : (meta?.language_code && String(meta.language_code).trim()) || 'zh-CN';
       const content_type = (it.content_type != null && String(it.content_type).trim()) ? String(it.content_type).trim() : (meta?.content_type && String(meta.content_type).trim()) || 'vue';
       const svg_thumbnail = (it.svg_thumbnail != null && typeof it.svg_thumbnail === 'string' && it.svg_thumbnail.trim()) ? it.svg_thumbnail.trim() : undefined;
@@ -155,6 +158,9 @@ router.post('/:id/import', authenticateToken, async (req, res) => {
           full_html,
           description: description || '',
           tags,
+          knowledge_points,
+          metadata_json,
+          tech_stack,
           content_type,
           language_code,
           svg_thumbnail,

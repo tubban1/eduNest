@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>要能随时到太空旅行该多好</title>
+    <!-- Standard Elite Dependencies -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Fredoka:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Fredoka', 'ZCOOL XiaoWei', serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 5vh;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Sci-Fi Glassmorphism */
+        .scifi-glass {
+            background: rgba(10, 20, 40, 0.4);
+            backdrop-filter: blur(25px) saturate(200%);
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 40px;
+            padding: 30px 45px;
+            max-width: 600px;
+            box-shadow: 0 0 40px rgba(0, 100, 255, 0.2);
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        .scifi-glass.minimized {
+            max-width: 250px;
+            padding: 15px 25px;
+            background: rgba(10, 20, 40, 0.8);
+        }
+
+        .toggle-btn {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+            background: rgba(0, 150, 255, 0.2);
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            color: #70d1ff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .parent-words {
+            background: rgba(0, 210, 255, 0.1);
+            border-left: 4px solid #00D2FF;
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            color: #E0F2FE;
+            text-align: left;
+        }
+
+        .btn-warp {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+            font-weight: 800;
+            border: none;
+            transition: all 0.4s;
+        }
+
+        .btn-warp:hover {
+            transform: scale(1.05) rotate(1deg);
+            filter: brightness(1.2);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .cockpit-frame {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 40px solid transparent;
+            border-image: linear-gradient(to right, rgba(0, 50, 100, 0.3), transparent 30%, transparent 70%, rgba(0, 50, 100, 0.3)) 1;
+            z-index: 5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+    <div class="cockpit-frame"></div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['scifi-glass', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <button @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '查看仪表' : '收起' }}
+                </button>
+
+                <div v-if="!isMinimized" class="parent-words">
+                    <strong>🛋️ 船长寄语：</strong> {{ parentTips[step-1] }}
+                </div>
+
+                <h1
+                    :class="['text-white font-bold tracking-tight', isMinimized ? 'text-lg mb-2' : 'text-3xl md:text-4xl mb-6']">
+                    {{ stages[step-1].title }}
+                </h1>
+
+                <div v-if="!isMinimized" class="text-xl text-blue-100 leading-relaxed mb-10">
+                    <p v-html="stages[step-1].content"></p>
+                </div>
+
+                <div class="flex justify-center">
+                    <button v-if="step < 5" @click="nextStage"
+                        :class="['btn-warp rounded-full shadow-xl font-bold', isMinimized ? 'px-8 py-2 text-md' : 'px-14 py-5 text-xl']">
+                        {{ buttonLabel }}
+                    </button>
+                    <button v-else @click="reset"
+                        class="bg-blue-900/40 text-blue-200 border border-blue-500 px-10 py-4 rounded-full">
+                        重启曲率引擎 🌀
+                    </button>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-blue-400/50 text-xs italic tracking-widest uppercase mb-4">
+            🚀 {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const { nextTick } = Vue;
+                const stages = ref([
+                    { title: '太空旅行社', content: '登机牌已经开好了！你现在是一艘星际飞船的船长，外面的星辰大海正等着你去征服。' },
+                    { title: '航向的选择', content: '我们该去哪儿呢？是去明亮的金星，还是去有巨大光环的土星？所有行星都准备好登门啦。' },
+                    { title: '全速冲刺！', content: '坐稳了！启动‘超空间跃迁’，让这些漫长的航程在眨眼间完成。' },
+                    { title: '时间与空间的奇迹', content: '哇！我们刚刚跨越了数亿公里。看，土星就在舷窗外面，它的星星裙子真漂亮！' },
+                    { title: '宇宙探险家', content: '旅行的意义在于发现新世界。你的飞船会永远在好奇心的引擎下继续航行。' }
+                ]);
+                const step = ref(1);
+                const isMinimized = ref(false);
+
+                const parentTips = [
+                    "问问孩子：如果我们带上最喜欢的零食去太空，你想第一站去哪？",
+                    "去太阳公公家会太热吗？冥王星会冻感冒吗？每颗行星都有它性格呢。",
+                    "按住按钮，看！星星都变色了，这是飞得太快产生的‘视觉拉伸’哦！",
+                    "引导观察土星：看它那个巨大的滑梯（星环），其实是冰块做的呢。",
+                    "总结：宇宙没有尽头，只要勇敢出发，哪里都是我们的风景。"
+                ];
+
+
+                const buttonLabel = computed(() => ["准备出发", "选择坐标", "启动曲率引擎", "见证奇迹", "完成航行"][step.value - 1]);
+                const techHints = computed(() => ["💡 观察飞船舷窗的视角", "💡 设置星际导航", "💡 准备开启 GSAP 动力视觉特效", "💡 观察土星 3D 渲染细节", "🛰️ 宇宙勋章认证完毕"][step.value - 1]);
+
+                // --- Hyper-Space Three.js Engine ---
+                let scene, camera, renderer, starfield, starMaterials = [];
+                let particleCount = 2000;
+                let clock = new THREE.Clock();
+                let isWarping = false;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.z = 100;
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    // 1. Stars (Long lines for warp effect)
+                    const geo = new THREE.BufferGeometry();
+                    const positions = new Float32Array(particleCount * 3);
+                    for (let i = 0; i < particleCount; i++) {
+                        positions[i * 3] = (Math.random() - 0.5) * 400;
+                        positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 1000;
+                    }
+                    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                    const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 1, transparent: true, opacity: 0.8 });
+                    starfield = new THREE.Points(geo, mat);
+                    scene.add(starfield);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const speed = isWarping ? 15 : 0.5;
+                    const pos = starfield.geometry.attributes.position.array;
+
+                    for (let i = 0; i < particleCount; i++) {
+                        pos[i * 3 + 2] += speed;
+                        if (pos[i * 3 + 2] > 200) {
+                            pos[i * 3 + 2] = -800;
+                        }
+                    }
+                    starfield.geometry.attributes.position.needsUpdate = true;
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.value.length);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length });
+                    if (step.value === 3) {
+                        isWarping = true;
+                        gsap.to(starfield.scale, { x: 0.2, y: 0.2, duration: 2 });
+                        gsap.to(starfield.rotation, { z: Math.PI, duration: 2 });
+                    } else if (step.value === 4) {
+                        isWarping = false;
+                        gsap.to(starfield.scale, { x: 1, y: 1, duration: 1.5 });
+                        gsap.to(camera.position, { z: 50, duration: 2 });
+                        scene.background = new THREE.Color(0x0a1a3a);
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    nextTick(() => { });
+                    isWarping = false;
+                    scene.background = new THREE.Color(0x000);
+                    gsap.to(camera.position, { z: 100, duration: 2 });
+                };
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.value.length,
+                            currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, stages, parentTips, nextStage, reset, buttonLabel, techHints };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

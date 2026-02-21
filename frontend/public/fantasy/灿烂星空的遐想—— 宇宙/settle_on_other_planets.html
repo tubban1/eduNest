@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我想到其他星球去安家</title>
+    <!-- Standard Dependencies -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Fredoka:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Fredoka', 'ZCOOL XiaoWei', serif;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-main {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 5vh;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        /* Alien Glassmorphism */
+        .glass-ui {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 40px;
+            padding: 30px 40px;
+            max-width: 600px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        .glass-ui.minimized {
+            max-width: 280px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .toggle-btn {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #c4b5fd;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .parent-callout {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid #8B5CF6;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            color: #DDD6FE;
+            text-align: left;
+        }
+
+        .btn-stellar {
+            background: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
+            color: white;
+            font-weight: 800;
+            border: none;
+            transition: all 0.4s;
+        }
+
+        .btn-stellar:hover {
+            transform: scale(1.05) translateY(-3px);
+            box-shadow: 0 10px 25px rgba(217, 70, 239, 0.5);
+        }
+
+        .atmosphere-control {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="three-canvas" class="pointer-events-auto"></div>
+
+    <div id="app" class="ui-main">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['glass-ui', 'pointer-events-auto', { 'minimized': isMinimized }]">
+                <button @click="isMinimized = !isMinimized" class="toggle-btn">
+                    {{ isMinimized ? '查看星图' : '收起' }}
+                </button>
+
+                <div v-if="!isMinimized" class="parent-callout">
+                    <strong>🛋️ 探险队长建议：</strong> {{ parentTips[step-1] }}
+                </div>
+
+                <h1
+                    :class="['text-white font-bold tracking-tight', isMinimized ? 'text-lg mb-2' : 'text-3xl md:text-4xl mb-6']">
+                    {{ stages[step-1].title }}
+                </h1>
+
+                <div v-if="!isMinimized" class="text-xl text-violet-100 leading-relaxed mb-6">
+                    <p v-html="stages[step-1].content"></p>
+                </div>
+
+                <!-- Live Interaction: Atmosphere Color -->
+                <div v-if="!isMinimized && step >= 3" class="atmosphere-control">
+                    <span>大气成分</span>
+                    <input type="range" min="0" max="360" v-model="atmHue" class="accent-violet-500">
+                    <span>光谱：{{ atmHue }}°</span>
+                </div>
+
+                <div class="flex justify-center mt-6">
+                    <button v-if="step < 5" @click="nextStage"
+                        :class="['btn-stellar rounded-full shadow-xl font-bold', isMinimized ? 'px-8 py-2 text-md' : 'px-14 py-5 text-xl']">
+                        {{ buttonLabel }}
+                    </button>
+                    <button v-else @click="reset"
+                        class="bg-violet-900/30 text-violet-200 border border-violet-500/50 px-10 py-4 rounded-full">
+                        寻找下一个星球 🌏
+                    </button>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-violet-400/40 text-xs italic tracking-widest uppercase mb-4">
+            🌟 {{ techHints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const { nextTick } = Vue;
+                const stages = ref([
+                    { title: '寻找“地球双胞胎”', content: '在遥远的天鹅座，有一颗行星围着两颗太阳转。在那儿，白天的天空是一块亮紫色的丝绒。' },
+                    { title: '新家的法则', content: '如果我们搬去那儿，草地是深紫色的（为了吸收更多的阳光），山脉甚至能漂浮在半空中。' },
+                    { title: '生态模拟器', content: '让我们来调整星球的‘氧气’和‘光谱’。看！天空正在从粉色变成迷人的青绿色。' },
+                    { title: '生命的多彩形态', content: '看那边！新家的邻居们出来了。它们像一个个发光的气球，在风中用闪烁的光芒互相唱歌。' },
+                    { title: '星际文明的种子', content: '家不只是一个地方，而是一种关怀。无论走到哪颗星星，只要有友爱，就是家园。' }
+                ]);
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const atmHue = ref(280);
+
+                const parentTips = [
+                    "观察天上的两颗大太阳。问孩子：如果有两个影子，你会觉得有趣吗？",
+                    "思考：如果草是紫色的，天是粉色的，那里的动物会是什么颜色？",
+                    "拉动滑块试试。告诉孩子：不同的光照会让星球的大气呈现梦幻的色彩。",
+                    "指出那些悬浮的圆球生命。提醒孩子：生命不一定要像我们这样有手有脚。",
+                    "总结：宇宙中有成千上万个‘二号地球’，我们的新邻居就在其中。"
+                ];
+
+
+                const buttonLabel = computed(() => ["飞向系外行星", "建立科考站", "调整大气层", "打招呼", "完成落户"][step.value - 1]);
+                const techHints = computed(() => ["💡 观察双星系统引力模型", "💡 记录各种植被反射光谱", "💡 实时调整 Fragment Shader 参数", "💡 生物荧光动态感应", "🚀 探险家等级提升"][step.value - 1]);
+
+                // --- Alien Planet Engine ---
+                let scene, camera, renderer, crystalGroup, starfield, atmosphere, clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(`hsl(${atmHue.value}, 50%, 5%)`);
+
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 10, 50);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('three-canvas').appendChild(renderer.domElement);
+
+                    // 1. Dual Suns
+                    const sun1 = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffdd00 }));
+                    sun1.position.set(-20, 30, -50);
+                    scene.add(sun1);
+
+                    const sun2 = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), new THREE.MeshBasicMaterial({ color: 0xff6600 }));
+                    sun2.position.set(10, 25, -60);
+                    scene.add(sun2);
+
+                    // 2. Distant Planets/Stars
+                    const geo = new THREE.BufferGeometry();
+                    const count = 3000;
+                    const pos = new Float32Array(count * 3);
+                    for (let i = 0; i < count * 3; i++) pos[i] = (Math.random() - 0.5) * 800;
+                    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                    starfield = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.8 }));
+                    scene.add(starfield);
+
+                    // 3. Alien Terrain (Floating Crystals)
+                    crystalGroup = new THREE.Group();
+                    for (let i = 0; i < 15; i++) {
+                        const crystal = new THREE.Mesh(
+                            new THREE.OctahedronGeometry(2 + Math.random() * 3),
+                            new THREE.MeshStandardMaterial({ color: 0x8b5cf6, emissive: 0x4c1d95, transparent: true, opacity: 0.8 })
+                        );
+                        crystal.position.set((Math.random() - 0.5) * 60, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 20);
+                        crystalGroup.add(crystal);
+                    }
+                    scene.add(crystalGroup);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+                    const l1 = new THREE.PointLight(0xffdd00, 1);
+                    l1.position.set(-20, 30, -50);
+                    scene.add(l1);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    crystalGroup.rotation.y += 0.005;
+                    crystalGroup.children.forEach((c, idx) => {
+                        c.position.y += Math.sin(t + idx) * 0.02;
+                    });
+                    renderer.render(scene, camera);
+                };
+
+                watch(atmHue, (nv) => {
+                    scene.background = new THREE.Color(`hsl(${nv}, 50%, 5%)`);
+                    crystalGroup.children.forEach(c => {
+                        c.material.color.setHSL(nv / 360, 0.6, 0.5);
+                    });
+                });
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, stages.value.length);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: stages.value.length });
+                    if (step.value === 3) {
+                        gsap.to(camera.position, { z: 30, duration: 2 });
+                    } else if (step.value === 4) {
+                        gsap.to(crystalGroup.scale, { x: 1.2, y: 1.2, z: 1.2, duration: 1.5, repeat: 1, yoyo: true });
+                    }
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    nextTick(() => { });
+                    gsap.to(camera.position, { z: 50, duration: 2 });
+                };
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: stages.value.length,
+                            currentStage: (stages.value[step.value - 1] && stages.value[step.value - 1].title) || ''
+                        };
+                    };
+                }
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, isMinimized, stages, parentTips, nextStage, reset, buttonLabel, techHints, atmHue };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

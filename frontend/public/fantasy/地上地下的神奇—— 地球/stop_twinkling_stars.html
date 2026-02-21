@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顽皮小星星不许再眨眼睛</title>
+    <!-- 核心技术栈 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --night-sky: #020617;
+            --star-gold: #FDE047;
+            --air-blue: #38BDF8;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--night-sky);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: white;
+        }
+
+        /* 星空容器 */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px white;
+        }
+
+        /* 大气层视觉 */
+        .atmosphere-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(56, 189, 248, 0.4), transparent);
+            z-index: 2;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        /* UI Panel */
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+
+        .info-panel {
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid var(--air-blue);
+            backdrop-filter: blur(15px);
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 550px;
+            margin: 0 auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            text-align: left;
+            transition: all 0.4s;
+            pointer-events: auto;
+        }
+
+        .info-panel.minimized {
+            max-width: 280px;
+            padding: 15px 25px;
+            transform: translateY(20px);
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2rem;
+            color: var(--air-blue);
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+        }
+
+        .parent-words {
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--air-blue);
+            font-size: 0.9rem;
+            color: #BAE6FD;
+        }
+
+        .btn-interact {
+            background: var(--air-blue);
+            color: #020617;
+            padding: 12px 40px;
+            border-radius: 15px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-interact:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--air-blue);
+        }
+
+        /* 滑块控制 */
+        .slider-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+        }
+
+        .custom-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--air-blue);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--air-blue);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stars-container" id="starfield">
+        <!-- 由 JS 生成的星星 -->
+    </div>
+
+    <div class="atmosphere-overlay" :style="{ opacity: airDensity }"></div>
+
+    <div id="app" class="ui-root">
+        <transition name="up" mode="out-in">
+            <div :key="step" :class="['info-panel', { 'minimized': isMinimized }]">
+                <div @click="isMinimized = !isMinimized"
+                    class="text-right text-[10px] text-sky-400 cursor-pointer mb-2">
+                    {{ isMinimized ? '【展开学习】' : '【收起】' }}
+                </div>
+
+                <div v-if="!isMinimized">
+                    <div class="parent-words">
+                        <strong>👨‍👩‍👧 睡前科学：</strong> {{ parentWords[step-1] }}
+                    </div>
+
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+
+                    <div class="text-lg text-slate-100 leading-relaxed mb-6">
+                        <p v-html="stages[step-1].content"></p>
+                    </div>
+
+                    <div v-if="step === 3" class="slider-box">
+                        <div class="flex justify-between text-[10px] font-bold text-sky-300 mb-2">
+                            <span>真空 (无大气)</span>
+                            <span>深厚大气层</span>
+                        </div>
+                        <input type="range" class="custom-slider" min="0" max="1" step="0.01" v-model="airDensity">
+                        <div class="text-center text-xs mt-3 text-sky-200">
+                            当前大气密度: {{ (airDensity * 100).toFixed(0) }}%
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mt-6">
+                        <button v-if="step < 5" @click="nextStage" class="btn-interact">
+                            {{ step === 3 ? '查看发现' : '下一步' }}
+                        </button>
+                        <button v-else @click="reset"
+                            class="bg-slate-700 text-sky-300 px-6 py-2 rounded-xl text-xs uppercase tracking-tighter">
+                            重新观测
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <h2 class="text-sky-300 font-bold">{{ stages[step-1].title }}</h2>
+                </div>
+            </div>
+        </transition>
+
+        <div class="mt-8 text-sky-900/40 text-[10px] tracking-widest uppercase text-center mb-2">
+            ✨ {{ hints[step-1] }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMinimized = ref(false);
+                const airDensity = ref(0.8); // 默认大气密度
+
+                const parentWords = [
+                    "让孩子学学眨眼睛。问问他：星星是在跟我们捉迷藏，还是在跳舞？",
+                    "抛出猜想：如果我们飞出地球，去太空中看星星，它们还会眨眼吗？",
+                    "动手时间：拉动滑块把大气层‘抽干’。你看，星星是不是变安静了？",
+                    "引导观察：看那个巨大的哈勃望远镜，它飞到太空中，就是为了躲开这些晃动的空气。",
+                    "总结：大气层保护了我们，也给宇宙加上了一层梦幻的‘滤镜’。"
+                ];
+
+                const stages = [
+                    { title: '爱眨眼的星星', content: '在宁静的夜晚，星星总是在一闪一闪的。它们真的在调皮地眨眼睛吗？' },
+                    { title: '空气的小诡计', content: '其实，星光要穿过厚厚的地球大气层。这里的空气一直在晃动，把星光给“带歪”了。' },
+                    { title: '关闭大气层', content: '现在，你是宇宙飞船的船长！试调节大气层的密度，看看在真空中星星还会眨眼吗？' },
+                    { title: '宁静的光点', content: '哇！当空气消失，星星变成了一个个稳定的明亮圆点。原来是空气让它们变“调皮”了。' },
+                    { title: '滤镜下的世界', content: '大气层像一层保护膜，虽然让目光变得模糊，却给了我们呼吸。科学的眼光能让我们看清真相。' }
+                ];
+
+                const hints = ["观察：夜空中跳动的光点", "预测：星光穿透大气的旅程", "互动：开关大气密度器", "发现：真空中静止的星芒", "总结：透过表象看清自然"];
+
+                // --- 动画逻辑 ---
+                const stars = [];
+
+                const createStars = () => {
+                    const container = document.getElementById('starfield');
+                    for (let i = 0; i < 60; i++) {
+                        const star = document.createElement('div');
+                        star.className = 'star';
+                        star.style.left = Math.random() * 100 + '%';
+                        star.style.top = Math.random() * 100 + '%';
+                        star.style.transform = `scale(${Math.random() * 0.5 + 0.5})`;
+                        container.appendChild(star);
+                        stars.push(star);
+
+                        // 初始闪烁
+                        twinkle(star);
+                    }
+                };
+
+                const twinkle = (star) => {
+                    const duration = Math.random() * 1 + 0.5;
+                    const delay = Math.random() * 2;
+
+                    // 闪烁受 airDensity 影响
+                    gsap.to(star, {
+                        opacity: 0.1,
+                        duration: duration / (airDensity.value + 0.1),
+                        repeat: -1,
+                        yoyo: true,
+                        delay: delay,
+                        ease: "sine.inOut"
+                    });
+
+                    // 位置微抖动
+                    gsap.to(star, {
+                        x: `random(-3, 3) * ${airDensity.value}`,
+                        y: `random(-3, 3) * ${airDensity.value}`,
+                        duration: duration,
+                        repeat: -1,
+                        yoyo: true,
+                        ease: "sine.inOut"
+                    });
+                };
+
+                watch(airDensity, (val) => {
+                    stars.forEach(star => {
+                        gsap.killTweensOf(star);
+                        if (val > 0.05) {
+                            twinkle(star);
+                        } else {
+                            gsap.to(star, { opacity: 1, x: 0, y: 0, duration: 1 });
+                        }
+                    });
+                });
+
+                const nextStage = () => {
+                    step.value++;
+                };
+
+                const reset = () => {
+                    step.value = 1; airDensity.value = 0.8;
+                };
+
+                onMounted(() => {
+                    createStars();
+                });
+
+                return { step, isMinimized, airDensity, parentWords, stages, hints, nextStage, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
