@@ -745,38 +745,34 @@ class ApiClient {
      * 根据 short_id 获取 collection_list
      */
     getByShortId: async (shortId: string) => {
-      // 生成缓存键
-      const cacheKey = `collection_list:short:${shortId}`;
-      
-      // 尝试从缓存获取
+      // 先取 token，再决定缓存键，避免「未登录时缓存的 is_owner:false」在登录后仍被命中
+      const token = await this.getLatestToken();
+      const cacheKey = `collection_list:short:${shortId}${token ? ':auth' : ':anon'}`;
+
       const cached = cache.get<any>(cacheKey);
       if (cached !== null) {
         return cached;
       }
 
-      // 获取认证 token
-      const token = await this.getLatestToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      // 始终传 visitor_id（设备标识），供密钥解锁判定
       if (typeof window !== 'undefined') {
         try {
           const visitorId = getVisitorId();
           if (visitorId) headers['X-Visitor-Id'] = visitorId;
         } catch (_) {}
       }
-      
+
       const response = await fetch(`${this.baseUrl}/collection_lists/by-short-id/${shortId}`, {
         method: 'GET',
         headers,
         credentials: 'include',
       });
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('列表不存在');
@@ -786,16 +782,14 @@ class ApiClient {
         }
         throw new Error('获取列表失败');
       }
-      
+
       const data = await response.json();
       if (!data.success) {
         throw new Error(data.error || '获取列表失败');
       }
-      
+
       const listData = data.data;
-      // 缓存与返回值一致，避免缓存命中时返回 { success, data } 而期望 { list, user_access, ... }
       cache.set(cacheKey, listData, CACHE_CONFIG.COLLECTION_DETAIL);
-      
       return listData;
     },
 
@@ -832,9 +826,9 @@ class ApiClient {
       return res;
     },
 
-    /** 使列表缓存失效（密钥解锁成功后调用） */
+    /** 使列表缓存失效（密钥解锁/设置变更后调用），同时清除 :auth / :anon 两种 key */
     invalidateCache: (shortId: string) => {
-      cache.delete(`collection_list:short:${shortId}`);
+      cache.deletePattern(`collection_list:short:${shortId}*`);
     },
 
     /**

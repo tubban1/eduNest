@@ -23,10 +23,10 @@ interface ListSettings {
 export default function ListSettingsPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t } = useTranslation(['common', 'collections']);
   const { handleSmartBack } = useSmartBack();
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,36 +55,26 @@ export default function ListSettingsPage() {
 
   useEffect(() => {
     const fetchListData = async () => {
-      // 等待 mounted 和 user 都准备好
       if (!mounted) return;
-      
-      // 检查用户是否已登录
-      if (!user?.id) {
-        setError(mounted ? t('collections:list.pleaseLogin') : 'Please login');
-        setLoading(false);
-        return;
-      }
-      
+
       try {
         setLoading(true);
         setError(null);
         const shortId = params.short_id as string;
         const data = await api.collectionList.getByShortId(shortId);
-        
-        // 检查是否为创建者（data 结构应为 { list, user_access, ... }）
+
         if (!data || !data.user_access || data.user_access.is_owner !== true) {
-          const errorMsg = mounted 
+          const errorMsg = mounted
             ? `${t('collections:list.noPermission')}。${t('collections:list.noPermissionDesc')}`
             : 'No permission';
           setError(errorMsg);
-          // 仅在数据结构异常时打日志（如 list/user_access 缺失，可能是缓存格式错误）
           if (data && !data.list) {
             console.error('权限检查失败: API 返回数据缺少 list 字段，请清除缓存后重试', { keys: data ? Object.keys(data) : [] });
           }
           setLoading(false);
           return;
         }
-        
+
         setListData(data);
         setSettings({
           name: data.list.name || '',
@@ -95,7 +85,6 @@ export default function ListSettingsPage() {
           currency: data.list.currency || 'USD',
           language_code: data.list.language_code ?? null,
         });
-        // 加载密钥列表（付费/预览模式时）
         if (data.list && (data.list.pricing_mode === 'premium' || data.list.pricing_mode === 'free_preview')) {
           fetchAccessKeys(data.list.id);
         }
@@ -108,15 +97,22 @@ export default function ListSettingsPage() {
       }
     };
 
-    if (params.short_id && mounted) {
-      if (user?.id) {
-        fetchListData();
-      } else {
-        setLoading(false);
-        setError(mounted ? t('collections:list.pleaseLogin') : 'Please login');
-      }
+    const shortId = params.short_id as string | undefined;
+    if (!shortId || !mounted) return;
+
+    // 等 auth 状态稳定后再请求，避免用「未登录缓存」导致设置页一直显示无权限
+    if (authLoading) {
+      setLoading(true);
+      setError(null);
+      return;
     }
-  }, [params.short_id, user, mounted, t]);
+    if (!user?.id) {
+      setLoading(false);
+      setError(mounted ? t('collections:list.pleaseLogin') : 'Please login');
+      return;
+    }
+    fetchListData();
+  }, [params.short_id, user?.id, mounted, authLoading, t]);
 
   const fetchAccessKeys = async (listId: string) => {
     try {

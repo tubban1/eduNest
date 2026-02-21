@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import ContentActionButtons from '@/components/ui/ContentActionButtons';
@@ -20,10 +20,21 @@ import { getVisitorId } from '@/utils/visitorId';
 export default function FullHTMLContentPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { t } = useTranslation(['common', 'content']);
   const { handleSmartBack } = useSmartBack();
   const [mounted, setMounted] = useState(false);
+
+  const fromList = searchParams.get('from');
+  const backTarget = fromList && fromList.startsWith('/list/') ? fromList : null;
+  const handleBack = () => {
+    if (backTarget) {
+      router.push(backTarget);
+    } else {
+      handleSmartBack();
+    }
+  };
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -368,7 +379,7 @@ export default function FullHTMLContentPage() {
             {error || (mounted ? t('generation.contentNotFound', { ns: 'content', defaultValue: '内容不存在' }) : 'Content not found')}
           </p>
           <button
-            onClick={handleSmartBack}
+            onClick={handleBack}
             className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
           >
             {mounted ? t('back', { defaultValue: '返回' }) : 'Back'}
@@ -494,7 +505,7 @@ export default function FullHTMLContentPage() {
               {mounted ? '该内容没有完整的 HTML 内容' : 'This content does not have complete HTML content'}
             </p>
             <button
-              onClick={handleSmartBack}
+              onClick={handleBack}
               className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
             >
               {mounted ? t('back', { defaultValue: '返回' }) : 'Back'}
@@ -513,9 +524,9 @@ export default function FullHTMLContentPage() {
       <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-sm shadow-sm border-b border-border h-16">
         <div className="max-w-7xl mx-auto h-full px-4">
           <div className="flex items-center h-full gap-3">
-            {/* 返回 */}
+            {/* 返回：若来自列表页则回到该列表，否则走智能返回 */}
             <button
-              onClick={handleSmartBack}
+              onClick={handleBack}
               className="px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
               ← {t('back')}

@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
-import { useSmartBack } from '@/utils/navigation';
 import MathText from '@/components/MathText';
 import { getVisitorId } from '@/utils/visitorId';
 
@@ -64,8 +63,8 @@ export default function CollectionListPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useTranslation(['common', 'collections']);
-  const { handleSmartBack } = useSmartBack();
   const [listData, setListData] = useState<CollectionListData | null>(null);
+  const backToList = () => router.push('/collections');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -136,7 +135,8 @@ export default function CollectionListPage() {
       setShowKeyModal(true);
       return;
     }
-    router.push(`/c/${item.content.short_id}`);
+    const listShortId = listData?.list?.short_id ?? params.short_id;
+    router.push(`/c/${item.content.short_id}?from=${encodeURIComponent(`/list/${listShortId}`)}`);
   };
 
   const handleKeySubmit = async () => {
@@ -193,7 +193,7 @@ export default function CollectionListPage() {
           <p className="text-muted-foreground mb-6">{error || (mounted ? t('collections:list.listNotFound') : 'List not found')}</p>
           <div className="flex gap-3 justify-center">
             <button
-              onClick={handleSmartBack}
+              onClick={backToList}
               className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors"
             >
               {mounted ? t('back') : 'Back'}
@@ -235,7 +235,7 @@ export default function CollectionListPage() {
           <div className="text-destructive text-xl font-semibold mb-2">{mounted ? t('collections:list.loadFailed') : 'Load failed'}</div>
           <p className="text-muted-foreground mb-6">{mounted ? t('collections:list.listNotFound') : 'List not found'}</p>
           <button
-            onClick={handleSmartBack}
+            onClick={backToList}
             className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors"
           >
             {mounted ? t('back') : 'Back'}
@@ -255,7 +255,7 @@ export default function CollectionListPage() {
           {/* 第一行：返回按钮、标题、操作按钮、logo */}
           <div className="flex items-center mb-3">
             <button
-              onClick={handleSmartBack}
+              onClick={backToList}
               className="px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors mr-3"
             >
               ← {mounted ? t('back') : 'Back'}
