@@ -258,8 +258,8 @@ export default function OnboardRolePage() {
                 </label>
                 <input
                   type="number"
-                  min={currentYear - 25}
-                  max={currentYear - 3}
+                  min={currentYear - 120}
+                  max={currentYear}
                   value={birthYear}
                   onChange={(e) =>
                     setBirthYear(
