@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>李逍遥 & 赵灵儿 - 表情</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+      background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      padding: 32px;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    p { opacity: 0.85; margin-bottom: 16px; font-size: 0.95rem; }
+    .expression-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+    .expression-buttons button {
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: #e5e7eb;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .expression-buttons button:hover {
+      background: rgba(255,255,255,0.18);
+      transform: translateY(-1px);
+    }
+    .expression-buttons button.active {
+      background: rgba(99, 102, 241, 0.5);
+      border-color: rgba(129, 140, 248, 0.6);
+    }
+    .faces {
+      display: flex;
+      gap: 48px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .face-card {
+      background: rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 24px;
+      border: 1px solid rgba(255,255,255,0.12);
+      text-align: center;
+    }
+    .face-card h2 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+    canvas {
+      display: block;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+  <h1>李逍遥 & 赵灵儿</h1>
+  <p>点击下方表情，两人同步变化</p>
+  <div class="expression-buttons">
+    <button type="button" data-expr="happy">开心</button>
+    <button type="button" data-expr="sad">难过</button>
+    <button type="button" data-expr="angry">生气</button>
+    <button type="button" data-expr="surprised">惊讶</button>
+    <button type="button" data-expr="neutral">平静</button>
+  </div>
+  <div class="faces">
+    <div class="face-card">
+      <h2>李逍遥</h2>
+      <canvas id="face1" width="280" height="320"></canvas>
+    </div>
+    <div class="face-card">
+      <h2>赵灵儿</h2>
+      <canvas id="face2" width="280" height="320"></canvas>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const PI = Math.PI;
+
+      // 表情参数：browY 眉高低, browCurve 眉弯度, eyeScale 眼睛开合, mouthCurve 嘴弯度, mouthOpen 嘴张合(惊讶)
+      const EXPRESSIONS = {
+        happy:   { browY: -5,  browCurve: -8,  eyeScale: 0.95, mouthCurve: 1,   mouthOpen: 0   },
+        sad:     { browY: 4,   browCurve: 10,  eyeScale: 0.88, mouthCurve: -0.9, mouthOpen: 0   },
+        angry:   { browY: 10,  browCurve: -6,  eyeScale: 0.6,  mouthCurve: -0.4, mouthOpen: 0   },
+        surprised: { browY: -14, browCurve: -12, eyeScale: 1.35, mouthCurve: 0,   mouthOpen: 1   },
+        neutral: { browY: 0,   browCurve: -3,  eyeScale: 1,    mouthCurve: 0,   mouthOpen: 0   }
+      };
+
+      function lerp(a, b, t) {
+        if (typeof a === 'number') return a + (b - a) * t;
+        const r = {};
+        for (const k of Object.keys(a)) r[k] = lerp(a[k], b[k], t);
+        return r;
+      }
+      function easeOut(t) { return 1 - (1 - t) * (1 - t); }
+
+      function drawEye(ctx, ex, ey, ew, eh, pupilColor, irisColor, doubleEyelid, eyeScale) {
+        ctx.save();
+        ctx.translate(ex, ey);
+        const h = Math.max(2, eh * (eyeScale || 1));
+        const irisR = Math.min(ew * 0.5, h * 0.55);
+        const irisGrad = ctx.createRadialGradient(-3, -3, 0, 0, 0, irisR);
+        irisGrad.addColorStop(0, irisColor);
+        irisGrad.addColorStop(0.6, irisColor);
+        irisGrad.addColorStop(1, 'rgba(80,60,40,0.9)');
+        ctx.fillStyle = irisGrad;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, ew / 2, h / 2, 0, 0, PI * 2);
+        ctx.fill();
+        ctx.fillStyle = pupilColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, irisR * 0.4, 0, PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.beginPath();
+        ctx.arc(irisR * 0.35, -irisR * 0.2, irisR * 0.2, 0, PI * 2);
+        ctx.fill();
+        if (doubleEyelid && eyeScale >= 0.9) {
+          ctx.strokeStyle = 'rgba(90,65,50,0.5)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.ellipse(0, -h / 2 - 1, ew / 2 + 2, 3, 0, 0, PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawMouth(ctx, cx, cy, expr, face1) {
+        const curve = expr.mouthCurve ?? 0;
+        const open = expr.mouthOpen ?? 0;
+        const lipTop = face1 ? 72 : 78;
+        const lipBottom = face1 ? 82 : 86;
+        const w = face1 ? 22 : 20;
+
+        if (open > 0.5) {
+          // 惊讶：O 形嘴
+          const r = 12 + open * 8;
+          const lipGrad = ctx.createLinearGradient(cx, cy + 70, cx, cy + 95);
+          lipGrad.addColorStop(0, 'rgba(160,95,90,0.5)');
+          lipGrad.addColorStop(1, 'rgba(120,75,70,0.45)');
+          ctx.fillStyle = lipGrad;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy + 82, r * 0.9, r, 0, 0, PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(110,70,65,0.6)';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          return;
+        }
+
+        const y0 = cy + lipTop;
+        const ctrlY = cy + (curve > 0 ? lipTop + 16 : lipTop + 10) + curve * 8;
+        const y1 = cy + (curve > 0 ? lipBottom + 4 : lipBottom);
+        const lipGrad = ctx.createLinearGradient(cx, cy + 65, cx, cy + 92);
+        lipGrad.addColorStop(0, face1 ? 'rgba(180,100,90,0.55)' : 'rgba(150,95,90,0.45)');
+        lipGrad.addColorStop(1, face1 ? 'rgba(140,75,70,0.45)' : 'rgba(120,80,75,0.4)');
+        ctx.fillStyle = lipGrad;
+        ctx.beginPath();
+        ctx.moveTo(cx - w, y0);
+        ctx.quadraticCurveTo(cx, ctrlY, cx + w, y0);
+        ctx.quadraticCurveTo(cx, y1, cx - w, y0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = face1 ? 'rgba(120,70,60,0.6)' : 'rgba(100,80,75,0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      function drawFace1(ctx, expr) {
+        const w = ctx.canvas.width, h = ctx.canvas.height;
+        const cx = w / 2, cy = h / 2;
+        const headW = 170, headH = 218;
+        const faceW = 152, faceH = 192;
+        const eyeY = cy - 22, eyeSpacing = 40, eyeW = 28, eyeH = 14;
+        const browY = expr.browY ?? 0, browCurve = expr.browCurve ?? -3;
+        const eyeScale = expr.eyeScale ?? 1;
+
+        // 李逍遥：整个头 —— 1) 头型（大椭圆肤色）
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, headW / 2, headH / 2, 0, 0, PI * 2);
+        ctx.closePath();
+        const headGrad = ctx.createRadialGradient(cx - 15, cy - 35, 0, cx, cy, headW * 0.55);
+        headGrad.addColorStop(0, '#e8c4a8');
+        headGrad.addColorStop(0.5, '#d4a574');
+        headGrad.addColorStop(1, '#b8956e');
+        ctx.fillStyle = headGrad;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(120,90,75,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // 2) 头发：头顶 + 两侧鬓发
+        ctx.fillStyle = '#1a1510';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 82, 85, 44, 0, 0, PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx - 80, cy + 8, 20, 62, 0, 0, PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + 80, cy + 8, 20, 62, 0, 0, PI * 2);
+        ctx.fill();
+
+        // 3) 脸部（正面肤色，盖在头发中间）
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, faceW / 2, faceH / 2, 0, 0, PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        const skinGrad = ctx.createRadialGradient(cx - 20, cy - 30, 0, cx, cy, faceW * 0.6);
+        skinGrad.addColorStop(0, '#e8c4a8');
+        skinGrad.addColorStop(0.5, '#d4a574');
+        skinGrad.addColorStop(1, '#b8956e');
+        ctx.fillStyle = skinGrad;
+        ctx.fillRect(0, 0, w, h);
+        const highlight = ctx.createRadialGradient(cx - 15, cy - 50, 0, cx, cy - 20, 80);
+        highlight.addColorStop(0, 'rgba(255,230,210,0.4)');
+        highlight.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = highlight;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+        ctx.strokeStyle = 'rgba(140,100,80,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, faceW / 2, faceH / 2, 0, 0, PI * 2);
+        ctx.stroke();
+
+        // 李逍遥：额头发带
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, faceW / 2, faceH / 2, 0, 0, PI * 2);
+        ctx.clip();
+        const bandY = cy - 88, bandH = 22;
+        const bandGrad = ctx.createLinearGradient(cx, bandY, cx, bandY + bandH);
+        bandGrad.addColorStop(0, '#2c3e50');
+        bandGrad.addColorStop(0.5, '#34495e');
+        bandGrad.addColorStop(1, '#2c3e50');
+        ctx.fillStyle = bandGrad;
+        ctx.fillRect(cx - 80, bandY, 160, bandH);
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx - 80, bandY, 160, bandH);
+        ctx.restore();
+
+        drawEye(ctx, cx - eyeSpacing, eyeY, eyeW, eyeH, '#3d2817', '#6b4423', true, eyeScale);
+        drawEye(ctx, cx + eyeSpacing, eyeY, eyeW, eyeH, '#3d2817', '#6b4423', true, eyeScale);
+
+        const by = eyeY - 28 + browY, ctrl = eyeY - 35 + browCurve;
+        ctx.strokeStyle = 'rgba(60,40,25,0.9)';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(cx - eyeSpacing - 22, by);
+        ctx.quadraticCurveTo(cx - eyeSpacing, ctrl, cx - eyeSpacing + 22, by);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx + eyeSpacing - 22, by);
+        ctx.quadraticCurveTo(cx + eyeSpacing, ctrl, cx + eyeSpacing + 22, by);
+        ctx.stroke();
+
+        const noseGrad = ctx.createLinearGradient(cx - 15, cy, cx + 15, cy + 40);
+        noseGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        noseGrad.addColorStop(0.5, 'rgba(100,70,50,0.12)');
+        noseGrad.addColorStop(1, 'rgba(80,55,40,0.08)');
+        ctx.fillStyle = noseGrad;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + 15);
+        ctx.lineTo(cx - 8, cy + 55);
+        ctx.lineTo(cx, cy + 50);
+        ctx.lineTo(cx + 8, cy + 55);
+        ctx.closePath();
+        ctx.fill();
+
+        drawMouth(ctx, cx, cy, expr, true);
+      }
+
+      function drawFace2(ctx, expr) {
+        const w = ctx.canvas.width, h = ctx.canvas.height;
+        const cx = w / 2, cy = h / 2;
+        // 赵灵儿整体更秀气一点：头略窄、脸更椭圆
+        const headW = 158, headH = 216;
+        const faceW = 136, faceH = 190;
+        const eyeY = cy - 24, eyeSpacing = 34, eyeW = 26, eyeH = 15;
+        const browY = expr.browY ?? 0, browCurve = expr.browCurve ?? -5;
+        const eyeScale = expr.eyeScale ?? 1;
+
+        // 1) 头型（柔和肤色）
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, headW / 2, headH / 2, 0, 0, PI * 2);
+        ctx.closePath();
+        const headGrad = ctx.createRadialGradient(cx + 10, cy - 32, 0, cx, cy, headW * 0.55);
+        headGrad.addColorStop(0, '#f8dfcf');
+        headGrad.addColorStop(0.5, '#f0cfbd');
+        headGrad.addColorStop(1, '#d5b19a');
+        ctx.fillStyle = headGrad;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(150,120,105,0.32)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // 2) 长发：头顶 + 两侧长发 + 刘海
+        ctx.fillStyle = '#111013';
+        // 头顶发量略窄一些，留出更多额头
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 82, 70, 36, 0, 0, PI * 2);
+        ctx.fill();
+        // 两侧长发顺着脸垂下
+        ctx.beginPath();
+        ctx.ellipse(cx - 72, cy + 18, 18, 76, 0, 0, PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + 72, cy + 18, 18, 76, 0, 0, PI * 2);
+        ctx.fill();
+        // 刘海：中间一小段，微微弧形
+        ctx.beginPath();
+        ctx.moveTo(cx - 42, cy - 58);
+        ctx.quadraticCurveTo(cx, cy - 48, cx + 42, cy - 58);
+        ctx.quadraticCurveTo(cx, cy - 62, cx - 42, cy - 58);
+        ctx.closePath();
+        ctx.fill();
+
+        // 小发饰：右侧一个淡紫色圆形
+        ctx.fillStyle = '#e9b8ff';
+        ctx.beginPath();
+        ctx.arc(cx + 58, cy - 50, 7, 0, PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fdf2ff';
+        ctx.beginPath();
+        ctx.arc(cx + 58, cy - 50, 3, 0, PI * 2);
+        ctx.fill();
+
+        // 3) 脸部（正面，偏白肤色）
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, faceW / 2, faceH / 2, 0, 0, PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        const skinGrad = ctx.createRadialGradient(cx - 8, cy - 26, 0, cx, cy, faceW * 0.6);
+        skinGrad.addColorStop(0, '#fbe4d6');
+        skinGrad.addColorStop(0.5, '#f2d0c0');
+        skinGrad.addColorStop(1, '#d8b29c');
+        ctx.fillStyle = skinGrad;
+        ctx.fillRect(0, 0, w, h);
+        const highlight = ctx.createRadialGradient(cx - 10, cy - 46, 0, cx, cy - 16, 76);
+        highlight.addColorStop(0, 'rgba(255,245,238,0.45)');
+        highlight.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = highlight;
+        ctx.fillRect(0, 0, w, h);
+
+        // 腮红
+        ctx.fillStyle = 'rgba(255,160,170,0.18)';
+        ctx.beginPath();
+        ctx.ellipse(cx - 30, cy + 16, 20, 14, 0, 0, PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + 30, cy + 16, 20, 14, 0, 0, PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+        ctx.strokeStyle = 'rgba(150,120,105,0.3)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, faceW / 2, faceH / 2, 0, 0, PI * 2);
+        ctx.stroke();
+
+        // 4) 眼睛：更大、更柔和
+        drawEye(ctx, cx - eyeSpacing, eyeY, eyeW, eyeH, '#2e1d15', '#7a4b30', true, eyeScale * 1.1);
+        drawEye(ctx, cx + eyeSpacing, eyeY, eyeW, eyeH, '#2e1d15', '#7a4b30', true, eyeScale * 1.1);
+
+        // 5) 眉毛：细一点、更弯
+        const by = eyeY - 28 + browY;
+        const ctrl = eyeY - 38 + browCurve;
+        ctx.strokeStyle = 'rgba(80,55,45,0.9)';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(cx - eyeSpacing - 18, by);
+        ctx.quadraticCurveTo(cx - eyeSpacing, ctrl, cx - eyeSpacing + 18, by);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx + eyeSpacing - 18, by);
+        ctx.quadraticCurveTo(cx + eyeSpacing, ctrl, cx + eyeSpacing + 18, by);
+        ctx.stroke();
+
+        // 6) 鼻子：更短、更柔和
+        const noseGrad = ctx.createLinearGradient(cx - 10, cy + 4, cx + 10, cy + 42);
+        noseGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        noseGrad.addColorStop(0.5, 'rgba(100,75,60,0.09)');
+        noseGrad.addColorStop(1, 'rgba(80,60,50,0.05)');
+        ctx.fillStyle = noseGrad;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + 14);
+        ctx.lineTo(cx - 5, cy + 42);
+        ctx.lineTo(cx, cy + 38);
+        ctx.lineTo(cx + 5, cy + 42);
+        ctx.closePath();
+        ctx.fill();
+
+        // 7) 嘴：用「face1」样式，让嘴型更柔和
+        drawMouth(ctx, cx, cy, expr, true);
+      }
+
+      const c1 = document.getElementById('face1');
+      const c2 = document.getElementById('face2');
+      const ctx1 = c1 && c1.getContext('2d');
+      const ctx2 = c2 && c2.getContext('2d');
+
+      let currentExpr = { ...EXPRESSIONS.neutral };
+      let targetExpr = EXPRESSIONS.neutral;
+      let animT = 1;
+      let targetName = 'neutral';
+
+      function render() {
+        const e = animT >= 1 ? targetExpr : lerp(currentExpr, targetExpr, easeOut(animT));
+        if (ctx1) drawFace1(ctx1, e);
+        if (ctx2) drawFace2(ctx2, e);
+      }
+
+      function runAnimation() {
+        animT = 0;
+        function tick() {
+          animT += 0.04;
+          if (animT > 1) {
+            animT = 1;
+            currentExpr = { ...targetExpr };
+          }
+          render();
+          if (animT < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      document.querySelectorAll('.expression-buttons button').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const name = this.getAttribute('data-expr');
+          if (!EXPRESSIONS[name]) return;
+          const fromExpr = animT >= 1 ? { ...targetExpr } : lerp(currentExpr, targetExpr, easeOut(animT));
+          targetName = name;
+          targetExpr = EXPRESSIONS[name];
+          currentExpr = fromExpr;
+          document.querySelectorAll('.expression-buttons button').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          runAnimation();
+        });
+      });
+
+      if (ctx1 && ctx2) {
+        document.querySelector('.expression-buttons button[data-expr="neutral"]').classList.add('active');
+        render();
+      }
+    })();
+  </script>
+</body>
+</html>

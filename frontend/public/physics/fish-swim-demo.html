@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鱼的游动骨骼演示</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+      background: radial-gradient(circle at top, #022c22 0%, #020617 55%, #000 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #e5e7eb;
+    }
+    h1 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 6px; }
+    p { font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px; }
+    #canvas {
+      background: linear-gradient(to bottom, #0f766e, #0f172a 60%, #020617 100%);
+      border-radius: 12px;
+      border: 1px solid rgba(34,197,94,0.4);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>鱼的游动 - 跨段身体波动</h1>
+  <p>用多节骨骼沿身体主轴做相位渐变的波动，展示鱼在水中的 S 形游动。</p>
+  <canvas id="canvas" width="900" height="420"></canvas>
+
+  <script src="KinecticsCore.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      let t0 = performance.now();
+
+      const segments = 10; // 身体分成多节
+      const length = 260;
+      const baseY = H / 2 + 20;
+      const baseX = W / 3;
+
+      function drawBackground() {
+        ctx.clearRect(0, 0, W, H);
+        // 水泡
+        ctx.fillStyle = 'rgba(191,219,254,0.2)';
+        for (let i = 0; i < 25; i++) {
+          const x = (i * 50 + (performance.now() * 0.03) % (W + 50)) - 50;
+          const y = H - (i * 20 % H);
+          ctx.beginPath();
+          ctx.arc(x, y, 3 + (i % 3), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function drawFish(time) {
+        const pts = [];
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          const x = baseX + t * length;
+          // 波动相位随 i 渐变，形成 S 形
+          const wave = Math.sin(time * 4 - t * 4 * Math.PI) * (1 - t) * 22;
+          const y = baseY + wave;
+          pts.push({ x, y });
+        }
+
+        ctx.save();
+
+        // 身体厚度随 t 变化：头部厚，尾部细
+        ctx.fillStyle = '#38bdf8';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+
+        // 上轮廓
+        for (let i = 0; i <= segments; i++) {
+          const p = pts[i];
+          const t = i / segments;
+          const width = 22 * (1 - t * 0.7);
+          const ny = -1; // 上侧
+          const offsetY = ny * width;
+          if (i === 0) ctx.moveTo(p.x, p.y + offsetY);
+          else ctx.lineTo(p.x, p.y + offsetY);
+        }
+        // 下轮廓（反向）
+        for (let i = segments; i >= 0; i--) {
+          const p = pts[i];
+          const t = i / segments;
+          const width = 22 * (1 - t * 0.7);
+          const ny = 1;
+          const offsetY = ny * width;
+          ctx.lineTo(p.x, p.y + offsetY);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 鱼头高光
+        ctx.fillStyle = '#e0f2fe';
+        ctx.beginPath();
+        ctx.ellipse(pts[0].x + 12, pts[0].y - 4, 18, 10, -0.1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 眼睛
+        ctx.fillStyle = '#020617';
+        ctx.beginPath();
+        ctx.arc(pts[0].x + 20, pts[0].y - 4, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 尾鳍（用最后两节的方向）
+        const tail = pts[segments];
+        const prev = pts[segments - 1];
+        const dx = tail.x - prev.x;
+        const dy = tail.y - prev.y;
+        const ang = Math.atan2(dy, dx);
+        const finLen = 26;
+
+        ctx.translate(tail.x, tail.y);
+        ctx.rotate(ang);
+
+        ctx.fillStyle = '#0ea5e9';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-finLen, -14);
+        ctx.lineTo(-finLen + 4, 0);
+        ctx.lineTo(-finLen, 14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+
+        // 背鳍
+        ctx.fillStyle = '#0ea5e9';
+        const mid = pts[Math.floor(segments * 0.4)];
+        ctx.beginPath();
+        ctx.moveTo(mid.x, mid.y - 18);
+        ctx.lineTo(mid.x + 20, mid.y - 10);
+        ctx.lineTo(mid.x, mid.y - 4);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function loop(now) {
+        const t = (now - t0) / 1000;
+        drawBackground();
+        drawFish(t);
+        requestAnimationFrame(loop);
+      }
+
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
+

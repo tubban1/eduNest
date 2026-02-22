@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spine + Matter.js 人物走路</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+      background: #1e293b;
+      min-height: 100vh;
+      padding: 20px;
+      color: #e5e7eb;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 6px; }
+    .desc { font-size: 0.9rem; opacity: 0.9; margin-bottom: 12px; max-width: 640px; }
+    .wrap { position: relative; width: 640px; height: 400px; margin-bottom: 16px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    #matterCanvas { position: absolute; left: 0; top: 0; width: 640px; height: 400px; display: block; background: #334155; }
+    #spineCanvas { position: absolute; left: 0; top: 0; width: 640px; height: 400px; display: block; pointer-events: none; background: transparent; }
+    .loadRow { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+    .loadRow label { font-size: 0.85rem; }
+    .loadRow input[type="file"] { font-size: 0.8rem; }
+    .hint { font-size: 0.8rem; color: #94a3b8; margin-top: 8px; }
+    a { color: #7dd3fc; }
+  </style>
+</head>
+<body>
+  <h1>Spine + Matter.js 人物走路</h1>
+  <p class="desc">下方用 Matter.js 做地面和角色刚体（左右移动），上方用 Spine 播放走路动画并跟随刚体位置。请从 Spine 编辑器导出包含 walk 动画的骨架（JSON + Atlas + PNG），选择文件后加载。</p>
+  <div class="loadRow">
+    <label>JSON：</label>
+    <input type="file" id="fJson" accept=".json" />
+    <label>Atlas：</label>
+    <input type="file" id="fAtlas" accept=".atlas,.txt" />
+    <label>PNG：</label>
+    <input type="file" id="fPng" accept="image/png" />
+    <button type="button" id="btnLoad">加载并播放 walk</button>
+  </div>
+  <p class="hint">可从 <a href="https://esotericsoftware.com/spine-examples" target="_blank" rel="noopener">Spine 示例</a> 下载 spineboy 等，在 Spine 编辑器中导出 JSON + Atlas + PNG（需与运行时版本一致，如 4.2）。</p>
+  <div class="wrap">
+    <canvas id="matterCanvas" width="640" height="400"></canvas>
+    <canvas id="spineCanvas" width="640" height="400"></canvas>
+  </div>
+  <p class="hint">← → 或 A D 移动角色。Spine 骨骼会跟随 Matter 刚体位置播放走路动画。</p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "@esotericsoftware/spine-core": "https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-core@4.2.102/dist/index.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as Spine from 'https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-webgl@4.2.102/dist/index.js';
+
+    const matterCanvas = document.getElementById('matterCanvas');
+    const spineCanvas = document.getElementById('spineCanvas');
+    const W = 640, H = 400;
+    const groundY = H - 50;
+    const { Engine, Render, Runner, Bodies, World, Events } = Matter;
+
+    const engine = Engine.create({ gravity: { x: 0, y: 0 } });
+    const render = Render.create({
+      canvas: matterCanvas,
+      engine,
+      options: { width: W, height: H, wireframes: false, background: '#334155' }
+    });
+    const ground = Bodies.rectangle(W/2, groundY + 25, W, 50, { isStatic: true, render: { fillStyle: '#475569' } });
+    const character = Bodies.rectangle(120, groundY - 40, 50, 80, { restitution: 0, friction: 0.3, render: { fillStyle: 'rgba(100,116,139,0.6)' } });
+    World.add(engine.world, [ground, character]);
+    Runner.run(engine);
+    Render.run(render);
+
+    const keys = {};
+    document.addEventListener('keydown', (e) => { keys[e.code] = true; });
+    document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+    Events.on(engine, 'beforeUpdate', () => {
+      if (keys['ArrowLeft'] || keys['KeyA']) Matter.Body.setPosition(character, { x: Math.max(40, character.position.x - 4), y: character.position.y });
+      if (keys['ArrowRight'] || keys['KeyD']) Matter.Body.setPosition(character, { x: Math.min(W - 40, character.position.x + 4), y: character.position.y });
+    });
+
+    let sceneRenderer = null;
+    let skeleton = null;
+    let state = null;
+    let lastTime = 0;
+
+    function drawSpine(time) {
+      if (!skeleton || !sceneRenderer) return;
+      const delta = (time - lastTime) / 1000;
+      lastTime = time;
+      state.update(delta);
+      state.apply(skeleton);
+      skeleton.updateWorldTransform(Spine.Physics.none);
+      // Spine OrthoCamera 以画布中心为原点、y 向上，投影范围 (-W/2,W/2) x (-H/2,H/2)
+      skeleton.x = character.position.x - W / 2;
+      skeleton.y = -(character.position.y - H / 2);
+      const gl = spineCanvas.getContext('webgl2') || spineCanvas.getContext('webgl');
+      gl.viewport(0, 0, spineCanvas.width, spineCanvas.height);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      sceneRenderer.begin();
+      sceneRenderer.drawSkeleton(skeleton);
+      sceneRenderer.end();
+    }
+
+    document.getElementById('btnLoad').addEventListener('click', async () => {
+      const fJson = document.getElementById('fJson').files[0];
+      const fAtlas = document.getElementById('fAtlas').files[0];
+      const fPng = document.getElementById('fPng').files[0];
+      if (!fJson || !fAtlas || !fPng) {
+        alert('请同时选择 JSON、Atlas、PNG 三个文件');
+        return;
+      }
+      try {
+        const atlasText = await fAtlas.text();
+        const jsonText = await fJson.text();
+        const img = await createImageBitmap(fPng);
+        const gl = spineCanvas.getContext('webgl2') || spineCanvas.getContext('webgl');
+        if (!gl) throw new Error('WebGL 不可用');
+        const glTexture = new Spine.GLTexture(gl, img);
+        const atlas = new Spine.TextureAtlas(atlasText);
+        if (atlas.pages.length > 0) atlas.pages[0].setTexture(glTexture);
+        const atlasLoader = new Spine.AtlasAttachmentLoader(atlas);
+        const json = new Spine.SkeletonJson(atlasLoader);
+        json.scale = 1;
+        const skeletonData = json.readSkeletonData(jsonText);
+        skeleton = new Spine.Skeleton(skeletonData);
+        skeleton.setToSetupPose();
+        state = new Spine.AnimationState(new Spine.AnimationStateData(skeletonData));
+        const walk = state.setAnimation(0, 'walk', true);
+        if (!walk) state.setAnimation(0, 'run', true);
+        if (!sceneRenderer) sceneRenderer = new Spine.SceneRenderer(spineCanvas, gl, false);
+        lastTime = performance.now();
+        function loop(t) {
+          drawSpine(t);
+          requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      } catch (e) {
+        console.error(e);
+        alert('加载失败：' + (e.message || e));
+      }
+    });
+  </script>
+</body>
+</html>

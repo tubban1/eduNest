@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import Sidebar, { SidebarWidthContext, SIDEBAR_COLLAPSED_KEY } from '@/components/Sidebar';
 import MobileHeader from '@/components/MobileHeader';
@@ -115,7 +116,7 @@ function buildNewConversationIframeHtml(t: (key: string) => string, role: LearnR
 }
 
 export default function LearnPage() {
-  const { t } = useTranslation(['aiGuide', 'onboard', 'content', 'common']);
+  const { t } = useTranslation(['aiGuide', 'onboard', 'content', 'common', 'auth']);
   const { user, loading: authLoading } = useAuth();
   const learnRole: LearnRole = ['student', 'parent', 'teacher'].includes(user?.role || '') ? (user!.role as LearnRole) : 'student';
   const [shortId, setShortId] = useState<string | null>(null);
@@ -198,7 +199,7 @@ export default function LearnPage() {
   }, []);
 
   const LAYOUT_KEY = 'edu_learn_layout';
-  const LAYOUT_HORIZONTAL_MIN_WIDTH = 768; // 窄屏（含手机竖屏）禁止左右排列，避免顶部按钮无法点击
+  const LAYOUT_HORIZONTAL_MIN_WIDTH = 768; // 窄屏禁止左右排列；≥768 时允许左右排列，对话框 z-20 保证顶部按钮可点
   const [layoutVertical, setLayoutVertical] = useState(true);
   const [isNarrowScreen, setIsNarrowScreen] = useState(true);
   useEffect(() => {
@@ -1041,7 +1042,7 @@ export default function LearnPage() {
             >
             <div
               ref={iframeBoxRef}
-              className={`flex flex-col min-h-0 rounded-xl border border-white/15 bg-black/10 overflow-hidden relative ${!effectiveLayoutVertical ? 'flex-none min-w-0 shrink-0' : ''}`}
+              className={`flex flex-col min-h-0 rounded-xl border border-white/15 bg-black/10 overflow-hidden relative ${!effectiveLayoutVertical ? 'flex-none min-w-0 shrink-0 z-10' : ''}`}
               style={
                 effectiveLayoutVertical
                   ? ({ ['--iframe-h' as any]: `${iframeHeight}px` } as React.CSSProperties)
@@ -1111,8 +1112,17 @@ export default function LearnPage() {
               }`} />
             </div>
             )}
-            <div className={`rounded-xl border border-white/15 bg-slate-950/95 backdrop-blur-sm flex flex-col overflow-hidden ${effectiveLayoutVertical ? 'h-[400px] flex-none' : 'flex-1 min-w-0 min-h-0'}`}>
-              <div className="flex items-center justify-end gap-3 px-3 py-2 border-b border-white/10 shrink-0">
+            <div className={`rounded-xl border border-white/15 bg-slate-950/95 backdrop-blur-sm flex flex-col overflow-hidden ${effectiveLayoutVertical ? 'h-[400px] flex-none' : 'flex-1 min-w-0 min-h-0 relative z-20'}`}>
+              <div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-white/10 shrink-0 relative z-10 bg-slate-950/95 min-h-[40px]">
+                {!user ? (
+                  <Link
+                    href="/login"
+                    className="ai-gradient-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white shrink-0"
+                  >
+                    {t('login', { ns: 'auth', defaultValue: '登录' })}
+                  </Link>
+                ) : null}
+                <div className={`flex items-center gap-3 ${user ? 'ml-auto' : ''}`}>
                 {!isNarrowScreen && (
                 <button
                   type="button"
@@ -1128,16 +1138,21 @@ export default function LearnPage() {
                 <button type="button" onClick={handleStartNewConversation} className="flex items-center gap-1.5 text-slate-300 hover:text-white text-xs">
                   <MessageSquarePlus className="w-4 h-4" />{t('newConversation')}
                 </button>
-                <button type="button" onClick={() => setCollectionsOpen((o) => !o)} className="flex items-center gap-1.5 text-slate-300 hover:text-white text-xs">
-                  <Heart className="w-4 h-4" />{t('collectionsButton')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setHistoryOpen((o) => !o); if (!historyOpen) fetchHistoryList(); }}
-                  className="flex items-center gap-1.5 text-slate-300 hover:text-white text-xs"
-                >
-                  <History className="w-4 h-4" />{t('conversationHistory')}
-                </button>
+                {user && (
+                  <>
+                    <button type="button" onClick={() => setCollectionsOpen((o) => !o)} className="flex items-center gap-1.5 text-slate-300 hover:text-white text-xs">
+                      <Heart className="w-4 h-4" />{t('collectionsButton')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setHistoryOpen((o) => !o); if (!historyOpen) fetchHistoryList(); }}
+                      className="flex items-center gap-1.5 text-slate-300 hover:text-white text-xs"
+                    >
+                      <History className="w-4 h-4" />{t('conversationHistory')}
+                    </button>
+                  </>
+                )}
+                </div>
               </div>
               <div ref={messagesScrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
                 {messages.map((m, idx) => (

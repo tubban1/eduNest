@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>运动中的变化 - 逆运动学小游戏</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 {
+      color: rgba(255,255,255,0.95);
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(0,200,255,0.3);
+    }
+    .hint {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    #canvas {
+      display: block;
+      background: rgba(0,0,0,0.25);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .score-bar {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      color: rgba(255,255,255,0.8);
+      font-size: 1rem;
+    }
+    .score-bar span { font-weight: 600; color: #7dd3fc; }
+  </style>
+</head>
+<body>
+  <h1>运动中的变化</h1>
+  <p class="hint">移动鼠标或手指，机械臂会实时追踪目标；触碰画面中的小动物和小人触发有趣变化</p>
+  <canvas id="canvas" width="800" height="500"></canvas>
+  <div class="score-bar">
+    <span>得分：<strong id="score">0</strong></span>
+    <span>时间：<strong id="timer">0</strong> 秒</span>
+  </div>
+
+  <script src="KinecticsCore.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const { Vec2, KinematicChain } = typeof KineticsCore !== 'undefined' ? KineticsCore : window.KineticsCore;
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const ORIGIN_X = W / 2;
+      const ORIGIN_Y = H - 60;
+
+      // 构建机械臂：4 节刚性骨骼
+      function buildChain() {
+        const chain = new KinematicChain(ORIGIN_X, ORIGIN_Y);
+        chain.addStaticBone(80);
+        chain.addStaticBone(70);
+        chain.addStaticBone(60);
+        chain.addStaticBone(50);
+        return chain;
+      }
+
+      let chain = buildChain();
+      let target = { x: W / 2, y: H / 2 };
+      let trail = [];
+      const TRAIL_MAX = 80;
+
+      // 不规则生物（小动物、小人）
+      const CREATURE_R = 26;
+      const CREATURE_SPEED = 0.9;
+      const creatures = [];
+
+      function createCreature() {
+        const types = ['cat', 'person', 'blob'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        return {
+          type,
+          x: Math.random() * (W - 160) + 80,
+          y: Math.random() * (H - 220) + 80,
+          vx: (Math.random() - 0.5) * CREATURE_SPEED * 2,
+          vy: (Math.random() - 0.5) * CREATURE_SPEED * 2,
+          happy: false,
+          happyTime: 0,
+        };
+      }
+
+      for (let i = 0; i < 4; i++) creatures.push(createCreature());
+
+      let score = 0;
+      let startTime = Date.now();
+
+      function getCanvasPoint(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY,
+        };
+      }
+
+      canvas.addEventListener('mousemove', (e) => {
+        const p = getCanvasPoint(e);
+        target.x = p.x;
+        target.y = p.y;
+      });
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const p = getCanvasPoint(e);
+        target.x = p.x;
+        target.y = p.y;
+      }, { passive: false });
+
+      function updateCreatures(dt) {
+        for (const c of creatures) {
+          c.x += c.vx * dt;
+          c.y += c.vy * dt;
+
+          if (c.x <= CREATURE_R || c.x >= W - CREATURE_R) c.vx *= -1;
+          if (c.y <= CREATURE_R || c.y >= H - CREATURE_R) c.vy *= -1;
+
+          c.x = Math.max(CREATURE_R, Math.min(W - CREATURE_R, c.x));
+          c.y = Math.max(CREATURE_R, Math.min(H - CREATURE_R, c.y));
+
+          if (c.happy) {
+            c.happyTime += dt;
+            if (c.happyTime > 45) { // 一段时间后恢复或换一只
+              Object.assign(c, createCreature());
+            }
+          }
+        }
+      }
+
+      function distance(x1, y1, x2, y2) {
+        return Math.hypot(x2 - x1, y2 - y1);
+      }
+
+      function drawCreatureShape(c, time) {
+        ctx.save();
+        ctx.translate(c.x, c.y);
+
+        if (c.type === 'cat') {
+          // 不规则小猫：椭圆身体 + 三角耳朵 + 尾巴
+          ctx.fillStyle = c.happy ? '#facc15' : '#f97316';
+          ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+          ctx.lineWidth = 2;
+
+          // 身体
+          ctx.beginPath();
+          ctx.ellipse(0, 4, 20, 16, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // 头
+          ctx.beginPath();
+          ctx.arc(0, -12, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // 耳朵
+          ctx.beginPath();
+          ctx.moveTo(-7, -20);
+          ctx.lineTo(-2, -14);
+          ctx.lineTo(-10, -13);
+          ctx.closePath();
+          ctx.moveTo(7, -20);
+          ctx.lineTo(2, -14);
+          ctx.lineTo(10, -13);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // 尾巴（随时间轻微摆动）
+          const tailSwing = Math.sin(time * 2 + c.x * 0.02) * 4;
+          ctx.beginPath();
+          ctx.moveTo(16, 4);
+          ctx.quadraticCurveTo(26, tailSwing, 20, -6 + tailSwing);
+          ctx.stroke();
+
+          // 表情
+          ctx.strokeStyle = '#111827';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(-4, -13, 1.4, 0, Math.PI * 2);
+          ctx.arc(4, -13, 1.4, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          if (c.happy) {
+            ctx.arc(0, -10, 4, 0, Math.PI, false);
+          } else {
+            ctx.moveTo(-3, -8);
+            ctx.quadraticCurveTo(0, -11, 3, -8);
+          }
+          ctx.stroke();
+        } else if (c.type === 'person') {
+          // 简单小人：略不规则的火柴人 + 跑步骨骼动作
+          ctx.strokeStyle = c.happy ? '#22c55e' : '#e5e7eb';
+          ctx.lineWidth = 3;
+
+          // 身体
+          ctx.beginPath();
+          ctx.moveTo(0, -10);
+          ctx.lineTo(0, 16);
+          ctx.stroke();
+
+          // 头
+          ctx.beginPath();
+          ctx.arc(0, -20, 8, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // 手（摆臂）：相反方向摆动
+          const runPhase = time * 3 + c.x * 0.03;
+          const armAngleL = -0.4 + Math.sin(runPhase) * 0.6;
+          const armAngleR = 0.4 + Math.sin(runPhase + Math.PI) * 0.6;
+          const armLen = 16;
+          const shoulderY = -8;
+
+          ctx.beginPath();
+          // 左臂
+          ctx.moveTo(0, shoulderY);
+          ctx.lineTo(
+            0 + Math.cos(armAngleL) * armLen,
+            shoulderY + Math.sin(armAngleL) * armLen
+          );
+          // 右臂
+          ctx.moveTo(0, shoulderY);
+          ctx.lineTo(
+            0 + Math.cos(armAngleR) * armLen,
+            shoulderY + Math.sin(armAngleR) * armLen
+          );
+          ctx.stroke();
+
+          // 腿（奔跑）：两条腿交替前后伸展
+          const legLen = 18;
+          const hipY = 16;
+          const legAngleL = 0.8 + Math.sin(runPhase + Math.PI) * 0.7;
+          const legAngleR = 2.3 + Math.sin(runPhase) * 0.7;
+
+          ctx.beginPath();
+          // 左腿
+          ctx.moveTo(0, hipY);
+          ctx.lineTo(
+            0 + Math.cos(legAngleL) * legLen,
+            hipY + Math.sin(legAngleL) * legLen
+          );
+          // 右腿
+          ctx.moveTo(0, hipY);
+          ctx.lineTo(
+            0 + Math.cos(legAngleR) * legLen,
+            hipY + Math.sin(legAngleR) * legLen
+          );
+          ctx.stroke();
+
+          // 表情
+          ctx.strokeStyle = '#22c55e';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(-3, -21, 1.5, 0, Math.PI * 2);
+          ctx.arc(3, -21, 1.5, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          if (c.happy) {
+            ctx.arc(0, -17, 3.5, 0, Math.PI, false);
+          } else {
+            ctx.moveTo(-3, -17);
+            ctx.lineTo(3, -17);
+          }
+          ctx.stroke();
+        } else {
+          // blob：不规则小怪物 —— 可作为“鱼游动 / 鸟飞行 / 猎豹奔跑”的抽象骨骼
+          ctx.fillStyle = c.happy ? '#a855f7' : '#6366f1';
+          ctx.strokeStyle = 'rgba(15,23,42,0.7)';
+          ctx.lineWidth = 2;
+
+          // 身体轮廓随时间产生波动（类似鱼身 / 猎豹身体的起伏）
+          const bodyWave = Math.sin(time * 2.4 + c.x * 0.05) * 4;
+
+          ctx.beginPath();
+          ctx.moveTo(-16, 4 + bodyWave);
+          ctx.quadraticCurveTo(-20, -12 + bodyWave, -4, -16 + bodyWave);
+          ctx.quadraticCurveTo(0, -22 + bodyWave * 0.7, 6, -18 + bodyWave);
+          ctx.quadraticCurveTo(20, -12 + bodyWave, 18, 4 + bodyWave);
+          ctx.quadraticCurveTo(8, 18 + bodyWave * 0.5, -10, 16 + bodyWave);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // 眼睛
+          ctx.fillStyle = '#f9fafb';
+          ctx.beginPath();
+          ctx.arc(-4, -10, 3, 0, Math.PI * 2);
+          ctx.arc(5, -9, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(-4, -10, 1.6, 0, Math.PI * 2);
+          ctx.arc(5, -9, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 嘴
+          ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          if (c.happy) {
+            ctx.arc(0, -4, 4, 0, Math.PI, false);
+          } else {
+            ctx.moveTo(-4, -4);
+            ctx.quadraticCurveTo(0, -6, 4, -4);
+          }
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function draw() {
+        const now = Date.now();
+        const dt = Math.min(1, (now - (draw.last || now)) / 16);
+        draw.last = now;
+
+        ctx.fillStyle = 'rgba(10,15,30,0.4)';
+        ctx.fillRect(0, 0, W, H);
+
+        updateCreatures(dt);
+
+        // 将目标限制在可到达范围内，避免手臂过度拉伸
+        const end = chain.points[chain.points.length - 1];
+        const maxReach = 80 + 70 + 60 + 50;
+        const dx = target.x - ORIGIN_X;
+        const dy = target.y - ORIGIN_Y;
+        const d = Math.hypot(dx, dy) || 1;
+        if (d > maxReach) {
+          target.x = ORIGIN_X + (dx / d) * maxReach;
+          target.y = ORIGIN_Y + (dy / d) * maxReach;
+        }
+
+        chain.solveIK(target.x, target.y);
+        const tip = chain.points[chain.points.length - 1];
+
+        trail.push({ x: tip.x, y: tip.y });
+        if (trail.length > TRAIL_MAX) trail.shift();
+
+        // 绘制轨迹（运动中的变化）
+        ctx.strokeStyle = 'rgba(125, 211, 252, 0.35)';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        for (let i = 0; i < trail.length; i++) {
+          const t = trail[i];
+          if (i === 0) ctx.moveTo(t.x, t.y);
+          else ctx.lineTo(t.x, t.y);
+        }
+        ctx.stroke();
+
+        // 骨骼
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(chain.points[0].x, chain.points[0].y);
+        for (let i = 1; i < chain.points.length; i++) {
+          ctx.lineTo(chain.points[i].x, chain.points[i].y);
+        }
+        ctx.stroke();
+
+        // 关节点
+        for (let i = 0; i < chain.points.length; i++) {
+          const p = chain.points[i];
+          const r = i === 0 ? 14 : i === chain.points.length - 1 ? 12 : 8;
+          ctx.fillStyle = i === 0 ? '#0ea5e9' : i === chain.points.length - 1 ? '#7dd3fc' : '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // 目标点
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 生物与碰撞检测 + 骨骼式运动
+        for (const c of creatures) {
+          const hit = distance(tip.x, tip.y, c.x, c.y) < CREATURE_R + 18;
+          if (hit && !c.happy) {
+            c.happy = true;
+            c.happyTime = 0;
+            score += 15;
+          }
+          drawCreatureShape(c, now / 1000);
+        }
+
+        document.getElementById('score').textContent = score;
+        document.getElementById('timer').textContent = Math.floor((Date.now() - startTime) / 1000);
+
+        requestAnimationFrame(draw);
+      }
+
+      requestAnimationFrame(draw);
+    })();
+  </script>
+</body>
+</html>

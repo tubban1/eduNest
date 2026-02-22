@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人物运动小游戏 - 跑跳</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #e5e7eb;
+    }
+    h1 { font-size: 1.35rem; margin-bottom: 4px; }
+    p { font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px; }
+    #canvas {
+      display: block;
+      background: linear-gradient(to bottom, #1e3a5f 0%, #0f172a 60%);
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.3);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <h1>人物运动小游戏 · 跑跳</h1>
+  <p>空格跳跃，躲开障碍、吃金币。角色使用骨骼跑步动画 + 抛物线跳跃。</p>
+  <canvas id="canvas" width="800" height="400"></canvas>
+  <p style="margin-top:8px">得分：<strong id="score">0</strong> &nbsp;|&nbsp; 空格跳跃</p>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const groundY = H - 60;
+      const CHAR_X = 140;
+
+      let t0 = performance.now();
+      let jumpVy = 0;
+      let characterY = 0;
+      let gameOver = false;
+      let score = 0;
+      const obstacles = [];
+      const coins = [];
+      let lastSpawn = 0;
+      const GRAVITY = 0.7;
+      const JUMP_V0 = -14;
+
+      function spawnObstacle() {
+        obstacles.push({ x: W + 20, w: 28, h: 42 });
+      }
+      function spawnCoin() {
+        coins.push({ x: W + 30, y: groundY - 80 - Math.random() * 60, r: 14 });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') e.preventDefault();
+        if (gameOver) return;
+        if (e.code === 'Space' && characterY >= -2) jumpVy = JUMP_V0;
+      });
+
+      function drawRunner(time, centerX, baseGroundY, offsetY) {
+        const phase = time * 1.6;
+        const hipY = baseGroundY - 78 + offsetY;
+        const torsoLen = 58, neckLen = 12, headR = 18;
+        const upperArmLen = 30, lowerArmLen = 28, thighLen = 46, calfLen = 42;
+        const bodyBob = Math.sin(phase * 2) * 4;
+        const hipCenter = { x: centerX, y: hipY + bodyBob };
+        const shoulderY = hipCenter.y - torsoLen;
+        const pelvisW = 10, shoulderW = 14;
+        const leftHip = { x: hipCenter.x - pelvisW, y: hipCenter.y };
+        const rightHip = { x: hipCenter.x + pelvisW, y: hipCenter.y };
+        const leftShoulder = { x: hipCenter.x - shoulderW, y: shoulderY };
+        const rightShoulder = { x: hipCenter.x + shoulderW, y: shoulderY };
+
+        ctx.save();
+        const lean = -0.18 + Math.sin(phase * 1.5) * 0.05;
+        ctx.translate(hipCenter.x, hipCenter.y);
+        ctx.rotate(lean);
+        ctx.translate(-hipCenter.x, -hipCenter.y);
+
+        ctx.fillStyle = 'rgba(148,163,184,0.95)';
+        ctx.strokeStyle = 'rgba(15,23,42,0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(leftHip.x, leftHip.y);
+        ctx.lineTo(leftShoulder.x + 2, leftShoulder.y + 4);
+        ctx.quadraticCurveTo(hipCenter.x, shoulderY - 4, rightShoulder.x - 2, rightShoulder.y + 4);
+        ctx.lineTo(rightHip.x, rightHip.y);
+        ctx.quadraticCurveTo(hipCenter.x, hipCenter.y + 10, leftHip.x, leftHip.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(226,232,240,0.95)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(hipCenter.x - 4, shoulderY + 6);
+        ctx.lineTo(hipCenter.x + 4, shoulderY - 10);
+        ctx.stroke();
+
+        ctx.fillStyle = '#e5e7eb';
+        ctx.strokeStyle = '#020617';
+        ctx.lineWidth = 2;
+        const headCx = hipCenter.x + 4, headCy = shoulderY - neckLen - headR + 4;
+        ctx.beginPath();
+        ctx.arc(headCx, headCy, headR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = '#020617';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(headCx + 6, headCy - 4, 1.8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(headCx + 4, headCy + 4);
+        ctx.quadraticCurveTo(headCx + 8, headCy + 6, headCx + 6, headCy + 9);
+        ctx.stroke();
+
+        const armPhase = phase * 1.8;
+        const rightUpperAngle = -0.1 + Math.sin(armPhase) * 0.8;
+        const rightLowerAngle = rightUpperAngle + 0.9 + Math.sin(armPhase + 0.6) * 0.2;
+        const leftUpperAngle = 0.3 + Math.sin(armPhase + Math.PI) * 0.8;
+        const leftLowerAngle = leftUpperAngle + 0.9 + Math.sin(armPhase + Math.PI + 0.4) * 0.2;
+
+        function drawLimb(base, angle1, len1, angle2, len2, color, zBehind) {
+          const joint1 = { x: base.x + Math.cos(angle1) * len1, y: base.y + Math.sin(angle1) * len1 };
+          const end = { x: joint1.x + Math.cos(angle2) * len2, y: joint1.y + Math.sin(angle2) * len2 };
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = zBehind ? 10 : 12;
+          ctx.beginPath();
+          ctx.moveTo(base.x, base.y);
+          ctx.lineTo(joint1.x, joint1.y);
+          ctx.stroke();
+          ctx.lineWidth = zBehind ? 8 : 10;
+          ctx.beginPath();
+          ctx.moveTo(joint1.x, joint1.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.stroke();
+          ctx.fillStyle = '#e5e7eb';
+          ctx.beginPath();
+          ctx.arc(joint1.x, joint1.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          return { end };
+        }
+
+        const legPhase = phase * 2.1;
+        const rightThighAngle = 0.4 + Math.sin(legPhase) * 0.9;
+        const rightCalfAngle = rightThighAngle + 0.7 + Math.sin(legPhase + 1.1) * 0.3;
+        const leftThighAngle = 2.6 + Math.sin(legPhase + Math.PI) * 0.9;
+        const leftCalfAngle = leftThighAngle + 0.7 + Math.sin(legPhase + Math.PI + 1.1) * 0.3;
+
+        const leftLeg = drawLimb(leftHip, leftThighAngle, thighLen, leftCalfAngle, calfLen, 'rgba(75,85,99,0.95)', true);
+        drawLimb(leftShoulder, leftUpperAngle, upperArmLen, leftLowerAngle, lowerArmLen, 'rgba(148,163,184,0.7)', true);
+        const rightLeg = drawLimb(rightHip, rightThighAngle, thighLen, rightCalfAngle, calfLen, 'rgba(248,250,252,0.95)', false);
+        drawLimb(rightShoulder, rightUpperAngle, upperArmLen, rightLowerAngle, lowerArmLen, 'rgba(226,232,240,0.95)', false);
+
+        const yClamp = baseGroundY + 1 + offsetY;
+        [leftLeg.end, rightLeg.end].forEach((foot) => {
+          const fy = Math.min(foot.y, yClamp);
+          ctx.fillStyle = 'rgba(15,23,42,0.9)';
+          ctx.beginPath();
+          ctx.ellipse(foot.x, yClamp + 6, 14, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#e5e7eb';
+          ctx.beginPath();
+          ctx.ellipse(foot.x, fy, 9, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      function hitTestChar(rect) {
+        const cx = CHAR_X, cy = groundY - 90 + characterY;
+        const cw = 50, ch = 100;
+        return !(rect.x + rect.w < cx - cw/2 || rect.x > cx + cw/2 || rect.y + rect.h < cy - ch || rect.y > cy + 20);
+      }
+
+      function loop(now) {
+        const t = (now - t0) / 1000;
+        if (!gameOver) {
+          characterY += jumpVy;
+          jumpVy += GRAVITY;
+          if (characterY > 0) { characterY = 0; jumpVy = 0; }
+
+          if (now - lastSpawn > 2200) {
+            spawnObstacle();
+            if (Math.random() < 0.6) spawnCoin();
+            lastSpawn = now;
+          }
+          obstacles.forEach((o) => o.x -= 5.2);
+          coins.forEach((c) => c.x -= 5.2);
+
+          obstacles.forEach((o) => {
+            if (hitTestChar({ x: o.x, y: groundY - o.h, w: o.w, h: o.h })) gameOver = true;
+          });
+          for (let i = coins.length - 1; i >= 0; i--) {
+            const c = coins[i];
+            const dx = CHAR_X - c.x, dy = (groundY - 90 + characterY) - c.y;
+            if (dx*dx + dy*dy < (30 + c.r)*(30 + c.r)) { coins.splice(i, 1); score++; document.getElementById('score').textContent = score; }
+          }
+          obstacles.splice(0, obstacles.filter((o) => o.x + o.w < 0).length);
+          coins.splice(0, coins.filter((c) => c.x + c.r < -20).length);
+        }
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, groundY, W, H - groundY);
+        ctx.strokeStyle = '#334155';
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        ctx.lineTo(W, groundY);
+        ctx.stroke();
+
+        obstacles.forEach((o) => {
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(o.x, groundY - o.h, o.w, o.h);
+          ctx.strokeStyle = '#991b1b';
+          ctx.strokeRect(o.x, groundY - o.h, o.w, o.h);
+        });
+        coins.forEach((c) => {
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#b45309';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+
+        drawRunner(t, CHAR_X, groundY, characterY);
+
+        if (gameOver) {
+          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = '#fef2f2';
+          ctx.font = 'bold 32px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText('游戏结束', W/2, H/2 - 20);
+          ctx.font = '18px system-ui';
+          ctx.fillText('得分：' + score, W/2, H/2 + 20);
+        }
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

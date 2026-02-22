@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>走路骨架演示</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+      background: #cbd5e1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #1e293b;
+    }
+    h1 { font-size: 1.35rem; margin-bottom: 4px; }
+    p { font-size: 0.9rem; margin-bottom: 8px; color: #475569; }
+    #canvas {
+      display: block;
+      background: #f1f5f9;
+      border-radius: 12px;
+      border: 2px solid #94a3b8;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    }
+  </style>
+</head>
+<body>
+  <h1>走路骨架演示</h1>
+  <p>← → 或 A / D 移动。整体骨架由 KineticsCore 多链一体驱动，便于观察关节与骨骼。</p>
+  <canvas id="canvas" width="800" height="480"></canvas>
+  <p style="margin-top:8px; color:#64748b;">← → 或 A D 移动</p>
+
+  <script src="KinecticsCore.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const groundY = H - 80;
+      const CHAR_SPEED = 5;
+      const CHAR_WIDTH = 50;
+      const KC = window.KineticsCore;
+
+      let t0 = performance.now();
+      let characterX = W / 2;
+      const gaitSpeed = 0.9;
+
+      const keys = {};
+      document.addEventListener('keydown', (e) => { keys[e.code] = true; });
+      document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+      const torsoLen1 = 18, torsoLen2 = 18, torsoLen3 = 16;
+      const thighLen = 28, shinLen = 28, footLen = 26;
+      const upperArmLen = 20, forearmLen = 20, handLen = 18;
+      const pelvisW = 12, shoulderW = 16;
+      const spinePointShoulder = 3;
+
+      const spine = new KC.KinematicChain(0, 0);
+      spine.addStaticBone(torsoLen1).addStaticBone(torsoLen2).addStaticBone(torsoLen3);
+
+      function makeLimb3(seg1, seg2, seg3) {
+        const c = new KC.KinematicChain(0, 0);
+        c.addStaticBone(seg1).addStaticBone(seg2).addStaticBone(seg3);
+        return c;
+      }
+
+      const skeleton = new KC.KinematicSkeleton(0, 0);
+      skeleton.setSpine(spine);
+      skeleton.addLimb('leftLeg', makeLimb3(thighLen, shinLen, footLen), 0, -pelvisW, 0);
+      skeleton.addLimb('rightLeg', makeLimb3(thighLen, shinLen, footLen), 0, pelvisW, 0);
+      skeleton.addLimb('leftArm', makeLimb3(upperArmLen, forearmLen, handLen), spinePointShoulder, -shoulderW, 0);
+      skeleton.addLimb('rightArm', makeLimb3(upperArmLen, forearmLen, handLen), spinePointShoulder, shoulderW, 0);
+
+      // 骨架配色：深色骨骼 + 关节圆，在浅色背景上清晰可见
+      const BONE_COLOR = '#0f172a';
+      const BONE_STROKE = '#1e293b';
+      const JOINT_FILL = '#334155';
+      const JOINT_STROKE = '#0f172a';
+      const SPINE_COLOR = '#0369a1';
+      const HEAD_FILL = '#f8fafc';
+      const HEAD_STROKE = '#0f172a';
+
+      function drawWalker(time, centerX) {
+        const phase = time * gaitSpeed * Math.PI * 2;
+        const hipY = groundY - 78;
+        const bodyBob = Math.sin(phase) * 2;
+        const shoulderY = hipY - torsoLen1 - torsoLen2 - torsoLen3 + bodyBob;
+
+        skeleton.origin.x = centerX;
+        skeleton.origin.y = hipY + bodyBob;
+
+        const stepW = 28;
+        const leftFootX = centerX - stepW * Math.sin(phase);
+        const rightFootX = centerX + stepW * Math.sin(phase);
+        // 走路时手自然下垂，仅轻微摆动（与对侧腿同向：右腿前迈时左手略前）
+        const handSwing = 6;
+        const leftHandX = centerX - shoulderW + handSwing * Math.sin(phase);
+        const rightHandX = centerX + shoulderW - handSwing * Math.sin(phase);
+        const handY = shoulderY + 24;
+
+        skeleton.solve({
+          spineTargetX: centerX,
+          spineTargetY: shoulderY - 8,
+          limbTargets: {
+            leftLeg: [leftFootX, groundY],
+            rightLeg: [rightFootX, groundY],
+            leftArm: [leftHandX, handY],
+            rightArm: [rightHandX, handY]
+          },
+          ikOptions: { iterations: 14, tolerance: 1e-3 }
+        });
+
+        const hipCenter = { x: skeleton.origin.x, y: skeleton.origin.y };
+        const spinePts = spine.points;
+        const shoulderLevel = spinePts[spinePointShoulder];
+
+        ctx.save();
+        const lean = -0.06;
+        ctx.translate(hipCenter.x, hipCenter.y);
+        ctx.rotate(lean);
+        ctx.translate(-hipCenter.x, -hipCenter.y);
+
+        // ---------- 脊柱：线段 + 关节点 ----------
+        ctx.strokeStyle = SPINE_COLOR;
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(spinePts[0].x, spinePts[0].y);
+        for (let i = 1; i < spinePts.length; i++) {
+          ctx.lineTo(spinePts[i].x, spinePts[i].y);
+        }
+        ctx.stroke();
+        ctx.fillStyle = JOINT_FILL;
+        ctx.strokeStyle = JOINT_STROKE;
+        ctx.lineWidth = 2;
+        spinePts.forEach((p, i) => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, i === 0 ? 8 : 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+
+        // ---------- 四肢：骨骼线段 + 关节圆 ----------
+        function drawLimbSkeleton(chain, lineWidth) {
+          const pts = chain.points;
+          if (pts.length < 2) return pts[pts.length - 1];
+          ctx.strokeStyle = BONE_COLOR;
+          ctx.lineWidth = lineWidth;
+          ctx.lineCap = 'round';
+          for (let i = 0; i < pts.length - 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
+            ctx.stroke();
+          }
+          ctx.fillStyle = JOINT_FILL;
+          ctx.strokeStyle = JOINT_STROKE;
+          for (let i = 1; i < pts.length; i++) {
+            ctx.beginPath();
+            ctx.arc(pts[i].x, pts[i].y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+          return pts[pts.length - 1];
+        }
+
+        drawLimbSkeleton(skeleton.limbs['leftLeg'].chain, 5);
+        drawLimbSkeleton(skeleton.limbs['rightLeg'].chain, 5);
+        drawLimbSkeleton(skeleton.limbs['leftArm'].chain, 4);
+        drawLimbSkeleton(skeleton.limbs['rightArm'].chain, 4);
+
+        // 骨盆两侧与肩的附着点（小圆）
+        const leftHip = { x: hipCenter.x - pelvisW, y: hipCenter.y };
+        const rightHip = { x: hipCenter.x + pelvisW, y: hipCenter.y };
+        ctx.fillStyle = JOINT_FILL;
+        ctx.strokeStyle = JOINT_STROKE;
+        [leftHip, rightHip].forEach((p) => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+
+        // 头部（简化圆，便于看整体比例）
+        const headCx = hipCenter.x + 2, headCy = shoulderLevel.y - 22, headR = 14;
+        ctx.fillStyle = HEAD_FILL;
+        ctx.strokeStyle = HEAD_STROKE;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(headCx, headCy, headR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 脚掌落地点（小椭圆标识）
+        const leftLegEnd = skeleton.limbs['leftLeg'].chain.points[skeleton.limbs['leftLeg'].chain.points.length - 1];
+        const rightLegEnd = skeleton.limbs['rightLeg'].chain.points[skeleton.limbs['rightLeg'].chain.points.length - 1];
+        [leftLegEnd, rightLegEnd].forEach((foot) => {
+          ctx.fillStyle = 'rgba(15,23,42,0.25)';
+          ctx.beginPath();
+          ctx.ellipse(foot.x, groundY + 4, 12, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = BONE_STROKE;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+
+        ctx.restore();
+      }
+
+      function loop(now) {
+        const t = (now - t0) / 1000;
+        if (keys['ArrowLeft'] || keys['KeyA']) characterX -= CHAR_SPEED;
+        if (keys['ArrowRight'] || keys['KeyD']) characterX += CHAR_SPEED;
+        characterX = Math.max(CHAR_WIDTH, Math.min(W - CHAR_WIDTH, characterX));
+
+        // 背景：浅灰画布 + 深灰地面，与骨架深色形成对比
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(0, groundY, W, H - groundY);
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        ctx.lineTo(W, groundY);
+        ctx.stroke();
+
+        drawWalker(t, characterX);
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

@@ -373,18 +373,7 @@ function generateShortId() {
 
 const createContent = async (contentData, userId) => {
   try {
-    const {
-      title,
-      full_html,
-      tags,
-      description,
-      content_type,
-      language_code,
-      svg_thumbnail,
-      knowledge_points,
-      metadata_json,
-      tech_stack,
-    } = contentData;
+    const { title, full_html, tags, description, content_type, language_code, svg_thumbnail } = contentData;
     
     // 只接受 full_html，不再使用代码块字段
     if (!full_html || typeof full_html !== 'string' || full_html.trim().length === 0) {
@@ -410,16 +399,6 @@ const createContent = async (contentData, userId) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    if (Array.isArray(knowledge_points)) {
-      insertPayload.knowledge_points = knowledge_points.map((x) => String(x));
-    }
-    if (metadata_json != null) {
-      // jsonb：允许对象/数组/字符串（字符串会原样存入，便于后续排查；建议传对象）
-      insertPayload.metadata_json = metadata_json;
-    }
-    if (tech_stack != null) {
-      insertPayload.tech_stack = tech_stack;
-    }
     if (svg_thumbnail != null && typeof svg_thumbnail === 'string' && svg_thumbnail.trim()) {
       insertPayload.svg_thumbnail = svg_thumbnail.trim();
       insertPayload.thumbnail_status = 'ready';

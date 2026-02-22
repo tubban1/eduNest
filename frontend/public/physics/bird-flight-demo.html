@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鸟的飞行骨骼演示</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+      background: radial-gradient(circle at top, #0f172a 0%, #020617 60%, #000 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #e5e7eb;
+    }
+    h1 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 6px; }
+    p { font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px; }
+    #canvas {
+      background: linear-gradient(to bottom, #0ea5e9, #022c44 55%, #020617 100%);
+      border-radius: 12px;
+      border: 1px solid rgba(59,130,246,0.5);
+      box-shadow: 0 12px 40px rgba(15,23,42,0.9);
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>鸟的飞行 - 翅膀骨骼</h1>
+  <p>多段翅膀骨骼驱动羽翼上下振动，身体随之轻微起伏，表现连续飞行动作。</p>
+  <canvas id="canvas" width="900" height="420"></canvas>
+
+  <script src="KinecticsCore.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      let t0 = performance.now();
+
+      function drawBackground() {
+        ctx.clearRect(0, 0, W, H);
+        // 云层
+        ctx.fillStyle = 'rgba(248,250,252,0.22)';
+        for (let i = 0; i < 4; i++) {
+          const cx = (i * 260 + (performance.now() * 0.02) % (W + 260)) - 130;
+          const cy = 90 + i * 10;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, 90, 28, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function drawBird(time) {
+        const baseX = W / 2;
+        const baseY = H / 2;
+
+        // 身体上下轻微起伏
+        const bob = Math.sin(time * 3) * 6;
+        const bodyY = baseY + bob;
+
+        ctx.save();
+        ctx.translate(baseX, bodyY);
+
+        // 身体
+        ctx.fillStyle = '#f9fafb';
+        ctx.strokeStyle = 'rgba(15,23,42,0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 55, 26, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 头
+        ctx.beginPath();
+        ctx.arc(40, -8, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 嘴
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.moveTo(52, -6);
+        ctx.lineTo(66, -2);
+        ctx.lineTo(52, 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // 眼睛
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(36, -11, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 尾巴
+        ctx.fillStyle = '#e5e7eb';
+        ctx.beginPath();
+        ctx.moveTo(-50, 0);
+        ctx.lineTo(-68, -8);
+        ctx.lineTo(-60, 4);
+        ctx.closePath();
+        ctx.fill();
+
+        // 翅膀骨骼参数（左右对称）
+        const flap = Math.sin(time * 8) * 0.9 + 0.4; // 主挥动角
+
+        function drawWing(side) {
+          const dir = side === 'left' ? -1 : 1;
+          const root = { x: 4, y: -6 };
+          const upperLen = 60;
+          const midLen = 45;
+          const tipLen = 35;
+
+          // 三段翅膀骨骼：肩 -> 中段 -> 末梢
+          const angle1 = dir * (Math.PI / 2 - flap);          // 肩关节
+          const angle2 = angle1 + dir * (0.4 + Math.sin(time * 7 + dir) * 0.25); // 中段
+          const angle3 = angle2 + dir * (0.5 + Math.sin(time * 6 + dir * 1.3) * 0.2); // 末梢
+
+          const joint1 = {
+            x: root.x + Math.cos(angle1) * upperLen,
+            y: root.y + Math.sin(angle1) * upperLen,
+          };
+          const joint2 = {
+            x: joint1.x + Math.cos(angle2) * midLen,
+            y: joint1.y + Math.sin(angle2) * midLen,
+          };
+          const tip = {
+            x: joint2.x + Math.cos(angle3) * tipLen,
+            y: joint2.y + Math.sin(angle3) * tipLen,
+          };
+
+          // 羽翼轮廓（用骨骼包络出有厚度的翅膀）
+          ctx.fillStyle = 'rgba(248,250,252,0.95)';
+          ctx.strokeStyle = 'rgba(15,23,42,0.7)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(root.x, root.y);
+          ctx.quadraticCurveTo(
+            (root.x + joint1.x) / 2,
+            (root.y + joint1.y) / 2 - dir * 8,
+            joint1.x,
+            joint1.y
+          );
+          ctx.quadraticCurveTo(
+            (joint1.x + joint2.x) / 2,
+            (joint1.y + joint2.y) / 2 - dir * 10,
+            joint2.x,
+            joint2.y
+          );
+          ctx.quadraticCurveTo(
+            (joint2.x + tip.x) / 2,
+            (joint2.y + tip.y) / 2 - dir * 8,
+            tip.x,
+            tip.y
+          );
+          // 回到根部，形成闭合翅膀
+          ctx.quadraticCurveTo(
+            (tip.x + root.x) / 2,
+            (tip.y + root.y) / 2 + dir * 18,
+            root.x,
+            root.y
+          );
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // 骨节高光
+          ctx.fillStyle = 'rgba(241,245,249,0.9)';
+          [joint1, joint2].forEach((j) => {
+            ctx.beginPath();
+            ctx.arc(j.x, j.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        // 先画远侧翅膀，再画近侧，营造层次
+        drawWing('left');
+        drawWing('right');
+
+        ctx.restore();
+      }
+
+      function loop(now) {
+        const t = (now - t0) / 1000;
+        drawBackground();
+        drawBird(t);
+        requestAnimationFrame(loop);
+      }
+
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
+
