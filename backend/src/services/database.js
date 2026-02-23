@@ -1272,8 +1272,18 @@ const deleteCollectionList = async (listId, userId) => {
     if (checkError || !existingList) {
       throw new Error('列表不存在或无权限删除');
     }
-    
-    // 删除列表
+
+    // 先删除关联的 user_collections，避免外键约束报错
+    const { error: userCollectionsDeleteError } = await supabase
+      .from('user_collections')
+      .delete()
+      .eq('list_id', listId);
+
+    if (userCollectionsDeleteError) {
+      throw userCollectionsDeleteError;
+    }
+
+    // 再删除列表本身
     const { error: deleteError } = await supabase
       .from('collection_lists')
       .delete()
