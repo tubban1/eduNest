@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鸭子当保姆</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E0F7FA;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .picture-book-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-words {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #006064;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+        }
+
+        .narrative-center {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 100px;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #00838F;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.7));
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #004D40;
+            line-height: 1.8;
+            padding: 10px 30px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 80%);
+        }
+
+        .duck-counter {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #FBC02D;
+            padding: 8px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: #F9A825;
+            font-size: 1.2rem;
+        }
+
+        .btn-call {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            background: linear-gradient(135deg, #FBC02D 0%, #F9A825 100%);
+            color: #5D4037;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-call:hover {
+            transform: scale(1.05);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="picture-book-ui">
+        <!-- 统计面板 -->
+        <div class="duck-counter" v-if="step === 3">🐥 归队小鸭: {{ duckCount }}/5</div>
+
+        <!-- 顶部引导 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">
+                🌊 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 中心叙事 -->
+        <div class="narrative-center">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 交互按钮 -->
+        <div class="pointer-events-auto">
+            <button v-if="step === 3" @click="addDuck" class="btn-call">
+                {{ duckCount >= 5 ? '全体集合完毕！' : '吹响口哨：召集小鸭' }}
+            </button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-call">继续探索</button>
+            <button v-else @click="reset" class="btn-call bg-stone-500">回到池塘</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const duckCount = ref(0);
+                const ducklings = ref([]);
+
+                const stages = [
+                    { title: '晚霞中的池塘', content: '当晚霞把池塘染成橘粉色，水面上静悄悄的。几只玩累了的小鸭子正躲在荷叶下，等着保姆妈妈带它们回家睡觉。' },
+                    { title: '数数小可爱的影子', content: '照顾这些调皮的小家伙需要很多耐心。咱们仔细数一数，一个个地把它们喊醒，千万不要落下一个。' },
+                    { title: '排队游进梦里', content: '嘘——！轻轻地吹响小口哨。你看，一只接一只，它们在水面上排成了整齐的队伍，就像一串漂浮的小星星。' },
+                    { title: '波浪的推手', content: '鸭子妈妈在前面划着水，推开小小的波浪。后边的小鸭子只要顺着波浪走，就能在摇摇晃晃中舒服地打个盹。' },
+                    { title: '月光下的摇篮', content: '星星出来啦。大家挤在一起，把头埋进羽毛里。池塘就是一个大摇篮，晃呀晃，带走了一天的疲倦。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，看小鸭子们在捉迷藏呢。帮鸭子妈妈把睡着的小家伙叫醒吧。",
+                    "荷叶下面那团黄嘟嘟的小圆球，是不是掉队的小淘气？",
+                    "轻轻地召唤它们。看，小鸭子们排队回家的样子多整齐呀。",
+                    "妈妈在前面保护大家，后边的小伙伴跟着波浪就能走啦。多省力呀。",
+                    "月亮姐姐升起来了，小鸭子该闭上眼睛休息咯。晚安，宝贝。"
+                ];
+
+                let rc, ctx, canvas;
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    for (let i = 0; i < 5; i++) {
+                        ducklings.value.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height * 0.4 + canvas.height * 0.2, following: false, offset: Math.random() * 10 });
+                    }
+                    animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawDuck = (x, y, scale = 1, t, color = '#FFEB3B') => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+                    const wobble = Math.sin(t * 5) * 5;
+                    ctx.rotate(wobble * 0.01);
+                    rc.ellipse(0, 0, 100, 70, { fill: color, fillStyle: 'hachure' });
+                    rc.polygon([[-50, -10], [-70, -30], [-50, -20]], { fill: color, fillStyle: 'solid' });
+                    const headX = 40 + Math.sin(t * 3) * 5;
+                    rc.circle(headX, -30, 45, { fill: color, fillStyle: 'solid' });
+                    rc.polygon([[headX + 20, -30], [headX + 60, -20], [headX + 20, -10]], { fill: '#FB8C00', fillStyle: 'solid' });
+                    rc.ellipse(0, 0, 50, 30, { fill: color, fillStyle: 'zigzag' });
+                    rc.circle(headX + 15, -40, 5, { fill: '#000' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    const lx = canvas.width / 2 + Math.sin(time * 0.5) * 200;
+                    const ly = canvas.height * 0.4 + Math.cos(time * 0.8) * 50;
+                    drawDuck(lx, ly, 1.2, time, '#FFEB3B');
+                    ducklings.value.forEach((d, i) => {
+                        if (d.following) {
+                            const targetX = lx - (i + 1) * 80;
+                            const targetY = ly + Math.sin(time * 2 + i) * 20;
+                            d.x = gsap.utils.interpolate(d.x, targetX, 0.1);
+                            d.y = gsap.utils.interpolate(d.y, targetY, 0.1);
+                        } else { d.x += Math.sin(time + d.offset) * 1; }
+                        drawDuck(d.x, d.y, 0.6, time + d.offset, '#FFF9C4');
+                    });
+                    requestAnimationFrame(animate);
+                };
+
+                const addDuck = () => {
+                    if (duckCount.value < 5) {
+                        ducklings.value[duckCount.value].following = true;
+                        duckCount.value++;
+                        if (duckCount.value === 5) setTimeout(() => nextStage(), 2000);
+                    }
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; duckCount.value = 0; ducklings.value.forEach(d => { d.following = false; d.x = Math.random() * canvas.width; }); };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, duckCount, stages, parentWords, nextStage, reset, addDuck };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

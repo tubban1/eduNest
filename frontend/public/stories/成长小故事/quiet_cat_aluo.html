@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不会说话的阿罗</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #CFD8DC;
+            --text-primary: #455A64;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #F5F5F5;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #546E7A;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #607D8B;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: #90A4AE;
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(144, 164, 174, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #78909C;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">🐱 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故事情节 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="petTail" class="btn-action">轻轻摸摸阿罗摇摆的尾巴 🌈</button>
+            <button v-else-if="step === 3" @click="giveSnuggle" class="btn-action">给阿罗一个暖暖的贴贴 🫂</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">倾听阿罗的无声告白</button>
+            <button v-else @click="reset" class="btn-action !bg-slate-500 !text-white">在宁静里做个好梦</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isPetting = ref(false);
+                const isSnuggling = ref(false);
+
+                const stages = [
+                    { title: '安静的小伙伴', content: '大家都说：‘阿罗是一只很特别的猫。’ 它从不乱叫，也不会吵闹。它总是安安静静地坐在窗台上，睁着亮晶晶的大眼睛，静静地听着森林里的风声。' },
+                    { title: '摇摆的尾巴语', content: '阿罗不会说话，但它的身体藏着好多小秘密。当它开心时，长长的尾巴就像弯弯的彩虹，在空中轻快地摇摆。‘看，它在对你笑呢！’妈妈轻轻地说。' },
+                    { title: '暖烘烘的贴贴', content: '当你觉得有一点点小孤单或难过时，阿罗会悄悄地穿过房间，走到你脚边。它用那软绵绵、暖烘烘的小身子蹭蹭你的腿，仿佛在说：‘没关系的，我就在这里陪着你。’' },
+                    { title: '眼神里的秘密', content: '阿罗眯起了圆圆的眼睛，发出了细细的‘咕噜咕噜’声。那是它最温柔的心跳声。虽然它没有开口说话，但你一定能听懂：‘我也是真的很爱你哦。’' },
+                    { title: '心贴心的好梦', content: '在这个世界上，爱有时候是不需要语言的。窗外的月亮升起来了，阿罗蜷缩在你的被角边，你们的心跳慢慢地变得一样快。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看。阿罗正歪着头在听我们说话呢。你不说话的时候，心里在想些什么有趣的事？",
+                    "嘘——尾巴是阿罗的小信箱。咱们轻轻地给它一个回应，让它知道我们也正看着它。",
+                    "这种无声的陪伴最让人安心了。如果你是一只小猫，你会怎么告诉爸爸妈妈你很爱他们？",
+                    "每一个‘咕噜’声都是一个爱的音符。咱们闭上双眼，静静地感受这这份宁静。你听到了吗？",
+                    "故事讲完啦。阿罗已经和月亮一起打瞌睡了。咱们也藏进暖和的梦境里，和它一起出发。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawCat = (x, y, scale, t, action = 'idle') => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const bounce = Math.sin(t * 2) * 3;
+                    // Body
+                    rc.circle(0, bounce, 110, { fill: '#BDBDBD', fillStyle: 'hachure', stroke: '#78909C' });
+                    // Ears
+                    rc.polygon([[-40, -60 + bounce], [-60, -100 + bounce], [-20, -80 + bounce]], { fill: '#9E9E9E', fillStyle: 'solid' });
+                    rc.polygon([[40, -60 + bounce], [60, -100 + bounce], [20, -80 + bounce]], { fill: '#9E9E9E', fillStyle: 'solid' });
+                    // Tail
+                    const tailWag = Math.sin(t * 8) * 0.4;
+                    ctx.save(); ctx.rotate(tailWag);
+                    rc.curve([[-100, 50], [-130, 0], [-150, 40]], { stroke: '#9E9E9E', strokeWidth: 12 });
+                    ctx.restore();
+                    // Face
+                    if (step.value < 4) {
+                        rc.circle(-30, -20 + bounce, 6, { fill: '#333' }); rc.circle(30, -20 + bounce, 6, { fill: '#333' });
+                    } else {
+                        // Sleeping/Happy eyes
+                        rc.curve([[-40, -20 + bounce], [-30, -10 + bounce], [-20, -20 + bounce]], { stroke: '#333' });
+                        rc.curve([[20, -20 + bounce], [30, -10 + bounce], [40, -20 + bounce]], { stroke: '#333' });
+                    }
+                    rc.circle(0, 10 + bounce, 8, { fill: '#F06292', fillStyle: 'solid' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.65;
+
+                    if (step.value === 1) {
+                        drawCat(centerX, centerY, 1, t);
+                        rc.rectangle(centerX - 200, centerY - 150, 400, 300, { stroke: '#8D6E63', strokeWidth: 4 }); // Window
+                    } else if (step.value === 2) {
+                        drawCat(centerX, centerY, 1.2, t);
+                    } else if (step.value === 3) {
+                        drawCat(centerX + 100, centerY, 0.9, t, 'snuggle');
+                        // Child hand or leg cue
+                        rc.curve([[centerX - 100, centerY + 100], [centerX, centerY + 100], [centerX + 50, centerY + 50]], { stroke: '#FFCCBC', strokeWidth: 15 });
+                    } else if (step.value === 4) {
+                        drawCat(centerX, centerY, 1.3, t * 0.5);
+                        // Hearth/Love particles
+                        for (let i = 0; i < 3; i++) {
+                            rc.circle(centerX + Math.sin(t + i) * 100, centerY - 100 - i * 50, 15, { fill: '#FF8A80', fillStyle: 'solid' });
+                        }
+                    } else if (step.value === 5) {
+                        drawCat(centerX - 100, centerY + 100, 0.7, 0, 'sleep');
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const petTail = () => { isPetting.value = true; setTimeout(() => nextStage(), 1500); };
+                const giveSnuggle = () => { isSnuggling.value = true; setTimeout(() => { isSnuggling.value = false; nextStage(); }, 1500); };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isPetting.value = false; isSnuggling.value = false; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, petTail, giveSnuggle, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

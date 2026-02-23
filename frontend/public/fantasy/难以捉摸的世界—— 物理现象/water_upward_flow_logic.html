@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水为什么不往上流</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --water-blue: #3b82f6;
+            --glass: rgba(255, 255, 255, 0.2);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f0f9ff;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #1e3a8a;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-main {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .head-area {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4rem;
+            background: linear-gradient(135deg, #1e40af, #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-words {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 1.1rem;
+            color: #1e40af;
+            display: inline-block;
+        }
+
+        .content-area {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .description {
+            font-size: 1.5rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+        }
+
+        .btn-fancy {
+            background: #3b82f6;
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: none;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-fancy:hover {
+            transform: scale(1.1);
+            background: #2563eb;
+        }
+
+        .interact-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 500px;
+            pointer-events: auto;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .tool-slot {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .tube-item {
+            width: 40px;
+            height: 100px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid #3b82f6;
+            border-radius: 20px 20px 0 0;
+            cursor: move;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            transition: 0.3s;
+        }
+
+        .tube-item:hover {
+            filter: drop-shadow(0 0 10px #3b82f6);
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #3b82f6;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #3b82f6;
+            transform: scale(1.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+
+    <div id="app" class="ui-main">
+        <div class="head-area" ref="header">
+            <h1 class="title">{{ current.title }}</h1>
+            <div class="parent-words">💧 {{ current.parentWords }}</div>
+        </div>
+
+        <div class="content-area" ref="content">
+            <p class="description">{{ current.description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="btn-fancy">继续探索</button>
+                <button v-if="step === 5" @click="reset" class="btn-fancy">顺流而下</button>
+            </div>
+        </div>
+
+        <!-- S3 核心交互 -->
+        <div v-if="step === 3" class="interact-panel">
+            <div class="text-blue-800 font-bold mb-2">水往“高处”爬实验台</div>
+            <div class="text-[10px] text-blue-500 mb-4">拖拽不同粗细的吸管放入水池</div>
+
+            <div class="tool-slot">
+                <div v-for="w in [20, 10, 5]" :key="w" @mousedown="pickTube(w)" class="tube-item"
+                    :style="{ width: w*2 + 'px' }">
+                    <div class="bg-blue-500 w-full" :style="{ height: (30/w)*10 + '%' }"></div>
+                </div>
+            </div>
+
+            <div class="mt-8 text-xs text-blue-400">试试最细的那根管子！</div>
+            <button v-if="hasExplored" @click="next" class="btn-fancy !py-2 !px-8 !text-sm mt-4">理解流动的力量</button>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const hasExplored = ref(false);
+
+                const stages = [
+                    {
+                        title: "水的执着",
+                        parentWords: "宝贝，你看小溪流和瀑布，它们总是叮叮咚咚地往下跑，从来不去山顶上。这是为什么呢？",
+                        description: "水是一个很‘听话’的家伙，它总是被地球的引力拉着走。只要有低的地方，它就绝对不往高处留。这就叫‘人往高处走，水往低处流’。"
+                    },
+                    {
+                        title: "偶尔也‘调皮’一下",
+                        parentWords: "可是，你知道吗？有时候水也会偷偷‘踩着梯子’往上爬哦。如果你仔细看小吸管或者毛巾里的水...",
+                        description: "在大自然的某些特殊时刻，重力也不是唯一的霸主。有一种神奇的力量（毛细现象），能让水违背常规，顺着狭小的缝隙向上攀登。"
+                    },
+                    {
+                        title: "水爬高挑战",
+                        parentWords: "来，实验室准备了三根不同粗细的玻璃管。把它们放进水池里，看看哪一根能让水爬得最高？",
+                        description: "你会发现，管子越细，水就爬得越欢。这是因为水和管壁之间有一种‘亲吻力’，克服了重力把水拉了上去。这可是大树长高的秘密呢！"
+                    },
+                    {
+                        title: "引力与压力的交锋",
+                        parentWords: "不仅是管子，连通器也是水的杰作。无论容器长成什么样，只要连通，水面永远是一样高的。这是压力的平衡。",
+                        description: "其实水一直在寻找‘最舒服’的状态。它往低处流是为了释放能量，它往细管爬是为了寻找依靠。每一滴水的轨迹，都是引力和张力的精确计算。"
+                    },
+                    {
+                        title: "润物无声的智慧",
+                        parentWords: "水流向下是为了滋润山谷里的每一棵草；而它往上爬是为了让最高处的叶子也能喝到水。它可真聪明！",
+                        description: "了解水的流动，我们就了解了生命的循环。我们要像水一样，既能顺应规律，也能在细微处顽强向上。故事讲完了，晚安。"
+                    }
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, pool, activeTube = null;
+                let particles = [];
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 30, 80);
+                    camera.lookAt(0, 0, 0);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Water pool
+                    const pGeo = new THREE.BoxGeometry(60, 5, 40);
+                    const pMat = new THREE.MeshPhongMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.6 });
+                    pool = new THREE.Mesh(pGeo, pMat);
+                    pool.position.y = -2.5;
+                    scene.add(pool);
+
+                    // Fountain or generic flow for S1
+                    setupWaterfall();
+
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+                    sun.position.set(20, 50, 10);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const setupWaterfall = () => {
+                    // Particle flow
+                    for (let i = 0; i < 100; i++) {
+                        const p = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                        resetParticle(p);
+                        scene.add(p);
+                        particles.push(p);
+                    }
+                };
+
+                const resetParticle = (p) => {
+                    p.position.set((Math.random() - 0.5) * 5, 20 + Math.random() * 5, 0);
+                    p.velocity = new THREE.Vector3(0, -0.2 - Math.random() * 0.2, 0);
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = Date.now() * 0.001;
+
+                    if (step.value === 1 || step.value === 5) {
+                        particles.forEach(p => {
+                            p.position.add(p.velocity);
+                            if (p.position.y < 0) resetParticle(p);
+                            p.visible = true;
+                        });
+                    } else {
+                        particles.forEach(p => p.visible = false);
+                    }
+
+                    // Active Tube interaction shim
+                    if (activeTube) {
+                        activeTube.rotation.y += 0.01;
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                // Methods
+                const pickTube = (w) => {
+                    hasExplored.value = true;
+                    if (activeTube) scene.remove(activeTube);
+
+                    const tubeGeo = new THREE.CylinderGeometry(w / 4, w / 4, 25, 32, 1, true);
+                    const tubeCol = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+                    activeTube = new THREE.Mesh(tubeGeo, tubeCol);
+                    activeTube.position.set(0, 12.5, 0);
+
+                    // Inner water level (Capillary)
+                    const waterH = (10 / w) * 15 + 5;
+                    const iwGeo = new THREE.CylinderGeometry(w / 4 - 0.1, w / 4 - 0.1, waterH, 32);
+                    const iwMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6 });
+                    const iw = new THREE.Mesh(iwGeo, iwMat);
+                    iw.position.y = - (25 - waterH) / 2;
+                    activeTube.add(iw);
+
+                    scene.add(activeTube);
+                    gsap.from(activeTube.position, { y: 40, duration: 1, ease: "power2.out" });
+                };
+
+                const next = () => { if (step.value < 5) step.value++; };
+                const jump = (n) => { step.value = n; };
+                const reset = () => {
+                    step.value = 1; hasExplored.value = false;
+                    if (activeTube) { scene.remove(activeTube); activeTube = null; }
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.head-area', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.content-area', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.head-area', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.content-area', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, hasExplored, next, jump, reset, pickTube };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

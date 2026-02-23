@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>癞蛤蟆的包</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E8F5E9;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .swamp-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 45px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .whisper-top {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #2E7D32;
+            opacity: 0.85;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
+        }
+
+        .narrative-center {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 120px;
+        }
+
+        .title-text {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: #1B5E20;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.7));
+        }
+
+        .content-text {
+            font-size: 1.4rem;
+            color: #2E7D32;
+            line-height: 1.8;
+            padding: 15px 40px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-container {
+            position: absolute;
+            bottom: 60px;
+            right: 60px;
+        }
+
+        .btn-bounce {
+            background: rgba(46, 125, 50, 0.95);
+            color: white;
+            padding: 18px 50px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-bounce:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="swamp-ui">
+        <!-- 顶部引导 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="whisper-top">
+                🐸 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 中心叙事 -->
+        <div class="narrative-center">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="title-text">{{ stages[step-1].title }}</h1>
+                    <p class="content-text">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 浮放交互 -->
+        <div class="action-container pointer-events-auto">
+            <button v-if="step === 3" @click="handleLump" class="btn-bounce">戳一戳小疙瘩（Q弹反馈）</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-bounce">继续探索沼泽</button>
+            <button v-else @click="reset" class="btn-bounce bg-stone-500">回到池塘边</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const lumpScale = ref(1);
+                const toadShifts = ref(0);
+
+                const stages = [
+                    { title: '深夜的呼唤', content: '在湿润的草丛里，大蛤蟆呱呱正静静地坐在一块青苔石上。它闭着眼，感受着夜晚吹过的每一阵凉爽的风。' },
+                    { title: '月亮下的秘密', content: '呱呱背上那些凸起的小圆点，就像是月亮落在它身上的小脚印。这些小疙瘩可是它的守护星，帮它存储着森林的能量。' },
+                    { title: '会跳舞的节奏', content: '来，伸出小食指，轻轻地、慢慢地触碰。每一个小圆点都充满了弹性，就像是在指尖轻轻跳舞的果冻。' },
+                    { title: '森林的共鸣', content: '你听，随着你的轻轻按压，呱呱也发出了舒缓的‘呱——’声。这不仅是歌唱，更是森林在对你温柔地耳语，诉说着古老的故事。' },
+                    { title: '草丛里的好梦', content: '夜晚深了，呱呱要钻进它最心爱的草窝里睡个好觉。星星挂在树梢，就像它的那些小疙瘩一样，亮晶晶的。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，看呱呱静静坐着的样子，它是不是也在听星星唱歌呢？",
+                    "每一个小生命都有它独特的‘铠甲’。呱呱的这些小山坡，就是它的宝贝。",
+                    "咱们轻轻地、慢慢地摸，就像在给它按摩。看，它是不是很舒服地眯起了眼睛？",
+                    "这就是大自然的乐器。你一点，它就回你一个温柔的音符。",
+                    "呱呱要去做梦啦。咱们也给每一个好梦说声谢谢。晚安，宝贝。"
+                ];
+
+                let rc, ctx, canvas;
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawToad = (x, y, t) => {
+                    ctx.save(); ctx.translate(x + Math.sin(t * 10) * toadShifts.value, y);
+                    // Feet
+                    rc.circle(-60, 60, 30, { fill: '#689F38', fillStyle: 'solid' });
+                    rc.circle(60, 60, 30, { fill: '#689F38', fillStyle: 'solid' });
+                    // Body
+                    rc.ellipse(0, 0, 180, 140, { fill: '#8BC34A', fillStyle: 'hachure', roughness: 2 });
+                    // Head / Mouth
+                    rc.curve([[-80, -30], [0, -60], [80, -30]], { stroke: '#1B5E20', strokeWidth: 3 });
+                    // Chin puffing
+                    const puff = Math.sin(t * 2) * 20;
+                    rc.ellipse(0, 40, 60 + puff, 40 + puff, { fill: '#DCEDC8', stroke: 'none' });
+                    // Eyes
+                    rc.circle(-40, -60, 30, { fill: '#FFF', stroke: '#333' });
+                    rc.circle(40, -60, 30, { fill: '#FFF', stroke: '#333' });
+                    rc.circle(-40, -60, 10, { fill: '#000' });
+                    rc.circle(40, -60, 10, { fill: '#000' });
+                    // Lumps
+                    const lumps = [[-30, -20], [30, -20], [0, -10], [-50, 10], [50, 10], [0, 20]];
+                    lumps.forEach(pos => {
+                        rc.circle(pos[0], pos[1], 15 * lumpScale.value, { fill: '#AED581', fillStyle: 'solid', stroke: '#558B2F' });
+                    });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    const cx = canvas.width / 2; const cy = canvas.height * 0.55;
+                    drawToad(cx, cy, time);
+                    if (toadShifts.value > 0) toadShifts.value *= 0.9;
+                    requestAnimationFrame(animate);
+                };
+
+                const handleLump = () => {
+                    toadShifts.value = 5;
+                    gsap.to(lumpScale, { value: 1.5, duration: 0.1, yoyo: true, repeat: 1 });
+                    if (step.value === 3) {
+                        setTimeout(() => nextStage(), 1500);
+                    }
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; };
+
+                onMounted(() => { initVisuals(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, lumpScale, stages, parentWords, nextStage, reset, handleLump };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

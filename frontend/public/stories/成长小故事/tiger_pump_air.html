@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小老虎学打气</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #FFB74D;
+            --text-primary: #BF360C;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFF3E0;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #E64A19;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #F4511E;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: #FF9800;
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #EF6C00;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">🐯 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故事情节 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="steadyPump" class="btn-action">伸出小手帮猛猛扶稳打气筒 🔧</button>
+            <button v-else-if="step === 3" @click="doPump" class="btn-action">一、二、嘿哟！用力压下去 🌬️</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">看球变圆了吗</button>
+            <button v-else @click="reset" class="btn-action !bg-slate-500 !text-white">明天再来学习新本领</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isSteady = ref(false);
+                const pumpProgress = ref(0.2);
+
+                const stages = [
+                    { title: '瘪瘪的小皮球', content: '猛猛最心爱的小皮球没气了。‘别担心，瞧我的，我力气可大啦！’猛猛翻出了角落里的打气筒，可它连打气管该插在哪个小圆洞里都还没看清楚呢。' },
+                    { title: '笨拙的第一次', content: '猛猛急急忙忙地用力压了一下，可打气筒就像个调皮的小马，一下子就歪倒了。猛猛的鼻尖差点碰到了把手，‘哎呀，气筒怎么不听话呀？’' },
+                    { title: '一、二、加油！', content: '妈妈笑了，教会了猛猛小窍诀：‘手要扶正，深深吸一口气，再匀称地把力气传给把手。’。‘噗嗤、噗嗤’，空气宝宝正在一点点钻进球里。' },
+                    { title: '圆滚滚的奖赏', content: '‘砰！’皮球终于变圆啦，弹性十足地在地板上轻快地蹦了两下。猛猛发现，原来只要掌握了节奏，连打气这么累的事也会变得很有趣。' },
+                    { title: '安静的休息时刻', content: '月亮爬到了窗台。今天虽然流了一点汗，但学会新本领的快乐比蜂蜜还要甜。猛猛抱着圆滚滚的皮球，进入了香甜的梦乡。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看，猛猛的小老虎耳朵正专注地竖着。如果你想给气球打气，你会请谁帮忙？",
+                    "嘘——做事不能太急哦。咱们伸手帮盟明稳住这个大家伙，告诉他：‘慢慢来，宝宝和你一起想办法。’",
+                    "打气就像在做呼吸操。来，咱们配合猛猛的节奏。一、二、用力！一、二、好样滴！",
+                    "哇！皮球现在就像个大橘子一样饱满。坚持就是最神奇的魔法，宝贝，你也拥有这种魔法哦。",
+                    "故事讲完啦。猛猛正和他的皮球在梦里踢比赛呢。咱们也盖好被子，开启我们的奇幻旅程。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawTiger = (x, y, scale, t, action = 'idle') => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const bounce = Math.sin(t * 5) * 4;
+                    // Body
+                    rc.circle(0, bounce, 120, { fill: '#FFB74D', fillStyle: 'hachure' });
+                    // Ears
+                    rc.circle(-60, -80 + bounce, 40, { fill: '#FFB74D', fillStyle: 'solid' });
+                    rc.circle(60, -80 + bounce, 40, { fill: '#FFB74D', fillStyle: 'solid' });
+                    // Stripes
+                    rc.line(-30, -100 + bounce, 30, -100 + bounce, { stroke: '#333', strokeWidth: 5 });
+                    rc.line(-20, -110 + bounce, 20, -110 + bounce, { stroke: '#333', strokeWidth: 3 });
+                    // Eyes
+                    rc.circle(-35, -30 + bounce, 8, { fill: '#333' }); rc.circle(35, -30 + bounce, 8, { fill: '#333' });
+                    ctx.restore();
+                };
+
+                const drawPump = (x, y, t, pushing = false) => {
+                    ctx.save(); ctx.translate(x, y);
+                    const handleY = pushing ? 50 + Math.sin(t * 20) * 20 : -50;
+                    // Cylinder
+                    rc.rectangle(-20, 0, 40, 150, { fill: '#78909C', fillStyle: 'solid' });
+                    // Handle
+                    rc.line(-60, handleY, 60, handleY, { stroke: '#333', strokeWidth: 8 });
+                    rc.line(0, handleY, 0, 150, { stroke: '#999', strokeWidth: 5 });
+                    // Base
+                    rc.line(-50, 150, 50, 150, { stroke: '#333', strokeWidth: 10 });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.65;
+
+                    if (step.value === 1) {
+                        drawTiger(centerX - 100, centerY, 1, t);
+                        // Flat Ball
+                        rc.ellipse(centerX + 150, centerY + 100, 120, 40, { fill: '#FF5252', fillStyle: 'hachure' });
+                    } else if (step.value === 2) {
+                        drawTiger(centerX - 150, centerY, 0.9, t);
+                        const tilt = isSteady.value ? 0 : 0.3;
+                        ctx.save(); ctx.translate(centerX + 50, centerY); ctx.rotate(tilt);
+                        drawPump(0, 0, t, false);
+                        ctx.restore();
+                    } else if (step.value === 3) {
+                        drawTiger(centerX - 120, centerY + 80, 0.8, t);
+                        drawPump(centerX + 50, centerY - 50, t, true);
+                        // Ball growing
+                        rc.circle(centerX + 200, centerY + 100, 40 + pumpProgress.value * 60, { fill: '#FF5252', fillStyle: 'solid' });
+                    } else if (step.value === 4) {
+                        drawTiger(centerX - 100, centerY, 1.1, t);
+                        rc.circle(centerX + 150, centerY + 50, 100, { fill: '#FF5252', fillStyle: 'solid' });
+                    } else if (step.value === 5) {
+                        drawTiger(centerX, centerY + 100, 0.7, 0, 'sleep');
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const steadyPump = () => { isSteady.value = true; setTimeout(() => nextStage(), 1500); };
+                const doPump = () => {
+                    pumpProgress.value += 0.2;
+                    if (pumpProgress.value >= 1) {
+                        setTimeout(() => nextStage(), 1000);
+                    }
+                };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isSteady.value = false; pumpProgress.value = 0.2; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, steadyPump, doPump, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

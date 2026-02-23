@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>腾云驾雾的感觉一定很奇妙</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #81D4FA;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 3.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .head-area {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .title-fancy {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #fff, #E0F7FA);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.8rem;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
+        }
+
+        .parent-hint {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            padding: 0.6rem 2.8rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 1.15rem;
+            color: #fff;
+        }
+
+        .story-content {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc-p {
+            font-size: 1.5rem;
+            line-height: 2.1;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            font-weight: 300;
+        }
+
+        .sky-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.5s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .sky-btn:hover {
+            transform: scale(1.1) translateY(-5px);
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #fff;
+        }
+
+        .alt-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 480px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(25px);
+            padding: 2.5rem;
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            pointer-events: auto;
+            z-index: 50;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.05);
+        }
+
+        .alt-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            margin: 1.8rem 0;
+            cursor: pointer;
+        }
+
+        .alt-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-nav {
+            position: fixed;
+            left: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .nav-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .nav-dot.active {
+            background: #fff;
+            transform: scale(1.5);
+            box-shadow: 0 0 15px #fff;
+        }
+
+        .mist-fog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+            z-index: 5;
+            backdrop-filter: blur(20px);
+            opacity: 0;
+            transition: opacity 1s;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg-canvas"></div>
+    <div class="mist-fog" id="fog-overlay"></div>
+
+    <div id="app" class="ui-overlay">
+        <div class="head-area">
+            <h1 class="title-fancy">{{ stages[step-1].title }}</h1>
+            <div class="parent-hint">☁️ {{ stages[step-1].parentWords }}</div>
+        </div>
+
+        <div class="story-content">
+            <p class="desc-p">{{ stages[step-1].description }}</p>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < 5 && step !== 3" @click="next" class="sky-btn">
+                    {{ step === 2 ? '启动引擎，向上冲！' : '继续云间航行' }}
+                </button>
+                <button v-else-if="step === 5" @click="reset" class="sky-btn">降落地面家园</button>
+            </div>
+        </div>
+
+        <div v-if="step === 3" class="alt-panel">
+            <div class="flex justify-between text-sm font-bold text-white mb-2">
+                <span>地表青草地</span>
+                <span>高空棉花云</span>
+            </div>
+            <input type="range" v-model="altitude" min="0" max="1" step="0.01" class="alt-slider pointer-events-auto">
+            <div class="flex justify-center mt-4">
+                <button @click="next" class="sky-btn !text-sm !py-2 !px-8"
+                    :style="{ opacity: altitude > 0.8 ? 1 : 0.6 }">
+                    进入云核深处
+                </button>
+            </div>
+        </div>
+
+        <div class="progress-nav">
+            <div v-for="n in 5" :key="n" :class="['nav-dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const altitude = ref(0);
+
+                const stages = [
+                    {
+                        title: "仰望云端",
+                        parentWords: "宝贝，你看天上的云白花花的，像不像一大团棉花糖在天上飘呀？",
+                        description: "其实云并不是‘糖’，而是由无数个非常非常小的小水滴或者小冰晶组成的。它们因为太轻了，所以能被风托在半空中。"
+                    },
+                    {
+                        title: "柔软的幻象",
+                        parentWords: "如果你能长出翅膀飞进去，你觉得云摸起来是硬邦邦的，还是像空气一样？",
+                        description: "云看起来虽然很有‘型’，但在里面看，它其实和大雾一模一样。一旦你钻进去，风景就会变得朦朦胧胧，你甚至看不清自己的手指。"
+                    },
+                    {
+                        title: "冲进云雾里",
+                        parentWords: "来！推动飞行手柄。增加我们的高度，看看穿透云层的那一刻，世界会变成什么样？",
+                        description: "在这个阶段，你正在穿越南太平洋层积云。阳光被无数的小水珠折射，形成了一种奇妙的、半透明的白色世界。这就是‘腾云驾雾’。"
+                    },
+                    {
+                        title: "大雾迷城",
+                        parentWords: "哇！到处都是白茫茫的，我们已经在云肚子里面啦。原来这里一点也不像棉花地呢。",
+                        description: "我们发现了一个气象常识：云就是‘飞在天上的雾’。这里能见度极低，空气湿润。在这种奇妙的环境里，世界变得宁静而孤独。"
+                    },
+                    {
+                        title: "换个距离看世界",
+                        parentWords: "飞累了我们就回地面吧。云在远看最美，我们也需要那份抬头就能看到的惊喜。晚安。",
+                        description: "视角的变化让我们理解了自然的真相。云不仅负责美丽的构图，更是地球降雨的主要来源。感谢这些轻飘飘的‘雾团’保护着地球。晚安。"
+                    }
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, cloudParticles = [];
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 150);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('bg-canvas').appendChild(renderer.domElement);
+
+                    // Sky gradient background
+                    scene.background = new THREE.Color(0x81D4FA);
+
+                    // Add dynamic clouds
+                    const cloudGeo = new THREE.SphereGeometry(30, 24, 24);
+                    for (let i = 0; i < 15; i++) {
+                        const mat = new THREE.MeshBasicMaterial({
+                            color: 0xffffff, transparent: true, opacity: 0.15
+                        });
+                        const c = new THREE.Mesh(cloudGeo, mat);
+                        c.position.set((Math.random() - 0.5) * 300, -100 + (Math.random() * 300), (Math.random() - 0.5) * 200);
+                        c.scale.set(i * 0.2 + 1, 1, i * 0.2 + 1);
+                        scene.add(c);
+                        cloudParticles.push(c);
+                    }
+
+                    // Lower "ground" plane (becomes invisible as we rise)
+                    const gGeo = new THREE.PlaneGeometry(2000, 2000);
+                    const gMat = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+                    const ground = new THREE.Mesh(gGeo, gMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    ground.position.y = -80;
+                    scene.add(ground);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    // Update scene based on altitude
+                    const altVal = altitude.value;
+                    camera.position.y = -50 + altVal * 150;
+
+                    cloudParticles.forEach((c, idx) => {
+                        c.position.x += Math.sin(t * 0.5 + idx) * 0.05;
+                        // Fade in cloud texture more as we get closer to its height
+                        const dist = Math.abs(c.position.y - camera.position.y);
+                        c.material.opacity = Math.max(0.1, 0.6 - dist / 100);
+                    });
+
+                    // Sync overlay fog
+                    const fog = document.getElementById('fog-overlay');
+                    if (fog) {
+                        const fogFactor = Math.max(0, (altVal - 0.7) * 4); // Peak fog at top
+                        fog.style.opacity = Math.min(0.5, fogFactor);
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const next = () => {
+                    if (step.value < 5) {
+                        step.value++;
+                        if (step.value === 4) gsap.to(altitude, { value: 3.5, duration: 2.5 });
+                    }
+                };
+                const jump = (n) => {
+                    step.value = n;
+                    if (n < 3) altitude.value = 0;
+                    if (n > 3) altitude.value = 1;
+                };
+                const reset = () => {
+                    step.value = 1; altitude.value = 0;
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.head-area', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.story-content', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.head-area', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.story-content', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.rotation, { x: -y * 0.05, y: -x * 0.05, duration: 2 });
+                        gsap.to('.ui-overlay', { x: -x * 10, y: -y * 10, duration: 1.5 });
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, stages, altitude, next, jump, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人物行走动画</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            min-height: 100dvh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #e8eef2 0%, #d0d8de 100%);
+            font-family: system-ui, sans-serif;
+            color: #333;
+        }
+        h1 {
+            margin: 0 0 0.5em;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .walk-area {
+            position: relative;
+            width: 260px;
+            min-height: 340px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 16px;
+            overflow: visible;
+        }
+        .walk-area .hw-walker {
+            filter: drop-shadow(2px 4px 8px rgba(0,0,0,0.12));
+        }
+        /* 人物：身材、衣服、手掌、脚与脚趾 */
+        .human-walker .hw-segment {
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.25) !important;
+        }
+        .human-walker .hw-body { background: transparent !important; }
+        .human-walker [data-segment="neck"] {
+            background: linear-gradient(180deg, #e8c9b0 0%, #dbb89a 100%) !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+        }
+        /* 上臂：军装袖 — 橄榄绿、袖口线 */
+        .human-walker [data-segment$="UpperArm"] {
+            background: linear-gradient(180deg, #5c6b3c 0%, #4a5d23 40%, #3d4e1c 100%) !important;
+            border-radius: 50% !important;
+            border-color: rgba(0,0,0,0.2) !important;
+        }
+        .human-walker [data-segment$="UpperArm"]::after {
+            content: ""; position: absolute; left: 50%; bottom: 0; width: 120%; height: 14%; margin-left: -10%; border-radius: 2px; background: linear-gradient(180deg, #3d4e1c, #2a3514); border-top: 1px solid rgba(0,0,0,0.25);
+        }
+        /* 小臂：军装袖延续 */
+        .human-walker [data-segment$="Forearm"] {
+            background: linear-gradient(180deg, #4a5d23 0%, #3d4e1c 100%) !important;
+            border-color: rgba(0,0,0,0.2) !important;
+        }
+        /* 手掌 + 手指暗示 */
+        .human-walker [data-segment*="Hand"] {
+            background: linear-gradient(180deg, #dbb89a 0%, #d0a888 40%, #c49870 100%) !important;
+            border-radius: 48% 48% 45% 45% !important;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.08) !important;
+        }
+        .human-walker [data-segment*="Hand"]::before {
+            content: ""; position: absolute; left: 10%; bottom: 8%; width: 80%; height: 35%; border-radius: 0 0 40% 40%; background: repeating-linear-gradient(90deg, transparent 0, transparent 18%, rgba(0,0,0,0.06) 18%, rgba(0,0,0,0.06) 22%); pointer-events: none;
+        }
+        /* 大腿/小腿：军裤 — 橄榄绿 */
+        .human-walker [data-segment*="Thigh"] {
+            background: linear-gradient(180deg, #5c6b3c 0%, #4a5d23 50%, #3d4e1c 100%) !important;
+            border-color: rgba(0,0,0,0.2) !important;
+        }
+        .human-walker [data-segment*="Shin"] {
+            background: linear-gradient(180deg, #4a5d23 0%, #3d4e1c 100%) !important;
+            border-color: rgba(0,0,0,0.2) !important;
+        }
+        /* 脚：军靴 — 深棕/黑、鞋底 */
+        .human-walker [data-segment*="Foot"] {
+            background: linear-gradient(180deg, #3d3528 0%, #2a2218 40%, #1a1610 100%) !important;
+            border-radius: 45% 45% 50% 50% !important;
+            box-shadow: inset 0 2px 0 rgba(80,70,50,0.15), 0 4px 6px rgba(0,0,0,0.35) !important;
+            border: 1px solid rgba(0,0,0,0.3) !important;
+        }
+        .human-walker [data-segment*="Foot"]::after {
+            content: ""; position: absolute; left: 0; right: 0; bottom: -18%; height: 28%; background: linear-gradient(180deg, transparent, #1a1610); border-radius: 0 0 45% 45%; filter: blur(0.5px);
+        }
+        /* 脚趾：军靴鞋头 */
+        .human-walker [data-segment*="Toe"] {
+            background: linear-gradient(180deg, #2a2218 0%, #1a1610 100%) !important;
+            border-radius: 40% 40% 50% 50% !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+            border: 1px solid rgba(0,0,0,0.25) !important;
+        }
+        .human-walker [data-segment*="Toe"]::before {
+            content: ""; position: absolute; left: 5%; bottom: 10%; width: 90%; height: 45%; border-radius: 0 0 40% 40%; background: repeating-linear-gradient(90deg, transparent 0, transparent 22%, rgba(0,0,0,0.2) 22%, rgba(0,0,0,0.2) 26%); pointer-events: none;
+        }
+        /* 内侧手脚：更深色，与外侧形成层次 */
+        .human-walker .hw-inner [data-segment$="UpperArm"] {
+            background: linear-gradient(180deg, #4a5d23 0%, #3d4e1c 40%, #2a3514 100%) !important;
+        }
+        .human-walker .hw-inner [data-segment$="Forearm"] {
+            background: linear-gradient(180deg, #3d4e1c 0%, #2a3514 100%) !important;
+        }
+        .human-walker .hw-inner [data-segment*="Hand"] {
+            background: linear-gradient(180deg, #c49870 0%, #b08860 40%, #9a7048 100%) !important;
+        }
+        .human-walker .hw-inner [data-segment*="Thigh"] {
+            background: linear-gradient(180deg, #4a5d23 0%, #3d4e1c 50%, #2a3514 100%) !important;
+        }
+        .human-walker .hw-inner [data-segment*="Shin"] {
+            background: linear-gradient(180deg, #3d4e1c 0%, #2a3514 100%) !important;
+        }
+        .human-walker .hw-inner [data-segment*="Foot"] {
+            background: linear-gradient(180deg, #2a2218 0%, #1a1610 50%, #120e0a 100%) !important;
+        }
+        .human-walker .hw-inner [data-segment*="Toe"] {
+            background: linear-gradient(180deg, #1a1610 0%, #120e0a 100%) !important;
+        }
+        .human-walker .hw-joint { display: none !important; }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1em;
+            margin-top: 1.5em;
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.85);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        label { display: inline-flex; align-items: center; gap: 0.5em; cursor: pointer; }
+        input[type="checkbox"] { cursor: pointer; accent-color: #5a8; }
+        input[type="range"] { cursor: pointer; accent-color: #5a8; }
+    </style>
+</head>
+<body>
+
+    <h1>🚶 人物行走</h1>
+    <div class="walk-area" id="walk-container"></div>
+    <div class="controls">
+        <label><input type="checkbox" id="walk-toggle" checked> 走路</label>
+        <label>速度 <input type="range" name="speed" value="1.4" min="0.6" max="2.5" step="0.1"></label>
+        <label>肤色 <input type="range" name="color" value="28" min="0" max="45" step="1"></label>
+        <label>体型 <input type="range" name="size" value="1" min="0.6" max="1.4" step="0.1"></label>
+    </div>
+
+    <script src="HumanWalk.js"></script>
+    <script>
+        (function () {
+            const container = document.getElementById('walk-container');
+            const walkToggle = document.getElementById('walk-toggle');
+
+            const walker = HumanWalk.createWalker({
+                scale: 1,
+                color: 28,
+                duration: 1.4,
+                playing: true,
+                sizes: {
+                    head: 36,
+                    neck: 14,
+                    upperTorso: 34,
+                    lowerTorso: 32,
+                    upperArm: 50,
+                    forearm: 46,
+                    hand: 22,
+                    thigh: 64,
+                    shin: 62,
+                    foot: 26,
+                    toe: 16,
+                    joint: 24
+                }
+            });
+            HumanWalk.setColor(walker, 28);
+            walker.root.classList.add('human-walker');
+            container.appendChild(walker.root);
+
+            // 头：侧脸 — 左=后脑+耳，右=正面（眉眼下鼻嘴），一眼在侧面
+            const headSlot = walker.slots.head;
+            headSlot.innerHTML = '';
+            headSlot.style.pointerEvents = 'auto';
+            const headWrap = document.createElement('div');
+            headWrap.style.cssText = 'position: relative; width: 100%; height: 100%;';
+
+            const face = document.createElement('div');
+            face.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(90deg, #b89570 0%, #c9a078 22%, #dbb89a 45%, #e8c9b0 70%, #f0d4c0 100%); border: 2px solid rgba(0,0,0,0.08); box-shadow: inset -8px 0 20px rgba(0,0,0,0.2), inset 6px 0 10px rgba(255,255,255,0.2);';
+            headWrap.appendChild(face);
+            const ear = document.createElement('div');
+            ear.style.cssText = 'position: absolute; left: -6%; top: 26%; width: 14%; height: 26%; border-radius: 50%; background: linear-gradient(140deg, #c9a078 0%, #dbb89a 100%); border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 2px 0 4px rgba(255,255,255,0.15);';
+            headWrap.appendChild(ear);
+            const brow = document.createElement('div');
+            brow.style.cssText = 'position: absolute; left: 62%; top: 30%; width: 18%; height: 5%; border-radius: 2px; background: linear-gradient(180deg, rgba(70,50,35,0.5) 0%, transparent 100%); transform: rotate(-4deg);';
+            headWrap.appendChild(brow);
+            const eye = document.createElement('div');
+            eye.style.cssText = 'position: absolute; left: 64%; top: 36%; width: 12%; height: 14%; border-radius: 50%; background: radial-gradient(ellipse 70% 80% at 50% 40%, #2a2a2a, #141414); border: 1px solid rgba(0,0,0,0.3); box-shadow: inset 0 -1px 2px rgba(0,0,0,0.3);';
+            headWrap.appendChild(eye);
+            const shine = document.createElement('div');
+            shine.style.cssText = 'position: absolute; left: 66%; top: 38%; width: 4%; height: 4%; border-radius: 50%; background: #fff;';
+            headWrap.appendChild(shine);
+            const nose = document.createElement('div');
+            nose.style.cssText = 'position: absolute; left: 72%; top: 42%; width: 8%; height: 22%; border-radius: 0 50% 50% 0; background: linear-gradient(100deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.04) 60%, transparent 100%);';
+            headWrap.appendChild(nose);
+            const mouth = document.createElement('div');
+            mouth.style.cssText = 'position: absolute; left: 68%; top: 66%; width: 10%; height: 4%; border-radius: 0 0 50% 50%; border-bottom: 1.5px solid rgba(120,80,55,0.5);';
+            headWrap.appendChild(mouth);
+            const chin = document.createElement('div');
+            chin.style.cssText = 'position: absolute; left: 65%; top: 68%; width: 14%; height: 24%; border-radius: 0 0 50% 30%; background: linear-gradient(165deg, transparent 0%, rgba(0,0,0,0.06) 100%);';
+            headWrap.appendChild(chin);
+
+            headSlot.appendChild(headWrap);
+
+            // 上躯干：军装上衣 — 橄榄绿、立领、肩章、胸袋
+            const upperSlot = walker.slots.upperTorso;
+            upperSlot.innerHTML = '';
+            const upperWrap = document.createElement('div');
+            upperWrap.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 45% 45% 42% 42%; background: linear-gradient(175deg, #6b7c4a 0%, #5c6b3c 25%, #4a5d23 60%, #3d4e1c 100%); border: 1px solid rgba(0,0,0,0.25); box-shadow: inset 0 3px 8px rgba(255,255,255,0.08), inset 0 -3px 8px rgba(0,0,0,0.15);';
+            upperSlot.appendChild(upperWrap);
+            const collar = document.createElement('div');
+            collar.style.cssText = 'position: absolute; left: 18%; top: 0; width: 64%; height: 24%; border-radius: 0 0 50% 50%; border: 2px solid #2a3514; border-top: none; background: linear-gradient(180deg, #3d4e1c 0%, #2a3514 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);';
+            upperWrap.appendChild(collar);
+            const chestPocket = document.createElement('div');
+            chestPocket.style.cssText = 'position: absolute; left: 30%; top: 32%; width: 40%; height: 22%; border-radius: 2px; border: 1px solid rgba(0,0,0,0.3); background: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, transparent 100%);';
+            upperWrap.appendChild(chestPocket);
+            const shoulderL = document.createElement('div');
+            shoulderL.style.cssText = 'position: absolute; left: -10%; top: -2%; width: 32%; height: 36%; border-radius: 50%; background: linear-gradient(135deg, #5c6b3c 0%, #4a5d23 100%); border: 1px solid rgba(0,0,0,0.2); box-shadow: inset 2px 2px 4px rgba(255,255,255,0.06);';
+            upperWrap.appendChild(shoulderL);
+            const shoulderR = document.createElement('div');
+            shoulderR.style.cssText = 'position: absolute; right: -10%; top: -2%; width: 32%; height: 36%; border-radius: 50%; background: linear-gradient(225deg, #5c6b3c 0%, #4a5d23 100%); border: 1px solid rgba(0,0,0,0.2); box-shadow: inset -2px 2px 4px rgba(255,255,255,0.06);';
+            upperWrap.appendChild(shoulderR);
+            const epauletteL = document.createElement('div');
+            epauletteL.style.cssText = 'position: absolute; left: -6%; top: 2%; width: 18%; height: 14%; border-radius: 2px; background: linear-gradient(180deg, #4a5d23 0%, #3d4e1c 100%); border: 1px solid rgba(0,0,0,0.2);';
+            upperWrap.appendChild(epauletteL);
+            const epauletteR = document.createElement('div');
+            epauletteR.style.cssText = 'position: absolute; right: -6%; top: 2%; width: 18%; height: 14%; border-radius: 2px; background: linear-gradient(180deg, #4a5d23 0%, #3d4e1c 100%); border: 1px solid rgba(0,0,0,0.2);';
+            upperWrap.appendChild(epauletteR);
+
+            // 下躯干：军裤 — 橄榄绿、腰带、臀袋感、臀宽
+            const lowerSlot = walker.slots.lowerTorso;
+            lowerSlot.innerHTML = '';
+            const lowerWrap = document.createElement('div');
+            lowerWrap.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 42% 42% 48% 48%; background: linear-gradient(180deg, #4a5d23 0%, #3d4e1c 50%, #2a3514 100%); border: 1px solid rgba(0,0,0,0.25); box-shadow: inset 0 2px 6px rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.12);';
+            lowerSlot.appendChild(lowerWrap);
+            const belt = document.createElement('div');
+            belt.style.cssText = 'position: absolute; left: 2%; top: 6%; width: 96%; height: 16%; border-radius: 2px; background: linear-gradient(180deg, #1a1610 0%, #0d0b08 50%, #1a1610 100%); border: 1px solid rgba(0,0,0,0.4); box-shadow: inset 0 1px 0 rgba(100,90,70,0.2);';
+            lowerWrap.appendChild(belt);
+            const buckle = document.createElement('div');
+            buckle.style.cssText = 'position: absolute; left: 50%; top: 4%; width: 20%; height: 14%; margin-left: -10%; border-radius: 2px; background: linear-gradient(135deg, #8a7a5a 0%, #5a4a3a 100%); border: 1px solid rgba(0,0,0,0.3); box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);';
+            lowerWrap.appendChild(buckle);
+            const thighPocketL = document.createElement('div');
+            thighPocketL.style.cssText = 'position: absolute; left: 12%; top: 28%; width: 22%; height: 24%; border-radius: 2px; border: 1px solid rgba(0,0,0,0.25); background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, transparent 100%);';
+            lowerWrap.appendChild(thighPocketL);
+            const hipL = document.createElement('div');
+            hipL.style.cssText = 'position: absolute; left: -6%; bottom: 2%; width: 34%; height: 42%; border-radius: 50%; background: linear-gradient(210deg, #3d4e1c 0%, #2a3514 100%); border: 1px solid rgba(0,0,0,0.2);';
+            lowerWrap.appendChild(hipL);
+            const hipR = document.createElement('div');
+            hipR.style.cssText = 'position: absolute; right: -6%; bottom: 2%; width: 34%; height: 42%; border-radius: 50%; background: linear-gradient(330deg, #3d4e1c 0%, #2a3514 100%); border: 1px solid rgba(0,0,0,0.2);';
+            lowerWrap.appendChild(hipR);
+
+            walkToggle.addEventListener('change', function () {
+                HumanWalk.setPlaying(walker, this.checked);
+            });
+            document.querySelector('input[name="speed"]').addEventListener('input', function () {
+                HumanWalk.setDuration(walker, parseFloat(this.value));
+            });
+            document.querySelector('input[name="color"]').addEventListener('input', function () {
+                HumanWalk.setColor(walker, parseFloat(this.value));
+            });
+            document.querySelector('input[name="size"]').addEventListener('input', function () {
+                HumanWalk.setScale(walker, parseFloat(this.value));
+            });
+        })();
+    </script>
+</body>
+</html>

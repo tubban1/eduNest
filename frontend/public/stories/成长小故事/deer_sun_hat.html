@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>梅花鹿的太阳帽</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-summer: #FFFDE7;
+            --text-summer: #5D4037;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-summer);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #795548;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #5D4037;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #4E342E;
+            line-height: 1.8;
+            padding: 12px 25px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(93, 64, 55, 0.85);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: #5D4037;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 1s, transform 1s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 指导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🦌 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 正文 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 v-if="stages[step-1].title" class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p v-if="stages[step-1].content" class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 互动 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="shareHat" class="btn-action">帮悠悠把大草帽带给小花 🎐</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">继续在这美好的午后散步</button>
+            <button v-else @click="reset" class="btn-action !bg-amber-800">在凉爽的晚风中入梦</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isSharing = ref(false);
+
+                const stages = [
+                    { title: '漂亮的太阳帽', content: '梅花鹿悠悠有一顶漂亮的草帽，帽檐缀着粉色的蝴蝶结。它戴着帽子在软绵绵的草地上散步，觉得开心极了。' },
+                    { title: '火辣辣的太阳', content: '太阳公公今天特别热情，草地被晒得暖洋洋的。悠悠靠着帽子遮挡，一点儿也不觉得晒。‘这帽子真好呀！’它想。' },
+                    { title: '垂头丧气的小花', content: '路边的一朵小红花却低下了头，花瓣都有点蔫了。它小小声地说：‘太阳公公，能不能稍微凉快一点点呀？’ 悠悠停下了脚步。' },
+                    { title: '阴凉里的欢歌', content: '悠悠悄悄地走到小花身边，把大大的帽檐移了过去。小花觉得身上一阵凉爽，慢慢抬起了头：‘谢谢你，善良的悠悠！’' },
+                    { title: '温柔的午后梦', content: '太阳下山了，风儿变清凉了。悠悠和小花依偎在一起，盖着薄薄的月光，做了一个关于彩虹的梦。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你瞧，悠悠的帽子是不是像一个大大的黄色飞碟？咱们给它打个招呼吧。",
+                    "太阳公公真勤劳。如果你觉得热，你会躲在什么地方呢？",
+                    "嘘——小花渴了，也怕晒。咱们帮悠悠出个主意，怎么让小花也凉快一下？",
+                    "哇！快看！小花重新挺起了胸膛。分享凉爽，就是分享快乐。宝贝，你真棒！",
+                    "故事讲完啦。现在，咱们也盖好小被子，像悠悠和小花一样，进入甜甜的梦乡。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawDeer = (x, y, scale, t) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+
+                    const bounce = Math.sin(t * 3) * 4;
+                    const bodyColor = '#BCAECC';
+
+                    // Body with texture
+                    rc.circle(0, bounce, 95, { fill: bodyColor, fillStyle: 'hachure', roughness: 1.5 });
+
+                    // Plum Blossom Spots
+                    for (let i = 0; i < 5; i++) {
+                        const sx = Math.sin(i * 1.5) * 40;
+                        const sy = Math.cos(i * 1.5) * 40 + bounce;
+                        rc.circle(sx, sy, 8, { fill: '#FFF', stroke: 'none', roughness: 2 });
+                    }
+
+                    // Legs & Hooves
+                    for (let i = 0; i < 2; i++) {
+                        const lx = i === 0 ? -35 : 35;
+                        rc.line(lx, 40 + bounce, lx, 100, { stroke: bodyColor, strokeWidth: 10 });
+                        rc.circle(lx, 105, 12, { fill: '#8D6E63', stroke: 'none' }); // Hooves
+                    }
+
+                    // Neck & Head
+                    rc.curve([[60, -20 + bounce], [105, -70 + bounce], [85, -120 + bounce]], { stroke: bodyColor, strokeWidth: 28 });
+                    rc.circle(90, -125 + bounce, 45, { fill: bodyColor, fillStyle: 'solid' });
+
+                    // Expressive Face
+                    rc.circle(80, -10 + bounce, 15, { fill: '#F48FB1', fillStyle: 'solid', roughness: 2, stroke: 'none' }); // Cheek
+                    const blink = Math.sin(t * 0.5) > 0.95 ? 0.1 : 1.0;
+                    rc.ellipse(105, -135 + bounce, 10, 14 * blink, { fill: '#000', fillStyle: 'solid' }); // Eye
+                    rc.circle(125, -120 + bounce, 8, { fill: '#F06292', stroke: 'none' }); // Nose
+
+                    // Antlers (Branched)
+                    for (let i = 0; i < 2; i++) {
+                        const ax = i === 0 ? 80 : 105;
+                        rc.line(ax, -165 + bounce, ax - (i === 0 ? 20 : -20), -200 + bounce, { stroke: '#8D6E63', strokeWidth: 4 });
+                        rc.line(ax - (i === 0 ? 5 : -5), -180 + bounce, ax - (i === 0 ? 15 : -15), -190 + bounce, { stroke: '#8D6E63', strokeWidth: 3 });
+                    }
+
+                    // Hat
+                    const hatX = isSharing.value ? 0 : 90;
+                    const hatY = isSharing.value ? -160 : -165;
+                    const hatSway = Math.sin(t * 2) * 6;
+                    // Hat Base
+                    rc.curve([[hatX - 75, hatY + bounce + hatSway], [hatX, hatY - 60 + bounce + hatSway], [hatX + 75, hatY + bounce + hatSway]], { fill: '#FFD54F', fillStyle: 'hachure', hachureGap: 3, strokeWidth: 3 });
+                    // Ribbon
+                    rc.curve([[hatX - 30, hatY - 20 + bounce + hatSway], [hatX + 30, hatY - 20 + bounce + hatSway]], { stroke: '#F06292', strokeWidth: 12 });
+                    rc.circle(hatX, hatY - 25 + bounce + hatSway, 10, { fill: '#F06292', fillStyle: 'solid' }); // Bow
+
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.65;
+
+                    // Ground with grass bits
+                    rc.line(0, centerY + 110, canvas.width, centerY + 110, { stroke: '#81C784', strokeWidth: 5 });
+                    for (let i = 0; i < 10; i++) {
+                        const gx = (i * 200 + t * 20) % canvas.width;
+                        rc.line(gx, centerY + 110, gx + 10, centerY + 90, { stroke: '#4CAF50' });
+                    }
+
+                    // Sun (Pulsating)
+                    if (step.value < 5) {
+                        const sunPulse = Math.sin(t * 2) * 5;
+                        rc.circle(150, 150, 55 + sunPulse, { fill: '#FFB300', fillStyle: 'solid' });
+                        for (let i = 0; i < 12; i++) {
+                            const angle = (i / 12) * Math.PI * 2 + t * 0.4;
+                            rc.line(150 + Math.cos(angle) * 70, 150 + Math.sin(angle) * 70, 150 + Math.cos(angle) * 110, 150 + Math.sin(angle) * 110, { stroke: '#FFB300', strokeWidth: 2 });
+                        }
+                    } else {
+                        // Night Moon
+                        document.body.style.background = '#3F51B5';
+                        rc.circle(canvas.width * 0.85, 150, 50, { fill: '#FFF9C4', fillStyle: 'solid' });
+                    }
+
+                    // Flower logic
+                    const flowerX = centerX - 240 + Math.sin(t) * 5;
+                    const flowerY = centerY + 110;
+                    const flowerState = step.value < 4 ? 0.7 : 1.2; // drooping or upright
+                    const flowerBounce = Math.sin(t * 3) * 3;
+
+                    // Stem
+                    rc.curve([[flowerX, flowerY], [flowerX + (step.value < 4 ? 20 : 0), flowerY - 40], [flowerX, flowerY - 80 * flowerState + flowerBounce]], { stroke: '#4CAF50', strokeWidth: 5 });
+                    // Petals
+                    const fpx = flowerX, fpy = flowerY - 85 * flowerState + flowerBounce;
+                    for (let i = 0; i < 5; i++) {
+                        const ang = (i / 5) * Math.PI * 2 + t;
+                        rc.ellipse(fpx + Math.cos(ang) * 20, fpy + Math.sin(ang) * 20, 18, 18, { fill: '#EF5350', fillStyle: 'solid' });
+                    }
+                    rc.circle(fpx, fpy, 12, { fill: '#FFF' });
+
+                    drawDeer(centerX, centerY, 1.1, t);
+                    requestAnimationFrame(animate);
+                };
+
+                const shareHat = () => {
+                    isSharing.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    if (step.value !== 4) isSharing.value = false;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    isSharing.value = false;
+                };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, shareHat, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

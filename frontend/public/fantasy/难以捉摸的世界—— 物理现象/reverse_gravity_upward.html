@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>东西往上升而不往下掉会怎样</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --gravity-color: #a78bfa;
+            --sky-color: #0c4a6e;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--sky-color);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .header {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, #ddd, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-hint {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 0.5rem 2rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.1rem;
+            color: #c4b5fd;
+            display: inline-block;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .description {
+            font-size: 1.6rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-fancy {
+            background: rgba(167, 139, 250, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #ddd;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: 1px solid rgba(167, 139, 250, 0.4);
+        }
+
+        .btn-fancy:hover {
+            transform: scale(1.1);
+            background: rgba(167, 139, 250, 0.4);
+            border-color: #fff;
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 480px;
+            pointer-events: auto;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .gravity-switch {
+            width: 80px;
+            height: 40px;
+            background: #4b5563;
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            display: inline-block;
+            transition: 0.4s;
+        }
+
+        .gravity-switch::after {
+            content: '⬇️';
+            position: absolute;
+            left: 4px;
+            top: 4px;
+            width: 32px;
+            height: 32px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.4s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .gravity-switch.reversed {
+            background: #a78bfa;
+        }
+
+        .gravity-switch.reversed::after {
+            left: 44px;
+            content: '⬆️';
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #a78bfa;
+            border-color: #a78bfa;
+            transform: scale(1.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+
+    <div id="app" class="ui-overlay">
+        <div class="header" ref="header">
+            <h1 class="title">{{ stages[step-1].title }}</h1>
+            <div class="parent-hint">🌍 {{ stages[step-1].parentWords }}</div>
+        </div>
+
+        <div class="content-box" ref="content">
+            <p class="description">{{ stages[step-1].description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="btn-fancy">继续探索</button>
+                <button v-if="step === 5" @click="reset" class="btn-fancy">找回大地的怀抱</button>
+            </div>
+        </div>
+
+        <!-- S3 核心交互 -->
+        <div v-if="step === 3" class="control-panel">
+            <div class="text-purple-200 text-sm font-bold mb-4">引力相位反转开关</div>
+            <div class="flex items-center justify-center gap-8">
+                <div @click="toggleGravity" :class="['gravity-switch', { reversed: isGravityReversed }]"></div>
+                <button @click="resetScene" class="btn-fancy !py-2 !px-6 !text-xs">复位全部</button>
+            </div>
+            <div class="text-[10px] text-purple-300 mt-4">点击飞起的物体尝试“捕捉”它们！</div>
+            <button v-if="isGravityReversed" @click="next" class="btn-fancy !py-2 !px-8 !text-sm mt-4">体验失控世界</button>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isGravityReversed = ref(false);
+                const caughtCount = ref(0);
+
+                const stages = [
+                    {
+                        title: "大地的拥抱",
+                        parentWords: "宝贝，你看，苹果熟了会掉到地上，水总是往低处流。这都是因为地球在紧紧地抱着我们呢。",
+                        description: "这种‘抱住’我们的力量叫万有引力。地球就像一个巨大的磁铁，吸引着它上面的一切，不让我们飘进黑漆漆的太空。"
+                    },
+                    {
+                        title: "如果拥抱变推开...",
+                        parentWords: "假如有一天，地球突然不想抱我们了，反而要把所有东西都推向天空，会发生什么？",
+                        description: "那可就糟透了！房子会离开地基，海水会飞向云端，连我们自己也会像断了线的氢气球一样加速飞走。"
+                    },
+                    {
+                        title: "重力反转实验室",
+                        parentWords: "来吧，拨动那个危险的开关！看看当‘往下掉’变成‘往上升’时，原本熟悉的世界会变得多疯狂。",
+                        description: "在这个阶段，所有的向心力都变成了离心力。如果不赶紧‘抓住’那些飞走的苹果和石头，它们就永远找不回来啦。"
+                    },
+                    {
+                        title: "失重与孤独的漂泊",
+                        parentWords: "你看，由于没有引力的牵引，大气层也会慢慢消散，地球会变成一颗荒凉的死球。生命需要引力的束缚才能存在。",
+                        description: "没有了引力的世界是支离破碎的。虽然‘飞翔’看起来很酷，但没有归宿的漂泊却是生命最大的威胁。平衡才是自然的真谛。"
+                    },
+                    {
+                        title: "隐形的定海神针",
+                        parentWords: "重力虽然让我们变重，但它也是最能带给我们安全感的东西。让我们感谢这股一直向下的力量吧。",
+                        description: "引力不仅塑造了地球，也塑造了我们的骨骼和心脏。它是宇宙中最深沉、最持久的一份契约。故事讲完了，晚安。"
+                    }
+                ];
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, ground, floatingObjects = [], raycaster = new THREE.Raycaster();
+                let mouse = new THREE.Vector2(), clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 30, 100);
+                    camera.lookAt(0, 10, 0);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Ground with texture shim
+                    const gGeo = new THREE.CircleGeometry(60, 64);
+                    const gMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, side: THREE.DoubleSide });
+                    ground = new THREE.Mesh(gGeo, gMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    scene.add(ground);
+
+                    // Add items on ground
+                    for (let i = 0; i < 20; i++) {
+                        addItem();
+                    }
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(30, 100, 30);
+                    scene.add(sun);
+
+                    window.addEventListener('click', onDocClick);
+                    animate();
+                };
+
+                const addItem = () => {
+                    const types = [
+                        new THREE.SphereGeometry(2, 16, 16), // Apple
+                        new THREE.BoxGeometry(3, 3, 3),      // Box
+                        new THREE.ConeGeometry(2, 5, 8)      // Gem
+                    ];
+                    const colors = [0xef4444, 0x10b981, 0xfacc15, 0xffffff];
+                    const geo = types[Math.floor(Math.random() * types.length)];
+                    const col = colors[Math.floor(Math.random() * colors.length)];
+                    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col }));
+
+                    mesh.position.set((Math.random() - 0.5) * 80, 2, (Math.random() - 0.5) * 80);
+                    mesh.rotation.set(Math.random(), Math.random(), Math.random());
+                    mesh.userData = { initialPos: mesh.position.clone(), speed: 0.1 + Math.random() * 0.2 };
+                    scene.add(mesh);
+                    floatingObjects.push(mesh);
+                };
+
+                const onDocClick = (e) => {
+                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(floatingObjects);
+                    if (intersects.length > 0) {
+                        const target = intersects[0].object;
+                        // "Catch" animation using GSAP
+                        gsap.to(target.position, { y: ground.position.y + 2, duration: 1, ease: "bounce.out" });
+                        caughtCount.value++;
+                    }
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    floatingObjects.forEach(obj => {
+                        if (isGravityReversed.value) {
+                            obj.position.y += obj.userData.speed;
+                            obj.rotation.x += 0.02;
+                            if (obj.position.y > 150) obj.position.y = -20; // Recycle
+                        } else if (obj.position.y > 2.1) {
+                            obj.position.y -= 0.5; // Natural fall
+                            if (obj.position.y < 2) obj.position.y = 2;
+                        }
+                    });
+
+                    // Background sky shift
+                    if (isGravityReversed.value) {
+                        scene.background = new THREE.Color().lerpColors(new THREE.Color(0x0c4a6e), new THREE.Color(0x000000), 0.5);
+                    } else {
+                        scene.background = new THREE.Color(0x0c4a6e);
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                // Methods
+                const next = () => { if (step.value < 5) step.value++; };
+                const jump = (n) => { step.value = n; };
+                const reset = () => { step.value = 1; isGravityReversed.value = false; resetScene(); };
+                const toggleGravity = () => { isGravityReversed.value = !isGravityReversed.value; };
+                const resetScene = () => {
+                    floatingObjects.forEach(obj => {
+                        gsap.to(obj.position, {
+                            x: obj.userData.initialPos.x,
+                            y: obj.userData.initialPos.y,
+                            z: obj.userData.initialPos.z,
+                            duration: 1.5,
+                            ease: "power2.inOut"
+                        });
+                    });
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.header', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    if (newVal === 4) isGravityReversed.value = true;
+                    if (newVal === 1) isGravityReversed.value = false;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.header', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, stages, isGravityReversed, next, jump, reset, toggleGravity, resetScene };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

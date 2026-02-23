@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>是猫还是鱼？</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFF3E0;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .picture-book-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .whisper-top {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #795548;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+        }
+
+        .narrative-bottom {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 100px;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #5D4037;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.7));
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #4E342E;
+            line-height: 1.8;
+            padding: 10px 40px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 80%);
+        }
+
+        .btn-action {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            background: rgba(93, 64, 55, 0.95);
+            color: white;
+            padding: 18px 55px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-5px);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="picture-book-ui">
+        <!-- 顶部感悟 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="whisper-top">
+                🐱 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 底部文字 -->
+        <div class="narrative-bottom">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 浮放按钮 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="handleInteraction" class="btn-action"> 伸出小爪子：和小金鱼打招呼 </button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">继续探索</button>
+            <button v-else @click="reset" class="btn-action bg-stone-500">回到温馨的家</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const fishOffset = ref(0);
+                const ripple = ref(0);
+
+                const stages = [
+                    { title: '宁静的深夜', content: '当月亮挂上枝头，客厅里静悄悄的。小花猫小花正蜷缩成一个软软的毛球，在它最爱的波斯地毯上打着响亮的呼噜。' },
+                    { title: '透明的小床', content: '在那架高高的桌子上，住着一位特别的朋友。金鱼小金正躲在绿色的水草后面，在它清澈的家园里悠闲地吐着透明的小泡泡。' },
+                    { title: '温柔的探访', content: '小花半睁开它那蓝宝石一样的眼睛。它慢慢挪向鱼缸，伸出一只毛茸茸的小爪子，想要轻轻触碰那片晃动的水影。' },
+                    { title: '友谊的波纹', content: '哗啦——水面荡起了柔和的波纹。小金欢快地在珊瑚后面转了个圈，那是它在对小花说：‘晚安，我的好邻居。’' },
+                    { title: '温馨的守护', content: '由于这份交替的问候，整座房子都充满了安全感。小花重新把头埋进爪子里，小金也静静地睡着了。晚安，亲爱的小伙伴。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，听小花猫的呼噜声，是不是像一台小小的风扇？",
+                    "嘘——你看小金鱼在水里吐泡泡呢。那些泡泡里藏着它的小秘密。",
+                    "来，咱们轻轻点点鱼缸，跟小鱼打个招呼。就像在它的梦里敲了敲门。",
+                    "哇！你看，小鱼游得真慢，它现在也觉得好困了。波纹都在拍它睡觉呢。",
+                    "好啦，让小花猫继续做梦，让小鱼也静静生活。咱们家真温馨，晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawCat = (x, y, t) => {
+                    ctx.save(); ctx.translate(x, y);
+                    const tailWag = Math.sin(t * 2) * 0.3;
+                    ctx.save(); ctx.rotate(tailWag);
+                    rc.curve([[-40, 0], [-100, -30], [-120, 10], [-100, 50]], { stroke: '#5D4037', strokeWidth: 15 });
+                    ctx.restore();
+                    rc.ellipse(0, 0, 150, 100, { fill: '#BDBDBD', fillStyle: 'hachure' });
+                    ctx.save(); ctx.translate(60, -HeadY(step.value));
+                    rc.circle(0, 0, 80, { fill: '#F5F5F5', fillStyle: 'solid' });
+                    rc.polygon([[-30, -30], [-50, -80], [-10, -50]], { fill: '#BDBDBD' });
+                    rc.polygon([[30, -30], [50, -80], [10, -50]], { fill: '#BDBDBD' });
+                    if (step.value === 1) { rc.line(-30, -10, -10, -10, { strokeWidth: 3 }); rc.line(30, -10, 10, -10, { strokeWidth: 3 }); }
+                    else { rc.circle(-20, -10, 8, { fill: '#1976D2' }); rc.circle(20, -10, 8, { fill: '#1976D2' }); }
+                    ctx.restore(); ctx.restore();
+                };
+                const HeadY = (s) => s === 1 ? 50 : 60;
+
+                const drawBowl = (x, y, t) => {
+                    ctx.save(); ctx.translate(x, y);
+                    rc.circle(0, 0, 200, { stroke: '#E1F5FE', strokeWidth: 8 });
+                    rc.arc(0, 0, 195, 0, Math.PI, false, { fill: '#B3E5FC', fillStyle: 'solid' });
+                    const fx = Math.cos(t * 0.5 + fishOffset.value) * 100;
+                    ctx.save(); ctx.translate(fx, Math.sin(t * 0.8) * 30);
+                    rc.ellipse(0, 0, 60, 40, { fill: '#FF9800', fillStyle: 'zigzag' });
+                    ctx.restore();
+                    if (ripple.value > 0) {
+                        rc.circle(0, -50, ripple.value * 200, { stroke: '#FFF' });
+                        ripple.value *= 0.95;
+                    }
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    rc.rectangle(0, canvas.height * 0.7, canvas.width, 300, { fill: '#B0BEC5', fillStyle: 'hachure' });
+                    drawCat(canvas.width * 0.25, canvas.height * 0.75, time);
+                    drawBowl(canvas.width * 0.7, canvas.height * 0.5, time);
+                    requestAnimationFrame(animate);
+                };
+
+                const handleInteraction = () => {
+                    fishOffset.value += 5; ripple.value = 1.0;
+                    if (step.value === 3) setTimeout(() => nextStage(), 1500);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; ripple.value = 0; };
+
+                onMounted(() => { initVisuals(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, reset, handleInteraction };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

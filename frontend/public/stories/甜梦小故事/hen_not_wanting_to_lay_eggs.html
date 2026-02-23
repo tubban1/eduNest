@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不想下蛋的母鸡</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFF9C4;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .book-interface {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .whisper-text {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #795548;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+        }
+
+        .narrative-bottom {
+            max-width: 900px;
+            margin: 0 auto 100px;
+            text-align: center;
+        }
+
+        .title-text {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #795548;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 2px 2px rgba(255, 255, 255, 0.8));
+        }
+
+        .content-text {
+            font-size: 1.3rem;
+            color: #5D4037;
+            line-height: 1.8;
+            padding: 10px 40px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .warmth-indicator {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #FF5252;
+            padding: 8px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: #FF5252;
+            font-size: 1.2rem;
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+        }
+
+        .btn-interact {
+            background: #E64A19;
+            color: white;
+            padding: 18px 55px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-interact:hover {
+            transform: translateY(-5px);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="book-interface">
+        <!-- 孵化感应 -->
+        <div class="warmth-indicator" v-if="step === 3">🐣 孵化温度: {{ Math.floor(warmth) }}℃</div>
+
+        <!-- 顶部引导 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="whisper-text">
+                🥚 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 底部正文 -->
+        <div class="narrative-bottom">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="title-text">{{ stages[step-1].title }}</h1>
+                    <p class="content-text">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 交互区域 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="addWarmth" class="btn-interact">
+                {{ warmth >= 100 ? '生命正在萌发...' : '点一点：维持温暖环境' }}
+            </button>
+            <button v-else-if="step === 4" @click="crackEgg" class="btn-interact bg-orange-600">
+                {{ isHatched ? '小天骄诞生！' : '快点！帮小鸡破壳' }}
+            </button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-interact bg-amber-700">继续探索</button>
+            <button v-else @click="reset" class="btn-interact bg-stone-500">回到那场梦</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const warmth = ref(30);
+                const isHatched = ref(false);
+                const eggShakes = ref(0);
+
+                const stages = [
+                    { title: '暖和的草窝', content: '在安静的农场角落，母鸡罗拉正一动不动地趴在柔软的干草上。它用自己厚厚的羽毛，为还没出生的小宝宝盖了一床最暖和的被子。' },
+                    { title: '壳里的梦境', content: '所有的希望都藏在这枚洁白的蛋里。在厚厚的壳下面，小生命的翅膀正在悄悄地扇动，它正做着一个关于蓝天和草地的美梦。' },
+                    { title: '恒温的拥抱', content: '孵化需要最稳定的温暖。让我们一起守在旁边，把周围的环境维持在最舒适、最宁静的状态。暖暖的，真贴心。' },
+                    { title: '新生命的问候', content: '‘咔嚓’一声，壳上出现了一道小裂缝。小鸡已经准备好呼吸第一口新鲜空气啦。让我们伸出小手，轻轻地帮它推开最后的小门。' },
+                    { title: '宁静的摇篮', content: '新生命终于诞生了，罗拉妈妈欣慰地张开翅膀，把小鸡裹进怀里。听，那微弱的啾啾声，是生命最动听的摇篮曲。晚安，农场的所有伙伴。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，母鸡罗拉就像妈妈一样，总想把最好的温暖都给宝宝。咱们也不要吵醒它，好吗？",
+                    "嘘——你听！壳里是不是有轻轻的敲击声？那是小生命在伸懒腰呢。",
+                    "蛋宝宝喜欢暖和的感觉。来！咱们用温柔的心，帮罗拉一起传递温暖吧。",
+                    "哇！裂缝变大啦！咱们也要像风儿一样轻，帮它把门开得再大一点点。",
+                    "小鸡终于出来啦！看它的毛绒绒的，就像一个小太阳。农场的夜晚真安宁呀，晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawHen = (x, y, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(1 + Math.sin(t * 3) * 0.05, 1 - Math.sin(t * 3) * 0.05);
+                    rc.circle(0, 0, 150, { fill: '#FFD54F', fillStyle: 'hachure' });
+                    rc.circle(80, -100, 60, { fill: '#FFCA28', fillStyle: 'solid' });
+                    rc.polygon([[140, -100], [160, -90], [140, -80]], { fill: '#FF9800', fillStyle: 'solid' });
+                    rc.circle(110, -110, 8, { fill: '#000' });
+                    ctx.restore();
+                };
+
+                const drawNest = () => {
+                    const cx = canvas.width / 2; const cy = canvas.height * 0.6;
+                    for (let i = 0; i < 40; i++) {
+                        const angle = (i / 40) * Math.PI * 2;
+                        rc.line(cx + Math.cos(angle) * 180, cy + Math.sin(angle) * 70, cx + Math.cos(angle + 0.2) * 220, cy + Math.sin(angle + 0.2) * 80, { stroke: '#D7CCC8' });
+                    }
+                };
+
+                const drawEgg = (x, y, isCracked, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 20) * eggShakes.value * 0.02);
+                    if (!isHatched.value) {
+                        const eggColor = step.value === 3 ? `rgb(255, ${255 - (warmth.value - 30) * 2}, ${255 - (warmth.value - 30) * 2})` : '#FFF';
+                        rc.ellipse(0, 0, 100, 140, { fill: eggColor, fillStyle: 'solid' });
+                        if (isCracked) { rc.line(-30, -40, 20, 0, { stroke: '#795548', strokeWidth: 3 }); }
+                    } else { rc.curve([[-50, 40], [-20, 70], [20, 50], [50, 80]], { fill: '#EEE', stroke: '#DDD' }); }
+                    ctx.restore();
+                };
+
+                const drawChick = (x, y, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.translate(0, -Math.abs(Math.sin(t * 10)) * 20);
+                    rc.circle(0, 0, 60, { fill: '#FFFF00', fillStyle: 'hachure' });
+                    rc.circle(40, -30, 40, { fill: '#FFFF00', fillStyle: 'solid' });
+                    rc.polygon([[80, -30], [95, -25], [80, -20]], { fill: '#F44336', fillStyle: 'solid' });
+                    rc.circle(55, -40, 4, { fill: '#000' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    drawNest();
+                    const cx = canvas.width / 2; const cy = canvas.height * 0.55;
+                    if (step.value === 1) { drawHen(cx, cy, time); }
+                    else if (step.value < 5) {
+                        drawEgg(cx, cy + 30, step.value >= 4, time);
+                        if (isHatched.value) drawChick(cx, cy + 50, time);
+                    } else { drawChick(cx + Math.sin(time) * 200, cy + 50, time); }
+                    if (eggShakes.value > 0) eggShakes.value *= 0.9;
+                    requestAnimationFrame(animate);
+                };
+
+                const addWarmth = () => { if (warmth.value < 100) { warmth.value += 10; eggShakes.value = 5; if (warmth.value >= 100) setTimeout(() => nextStage(), 1500); } };
+                const crackEgg = () => { eggShakes.value = 10; if (isHatched.value) return; setTimeout(() => { isHatched.value = true; setTimeout(() => nextStage(), 2000); }, 500); };
+                const nextStage = () => { step.value = Math.min(step.value + 1, 5); window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; warmth.value = 30; isHatched.value = false; };
+
+                onMounted(() => { initVisuals(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, warmth, isHatched, stages, parentWords, nextStage, reset, addWarmth, crackEgg };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的衣服自己穿</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-child: #E3F2FD;
+            --text-child: #1565C0;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-child);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #0277BD;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #1A237E;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #1E88E5;
+            line-height: 1.8;
+            padding: 12px 25px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(26, 35, 126, 0.85);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: #1A237E;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 1s, transform 1s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 指导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🐘 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 正文 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 v-if="stages[step-1].title" class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p v-if="stages[step-1].content" class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 互动 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 2" @click="stretchArms" class="btn-action">帮波波穿上条纹外套 🐘</button>
+            <button v-else-if="step === 3" @click="buttonUp" class="btn-action">咔嚓！帮波波扣好木纽扣 ✨</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">看波波帅帅的样子</button>
+            <button v-else @click="reset" class="btn-action !bg-slate-700">明天也要尝试自己穿衣服</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isDressing = ref(false);
+                const isButtoned = ref(false);
+
+                const stages = [
+                    { title: '彩色的小山', content: '早晨，波波面前堆着一丛彩色的衣服。蓝色的上衣，黄色的裤子，还有一双红袜子。今天，波波想挑战自己穿衣服！' },
+                    { title: '捉迷藏的袖子', content: '左手伸进去，右手在哪里呀？袖子就像两个圆圆的长隧道。波波努力地钻呀钻，终于看到了五根调皮的小手指蹦了出来。' },
+                    { title: '扣子小圆豆', content: '扣子圆圆的，像一颗颗彩色的小糖果。波波用大大的象鼻子和灵巧的手，一颗一颗把它们送回了‘温暖的小房子’。' },
+                    { title: '镜子里的超人', content: '嘿！整整齐齐，干干净净。波波看着镜子里的自己，开心得甩了甩长鼻子：‘原来我自己穿衣服，也这么神气！’' },
+                    { title: '温暖的拥抱', content: '月光洒满了房间，波波穿着自己穿好的软睡衣，觉得今晚枕头格外蓬松，梦也一定格外甜。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看，波波也想和你一样大显身手呢。你想让他先穿哪件颜色的衣服？",
+                    "嘘——穿衣服就像在和袖子玩捉迷藏。咱们加加油：‘波波，小隧道就在前面，冲呀！’",
+                    "扣纽扣需要超强的耐心哦。咱们一点点配合，看看能不能把这些小彩豆都排列整齐。",
+                    "哇！波波现在看起来像个帅气的飞行员。宝贝，你独立完成任务的样子，也是最闪亮的。",
+                    "故事讲完啦。能干的小象累了，正抱着它的勇气入睡。咱们也闭上眼睛，去梦里拿勋章。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawElephant = (x, y, scale, t) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+
+                    const bounce = Math.sin(t * 3) * 5;
+                    const elColor = '#BDBDBD';
+
+                    // Body with texture
+                    rc.circle(0, bounce, 125, { fill: elColor, fillStyle: 'hachure', hachureAngle: 60, roughness: 1.5 });
+
+                    // Toes
+                    for (let i = 0; i < 3; i++) {
+                        rc.circle(-30 + i * 30, 110 + bounce, 10, { fill: '#EEE', stroke: 'none' });
+                    }
+
+                    // Large Floppy Ears
+                    const earShake = Math.sin(t * 5) * 5;
+                    rc.ellipse(-85, -40 + bounce + earShake, 60, 100, { fill: elColor, fillStyle: 'solid' });
+                    rc.ellipse(-85, -40 + bounce + earShake, 40, 70, { fill: '#E0E0E0', fillStyle: 'solid', roughness: 0.5 });
+                    rc.ellipse(85, -40 + bounce - earShake, 60, 100, { fill: elColor, fillStyle: 'solid' });
+                    rc.ellipse(85, -40 + bounce - earShake, 40, 70, { fill: '#E0E0E0', fillStyle: 'solid', roughness: 0.5 });
+
+                    // Rosy Cheeks
+                    rc.circle(-50, 0 + bounce, 15, { fill: '#F48FB1', fillStyle: 'solid', roughness: 2, stroke: 'none' });
+                    rc.circle(50, 0 + bounce, 15, { fill: '#F48FB1', fillStyle: 'solid', roughness: 2, stroke: 'none' });
+
+                    // Face features
+                    const blink = Math.sin(t * 0.45) > 0.95 ? 0.1 : 1.0;
+                    rc.ellipse(-35, -30 + bounce, 12, 16 * blink, { fill: '#333', fillStyle: 'solid' });
+                    rc.ellipse(35, -30 + bounce, 12, 16 * blink, { fill: '#333', fillStyle: 'solid' });
+
+                    // Tusks
+                    rc.curve([[25, 20 + bounce], [45, 30 + bounce]], { stroke: '#FFF', strokeWidth: 8 });
+                    rc.curve([[-25, 20 + bounce], [-45, 30 + bounce]], { stroke: '#FFF', strokeWidth: 8 });
+
+                    // Trunk with rings
+                    const trunkOffset = Math.sin(t * 4) * 12;
+                    rc.curve([[0, 25 + bounce], [35 + trunkOffset, 65 + bounce], [15 + trunkOffset, 120 + bounce]], { stroke: elColor, strokeWidth: 20 });
+                    for (let i = 0; i < 3; i++) {
+                        rc.line(10 + i * 10, 50 + bounce, 20 + i * 10, 60 + bounce, { stroke: '#999', strokeWidth: 1 });
+                    }
+
+                    // Clothing
+                    if (step.value >= 2) {
+                        const clothY = 35 + bounce;
+                        const progress = isDressing.value ? 1.0 : (step.value === 2 ? 0.65 : 1.0);
+                        // Jacket with stripes
+                        rc.rectangle(-80, clothY, 160 * progress, 90, { fill: '#03A9F4', fillStyle: 'hachure', hachureAngle: 90, hachureGap: 8 });
+                        rc.rectangle(-80, clothY, 160 * progress, 90, { fill: '#0288D1', fillStyle: 'solid', roughness: 1.5 });
+
+                        if (step.value >= 3) {
+                            for (let i = 0; i < 3; i++) {
+                                // Wooden buttons
+                                rc.circle(0, clothY + 25 + i * 25, 8, { fill: '#8D6E63', fillStyle: 'solid' });
+                                rc.circle(0, clothY + 25 + i * 25, 3, { stroke: '#FFF' });
+                            }
+                        }
+                    }
+
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.6;
+
+                    // Environmental background
+                    if (step.value < 5) {
+                        // Window with rays
+                        const wx = 120, wy = 120;
+                        rc.rectangle(wx - 60, wy - 60, 120, 160, { fill: '#E3F2FD', fillStyle: 'solid' });
+                        rc.line(wx, wy - 60, wx, wy + 100);
+                        rc.line(wx - 60, wy + 20, wx + 60, wy + 20);
+                        // Sunbeam
+                        ctx.globalAlpha = 0.2;
+                        rc.polygon([[wx, wy], [centerX - 100, centerY + 200], [centerX + 100, centerY + 200]], { fill: '#FFF9C4', stroke: 'none' });
+                        ctx.globalAlpha = 1.0;
+                    }
+
+                    if (step.value === 1) {
+                        // Heap of clothes in background
+                        for (let i = 0; i < 3; i++) {
+                            rc.circle(centerX + 200 + i * 20, centerY + 100, 40, { fill: i === 0 ? '#F44336' : (i === 1 ? '#4CAF50' : '#FFEB3B'), fillStyle: 'hachure' });
+                        }
+                    } else if (step.value === 4) {
+                        // Large ornate mirror
+                        rc.rectangle(centerX - 240, centerY - 240, 480, 480, { stroke: '#8D6E63', strokeWidth: 15, roughness: 2 });
+                        rc.rectangle(centerX - 225, centerY - 225, 450, 450, { fill: '#E1F5FE', fillStyle: 'solid', roughness: 0 });
+                    } else if (step.value === 5) {
+                        document.body.style.background = '#1A237E';
+                        rc.circle(canvas.width * 0.85, 150, 50, { fill: '#FFF9C4', fillStyle: 'solid' });
+                    }
+
+                    drawElephant(centerX, centerY, 1.25, t);
+                    requestAnimationFrame(animate);
+                };
+
+                const stretchArms = () => {
+                    isDressing.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const buttonUp = () => {
+                    isButtoned.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    isDressing.value = false;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    isDressing.value = false;
+                    isButtoned.value = false;
+                };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, stretchArms, buttonUp, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

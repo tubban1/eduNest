@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间倒转会怎样</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --time-gold: #d4d4d8;
+            --time-purple: #4c1d95;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-portal {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .header {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-hint {
+            background: rgba(167, 139, 250, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            font-size: 1.1rem;
+            color: #a78bfa;
+            display: inline-block;
+        }
+
+        .medium-content {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc {
+            font-size: 1.6rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px #000;
+        }
+
+        .btn-time {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-time:hover {
+            transform: scale(1.1);
+            background: rgba(167, 139, 250, 0.2);
+            border-color: #a78bfa;
+        }
+
+        /* 时间控制器 */
+        .time-cog-box {
+            position: fixed;
+            bottom: 3rem;
+            right: 3rem;
+            width: 160px;
+            height: 160px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .time-cog {
+            width: 100%;
+            height: 100%;
+            background: url('https://img.icons8.com/ios-filled/100/ffffff/settings.png') no-repeat center;
+            background-size: contain;
+            opacity: 0.6;
+            transition: 0.1s linear;
+            cursor: pointer;
+        }
+
+        .state-indicator {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            color: #a78bfa;
+            pointer-events: none;
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #a78bfa;
+            transform: scale(1.4);
+        }
+
+        .glitch-text {
+            animation: glitch 1s infinite alternate;
+        }
+
+        @keyframes glitch {
+            0% {
+                transform: scale(1);
+                text-shadow: 2px 0 red, -2px 0 blue;
+            }
+
+            100% {
+                transform: scale(1.02);
+                text-shadow: -2px 0 red, 2px 0 blue;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+
+    <div id="app" class="ui-portal">
+        <div class="header" ref="header">
+            <h1 class="title">{{ current.title }}</h1>
+            <div class="parent-hint">⏳ {{ current.parentWords }}</div>
+        </div>
+
+        <div class="medium-content" ref="content">
+            <p class="desc">{{ current.description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="btn-time">顺时而行</button>
+                <button v-if="step === 5" @click="reset" class="btn-time">拥抱今天</button>
+            </div>
+        </div>
+
+        <div v-if="step === 3" class="state-indicator" :class="{'glitch-text': timeFactor < 0}">
+            {{ timeFactor < 0 ? '⏮️ 时间倒回中...' : (timeFactor> 0 ? '▶️ 时间流逝中...' : '⏸️ 瞬间凝固') }}
+        </div>
+
+        <div v-if="step === 3" class="time-cog-box" @wheel="handleWheel" @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove">
+            <div class="time-cog" :style="{ transform: 'rotate(' + rotation + 'deg)' }" @mousedown="startDrag"></div>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const rotation = ref(0);
+                const timeFactor = ref(1.0); // 1 = normal, -1 = reverse
+
+                const stages = [
+                    {
+                        title: "不可阻挡的箭",
+                        parentWords: "宝贝，时间就像一支射出去的箭，只能往前走。碎掉的杯子不会自己拼好，花儿谢了就要等明年再开。",
+                        description: "在我们的宇宙里，有一个规则叫‘熵增’。它的意思就是万物总是会从整齐变得混乱，从崭新变得陈旧。时间，就是记录这个过程的刻度。"
+                    },
+                    {
+                        title: "如果齿轮反转...",
+                        parentWords: "假如有一台超级机器，能让宇宙的齿轮往回转，那会变成什么样？",
+                        description: "你会看到雨滴从地面飞向天空，破掉的蛋壳重新包裹住小鸡，你吃掉的苹果会在嘴里变回完整的样子。一切混乱都会重新变得有序。"
+                    },
+                    {
+                        title: "时间拨号盘",
+                        parentWords: "来！尝试拨动那个巨大的时间齿轮。左右滑动手势或者滚轮。看看当你倒着拨动它时，眼前的一切会有多惊人？",
+                        description: "你会亲手让一个破碎的杯子重组，让变黄的叶子重新变绿。你会发现，虽然看起来很解压，但这也意味着所有的惊喜都会被‘擦除’。"
+                    },
+                    {
+                        title: "有序的代价",
+                        parentWords: "你看，时间倒带虽然好玩，但它也取消了我们努力的结果。如果时间可以随意倒流，我们的选择也就失去了意义。",
+                        description: "时间的单向性，赋予了生命独一无二的尊严。正是因为‘回不去’，此时此刻才显得如此珍贵。它是物理学中最仁慈也最严酷的限制。"
+                    },
+                    {
+                        title: "活在当下",
+                        parentWords: "与其希望时间倒转，不如好好利用现在的每一秒。去做你想做的事，去抱你想抱的人吧。",
+                        description: "了解了时空的单向物理属性，我们就能更好地理解成长的意义。昨天已经过去，明天尚未到来，只有今天是一个礼物。故事讲完了，晚安。"
+                    }
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, cupBase, shards = [];
+                let isDragging = false, lastX = 0;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 30, 80);
+                    camera.lookAt(0, 5, 0);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Table
+                    const table = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshPhongMaterial({ color: 0x1e293b }));
+                    table.rotation.x = -Math.PI / 2;
+                    scene.add(table);
+
+                    // Shards of a cup
+                    setupCup();
+
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const sun = new THREE.DirectionalLight(0xa78bfa, 0.8);
+                    sun.position.set(20, 50, 20);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const setupCup = () => {
+                    for (let i = 0; i < 30; i++) {
+                        const geo = new THREE.TetrahedronGeometry(Math.random() * 3 + 1);
+                        const mat = new THREE.MeshStandardMaterial({
+                            color: 0xffffff,
+                            metalness: 0.1,
+                            roughness: 0.1,
+                            transparent: true,
+                            opacity: 0.9
+                        });
+                        const shard = new THREE.Mesh(geo, mat);
+
+                        // Define path for shattering
+                        shard.userData = {
+                            originPos: new THREE.Vector3(0, 5 + Math.random() * 2, 0),
+                            targetPos: new THREE.Vector3((Math.random() - 0.5) * 40, 0, (Math.random() - 0.5) * 40),
+                            originRot: new THREE.Euler(0, 0, 0),
+                            targetRot: new THREE.Euler(Math.random() * 5, Math.random() * 5, Math.random() * 5),
+                            t: 0 // animation local time 0-1
+                        };
+                        scene.add(shard);
+                        shards.push(shard);
+                    }
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+
+                    // Update shards based on timeFactor and rotation
+                    // In this demo, shard.userData.t is calculated from the 'rotation' UI state
+                    const progress = (rotation.value % 3600) / 1000; // Mock mapping
+
+                    shards.forEach(s => {
+                        const t = Math.max(0, Math.min(1, progress));
+                        s.position.lerpVectors(s.userData.originPos, s.userData.targetPos, t);
+                        s.rotation.x = THREE.MathUtils.lerp(s.userData.originRot.x, s.userData.targetRot.x, t);
+                    });
+
+                    renderer.render(scene, camera);
+                };
+
+                const handleWheel = (e) => {
+                    rotation.value += e.deltaY * 0.5;
+                    timeFactor.value = e.deltaY > 0 ? 1 : -1;
+                };
+
+                const startDrag = () => {
+                    isDragging = true;
+                    window.addEventListener('mousemove', onDrag);
+                    window.addEventListener('mouseup', stopDrag);
+                };
+                const onDrag = (e) => {
+                    if (!isDragging) return;
+                    rotation.value += (e.movementX + e.movementY) * 2;
+                    timeFactor.value = (e.movementX + e.movementY) > 0 ? 1 : -1;
+                };
+                const stopDrag = () => { isDragging = false; };
+
+                const next = () => { if (step.value < 5) step.value++; };
+                const jump = (n) => { step.value = n; };
+                const reset = () => { step.value = 1; rotation.value = 0; };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.header', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.medium-content', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    if (newVal === 4) rotation.value = 1500; // Broken state
+                    if (newVal === 1) rotation.value = 0;    // New state
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.header', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.medium-content', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, rotation, timeFactor, next, jump, reset, handleWheel, startDrag, stages };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

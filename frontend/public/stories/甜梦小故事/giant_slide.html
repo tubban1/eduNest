@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巨大的滑梯</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E1F5FE;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .immersion-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .whisper-top {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #0277BD;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
+        }
+
+        .narrative-bottom {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 100px;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #01579B;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.7));
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #0288D1;
+            line-height: 1.8;
+            padding: 10px 40px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 80%);
+        }
+
+        .btn-slide {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            background: linear-gradient(135deg, #039BE5 0%, #01579B 100%);
+            color: white;
+            padding: 18px 55px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(1, 87, 155, 0.2);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-slide:hover {
+            transform: translateY(-5px);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="immersion-layer">
+        <!-- 顶部引导 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="whisper-top">
+                🌈 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 底部文字 -->
+        <div class="narrative-bottom">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 浮放操作 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="handleSlide" class="btn-slide">
+                {{ isAnimating ? '正在嗖地飞下去！' : '准备好了：点击开始滑行' }}
+            </button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-slide">继续飞翔</button>
+            <button v-else @click="reset" class="btn-slide bg-sky-600">回到云顶</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isAnimating = ref(false);
+                const rabbitPos = ref({ x: 100, y: 150, rotation: 0 });
+
+                const stages = [
+                    { title: '星空的起点', content: '在梦幻乐园的最顶端，有一道闪闪发光的滑梯，它像一条银河，静静地伸向远方的星海。小兔子球球背着它软软的枕头背包，准备出发。' },
+                    { title: '温柔的转弯', content: '滑梯的轨道弯弯曲曲的，就像一段轻柔的梦境。每一个转弯，都带着风儿的轻吻，让球球感到无比放松和安宁。' },
+                    { title: '在风中起舞', content: '嗖——！轻轻地松开手，让身体顺着滑梯慢慢滑动。感受空气在耳边温柔地耳语，感受像在云朵上飞翔一样的自由。' },
+                    { title: '安全的拥抱', content: '慢慢地停下来啦，球球落在了一大片像棉花糖一样柔软的海绵池里。这里像妈妈的怀抱一样厚实，守护着球球的每一次勇敢。' },
+                    { title: '梦里的彩虹', content: '月亮姐姐出来啦，滑梯变成了漂亮的深紫色。球球打了个哈欠，它已经滑到了梦想的乐园。晚安，勇敢的小球球。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，看球球的耳朵。它正在听月亮说话呢，咱们也小声点，好吗？",
+                    "这个滑梯像不像一道圆圆的彩虹？咱们深呼吸，去星空里旅行喽。",
+                    "轻轻点击，咱们出发啦！就像滑进了一场亮晶晶的梦。好凉爽呀。",
+                    "成功着陆！球球的尾巴还在轻轻摇动，它已经准备好要睡觉咯。",
+                    "不管是滑滑梯，还是荡秋千。只要闭上眼，咱们就能飞向最美的梦。晚安，宝贝。"
+                ];
+
+                // --- Visuals Logic ---
+                let rc, ctx, canvas;
+                const curveData = [[100, 150], [300, 100], [500, 400], [800, 600], [1100, 700]];
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawRabbit = (x, y, rot, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+                    // Body
+                    rc.circle(0, 0, 60, { fill: '#F5F5F5', fillStyle: 'hachure' });
+                    // Ears (flapping)
+                    const flap = Math.sin(t * 15) * 0.3;
+                    rc.ellipse(-15, -60, 20, 80 + flap * 10, { fill: '#F5F5F5', fillStyle: 'solid' });
+                    rc.ellipse(15, -60, 20, 80 - flap * 10, { fill: '#F5F5F5', fillStyle: 'solid' });
+                    // Eyes
+                    rc.circle(-15, -10, 5, { fill: '#E91E63' });
+                    rc.circle(15, -10, 5, { fill: '#E91E63' });
+                    ctx.restore();
+                };
+
+                const drawSlide = () => {
+                    rc.curve(curveData, { stroke: '#FF80AB', strokeWidth: 40, roughness: 1.5 });
+                    rc.curve(curveData, { stroke: '#FFF', strokeWidth: 5, strokeLineDash: [20, 10] });
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    drawSlide();
+                    drawRabbit(rabbitPos.value.x, rabbitPos.value.y, rabbitPos.value.rotation, time);
+                    requestAnimationFrame(animate);
+                };
+
+                const handleSlide = () => {
+                    if (isAnimating.value) return;
+                    isAnimating.value = true;
+                    const path = [];
+                    for (let i = 0; i <= 1; i += 0.01) {
+                        const pt = getBezierPoint(i, curveData);
+                        path.push({ x: pt.x, y: pt.y, rotation: pt.angle });
+                    }
+                    gsap.to(rabbitPos.value, {
+                        duration: 2.5,
+                        ease: "power2.inOut",
+                        motionPath: { path: path, alignOrigin: [0.5, 0.5] },
+                        onComplete: () => { isAnimating.value = false; nextStage(); }
+                    });
+                };
+
+                const getBezierPoint = (t, pts) => {
+                    const p1 = pts[0], p2 = pts[1], p3 = pts[2], p4 = pts[3], p5 = pts[4];
+                    const x = Math.pow(1 - t, 4) * p1[0] + 4 * Math.pow(1 - t, 3) * t * p2[0] + 6 * Math.pow(1 - t, 2) * Math.pow(t, 2) * p3[0] + 4 * (1 - t) * Math.pow(t, 3) * p4[0] + Math.pow(t, 4) * p5[0];
+                    const y = Math.pow(1 - t, 4) * p1[1] + 4 * Math.pow(1 - t, 3) * t * p2[1] + 6 * Math.pow(1 - t, 2) * Math.pow(t, 2) * p3[1] + 4 * (1 - t) * Math.pow(t, 3) * p4[1] + Math.pow(t, 4) * p5[1];
+                    const angle = Math.sin(t * Math.PI) * 0.5;
+                    return { x, y, angle };
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; rabbitPos.value = { x: 100, y: 150, rotation: 0 }; };
+
+                onMounted(() => { initVisuals(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, isAnimating, stages, parentWords, nextStage, reset, handleSlide };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

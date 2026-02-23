@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我能随着旋风上天吗</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --storm-grey: #475569;
+            --tornado-white: #F8FAFC;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1e293b;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-main {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .head-group {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .app-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #CFD8DC, #90A4AE, #607D8B);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+        }
+
+        .parent-label {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 0.6rem 2.8rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.1rem;
+            color: #E2E8F0;
+        }
+
+        .content-wrap {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc-p {
+            font-size: 1.45rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+            font-weight: 300;
+        }
+
+        .btn-storm {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-storm:hover {
+            transform: scale(1.08) translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #90A4AE;
+        }
+
+        .hud-control {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 480px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(25px);
+            padding: 2.22rem;
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: auto;
+            z-index: 50;
+        }
+
+        .storm-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 10px;
+            border-radius: 5px;
+            outline: none;
+            margin: 1.5rem 0;
+            background: linear-gradient(to right, #64748b, #f8fafc);
+        }
+
+        .storm-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 4px solid #64748b;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+        }
+
+        .progress-nav {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .nav-mark {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .nav-mark.active {
+            background: #94A3B8;
+            border-color: #fff;
+            transform: scale(1.5);
+            box-shadow: 0 0 15px #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-bg"></div>
+
+    <div id="app" class="ui-main">
+        <div class="head-group">
+            <h1 class="app-title">{{ stages[step-1].title }}</h1>
+            <div class="parent-label">🌪️ {{ stages[step-1].parentWords }}</div>
+        </div>
+
+        <div class="content-wrap">
+            <p class="desc-p">{{ stages[step-1].description }}</p>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < 5 && step !== 3" @click="next" class="btn-storm">
+                    {{ step === 2 ? '开启旋风实验室' : '继续探索天气' }}
+                </button>
+                <button v-else-if="step === 5" @click="reset" class="btn-storm">重返风平浪静</button>
+            </div>
+        </div>
+
+        <div v-if="step === 3" class="hud-control">
+            <div class="flex justify-between text-xs font-bold text-slate-400 mb-2">
+                <span>微风习习 🍃</span>
+                <span>核心超级单体 🌪️</span>
+            </div>
+            <input type="range" v-model="stormPower" min="0" max="1" step="0.01"
+                class="storm-slider pointer-events-auto">
+            <div class="flex justify-center mt-4">
+                <button @click="next" class="btn-storm !text-sm !py-2 !px-8"
+                    :style="{ opacity: stormPower > 0.8 ? 1 : 0.6 }">
+                    生成完整漏斗云
+                </button>
+            </div>
+        </div>
+
+        <div class="progress-nav">
+            <div v-for="n in 5" :key="n" :class="['nav-mark', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const stormPower = ref(0);
+
+                const stages = [
+                    {
+                        title: "调皮的地滚风",
+                        parentWords: "宝贝，你看操场上那些卷着落叶打转的小旋风，是不是就像大地在跳街舞呀？",
+                        description: "由于两股冷热空气‘握手’的方式不太对，它们就开始绕着对方打转。这只是自然界非常调皮的小情绪。"
+                    },
+                    {
+                        title: "风的‘疯狂加速’",
+                        parentWords: "如果这种旋转变得超级快，它会产生巨大的吸力，把原本待在地面上的东西都‘拔’起来哦。",
+                        description: "当对流非常剧烈，旋转半径在缩小而速度在拼命加快（角动量守恒）。这一刻，原本温和的小旋风就会变成力量惊人的吸尘器。"
+                    },
+                    {
+                        title: "制造龙卷风",
+                        parentWords: "快，握住大气遥控器！滑动滑块，增加冷暖空气的冲突，看看漏斗云是怎么长出来的。",
+                        description: "你在增加空气之间的气压梯度。看！旋风的中心气压极低，像一只长长的鼻子，正在把一切卷向高空。"
+                    },
+                    {
+                        title: "致命的旋转木马",
+                        parentWords: "你看！汽车和树木都被甩飞了。在里面可一点也不好玩，反而会被转得头晕眼花，非常危险呢。",
+                        description: "我们发现了一个物理事实：随风上天并不是奇幻旅程，而是剧烈的离心运动。大自然的这些极端行为，是在快速释放能量。我们要保持距离，学会敬畏。"
+                    },
+                    {
+                        title: "科学之眼",
+                        parentWords: "故事讲完啦。虽然旋风很壮观，但我们只需要躲在坚固的房子里观察它。科学能让我们更安全。晚安。",
+                        description: "了解气象是为了更好地生活。在宁静的夜晚，感受这首大气的叙事诗。愿你在这个和谐的星球上，做一个好梦。晚安。"
+                    }
+                ];
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, tornado, particles = [];
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 30, 200);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('canvas-bg').appendChild(renderer.domElement);
+
+                    // Lights
+                    const sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(50, 50, 50);
+                    scene.add(sun);
+                    scene.add(new THREE.AmbientLight(0x444444));
+
+                    // Tornado Group
+                    tornado = new THREE.Group();
+                    scene.add(tornado);
+
+                    // Particle System for Tornado
+                    const geo = new THREE.SphereGeometry(2, 8, 8);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0x94A3B8, transparent: true, opacity: 0.5 });
+                    for (let i = 0; i < 300; i++) {
+                        const m = new THREE.Mesh(geo, mat.clone());
+                        const r = 5 + Math.random() * 20;
+                        const h = Math.random() * 150 - 60;
+                        m.userData = { r, h, speed: 0.05 + Math.random() * 0.1, offset: Math.random() * Math.PI * 2 };
+                        tornado.add(m);
+                        particles.push(m);
+                    }
+
+                    // Ground
+                    const gGeo = new THREE.PlaneGeometry(1000, 1000);
+                    const gMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
+                    const ground = new THREE.Mesh(gGeo, gMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    ground.position.y = -60;
+                    scene.add(ground);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    particles.forEach(p => {
+                        const d = p.userData;
+                        const factor = stormPower.value;
+
+                        // Increase speed and density with power
+                        const speed = d.speed * (1 + factor * 5);
+                        d.offset += speed;
+
+                        // Expand top, narrow bottom
+                        const dynamicR = d.r * (1 + factor * 2) * (1 + (p.position.y + 60) / 100);
+                        p.position.x = Math.cos(d.offset) * dynamicR;
+                        p.position.z = Math.sin(d.offset) * dynamicR;
+
+                        p.material.opacity = 0.2 + factor * 0.4;
+                        p.scale.setScalar(1 + factor * 3);
+                    });
+
+                    tornado.rotation.y += 0.01;
+
+                    renderer.render(scene, camera);
+                };
+
+                const next = () => {
+                    if (step.value < 5) {
+                        step.value++;
+                        if (step.value === 4) gsap.to(stormPower, { value: 1, duration: 2.5 });
+                    }
+                };
+                const jump = (n) => {
+                    step.value = n;
+                    if (n < 3) stormPower.value = 0;
+                    if (n > 3) stormPower.value = 1;
+                };
+                const reset = () => {
+                    step.value = 1; stormPower.value = 0;
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.head-group', { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.content-wrap', { opacity: 0, y: 40, scale: 0.95 }, { opacity: 1, y: 0, scale: 1, duration: 1, delay: 0.3 });
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.head-group', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.content-wrap', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.rotation, { x: -y * 0.1, y: -x * 0.1, duration: 2 });
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, stages, stormPower, next, jump, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

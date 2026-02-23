@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>夏天下雪该多有趣</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif;
+            background: #FFD54F;
+        }
+
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-info {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .app-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4rem;
+            background: linear-gradient(135deg, #FFEB3B, #E0F2F1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
+        }
+
+        .parent-words {
+            font-size: 1.15rem;
+            color: #37474F;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .content-area {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .description {
+            font-size: 1.5rem;
+            line-height: 1.9;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+            color: #fff;
+            margin-bottom: 2.5rem;
+        }
+
+        .main-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4.5rem;
+            border-radius: 5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.35rem;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .main-btn:hover {
+            transform: scale(1.1) translateY(-5px);
+            background: rgba(255, 255, 255, 0.35);
+            border-color: #FFEB3B;
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 450px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(25px);
+            padding: 2rem;
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            pointer-events: auto;
+            z-index: 50;
+        }
+
+        .slider-custom {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #FFD54F, #E0F2F1);
+            outline: none;
+        }
+
+        .slider-custom::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 4px solid #4DB6AC;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+            transition: 0.3s;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .dot.active {
+            background: #FFEB3B;
+            border-color: #FFEB3B;
+            transform: scale(1.5);
+            box-shadow: 0 0 15px #FFEB3B;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-bg"></div>
+
+    <div id="app" class="ui-container">
+        <div class="top-info" ref="header">
+            <h1 class="app-title">{{ stages[step-1].title }}</h1>
+            <div class="parent-words">❄️ {{ stages[step-1].parentWords }}</div>
+        </div>
+
+        <div class="content-area" ref="content">
+            <p class="description">{{ stages[step-1].description }}</p>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < 5 && step !== 3" @click="next" class="main-btn">
+                    {{ step === 2 ? '启动魔幻降温' : '继续探索' }}
+                </button>
+                <button v-else-if="step === 5" @click="reset" class="main-btn">回到温暖夏天</button>
+            </div>
+        </div>
+
+        <div v-if="step === 3" class="control-panel">
+            <div class="flex justify-between text-xs font-bold text-teal-100 mb-2">
+                <span>炎炎烈日 ☀️</span>
+                <span>不可思议 ⛄</span>
+            </div>
+            <input type="range" v-model="snowPower" min="0" max="1" step="0.01"
+                class="slider-custom pointer-events-auto mb-6">
+            <div class="flex justify-center">
+                <button @click="next" class="main-btn !text-sm !py-2 !px-8"
+                    :style="{ opacity: snowPower > 0.8 ? 1 : 0.6 }">
+                    开启极限降雪
+                </button>
+            </div>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const snowPower = ref(0);
+
+                const stages = [
+                    {
+                        title: "蝉鸣阵阵的夏天",
+                        parentWords: "宝贝，你看现在的太阳多热情，树下的蝉儿都在拼命叫着‘热死啦’。",
+                        description: "夏天通常离降雪很遥远，因为太阳把大地和底层空气都晒得暖洋洋的。所有从高空落下的冰晶，都会在半路变成雨滴。"
+                    },
+                    {
+                        title: "冷热的大碰撞",
+                        parentWords: "如果突然有一大盆‘高空冷饮’从北极飞过来，你觉得夏天能穿上棉袄吗？",
+                        description: "虽然很难，但当极强的底层冷空气入侵，高空又是充满电力的乌云时，大自然就会导演一场‘不合时宜’的奇观。"
+                    },
+                    {
+                        title: "召唤六月雪",
+                        parentWords: "快，握住气候节拍器！往右滑动，让云层里的温度迅速破冰，拦截夏日的暑气。",
+                        description: "在这个阶段，你正在改变大气的层叠模式。当冷空气变得极其霸道，雪花降落的速度超过了它们消融的速度..."
+                    },
+                    {
+                        title: "冰火两重天",
+                        parentWords: "你看！绿油油的树叶上落满了雪花，这种冲突虽然美，但对贪睡的种子可是个大麻烦呢。",
+                        description: "我们发现了一个气象逻辑：只要底层温度够低，夏天也能下雪。但这会打破动植物的生物钟，让原本活跃的夏天瞬间‘冻结’。"
+                    },
+                    {
+                        title: "自然的韵律",
+                        parentWords: "四季分明才是最健康的。虽然夏雪好玩，但我们还是更喜欢温暖如初的夏天，对不对？",
+                        description: "差异让世界惊喜，规律让生命延续。感谢这份有节奏的季节交替，让我们能在这个丰富的星球上生生不息。故事讲完啦。"
+                    }
+                ];
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, world, snowParticles, sun;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 50, 200);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('canvas-bg').appendChild(renderer.domElement);
+
+                    // Sun (A glowing sphere)
+                    const sunGeo = new THREE.SphereGeometry(30, 32, 32);
+                    const sunMat = new THREE.MeshBasicMaterial({ color: 0xFFEB3B });
+                    sun = new THREE.Mesh(sunGeo, sunMat);
+                    sun.position.set(100, 100, -150);
+                    scene.add(sun);
+
+                    // Ground (Vertex displacement)
+                    const groundGeo = new THREE.PlaneGeometry(500, 500, 64, 64);
+                    const groundMat = new THREE.ShaderMaterial({
+                        uniforms: {
+                            time: { value: 0 },
+                            snowPower: { value: 0 }
+                        },
+                        vertexShader: `
+                            varying vec2 vUv;
+                            varying float vH;
+                            void main() {
+                                vUv = uv;
+                                vec3 p = position;
+                                float h = sin(p.x * 0.05) * cos(p.y * 0.05) * 8.0;
+                                p.z = h;
+                                vH = h;
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            varying vec2 vUv;
+                            varying float vH;
+                            uniform float snowPower;
+                            void main() {
+                                vec3 summer = vec3(0.5, 0.7, 0.2); // Lush Green
+                                vec3 snow = vec3(0.9, 0.95, 1.0);  // Pure White
+                                vec3 final = mix(summer, snow, clamp(snowPower * 1.5, 0.0, 1.0));
+                                final *= (1.0 + vH * 0.02); // Shading
+                                gl_FragColor = vec4(final, 1.0);
+                            }
+                        `
+                    });
+                    const ground = new THREE.Mesh(groundGeo, groundMat);
+                    ground.rotation.x = -Math.PI / 2.2;
+                    scene.add(ground);
+                    world = ground;
+
+                    // Snow
+                    const pCount = 2000;
+                    const pGeo = new THREE.BufferGeometry();
+                    const pPos = new Float32Array(pCount * 3);
+                    for (let i = 0; i < pCount; i++) {
+                        pPos[i * 3] = (Math.random() - 0.5) * 400;
+                        pPos[i * 3 + 1] = Math.random() * 300;
+                        rp = pPos[i * 3 + 2] = (Math.random() - 0.5) * 400;
+                    }
+                    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+                    const pMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, transparent: true, opacity: 0 });
+                    snowParticles = new THREE.Points(pGeo, pMat);
+                    scene.add(snowParticles);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (world) {
+                        world.material.uniforms.snowPower.value = THREE.MathUtils.lerp(
+                            world.material.uniforms.snowPower.value,
+                            snowPower.value,
+                            0.05
+                        );
+                    }
+
+                    if (snowParticles) {
+                        const pos = snowParticles.geometry.attributes.position;
+                        const factor = snowPower.value;
+                        const summerHeat = 1.0 - factor;
+                        for (let i = 0; i < pos.count; i++) {
+                            let y = pos.getY(i);
+                            y -= (2 + factor * 5); // Fall speed
+                            if (y < -50) y = 250;
+                            pos.setY(i, y);
+                            pos.setX(i, pos.getX(i) + Math.sin(t + i) * 0.2 * factor); // Wind
+                        }
+                        pos.needsUpdate = true;
+                        // Fade in as snow increases
+                        snowParticles.material.opacity = factor * 0.9;
+                    }
+
+                    // Sun interaction
+                    if (sun) {
+                        const s = 1.0 - snowPower.value * 0.5;
+                        sun.scale.set(s, s, s);
+                        sun.material.color.lerp(new THREE.Color(0xFFFFFF), snowPower.value * 0.2);
+                        scene.background = new THREE.Color().lerpColors(
+                            new THREE.Color(0x81D4FA),
+                            new THREE.Color(0x37474F),
+                            snowPower.value * 0.8
+                        );
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const next = () => {
+                    if (step.value < 5) {
+                        step.value++;
+                        if (step.value === 4) gsap.to(snowPower, { value: 1, duration: 2.5 });
+                    }
+                };
+                const jump = (n) => {
+                    step.value = n;
+                    if (n < 3) snowPower.value = 0;
+                    if (n > 3) snowPower.value = 1;
+                };
+                const reset = () => {
+                    step.value = 1;
+                    snowPower.value = 0;
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.top-info', { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1.2 });
+                    gsap.fromTo('.content-area', { opacity: 0, scale: 0.9, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 1.2, delay: 0.3 });
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.top-info', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.content-area', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.position, { x: x * 20, y: 50 - y * 20, duration: 2 });
+                        camera.lookAt(0, 0, 0);
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value,
+                        totalStages: 5,
+                        currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, stages, snowPower, next, jump, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

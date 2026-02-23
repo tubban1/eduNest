@@ -1,243 +1,221 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>猎豹奔跑骨骼演示</title>
+  <title>艺术像素猎豹 - 骨骼随动演示</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
-      background: radial-gradient(circle at top, #450a0a 0%, #020617 55%, #000 100%);
-      min-height: 100vh;
+      background: radial-gradient(circle at bottom, #1a1c2c 0%, #000 100%);
+      overflow: hidden;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #fee2e2;
+      height: 100vh;
     }
-    h1 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 6px; }
-    p { font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px; }
-    #canvas {
-      background: linear-gradient(to top, #1f2933, #020617);
-      border-radius: 12px;
-      border: 1px solid rgba(248,113,113,0.5);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.9);
-      max-width: 100%;
+
+    #stage {
+      position: relative;
+      transform: scale(1.2);
+      /* 防止 CSS 变换导致模糊 */
+      image-rendering: pixelated;
+    }
+
+    /* 核心图层样式：移除了 overflow: hidden 以显示 box-shadow 像素皮肤 */
+    .layer {
+      position: absolute;
+      display: block;
+      height: 2px;
+      width: 2px;
+      background-color: rgba(0, 0, 0, 1.00);
+      border-radius: 600px;
+      transform-origin: left center;
+      /* 关键：绕关节左侧旋转 */
+      pointer-events: none;
+    }
+
+    /* 注入用户提供的像素猎豹皮肤 (精选代表性阴影以平衡性能与效果) */
+    .cheetah-skin {
+      box-shadow:
+        -2px 1px 0px 0px #000,
+        2px 2px 8px 2px #f2bd21,
+        10px 5px 0px 8px #f2bd21,
+        -10px 0px 0px 4px #f2bd21,
+        0px 0px 5px 12px #f2bd21,
+        /* 斑点 */
+        5px -2px 0px 2px #000,
+        -5px 3px 0px 3px #000,
+        8px 8px 0px 2px #000,
+        /* 高光 */
+        0px -5px 10px 1px rgba(255, 255, 255, 0.4);
+    }
+
+    /* 头部皮肤细节 */
+    .head-skin {
+      box-shadow:
+        0px 0px 10px 10px #f2bd21,
+        8px -2px 0px 2px #000,
+        /* 眼睛 */
+        12px 2px 0px 1px #000;
+      /* 鼻子 */
+    }
+
+    .ground {
+      position: absolute;
+      bottom: -150px;
+      width: 800px;
+      left: -400px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #f2bd21, transparent);
+      opacity: 0.2;
+    }
+
+    #ui {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
+      color: #f2bd21;
+      font-family: 'PingFang SC', sans-serif;
+      letter-spacing: 2px;
     }
   </style>
 </head>
+
 <body>
-  <h1>猎豹奔跑 - 四足骨骼</h1>
-  <p>用四条腿 + 脊柱链条的骨骼节奏，呈现猎豹高速奔跑时的伸展与收缩。</p>
-  <canvas id="canvas" width="900" height="420"></canvas>
+  <div id="ui">
+    <h1>像素猎豹 (CSS Art)</h1>
+    <p>基于 box-shadow 堆叠与 FK 骨骼动力学</p>
+  </div>
 
-  <script src="KinecticsCore.js"></script>
+  <div id="stage">
+    <div class="ground"></div>
+    <!-- 猎豹 DOM 容器 -->
+    <div id="cheetah-root"></div>
+  </div>
+
   <script>
-    (function () {
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width;
-      const H = canvas.height;
-      let t0 = performance.now();
+    /**
+     * 骨骼随动逻辑
+     * 1. 使用嵌套 DOM 结构
+     * 2. 子骨骼定位在父骨骼末端 (left: length)
+     * 3. 动态旋转旋转中心
+     */
 
-      function drawGround() {
-        const groundY = H - 70;
-        // 天空
-        ctx.fillStyle = '#020617';
-        ctx.fillRect(0, 0, W, groundY);
-        // 地面
-        ctx.fillStyle = '#111827';
-        ctx.fillRect(0, groundY, W, H - groundY);
-        ctx.strokeStyle = '#4b5563';
-        ctx.beginPath();
-        ctx.moveTo(0, groundY);
-        ctx.lineTo(W, groundY);
-        ctx.stroke();
+    class Bone {
+      constructor(parent, length, className = "") {
+        this.length = length;
+        this.element = document.createElement('div');
+        this.element.className = "layer " + className;
+        // 设置骨骼表现长度
+        this.element.style.width = length + "px";
 
-        // 速度线
-        ctx.strokeStyle = 'rgba(248,113,113,0.4)';
-        ctx.lineWidth = 2;
+        if (parent) {
+          parent.appendChild(this.element);
+          // 关键：子骨骼必须定位在父骨骼的末端，这样旋转时才会像链条一样
+          this.element.style.left = parent.style.width;
+          this.element.style.top = "0";
+        } else {
+          document.getElementById('cheetah-root').appendChild(this.element);
+        }
+      }
+
+      rotate(angle) {
+        this.element.style.transform = `rotate(${angle}rad)`;
+      }
+
+      move(x, y) {
+        this.element.style.left = x + "px";
+        this.element.style.top = y + "px";
+      }
+    }
+
+    class Cheetah {
+      constructor() {
+        this.time = 0;
+        // 1. 创建脊椎骨骼链
+        this.spine = [];
+        let lastBone = null;
         for (let i = 0; i < 6; i++) {
-          const offset = (performance.now() * 0.4 + i * 200) % (W + 200) - 200;
-          const y = groundY - 40 - i * 10;
-          ctx.beginPath();
-          ctx.moveTo(W - offset, y);
-          ctx.lineTo(W - offset - 80, y + 6);
-          ctx.stroke();
+          let b = new Bone(lastBone, 28, "cheetah-skin");
+          this.spine.push(b);
+          lastBone = b.element;
         }
+        this.spine[0].move(-100, 0); // 初始锚点
+
+        // 2. 挂载四肢 (分别挂载在脊椎的首尾)
+        this.legBL = this.createLeg(this.spine[0].element); // 后脚1
+        this.legBR = this.createLeg(this.spine[0].element); // 后脚2
+        this.legFL = this.createLeg(this.spine[4].element); // 前脚1
+        this.legFR = this.createLeg(this.spine[4].element); // 前脚2
+
+        // 3. 头部与尾巴
+        this.head = new Bone(this.spine[5].element, 10, "head-skin");
+        this.tail = new Bone(this.spine[0].element, 50, "cheetah-skin");
       }
 
-      function drawCheetah(time) {
-        const groundY = H - 70;
-        const baseX = W / 2;
+      createLeg(parent) {
+        let thigh = new Bone(parent, 35, "cheetah-skin");
+        let calf = new Bone(thigh.element, 40, "cheetah-skin");
+        let foot = new Bone(calf.element, 15, "cheetah-skin");
+        return [thigh, calf, foot];
+      }
 
-        // 奔跑周期
-        const speed = 2.4;
-        const phase = time * speed;
+      update() {
+        this.time += 0.08;
 
-        // 脊柱轻微起伏（伸展/收缩）
-        const spineAmp = 10;
-        const spineOffset = Math.sin(phase * 2) * spineAmp;
+        // 1. 身体起伏与前进律动
+        let bob = Math.sin(this.time * 2) * 12;
+        this.spine[0].move(-80 + Math.cos(this.time) * 10, bob);
 
-        const hip = { x: baseX - 40, y: groundY - 60 + spineOffset };
-        const shoulder = { x: baseX + 40, y: groundY - 70 - spineOffset * 0.5 };
-
-        ctx.save();
-
-        // 脊柱（有厚度）
-        ctx.strokeStyle = '#f97316';
-        ctx.lineWidth = 16;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(hip.x, hip.y);
-        ctx.quadraticCurveTo(
-          (hip.x + shoulder.x) / 2,
-          (hip.y + shoulder.y) / 2 - spineOffset * 0.6,
-          shoulder.x,
-          shoulder.y
-        );
-        ctx.stroke();
-
-        // 身体高光
-        ctx.strokeStyle = '#fed7aa';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(hip.x - 6, hip.y - 4);
-        ctx.lineTo(shoulder.x + 10, shoulder.y - 6);
-        ctx.stroke();
-
-        // 头部
-        const headX = shoulder.x + 34;
-        const headY = shoulder.y - 14;
-        ctx.fillStyle = '#fb923c';
-        ctx.strokeStyle = '#111827';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.ellipse(headX, headY, 18, 14, -0.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 耳朵
-        ctx.beginPath();
-        ctx.moveTo(headX - 8, headY - 14);
-        ctx.lineTo(headX - 2, headY - 18);
-        ctx.lineTo(headX - 1, headY - 10);
-        ctx.closePath();
-        ctx.moveTo(headX + 4, headY - 14);
-        ctx.lineTo(headX + 10, headY - 18);
-        ctx.lineTo(headX + 7, headY - 10);
-        ctx.closePath();
-        ctx.fill();
-
-        // 眼睛 & 嘴
-        ctx.fillStyle = '#020617';
-        ctx.beginPath();
-        ctx.arc(headX + 4, headY - 4, 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(headX + 8, headY + 2);
-        ctx.quadraticCurveTo(headX + 14, headY + 4, headX + 12, headY + 7);
-        ctx.stroke();
-
-        // 尾巴（甩动）
-        const tailBase = { x: hip.x - 40, y: hip.y - 6 };
-        const tailWave = Math.sin(phase * 2.4) * 10;
-        ctx.strokeStyle = '#f97316';
-        ctx.lineWidth = 8;
-        ctx.beginPath();
-        ctx.moveTo(hip.x - 4, hip.y - 4);
-        ctx.quadraticCurveTo(
-          tailBase.x,
-          tailBase.y - tailWave,
-          tailBase.x - 40,
-          tailBase.y - 6 - tailWave * 0.6
-        );
-        ctx.stroke();
-
-        // 四条腿骨骼
-        function drawLeg(base, phaseOffset, front, near) {
-          const runP = phase * 2 + phaseOffset;
-          const contact = Math.max(0, Math.cos(runP)); // 落地阶段
-
-          const upperLen = 34;
-          const lowerLen = 40;
-
-          // 前后摆动角
-          const swing = Math.sin(runP) * (front ? 0.9 : 1.1);
-          const baseAngle = front ? -0.1 : 0.4;
-          const upperAngle = baseAngle + swing;
-
-          // 下肢随落地点调整
-          const kneeFlex = 0.6 + (1 - contact) * 0.5;
-          const lowerAngle = upperAngle + kneeFlex;
-
-          const knee = {
-            x: base.x + Math.cos(upperAngle) * upperLen,
-            y: base.y + Math.sin(upperAngle) * upperLen,
-          };
-          const paw = {
-            x: knee.x + Math.cos(lowerAngle) * lowerLen,
-            y: knee.y + Math.sin(lowerAngle) * lowerLen,
-          };
-
-          ctx.strokeStyle = near ? '#fed7aa' : 'rgba(248,250,252,0.6)';
-          ctx.lineCap = 'round';
-
-          // 大腿
-          ctx.lineWidth = near ? 10 : 8;
-          ctx.beginPath();
-          ctx.moveTo(base.x, base.y);
-          ctx.lineTo(knee.x, knee.y);
-          ctx.stroke();
-
-          // 小腿
-          ctx.lineWidth = near ? 8 : 6;
-          ctx.beginPath();
-          ctx.moveTo(knee.x, knee.y);
-          ctx.lineTo(paw.x, paw.y);
-          ctx.stroke();
-
-          // 关节
-          ctx.fillStyle = '#fee2e2';
-          ctx.beginPath();
-          ctx.arc(knee.x, knee.y, near ? 4 : 3, 0, Math.PI * 2);
-          ctx.fill();
-
-          // 脚掌与阴影
-          const groundY = H - 70;
-          const py = Math.min(paw.y, groundY + 1);
-          ctx.fillStyle = '#fecaca';
-          ctx.beginPath();
-          ctx.ellipse(paw.x, py, near ? 7 : 5, near ? 3.5 : 3, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = 'rgba(15,23,42,0.9)';
-          ctx.beginPath();
-          ctx.ellipse(paw.x, groundY + 8, near ? 14 : 10, 4, 0, 0, Math.PI * 2);
-          ctx.fill();
+        // 2. 脊椎波动 (由前向后传导)
+        for (let i = 0; i < this.spine.length; i++) {
+          let wave = Math.sin(this.time * 2 - i * 0.45) * 0.25;
+          this.spine[i].rotate(wave);
         }
 
-        // 画远侧腿（颜色略淡），再画近侧腿
-        // 后腿（hip），前腿（shoulder），前后相位有差异
-        drawLeg(hip, 0, false, false);                 // 远后腿
-        drawLeg(shoulder, Math.PI, true, false);      // 远前腿
-        drawLeg(hip, Math.PI, false, true);           // 近后腿
-        drawLeg(shoulder, 0, true, true);             // 近前腿
+        // 3. 驱动四肢 (典型的四足步态相位)
+        this.animateLeg(this.legFR, 0, 1);       // 前右
+        this.animateLeg(this.legBL, 1.5, 0);     // 后左
+        this.animateLeg(this.legFL, 3.1, 0);     // 前左
+        this.animateLeg(this.legBR, 4.6, 1);     // 后右
 
-        ctx.restore();
+        // 4. 头尾细节
+        this.head.rotate(Math.sin(this.time * 2) * 0.2 - 0.1);
+        this.tail.rotate(Math.PI * 0.8 + Math.sin(this.time * 1.5) * 0.6);
       }
 
-      function loop(now) {
-        const t = (now - t0) / 1000;
-        drawGround();
-        drawCheetah(t);
-        requestAnimationFrame(loop);
-      }
+      animateLeg(leg, phase, isNear) {
+        let t = (this.time * 2.5 + phase) % 6.28;
 
-      requestAnimationFrame(loop);
-    })();
+        // 跑步运动模型
+        let a1 = Math.sin(t) * 0.7 + 0.5; // 大腿主摆动
+        let a2 = (t > 1 && t < 4) ? 1.8 : 0.4; // 膝盖收缩逻辑
+        let a3 = -a1 * 0.6; // 平衡足部
+
+        leg[0].rotate(a1 + 1.2);
+        leg[1].rotate(a2);
+        leg[2].rotate(a3);
+
+        // 远近层级阴影表现
+        leg[0].element.style.filter = isNear ? "brightness(1.1)" : "brightness(0.6)";
+        leg[0].element.style.zIndex = isNear ? "10" : "-10";
+      }
+    }
+
+    const cheetahInstance = new Cheetah();
+    function step() {
+      cheetahInstance.update();
+      requestAnimationFrame(step);
+    }
+    step();
   </script>
 </body>
-</html>
 
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>把过去的所有时间浓缩成一年会怎样</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --deep-sky: #0c0a09;
+            --gold-foil: #d97706;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--deep-sky);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-calendar {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .header {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-hint {
+            background: rgba(217, 119, 6, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(217, 119, 6, 0.3);
+            font-size: 1.1rem;
+            color: #fbbf24;
+            display: inline-block;
+        }
+
+        .middle-content {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc {
+            font-size: 1.6rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px #000;
+        }
+
+        .btn-cosmic {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-cosmic:hover {
+            transform: scale(1.1);
+            background: rgba(217, 119, 6, 0.2);
+            border-color: #fbbf24;
+        }
+
+        /* 宇宙时序仪表盘 */
+        .timeline-box {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            padding: 2rem;
+            border-radius: 2.5rem;
+            pointer-events: auto;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .month-rail {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin: 1.5rem 0;
+            padding-top: 10px;
+        }
+
+        .month-node {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #444;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .month-node.active {
+            background: #fbbf24;
+            box-shadow: 0 0 10px #fbbf24;
+        }
+
+        .month-node::after {
+            content: attr(data-month);
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        .slider-handle {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #262626;
+            border-radius: 3px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .slider-handle::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 40px;
+            height: 18px;
+            background: #fbbf24;
+            border-radius: 9px;
+            cursor: pointer;
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #fbbf24;
+            transform: scale(1.4);
+        }
+
+        .date-badge {
+            font-family: serif;
+            font-size: 1.8rem;
+            color: #fbbf24;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+
+    <div id="app" class="ui-calendar">
+        <div class="header" ref="header">
+            <h1 class="main-title">{{ current.title }}</h1>
+            <div class="parent-hint">🗓️ {{ current.parentWords }}</div>
+        </div>
+
+        <div class="middle-content" ref="content">
+            <p class="desc">{{ current.description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="btn-cosmic">翻阅年历</button>
+                <button v-if="step === 5" @click="reset" class="btn-cosmic">珍爱当下</button>
+            </div>
+        </div>
+
+        <!-- S3 核心交互 -->
+        <div v-if="step === 3" class="timeline-box">
+            <div class="date-badge">{{ activeMonthName }}</div>
+            <div class="text-[10px] text-gray-400 mb-6">{{ activeEvent }}</div>
+
+            <div class="month-rail">
+                <input type="range" v-model="timer" min="0" max="11" step="0.01" class="slider-handle">
+                <div v-for="m in 12" :key="m" :class="['month-node', { active: Math.floor(timer) >= m-1 }]"
+                    :data-month="m+'月'"></div>
+            </div>
+
+            <button v-if="timer > 10.5" @click="next" class="btn-cosmic !py-1 !px-8 !text-sm mt-4">发现人类位置</button>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const timer = ref(0);
+
+                const stages = [
+                    {
+                        title: "138 亿年的长跑",
+                        parentWords: "宝贝，138 亿年是一个长到没法数清楚的概念。如果我们要讲完这个故事，可能要讲一万年呢！",
+                        description: "为了更清楚地看清这段历史，物理学家把宇宙从诞生到现在的全部时间，缩成了一年。这就是‘宇宙年历’。让我们看看我们在这个年历里的位置。"
+                    },
+                    {
+                        title: "一页一亿年",
+                        parentWords: "在这个年历里，每一个月都代表了超过 10 亿年。你会惊讶地发现，原来地球并不是一开始就有的。",
+                        description: "宇宙在大年初一爆发，但直到八月，我们的太阳和地球才刚刚露面。生命像是一个慢性子，直到年终岁尾才开始忙碌起来。"
+                    },
+                    {
+                        title: "翻阅宇宙史诗",
+                        parentWords: "来吧，拨动滚轴。看看从 1 月到 12 月，这个宇宙舞台发生了哪些翻天覆地的变化？",
+                        description: "你会看到恒星的诞生、星系的重组，以及各种奇幻生命的演变。你会发现，绝大多数时间里，宇宙都没有人类的声音。直到最后一刻..."
+                    },
+                    {
+                        title: "最后的这一秒",
+                        parentWords: "看到了吗？直到 12 月 31 日的最后那几十秒，人类才刚刚学会直立行走。而我们的现代文明，只占了最后 0.1 秒。",
+                        description: "这并不是说我们不重要，而是说明能作为宇宙的观察者出现，本身就是一个奇迹。我们在这浩瀚时空的极致深处，点亮了一盏微弱却灿烂的灯。"
+                    },
+                    {
+                        title: "渺小而伟大",
+                        parentWords: "虽然我们在时间的长河里只是一个小水滴，但我们却能理解整条大河的流动。这才是人类最伟大的地方。",
+                        description: "了解宇宙尺度，让我们学会谦卑，更学会珍惜。我们的每一天，都是这亿万年累积出来的宝藏。故事讲完了，晚安。"
+                    }
+                ];
+
+                const events = [
+                    "1月1日：宇宙大爆炸，一切的起点！🎆",
+                    "2月：第一批恒星和星系开始闪烁。✨",
+                    "3月：银河系渐渐成形。🌌",
+                    "4月：宇宙在膨胀中变得广阔。🔭",
+                    "5月：古老的星球在生灭中循环。🌑",
+                    "6月：星云中孕育着重元素。💎",
+                    "7月：早期的星系开始碰撞融合。🌀",
+                    "8月：我们的太阳和地球降生了！🌍",
+                    "9月：地球上出现了最早的单细胞。🦠",
+                    "10月：大气中开始充满氧气。🌬️",
+                    "11月：多细胞生物带来了多样性。🧬",
+                    "12月：恐龙称霸地球，直到最后几天！🦖"
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+                const activeMonth = computed(() => Math.floor(timer.value));
+                const activeMonthName = computed(() => (activeMonth.value + 1) + " 月");
+                const activeEvent = computed(() => events[activeMonth.value]);
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, globe, particles;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 20, 80);
+                    camera.lookAt(0, 0, 0);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Central visual representing the universe evolution
+                    const globeGeo = new THREE.SphereGeometry(15, 32, 32);
+                    const globeMat = new THREE.MeshStandardMaterial({
+                        color: 0xfbbf24,
+                        emissive: 0x442200,
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.3
+                    });
+                    globe = new THREE.Mesh(globeGeo, globeMat);
+                    scene.add(globe);
+
+                    // Particle Nebula
+                    const pGeo = new THREE.BufferGeometry();
+                    const pPos = new Float32Array(3000 * 3);
+                    for (let i = 0; i < 3000; i++) {
+                        pPos[i * 3] = (Math.random() - 0.5) * 150;
+                        pPos[i * 3 + 1] = (Math.random() - 0.5) * 150;
+                        pPos[i * 3 + 2] = (Math.random() - 0.5) * 150;
+                    }
+                    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+                    const pMat = new THREE.PointsMaterial({ color: 0xfbbf24, size: 0.5 });
+                    particles = new THREE.Points(pGeo, pMat);
+                    scene.add(particles);
+
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const sun = new THREE.PointLight(0xfbbf24, 1, 200);
+                    sun.position.set(20, 20, 20);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    // Visual shift based on timer
+                    const m = timer.value;
+                    globe.rotation.y += 0.005;
+                    globe.scale.setScalar(1 + m * 0.1);
+                    globe.material.color.lerp(new THREE.Color(m < 7 ? 0xfbbf24 : 0x38bdf8), 0.05);
+
+                    particles.rotation.z += 0.001 * (m + 1);
+
+                    renderer.render(scene, camera);
+                };
+
+                // Methods
+                const next = () => { if (step.value < 5) step.value++; };
+                const jump = (n) => { step.value = n; };
+                const reset = () => { step.value = 1; timer.value = 0; };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.header', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.middle-content', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    if (newVal === 4) timer.value = 11.99;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.header', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.middle-content', { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, timer, activeMonthName, activeEvent, next, jump, reset, stages };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

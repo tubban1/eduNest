@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灰灰兔感冒了</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-warm: #FFF3E0;
+            --text-main: #BF360C;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-warm);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #EF6C00;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #E65100;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.6);
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: var(--text-main);
+            line-height: 1.8;
+            padding: 12px 25px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(230, 81, 0, 0.85);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: #E65100;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 1s, transform 1s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 指导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🥗 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 正文 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 v-if="stages[step-1].title" class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p v-if="stages[step-1].description" class="stage-content">{{ stages[step-1].description }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 互动 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 2" @click="coverQuilt" class="btn-action">给灰灰兔盖好阳光被子 🛌</button>
+            <button v-else-if="step === 3" @click="drinkSoup" class="btn-action">喂灰灰兔喝暖暖的汤 🥣</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">再多休息一会儿</button>
+            <button v-else @click="reset" class="btn-action !bg-orange-600">迎接健康新一天</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const hasQuilt = ref(false);
+                const isDrinking = ref(false);
+
+                const stages = [
+                    { title: '阿嚏！阿嚏！', description: '‘阿嚏——！’灰灰兔今天没去草丛里蹦跶，它的鼻尖红红的，耳朵耷拉着。‘哎呀，一定是不小心着凉了。’灰灰兔说话的声音都变得闷闷的。' },
+                    { title: '软绵绵的被子', description: '兔妈妈走过来，搬出了那条满是阳光气息的软被子。‘来，小宝贝，咱们先在被窝里躲一会儿，感冒很快就会被咱们的热气赶跑的。’' },
+                    { title: '热腾腾的胡萝卜汤', description: '妈妈端来了一小碗冒着白烟的胡萝卜汤。‘多喝一点热汤，身体里的小卫兵就有力气和感冒打仗了。’灰灰兔慢慢地喝着，觉得肚子和心都暖了。' },
+                    { title: '耳朵重新竖起来了', description: '睡了一觉后，灰灰兔觉得自己轻快多啦！它伸了一个长长的懒腰，鼻子通气了，耳朵也重新竖了起来。‘谢谢妈妈，我已经好啦！’' },
+                    { title: '好梦里的守护', description: '月亮悄悄爬进窗户。灰灰兔乖乖地躺着，抱着胡萝卜枕头入睡了。明天，又可以在草地上开心地翻跟头了。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看。灰灰兔生病了，它有点儿没精神。你生病的时候，感觉是怎么样的？",
+                    "嘘——咱们动作轻一点，帮妈妈把被子给灰灰兔盖好。生病的时候，休息是最重要的。",
+                    "来，咱们给灰灰兔加油。多喝水、多喝汤，身体里的小卫兵就会变得很强大哦。",
+                    "哇！你看灰灰兔又能跳了！照顾好身体，就能收获最开心的明天。宝贝，你也要多喝水呀。",
+                    "故事听完啦。现在，咱们也学着灰灰兔的样子，盖好被子，进入甜甜的梦乡。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawRabbit = (x, y, scale, t, cold = true) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+
+                    const bounce = cold ? Math.sin(t * 1.5) * 2 : Math.sin(t * 4) * 5;
+
+                    // Ears
+                    const earWag = cold ? 0.4 : Math.sin(t * 5) * 0.1;
+                    rc.ellipse(-25, -120 + bounce, 35, 100, { fill: '#BDBDBD', fillStyle: 'solid', roughness: 1.5 });
+                    rc.ellipse(25, -120 + bounce, 35, 100, { fill: '#BDBDBD', fillStyle: 'solid', roughness: 1.5 });
+
+                    // Face
+                    rc.circle(0, -40 + bounce, 95, { fill: '#BDBDBD', fillStyle: 'solid', roughness: 1.2 });
+
+                    if (cold) {
+                        // Sad Eyes
+                        rc.line(-35, -55 + bounce, -15, -55 + bounce, { stroke: '#444', strokeWidth: 2 });
+                        rc.line(35, -55 + bounce, 15, -55 + bounce, { stroke: '#444', strokeWidth: 2 });
+                        // Red nose
+                        rc.circle(0, -35 + bounce, 10, { fill: '#FF5252', fillStyle: 'solid' });
+                    } else {
+                        // Happy Eyes
+                        rc.circle(-30, -55 + bounce, 6, { fill: '#333' });
+                        rc.circle(30, -55 + bounce, 6, { fill: '#333' });
+                        rc.circle(0, -35 + bounce, 8, { fill: '#F06292', fillStyle: 'solid' });
+                    }
+
+                    // Quilt
+                    if (hasQuilt.value && step.value < 4) {
+                        rc.rectangle(-140, -10, 280, 180, { fill: '#FFF176', fillStyle: 'hachure', stroke: '#FBC02D', strokeWidth: 2 });
+                    }
+
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.7;
+
+                    if (step.value === 5) {
+                        document.body.style.background = '#3F51B5';
+                        rc.circle(canvas.width * 0.8, 150, 45, { fill: '#FFF59D', fillStyle: 'solid' });
+                    } else {
+                        document.body.style.background = '#FFF3E0';
+                    }
+
+                    if (step.value === 3 && !isDrinking.value) {
+                        // Soup bowl
+                        const sx = centerX + 180;
+                        const sy = centerY + 80;
+                        rc.curve([[sx - 50, sy], [sx + 50, sy], [sx + 40, sy + 60], [sx - 40, sy + 60]], { fill: '#FFCC80', fillStyle: 'solid' });
+                        const steam = Math.sin(t * 10) * 5;
+                        rc.line(sx, sy - 10, sx + steam, sy - 40, { stroke: '#FFF', strokeWidth: 2 });
+                    }
+
+                    const rabbitScale = step.value >= 4 ? 1.2 : 1.0;
+                    const isCold = step.value < 4;
+                    drawRabbit(centerX, centerY, rabbitScale, t, isCold);
+
+                    requestAnimationFrame(animate);
+                };
+
+                const coverQuilt = () => {
+                    hasQuilt.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const drinkSoup = () => {
+                    isDrinking.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    hasQuilt.value = false;
+                    isDrinking.value = false;
+                };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, coverQuilt, drinkSoup, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

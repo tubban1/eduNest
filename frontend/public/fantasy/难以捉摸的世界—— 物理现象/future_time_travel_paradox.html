@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我想到未来时空去旅行</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --warp-blue: #38bdf8;
+            --future-pink: #f472b6;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-space {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .header {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #38bdf8, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-hint {
+            background: rgba(56, 189, 248, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-size: 1.1rem;
+            color: #38bdf8;
+            display: inline-block;
+        }
+
+        .middle-content {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc {
+            font-size: 1.6rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px #000;
+        }
+
+        .btn-warp {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-warp:hover {
+            transform: scale(1.1);
+            background: rgba(244, 114, 182, 0.2);
+            border-color: #f472b6;
+        }
+
+        /* 速度仪表盘 */
+        .warp-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 500px;
+            padding: 2.5rem;
+            border-radius: 2.5rem;
+            pointer-events: auto;
+            z-index: 100;
+            text-align: center;
+        }
+
+        /* 相对论钟 */
+        .clock-container {
+            position: fixed;
+            top: 12rem;
+            left: 5rem;
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            pointer-events: none;
+        }
+
+        .time-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .time-val {
+            font-family: monospace;
+            font-size: 1.8rem;
+            color: #38bdf8;
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #38bdf8;
+            transform: scale(1.4);
+        }
+
+        .speed-slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: #334155;
+            border-radius: 4px;
+            outline: none;
+            margin: 2rem 0;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 5px solid #38bdf8;
+            box-shadow: 0 0 20px #38bdf8;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+
+    <div id="app" class="ui-space">
+        <div class="header" ref="header">
+            <h1 class="title">{{ current.title }}</h1>
+            <div class="parent-hint">🚀 {{ current.parentWords }}</div>
+        </div>
+
+        <div class="clock-container" v-if="step >= 3">
+            <div>
+                <div class="time-label">飞船时间 (你的感觉)</div>
+                <div class="time-val">{{ shipTimeFormatted }}</div>
+            </div>
+            <div class="mt-4">
+                <div class="time-label">地球时间 (真实流逝)</div>
+                <div class="time-val text-pink-400">{{ earthTimeFormatted }}</div>
+            </div>
+        </div>
+
+        <div class="middle-content" ref="content">
+            <p class="desc">{{ current.description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="btn-warp">加速前进</button>
+                <button v-if="step === 5" @click="reset" class="btn-warp">回到现在</button>
+            </div>
+        </div>
+
+        <!-- S3 核心交互 -->
+        <div v-if="step === 3" class="warp-panel">
+            <div class="text-sky-400 font-bold mb-1">相对论速推器</div>
+            <div class="text-[10px] text-gray-500 mb-4">当前速度：{{ speedPercent }}% 光速</div>
+
+            <input type="range" v-model="speedFactor" min="0" max="0.999" step="0.001" class="speed-slider">
+
+            <div class="text-xs text-sky-200 mt-2">当速度超过 90% 时，观察星空的变化！</div>
+            <button v-if="speedFactor > 0.9" @click="next" class="btn-warp !py-1 !px-8 !text-sm mt-4">前往未来</button>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const speedFactor = ref(0); // 0 to 0.999
+                const shipTime = ref(0);
+                const earthTime = ref(0);
+
+                const stages = [
+                    {
+                        title: "想去未来看看吗？",
+                        parentWords: "宝贝，虽然我们没发明出时光机，但爱因斯坦老爷爷告诉我们，宇宙里真的有一条通往未来的‘快车道’哦。",
+                        description: "其实，我们每时每刻都在向未来旅行，只不过大家的速度都是一样的。但如果你能跑得足够快，甚至追上光的速度，神奇的事情就会发生。"
+                    },
+                    {
+                        title: "时间的慢速魔法",
+                        parentWords: "当你坐上一艘超级飞船时，时间就像进了粘稠的胶水里。你在船上只过了一天，地球上可能已经过去了一百年。",
+                        description: "这就叫‘时间膨胀’。运动越快，时间越慢。这意味着，你可以通过高速飞行，让自己‘活到’几千年后的地球，亲眼看看那个未来的模样。"
+                    },
+                    {
+                        title: "光速极限挑战",
+                        parentWords: "来！推动那个加速杆。当你接近光速，时间会产生裂痕。看看左边的时钟对比，你会变成一个‘时空旅行者’！",
+                        description: "在这个阶段，你会看到星光扭曲、变色。你在飞船里的每一秒，都让地球上的亲人等了许久。你的生命在加速前进的宇宙中被凝缩了。"
+                    },
+                    {
+                        title: "单程票的秘密",
+                        parentWords: "你看！由于你跑得太快，现在的地球已经是几百年后的样子了。虽然你没变老，但世界已经翻天覆地了。",
+                        description: "前往未来的旅行是一张单程票，你回不到过去的那个地球了。物理规律就是这样：用速度‘购买’未来的门票。这是宇宙最硬的规则。"
+                    },
+                    {
+                        title: "永恒的旅程",
+                        parentWords: "时间不只是一成不变的钟声，它是随着你的脚步而律动的。哪怕不坐飞船，和你在一起的每一刻也是永恒。",
+                        description: "了解了相对论，我们就了解了宇宙的广阔。时间的长短，取决于你探索世界的热情和速度。故事讲完了，晚安。"
+                    }
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+                const speedPercent = computed(() => (speedFactor.value * 100).toFixed(2));
+
+                const shipTimeFormatted = computed(() => {
+                    const total = Math.floor(shipTime.value);
+                    const m = Math.floor(total / 60);
+                    const s = total % 60;
+                    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                });
+                const earthTimeFormatted = computed(() => {
+                    const total = Math.floor(earthTime.value);
+                    const y = Math.floor(total / 3600);
+                    const d = Math.floor((total % 3600) / 60);
+                    const s = total % 60;
+                    return `${y}年 ${d}天 ${s}秒`;
+                });
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, stars = [], clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.z = 5;
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Stars (particles)
+                    const starGeo = new THREE.BufferGeometry();
+                    const starPos = new Float32Array(5000 * 3);
+                    const starColors = new Float32Array(5000 * 3);
+                    for (let i = 0; i < 5000; i++) {
+                        starPos[i * 3] = (Math.random() - 0.5) * 1000;
+                        starPos[i * 3 + 1] = (Math.random() - 0.5) * 1000;
+                        starPos[i * 3 + 2] = (Math.random() - 0.5) * 1000;
+                        starColors[i * 3] = 1; starColors[i * 3 + 1] = 1; starColors[i * 3 + 2] = 1;
+                    }
+                    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+                    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+
+                    const starMat = new THREE.PointsMaterial({ size: 1.5, vertexColors: true, transparent: true });
+                    const starPoints = new THREE.Points(starGeo, starMat);
+                    scene.add(starPoints);
+                    scene.userData.starPoints = starPoints;
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const delta = clock.getDelta();
+                    const t = clock.getElapsedTime();
+
+                    // Relative time flow
+                    const lorentz = 1 / Math.sqrt(1 - Math.pow(speedFactor.value, 2));
+                    shipTime.value += delta;
+                    earthTime.value += delta * lorentz * (speedFactor.value > 0.9 ? 500 : 1);
+
+                    // Star distortion logic
+                    const stars = scene.userData.starPoints;
+                    const pos = stars.geometry.attributes.position;
+                    const colors = stars.geometry.attributes.color;
+
+                    for (let i = 0; i < 5000; i++) {
+                        let z = pos.getZ(i);
+                        z += 2 + speedFactor.value * 50;
+                        if (z > 500) z = -500;
+                        pos.setZ(i, z);
+
+                        // Doppler shift Simulation (Blue shift as we approach stars)
+                        if (speedFactor.value > 0.8) {
+                            colors.setXYZ(i, 0.5, 0.8, 1.0); // Shift to Blue
+                        } else {
+                            colors.setXYZ(i, 1.0, 1.0, 1.0); // Normal
+                        }
+                    }
+                    pos.needsUpdate = true;
+                    colors.needsUpdate = true;
+
+                    // Camera Shake at high speed
+                    if (speedFactor.value > 0.95) {
+                        camera.position.x = Math.sin(t * 50) * 0.1;
+                        camera.position.y = Math.cos(t * 50) * 0.1;
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                // Methods
+                const next = () => { if (step.value < 5) step.value++; };
+                const jump = (n) => { step.value = n; };
+                const reset = () => {
+                    step.value = 1; speedFactor.value = 0;
+                    shipTime.value = 0; earthTime.value = 0;
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.header', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.middle-content', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    if (newVal === 5) speedFactor.value = 0;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.header', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.middle-content', { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, speedFactor, speedPercent, shipTimeFormatted, earthTimeFormatted, next, jump, reset, stages };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

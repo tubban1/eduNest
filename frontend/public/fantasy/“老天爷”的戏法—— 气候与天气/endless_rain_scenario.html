@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雨一直下会怎样</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --rain-cyan: #A5F3FC;
+            --water-blue: rgba(30, 64, 175, 0.6);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1e293b;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .head-group {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .title-main {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4rem;
+            letter-spacing: 0.2rem;
+            background: linear-gradient(135deg, #06B6D4, #DBEAFE);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-hint {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--rain-cyan);
+            font-size: 1.1rem;
+            display: inline-block;
+        }
+
+        .desc-box {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            /* 避让底部的交互面板 */
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc-text {
+            font-size: 1.5rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+            font-weight: 300;
+        }
+
+        .btn-fancy {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.35rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-fancy:hover {
+            transform: scale(1.1) translateY(-5px);
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #06B6D4;
+        }
+
+        .interact-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 450px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(30px);
+            padding: 2rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .rain-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            margin: 1.5rem 0;
+        }
+
+        .rain-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #06B6D4;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.6);
+            cursor: pointer;
+            border: 4px solid #fff;
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .progress-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .progress-dot.active {
+            background: #06B6D4;
+            border-color: #06B6D4;
+            transform: scale(1.4);
+            box-shadow: 0 0 15px #06B6D4;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage-canvas"></div>
+
+    <div id="app" class="ui-root">
+        <div class="head-group">
+            <h1 class="title-main">{{ current.title }}</h1>
+            <div class="parent-hint">
+                💧 {{ current.parentWords }}
+            </div>
+        </div>
+
+        <div class="desc-box">
+            <p class="desc-text">{{ current.description }}</p>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < 5 && step !== 3" @click="next" class="btn-fancy">
+                    {{ step === 2 ? '启动暴雨实验' : '继续探索' }}
+                </button>
+                <button v-else-if="step === 5" @click="reset" class="btn-fancy">迎接阳光</button>
+            </div>
+        </div>
+
+        <!-- 交互面板：仅在3步 -->
+        <div v-if="step === 3" class="interact-panel">
+            <div class="flex justify-between font-bold text-xs text-blue-300">
+                <span>微雨蒙蒙</span>
+                <span>倾盆大雨</span>
+            </div>
+            <input type="range" v-model="rainPower" min="0" max="1" step="0.01" class="rain-slider pointer-events-auto">
+            <div class="flex justify-center mt-3">
+                <button @click="next" class="btn-fancy !text-xs !py-2 !px-8"
+                    :style="{ opacity: rainPower > 0.8 ? 1 : 0.6 }">
+                    开启极限洪水模拟
+                </button>
+            </div>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['progress-dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const rainPower = ref(0);
+                const waterLevel = ref(-40);
+
+                const stages = [
+                    {
+                        title: "润物细无声",
+                        parentWords: "宝贝，听，那是雨点落在叶子上的声音。适量的雨水是植物的好朋友呢。",
+                        description: "小雨能让土壤变得松软，给大地解渴。这种循环是地球最自然的模样，充满了平静的力量。"
+                    },
+                    {
+                        title: "永不停歇的挑战",
+                        parentWords: "如果这场雨像魔法一样停不下来，你觉得我们的小山谷会发生什么？",
+                        description: "当降雨远超蒸发的速度，水就会在地面聚集。一个看似平衡的世界，可能会在不断的累积中被打破。"
+                    },
+                    {
+                        title: "调节‘降雨旋钮’",
+                        parentWords: "来，握住云朵遥控器！把雨调到最大，看看水位是怎么一点点涨上来的。",
+                        description: "在这个阶段，你可以看到陆地正在‘退缩’。太多的水让泥土无法呼吸，家园正在慢慢被淹没。"
+                    },
+                    {
+                        title: "消失的家园",
+                        parentWords: "哇！水已经漫过树梢了。没有了旱季的交替，陆地上的生命真的很难生存呢。",
+                        description: "我们发现了一个残酷的真理：‘生命之水’如果过量，也会变成‘吞噬之力’。平衡才是这个星球最伟大的智慧。"
+                    },
+                    {
+                        title: "平衡的艺术",
+                        parentWords: "太阳出来啦！有晴有雨，才是大自然最好的节拍。我们要珍惜这份平衡哦。",
+                        description: "每一个晴天都在为大地减负。正是因为有这种循环的节奏，我们的地球才如此适合生命居住。晚安。"
+                    }
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, terrain, water, rain;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 80, 200);
+                    camera.lookAt(0, 0, 0);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage-canvas').appendChild(renderer.domElement);
+
+                    // Terrain
+                    const terGeo = new THREE.PlaneGeometry(300, 300, 100, 100);
+                    const terMat = new THREE.MeshPhongMaterial({ color: 0x4d7c0f, flatShading: true });
+                    const pos = terGeo.attributes.position;
+                    for (let i = 0; i < pos.count; i++) {
+                        const px = pos.getX(i);
+                        const py = pos.getY(i);
+                        pos.setZ(i, (Math.sin(px * 0.05) * Math.cos(py * 0.05)) * 25);
+                    }
+                    terrain = new THREE.Mesh(terGeo, terMat);
+                    terrain.rotation.x = -Math.PI / 2.2;
+                    scene.add(terrain);
+
+                    // Water Plane
+                    const waterGeo = new THREE.PlaneGeometry(350, 350);
+                    const waterMat = new THREE.MeshPhongMaterial({ color: 0x1e40af, transparent: true, opacity: 0.6 });
+                    water = new THREE.Mesh(waterGeo, waterMat);
+                    water.rotation.x = -Math.PI / 2.2;
+                    water.position.z = -40; // Under terrain initially
+                    scene.add(water);
+
+                    // Lights
+                    const sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(50, 100, 50);
+                    scene.add(sun);
+                    scene.add(new THREE.AmbientLight(0x404040));
+
+                    // Rain
+                    const rainCount = 1000;
+                    const rg = new THREE.BufferGeometry();
+                    const rp = new Float32Array(rainCount * 3);
+                    for (let i = 0; i < rainCount; i++) {
+                        rp[i * 3] = (Math.random() - 0.5) * 300;
+                        rp[i * 3 + 1] = Math.random() * 200;
+                        rp[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                    }
+                    rg.setAttribute('position', new THREE.BufferAttribute(rp, 3));
+                    rain = new THREE.Points(rg, new THREE.PointsMaterial({ color: 0xa5f3fc, size: 1, transparent: true, opacity: 0 }));
+                    scene.add(rain);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const dt = clock.getDelta();
+                    const t = clock.getElapsedTime();
+
+                    if (rain) {
+                        const rp = rain.geometry.attributes.position;
+                        const factor = rainPower.value;
+                        for (let i = 0; i < rp.count; i++) {
+                            let y = rp.getY(i);
+                            y -= (5 + factor * 20);
+                            if (y < -50) y = 200;
+                            rp.setY(i, y);
+                        }
+                        rp.needsUpdate = true;
+                        rain.material.opacity = factor * 0.8;
+                    }
+
+                    if (water) {
+                        // Level based on rain and step
+                        const targetL = (step.value >= 4) ? 10 : (step.value === 3 ? (rainPower.value * 40 - 30) : -40);
+                        waterLevel.value = THREE.MathUtils.lerp(waterLevel.value, targetL, 0.05);
+                        water.position.y = waterLevel.value;
+                        water.material.opacity = 0.5 + Math.sin(t) * 0.1;
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const next = () => {
+                    if (step.value < 5) {
+                        step.value++;
+                        if (step.value === 4) gsap.to(rainPower, { value: 1, duration: 2 });
+                    }
+                };
+                const jump = (n) => {
+                    step.value = n;
+                    if (n < 3) rainPower.value = 0;
+                    if (n > 3) rainPower.value = 1;
+                };
+                const reset = () => {
+                    step.value = 1;
+                    rainPower.value = 0;
+                    waterLevel.value = -40;
+                };
+
+                watch(step, (newVal) => {
+                    gsap.to('.head-group', { opacity: 1, y: 0, duration: 1.2 });
+                    gsap.to('.desc-box', { opacity: 1, y: 0, duration: 1.2, delay: 0.3 });
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.head-group', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.desc-box', { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
+
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.position, { x: x * 30, y: 80 - y * 20, duration: 2 });
+                        camera.lookAt(0, 0, 0);
+                        gsap.to('.ui-root', { x: -x * 10, y: -y * 10, duration: 1.5 });
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value,
+                        totalStages: 5,
+                        currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, rainPower, next, jump, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

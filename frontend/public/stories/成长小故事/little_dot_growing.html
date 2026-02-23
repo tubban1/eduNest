@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小点点要长大</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-growing: #E8F5E9;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-growing);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #2E7D32;
+            opacity: 0.9;
+            font-style: italic;
+            max-width: 600px;
+            margin: 0 auto;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #1B5E20;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 2px 2px rgba(255, 255, 255, 0.5));
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #33691E;
+            line-height: 1.8;
+            padding: 10px 24px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.5), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(46, 125, 50, 0.9);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #2E7D32;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 1s, transform 1s ease-out;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 顶部核心指示：家长引导 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🌱 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 底部核心展示：故事情节 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 动态交互按钮 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="triggerRain" class="btn-action">呼唤温柔的春雨 🌧️</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">去看成长的奇迹</button>
+            <button v-else @click="reset" class="btn-action !bg-green-700">回到温暖的起点</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isRaining = ref(false);
+                const growthPhase = ref(0); // 0: seed, 1: sprout, 2: small plant
+
+                const stages = [
+                    { title: '迷路的小点点', content: '在静悄悄的高山上，躺着一颗像小点点一样的种子。它正深深地埋在泥土里，盖着厚厚的、暖暖的被子。它在想：外面是什么样子的呢？' },
+                    { title: '我也想变大', content: '小点点听到了风的歌声，听到了虫鸣的呢喃。它努力地伸了伸腰，好想去看看那高高的云朵和闪闪的星星呀。‘我什么时候才能长大呢？’' },
+                    { title: '云朵姐姐的密语', content: '云朵姐姐飘了过来，温柔地说：‘别急，小点点。先喝一口甜甜的雨露吧。成长需要耐心，更需要时间。’ 瞧，雨点儿落下来了。' },
+                    { title: '向上的一小步', content: '喝饱了雨水，又晒了晒太阳，小点点终于勇敢地探出了头。‘哇！’它穿上了嫩绿的新衣服，看见了从未见过的美丽世界。原来，我就在成长的路上。' },
+                    { title: '甜甜的梦境', content: '微风轻轻吹，小嫩叶轻轻摇。小点点明白，每一刻的等待都是为了更好的绽放。在这个宁静的夜晚，它抱着月光进入了梦乡。晚安，宝贝。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你瞧，这里有一颗小种子在睡觉呢。咱们轻轻地，别吵醒它。",
+                    "小种子也想和你一样长大呢。你觉得它会变成什么样的小树苗？",
+                    "来，咱们帮云朵姐姐一把，给小种子送去点水分。成长虽然慢，但每一刻都很棒。",
+                    "哇！快看，它钻出来了！真勇敢呀。宝贝，你也像它一样正充满力量地长大哦。",
+                    "故事讲完啦。小种子也累了，正盖着月光睡觉。咱们也闭上眼睛，去梦境里看它长高吧。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                let particles = [];
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawSeed = (x, y, scale, t) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+                    const pulse = Math.sin(t * 2) * 0.05;
+                    rc.circle(0, 0, 40 * (1 + pulse), { fill: '#795548', fillStyle: 'hachure', roughness: 1.5 });
+                    ctx.restore();
+                };
+
+                const drawSprout = (x, y, progress, t) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    const swing = Math.sin(t * 1.5) * 5;
+                    // Stem
+                    rc.curve([[0, 0], [swing, -80 * progress], [swing * 1.5, -150 * progress]], { stroke: '#4CAF50', strokeWidth: 8 });
+                    if (progress > 0.5) {
+                        // Leaf 1
+                        ctx.save();
+                        ctx.translate(swing, -80 * progress);
+                        ctx.rotate(-0.5 + Math.sin(t) * 0.1);
+                        rc.ellipse(0, 0, 40, 25, { fill: '#81C784', fillStyle: 'solid' });
+                        ctx.restore();
+                        // Leaf 2
+                        ctx.save();
+                        ctx.translate(swing * 1.2, -120 * progress);
+                        ctx.rotate(0.4 - Math.sin(t * 0.8) * 0.1);
+                        rc.ellipse(0, 0, 35, 20, { fill: '#AED581', fillStyle: 'solid' });
+                        ctx.restore();
+                    }
+                    ctx.restore();
+                };
+
+                const drawCloud = (x, y, t) => {
+                    ctx.save();
+                    const float = Math.sin(t * 0.8) * 10;
+                    ctx.translate(x, y + float);
+                    rc.ellipse(0, 0, 150, 70, { fill: '#FFF', fillStyle: 'solid', roughness: 0.5 });
+                    rc.ellipse(-40, -20, 80, 60, { fill: '#FFF', fillStyle: 'solid', roughness: 0.5 });
+                    rc.ellipse(40, -20, 90, 65, { fill: '#FFF', fillStyle: 'solid', roughness: 0.5 });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    // Background Soil
+                    rc.rectangle(0, canvas.height * 0.75, canvas.width, canvas.height * 0.25, { fill: '#D7CCC8', fillStyle: 'solid', stroke: 'none' });
+
+                    const centerX = canvas.width / 2;
+                    const soilY = canvas.height * 0.75;
+
+                    if (step.value <= 2) {
+                        drawSeed(centerX, soilY + 50, 0.8, t);
+                    } else if (step.value === 3) {
+                        drawSeed(centerX, soilY + 50, 0.9, t);
+                        drawCloud(centerX, 150, t);
+                        if (isRaining.value) {
+                            if (Math.random() > 0.7) particles.push({ x: centerX + (Math.random() - 0.5) * 120, y: 180, speed: 5 + Math.random() * 5 });
+                        }
+                    } else if (step.value === 4) {
+                        drawSprout(centerX, soilY, 0.8, t);
+                    } else if (step.value === 5) {
+                        drawSprout(centerX, soilY, 1.0, t);
+                        // Subtle sleeping cues: moon/stars
+                        rc.circle(canvas.width * 0.8, 100, 40, { fill: '#FFF9C4', fillStyle: 'solid', stroke: 'none' });
+                    }
+
+                    // Rain particles
+                    ctx.strokeStyle = '#BBDEFB';
+                    ctx.lineWidth = 2;
+                    particles = particles.filter(p => {
+                        p.y += p.speed;
+                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + 10); ctx.stroke();
+                        return p.y < soilY;
+                    });
+
+                    requestAnimationFrame(animate);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const triggerRain = () => {
+                    isRaining.value = true;
+                    setTimeout(() => {
+                        isRaining.value = false;
+                        nextStage();
+                    }, 3000);
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    isRaining.value = false;
+                    particles = [];
+                };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, triggerRain, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香喷喷的蛋糕</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #FBC02D;
+            --text-primary: #5D4037;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFF9C4;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #795548;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #8D6E63;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: var(--theme-color);
+            color: var(--text-primary);
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(251, 192, 45, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #F9A825;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">🍰 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故事情节 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="mixDough" class="btn-action">快来帮忙搅拌面糊 🥣</button>
+            <button v-else-if="step === 3" @click="startOven" class="btn-action">守在烤箱旁静静等待 ✨</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">看蛋糕出炉了！</button>
+            <button v-else @click="reset" class="btn-action !bg-stone-500 !text-white">明天再做一次甜梦</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isMixing = ref(false);
+                const isBaking = ref(false);
+
+                const stages = [
+                    { title: '亮晶晶的厨房', content: '小猪呼呼系上了他最心爱的小围裙。今天，他要为森林的小伙伴们做一个巨大的水果蛋糕。厨房里到处都是阳光的味道。' },
+                    { title: '像白云一样的面粉', content: '呼呼倒出了雪白的面粉，它轻飘飘的，真像天上的云朵掉在了碗里。咱们得加点牛奶，把它们调皮地搅拌在一起。' },
+                    { title: '烤箱里的魔法', content: '呼呼把面糊放进了圆圆的烤箱。‘呼——吸——’ 烤箱里传出了香喷喷的气息，蛋糕正在悄悄地长高，像个慢慢鼓起来的小气球。' },
+                    { title: '最棒的奶油花', content: '蛋糕出炉啦！呼呼在上面挤了一层厚厚的奶油云，又点缀了几颗亮晶晶的小樱桃。大家都说：‘这是世界上最甜的劳动奖励！’' },
+                    { title: '甜甜的梦境', content: '分享完蛋糕，呼呼也累了。他抱着满满的果香味，滑进了软软的被窝里。梦里，他正开着一辆蛋糕车在彩虹上飞呢。晚安，宝贝。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看，呼呼的厨师帽歪歪的，真可爱。你觉得自己系上围裙会变身成什么小厨师？",
+                    "嘘——搅拌面粉要轻一点，别让白粉末飞到鼻子上哦。咱们一起‘转转转’。",
+                    "等待是最需要耐心的魔法。你瞧，蛋糕正在努力变胖，咱们也一起陪着它慢慢等待吧。",
+                    "哇！这也太香了吧！勤劳的小猪收获了甜甜的快乐，宝贝，你辛苦做的每一件事也都会结果子哦。",
+                    "故事讲完啦。呼呼已经睡着了，嘴角还带着蛋糕的甜味呢。咱们也闭上眼，做一个甜甜的美梦。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawPig = (x, y, scale, t, action = 'idle') => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const bounce = Math.sin(t * 4) * 5;
+                    // Body
+                    rc.circle(0, bounce, 120, { fill: '#F8BBD0', fillStyle: 'hachure' });
+                    // Ears
+                    rc.polygon([[-60, -80 + bounce], [-90, -120 + bounce], [-30, -110 + bounce]], { fill: '#F06292', fillStyle: 'solid' });
+                    rc.polygon([[60, -80 + bounce], [90, -120 + bounce], [30, -110 + bounce]], { fill: '#F06292', fillStyle: 'solid' });
+                    // Face
+                    rc.circle(0, 20 + bounce, 40, { fill: '#F06292', fillStyle: 'solid' }); // Nose
+                    rc.circle(-10, 20 + bounce, 4, { fill: '#333' }); rc.circle(10, 20 + bounce, 4, { fill: '#333' }); // Nostrils
+                    rc.circle(-35, -20 + bounce, 8, { fill: '#333' }); rc.circle(35, -20 + bounce, 8, { fill: '#333' }); // Eyes
+                    // Apron
+                    rc.rectangle(-60, 40 + bounce, 120, 80, { fill: '#FFF', stroke: '#DDD' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.65;
+
+                    if (step.value === 1) {
+                        drawPig(centerX, centerY, 1, t);
+                    } else if (step.value === 2) {
+                        drawPig(centerX - 150, centerY + 50, 0.8, t);
+                        // Mixing bowl
+                        const mixRot = isMixing.value ? Math.sin(t * 10) * 0.2 : 0;
+                        ctx.save(); ctx.translate(centerX + 100, centerY); ctx.rotate(mixRot);
+                        rc.arc(0, 0, 150, 80, 0, Math.PI, true, { fill: '#E0E0E0', fillStyle: 'solid' });
+                        rc.circle(0, -10, 100, { fill: '#FFF', fillStyle: 'hachure', opacity: 0.5 });
+                        ctx.restore();
+                    } else if (step.value === 3) {
+                        // Oven
+                        const bakeGlow = Math.sin(t * 2) * 0.2 + 0.8;
+                        rc.rectangle(centerX - 120, centerY - 150, 240, 240, { fill: '#424242', fillStyle: 'solid' });
+                        rc.rectangle(centerX - 100, centerY - 130, 200, 160, { fill: `rgba(255, 152, 0, ${bakeGlow})`, fillStyle: 'solid', stroke: '#FF9800' });
+                        // Inside cake growing
+                        const growth = isBaking.value ? Math.min(1, (t % 5) / 5) : 0.5;
+                        rc.ellipse(centerX, centerY - 30, 120 * growth, 60 * growth, { fill: '#FFD54F', fillStyle: 'solid' });
+                    } else if (step.value === 4) {
+                        // Finished Cake
+                        drawPig(centerX - 200, centerY + 80, 0.7, t);
+                        rc.polygon([[centerX - 100, centerY], [centerX + 100, centerY], [centerX + 80, centerY - 150], [centerX - 80, centerY - 150]], { fill: '#FFD54F', fillStyle: 'solid' });
+                        rc.circle(centerX, centerY - 150, 40, { fill: '#EF5350', fillStyle: 'solid' }); // Cherry
+                    } else if (step.value === 5) {
+                        drawPig(centerX - 100, centerY + 100, 0.8, t, 'sleep');
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                        ctx.fillStyle = '#8D6E63'; ctx.font = '24px serif'; ctx.fillText('Zzz', centerX + 50, centerY + 50);
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const mixDough = () => { isMixing.value = true; setTimeout(() => { isMixing.value = false; nextStage(); }, 2000); };
+                const startOven = () => { isBaking.value = true; setTimeout(() => { isBaking.value = false; nextStage(); }, 3000); };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isMixing.value = false; isBaking.value = false; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, mixDough, startOven, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

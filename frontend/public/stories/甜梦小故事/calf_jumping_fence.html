@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喜欢跳篱笆的小牛犊</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E8F5E9;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .book-layout {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .whisper-top {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #388E3C;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+        }
+
+        .narrative-bottom {
+            max-width: 900px;
+            margin: 0 auto 100px;
+            text-align: center;
+        }
+
+        .title-text {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #2E7D32;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 2px 2px rgba(255, 255, 255, 0.8));
+        }
+
+        .content-text {
+            font-size: 1.3rem;
+            color: #1B5E20;
+            line-height: 1.8;
+            padding: 10px 40px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .jump-btn-area {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+        }
+
+        .btn-jump {
+            background: #2E7D32;
+            color: white;
+            padding: 16px 50px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-jump:hover {
+            transform: translateY(-5px);
+            filter: brightness(1.1);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.6s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="book-layout">
+        <!-- 顶部：亲子低语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="whisper-top">
+                🌿 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 底部：剧情正文 -->
+        <div class="narrative-bottom">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="title-text">{{ stages[step-1].title }}</h1>
+                    <p class="content-text">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 交互区域 -->
+        <div class="jump-btn-area pointer-events-auto">
+            <button v-if="step === 3" @click="handleJump" class="btn-jump">
+                {{ isJumping ? '正在起跳！' : '准备好了：点击助跳' }}
+            </button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-jump bg-green-700">继续探索</button>
+            <button v-else @click="reset" class="btn-jump bg-stone-500">回到草原</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isJumping = ref(false);
+                const calfState = ref({ x: 200, y: 0, scaleY: 1, scaleX: 1, rotation: 0 });
+
+                const stages = [
+                    { title: '月光下的草场', content: '当银色的月光洒满草场，小牛淘淘正站在草丛里悄悄散步。空气中弥漫着青草的芳香，世界变得格外安静。' },
+                    { title: '梦里的护栏', content: '看，前面有一道矮矮的小护栏。它就像通往梦里世界的敲门砖。咱们不急，慢慢地靠近它。' },
+                    { title: '飞向星空', content: '轻轻一点，帮淘淘飞起来吧！就像在梦里飞翔一样，轻盈地跨过护栏。那一刻，星星仿佛就在手边。' },
+                    { title: '云朵的触感', content: '成功越过！淘淘落在了像棉花糖一样柔软的草堆里。这就是勇气的滋味，甜甜的，软软的。' },
+                    { title: '星河下的美梦', content: '挑战结束啦，淘淘要在高高的草丛里睡个好觉。星河在头顶流过，守护着每一个勇敢的孩子。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，看淘淘在月光下走得多轻。咱们也小声点，听听蟋蟀唱歌。",
+                    "护栏后面就是好梦林了。淘淘已经准备好一跃而入啦。",
+                    "轻轻地帮帮它。就像在梦里推开了一扇发光的门，咱们飞过去喽。",
+                    "哇！淘淘飞得好高，就像月亮一样圆满。它落在了最舒服的被窝里。",
+                    "月光照着淘淘，也照着你。大家都在美丽的星空下睡着了。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawCalf = (x, y, sX, sY, rot, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sX, sY);
+                    rc.ellipse(0, -40, 120, 80, { fill: '#F5F5F5', fillStyle: 'hachure', roughness: 1 });
+                    rc.circle(-20, -50, 25, { fill: '#333', stroke: 'none' });
+                    rc.circle(20, -30, 20, { fill: '#333', stroke: 'none' });
+                    const headX = 60;
+                    rc.circle(headX, -60, 50, { fill: '#F5F5F5', fillStyle: 'solid' });
+                    rc.circle(headX + 10, -85, 15, { fill: '#F5F5F5', stroke: '#333' });
+                    rc.polygon([[headX + 30, -70], [headX + 50, -60], [headX + 30, -50]], { fill: '#FFAB91', fillStyle: 'solid' });
+                    rc.line(-30, 0, -30, 20, { strokeWidth: 8 });
+                    rc.line(30, 0, 30, 20, { strokeWidth: 8 });
+                    rc.curve([[-60, -40], [-90, -30 + Math.sin(t * 5) * 20], [-100, -50]], { stroke: '#333', strokeWidth: 3 });
+                    ctx.restore();
+                };
+
+                const drawScenery = () => {
+                    const groundY = canvas.height * 0.75;
+                    rc.line(0, groundY + 10, canvas.width, groundY + 10, { stroke: '#81C784', strokeWidth: 4 });
+                    for (let i = 0; i < 5; i++) {
+                        rc.circle(200 + i * 300, groundY + 40, 10, { fill: '#FFF' });
+                        rc.circle(200 + i * 300, groundY + 40, 4, { fill: '#FDD835' });
+                    }
+                    const fx = canvas.width / 2;
+                    rc.rectangle(fx - 10, groundY - 120, 20, 130, { fill: '#8D6E63', fillStyle: 'hachure' });
+                    rc.rectangle(fx - 100, groundY - 100, 200, 20, { fill: '#A1887F', fillStyle: 'hachure' });
+                    rc.rectangle(fx - 100, groundY - 50, 200, 20, { fill: '#A1887F', fillStyle: 'hachure' });
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    drawScenery();
+                    const groundY = canvas.height * 0.75;
+                    drawCalf(calfState.value.x, groundY - calfState.value.y, calfState.value.scaleX, calfState.value.scaleY, calfState.value.rotation, time);
+                    requestAnimationFrame(animate);
+                };
+
+                const handleJump = () => {
+                    if (isJumping.value) return;
+                    isJumping.value = true;
+                    const tl = gsap.timeline({ onComplete: () => { isJumping.value = false; nextStage(); } });
+                    tl.to(calfState.value, { scaleY: 0.7, scaleX: 1.2, duration: 0.3, ease: "power1.inOut" })
+                        .to(calfState.value, { scaleY: 1.3, scaleX: 0.8, y: 180, x: canvas.width / 2, rotation: -0.3, duration: 0.6, ease: "power2.out" })
+                        .to(calfState.value, { scaleY: 1, scaleX: 1, y: 0, x: canvas.width * 0.75, rotation: 0, duration: 0.6, ease: "bounce.out" });
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; calfState.value = { x: 200, y: 0, scaleY: 1, scaleX: 1, rotation: 0 }; };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, isJumping, stages, parentWords, nextStage, reset, handleJump };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

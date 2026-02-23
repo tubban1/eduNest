@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巨大的胡萝卜</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFFDE7;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .immersive-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-words {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #5D4037;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .narrative-box {
+            max-width: 900px;
+            margin: 0 auto 100px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #E65100;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 2px rgba(255, 255, 255, 0.8));
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #4E342E;
+            line-height: 1.8;
+            padding: 10px 40px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 80%);
+        }
+
+        .progress-meter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #FB8C00;
+            padding: 8px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: #E65100;
+            font-size: 1.2rem;
+        }
+
+        .btn-pull {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            background: linear-gradient(135deg, #FB8C00 0%, #E65100 100%);
+            color: white;
+            padding: 18px 55px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-pull:active {
+            transform: scale(0.95);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="immersive-overlay">
+        <!-- 进度记录 -->
+        <div class="progress-meter" v-if="step === 3">🥕 拔出进度: {{ Math.floor(progress) }}%</div>
+
+        <!-- 顶部感悟 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">
+                🥕 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 底部剧情 -->
+        <div class="narrative-box">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 交互区域 -->
+        <div class="pointer-events-auto">
+            <button v-if="step === 3" @click="pullCarrot" class="btn-pull">
+                {{ progress >= 100 ? '拔出来啦！' : '嘿咻！用力往上拉' }}
+            </button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-pull">继续探索</button>
+            <button v-else @click="reset" class="btn-pull bg-stone-500">重新播种</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const progress = ref(0);
+                const carrotY = ref(0);
+                const shake = ref(0);
+
+                const stages = [
+                    { title: '地上的绿摇篮', content: '在静悄悄的菜园中心，几片巨大的绿叶正随风轻轻摇摆。它们就像一把大阳伞，为地底下的伙伴遮挡着烈日的余威。' },
+                    { title: '橙色的美梦', content: '泥土微微隆起，露出一抹亮丽的橙色。这不是普通的胡萝卜，这是一个正在地底沉睡的‘橙色巨人’。它正做着一个关于阳光的甜梦。' },
+                    { title: '轻轻地唤醒', content: '来吧，小宝贝。咱们轻轻抓住叶柄，试着把这个大个子‘喊’醒。不要太用力哦，我们要慢慢地、温柔地把它带回地面。' },
+                    { title: '大地母亲的礼物', content: '在一阵泥土的芬芳中，巨大的胡萝卜终于睁开了眼。它的根须上还带着湿润的泥土，全身都散发着暖烘烘的太阳味道。' },
+                    { title: '分享甜甜的梦', content: '最甜的果实要大家一起分享。把这份巨大的喜悦送给森林里的好朋友吧。现在，大地又恢复了宁静。晚安，小园丁。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看这片叶子，像不像给小昆虫盖的绿被子？",
+                    "嘘——地底下有个大个子在打呼噜呢。咱们去把它轻轻喊醒，好吗？",
+                    "慢慢地往上拉。就像在拔河，我们要一点点地把它请出来，别弄疼了它。",
+                    "哇！快看！它终于出来啦，在阳光下亮晶晶的，好漂亮呀。",
+                    "分享快乐的孩子最可爱啦。忙碌了一天，咱们也该闭上眼睛休息了。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawCarrot = (x, y, t) => {
+                    const cx = x + (Math.random() - 0.5) * shake.value;
+                    const cy = y;
+                    const h = 400;
+                    rc.polygon([[cx - 80, cy], [cx + 80, cy], [cx + 20, cy + h], [cx - 20, cy + h]], { fill: '#FB8C00', fillStyle: 'solid', roughness: 1.5 });
+                    for (let i = 1; i < 10; i++) {
+                        const layerY = cy + i * 40;
+                        const w = 80 - i * 5;
+                        rc.line(cx - w, layerY, cx + w, layerY + 5, { stroke: '#E65100', strokeWidth: 2, roughness: 3 });
+                    }
+                    const leafColors = ['#2E7D32', '#43A047', '#66BB6A'];
+                    for (let i = 0; i < 5; i++) {
+                        const angle = (i - 2) * 0.4 + Math.sin(t + i) * 0.1;
+                        ctx.save(); ctx.translate(cx, cy - 20); ctx.rotate(angle);
+                        rc.line(0, 0, 0, -100, { stroke: '#388E3C', strokeWidth: 8 });
+                        rc.ellipse(-20, -150, 40, 120, { fill: leafColors[i % 3], fillStyle: 'hachure' });
+                        rc.ellipse(20, -150, 40, 120, { fill: leafColors[i % 3], fillStyle: 'hachure' });
+                        ctx.restore();
+                    }
+                };
+
+                const drawGround = (t) => {
+                    const groundY = canvas.height * 0.75;
+                    const cx = canvas.width / 2;
+                    if (progress.value > 0 && progress.value < 100) {
+                        const bulge = progress.value * 0.5;
+                        rc.curve([[cx - 200, groundY], [cx, groundY - bulge], [cx + 200, groundY]], { stroke: '#8D6E63', strokeWidth: 5 });
+                    }
+                    rc.line(0, groundY, canvas.width, groundY, { stroke: '#8D6E63', strokeWidth: 4 });
+                    for (let i = 0; i < 10; i++) {
+                        const gx = (canvas.width / 10) * i + 50;
+                        rc.line(gx, groundY, gx - 10, groundY - 20, { stroke: '#4CAF50' });
+                    }
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    drawGround(time);
+                    const groundY = canvas.height * 0.75;
+                    const initialY = groundY + 50;
+                    drawCarrot(canvas.width / 2, initialY - carrotY.value, time);
+                    if (shake.value > 0) shake.value *= 0.9;
+                    requestAnimationFrame(animate);
+                };
+
+                const pullCarrot = () => {
+                    if (progress.value < 100) {
+                        progress.value += 10;
+                        carrotY.value += 40;
+                        shake.value = 20;
+                        if (progress.value >= 100) setTimeout(() => nextStage(), 1500);
+                    }
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; progress.value = 0; carrotY.value = 0; };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, progress, stages, parentWords, nextStage, reset, pullCarrot };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

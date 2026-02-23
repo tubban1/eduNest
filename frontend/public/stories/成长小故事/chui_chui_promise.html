@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>说话不算数的吹吹</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-sky: #E1F5FE;
+            --text-main: #37474F;
+            --accent: #FFAB91;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-sky);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #546E7A;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #263238;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #455A64;
+            line-height: 1.8;
+            padding: 12px 25px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(38, 50, 56, 0.9);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: #263238;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 1s, transform 1s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 指导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🐷 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 正文 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 v-if="stages[step-1].title" class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p v-if="stages[step-1].description" class="stage-content">{{ stages[step-1].description }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 互动 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 2" @click="remindChuiChui" class="btn-action">轻轻拍拍吹吹的肩膀 👋</button>
+            <button v-else-if="step === 3" @click="giveLeaf" class="btn-action">送吹吹一片遮羞的大叶子 🍃</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">继续看他的改变</button>
+            <button v-else @click="reset" class="btn-action !bg-orange-400">我也要做个守信用的小宝贝</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isReminded = ref(false);
+                const hasLeaf = ref(false);
+
+                const stages = [
+                    { title: '爱夸口的吹吹', description: '吹吹是一只喜欢大声说话的小猪。‘没问题！我一定能帮大家拿到最甜的苹果！’它总是这样答应别人。' },
+                    { title: '被忘记的半路', description: '吹吹走到树林边，看到蝴蝶飞过，就跟着蝴蝶去玩了。它完全忘记了对朋友们的承诺。咱们快提醒提醒它。' },
+                    { title: '空空的手心', description: '当朋友们饿着肚子等待时，吹吹两手空空地回来了。它的脸涨得像个红番茄，恨不得找个地方躲起来。' },
+                    { title: '诚实的‘对不起’', description: '吹吹低下了头，诚恳地说：‘对不起，我玩得太开心，把话给忘了。’ 承认错误后，它觉得心里轻松多了。' },
+                    { title: '守信的好习惯', description: '月亮见证了吹吹的改变。它拿出小本子记下了明天要帮大家做的事。晚安，每一个言出必行的宝贝。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你瞧吹吹答应得真干脆。你觉得他能完成任务吗？",
+                    "哎呀，小蝴蝶太美了。可是答应别人的事，是不是应该先完成呢？咱们帮帮吹吹。",
+                    "说话不算数会让朋友们失望，自己也会难为情。咱们给尴尬的吹吹一点台阶下吧。",
+                    "承认错误需要很大的勇气。吹吹做到了，他依然是个诚实的好孩子。",
+                    "信任就像花朵，需要用行动来浇灌。咱们也给明天的自己定一个小目标吧。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawPig = (x, y, scale, t, color = '#FFAB91') => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+
+                    const bounce = Math.sin(t * 3) * 5;
+
+                    // Body (Textured)
+                    rc.circle(0, bounce, 120, { fill: color, fillStyle: 'hachure', hachureAngle: 60, roughness: 1.5 });
+
+                    // Vest (Character trait)
+                    rc.polygon([[-60, 40 + bounce], [60, 40 + bounce], [50, 110 + bounce], [-50, 110 + bounce]], { fill: '#B3E5FC', fillStyle: 'solid' });
+
+                    // Ears
+                    const earWag = Math.sin(t * 10) * 3;
+                    // Left
+                    rc.polygon([[-40, -100 + bounce + earWag], [-80, -140 + bounce + earWag], [-10, -120 + bounce + earWag]], { fill: color, fillStyle: 'solid' });
+                    // Right
+                    rc.polygon([[40, -100 + bounce - earWag], [80, -140 + bounce - earWag], [10, -120 + bounce - earWag]], { fill: color, fillStyle: 'solid' });
+
+                    // Face features
+                    // Pink cheeks
+                    rc.circle(-60, -10 + bounce, 15, { fill: '#F48FB1', fillStyle: 'solid', roughness: 2, stroke: 'none' });
+                    rc.circle(60, -10 + bounce, 15, { fill: '#F48FB1', fillStyle: 'solid', roughness: 2, stroke: 'none' });
+
+                    // Eyes
+                    const blink = Math.sin(t * 0.4) > 0.95 ? 0.1 : 1.0;
+                    rc.ellipse(-35, -20 + bounce, 12, 14 * blink, { fill: '#333', fillStyle: 'solid' });
+                    rc.ellipse(35, -20 + bounce, 12, 14 * blink, { fill: '#333', fillStyle: 'solid' });
+
+                    // Snout
+                    rc.ellipse(0, 20 + bounce, 65, 45, { fill: '#F06292', fillStyle: 'solid', roughness: 0.5 });
+                    rc.circle(-12, 20 + bounce, 6, { fill: '#333' });
+                    rc.circle(12, 20 + bounce, 6, { fill: '#333' });
+
+                    // Small curly tail (visible when angled or in back)
+                    rc.curve([[60, 100 + bounce], [90, 120 + bounce], [70, 140 + bounce], [50, 120 + bounce]], { stroke: color, strokeWidth: 5 });
+
+                    ctx.restore();
+                };
+
+                const drawButterfly = (x, y, t) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    const wingSway = Math.sin(t * 15) * 0.5 + 0.5;
+                    rc.ellipse(-15 * wingSway, 0, 32 * wingSway, 45, { fill: '#FFF176', fillStyle: 'solid' });
+                    rc.ellipse(15 * wingSway, 0, 32 * wingSway, 45, { fill: '#FFF176', fillStyle: 'solid' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.6;
+
+                    // Environmental background
+                    if (step.value < 5) {
+                        // Ground
+                        rc.line(0, centerY + 120, canvas.width, centerY + 120, { stroke: '#81C784', strokeWidth: 4 });
+                        // Sun
+                        rc.circle(120, 120, 50, { fill: '#FFD54F', fillStyle: 'solid' });
+                        for (let i = 0; i < 8; i++) {
+                            const angle = (i / 8) * Math.PI * 2 + t * 0.3;
+                            rc.line(120 + Math.cos(angle) * 60, 120 + Math.sin(angle) * 60, 120 + Math.cos(angle) * 85, 120 + Math.sin(angle) * 85, { stroke: '#FFD54F' });
+                        }
+                    }
+
+                    if (step.value === 1) {
+                        drawPig(centerX, centerY, 1.0, t);
+                        // Stylized Apples on tree
+                        rc.rectangle(centerX + 250, centerY - 100, 20, 200, { fill: '#8D6E63', fillStyle: 'solid' });
+                        rc.circle(centerX + 260, centerY - 150, 120, { fill: '#4CAF50', fillStyle: 'hachure' });
+                        for (let i = 0; i < 3; i++) {
+                            rc.circle(centerX + 220 + i * 40, centerY - 180 + Math.sin(t + i) * 10, 25, { fill: '#EF5350', fillStyle: 'solid' });
+                        }
+                    } else if (step.value === 2) {
+                        const pigX = isReminded.value ? centerX : centerX - 120;
+                        drawPig(pigX, centerY, 1.1, t);
+                        // Forest bushes
+                        rc.circle(centerX + 300, centerY + 80, 100, { fill: '#66BB6A', fillStyle: 'hachure' });
+                        const bfX = centerX + Math.cos(t * 2) * 180;
+                        const bfY = centerY - 150 + Math.sin(t * 5) * 60;
+                        drawButterfly(bfX, bfY, t);
+                        drawButterfly(bfX - 50, bfY + 40, t + 0.5);
+                    } else if (step.value === 3) {
+                        drawPig(centerX, centerY, 1.25, t, '#EF5350'); // Very Red face from embarrassment
+                        if (hasLeaf.value) {
+                            // Large leaf shading him
+                            rc.ellipse(centerX, centerY - 60, 350, 220, { fill: '#81C784', fillStyle: 'hachure', hachureAngle: -20 });
+                            rc.line(centerX, centerY - 170, centerX, centerY - 50, { stroke: '#4CAF50', strokeWidth: 8 });
+                        }
+                    } else if (step.value === 4) {
+                        drawPig(centerX, centerY + 60, 0.95, t * 0.6); // Bowed head
+                        // Remorse particles (tiny droplets)
+                        for (let i = 0; i < 3; i++) {
+                            const dropY = centerY + 40 + (t * 100 + i * 50) % 60;
+                            rc.circle(centerX, dropY, 2, { fill: '#B3E5FC' });
+                        }
+                    } else if (step.value === 5) {
+                        document.body.style.background = '#263238';
+                        drawPig(centerX - 180, centerY + 100, 0.75, t * 0.3);
+                        // Notebook with detailed spiral
+                        const nbX = centerX + 100, nbY = centerY;
+                        rc.rectangle(nbX, nbY, 140, 180, { fill: '#FFF176', fillStyle: 'solid' });
+                        for (let i = 0; i < 10; i++) {
+                            rc.circle(nbX, nbY + 15 + i * 16, 5, { stroke: '#333' });
+                            rc.line(nbX + 20, nbY + 30 + i * 14, nbX + 120, nbY + 30 + i * 14, { stroke: '#999', strokeWidth: 1 });
+                        }
+                        // Pencil
+                        rc.rectangle(nbX + 160, nbY + 40, 15, 130, { fill: '#FF7043' });
+                        rc.polygon([[nbX + 160, nbY + 40], [nbX + 175, nbY + 40], [nbX + 167, nbY + 20]], { fill: '#D32F2F' });
+                        // Moon
+                        rc.circle(canvas.width * 0.85, 150, 50, { fill: '#FFF9C4', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const remindChuiChui = () => {
+                    isReminded.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const giveLeaf = () => {
+                    hasLeaf.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    isReminded.value = false;
+                    hasLeaf.value = false;
+                };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, remindChuiChui, giveLeaf, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

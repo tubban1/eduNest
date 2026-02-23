@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>彩云乐园</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E1F5FE;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .sky-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 50px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-words {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #0277BD;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
+        }
+
+        .narrative-bottom {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 100px;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: #01579B;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.7));
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #0288D1;
+            line-height: 1.8;
+            padding: 15px 40px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 80%);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+        }
+
+        .btn-float {
+            background: rgba(1, 87, 155, 0.9);
+            color: white;
+            padding: 18px 55px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(1, 87, 155, 0.2);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-float:hover {
+            transform: translateY(-5px);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="sky-layer">
+        <!-- 顶部引导 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">
+                ☁️ {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 中心文字 -->
+        <div class="narrative-bottom">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 悬浮操作 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="handleSquash" class="btn-float">点一点云朵（挤压变色）</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-float">继续飞翔</button>
+            <button v-else @click="reset" class="btn-float bg-sky-600">回到云顶</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const cloudBounce = ref(0);
+                const cloudColor = ref('#FFF');
+
+                const stages = [
+                    { title: '轻飘飘的邻居', content: '在高高的、静悄悄的蓝天上，住着一群大棉花糖。它们总是慢悠悠地飘着，在风儿的怀抱里打着瞌睡，互相招手问好。' },
+                    { title: '云朵的睡衣', content: '当太阳公公下山去休息，白云就会换上漂亮的粉红色睡衣。到了深夜，它们又会穿上深蓝色的亮片斗篷，和星星一起玩耍。' },
+                    { title: '软绵绵的触碰', content: '云朵就像最柔软的小枕头。伸出指尖，轻轻地、慢慢地触碰它。你看，它不仅会收缩，还会绽放出彩虹般温暖的微光呢。' },
+                    { title: '彩虹的耳语', content: '当两朵白云悄悄聚在一起，它们并没有吵架，而是合成了一个更大的梦。它们留下一道美丽的彩虹，连接起森林和大海。' },
+                    { title: '星空下的软床', content: '白云带走了一天的忙碌，只留下宁静的夜空。它们现在成了巨大的软床，托起每一个飞翔的好梦。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，看天上的云。它们飘得好慢呀，就像在给大地扇风呢。",
+                    "云朵换颜色了，那是它在说：‘晚安，太阳公公’。你想让它变成什么颜色？",
+                    "来，咱们伸出小手指，轻轻‘按一按’这块大棉花糖。它最喜欢让人帮它揉枕头了。",
+                    "哇！彩虹的颜色满出来了！这就是云朵送给你的好梦礼物。",
+                    "白云要睡觉了。咱们也闭上眼睛，去云朵枕头上躺一会儿吧。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawCloud = (x, y, t) => {
+                    const squashX = 1 + Math.sin(t * 5) * 0.02 + cloudBounce.value;
+                    const squashY = 1 - Math.sin(t * 5) * 0.02 - cloudBounce.value;
+                    ctx.save(); ctx.translate(x, y); ctx.scale(squashX, squashY);
+                    const circles = [[-60, 0, 80], [60, 0, 80], [0, -40, 100], [-30, -50, 70], [30, -50, 70]];
+                    circles.forEach(c => {
+                        rc.circle(c[0], c[1], c[2], { fill: cloudColor.value, fillStyle: 'solid', stroke: '#B3E5FC' });
+                    });
+                    // Face
+                    rc.circle(-30, -30, 8, { fill: '#333' });
+                    rc.circle(30, -30, 8, { fill: '#333' });
+                    rc.curve([[-15, 0], [0, 15], [15, 0]], { stroke: '#E57373', strokeWidth: 3 });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    const cx = canvas.width / 2; const cy = canvas.height * 0.45;
+                    drawCloud(cx, cy, time);
+                    if (cloudBounce.value > 0) cloudBounce.value *= 0.85;
+                    requestAnimationFrame(animate);
+                };
+
+                const handleSquash = () => {
+                    cloudBounce.value = 0.5;
+                    const colors = ['#F8BBD0', '#E1BEE7', '#FFF9C4', '#C8E6C9', '#B3E5FC'];
+                    cloudColor.value = colors[Math.floor(Math.random() * colors.length)];
+                    if (step.value === 3) {
+                        setTimeout(() => nextStage(), 1500);
+                    }
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; cloudColor.value = '#FFF'; };
+
+                onMounted(() => { initVisuals(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, cloudBounce, stages, parentWords, nextStage, reset, handleSquash };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

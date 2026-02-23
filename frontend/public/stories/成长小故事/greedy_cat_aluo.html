@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>“小馋猫”阿罗</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #FFECB3;
+            --text-primary: #546E7A;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFFDE7;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: #4E342E;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #5D4037;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #795548;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: #4DB6AC;
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(77, 182, 172, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #00897B;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">🐱 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故故事层 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="pickCandy" class="btn-action">帮阿罗挑一颗橘子糖 🍬</button>
+            <button v-else-if="step === 3" @click="rubBelly" class="btn-action">轻轻给阿罗揉揉小肚子 🫂</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">去看他好点了吗</button>
+            <button v-else @click="reset" class="btn-action !bg-slate-600 !text-white">明天也要爱护牙齿</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isPicking = ref(false);
+                const isRubbing = ref(false);
+
+                const stages = [
+                    { title: '亮晶晶的橱柜', content: '阿罗是一只灰白色的小野猫，它最喜欢在厨房里探险了。今天，它闻到了甜甜的味道。瞧，橱柜高处放着一个装满彩色糖果的大玻璃罐。' },
+                    { title: '五颜六色的诱惑', content: '红色的草莓糖、绿色的薄荷糖、黄色的橘子糖……它们都在闪闪发光。阿罗舔了舔小嘴巴：‘我就吃这一颗，妈妈一定不会发现的。’' },
+                    { title: '牙齿的小抗议', content: '哎呀，糖果吃得太多了！阿罗觉得牙根酸酸的，肚子也变得胀胀的。它捂着脸小声嘟囔：‘呜呜，早知道就不吃那么多了。’' },
+                    { title: '亮闪闪的牙刷', content: '妈妈拿来了牙刷和牙膏。阿罗认真地‘刷刷刷’，细细的泡沫把牙齿里的‘糖果怪兽’都赶跑了。阿罗又变回了那个神气的小猫。' },
+                    { title: '舒服的午间觉', content: '阿罗明白啦，好吃的不能贪多，保护好牙齿才最重要。它盖上软松的毯子，做了一个关于大海和阳光的梦。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看，阿罗的尾巴摇得飞快。你平时最喜欢吃什么口味的糖果？",
+                    "嘘——糖果虽然甜，但它们也调皮哦。咱们帮阿罗选一颗最小的尝尝看。",
+                    "哎呀，肚子痛痛的感觉太难受了。咱们伸出小手，给阿罗揉一揉，鼓励它下次少吃点。",
+                    "刷牙就像在给牙齿洗澡。宝贝，你每天刷牙的时候，有没有发现牙齿变白变亮了？",
+                    "故事讲完啦。阿罗正抱着它干净的牙刷睡觉呢。咱们也闭上眼，进入甜甜的梦。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawCat = (x, y, scale, t, state = 'neutral') => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const bounce = Math.sin(t * 4) * 5;
+                    // Ears
+                    rc.polygon([[-40, -60 + bounce], [-60, -100 + bounce], [-20, -80 + bounce]], { fill: '#9E9E9E', fillStyle: 'solid' });
+                    rc.polygon([[40, -60 + bounce], [60, -100 + bounce], [20, -80 + bounce]], { fill: '#9E9E9E', fillStyle: 'solid' });
+                    // Face
+                    rc.circle(0, 0 + bounce, 100, { fill: '#BDBDBD', fillStyle: 'hachure' });
+                    // Eyes
+                    if (state === 'sad') {
+                        rc.line(-30, -20 + bounce, -10, -10 + bounce, { stroke: '#333' });
+                        rc.line(10, -10 + bounce, 30, -20 + bounce, { stroke: '#333' });
+                    } else {
+                        rc.circle(-30, -20 + bounce, 6, { fill: '#333' });
+                        rc.circle(30, -20 + bounce, 6, { fill: '#333' });
+                    }
+                    // Nose & Whiskers
+                    rc.circle(0, 10 + bounce, 8, { fill: '#F06292', fillStyle: 'solid' });
+                    rc.line(-20, 10 + bounce, -50, 0 + bounce, { stroke: '#666' });
+                    rc.line(20, 10 + bounce, 50, 0 + bounce, { stroke: '#666' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.65;
+
+                    if (step.value === 1) {
+                        drawCat(centerX, centerY, 1, t);
+                    } else if (step.value === 2) {
+                        drawCat(centerX - 150, centerY + 50, 0.8, t);
+                        // Candy Jar
+                        rc.rectangle(centerX + 100, centerY - 100, 120, 180, { fill: 'rgba(255,255,255,0.4)', stroke: '#666' });
+                        for (let i = 0; i < 3; i++) rc.circle(centerX + 160, centerY - 60 + i * 40, 20, { fill: i === 0 ? '#F44336' : (i === 1 ? '#4CAF50' : '#FF9800') });
+                    } else if (step.value === 3) {
+                        drawCat(centerX, centerY, 1.2, t, 'sad');
+                        // Belly Rub Motion
+                        if (isRubbing) {
+                            rc.circle(centerX, centerY + 50, 40 + Math.sin(t * 10) * 10, { stroke: '#FFEB3B', strokeWidth: 5 });
+                        }
+                    } else if (step.value === 4) {
+                        drawCat(centerX - 100, centerY, 1.1, t);
+                        // Toothbrush
+                        rc.line(centerX + 50, centerY - 50, centerX + 150, centerY - 50, { stroke: '#4DB6AC', strokeWidth: 8 });
+                        rc.rectangle(centerX + 50, centerY - 70, 40, 40, { fill: '#FFF' });
+                    } else if (step.value === 5) {
+                        drawCat(centerX, centerY + 100, 0.8, 0, 'sleep');
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const pickCandy = () => { isPicking.value = true; setTimeout(() => nextStage(), 1500); };
+                const rubBelly = () => { isRubbing.value = true; setTimeout(() => { isRubbing.value = false; nextStage(); }, 2000); };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isPicking.value = false; isRubbing.value = false; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, pickCandy, rubBelly, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

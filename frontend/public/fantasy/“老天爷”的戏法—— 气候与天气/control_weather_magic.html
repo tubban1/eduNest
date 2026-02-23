@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>要是能呼风唤雨多神气</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-yellow: #FFD54F;
+            --storm-blue: #0F172A;
+            --sunny-blue: #0ea5e9;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-base {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 3rem;
+            transition: background 1s ease;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .title-box {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .title-magic {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            letter-spacing: 0.2rem;
+            background: linear-gradient(135deg, #FFEB3B, #00E5FF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.8rem;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+        }
+
+        .guideText {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #E2E8F0;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            max-width: 800px;
+            margin: 0 auto 12rem auto;
+            /* 确保不被底部 Hud 面板遮挡 */
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .descText {
+            font-size: 1.4rem;
+            line-height: 2;
+            margin-bottom: 2rem;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+            font-weight: 300;
+        }
+
+        .magic-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .magic-btn:hover {
+            transform: scale(1.08) translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-yellow);
+            color: var(--accent-yellow);
+        }
+
+        .hud-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            padding: 2.2rem;
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: auto;
+            z-index: 30;
+        }
+
+        .magic-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            margin: 1.5rem 0;
+        }
+
+        .magic-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            border: 4px solid var(--accent-yellow);
+        }
+
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot-marker {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot-marker.active {
+            background: #FFEB3B;
+            border-color: #FFEB3B;
+            transform: scale(1.5);
+            box-shadow: 0 0 15px #FFEB3B;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div class="flash-overlay" id="bolt-flash"></div>
+
+    <div id="app" class="ui-base">
+        <!-- 顶部：标题 & 亲子话术 -->
+        <div class="title-box">
+            <h1 class="title-magic">{{ stages[step-1].title }}</h1>
+            <div class="guideText">
+                🪄 {{ stages[step-1].parentWords }}
+            </div>
+        </div>
+
+        <!-- 中心：文案展示 -->
+        <div class="main-content">
+            <p class="descText">{{ stages[step-1].description }}</p>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < 5 && step !== 3" @click="nextStage" class="magic-btn">
+                    {{ step === 2 ? '我要变魔术啦！' : '继续探索天气奥秘' }}
+                </button>
+                <button v-else-if="step === 5" @click="reset" class="magic-btn">重返宁静时刻</button>
+            </div>
+        </div>
+
+        <!-- 操作区：仅在第三步 -->
+        <div v-if="step === 3" class="hud-panel">
+            <div class="flex justify-between font-bold text-sm text-blue-200">
+                <span>微风习习</span>
+                <span>雷鸣电闪</span>
+            </div>
+            <input type="range" v-model="stormPower" min="0" max="1" step="0.01"
+                class="magic-slider pointer-events-auto">
+            <div class="flex justify-center mt-4">
+                <button @click="nextStage" class="magic-btn !text-sm !py-2 !px-8"
+                    :style="{ opacity: stormPower > 0.8 ? 1 : 0.5 }">
+                    开启极限风暴
+                </button>
+            </div>
+        </div>
+
+        <!-- 进度标记 -->
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot-marker', { active: step === n }]" @click="goTo(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const stormPower = ref(0); // 0 (sunny) to 1 (stormy)
+
+                const stages = [
+                    {
+                        title: "宁静的午后",
+                        parentWords: "宝贝，你看天上的云朵慢悠悠的，阳光洒在大地上，多舒服呀。",
+                        description: "由于太阳的加热非常均匀，此时的空气还在‘温柔地漫步’。这种稳定的气象让我们感到宁静和安全。"
+                    },
+                    {
+                        title: "如果你是天气之神",
+                        parentWords: "如果我们挥动魔法棒，让空气变湿润，让温度变混乱，你觉得会发生什么？",
+                        description: "天气的剧烈变化，本质上是能量在‘寻找平衡’。如果你让湿度和气压差变大，大自然的‘脾气’也就来了。"
+                    },
+                    {
+                        title: "舞动气象指挥棒",
+                        parentWords: "来吧！推导能量滑块。看看云层是怎么变黑的，风是怎么变急的。",
+                        description: "当你增加风暴指数，空气中的电荷开始聚集，水蒸气在迅速凝结。一场宏伟的‘大气演出’即将拉开帷幕。"
+                    },
+                    {
+                        title: "自然的狂响曲",
+                        parentWords: "哇！快看闪电！那是云朵里的水滴和冰晶在赛跑产生的火花。这就是自然的威力！",
+                        description: "其实，闪电是云层间的‘超级充电宝’在放电。风则是空气为了填平气压坑而发起的‘冲刺’。这种狂暴也是地球自我的循环。"
+                    },
+                    {
+                        title: "敬畏与热爱",
+                        parentWords: "风雨过后又是大晴天。宝贝，气象的力量很伟大，我们一定要学会尊重它。",
+                        description: "虽然人类还没法真正‘控制’巨大的天气系统，但理解它们，能让我们更好地与自然和谐相处。故事讲完啦，早点休息吧。"
+                    }
+                ];
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, sky, rainParticles, cloudUniforms;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.set(0, 0, 100);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Sky Sphere
+                    const skyGeo = new THREE.SphereGeometry(1000, 32, 32);
+                    cloudUniforms = {
+                        time: { value: 0 },
+                        storm: { value: 0 }
+                    };
+                    const skyMat = new THREE.ShaderMaterial({
+                        uniforms: cloudUniforms,
+                        vertexShader: `varying vec3 vNormal; void main() { vNormal = normal; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                        fragmentShader: `
+                            varying vec3 vNormal;
+                            uniform float time;
+                            uniform float storm;
+                            void main() {
+                                float n = vNormal.y;
+                                // Sunny: Light Blue/White | Stormy: Deep Grey/Purple
+                                vec3 sunny = vec3(0.1, 0.6, 1.0) + (1.0-abs(n))*0.3;
+                                vec3 stormy = vec3(0.05, 0.08, 0.15) + (1.0-abs(n))*0.05;
+                                vec3 color = mix(sunny, stormy, storm);
+                                gl_FragColor = vec4(color, 1.0);
+                            }
+                        `,
+                        side: THREE.BackSide
+                    });
+                    sky = new THREE.Mesh(skyGeo, skyMat);
+                    scene.add(sky);
+
+                    // Rain
+                    const rainCount = 1500;
+                    const rainGeo = new THREE.BufferGeometry();
+                    const rainPos = new Float32Array(rainCount * 3);
+                    for (let i = 0; i < rainCount; i++) {
+                        rainPos[i * 3] = (Math.random() - 0.5) * 400;
+                        rainPos[i * 3 + 1] = Math.random() * 400;
+                        rainPos[i * 3 + 2] = (Math.random() - 0.5) * 400;
+                    }
+                    rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+                    const rainMat = new THREE.PointsMaterial({
+                        color: 0x88ccff,
+                        size: 1.5,
+                        transparent: true,
+                        opacity: 0
+                    });
+                    rainParticles = new THREE.Points(rainGeo, rainMat);
+                    scene.add(rainParticles);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const dt = clock.getDelta();
+                    const t = clock.getElapsedTime();
+
+                    if (cloudUniforms) {
+                        cloudUniforms.time.value = t;
+                        cloudUniforms.storm.value = THREE.MathUtils.lerp(cloudUniforms.storm.value, stormPower.value, 0.05);
+                    }
+
+                    if (rainParticles) {
+                        const pos = rainParticles.geometry.attributes.position;
+                        const factor = stormPower.value;
+                        for (let i = 0; i < pos.count; i++) {
+                            let y = pos.getY(i);
+                            y -= (15 + factor * 30);
+                            if (y < -200) y = 200;
+                            pos.setY(i, y);
+                            pos.setX(i, pos.getX(i) + factor * 2); // Wind tilt
+                        }
+                        pos.needsUpdate = true;
+                        rainParticles.material.opacity = factor * 0.7;
+                    }
+
+                    // Occasional lightning effect in stage 4 or when storm is high
+                    if (stormPower.value > 0.8 && Math.random() < 0.005) {
+                        triggerFlash();
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const triggerFlash = () => {
+                    const flash = document.getElementById('bolt-flash');
+                    gsap.to(flash, {
+                        opacity: 0.8, duration: 0.05, onComplete: () => {
+                            gsap.to(flash, { opacity: 0, duration: 0.2, delay: 0.05 });
+                        }
+                    });
+                };
+
+                const nextStage = () => {
+                    if (step.value < 5) {
+                        step.value++;
+                        if (step.value === 4) gsap.to(stormPower, { value: 1, duration: 2 });
+                    }
+                };
+
+                const goTo = (n) => {
+                    step.value = n;
+                    if (n < 3) stormPower.value = 0;
+                    if (n > 3) stormPower.value = 1;
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    stormPower.value = 0;
+                };
+
+                watch(step, (newVal) => {
+                    // Refined UI animations
+                    const tl = gsap.timeline();
+                    tl.fromTo('.title-box', { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1.2, ease: "expo.out" });
+                    tl.fromTo('.main-content', { opacity: 0, scale: 0.9, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 1.2, ease: "expo.out" }, "-=1");
+
+                    if (newVal === 4) triggerFlash();
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    // Initial reveal
+                    gsap.to('.title-box', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.main-content', { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
+
+                    // Mouse interaction
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.rotation, { x: -y * 0.1, y: -x * 0.1, duration: 2 });
+                        gsap.to('.ui-base', { x: -x * 10, y: -y * 10, duration: 1.5 });
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value,
+                        totalStages: 5,
+                        currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, stages, stormPower, nextStage, goTo, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

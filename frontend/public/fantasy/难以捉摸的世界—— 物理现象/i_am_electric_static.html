@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我能带电该多好</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --static-yellow: #fbbf24;
+            --electric-blue: #60a5fa;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-top {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .header-section {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4rem;
+            background: linear-gradient(135deg, #fff, #fbbf24);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-words {
+            background: rgba(251, 191, 36, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            font-size: 1.1rem;
+            color: #fbbf24;
+            display: inline-block;
+        }
+
+        .middle-content {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc {
+            font-size: 1.6rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px #000;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #fbbf24;
+        }
+
+        .charge-meter {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 480px;
+            pointer-events: auto;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .energy-bar {
+            width: 100%;
+            height: 12px;
+            background: #334155;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+        }
+
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            box-shadow: 0 0 15px #fbbf24;
+            transition: 0.2s;
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #fbbf24;
+            border-color: #fbbf24;
+            transform: scale(1.4);
+        }
+
+        .rub-hint {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fbbf24;
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+
+    <div id="app" class="ui-top">
+        <div class="header-section" ref="header">
+            <h1 class="main-title">{{ current.title }}</h1>
+            <div class="parent-words">⚡ {{ current.parentWords }}</div>
+        </div>
+
+        <div class="middle-content" ref="content">
+            <p class="desc">{{ current.description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="action-btn">继续充电</button>
+                <button v-if="step === 5" @click="reset" class="action-btn">释放能量</button>
+            </div>
+        </div>
+
+        <!-- S3 核心交互 -->
+        <div v-if="step === 3" class="charge-meter">
+            <div class="text-yellow-400 font-bold mb-2">静电能量收集器</div>
+            <div class="text-[10px] text-gray-400 mb-6">在屏幕上快速滑动以进行“摩擦生电”</div>
+            <div class="energy-bar">
+                <div class="energy-fill" :style="{ width: charge + '%' }"></div>
+            </div>
+            <div class="flex gap-4 justify-center mt-4">
+                <button @click="discharge" class="action-btn !py-1 !px-4 !text-xs">接触放电</button>
+                <button v-if="charge > 80" @click="next"
+                    class="action-btn !py-1 !px-6 !text-xs !bg-yellow-700">理解电流</button>
+            </div>
+        </div>
+
+        <div v-if="step === 3 && charge < 50" class="rub-hint">👋 快速左右滑动试试！</div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const charge = ref(0);
+                const isDischarging = ref(false);
+
+                const stages = [
+                    {
+                        title: "脱衣服时的‘啪啪’声",
+                        parentWords: "宝贝，有没有在冬天脱毛衣时，听到过这种微小的爆炸声？那其实就是你在发光呢！",
+                        description: "这就叫微小的静电。你其实是一个活生生的‘电荷容器’。当不同材料（比如毛衣和你的身体）摩擦时，电子就会像淘气的小球一样跳来跳去。"
+                    },
+                    {
+                        title: "如果我变成了‘人形电池’",
+                        parentWords: "想象一下，如果你体内的静电比现在多一万倍，你一伸手就能点亮所有的电灯泡，那该多酷！",
+                        description: "虽然这听起来像超级英雄电影，但静电力可是宇宙中排名前四的超级基本力。它能让头发立起来，也能让水流打折弯。"
+                    },
+                    {
+                        title: "摩擦生电实验室",
+                        parentWords: "来吧！在屏幕上疯狂涂抹摩擦。看看你能给我们的主人公积累多少‘电能量’？",
+                        description: "随着电量的增加，你会看到主人公周围泛起了金色的弧光。这就是电子密度的提升。快看！当你的能量满格时，你甚至能操控物体的运动。"
+                    },
+                    {
+                        title: "静电力与物体的舞蹈",
+                        parentWords: "快看！那些原本不该飞起的纸片，居然被你‘隔空取物’般吸上来了。这就是电场的力量。",
+                        description: "静电虽然短暂，但它的瞬间爆发力非常惊人。闪电就是规模最大的静电放电现象。所有的带电粒子，都在这个无声的立场里共舞。"
+                    },
+                    {
+                        title: "能量的守恒",
+                        parentWords: "带电虽然好玩，但能量总是要流动的。放完电的你依然是那个温柔的宝贝。记住，能量就在你的每一个细胞里。",
+                        description: "从微观的原子到宏观的银河，电磁力维持着恒星和我们的稳定。了解了电荷，你就掌握了开启现代文明的钥匙。故事讲完了，晚安。"
+                    }
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, balloon, sparkParticles = [], waterStream = [];
+                let lastX = 0, clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 20, 80);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Balloon representative
+                    const bGeo = new THREE.SphereGeometry(10, 32, 24);
+                    const bMat = new THREE.MeshPhongMaterial({ color: 0xef4444, shininess: 100 });
+                    balloon = new THREE.Mesh(bGeo, bMat);
+                    balloon.position.set(0, 10, 0);
+                    scene.add(balloon);
+
+                    // Electirc Aura
+                    const auraGeo = new THREE.SphereGeometry(11, 32, 24);
+                    const auraMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0, wireframe: true });
+                    const aura = new THREE.Mesh(auraGeo, auraMat);
+                    balloon.add(aura);
+                    balloon.userData.aura = aura;
+
+                    // Water Stream (Simulated via line)
+                    const points = [];
+                    for (let i = 0; i < 30; i++) points.push(new THREE.Vector3(25, 40 - i * 2, 0));
+                    const waterGeo = new THREE.BufferGeometry().setFromPoints(points);
+                    const waterMat = new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 3 });
+                    const water = new THREE.Line(waterGeo, waterMat);
+                    scene.add(water);
+                    balloon.userData.water = water;
+
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const sun = new THREE.PointLight(0xffffff, 0.8);
+                    sun.position.set(20, 40, 30);
+                    scene.add(sun);
+
+                    window.addEventListener('mousemove', onMove);
+                    animate();
+                };
+
+                const onMove = (e) => {
+                    if (step.value === 3) {
+                        const delta = Math.abs(e.clientX - lastX);
+                        if (delta > 5) {
+                            charge.value = Math.min(charge.value + delta * 0.1, 100);
+                        }
+                        lastX = e.clientX;
+
+                        // Move balloon with mouse
+                        const x = (e.clientX / window.innerWidth) * 2 - 1;
+                        balloon.position.x = x * 40;
+                    }
+                };
+
+                const discharge = () => {
+                    isDischarging.value = true;
+                    charge.value = 0;
+                    gsap.fromTo(balloon.userData.aura.material, { opacity: 1 }, { opacity: 0, duration: 0.1, repeat: 5 });
+                    setTimeout(() => isDischarging.value = false, 1000);
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    // Aura visibility based on charge
+                    balloon.userData.aura.material.opacity = (charge.value / 100) * 0.5 + Math.sin(t * 20) * 0.1;
+                    balloon.rotation.y += 0.01;
+
+                    // Water bending effect
+                    const water = balloon.userData.water;
+                    const pos = water.geometry.attributes.position;
+                    for (let i = 0; i < 30; i++) {
+                        let origX = 25;
+                        let dist = Math.abs(balloon.position.x - origX);
+                        if (dist < 20 && charge.value > 10) {
+                            let bend = (charge.value / 100) * (20 - dist) * 0.5;
+                            pos.setX(i, origX + (balloon.position.x > origX ? -bend : bend));
+                        } else {
+                            pos.setX(i, origX);
+                        }
+                    }
+                    pos.needsUpdate = true;
+
+                    renderer.render(scene, camera);
+                };
+
+                const next = () => { if (step.value < 5) step.value++; };
+                const jump = (n) => { step.value = n; };
+                const reset = () => { step.value = 1; charge.value = 0; };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.header-section', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.middle-content', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    if (newVal === 4) charge.value = 100;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.header-section', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.middle-content', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, charge, isDischarging, next, jump, reset, discharge, stages };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

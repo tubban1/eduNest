@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小鼹鼠打地洞</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E0E0E0;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .immersion-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-words {
+            text-align: center;
+            font-size: 1rem;
+            color: #5D4037;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 600px;
+            margin: 0 auto;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+        }
+
+        .narrative-text {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3rem;
+            color: #3E2723;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 2px 2px rgba(255, 255, 255, 0.8));
+        }
+
+        .stage-content {
+            font-size: 1.2rem;
+            color: #4E342E;
+            line-height: 1.7;
+            padding: 10px 40px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .depth-gage {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            font-weight: bold;
+            color: #5D4037;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .action-container {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-dig {
+            background: #5D4037;
+            color: white;
+            padding: 15px 45px;
+            border-radius: 40px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-dig:active {
+            transform: scale(0.95);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.5s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="immersion-ui">
+        <!-- 深度感应 -->
+        <div class="depth-gage">🐾 挖掘深度: {{ depth }}m</div>
+
+        <!-- 顶部感语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">
+                🕳️ {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 底部正文 -->
+        <div class="narrative-text">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 当前动作 -->
+        <div class="action-container pointer-events-auto">
+            <button v-if="step === 3" @click="handleDig" class="btn-dig">
+                {{ depth >= 100 ? '挖到宝藏啦！' : '嘿咻！用力挖地洞' }}
+            </button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-dig bg-amber-800">继续探索</button>
+            <button v-else @click="reset" class="btn-dig bg-stone-500">回到地表</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const depth = ref(0);
+                const shake = ref(0);
+
+                const stages = [
+                    { title: '安静的地下室', content: '当月亮升到树梢，小鼹鼠正穿着它最柔软的棕色睡衣，准备在厚厚的泥土下面给自己造一个静悄悄的梦。' },
+                    { title: '泥土的香味', content: '泥土的味道是淡淡的、香甜的。每一层泥土都像一层松软的棉被，大树的根须则是天然的床柱，守护着地下的安宁。' },
+                    { title: '轻轻地挖掘', content: '来吧，小宝贝。咱们轻轻地帮它挖一个小窝。不要太用力哦，我们要避开坚硬的石头，去寻找最柔软的沙土。' },
+                    { title: '地下的光辉', content: '看！地底下不再是一片漆黑。当你静下心来，就会发现泥土里闪烁着微光，那是大地在对你温柔地微笑。' },
+                    { title: '最暖的避风港', content: '小窝终于挖好啦。这里避开了所有的风雨，冬暖夏凉。小鼹鼠揉揉鼻子，满足地缩进了被窝。晚安，勇敢的小鼹鼠。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你听，地下深处是不是很安静？小鼹鼠正在闻泥土的香味呢。",
+                    "泥土下面藏着很多秘密。咱们小声点，别吵醒了那些正在睡觉的小草根。",
+                    "轻轻地帮帮它。就像在给大地揉肚皮，我们要找一个最舒服的地方睡觉。",
+                    "哇，亮晶晶的！原来地底下也有星星呀。只要有希望，哪里都有光。",
+                    "干完活啦，小鼹鼠要抱着它的小宝石睡觉了。宝贝也快入梦吧，晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const particles = [];
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawMole = (x, y, t) => {
+                    ctx.save();
+                    ctx.translate(x + Math.sin(t * 20) * shake.value, y);
+                    rc.ellipse(0, 0, 100, 140, { fill: '#4E342E', fillStyle: 'hachure' });
+                    rc.circle(0, -60, 80, { fill: '#4E342E', fillStyle: 'solid' });
+                    rc.circle(0, -50, 20, { fill: '#F06292' }); // Nose
+                    const clawPos = Math.sin(t * 15) * 20;
+                    rc.line(-50, 20, -70, 20 + clawPos, { stroke: '#FFCCBC', strokeWidth: 8 });
+                    rc.line(50, 20, 70, 20 - clawPos, { stroke: '#FFCCBC', strokeWidth: 8 });
+                    rc.circle(-20, -70, 6, { fill: '#000' });
+                    rc.circle(20, -70, 6, { fill: '#000' });
+                    ctx.restore();
+                };
+
+                const drawSoil = (t) => {
+                    const scroll = (depth.value % 40) - 20;
+                    for (let i = 0; i < 6; i++) {
+                        const sy = i * 200 - scroll;
+                        rc.rectangle(0, sy, canvas.width, 200, { fill: i % 2 === 0 ? '#795548' : '#8D6E63', fillStyle: 'hachure', stroke: 'none' });
+                    }
+                    if (depth.value > 80) {
+                        rc.circle(canvas.width / 2, 400 - (depth.value - 80) * 10, 50, { fill: '#FFD54F', fillStyle: 'solid' });
+                    }
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    drawSoil(t);
+                    drawMole(canvas.width / 2, canvas.height / 2, t);
+                    particles.forEach((p, i) => {
+                        p.x += p.vx; p.y += p.vy; p.vy += 0.2;
+                        rc.circle(p.x, p.y, p.r, { fill: '#3E2723', stroke: 'none' });
+                        if (p.y > canvas.height) particles.splice(i, 1);
+                    });
+                    if (shake.value > 0) shake.value *= 0.9;
+                    requestAnimationFrame(animate);
+                };
+
+                const handleDig = () => {
+                    if (depth.value < 100) {
+                        depth.value += 5;
+                        shake.value = 5;
+                        for (let i = 0; i < 3; i++) {
+                            particles.push({
+                                x: canvas.width / 2, y: canvas.height / 2,
+                                vx: (Math.random() - 0.5) * 10, vy: -Math.random() * 10, r: 5 + Math.random() * 5
+                            });
+                        }
+                        if (depth.value >= 100) setTimeout(() => nextStage(), 1500);
+                    }
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; depth.value = 0; };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, depth, stages, parentWords, nextStage, reset, handleDig };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

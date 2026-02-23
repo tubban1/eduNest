@@ -1,256 +1,277 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>人物运动小游戏 - 跑跳</title>
+  <title>3D 人物跳跃小游戏</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
-      background: #0f172a;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #e5e7eb;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    h1 { font-size: 1.35rem; margin-bottom: 4px; }
-    p { font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px; }
-    #canvas {
-      display: block;
-      background: linear-gradient(to bottom, #1e3a5f 0%, #0f172a 60%);
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,0.3);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+
+    body {
+      background: #000;
+      overflow: hidden;
+      color: #fff;
+      font-family: 'PingFang SC', sans-serif;
+    }
+
+    #ui {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    #score-board {
+      position: absolute;
+      bottom: 2rem;
+      left: 2rem;
+      font-size: 1.5rem;
+      z-index: 10;
+    }
+
+    .msg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      display: none;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
     }
   </style>
 </head>
+
 <body>
-  <h1>人物运动小游戏 · 跑跳</h1>
-  <p>空格跳跃，躲开障碍、吃金币。角色使用骨骼跑步动画 + 抛物线跳跃。</p>
-  <canvas id="canvas" width="800" height="400"></canvas>
-  <p style="margin-top:8px">得分：<strong id="score">0</strong> &nbsp;|&nbsp; 空格跳跃</p>
+  <div id="ui">
+    <h1>3D 跑酷：粒子扫描人</h1>
+    <p>空格键跳跃，躲避红色方块</p>
+  </div>
+  <div id="score-board">得分：<span id="score">0</span></div>
+  <div id="game-over" class="msg">游戏结束</div>
+
+  <!-- 使用可靠的 jsDelivr GitHub 存档确保版本匹配 -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.86.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.86.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
-    (function () {
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width, H = canvas.height;
-      const groundY = H - 60;
-      const CHAR_X = 140;
+    // 确保脚本加载后再运行
+    window.onload = function () {
+      if (typeof THREE === 'undefined' || typeof THREE.OrbitControls === 'undefined') {
+        console.error('Three.js 或控制器加载失败');
+        // 备选方案：尝试从 cdnjs 重新绑定
+        const s = document.createElement('script');
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r86/three.min.js";
+        document.head.appendChild(s);
+      }
+      initGame();
+    };
 
-      let t0 = performance.now();
-      let jumpVy = 0;
-      let characterY = 0;
-      let gameOver = false;
-      let score = 0;
-      const obstacles = [];
-      const coins = [];
-      let lastSpawn = 0;
-      const GRAVITY = 0.7;
-      const JUMP_V0 = -14;
+    function initGame() {
+      //__________ Variables
+      var main_color = 0x000000;
+      var time = 0;
+      var scanMesh;
+      var loader = new THREE.JSONLoader();
+      var scene = new THREE.Scene();
+      var camera, renderer, controls;
+      var camHelper;
+
+      var obstacles = [];
+      var score = 0;
+      var gameOver = false;
+
+      // 运动学变量
+      var jumpVy = 0;
+      var charY = 0;
+      const GRAVITY = 0.5;
+      const JUMP_POWER = 12;
+
+      // 动画系数
+      var facX = Math.random() * 10 * .001;
+      var facY = Math.random() * 10 * .001;
+      var facZ = Math.random() * 10 * .001;
+
+      init();
+      animate(0);
+
+      function init() {
+        // Camera setup
+        camHelper = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+        camHelper.visible = false;
+        scene.add(camHelper);
+
+        camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 50, 150);
+        camHelper.add(camera);
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setClearColor(main_color, 1);
+        document.body.appendChild(renderer.domElement);
+
+        // Controls
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.2;
+        controls.target.set(0, 20, 0);
+
+        // Lights
+        var light = new THREE.HemisphereLight(0xACC5E1, 0x1588C8, 1);
+        light.intensity = 0.6;
+        scene.add(light);
+
+        var ambient = new THREE.AmbientLight(0x333333);
+        scene.add(ambient);
+
+        var spotLight = new THREE.SpotLight(0xFFFFFF);
+        spotLight.position.set(0, 200, 100);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        // Floor
+        var floorGeo = new THREE.PlaneGeometry(2000, 2000);
+        var floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+        var floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Grid helper
+        var grid = new THREE.GridHelper(2000, 50, 0x333333, 0x222222);
+        scene.add(grid);
+
+        // Load Character
+        loader.load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/61062/scan.json', function (geometry) {
+          var material = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            shading: THREE.FlatShading,
+            skinning: true,
+            metalness: 0.0,
+            roughness: 0.9
+          });
+          scanMesh = new THREE.SkinnedMesh(geometry, new THREE.MeshFaceMaterial([material]));
+          scanMesh.receiveShadow = true;
+          scanMesh.castShadow = true;
+          scanMesh.scale.set(1.5, 1.5, 1.5);
+          scene.add(scanMesh);
+        });
+
+        window.addEventListener('resize', onWindowResize, false);
+        document.addEventListener('keydown', onKeyDown);
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function onKeyDown(e) {
+        if (e.code === 'Space' && charY <= 0.1 && !gameOver) {
+          jumpVy = JUMP_POWER;
+        }
+        if (gameOver) location.reload();
+      }
 
       function spawnObstacle() {
-        obstacles.push({ x: W + 20, w: 28, h: 42 });
-      }
-      function spawnCoin() {
-        coins.push({ x: W + 30, y: groundY - 80 - Math.random() * 60, r: 14 });
-      }
-
-      document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') e.preventDefault();
         if (gameOver) return;
-        if (e.code === 'Space' && characterY >= -2) jumpVy = JUMP_V0;
-      });
-
-      function drawRunner(time, centerX, baseGroundY, offsetY) {
-        const phase = time * 1.6;
-        const hipY = baseGroundY - 78 + offsetY;
-        const torsoLen = 58, neckLen = 12, headR = 18;
-        const upperArmLen = 30, lowerArmLen = 28, thighLen = 46, calfLen = 42;
-        const bodyBob = Math.sin(phase * 2) * 4;
-        const hipCenter = { x: centerX, y: hipY + bodyBob };
-        const shoulderY = hipCenter.y - torsoLen;
-        const pelvisW = 10, shoulderW = 14;
-        const leftHip = { x: hipCenter.x - pelvisW, y: hipCenter.y };
-        const rightHip = { x: hipCenter.x + pelvisW, y: hipCenter.y };
-        const leftShoulder = { x: hipCenter.x - shoulderW, y: shoulderY };
-        const rightShoulder = { x: hipCenter.x + shoulderW, y: shoulderY };
-
-        ctx.save();
-        const lean = -0.18 + Math.sin(phase * 1.5) * 0.05;
-        ctx.translate(hipCenter.x, hipCenter.y);
-        ctx.rotate(lean);
-        ctx.translate(-hipCenter.x, -hipCenter.y);
-
-        ctx.fillStyle = 'rgba(148,163,184,0.95)';
-        ctx.strokeStyle = 'rgba(15,23,42,0.6)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(leftHip.x, leftHip.y);
-        ctx.lineTo(leftShoulder.x + 2, leftShoulder.y + 4);
-        ctx.quadraticCurveTo(hipCenter.x, shoulderY - 4, rightShoulder.x - 2, rightShoulder.y + 4);
-        ctx.lineTo(rightHip.x, rightHip.y);
-        ctx.quadraticCurveTo(hipCenter.x, hipCenter.y + 10, leftHip.x, leftHip.y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.strokeStyle = 'rgba(226,232,240,0.95)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(hipCenter.x - 4, shoulderY + 6);
-        ctx.lineTo(hipCenter.x + 4, shoulderY - 10);
-        ctx.stroke();
-
-        ctx.fillStyle = '#e5e7eb';
-        ctx.strokeStyle = '#020617';
-        ctx.lineWidth = 2;
-        const headCx = hipCenter.x + 4, headCy = shoulderY - neckLen - headR + 4;
-        ctx.beginPath();
-        ctx.arc(headCx, headCy, headR, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.strokeStyle = '#020617';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(headCx + 6, headCy - 4, 1.8, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(headCx + 4, headCy + 4);
-        ctx.quadraticCurveTo(headCx + 8, headCy + 6, headCx + 6, headCy + 9);
-        ctx.stroke();
-
-        const armPhase = phase * 1.8;
-        const rightUpperAngle = -0.1 + Math.sin(armPhase) * 0.8;
-        const rightLowerAngle = rightUpperAngle + 0.9 + Math.sin(armPhase + 0.6) * 0.2;
-        const leftUpperAngle = 0.3 + Math.sin(armPhase + Math.PI) * 0.8;
-        const leftLowerAngle = leftUpperAngle + 0.9 + Math.sin(armPhase + Math.PI + 0.4) * 0.2;
-
-        function drawLimb(base, angle1, len1, angle2, len2, color, zBehind) {
-          const joint1 = { x: base.x + Math.cos(angle1) * len1, y: base.y + Math.sin(angle1) * len1 };
-          const end = { x: joint1.x + Math.cos(angle2) * len2, y: joint1.y + Math.sin(angle2) * len2 };
-          ctx.strokeStyle = color;
-          ctx.lineCap = 'round';
-          ctx.lineWidth = zBehind ? 10 : 12;
-          ctx.beginPath();
-          ctx.moveTo(base.x, base.y);
-          ctx.lineTo(joint1.x, joint1.y);
-          ctx.stroke();
-          ctx.lineWidth = zBehind ? 8 : 10;
-          ctx.beginPath();
-          ctx.moveTo(joint1.x, joint1.y);
-          ctx.lineTo(end.x, end.y);
-          ctx.stroke();
-          ctx.fillStyle = '#e5e7eb';
-          ctx.beginPath();
-          ctx.arc(joint1.x, joint1.y, 4, 0, Math.PI * 2);
-          ctx.fill();
-          return { end };
-        }
-
-        const legPhase = phase * 2.1;
-        const rightThighAngle = 0.4 + Math.sin(legPhase) * 0.9;
-        const rightCalfAngle = rightThighAngle + 0.7 + Math.sin(legPhase + 1.1) * 0.3;
-        const leftThighAngle = 2.6 + Math.sin(legPhase + Math.PI) * 0.9;
-        const leftCalfAngle = leftThighAngle + 0.7 + Math.sin(legPhase + Math.PI + 1.1) * 0.3;
-
-        const leftLeg = drawLimb(leftHip, leftThighAngle, thighLen, leftCalfAngle, calfLen, 'rgba(75,85,99,0.95)', true);
-        drawLimb(leftShoulder, leftUpperAngle, upperArmLen, leftLowerAngle, lowerArmLen, 'rgba(148,163,184,0.7)', true);
-        const rightLeg = drawLimb(rightHip, rightThighAngle, thighLen, rightCalfAngle, calfLen, 'rgba(248,250,252,0.95)', false);
-        drawLimb(rightShoulder, rightUpperAngle, upperArmLen, rightLowerAngle, lowerArmLen, 'rgba(226,232,240,0.95)', false);
-
-        const yClamp = baseGroundY + 1 + offsetY;
-        [leftLeg.end, rightLeg.end].forEach((foot) => {
-          const fy = Math.min(foot.y, yClamp);
-          ctx.fillStyle = 'rgba(15,23,42,0.9)';
-          ctx.beginPath();
-          ctx.ellipse(foot.x, yClamp + 6, 14, 4, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#e5e7eb';
-          ctx.beginPath();
-          ctx.ellipse(foot.x, fy, 9, 4, 0, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        ctx.restore();
+        var geo = new THREE.BoxGeometry(20, 20 + Math.random() * 30, 20);
+        var mat = new THREE.MeshStandardMaterial({ color: 0xff3333 });
+        var box = new THREE.Mesh(geo, mat);
+        box.position.set(400, 10, (Math.random() - 0.5) * 40);
+        box.castShadow = true;
+        scene.add(box);
+        obstacles.push(box);
       }
 
-      function hitTestChar(rect) {
-        const cx = CHAR_X, cy = groundY - 90 + characterY;
-        const cw = 50, ch = 100;
-        return !(rect.x + rect.w < cx - cw/2 || rect.x > cx + cw/2 || rect.y + rect.h < cy - ch || rect.y > cy + 20);
-      }
+      var lastSpawnTime = 0;
 
-      function loop(now) {
-        const t = (now - t0) / 1000;
+      function animate(t) {
+        requestAnimationFrame(animate);
+        var delta = t - lastSpawnTime;
+
         if (!gameOver) {
-          characterY += jumpVy;
-          jumpVy += GRAVITY;
-          if (characterY > 0) { characterY = 0; jumpVy = 0; }
+          time = t;
+          charY += jumpVy;
+          jumpVy -= GRAVITY;
+          if (charY < 0) { charY = 0; jumpVy = 0; }
+          if (scanMesh && scanMesh.skeleton && scanMesh.skeleton.bones && scanMesh.skeleton.bones.length > 5) {
+            // 1. 基本物理位置
+            scanMesh.position.y = charY;
 
-          if (now - lastSpawn > 2200) {
+            // 2. 注入您代码中的随机/呼吸律动 (主要影响躯干)
+            // 增加频率系数，让律动更明显
+            let t_jitter = time * 0.002;
+            scanMesh.skeleton.bones[1].rotation.y = (Math.cos(0.005 + facY * time) * 0.4);
+            scanMesh.skeleton.bones[1].rotation.x = (Math.cos(0.005 + facX * time) * 0.4);
+            scanMesh.skeleton.bones[1].rotation.z = (Math.sin(0.004 + facZ * time) * 0.4);
+
+            // 3. 奔跑/空中的四肢动画
+            let runCycle = time * 0.012; // 增加步频
+
+            if (charY <= 0.1) {
+              // 地面奔跑：大幅度迈步 + 身体起伏
+              let stride = Math.sin(runCycle);
+
+              // 大腿逻辑：骨骼 2 和 3
+              scanMesh.skeleton.bones[2].rotation.x = stride * 1.1;
+              scanMesh.skeleton.bones[3].rotation.x = -stride * 1.1;
+
+              // 手臂/小腿逻辑：骨骼 4 和 5 协同摆动
+              scanMesh.skeleton.bones[4].rotation.x = Math.cos(runCycle) * 0.8;
+              scanMesh.skeleton.bones[5].rotation.x = -Math.cos(runCycle) * 0.8;
+
+              // 身体随步频轻微起伏 (Bobbing)
+              scanMesh.position.y += Math.abs(stride) * 3;
+            } else {
+              // 空中跳跃：腿部呈现收缩/前探姿态
+              scanMesh.skeleton.bones[2].rotation.x = -0.8; // 后收
+              scanMesh.skeleton.bones[3].rotation.x = 0.5;  // 前探
+              scanMesh.rotation.x = -0.2; // 身体前倾
+            }
+
+            // 落地时恢复身体角度
+            if (charY <= 0.1) scanMesh.rotation.x = 0;
+          }
+          if (delta > 1500) {
             spawnObstacle();
-            if (Math.random() < 0.6) spawnCoin();
-            lastSpawn = now;
+            lastSpawnTime = t;
           }
-          obstacles.forEach((o) => o.x -= 5.2);
-          coins.forEach((c) => c.x -= 5.2);
 
-          obstacles.forEach((o) => {
-            if (hitTestChar({ x: o.x, y: groundY - o.h, w: o.w, h: o.h })) gameOver = true;
-          });
-          for (let i = coins.length - 1; i >= 0; i--) {
-            const c = coins[i];
-            const dx = CHAR_X - c.x, dy = (groundY - 90 + characterY) - c.y;
-            if (dx*dx + dy*dy < (30 + c.r)*(30 + c.r)) { coins.splice(i, 1); score++; document.getElementById('score').textContent = score; }
+          for (var i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].position.x -= 4;
+            if (scanMesh && Math.abs(obstacles[i].position.x - scanMesh.position.x) < 22 &&
+              Math.abs(obstacles[i].position.z - scanMesh.position.z) < 22 &&
+              charY < obstacles[i].geometry.parameters.height) {
+              gameOver = true;
+              document.getElementById('game-over').style.display = 'block';
+            }
+            if (obstacles[i].position.x < -100 && !obstacles[i].scored) {
+              score++;
+              obstacles[i].scored = true;
+              document.getElementById('score').innerText = score;
+            }
+            if (obstacles[i].position.x < -500) {
+              scene.remove(obstacles[i]);
+              obstacles.splice(i, 1);
+            }
           }
-          obstacles.splice(0, obstacles.filter((o) => o.x + o.w < 0).length);
-          coins.splice(0, coins.filter((c) => c.x + c.r < -20).length);
         }
-
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, W, H);
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(0, groundY, W, H - groundY);
-        ctx.strokeStyle = '#334155';
-        ctx.beginPath();
-        ctx.moveTo(0, groundY);
-        ctx.lineTo(W, groundY);
-        ctx.stroke();
-
-        obstacles.forEach((o) => {
-          ctx.fillStyle = '#dc2626';
-          ctx.fillRect(o.x, groundY - o.h, o.w, o.h);
-          ctx.strokeStyle = '#991b1b';
-          ctx.strokeRect(o.x, groundY - o.h, o.w, o.h);
-        });
-        coins.forEach((c) => {
-          ctx.fillStyle = '#fbbf24';
-          ctx.beginPath();
-          ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = '#b45309';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        });
-
-        drawRunner(t, CHAR_X, groundY, characterY);
-
-        if (gameOver) {
-          ctx.fillStyle = 'rgba(0,0,0,0.7)';
-          ctx.fillRect(0, 0, W, H);
-          ctx.fillStyle = '#fef2f2';
-          ctx.font = 'bold 32px system-ui';
-          ctx.textAlign = 'center';
-          ctx.fillText('游戏结束', W/2, H/2 - 20);
-          ctx.font = '18px system-ui';
-          ctx.fillText('得分：' + score, W/2, H/2 + 20);
-        }
-        requestAnimationFrame(loop);
+        camHelper.rotateY(-0.005);
+        controls.update();
+        renderer.render(scene, camera);
       }
-      requestAnimationFrame(loop);
-    })();
+    }
   </script>
 </body>
+
 </html>

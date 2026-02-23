@@ -1,198 +1,238 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>鸟的飞行骨骼演示</title>
+  <title>灵动飞羽 - p5.js 骨骼飞行演示</title>
+  <!-- 引入 p5.js 库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
-      background: radial-gradient(circle at top, #0f172a 0%, #020617 60%, #000 100%);
-      min-height: 100vh;
+      background: #000;
+      overflow: hidden;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #e5e7eb;
+      height: 100vh;
     }
-    h1 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 6px; }
-    p { font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px; }
-    #canvas {
-      background: linear-gradient(to bottom, #0ea5e9, #022c44 55%, #020617 100%);
-      border-radius: 12px;
-      border: 1px solid rgba(59,130,246,0.5);
-      box-shadow: 0 12px 40px rgba(15,23,42,0.9);
-      max-width: 100%;
+
+    #ui {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
+      z-index: 10;
+      color: #fff;
+      font-family: 'PingFang SC', sans-serif;
+      pointer-events: none;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 300;
+      letter-spacing: 0.1rem;
+      opacity: 0.9;
+    }
+
+    p {
+      font-size: 0.9rem;
+      opacity: 0.5;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
+
 <body>
-  <h1>鸟的飞行 - 翅膀骨骼</h1>
-  <p>多段翅膀骨骼驱动羽翼上下振动，身体随之轻微起伏，表现连续飞行动作。</p>
-  <canvas id="canvas" width="900" height="420"></canvas>
+  <div id="ui">
+    <h1>灵动飞羽</h1>
+    <p>基于 p5.js 的三段式骨骼飞行算法</p>
+  </div>
 
-  <script src="KinecticsCore.js"></script>
   <script>
-    (function () {
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width;
-      const H = canvas.height;
-      let t0 = performance.now();
+    /**
+     * 灵动飞羽 - 核心飞行逻辑
+     * 采用三段式动力学骨骼（肩、肘、腕）
+     * 引入相位偏移（Phase Offset）实现羽翼的扇形波浪感
+     */
 
-      function drawBackground() {
-        ctx.clearRect(0, 0, W, H);
-        // 云层
-        ctx.fillStyle = 'rgba(248,250,252,0.22)';
-        for (let i = 0; i < 4; i++) {
-          const cx = (i * 260 + (performance.now() * 0.02) % (W + 260)) - 130;
-          const cy = 90 + i * 10;
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, 90, 28, 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
+    let bird;
+    let clouds = [];
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      bird = new Bird();
+      // 初始化云朵，营造空间深度感
+      for (let i = 0; i < 6; i++) {
+        clouds.push(new Cloud());
+      }
+    }
+
+    function draw() {
+      // 深邃天空背景
+      background(10, 25, 47);
+      drawSkyGradient();
+
+      // 绘制运动的云
+      for (let cloud of clouds) {
+        cloud.update();
+        cloud.display();
       }
 
-      function drawBird(time) {
-        const baseX = W / 2;
-        const baseY = H / 2;
+      // 居中绘制鸟
+      translate(width / 2, height / 2);
+      bird.update();
+      bird.display();
+    }
 
-        // 身体上下轻微起伏
-        const bob = Math.sin(time * 3) * 6;
-        const bodyY = baseY + bob;
+    function drawSkyGradient() {
+      noFill();
+      for (let i = 0; i <= height; i++) {
+        let inter = map(i, 0, height, 0, 1);
+        let c = lerpColor(color(20, 40, 60), color(5, 10, 20), inter);
+        stroke(c);
+        line(-width, i - height / 2, width * 2, i - height / 2);
+      }
+    }
 
-        ctx.save();
-        ctx.translate(baseX, bodyY);
+    class Cloud {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = random(width, width * 2);
+        this.y = random(-height / 2, 0);
+        this.size = random(100, 250);
+        this.speed = random(1, 3);
+        this.opacity = random(50, 150);
+      }
+      update() {
+        this.x -= this.speed;
+        if (this.x < -this.size - width / 2) this.reset();
+      }
+      display() {
+        noStroke();
+        fill(255, this.opacity);
+        ellipse(this.x, this.y, this.size, this.size * 0.4);
+      }
+    }
 
-        // 身体
-        ctx.fillStyle = '#f9fafb';
-        ctx.strokeStyle = 'rgba(15,23,42,0.8)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 55, 26, 0.1, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+    class Bird {
+      constructor() {
+        this.angle = 0;
+        this.bob = 0;
+        this.flapSpeed = 0.12;
+        this.time = 0;
+      }
 
-        // 头
-        ctx.beginPath();
-        ctx.arc(40, -8, 14, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+      update() {
+        this.time += this.flapSpeed;
+        // 身体自然起伏
+        this.bob = sin(this.time * 0.5) * 8;
+      }
 
-        // 嘴
-        ctx.fillStyle = '#fbbf24';
-        ctx.beginPath();
-        ctx.moveTo(52, -6);
-        ctx.lineTo(66, -2);
-        ctx.lineTo(52, 2);
-        ctx.closePath();
-        ctx.fill();
+      display() {
+        push();
+        translate(0, this.bob);
+
+        // 1. 远侧翅膀 (层级关系)
+        this.drawWing(-1);
+
+        // 2. 鸟身细节
+        this.drawBody();
+
+        // 3. 近侧翅膀
+        this.drawWing(1);
+        pop();
+      }
+
+      drawBody() {
+        // 尾羽
+        fill(220);
+        noStroke();
+        beginShape();
+        vertex(-45, 0);
+        vertex(-70, -10);
+        vertex(-65, 10);
+        endShape(CLOSE);
+
+        // 主躯干
+        fill(255);
+        stroke(30, 80);
+        strokeWeight(1);
+        ellipse(0, 0, 90, 45);
+
+        // 头部
+        ellipse(45, -15, 30, 30);
 
         // 眼睛
-        ctx.fillStyle = '#0f172a';
-        ctx.beginPath();
-        ctx.arc(36, -11, 2.2, 0, Math.PI * 2);
-        ctx.fill();
+        fill(10, 30, 50);
+        noStroke();
+        ellipse(55, -20, 4, 4);
 
-        // 尾巴
-        ctx.fillStyle = '#e5e7eb';
-        ctx.beginPath();
-        ctx.moveTo(-50, 0);
-        ctx.lineTo(-68, -8);
-        ctx.lineTo(-60, 4);
-        ctx.closePath();
-        ctx.fill();
-
-        // 翅膀骨骼参数（左右对称）
-        const flap = Math.sin(time * 8) * 0.9 + 0.4; // 主挥动角
-
-        function drawWing(side) {
-          const dir = side === 'left' ? -1 : 1;
-          const root = { x: 4, y: -6 };
-          const upperLen = 60;
-          const midLen = 45;
-          const tipLen = 35;
-
-          // 三段翅膀骨骼：肩 -> 中段 -> 末梢
-          const angle1 = dir * (Math.PI / 2 - flap);          // 肩关节
-          const angle2 = angle1 + dir * (0.4 + Math.sin(time * 7 + dir) * 0.25); // 中段
-          const angle3 = angle2 + dir * (0.5 + Math.sin(time * 6 + dir * 1.3) * 0.2); // 末梢
-
-          const joint1 = {
-            x: root.x + Math.cos(angle1) * upperLen,
-            y: root.y + Math.sin(angle1) * upperLen,
-          };
-          const joint2 = {
-            x: joint1.x + Math.cos(angle2) * midLen,
-            y: joint1.y + Math.sin(angle2) * midLen,
-          };
-          const tip = {
-            x: joint2.x + Math.cos(angle3) * tipLen,
-            y: joint2.y + Math.sin(angle3) * tipLen,
-          };
-
-          // 羽翼轮廓（用骨骼包络出有厚度的翅膀）
-          ctx.fillStyle = 'rgba(248,250,252,0.95)';
-          ctx.strokeStyle = 'rgba(15,23,42,0.7)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(root.x, root.y);
-          ctx.quadraticCurveTo(
-            (root.x + joint1.x) / 2,
-            (root.y + joint1.y) / 2 - dir * 8,
-            joint1.x,
-            joint1.y
-          );
-          ctx.quadraticCurveTo(
-            (joint1.x + joint2.x) / 2,
-            (joint1.y + joint2.y) / 2 - dir * 10,
-            joint2.x,
-            joint2.y
-          );
-          ctx.quadraticCurveTo(
-            (joint2.x + tip.x) / 2,
-            (joint2.y + tip.y) / 2 - dir * 8,
-            tip.x,
-            tip.y
-          );
-          // 回到根部，形成闭合翅膀
-          ctx.quadraticCurveTo(
-            (tip.x + root.x) / 2,
-            (tip.y + root.y) / 2 + dir * 18,
-            root.x,
-            root.y
-          );
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // 骨节高光
-          ctx.fillStyle = 'rgba(241,245,249,0.9)';
-          [joint1, joint2].forEach((j) => {
-            ctx.beginPath();
-            ctx.arc(j.x, j.y, 3, 0, Math.PI * 2);
-            ctx.fill();
-          });
-        }
-
-        // 先画远侧翅膀，再画近侧，营造层次
-        drawWing('left');
-        drawWing('right');
-
-        ctx.restore();
+        // 喙
+        fill(255, 200, 50);
+        triangle(60, -15, 75, -12, 60, -9);
       }
 
-      function loop(now) {
-        const t = (now - t0) / 1000;
-        drawBackground();
-        drawBird(t);
-        requestAnimationFrame(loop);
-      }
+      drawWing(side) {
+        push();
+        // 翅膀根部位置（肩部）
+        translate(10, -5);
 
-      requestAnimationFrame(loop);
-    })();
+        // 三段骨骼结构：肩部-上臂 (Upper)、肘部-前臂 (Mid)、腕部-翼尖 (Tip)
+        let flap = sin(this.time) * 0.7; // 核心呼吸角
+
+        // 肩关节弧度
+        let angle1 = side * (flap - 0.2);
+        // 肘关节滞后（产生波动感）
+        let angle2 = side * (sin(this.time - 0.4) * 0.5);
+        // 腕关节滞后
+        let angle3 = side * (sin(this.time - 0.8) * 0.4);
+
+        let L1 = 60, L2 = 50, L3 = 40;
+
+        // 计算节点坐标
+        let x1 = cos(angle1 - HALF_PI) * L1;
+        let y1 = sin(angle1 - HALF_PI) * L1;
+
+        let x2 = x1 + cos(angle1 + angle2 - HALF_PI) * L2;
+        let y2 = y1 + sin(angle1 + angle2 - HALF_PI) * L2;
+
+        let x3 = x2 + cos(angle1 + angle2 + angle3 - HALF_PI) * L3;
+        let y3 = y2 + sin(angle1 + angle2 + angle3 - HALF_PI) * L3;
+
+        // 绘羽翼轮廓
+        fill(side === 1 ? 255 : 200, 230); // 远近侧色差
+        stroke(50, 100);
+        strokeWeight(1.5);
+
+        beginShape();
+        vertex(0, 0);
+        // 前沿骨骼线
+        bezierVertex(x1 * 0.5, y1 * 0.5, x1, y1, x1, y1);
+        bezierVertex(x1 + (x2 - x1) * 0.5, y1 + (y2 - y1) * 0.5, x2, y2, x2, y2);
+        bezierVertex(x2 + (x3 - x2) * 0.5, y2 + (y3 - y2) * 0.5, x3, y3, x3, y3);
+
+        // 后沿羽毛线（产生宽阔的翼面）
+        // 增加特定的偏置使翅膀看起来有面积感
+        let backOffset = side * 30;
+        bezierVertex(x3 * 0.8, y3 + backOffset, x1 * 0.5, y1 + backOffset, 0, 0);
+        endShape(CLOSE);
+
+        pop();
+      }
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
   </script>
 </body>
-</html>
 
+</html>

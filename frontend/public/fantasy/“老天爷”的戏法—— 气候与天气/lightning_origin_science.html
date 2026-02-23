@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电闪雷鸣是老天在发怒吗</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --lightning: #F0A500;
+            --sky-deep: #1A1A2E;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--sky-deep);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #canvas-lightning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-base {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 3rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .title-group {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            color: #FFD369;
+            margin-bottom: 0.8rem;
+            filter: drop-shadow(0 4px 15px rgba(240, 165, 0, 0.4));
+        }
+
+        .parent-tips {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.1rem;
+            color: #EEEEEE;
+            display: inline-block;
+        }
+
+        .content-wrap {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc-text {
+            font-size: 1.45rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 5px 20px rgba(0, 0, 0, 0.9);
+            font-weight: 300;
+            color: #F7F7F7;
+        }
+
+        .btn-action {
+            background: rgba(255, 171, 0, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            border: 1px solid rgba(255, 171, 0, 0.4);
+            color: #FFD369;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.08) translateY(-5px);
+            background: rgba(255, 171, 0, 0.2);
+            border-color: #fff;
+        }
+
+        .charge-dashboard {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 480px;
+            background: rgba(34, 40, 49, 0.85);
+            backdrop-filter: blur(25px);
+            padding: 2.5rem;
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 211, 105, 0.2);
+            pointer-events: auto;
+            z-index: 50;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .charge-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 10px;
+            border-radius: 5px;
+            outline: none;
+            margin: 1.5rem 0;
+            background: linear-gradient(to right, #222831, #ffd369);
+        }
+
+        .charge-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #FFD369;
+            cursor: pointer;
+            border: 4px solid #fff;
+            box-shadow: 0 0 20px #FFD369;
+        }
+
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot-circle {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 211, 105, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot-circle.active {
+            background: #FFD369;
+            border-color: #FFD369;
+            transform: scale(1.5);
+            box-shadow: 0 0 15px #FFD369;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-lightning"></div>
+    <div class="flash-overlay" id="global-flash"></div>
+
+    <div id="app" class="ui-base">
+        <div class="title-group">
+            <h1 class="main-title">{{ stages[step-1].title }}</h1>
+            <div class="parent-tips">⚡ {{ stages[step-1].parentWords }}</div>
+        </div>
+
+        <div class="content-wrap">
+            <p class="desc-text">{{ stages[step-1].description }}</p>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < 5 && step !== 3" @click="next" class="btn-action">
+                    {{ step === 2 ? '开启电荷碰撞实验' : '继续探索真相' }}
+                </button>
+                <button v-else-if="step === 5" @click="reset" class="btn-action">迎接平静夜空</button>
+            </div>
+        </div>
+
+        <div v-if="step === 3" class="charge-dashboard">
+            <div class="flex justify-between text-xs font-bold text-yellow-300 mb-2">
+                <span>正电聚集 ➕</span>
+                <span>负电狂躁 ➖</span>
+            </div>
+            <input type="range" v-model="energy" min="0" max="1" step="0.01"
+                class="charge-slider pointer-events-auto mb-4">
+            <div class="flex justify-center">
+                <button @click="next" class="btn-action !text-xs !py-2 !px-8"
+                    :style="{ opacity: energy > 0.8 ? 1 : 0.6 }">
+                    触发等离子体放电
+                </button>
+            </div>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot-circle', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const energy = ref(0);
+
+                const stages = [
+                    {
+                        title: "云端里的‘派对’",
+                        parentWords: "宝贝，你看那一层层厚厚的乌云，里面其实有很多小水珠和小冰晶在不停地跳舞碰碰撞哦。",
+                        description: "其实云层也是会‘摩擦起电’的。就像你冬天脱毛衣时会有小火花一样，云层里的冰晶互相碰撞，让电荷在里面玩起了分边站的游戏。"
+                    },
+                    {
+                        title: "谁在偷电？",
+                        parentWords: "当它们碰得越多，云层顶端就攒满了正电，底部攒满了负电。它们隔得这么近，早就想握手啦。",
+                        description: "空气本来是绝缘的拦截者，不让它们见面。但当这种电荷的力量积攒到极限，它们就会瞬间击穿空气，产生最耀眼的‘大火花’。"
+                    },
+                    {
+                        title: "摩擦起电实验室",
+                        parentWords: "来，握住风暴推杆！滑动滑块，模拟云层里的强烈对流，让正负电荷彻底分开。",
+                        description: "你正在加快冰晶的碰撞频率。看云层内部那些金色的‘神经元’，那是这些电子在试图寻找前进的路径。能量已经快要突破临界点了！"
+                    },
+                    {
+                        title: "瞬间的‘握手’",
+                        parentWords: "轰隆！这就是闪电产生的瞬间。电火花加热了空气，让它们像爆炸一样猛烈膨胀，发出的声音就是雷声。",
+                        description: "我们发现了一个物理奥秘：闪电瞬间产生的热量比太阳表面还要高！正是这种剧烈的能量中和，才制造出了视觉与听觉的极致震撼。"
+                    },
+                    {
+                        title: "科学之盾",
+                        parentWords: "明白了吗？雷电并不是谁在发脾气，而是大自然的能量在做算术题。别怕，科学会保护我们。",
+                        description: "了解雷电的真相，我们就能更好地采取防御措施（比如不去大树下避雨）。自然的力量虽然伟大，但好奇心和科学知识才是我们最好的伴侣。晚安。"
+                    }
+                ];
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, clouds = [], lightningLines = [];
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 150);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('canvas-lightning').appendChild(renderer.domElement);
+
+                    // Add Clouds
+                    for (let i = 0; i < 8; i++) {
+                        const geo = new THREE.SphereGeometry(20 + Math.random() * 20, 16, 16);
+                        const mat = new THREE.MeshLambertMaterial({ color: 0x30475E, transparent: true, opacity: 0.8 });
+                        const c = new THREE.Mesh(geo, mat);
+                        c.position.set((Math.random() - 0.5) * 150, 40 + (Math.random() - 0.5) * 30, (Math.random() - 0.5) * 80);
+                        scene.add(c);
+                        clouds.push(c);
+                    }
+
+                    // Ground
+                    const gGeo = new THREE.PlaneGeometry(1000, 1000);
+                    const gMat = new THREE.MeshBasicMaterial({ color: 0x0a0a0a });
+                    const ground = new THREE.Mesh(gGeo, gMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    ground.position.y = -60;
+                    scene.add(ground);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0x222831));
+                    const sun = new THREE.PointLight(0xF0A500, 1);
+                    sun.position.set(0, 50, 0);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const createLightning = () => {
+                    const points = [];
+                    let x = 0, y = 50, z = 0;
+                    points.push(new THREE.Vector3(x, y, z));
+                    for (let i = 0; i < 10; i++) {
+                        x += (Math.random() - 0.5) * 20;
+                        y -= 12;
+                        z += (Math.random() - 0.5) * 20;
+                        points.push(new THREE.Vector3(x, y, z));
+                        if (y < -60) break;
+                    }
+                    const geo = new THREE.BufferGeometry().setFromPoints(points);
+                    const mat = new THREE.LineBasicMaterial({ color: 0xFFD369 });
+                    const line = new THREE.Line(geo, mat);
+                    scene.add(line);
+                    lightningLines.push(line);
+
+                    // Cleanup
+                    setTimeout(() => {
+                        scene.remove(line);
+                        lightningLines = lightningLines.filter(l => l !== line);
+                    }, 100);
+                };
+
+                const triggerGlobalFlash = () => {
+                    const flash = document.getElementById('global-flash');
+                    gsap.fromTo(flash, { opacity: 0.8 }, { opacity: 0, duration: 0.1, delay: 0.05 });
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    clouds.forEach((c, i) => {
+                        c.position.x += Math.sin(t + i) * 0.1;
+                        c.material.opacity = 0.6 + energy.value * 0.3;
+                    });
+
+                    // Random static spark in step 2/3
+                    if (energy.value > 0.5 && Math.random() < energy.value * 0.2) {
+                        createLightning();
+                    }
+
+                    if (step.value === 4 && Math.random() < 0.1) {
+                        createLightning();
+                        triggerGlobalFlash();
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const next = () => {
+                    if (step.value < 5) {
+                        step.value++;
+                        if (step.value === 4) {
+                            gsap.to(energy, { value: 1, duration: 2 });
+                            triggerGlobalFlash();
+                        }
+                    }
+                };
+                const jump = (n) => {
+                    step.value = n;
+                    if (n < 3) energy.value = 0;
+                    if (n > 3) energy.value = 1;
+                };
+                const reset = () => {
+                    step.value = 1; energy.value = 0;
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.title-group', { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.content-wrap', { opacity: 0, scale: 0.9, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 1, delay: 0.3 });
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.title-group', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.content-wrap', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.rotation, { x: -y * 0.1, y: -x * 0.1, duration: 2 });
+                        gsap.to('.ui-base', { x: -x * 10, y: -y * 10, duration: 1.5 });
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, stages, energy, next, jump, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

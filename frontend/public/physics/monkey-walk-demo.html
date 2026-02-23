@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猴子走路</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            min-height: 100dvh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #87ceeb 0%, #98d898 40%, #6b8e4e 100%);
+            font-family: system-ui, sans-serif;
+            color: #2d5016;
+        }
+        h1 {
+            margin: 0 0 0.5em;
+            font-size: 1.5rem;
+        }
+        .walk-area {
+            position: relative;
+            width: 240px;
+            min-height: 360px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 24px;
+            overflow: visible;
+        }
+        .walk-area .hw-walker {
+            filter: drop-shadow(2px 4px 8px rgba(0,0,0,0.2)) drop-shadow(0 2px 4px rgba(60,80,40,0.1));
+        }
+        .walk-area .leaf {
+            position: absolute; border-radius: 50% 0 50% 50%; background: linear-gradient(135deg, #5a7c3a 0%, #4a6b2a 100%); opacity: 0.7; pointer-events: none;
+        }
+        .walk-area .leaf-1 { left: 8%; bottom: 18%; width: 28px; height: 16px; transform: rotate(-25deg); }
+        .walk-area .leaf-2 { right: 12%; bottom: 12%; width: 22px; height: 14px; transform: rotate(15deg); }
+        .monkey-walker .hw-segment {
+            background: linear-gradient(180deg, #c4956a 0%, #a67c52 50%, #8b6914 100%) !important;
+            border: 1px solid rgba(0,0,0,0.2) !important;
+            box-shadow: inset 0 1px 0 rgba(255,230,200,0.2) !important;
+        }
+        .monkey-walker .hw-body { background: transparent !important; }
+        .monkey-walker [data-segment="neck"] {
+            background: linear-gradient(180deg, #d4a574 0%, #c4956a 100%) !important;
+            border-color: rgba(0,0,0,0.2) !important;
+        }
+        /* 猴子：手掌/肉垫、脚掌、脚趾、身材 */
+        .monkey-walker [data-segment*="Hand"] {
+            background: linear-gradient(180deg, #c4956a 0%, #a67c52 60%, #8b6914 100%) !important;
+            border-radius: 48% 48% 45% 45% !important;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.15) !important;
+        }
+        .monkey-walker [data-segment*="Hand"]::before {
+            content: ""; position: absolute; left: 15%; top: 25%; width: 70%; height: 50%; border-radius: 45%; background: radial-gradient(ellipse 80% 70% at 50% 50%, rgba(80,50,30,0.4), transparent 70%); pointer-events: none;
+        }
+        .monkey-walker [data-segment*="Foot"] {
+            background: linear-gradient(180deg, #a67c52 0%, #8b6914 100%) !important;
+            border-radius: 50% 50% 48% 48% !important;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15) !important;
+        }
+        .monkey-walker [data-segment*="Foot"]::before {
+            content: ""; position: absolute; left: 10%; bottom: 15%; width: 80%; height: 45%; border-radius: 0 0 45% 45%; background: radial-gradient(ellipse 90% 80% at 50% 60%, rgba(60,40,20,0.35), transparent 65%); pointer-events: none;
+        }
+        .monkey-walker [data-segment*="Toe"] {
+            background: linear-gradient(180deg, #8b6914 0%, #6b5010 100%) !important;
+            border-radius: 42% 42% 50% 50% !important;
+        }
+        .monkey-walker [data-segment*="Toe"]::before {
+            content: ""; position: absolute; left: 5%; bottom: 10%; width: 90%; height: 50%; border-radius: 0 0 40% 40%; background: repeating-linear-gradient(90deg, transparent 0, transparent 22%, rgba(0,0,0,0.2) 22%, rgba(0,0,0,0.2) 26%); pointer-events: none;
+        }
+        /* 内侧手脚：更深色，与外侧形成层次 */
+        .monkey-walker .hw-inner .hw-segment,
+        .monkey-walker .hw-inner [data-segment*="Hand"] {
+            background: linear-gradient(180deg, #a67c52 0%, #8b6914 50%, #6b5010 100%) !important;
+        }
+        .monkey-walker .hw-inner [data-segment*="Foot"] {
+            background: linear-gradient(180deg, #8b6914 0%, #6b5010 100%) !important;
+        }
+        .monkey-walker .hw-inner [data-segment*="Toe"] {
+            background: linear-gradient(180deg, #6b5010 0%, #4a3808 100%) !important;
+        }
+        .monkey-walker .hw-joint { display: none !important; }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1em;
+            margin-top: 1.5em;
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        label { display: inline-flex; align-items: center; gap: 0.5em; cursor: pointer; }
+        input[type="checkbox"] { cursor: pointer; accent-color: #8b6914; }
+        input[type="range"] { cursor: pointer; accent-color: #8b6914; }
+    </style>
+</head>
+<body>
+
+    <h1>🐵 猴子走路</h1>
+    <div class="walk-area" id="walk-container">
+        <div class="leaf leaf-1"></div>
+        <div class="leaf leaf-2"></div>
+    </div>
+    <div class="controls">
+        <label><input type="checkbox" id="walk-toggle" checked> 走路</label>
+        <label>速度 <input type="range" name="speed" value="1.5" min="0.5" max="3" step="0.1"></label>
+        <label>体型 <input type="range" name="size" value="1" min="0.6" max="1.4" step="0.1"></label>
+    </div>
+
+    <script src="HumanWalk.js"></script>
+    <script>
+        (function () {
+            const container = document.getElementById('walk-container');
+            const walkToggle = document.getElementById('walk-toggle');
+
+            const walker = HumanWalk.createWalker({
+                scale: 1,
+                color: 28,
+                duration: 1.5,
+                playing: true,
+                sizes: {
+                    head: 40,
+                    neck: 11,
+                    upperTorso: 32,
+                    lowerTorso: 28,
+                    upperArm: 58,
+                    forearm: 52,
+                    hand: 22,
+                    thigh: 68,
+                    shin: 66,
+                    foot: 24,
+                    toe: 16,
+                    joint: 20
+                }
+            });
+            HumanWalk.setColor(walker, 28);
+            walker.root.classList.add('monkey-walker');
+            container.appendChild(walker.root);
+
+            // 头：圆脸 + 额区、大耳（含内耳）、眼窝、眼、鼻、嘴
+            const headSlot = walker.slots.head;
+            headSlot.innerHTML = '';
+            headSlot.style.pointerEvents = 'auto';
+            const headWrap = document.createElement('div');
+            headWrap.style.cssText = 'position: relative; width: 100%; height: 100%;';
+
+            const face = document.createElement('div');
+            face.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(165deg, #dbb89a 0%, #d4a574 25%, #c4956a 55%, #a67c52 85%, #8b6914 100%); border: 2px solid rgba(0,0,0,0.2); box-shadow: inset 0 -4px 10px rgba(0,0,0,0.15), inset 2px 2px 6px rgba(255,230,200,0.12);';
+            headWrap.appendChild(face);
+            const cheekBlushL = document.createElement('div');
+            cheekBlushL.style.cssText = 'position: absolute; left: 12%; top: 52%; width: 20%; height: 24%; border-radius: 50%; background: radial-gradient(ellipse 60% 70% at 60% 50%, rgba(180,120,80,0.25), transparent 70%);';
+            headWrap.appendChild(cheekBlushL);
+            const cheekBlushR = document.createElement('div');
+            cheekBlushR.style.cssText = 'position: absolute; right: 12%; top: 52%; width: 20%; height: 24%; border-radius: 50%; background: radial-gradient(ellipse 60% 70% at 40% 50%, rgba(180,120,80,0.25), transparent 70%);';
+            headWrap.appendChild(cheekBlushR);
+            const forehead = document.createElement('div');
+            forehead.style.cssText = 'position: absolute; left: 15%; top: 8%; width: 70%; height: 28%; border-radius: 50% 50% 40% 40%; background: linear-gradient(180deg, rgba(0,0,0,0.04) 0%, transparent 100%);';
+            headWrap.appendChild(forehead);
+            const earLeft = document.createElement('div');
+            earLeft.style.cssText = 'position: absolute; left: -14%; top: 12%; width: 34%; height: 42%; border-radius: 50%; background: linear-gradient(135deg, #c4956a 0%, #a67c52 60%, #8b6914 100%); border: 1px solid rgba(0,0,0,0.25); box-shadow: inset 2px 2px 4px rgba(255,230,200,0.15);';
+            headWrap.appendChild(earLeft);
+            const earLeftInner = document.createElement('div');
+            earLeftInner.style.cssText = 'position: absolute; left: -8%; top: 20%; width: 14%; height: 22%; border-radius: 50%; background: linear-gradient(135deg, #8b6914 0%, #6b5010 100%);';
+            headWrap.appendChild(earLeftInner);
+            const earRight = document.createElement('div');
+            earRight.style.cssText = 'position: absolute; right: -14%; top: 12%; width: 34%; height: 42%; border-radius: 50%; background: linear-gradient(225deg, #c4956a 0%, #a67c52 60%, #8b6914 100%); border: 1px solid rgba(0,0,0,0.25); box-shadow: inset -2px 2px 4px rgba(255,230,200,0.15);';
+            headWrap.appendChild(earRight);
+            const earRightInner = document.createElement('div');
+            earRightInner.style.cssText = 'position: absolute; right: -8%; top: 20%; width: 14%; height: 22%; border-radius: 50%; background: linear-gradient(225deg, #8b6914 0%, #6b5010 100%);';
+            headWrap.appendChild(earRightInner);
+            const eyeSocketL = document.createElement('div');
+            eyeSocketL.style.cssText = 'position: absolute; left: 18%; top: 35%; width: 26%; height: 26%; border-radius: 50%; background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,0,0,0.12), transparent);';
+            headWrap.appendChild(eyeSocketL);
+            const eyeSocketR = document.createElement('div');
+            eyeSocketR.style.cssText = 'position: absolute; right: 18%; top: 35%; width: 26%; height: 26%; border-radius: 50%; background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,0,0,0.12), transparent);';
+            headWrap.appendChild(eyeSocketR);
+            const browL = document.createElement('div');
+            browL.style.cssText = 'position: absolute; left: 20%; top: 34%; width: 22%; height: 4%; border-radius: 2px; background: rgba(0,0,0,0.2); transform: rotate(-3deg);';
+            headWrap.appendChild(browL);
+            const browR = document.createElement('div');
+            browR.style.cssText = 'position: absolute; right: 20%; top: 34%; width: 22%; height: 4%; border-radius: 2px; background: rgba(0,0,0,0.2); transform: rotate(3deg);';
+            headWrap.appendChild(browR);
+            const eyeLeft = document.createElement('div');
+            eyeLeft.style.cssText = 'position: absolute; left: 22%; top: 38%; width: 20%; height: 22%; border-radius: 50%; background: radial-gradient(ellipse 70% 80% at 50% 40%, #2a2a2a, #0f0f0f); border: 1px solid #1a1a1a;';
+            headWrap.appendChild(eyeLeft);
+            const eyeRight = document.createElement('div');
+            eyeRight.style.cssText = 'position: absolute; right: 22%; top: 38%; width: 20%; height: 22%; border-radius: 50%; background: radial-gradient(ellipse 70% 80% at 50% 40%, #2a2a2a, #0f0f0f); border: 1px solid #1a1a1a;';
+            headWrap.appendChild(eyeRight);
+            const eyeShineL = document.createElement('div');
+            eyeShineL.style.cssText = 'position: absolute; left: 25%; top: 40%; width: 6%; height: 7%; border-radius: 50%; background: #fff;';
+            headWrap.appendChild(eyeShineL);
+            const eyeShineR = document.createElement('div');
+            eyeShineR.style.cssText = 'position: absolute; right: 25%; top: 40%; width: 6%; height: 7%; border-radius: 50%; background: #fff;';
+            headWrap.appendChild(eyeShineR);
+            const eyeShine2L = document.createElement('div');
+            eyeShine2L.style.cssText = 'position: absolute; left: 28%; top: 41%; width: 3%; height: 4%; border-radius: 50%; background: rgba(255,255,255,0.8);';
+            headWrap.appendChild(eyeShine2L);
+            const eyeShine2R = document.createElement('div');
+            eyeShine2R.style.cssText = 'position: absolute; right: 28%; top: 41%; width: 3%; height: 4%; border-radius: 50%; background: rgba(255,255,255,0.8);';
+            headWrap.appendChild(eyeShine2R);
+            const nose = document.createElement('div');
+            nose.style.cssText = 'position: absolute; left: 50%; top: 56%; width: 18%; height: 14%; margin-left: -9%; border-radius: 50%; background: linear-gradient(145deg, #3d2a1a 0%, #2d1f14 50%, #1a1510 100%); border: 1px solid #1a1510; box-shadow: inset 1px 1px 0 rgba(80,60,40,0.2);';
+            headWrap.appendChild(nose);
+            const mouth = document.createElement('div');
+            mouth.style.cssText = 'position: absolute; left: 38%; top: 70%; width: 24%; height: 10%; border-radius: 0 0 50% 50%; background: linear-gradient(180deg, #2d1f14 0%, #1a1510 100%); border: 1px solid #1a1510; border-top: none; box-shadow: inset 0 -1px 2px rgba(0,0,0,0.2);';
+            headWrap.appendChild(mouth);
+            const smileLine = document.createElement('div');
+            smileLine.style.cssText = 'position: absolute; left: 36%; top: 72%; width: 28%; height: 6%; border-radius: 0 0 50% 50%; border-bottom: 2px solid rgba(60,40,25,0.4); border-top: none; background: transparent;';
+            headWrap.appendChild(smileLine);
+
+            headSlot.appendChild(headWrap);
+
+            // 上躯干：胸/背 — 毛发走向、胸斑
+            const upperSlot = walker.slots.upperTorso;
+            upperSlot.innerHTML = '';
+            const upperWrap = document.createElement('div');
+            upperWrap.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 45% 45% 42% 42%; background: linear-gradient(175deg, #c4956a 0%, #b08a5a 25%, #a67c52 55%, #8b6914 85%, #6b5010 100%); border: 1px solid rgba(0,0,0,0.22); box-shadow: inset 0 4px 10px rgba(255,230,200,0.1), inset 0 -3px 8px rgba(0,0,0,0.12);';
+            upperSlot.appendChild(upperWrap);
+            const furStripe1 = document.createElement('div');
+            furStripe1.style.cssText = 'position: absolute; left: 18%; top: 12%; width: 64%; height: 5%; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent); transform: rotate(-5deg);';
+            upperWrap.appendChild(furStripe1);
+            const furStripe2 = document.createElement('div');
+            furStripe2.style.cssText = 'position: absolute; left: 20%; top: 36%; width: 60%; height: 5%; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent); transform: rotate(2deg);';
+            upperWrap.appendChild(furStripe2);
+            const furStripe3 = document.createElement('div');
+            furStripe3.style.cssText = 'position: absolute; left: 24%; top: 58%; width: 52%; height: 4%; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent); transform: rotate(-2deg);';
+            upperWrap.appendChild(furStripe3);
+            const furTuftL = document.createElement('div');
+            furTuftL.style.cssText = 'position: absolute; left: -4%; top: 8%; width: 18%; height: 22%; border-radius: 50%; background: radial-gradient(ellipse 70% 80% at 30% 50%, rgba(0,0,0,0.08), transparent);';
+            upperWrap.appendChild(furTuftL);
+            const furTuftR = document.createElement('div');
+            furTuftR.style.cssText = 'position: absolute; right: -4%; top: 8%; width: 18%; height: 22%; border-radius: 50%; background: radial-gradient(ellipse 70% 80% at 70% 50%, rgba(0,0,0,0.08), transparent);';
+            upperWrap.appendChild(furTuftR);
+            const chestPatch = document.createElement('div');
+            chestPatch.style.cssText = 'position: absolute; left: 32%; top: 28%; width: 36%; height: 28%; border-radius: 45%; background: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(180,120,80,0.35), transparent);';
+            upperWrap.appendChild(chestPatch);
+            const shoulderML = document.createElement('div');
+            shoulderML.style.cssText = 'position: absolute; left: -12%; top: 0; width: 34%; height: 38%; border-radius: 50%; background: linear-gradient(135deg, #c4956a 0%, #a67c52 100%); border: 1px solid rgba(0,0,0,0.2); box-shadow: inset 2px 2px 4px rgba(255,230,200,0.1);';
+            upperWrap.appendChild(shoulderML);
+            const shoulderMR = document.createElement('div');
+            shoulderMR.style.cssText = 'position: absolute; right: -12%; top: 0; width: 34%; height: 38%; border-radius: 50%; background: linear-gradient(225deg, #c4956a 0%, #a67c52 100%); border: 1px solid rgba(0,0,0,0.2); box-shadow: inset -2px 2px 4px rgba(255,230,200,0.1);';
+            upperWrap.appendChild(shoulderMR);
+
+            // 下躯干：腰/肚子 + 肚脐暗示 + 尾巴、臀宽
+            const lowerTorsoSlot = walker.slots.lowerTorso;
+            lowerTorsoSlot.innerHTML = '';
+            const lowerWrap = document.createElement('div');
+            lowerWrap.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 45% 45% 48% 48%; background: linear-gradient(180deg, #b08a62 0%, #a67c52 35%, #8b6914 70%, #6b5010 100%); border: 1px solid rgba(0,0,0,0.2); box-shadow: inset 0 3px 8px rgba(255,230,200,0.1), inset 0 -3px 8px rgba(0,0,0,0.12);';
+            lowerTorsoSlot.appendChild(lowerWrap);
+            const bellySoft = document.createElement('div');
+            bellySoft.style.cssText = 'position: absolute; left: 26%; top: 28%; width: 48%; height: 45%; border-radius: 50%; background: radial-gradient(ellipse 80% 90% at 50% 40%, rgba(220,180,140,0.2), transparent 70%);';
+            lowerWrap.appendChild(bellySoft);
+            const navel = document.createElement('div');
+            navel.style.cssText = 'position: absolute; left: 50%; top: 42%; width: 8%; height: 6%; margin-left: -4%; border-radius: 50%; background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,0,0,0.15), transparent);';
+            lowerWrap.appendChild(navel);
+            const tail = document.createElement('div');
+            tail.style.cssText = 'position: absolute; left: 68%; top: 70%; width: 42%; height: 24%; border-radius: 50%; background: linear-gradient(135deg, #c4956a 0%, #a67c52 40%, #8b6914 70%, #6b5010 100%); border: 1px solid rgba(0,0,0,0.2); transform-origin: 10% 50%; transform: rotate(-25deg); box-shadow: inset 3px 0 6px rgba(255,230,200,0.15), inset -2px 0 4px rgba(0,0,0,0.12);';
+            lowerWrap.appendChild(tail);
+            const tailFluff = document.createElement('div');
+            tailFluff.style.cssText = 'position: absolute; left: 78%; top: 68%; width: 28%; height: 28%; border-radius: 50%; background: radial-gradient(ellipse 80% 80% at 40% 50%, rgba(180,140,90,0.4), transparent 70%);';
+            lowerWrap.appendChild(tailFluff);
+            const tailRing = document.createElement('div');
+            tailRing.style.cssText = 'position: absolute; left: 76%; top: 74%; width: 20%; height: 12%; border-radius: 50%; border: 1px solid rgba(0,0,0,0.25); background: transparent;';
+            lowerWrap.appendChild(tailRing);
+            const hipML = document.createElement('div');
+            hipML.style.cssText = 'position: absolute; left: -8%; bottom: 0; width: 38%; height: 45%; border-radius: 50%; background: linear-gradient(210deg, #8b6914 0%, #6b5010 100%); border: 1px solid rgba(0,0,0,0.2);';
+            lowerWrap.appendChild(hipML);
+            const hipMR = document.createElement('div');
+            hipMR.style.cssText = 'position: absolute; right: -8%; bottom: 0; width: 38%; height: 45%; border-radius: 50%; background: linear-gradient(330deg, #8b6914 0%, #6b5010 100%); border: 1px solid rgba(0,0,0,0.2);';
+            lowerWrap.appendChild(hipMR);
+
+            walkToggle.addEventListener('change', function () {
+                HumanWalk.setPlaying(walker, this.checked);
+            });
+            document.querySelector('input[name="speed"]').addEventListener('input', function () {
+                HumanWalk.setDuration(walker, parseFloat(this.value));
+            });
+            document.querySelector('input[name="size"]').addEventListener('input', function () {
+                HumanWalk.setScale(walker, parseFloat(this.value));
+            });
+        })();
+    </script>
+</body>
+</html>

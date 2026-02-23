@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小树不能摇</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #4CAF50;
+            --text-primary: #1B5E20;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E8F5E9;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #2E7D32;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #388E3C;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: #81C784;
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(129, 199, 132, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #66BB6A;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">🌱 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故事情节 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="shakeTree" class="btn-action">轻轻摇一摇小树看看：‘下叶子雨啦！’ 🍃</button>
+            <button v-else-if="step === 3" @click="petTree" class="btn-action">温柔地摸摸小树，帮它平静下来 🫂</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">看小树挺起腰杆</button>
+            <button v-else @click="reset" class="btn-action !bg-teal-800 !text-white">在绿意盎然中睡吧</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isShaking = ref(false);
+                const isPetting = ref(false);
+
+                const stages = [
+                    { title: '亮晶晶的绿叶', content: '路边刚种下了一排小松树。它们的叶尖上带着亮晶晶的清晨露水，正在努力地从黑黑的泥土里往上钻，想要快点儿长成参天大树呢。' },
+                    { title: '顽皮的摇晃', content: '小猴皮皮觉得这样很有趣。他用那灵巧的小手抓起嫩嫩的树干，用力地摇了起来：‘看呀，我在下叶子雨！小树在跳舞呢！’' },
+                    { title: '小树的‘叹息声’', content: '大树爷爷从旁边沙沙地说：‘孩子，轻一点。小树就像你一样小，它的根还没抓稳泥土，你会摇疼它的。让它安静地喝点阳光吧。’' },
+                    { title: '挺起的小腰杆', content: '皮皮赶紧松开手，还细心地帮小树培了培被踢散的土。小树重新静静地立在阳光下，抖了抖叶子，仿佛在说：‘谢谢你让我安静地做好梦。’' },
+                    { title: '森林里的安眠', content: '月亮爬到了树冠上。小猴皮皮学会了和植物交朋友。只要我们温柔以待，每一片绿叶都会在夜晚的微风里，为我们唱出最甜的歌。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看，小树苗的嫩绿颜色多美啊。你觉得小树苗现在在想什么？",
+                    "嘘——小树苗虽然不会说话，但它也会觉得‘有点晕’哦。咱们帮小猴皮皮停下来，听听小树的感受。",
+                    "每一个生命都需要被温柔地对待。咱们伸出小手，轻轻抚摸一下它，向它道个歉：‘对不起，小树，请好好长大吧。’",
+                    "哇！小树现在重新变得神气活现了。宝贝，照顾好弱小的生命，就是你变得强大的开始哦。",
+                    "故事讲完啦。森林里的树木正和星星说着悄悄话。咱们也闭上双眼，像小树一样，扎根在甜甜的梦里。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawTree = (x, y, scale, t, action = 'idle') => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const shake = isShaking.value ? Math.sin(t * 30) * 0.1 : 0;
+                    ctx.rotate(shake);
+                    // Trunk
+                    rc.rectangle(-10, 0, 20, 150, { fill: '#795548', fillStyle: 'solid' });
+                    // Canopy
+                    rc.ellipse(0, -50, 120, 150, { fill: '#4CAF50', fillStyle: 'hachure', stroke: '#1B5E20' });
+                    // Leaves falling
+                    if (isShaking.value) {
+                        for (let i = 0; i < 5; i++) {
+                            rc.circle(Math.sin(t * i) * 50, i * 30, 5, { fill: '#81C784' });
+                        }
+                    }
+                    ctx.restore();
+                };
+
+                const drawMonkey = (x, y, scale, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const bounce = Math.sin(t * 4) * 5;
+                    rc.circle(0, bounce, 80, { fill: '#A1887F', fillStyle: 'hachure' }); // Head
+                    rc.circle(-50, -40 + bounce, 30, { fill: '#A1887F' }); // Ear
+                    rc.circle(50, -40 + bounce, 30, { fill: '#A1887F' }); // Ear
+                    rc.circle(0, 20 + bounce, 60, { fill: '#D7CCC8', fillStyle: 'solid' }); // Muzzle
+                    rc.circle(-25, -20 + bounce, 6, { fill: '#333' }); rc.circle(25, -20 + bounce, 6, { fill: '#333' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.65;
+
+                    if (step.value === 1) {
+                        drawTree(centerX, centerY, 1, t);
+                        // Sunlight rays
+                        rc.line(centerX + 200, 100, centerX + 150, 150, { stroke: '#FFF176', opacity: 0.5 });
+                    } else if (step.value === 2) {
+                        drawTree(centerX + 100, centerY, 0.9, t);
+                        drawMonkey(centerX - 100, centerY + 50, 0.8, t);
+                    } else if (step.value === 3) {
+                        drawTree(centerX, centerY, 1.2, t);
+                        // Great Tree whisper
+                        rc.arc(centerX - 150, centerY - 100, 100, -1, 1, false, { stroke: '#4E342E', strokeWidth: 2 });
+                    } else if (step.value === 4) {
+                        drawTree(centerX, centerY, 1.1, t);
+                        drawMonkey(centerX - 150, centerY + 80, 0.6, t);
+                        // Soil pile
+                        rc.curve([[centerX - 40, centerY + 150], [centerX, centerY + 140], [centerX + 40, centerY + 150]], { fill: '#3E2723', fillStyle: 'solid' });
+                    } else if (step.value === 5) {
+                        drawTree(centerX - 120, centerY + 50, 0.8, 0);
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const shakeTree = () => { isShaking.value = true; setTimeout(() => { isShaking.value = false; nextStage(); }, 2000); };
+                const petTree = () => { isPetting.value = true; setTimeout(() => { isPetting.value = false; nextStage(); }, 1500); };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isShaking.value = false; isPetting.value = false; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, shakeTree, petTree, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

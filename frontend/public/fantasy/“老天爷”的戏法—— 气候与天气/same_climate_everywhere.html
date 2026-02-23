@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>世界各地气候都一样该多好</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent: #4DB6AC;
+            --text-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E0F7FA;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 3.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .header-section {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #FFD54F, #81C784);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.2));
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-guide {
+            font-size: 1.15rem;
+            color: #263238;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            padding: 0.6rem 2rem;
+            border-radius: 1.5rem;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .content-section {
+            max-width: 800px;
+            margin: 0 auto 12rem auto;
+            /* 增加边距，防止调节器遮挡文字 */
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .description {
+            font-size: 1.5rem;
+            line-height: 1.9;
+            margin-bottom: 2.5rem;
+            text-shadow: var(--text-shadow);
+            font-weight: 300;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            font-weight: bold;
+            font-size: 1.35rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1) translateY(-5px);
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #FFD54F;
+            box-shadow: 0 15px 45px rgba(255, 213, 79, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 450px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            padding: 2rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: #37474F;
+            font-size: 0.95rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #FFD54F;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .discovery-badge {
+            background: #FF5252;
+            color: #fff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px solid white;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dot.active {
+            background: #FFD54F;
+            transform: scale(1.4);
+            box-shadow: 0 0 15px rgba(255, 213, 79, 0.8);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部引导 -->
+        <div class="header-section" ref="header">
+            <h1 class="main-title">{{ currentStage.title }}</h1>
+            <div class="parent-guide">
+                🎨 {{ currentStage.parentWords }}
+            </div>
+        </div>
+
+        <!-- 主文案区 -->
+        <div class="content-section" ref="content">
+            <div v-if="currentStage.isDiscovery" class="discovery-badge">惊奇大发现</div>
+            <p class="description">{{ currentStage.description }}</p>
+
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < 5 && step !== 3" @click="nextStage" class="action-btn">
+                    {{ step === 2 ? '启动气候实验室' : '继续探索' }}
+                </button>
+                <button v-else-if="step === 5" @click="reset" class="action-btn">返回多彩世界</button>
+            </div>
+        </div>
+
+        <!-- 交互滑块：仅阶段 3 显示 -->
+        <div v-if="step === 3" class="control-panel floating">
+            <div class="slider-box">
+                <div class="slider-labels">
+                    <span>四季分明 ❄️☀️</span>
+                    <span>千篇一律 🪴</span>
+                </div>
+                <input type="range" v-model="uniformity" min="0" max="1" step="0.01" class="pointer-events-auto">
+                <div class="flex justify-center mt-4">
+                    <button @click="nextStage" class="action-btn !text-sm !py-2 !px-8"
+                        :style="{ opacity: uniformity > 0.8 ? 1 : 0.4 }">
+                        完成改造
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 侧边进度 -->
+        <div class="nav-dots">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="goToStep(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const uniformity = ref(0); // 0 (diverse) to 1 (same)
+
+                const stages = [
+                    {
+                        title: "星球的彩色拼图",
+                        parentWords: "宝贝，你看现在的地球，有热得冒烟的沙漠，也有冷得结冰的雪山。这种多样性是不是很美？",
+                        description: "我们的地球就像一个巨大的拼图，每个地方都有独特的气候。这让地球变得丰富多彩，每个角落都有属于自己的秘密。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "消失的差异",
+                        parentWords: "如果我们把全世界都调成一个温度，比如永远的 20 度，你觉得那些习惯大雪的企鹅和喜欢暴晒的骆驼会怎么样？",
+                        description: "想象一下，全世界的风景都变得一模一样：没有极光，没有沙暴，也没有湿润的雨林。生命还能像现在这样精彩吗？",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "开启一致性模拟",
+                        parentWords: "来，握住气候控制器！把滑块推向右边，看着世界慢慢失去它原来的色彩层级。",
+                        description: "当你抹平温差和季节，你会发现大地正在‘褪色’。原本分明的气候地带开始交融，变成了一种乏味的中性状态。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "单调的生命之歌",
+                        parentWords: "你看！世界变得好文静啊，但那些活泼的生命也不见了。企鹅在找雪，骆驼在找沙，可哪里都一样。",
+                        description: "我们发现了一个大秘密：气候的‘不平等’才是生命的‘助推器’。如果到处都一样，物种就会大规模消失，生态系统会因为停滞而崩溃。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "多元即美妙",
+                        parentWords: "故事讲完啦。虽然冷暖不均会有挑战，但正是这些‘不一样’，创造了我们这个独一无二的家。",
+                        description: "差异创造了流动，流动创造了生命。让我们拥护这个多样化的星球。每个人、每个地方的独特性，都是大自然最珍贵的礼物。",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStage = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, landscape, particles;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 50, 150);
+                    camera.lookAt(0, 0, 0);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Landscape: A plain with displacement based on UV
+                    const geometry = new THREE.PlaneGeometry(300, 300, 128, 128);
+                    const material = new THREE.ShaderMaterial({
+                        uniforms: {
+                            time: { value: 0 },
+                            uniformity: { value: 0 },
+                            lightCol: { value: new THREE.Color(0xffffff) }
+                        },
+                        vertexShader: `
+                            varying vec2 vUv;
+                            varying float vDist;
+                            uniform float uniformity;
+                            uniform float time;
+                            
+                            void main() {
+                                vUv = uv;
+                                vec3 pos = position;
+                                
+                                // Diverse height based on original state
+                                float h = sin(pos.x * 0.05) * cos(pos.y * 0.05) * 15.0;
+                                // Add regional variations
+                                h += sin(pos.x * 0.2) * 5.0 * (1.0 - uniformity);
+                                
+                                // When uniformity is 1, flatten mostly
+                                pos.z = mix(h, sin(pos.x * 0.02 + time) * 2.0, uniformity);
+                                
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                                vDist = pos.z;
+                            }
+                        `,
+                        fragmentShader: `
+                            varying vec2 vUv;
+                            varying float vDist;
+                            uniform float uniformity;
+
+                            void main() {
+                                // Zone blending
+                                // Left: Frozen (Blue), Middle: Forest (Green), Right: Desert (Yellow)
+                                vec3 frozen = vec3(0.7, 0.9, 1.0);
+                                vec3 forest = vec3(0.2, 0.6, 0.3);
+                                vec3 desert = vec3(1.0, 0.8, 0.4);
+                                vec3 generic = vec3(0.4, 0.8, 0.5); // Mild green
+
+                                vec3 color;
+                                if(vUv.x < 0.3) color = frozen;
+                                else if(vUv.x < 0.7) color = forest;
+                                else color = desert;
+
+                                // Mix with generic mild state
+                                vec3 finalColor = mix(color, generic, uniformity);
+                                
+                                // Ambient shading based on height
+                                finalColor *= (0.8 + 0.2 * (vDist / 15.0));
+
+                                gl_FragColor = vec4(finalColor, 1.0);
+                            }
+                        `,
+                        side: THREE.DoubleSide
+                    });
+
+                    landscape = new THREE.Mesh(geometry, material);
+                    landscape.rotation.x = -Math.PI / 2.5;
+                    scene.add(landscape);
+
+                    // Atmosphere Particles
+                    const pCount = 800;
+                    const pGeo = new THREE.BufferGeometry();
+                    const pPos = new Float32Array(pCount * 3);
+                    for (let i = 0; i < pCount; i++) {
+                        pPos[i * 3] = (Math.random() - 0.5) * 400;
+                        pPos[i * 3 + 1] = Math.random() * 80;
+                        pPos[i * 3 + 2] = (Math.random() - 0.5) * 400;
+                    }
+                    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+                    const pMat = new THREE.PointsMaterial({
+                        color: 0xffffff,
+                        size: 2,
+                        transparent: true,
+                        opacity: 0.5
+                    });
+                    particles = new THREE.Points(pGeo, pMat);
+                    scene.add(particles);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (landscape) {
+                        landscape.material.uniforms.time.value = t;
+                        landscape.material.uniforms.uniformity.value = THREE.MathUtils.lerp(
+                            landscape.material.uniforms.uniformity.value,
+                            uniformity.value,
+                            0.05
+                        );
+                    }
+
+                    if (particles) {
+                        const pos = particles.geometry.attributes.position;
+                        const factor = 1.0 - uniformity.value;
+                        for (let i = 0; i < pos.count; i++) {
+                            pos.setY(i, pos.getY(i) + Math.sin(t + i) * 0.05 * factor);
+                            pos.setX(i, pos.getX(i) + Math.cos(t * 0.5 + i) * 0.1 * factor);
+                        }
+                        pos.needsUpdate = true;
+                        particles.material.opacity = 0.5 * factor + 0.05;
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                // --- UI Transition Handling ---
+                const nextStage = () => {
+                    if (step.value < 5) {
+                        step.value++;
+                        window.eduNestRuntime?.dispatchLearningEvent('stage_change', {
+                            stageIndex: step.value,
+                            totalStages: 5
+                        });
+                        if (step.value === 4) gsap.to(uniformity, { value: 1, duration: 2.5 });
+                    }
+                };
+
+                const goToStep = (n) => {
+                    step.value = n;
+                    if (n < 3) uniformity.value = 0;
+                    if (n > 3) uniformity.value = 1;
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    uniformity.value = 0;
+                };
+
+                watch(step, (newVal) => {
+                    // Parallax & Transition GSAP
+                    const tl = gsap.timeline();
+                    tl.fromTo('.header-section', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1, ease: "power2.out" });
+                    tl.fromTo('.content-section', { opacity: 0, scale: 0.95, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 1, ease: "power2.out" }, "-=0.7");
+
+                    // Camera adjust
+                    if (newVal === 3) gsap.to(camera.position, { y: 80, z: 120, duration: 2 });
+                    else if (newVal === 4) gsap.to(camera.position, { y: 20, z: 180, duration: 2 });
+                    else gsap.to(camera.position, { y: 50, z: 150, duration: 2 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    // Cursor Parallax
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+
+                        gsap.to(camera.position, {
+                            x: x * 15,
+                            y: 50 - y * 15,
+                            duration: 2,
+                            ease: "power2.out"
+                        });
+                        camera.lookAt(0, 0, 0);
+
+                        gsap.to('.ui-overlay', {
+                            x: -x * 10,
+                            y: -y * 10,
+                            duration: 1.5,
+                            ease: "power2.out"
+                        });
+                    });
+
+                    // Initial Entry
+                    gsap.to('.header-section', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.content-section', { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
+
+                    // Runtime Provider
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value,
+                        totalStages: 5,
+                        currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return {
+                    step, uniformity, stages, currentStage,
+                    nextStage, goToStep, reset
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>没有光也能看书该多好</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --sonar-green: #22c55e;
+            --void-black: #000000;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--void-black);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-base {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .header {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #fff, #22c55e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-hint {
+            background: rgba(34, 197, 94, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            font-size: 1.1rem;
+            color: #4ade80;
+            display: inline-block;
+        }
+
+        .middle-content {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc {
+            font-size: 1.5rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 20px #000;
+        }
+
+        .scan-btn {
+            background: rgba(34, 197, 94, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+
+        .scan-btn:hover {
+            transform: scale(1.1);
+            background: rgba(34, 197, 94, 0.4);
+            border-color: #fff;
+        }
+
+        .interact-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 480px;
+            pointer-events: auto;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .mode-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1.4rem;
+        }
+
+        .mode-icon.active {
+            background: #22c55e;
+            box-shadow: 0 0 15px #22c55e;
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #22c55e;
+            border-color: #22c55e;
+            transform: scale(1.4);
+        }
+
+        .sonar-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--mx) var(--my), rgba(34, 197, 94, 0.15), transparent 15%);
+            pointer-events: none;
+            z-index: 5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+    <div class="sonar-effect" id="sonar-effect"></div>
+
+    <div id="app" class="ui-base">
+        <div class="header" ref="header">
+            <h1 class="main-title">{{ current.title }}</h1>
+            <div class="parent-hint">🦇 {{ current.parentWords }}</div>
+        </div>
+
+        <div class="middle-content" ref="content">
+            <p class="desc">{{ current.description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="scan-btn">探寻出路</button>
+                <button v-if="step === 5" @click="reset" class="scan-btn">重见光明</button>
+            </div>
+        </div>
+
+        <!-- S3 核心交互 -->
+        <div v-if="step === 3" class="interact-panel">
+            <div class="text-green-400 font-bold mb-2">多模态感知实验舱</div>
+            <div class="text-[10px] text-gray-400 mb-4">移动光标发射“扫描声纳”</div>
+            <div class="mode-toggle">
+                <div @click="setMode('echo')" :class="['mode-icon', { active: mode === 'echo' }]">🦇</div>
+                <div @click="setMode('heat')" :class="['mode-icon', { active: mode === 'heat' }]">🔥</div>
+                <div @click="setMode('touch')" :class="['mode-icon', { active: mode === 'touch' }]">✋</div>
+            </div>
+            <p class="text-[10px] text-green-200 mt-2">{{ modeDesc }}</p>
+            <button v-if="scannedItems > 5" @click="next" class="scan-btn !py-1 !px-8 !text-sm mt-4">理解感知</button>
+        </div>
+
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const mode = ref('echo');
+                const scannedItems = ref(0);
+
+                const stages = [
+                    {
+                        title: "当世界关了灯",
+                        parentWords: "宝贝，闭上眼睛，如果你现在想看书，是不是感觉一点办法也没有？",
+                        description: "我们的眼睛习惯了依靠光线。没有了光，文字就像藏进了一口深井里。但在这个世界上，有很多生命从来不靠光来看世界哦。"
+                    },
+                    {
+                        title: "看不见的扫描仪",
+                        parentWords: "蝙蝠和海豚也生活在黑暗里，但它们能‘听’见物体的形状。甚至有些特别的书，是专门给‘手指’看的。",
+                        description: "光只是我们感知世界的一种方式。当光消失，我们可以启动声纳、红外热感，甚至是敏感的指尖，去描绘这个世界的轮廓。"
+                    },
+                    {
+                        title: "沉浸式黑暗挑战",
+                        parentWords: "来，现在场景已经全黑了。尝试移动光标，发射你的‘扫描波’。看看你能否‘扫描’出隐藏在黑暗中的书？",
+                        description: "点击蝙蝠图标开启声纳模式，点击火焰开启热感模式。只要不断探测，黑暗中的真相就会一点点通过线条显现出来。"
+                    },
+                    {
+                        title: "感知的多种维度",
+                        parentWords: "你看！热成像能探测到物体的温度，声纳能测量距离。即便没有光，物体也依然存在，只是我们需要换一种‘眼睛’去寻找它。",
+                        description: "物理世界由能量、波和触感交织而成。光只是其中最显眼的一种。了解了非可见光，我们的世界观就会变得比以往更加广阔。"
+                    },
+                    {
+                        title: "光影之上的智慧",
+                        parentWords: "所以，即便在最黑暗的时候，只要你有探寻的勇气和智慧，你也永远不会迷路。珍惜你的每一种感官吧。",
+                        description: "从声纳探测到盲文触读，人类发明了无数延伸感官的方法。世界从来不曾真正漆黑。故事讲完了，晚安。"
+                    }
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+                const modeDesc = computed(() => {
+                    if (mode.value === 'echo') return "声纳模式：通过回声勾勒物体的棱角";
+                    if (mode.value === 'heat') return "热成像：发现物体的温度足迹（橙色）";
+                    return "触觉：感受物体的纹理与跳动";
+                });
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, book, hiddenItems = [], spotlight;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 20, 60);
+                    camera.lookAt(0, 0, 0);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Add a 3D book
+                    const bookGeo = new THREE.BoxGeometry(15, 2, 20);
+                    const bookMat = new THREE.MeshPhongMaterial({ color: 0x222222, transparent: true, opacity: 0.1 });
+                    book = new THREE.Mesh(bookGeo, bookMat);
+                    scene.add(book);
+
+                    // Highlights (Hidden initially)
+                    const edges = new THREE.EdgesGeometry(bookGeo);
+                    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0 }));
+                    book.add(line);
+                    hiddenItems.push(line);
+
+                    // Interaction spotlight (fake sonar)
+                    spotlight = new THREE.SpotLight(0x22c55e, 0);
+                    spotlight.position.set(0, 50, 0);
+                    spotlight.angle = Math.PI / 8;
+                    scene.add(spotlight);
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    animate();
+                };
+
+                const onMouseMove = (e) => {
+                    const x = (e.clientX / window.innerWidth) * 2 - 1;
+                    const y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                    // Update CSS glow position
+                    document.documentElement.style.setProperty('--mx', e.clientX + 'px');
+                    document.documentElement.style.setProperty('--my', e.clientY + 'px');
+
+                    if (step.value === 3) {
+                        spotlight.position.x = x * 40;
+                        spotlight.position.z = -y * 40;
+
+                        // Check proximity to reveal
+                        const dist = new THREE.Vector3(x * 40, 0, -y * 40).distanceTo(book.position);
+                        if (dist < 15) {
+                            gsap.to(hiddenItems[0].material, { opacity: mode.value === 'echo' ? 1 : 0.2, duration: 0.5 });
+                            if (mode.value === 'heat') {
+                                hiddenItems[0].material.color.set(0xff5500);
+                            } else {
+                                hiddenItems[0].material.color.set(0x22c55e);
+                            }
+                            scannedItems.value++;
+                        }
+                    }
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    if (step.value === 1 || step.value === 5) {
+                        scene.background = new THREE.Color(0x111827);
+                    } else {
+                        scene.background = new THREE.Color(0x000000);
+                    }
+                    renderer.render(scene, camera);
+                };
+
+                // Methods
+                const setMode = (m) => { mode.value = m; };
+                const next = () => { if (step.value < 5) step.value++; };
+                const jump = (n) => { step.value = n; };
+                const reset = () => { step.value = 1; scannedItems.value = 0; };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.header', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.middle-content', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.header', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.middle-content', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, mode, scannedItems, modeDesc, next, jump, reset, setMode, stages };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

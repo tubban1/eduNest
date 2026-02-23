@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>所有的金属都有磁性会怎样</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --magnet-red: #ef4444;
+            --magnet-blue: #3b82f6;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #111827;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .title-group {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #fbbf24, #ef4444);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .parent-words {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.1rem;
+            color: #fbbf24;
+            display: inline-block;
+        }
+
+        .middle-box {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc {
+            font-size: 1.5rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 10px #000;
+        }
+
+        .fancy-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 1.1rem 4rem;
+            border-radius: 4rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .fancy-btn:hover {
+            transform: scale(1.1);
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #fbbf24;
+        }
+
+        .interact-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 460px;
+            pointer-events: auto;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .mag-toggle {
+            width: 80px;
+            height: 40px;
+            background: #334155;
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            display: inline-block;
+            margin: 1rem 0;
+            transition: 0.4s;
+        }
+
+        .mag-toggle::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 4px;
+            width: 32px;
+            height: 32px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.4s;
+        }
+
+        .mag-toggle.active {
+            background: #fbbf24;
+        }
+
+        .mag-toggle.active::after {
+            left: 44px;
+            background: #ef4444;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #fbbf24;
+            border-color: #fbbf24;
+            transform: scale(1.4);
+        }
+
+        /* 磁感线模拟 */
+        .mag-lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: 0.5s;
+            z-index: 2;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+    <div class="mag-lines" id="mag-lines"></div>
+
+    <div id="app" class="ui-root">
+        <div class="title-group" ref="header">
+            <h1 class="main-title">{{ current.title }}</h1>
+            <div class="parent-words">🧲 {{ current.parentWords }}</div>
+        </div>
+
+        <div class="middle-box" ref="content">
+            <p class="desc">{{ current.description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="fancy-btn">继续探索</button>
+                <button v-if="step === 5" @click="reset" class="fancy-btn">回到稳定世界</button>
+            </div>
+        </div>
+
+        <!-- S3 核心交互 -->
+        <div v-if="step === 3" class="interact-panel">
+            <div class="text-yellow-400 font-bold mb-1">“强磁化”实验箱</div>
+            <div class="text-xs text-gray-400 mb-4">拖拽场景物体来感受磁力强度</div>
+            <div class="flex flex-col items-center">
+                <div class="text-sm mb-2">全金属磁化开关</div>
+                <div @click="toggleMagnetism" :class="['mag-toggle', { active: isMagnetized }]"></div>
+                <div class="mt-4 flex gap-4">
+                    <button @click="resetPos" class="fancy-btn !py-1 !px-4 !text-xs">重置物品</button>
+                    <button v-if="magnetForce > 0.8" @click="next"
+                        class="fancy-btn !py-1 !px-6 !text-xs !bg-yellow-600">观察灾难</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-dots">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isMagnetized = ref(false);
+                const magnetForce = ref(0);
+
+                const stages = [
+                    {
+                        title: "磁铁的好朋友们",
+                        parentWords: "宝贝，你知道吗？磁铁虽然调皮，但它其实挺‘挑剔’的，只喜欢抱住它的几个‘铁哥们儿’。",
+                        description: "在这个世界上，只有铁、镍、钴等少数金属才会被磁石吸引。其他的像金戒指、铜硬币、铝易拉罐，它们原本是‘磁中立者’。"
+                    },
+                    {
+                        title: "如果磁性‘全屏化’",
+                        parentWords: "想象一下，要是所有的金属——勺子、汽车、甚至妈妈的项链——都突然变成了超强磁铁...",
+                        description: "那样的话，原本安静的厨房会变成‘打群架’现场，满地的餐具会像胶水一样粘在一起。整个现代文明都会陷入动弹不得的混乱。"
+                    },
+                    {
+                        title: "磁力混乱模拟",
+                        parentWords: "来，拨动开关！给这些普通金属充入魔法磁性。看看当你靠近它们时，那种吸力有多强？",
+                        description: "当你开启磁化，你会发现金子和铜也开始拼命吸引对方。你可以拖拽这些物体，感受那种无处不在、无法挣脱拉拽感。"
+                    },
+                    {
+                        title: "失控的城市",
+                        parentWords: "你看！桥梁和摩天大楼里的钢筋互相角力，这种力量大到能瞬间摧毁我们建造的一切。",
+                        description: "磁力如果不加挑选，就会变成一种纯粹的破坏力。汽车会吸在桥上，路灯会飞向大楼。秩序消失了，取而代之的是金属的碰撞声。"
+                    },
+                    {
+                        title: "秩序之美",
+                        parentWords: "现在你明白了，正是这种‘不公平’的磁性，才让我们的金属各司其职。我们要珍惜这份自然的秩序哦。",
+                        description: "每一颗原子里的电子自旋，都在默默维持着世界的平衡。了解磁性的边界，我们才能更好地利用这种神秘的力量。晚安。"
+                    }
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, objects = [], raycaster = new THREE.Raycaster();
+                let mouse = new THREE.Vector2(), draggedObj = null, offset = new THREE.Vector3();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 30, 100);
+                    camera.lookAt(0, 5, 0);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Table Top
+                    const table = new THREE.Mesh(new THREE.CylinderGeometry(40, 45, 2, 64), new THREE.MeshPhongMaterial({ color: 0x334155 }));
+                    table.position.y = -1;
+                    scene.add(table);
+
+                    // Metal Objects
+                    addMetal(new THREE.BoxGeometry(4, 4, 4), 0xFFD700, -15, "金块"); // Gold
+                    addMetal(new THREE.CylinderGeometry(3, 3, 8), 0xC0C0C0, 0, "铝罐"); // Aluminum
+                    addMetal(new THREE.SphereGeometry(3), 0xB87333, 15, "铜球"); // Copper
+                    addMetal(new THREE.TorusGeometry(3, 1), 0x708090, 0, "铁环", 10); // Iron
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+                    sun.position.set(20, 50, 30);
+                    scene.add(sun);
+
+                    initDrag();
+                    animate();
+                };
+
+                const addMetal = (geo, col, x, label, z = 0) => {
+                    const mat = new THREE.MeshStandardMaterial({ color: col, metalness: 0.9, roughness: 0.2 });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(x, 5, z);
+                    mesh.userData = { initialPos: mesh.position.clone(), label: label };
+                    scene.add(mesh);
+                    objects.push(mesh);
+                };
+
+                const initDrag = () => {
+                    window.addEventListener('mousedown', onPointerDown);
+                    window.addEventListener('mousemove', onPointerMove);
+                    window.addEventListener('mouseup', onPointerUp);
+                };
+
+                const onPointerDown = (e) => {
+                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(objects);
+                    if (intersects.length > 0) {
+                        draggedObj = intersects[0].object;
+                        const planeIntersect = raycaster.ray.at(intersects[0].distance, new THREE.Vector3());
+                        offset.copy(draggedObj.position).sub(planeIntersect);
+                    }
+                };
+
+                const onPointerMove = (e) => {
+                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    if (draggedObj) {
+                        raycaster.setFromCamera(mouse, camera);
+                        // Move on a fixed Y plane
+                        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -5);
+                        const intersectPoint = new THREE.Vector3();
+                        raycaster.ray.intersectPlane(plane, intersectPoint);
+                        draggedObj.position.copy(intersectPoint.add(offset));
+                    }
+                };
+
+                const onPointerUp = () => { draggedObj = null; };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = Date.now() * 0.001;
+
+                    if (isMagnetized.value) {
+                        magnetForce.value = THREE.MathUtils.lerp(magnetForce.value, 1, 0.05);
+                        objects.forEach((obj, i) => {
+                            // High freak rotation for magnetized state
+                            obj.rotation.y += 0.02 * magnetForce.value;
+                            // Pull each other slightly if not dragged
+                            if (!draggedObj) {
+                                objects.forEach((other, j) => {
+                                    if (i !== j) {
+                                        const dist = obj.position.distanceTo(other.position);
+                                        if (dist < 15) {
+                                            obj.position.lerp(other.position, 0.02 * magnetForce.value);
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                // Methods
+                const next = () => { if (step.value < 5) step.value++; };
+                const jump = (n) => { step.value = n; };
+                const reset = () => { step.value = 1; isMagnetized.value = false; magnetForce.value = 0; resetPos(); };
+                const toggleMagnetism = () => {
+                    isMagnetized.value = !isMagnetized.value;
+                    gsap.to('#mag-lines', { opacity: isMagnetized.value ? 0.3 : 0, duration: 1 });
+                };
+                const resetPos = () => {
+                    objects.forEach(obj => {
+                        gsap.to(obj.position, {
+                            x: obj.userData.initialPos.x,
+                            y: obj.userData.initialPos.y,
+                            z: obj.userData.initialPos.z,
+                            duration: 1
+                        });
+                        obj.rotation.set(0, 0, 0);
+                    });
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.title-group', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.middle-box', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    if (newVal === 4) isMagnetized.value = true;
+                    if (newVal === 1) isMagnetized.value = false;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.title-group', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.middle-box', { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, isMagnetized, magnetForce, next, jump, reset, toggleMagnetism, resetPos };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

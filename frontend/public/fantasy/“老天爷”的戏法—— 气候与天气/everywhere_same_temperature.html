@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>各地温度都一样会怎样</title>
+    <!-- 依赖库 -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-color: #00D2FF;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-blur: blur(12px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 3rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4rem;
+            letter-spacing: 0.2rem;
+            background: linear-gradient(135deg, #00D2FF, #92FE9D);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 10px rgba(0, 210, 255, 0.3));
+        }
+
+        .parent-words {
+            font-size: 1.1rem;
+            color: #A5F3FC;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            padding: 0.5rem 2rem;
+            border-radius: 1rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .content-box {
+            max-width: 750px;
+            margin: 0 auto 15rem auto;
+            /* 增加边距，确保不被底部的调节面板遮挡 */
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .description-text {
+            font-size: 1.4rem;
+            line-height: 2;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+            padding: 1.2rem 4rem;
+            border-radius: 4rem;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-5px);
+            border-color: var(--accent-color);
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 400px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .discovery-tag {
+            background: #F59E0B;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: var(--accent-color);
+            transform: scale(1.3);
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        /* 隐藏系统自带 UI，让 3D 更加沉浸 */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                👩‍👦‍👦 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">新发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开始实验' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation" class="next-btn bg-slate-700">
+                    重新开始
+                </button>
+            </div>
+        </div>
+
+        <!-- 交互面板：仅在特定阶段显示 -->
+        <div v-if="step === 3" class="control-panel">
+            <div class="slider-label">
+                <span>地球特色 (温差)</span>
+                <span>等温魔法 (一致)</span>
+            </div>
+            <input type="range" v-model="simulationFactor" min="0" max="1" step="0.01" class="pointer-events-auto mb-6">
+
+            <div class="flex justify-center">
+                <button @click="nextStage" class="next-btn !text-sm !py-2 !px-8"
+                    :style="{ opacity: simulationFactor > 0.8 ? 1 : 0.5 }">
+                    见证变化
+                </button>
+            </div>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const simulationFactor = ref(0); // 0: natural (diff), 1: homogenized (same)
+
+                const stages = [
+                    {
+                        title: "多彩的气候带",
+                        parentWords: "宝贝，你看现在的地球，南极是深蓝色的（很冷），赤道是橘红色的（很热），世界是五彩斑斓的对不对？",
+                        description: "正是由于太阳晒得不一样，我们的地球才有了冰天雪地的极地和热情似火的沙漠。不同的温度给地球穿上了彩虹色的外衣。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "假如世界不再有温差",
+                        parentWords: "如果你有一个魔法遥控器，把全世界的温度都调成一样暖和，你觉得风还会吹吗？云还会飘吗？",
+                        description: "让我们开启一个疯狂的幻想：让地球上每一个角落的温度都变成完美的 25°C。没有寒冷，也没有酷热，世界会变得更美好吗？",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "开启等温魔法",
+                        parentWords: "来，握住施法条！慢慢往右滑动，把全世界的冷热都抹平。仔细观察风粒子的动向哦。",
+                        description: "在这个阶段，你可以亲手终结地球的温差。你会发现，当热量分布变得完全一致时，某些看不见的力量正在悄悄消失。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "静止的大气",
+                        parentWords: "你看！风停了，云也不动了。如果没有冷热不均，空气就像睡着了一样，不再奔跑了。",
+                        description: "科学小课堂：风是因为空气冷热不均产生压强差才流动的。没有了温差，大气就变成了静止的一池死水。没有风，也就没有了雨，全球的水循环都会断掉！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "差异即生命",
+                        parentWords: "原来，温差才是地球‘跳动的心脏’啊！不一样的世界才是有活力的世界。",
+                        description: "差异创造了流动，流动创造了生命。每一次寒流和暖流的交汇，都是大自然在呼吸。让我们珍惜这个‘色彩斑斓、冷热不均’的神奇地球吧！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, globe, particles, stars;
+                let clock = new THREE.Clock();
+                let globeShader;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.z = 250;
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Stars
+                    const starGeo = new THREE.BufferGeometry();
+                    const starPos = [];
+                    for (let i = 0; i < 2000; i++) {
+                        starPos.push((Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000);
+                    }
+                    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+                    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
+                    stars = new THREE.Points(starGeo, starMat);
+                    scene.add(stars);
+
+                    // Globe with Heatmap Shader
+                    const globeGeo = new THREE.SphereGeometry(80, 64, 64);
+                    globeShader = {
+                        uniforms: {
+                            time: { value: 0 },
+                            homogenize: { value: 0 }, // 0 to 1
+                            lightDir: { value: new THREE.Vector3(1, 1, 1).normalize() }
+                        },
+                        vertexShader: `
+                            varying vec2 vUv;
+                            varying vec3 vNormal;
+                            varying vec3 vPosition;
+                            void main() {
+                                vUv = uv;
+                                vNormal = normalize(normalMatrix * normal);
+                                vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            varying vec2 vUv;
+                            varying vec3 vNormal;
+                            varying vec3 vPosition;
+                            uniform float homogenize;
+                            uniform vec3 lightDir;
+
+                            void main() {
+                                // Temperature heatmap logic
+                                // Latitude based color (Equator hot, Poles cold)
+                                float lat = abs(vUv.y - 0.5) * 2.0; // 0 at equator, 1 at poles
+                                vec3 hot = vec3(1.0, 0.2, 0.1);    // Red
+                                vec3 pleasant = vec3(0.0, 0.8, 1.0); // Cyan
+                                vec3 cold = vec3(0.7, 0.7, 1.0);   // Pale Blue
+                                
+                                vec3 tempColor;
+                                if(lat < 0.5) {
+                                    tempColor = mix(hot, pleasant, lat * 2.0);
+                                } else {
+                                    tempColor = mix(pleasant, cold, (lat - 0.5) * 2.0);
+                                }
+
+                                // Target homogenized color (Warm/Pleasant)
+                                vec3 targetColor = vec3(0.1, 0.7, 0.4); // Mild green-cyan
+                                
+                                vec3 finalBase = mix(tempColor, targetColor, homogenize);
+                                
+                                // Simulating land/sea noise (simplified)
+                                float noise = sin(vUv.x * 20.0) * cos(vUv.y * 20.0);
+                                finalBase *= (0.8 + 0.2 * step(0.1, noise));
+
+                                // Lighting
+                                float dotNL = max(0.0, dot(vNormal, lightDir));
+                                vec3 lightEffect = finalBase * (dotNL + 0.3);
+                                
+                                // Atmosphere glow
+                                float intensity = 1.05 - dot(vNormal, vec3(0.0, 0.0, 1.0));
+                                vec3 atmosphere = vec3(0.0, 0.8, 1.0) * pow(intensity, 3.0);
+
+                                gl_FragColor = vec4(lightEffect + atmosphere, 1.0);
+                            }
+                        `
+                    };
+                    const globeMat = new THREE.ShaderMaterial(globeShader);
+                    globe = new THREE.Mesh(globeGeo, globeMat);
+                    scene.add(globe);
+
+                    // Wind Particles
+                    const particleCount = 1000;
+                    const particleGeo = new THREE.BufferGeometry();
+                    const positions = new Float32Array(particleCount * 3);
+                    const velocities = [];
+                    for (let i = 0; i < particleCount; i++) {
+                        const r = 85 + Math.random() * 5;
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.random() * Math.PI;
+                        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                        positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                        positions[i * 3 + 2] = r * Math.cos(phi);
+
+                        // Movement along a latitudinal path largely
+                        velocities.push(new THREE.Vector3(
+                            (Math.random() - 0.5) * 0.5,
+                            (Math.random() - 0.5) * 0.5,
+                            (Math.random() - 0.5) * 0.5
+                        ));
+                    }
+                    particleGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                    const particleMat = new THREE.PointsMaterial({
+                        color: 0xffffff,
+                        size: 1.5,
+                        transparent: true,
+                        opacity: 0.6,
+                        blending: THREE.AdditiveBlending
+                    });
+                    particles = new THREE.Points(particleGeo, particleMat);
+                    scene.add(particles);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const dt = clock.getDelta();
+                    const t = clock.getElapsedTime();
+
+                    if (globe) globe.rotation.y += 0.002;
+                    if (stars) stars.rotation.y -= 0.0005;
+
+                    // Update Wind Particles based on simulationFactor
+                    if (particles) {
+                        const posAttr = particles.geometry.attributes.position;
+                        const windStrength = 1.0 - simulationFactor.value;
+
+                        for (let i = 0; i < posAttr.count; i++) {
+                            let x = posAttr.getX(i);
+                            let y = posAttr.getY(i);
+                            let z = posAttr.getZ(i);
+
+                            // Rotate around axis based on "wind"
+                            const speed = 0.01 * windStrength * (1.2 + Math.sin(i));
+                            const nx = x * Math.cos(speed) - z * Math.sin(speed);
+                            const nz = x * Math.sin(speed) + z * Math.cos(speed);
+
+                            posAttr.setXY(i, nx, y + Math.sin(t + i) * 0.1 * windStrength);
+                            posAttr.setZ(i, nz);
+                        }
+                        posAttr.needsUpdate = true;
+                        particles.material.opacity = 0.6 * windStrength + 0.05; // Fade out as wind stops
+                    }
+
+                    if (globeShader) {
+                        globeShader.uniforms.time.value = t;
+                        // Smoothly transition shader uniform
+                        globeShader.uniforms.homogenize.value = THREE.MathUtils.lerp(
+                            globeShader.uniforms.homogenize.value,
+                            simulationFactor.value,
+                            0.05
+                        );
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                // --- Interaction Handling ---
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                        // The dispatchLearningEvent call has been moved to the watch(step) handler for robustness.
+                        // window.eduNestRuntime?.dispatchLearningEvent('stage_change', {
+                        //     stageIndex: step.value,
+                        //     totalStages: totalStages
+                        // });
+
+                        if (step.value === 4) {
+                            // Automatically ensure simulation is maxed for the "discovery"
+                            gsap.to(simulationFactor, { value: 1, duration: 2 });
+                        }
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                    if (n < 3) simulationFactor.value = 0;
+                    if (n > 3) simulationFactor.value = 1;
+                };
+
+                const resetSimulation = () => {
+                    step.value = 1;
+                    simulationFactor.value = 0;
+                    gsap.to(camera.position, { z: 250, duration: 1 });
+                };
+
+                watch(step, (newVal) => {
+                    // Stage-specific camera moves or animations
+                    if (newVal === 1) {
+                        gsap.to(camera.position, { z: 250, duration: 2, ease: "expo.out" });
+                    } else if (newVal === 3) {
+                        gsap.to(camera.position, { z: 200, duration: 2, ease: "power2.inOut" });
+                    } else if (newVal === 4) {
+                        gsap.to(camera.position, { z: 180, duration: 2, ease: "elastic.out(1, 0.75)" });
+                    }
+
+                    // UI Animations - Refined for "Seamless Blend"
+                    const tl = gsap.timeline();
+                    tl.fromTo('.stage-title-container',
+                        { opacity: 0, scale: 0.9, y: -30 },
+                        { opacity: 1, scale: 1, y: 0, duration: 1.2, ease: "power3.out" }
+                    );
+                    tl.fromTo('.content-box',
+                        { opacity: 0, filter: "blur(10px)", y: 30 },
+                        { opacity: 1, filter: "blur(0px)", y: 0, duration: 1, ease: "power3.out" },
+                        "-=0.8"
+                    );
+                });
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    // --- Parallax Effect ---
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+
+                        // Move camera slightly
+                        gsap.to(camera.position, {
+                            x: x * 10,
+                            y: -y * 10,
+                            duration: 2,
+                            ease: "power2.out"
+                        });
+                        camera.lookAt(0, 0, 0);
+
+                        // Move UI slightly in opposite direction for depth
+                        gsap.to('.ui-root', {
+                            x: -x * 15,
+                            y: -y * 15,
+                            duration: 1.5,
+                            ease: "power2.out"
+                        });
+                    });
+
+                    // Initial reveal
+                    const tl = gsap.timeline({ delay: 0.5 });
+                    tl.to('.stage-title-container', { opacity: 1, y: 0, duration: 1.5, ease: "expo.out" });
+                    tl.to('.content-box', { opacity: 1, y: 0, duration: 1.5, ease: "expo.out" }, "-=1");
+
+                    // Provider registration
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, simulationFactor, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

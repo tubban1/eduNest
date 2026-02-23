@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狐狸的耳环店</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFF9F5;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .immersion-gui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .whisper-top {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #BF360C;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
+        }
+
+        .narrative-bottom {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 100px;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #E65100;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.7));
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #BF360C;
+            line-height: 1.8;
+            padding: 10px 40px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 80%);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+        }
+
+        .btn-fox {
+            background: linear-gradient(135deg, #FF8A65 0%, #D84315 100%);
+            color: white;
+            padding: 18px 55px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(216, 67, 21, 0.2);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-fox:hover {
+            transform: translateY(-5px);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="immersion-gui">
+        <!-- 顶部引导 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="whisper-top">
+                🦊 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 中心叙事 -->
+        <div class="narrative-bottom">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 交互区域 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="handleDraw" class="btn-fox"> 在画布左侧画一画，产生奇迹 </button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-fox">继续探索</button>
+            <button v-else @click="reset" class="btn-fox !bg-orange-800">重新设计</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const paths = ref([]);
+                const isDrawing = ref(false);
+
+                const stages = [
+                    { title: '静悄悄的饰品店', content: '在森林最繁华街道的尽头，月光照亮了一家小小的饰品店。店主狐狸小狸正趴在柜台后打着呼噜，做着五彩斑斓的梦。' },
+                    { title: '镜像的摇篮', content: '这里的饰品有着神奇的守护力量。只要你在柜台的一侧画下一种图案，另一侧就会像回声一样，悄悄长出完美对称的伴侣。' },
+                    { title: '梦境的设计师', content: '现在，轮到你来帮忙啦！伸出指尖，在左半边勾勒出你想送给星星的礼物样图。让它在月光下慢慢闪烁。' },
+                    { title: '对称的星光', content: '快看！由于魔法铜镜的反射，左右两边变得一模一样。这种平衡与和谐，就像两颗紧紧挨在一起的星星，互相守护。' },
+                    { title: '小狸的谢意', content: '小狸被这些温柔的作品唤醒了。它决定把这些会发光的魔法耳环，挂在每一个追求美丽的梦想家床头。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，看小狸的耳朵在动，它是不是梦到了好吃的蓝莓果？",
+                    "这家店里的镜子有魔法，它能把你的温柔心愿传递到另一边去哟。",
+                    "来！在左边画画。咱们给森林里的小动物设计一双世界上最安静的耳环。",
+                    "哇！你看，左右两边变得完全一样了。这就是‘轴对称’，像不像两只握在一起的手？",
+                    "小狸谢谢你的创意！它要把这些耳环送给月亮姐姐，让她今晚照得更远。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawFox = (x, y, t) => {
+                    ctx.save(); ctx.translate(x, y);
+                    const headWag = Math.sin(t * 2) * 0.1; ctx.rotate(headWag);
+                    rc.curve([[-40, 0], [-100, -50], [-60, -150], [-20, -100]], { fill: '#E65100', fillStyle: 'hachure' });
+                    rc.circle(-65, -145, 30, { fill: '#FFF' }); // Tip
+                    rc.ellipse(0, 0, 100, 120, { fill: '#EF6C00', fillStyle: 'hachure' });
+                    rc.circle(0, -90, 70, { fill: '#EF6C00', fillStyle: 'solid' });
+                    rc.circle(-20, -70, 40, { fill: '#FFF' }); rc.circle(20, -70, 40, { fill: '#FFF' });
+                    rc.polygon([[-40, -130], [-70, -180], [-20, -150]], { fill: '#BF360C' });
+                    rc.polygon([[40, -130], [70, -180], [20, -150]], { fill: '#BF360C' });
+                    rc.circle(-20, -85, 6, { fill: '#000' }); rc.circle(20, -85, 6, { fill: '#000' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = Date.now() * 0.001;
+                    const cx = canvas.width / 2;
+                    rc.line(cx, 0, cx, canvas.height, { stroke: '#FFAB91', strokeLineDash: [10, 5] });
+                    drawFox(cx, canvas.height * 0.45, time);
+                    paths.value.forEach(p => {
+                        rc.linearPath(p, { stroke: '#D84315', strokeWidth: 4 });
+                        const mirrored = p.map(pt => [cx + (cx - pt[0]), pt[1]]);
+                        rc.linearPath(mirrored, { stroke: '#FFB74D', strokeWidth: 4 });
+                    });
+                    requestAnimationFrame(animate);
+                };
+
+                const startDrawing = (e) => {
+                    if (step.value !== 3) return;
+                    isDrawing.value = true;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                    const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                    if (x < canvas.width / 2) paths.value.push([[x, y]]);
+                };
+
+                const handleMove = (e) => {
+                    if (!isDrawing.value) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                    const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                    const currentPath = paths.value[paths.value.length - 1];
+                    if (x < canvas.width / 2) currentPath.push([x, y]);
+                };
+
+                const endDrawing = () => {
+                    isDrawing.value = false;
+                    if (step.value === 3 && paths.value.length >= 2) {
+                        setTimeout(() => nextStage(), 1500);
+                    }
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+                const reset = () => { step.value = 1; paths.value = []; };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                    canvas.addEventListener('mousedown', startDrawing);
+                    canvas.addEventListener('mousemove', handleMove);
+                    window.addEventListener('mouseup', endDrawing);
+                    canvas.addEventListener('touchstart', startDrawing);
+                    canvas.addEventListener('touchmove', handleMove);
+                    canvas.addEventListener('touchend', endDrawing);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, reset, handleDraw: () => { } };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

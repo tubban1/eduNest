@@ -1,162 +1,377 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>鱼的游动骨骼演示</title>
+  <title>灵动锦鲤 - 丝滑骨骼游动演示</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
-      background: radial-gradient(circle at top, #022c22 0%, #020617 55%, #000 100%);
-      min-height: 100vh;
+      font-family: 'PingFang SC', system-ui, sans-serif;
+      background: #000814;
+      height: 100vh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #e5e7eb;
+      color: #fff;
     }
-    h1 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 6px; }
-    p { font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px; }
-    #canvas {
-      background: linear-gradient(to bottom, #0f766e, #0f172a 60%, #020617 100%);
-      border-radius: 12px;
-      border: 1px solid rgba(34,197,94,0.4);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.8);
-      max-width: 100%;
+
+    #ui {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 300;
+      letter-spacing: 0.2rem;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 20px rgba(0, 180, 255, 0.5);
+    }
+
+    p {
+      font-size: 0.9rem;
+      opacity: 0.6;
+    }
+
+    canvas {
+      display: block;
+      touch-action: none;
+      cursor: none;
+    }
+
+    .vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.8) 100%);
+      pointer-events: none;
     }
   </style>
 </head>
+
 <body>
-  <h1>鱼的游动 - 跨段身体波动</h1>
-  <p>用多节骨骼沿身体主轴做相位渐变的波动，展示鱼在水中的 S 形游动。</p>
-  <canvas id="canvas" width="900" height="420"></canvas>
+  <div id="ui">
+    <h1>灵动锦鲤</h1>
+    <p>轻触屏幕或移动鼠标，指引鱼儿游动</p>
+  </div>
+  <div class="vignette"></div>
+  <canvas id="canvas"></canvas>
 
-  <script src="KinecticsCore.js"></script>
   <script>
-    (function () {
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width;
-      const H = canvas.height;
-      let t0 = performance.now();
+    /**
+     * 灵动鱼体物理引擎与渲染
+     * 采用“领头羊-追随者”算法实现平滑骨骼转动
+     * 配合相位差函数模拟肌肉波动
+     */
+    class Fish {
+      constructor() {
+        this.pos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        this.angle = 0;
+        this.segments = 20; // 身体节数，层级越多越丝滑
+        this.nodes = []; // 存储骨骼节点
+        this.segmentDist = 12; // 节点间距
 
-      const segments = 10; // 身体分成多节
-      const length = 260;
-      const baseY = H / 2 + 20;
-      const baseX = W / 3;
+        // 初始化节点
+        for (let i = 0; i < this.segments; i++) {
+          this.nodes.push({ x: this.pos.x, y: this.pos.y, angle: 0 });
+        }
 
-      function drawBackground() {
-        ctx.clearRect(0, 0, W, H);
-        // 水泡
-        ctx.fillStyle = 'rgba(191,219,254,0.2)';
-        for (let i = 0; i < 25; i++) {
-          const x = (i * 50 + (performance.now() * 0.03) % (W + 50)) - 50;
-          const y = H - (i * 20 % H);
-          ctx.beginPath();
-          ctx.arc(x, y, 3 + (i % 3), 0, Math.PI * 2);
-          ctx.fill();
+        // 鱼体宽度参数（从头到尾的厚度分布）
+        // 头部较大，中间宽，尾部细
+        this.bodyWidths = [];
+        for (let i = 0; i < this.segments; i++) {
+          let t = i / (this.segments - 1);
+          let w = 0;
+          if (t < 0.2) w = Math.sin((t / 0.2) * Math.PI / 2) * 28 + 5;
+          else w = Math.cos(((t - 0.2) / 0.8) * Math.PI / 2) * 28 + 5;
+          this.bodyWidths.push(w);
+        }
+
+        this.speed = 0;
+        this.maxSpeed = 5;
+        this.target = { x: this.pos.x, y: this.pos.y };
+        this.time = 0;
+      }
+
+      update(target) {
+        this.time += 0.05;
+
+        // 头部向目标靠拢
+        let dx = target.x - this.nodes[0].x;
+        let dy = target.y - this.nodes[0].y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > 5) {
+          let targetAngle = Math.atan2(dy, dx);
+          // 角度平滑平滑
+          let diff = targetAngle - this.nodes[0].angle;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          this.nodes[0].angle += diff * 0.1;
+
+          this.speed = Math.min(dist * 0.05, this.maxSpeed);
+          this.nodes[0].x += Math.cos(this.nodes[0].angle) * this.speed;
+          this.nodes[0].y += Math.sin(this.nodes[0].angle) * this.speed;
+        } else {
+          this.speed *= 0.95; // 减速
+        }
+
+        // 骨骼链式跟随逻辑
+        for (let i = 1; i < this.segments; i++) {
+          let prev = this.nodes[i - 1];
+          let curr = this.nodes[i];
+
+          // 计算当前节点与前一节点的距离和角度
+          let dx = prev.x - curr.x;
+          let dy = prev.y - curr.y;
+          let angle = Math.atan2(dy, dx);
+
+          // 加上游动时的相位波动（尾部波动更剧烈）
+          let wave = Math.sin(this.time * 2 - i * 0.4) * (this.speed * 0.1 + 0.1) * (i / this.segments);
+          angle += wave;
+
+          curr.angle = angle;
+          curr.x = prev.x - Math.cos(angle) * this.segmentDist;
+          curr.y = prev.y - Math.sin(angle) * this.segmentDist;
         }
       }
 
-      function drawFish(time) {
-        const pts = [];
-        for (let i = 0; i <= segments; i++) {
-          const t = i / segments;
-          const x = baseX + t * length;
-          // 波动相位随 i 渐变，形成 S 形
-          const wave = Math.sin(time * 4 - t * 4 * Math.PI) * (1 - t) * 22;
-          const y = baseY + wave;
-          pts.push({ x, y });
+      draw(ctx) {
+        // 计算左右两舷的顶点坐标
+        let leftPts = [];
+        let rightPts = [];
+
+        for (let i = 0; i < this.segments; i++) {
+          let p = this.nodes[i];
+          let w = this.bodyWidths[i];
+          let normal = p.angle + Math.PI / 2;
+
+          leftPts.push({
+            x: p.x + Math.cos(normal) * w,
+            y: p.y + Math.sin(normal) * w
+          });
+          rightPts.push({
+            x: p.x - Math.cos(normal) * w,
+            y: p.y - Math.sin(normal) * w
+          });
         }
 
         ctx.save();
 
-        // 身体厚度随 t 变化：头部厚，尾部细
-        ctx.fillStyle = '#38bdf8';
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
+        // 1. 绘制鱼身阴影（增加立体感）
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 20;
 
-        // 上轮廓
-        for (let i = 0; i <= segments; i++) {
-          const p = pts[i];
-          const t = i / segments;
-          const width = 22 * (1 - t * 0.7);
-          const ny = -1; // 上侧
-          const offsetY = ny * width;
-          if (i === 0) ctx.moveTo(p.x, p.y + offsetY);
-          else ctx.lineTo(p.x, p.y + offsetY);
+        // 2. 绘制渐变鱼身
+        let head = this.nodes[0];
+        let tail = this.nodes[this.segments - 1];
+        let gradient = ctx.createLinearGradient(head.x, head.y, tail.x, tail.y);
+        gradient.addColorStop(0, '#ff4d00'); // 红色头部
+        gradient.addColorStop(0.4, '#ffffff'); // 白色腹部
+        gradient.addColorStop(0.8, '#ff9900'); // 橙红色尾部
+        gradient.addColorStop(1, '#ff4d00');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(leftPts[0].x, leftPts[0].y);
+        // 贝塞尔曲线平滑身体
+        for (let i = 1; i < this.segments; i++) {
+          ctx.lineTo(leftPts[i].x, leftPts[i].y);
         }
-        // 下轮廓（反向）
-        for (let i = segments; i >= 0; i--) {
-          const p = pts[i];
-          const t = i / segments;
-          const width = 22 * (1 - t * 0.7);
-          const ny = 1;
-          const offsetY = ny * width;
-          ctx.lineTo(p.x, p.y + offsetY);
+        // 绘制圆润尾部
+        let lastLeft = leftPts[this.segments - 1];
+        let lastRight = rightPts[this.segments - 1];
+        ctx.bezierCurveTo(lastLeft.x, lastLeft.y, tail.x - Math.cos(tail.angle) * 20, tail.y - Math.sin(tail.angle) * 20, lastRight.x, lastRight.y);
+
+        for (let i = this.segments - 1; i >= 0; i--) {
+          ctx.lineTo(rightPts[i].x, rightPts[i].y);
         }
         ctx.closePath();
         ctx.fill();
-        ctx.stroke();
 
-        // 鱼头高光
-        ctx.fillStyle = '#e0f2fe';
-        ctx.beginPath();
-        ctx.ellipse(pts[0].x + 12, pts[0].y - 4, 18, 10, -0.1, 0, Math.PI * 2);
-        ctx.fill();
+        // 3. 绘制鱼鳞纹理 (叠瓦状)
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = "rgba(0,0,0,0.12)";
+        ctx.lineWidth = 0.5;
 
-        // 眼睛
-        ctx.fillStyle = '#020617';
-        ctx.beginPath();
-        ctx.arc(pts[0].x + 20, pts[0].y - 4, 3, 0, Math.PI * 2);
-        ctx.fill();
+        // 从脖子到尾柄绘制鳞片
+        for (let i = 2; i < this.segments - 4; i++) {
+          let p = this.nodes[i];
+          let w = this.bodyWidths[i];
+          let normal = p.angle + Math.PI / 2;
 
-        // 尾鳍（用最后两节的方向）
-        const tail = pts[segments];
-        const prev = pts[segments - 1];
-        const dx = tail.x - prev.x;
-        const dy = tail.y - prev.y;
-        const ang = Math.atan2(dy, dx);
-        const finLen = 26;
+          // 根据身体宽度决定横向鳞片数量
+          let scaleCols = i < 10 ? 4 : 3;
+          for (let j = 0; j <= scaleCols; j++) {
+            let offset = (j / scaleCols - 0.5) * 2 * w * 0.85;
+            let sx = p.x + Math.cos(normal) * offset;
+            let sy = p.y + Math.sin(normal) * offset;
 
-        ctx.translate(tail.x, tail.y);
-        ctx.rotate(ang);
+            // 绘制鳞片弧线
+            ctx.beginPath();
+            ctx.arc(sx, sy, 7, p.angle - 0.6, p.angle + 0.6);
+            ctx.stroke();
 
-        ctx.fillStyle = '#0ea5e9';
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-finLen, -14);
-        ctx.lineTo(-finLen + 4, 0);
-        ctx.lineTo(-finLen, 14);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
+            // 绘制鳞片微弱反光
+            ctx.fillStyle = "rgba(255,255,255,0.25)";
+            ctx.beginPath();
+            ctx.arc(sx + 1.5, sy - 1.5, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
         ctx.restore();
 
-        // 背鳍
-        ctx.fillStyle = '#0ea5e9';
-        const mid = pts[Math.floor(segments * 0.4)];
+        // 4. 绘制细节
+
+        // 眼睛 (移动到头部两侧，而不是顶门)
+        let eyeNode = this.nodes[1]; // 使用略后方的节点
+        let eyeSideDist = this.bodyWidths[1] * 0.7; // 靠近边缘
+        let eyeForwardDist = 8;
+
+        ctx.fillStyle = "#fff";
+        // 左眼
+        let leftEyeX = eyeNode.x + Math.cos(eyeNode.angle + 1.2) * eyeSideDist + Math.cos(eyeNode.angle) * eyeForwardDist;
+        let leftEyeY = eyeNode.y + Math.sin(eyeNode.angle + 1.2) * eyeSideDist + Math.sin(eyeNode.angle) * eyeForwardDist;
         ctx.beginPath();
-        ctx.moveTo(mid.x, mid.y - 18);
-        ctx.lineTo(mid.x + 20, mid.y - 10);
-        ctx.lineTo(mid.x, mid.y - 4);
+        ctx.arc(leftEyeX, leftEyeY, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 右眼
+        let rightEyeX = eyeNode.x + Math.cos(eyeNode.angle - 1.2) * eyeSideDist + Math.cos(eyeNode.angle) * eyeForwardDist;
+        let rightEyeY = eyeNode.y + Math.sin(eyeNode.angle - 1.2) * eyeSideDist + Math.sin(eyeNode.angle) * eyeForwardDist;
+        ctx.beginPath();
+        ctx.arc(rightEyeX, rightEyeY, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.arc(leftEyeX + Math.cos(eyeNode.angle) * 1.5, leftEyeY + Math.sin(eyeNode.angle) * 1.5, 2, 0, Math.PI * 2);
+        ctx.arc(rightEyeX + Math.cos(eyeNode.angle) * 1.5, rightEyeY + Math.sin(eyeNode.angle) * 1.5, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 侧鳍（胸鳍）
+        this.drawFin(ctx, this.nodes[4], 30, head.angle + 0.8, -0.5);
+        this.drawFin(ctx, this.nodes[4], 30, head.angle - 0.8, 0.5);
+
+        // 尾鳍
+        this.drawTailFin(ctx, tail, 45);
+
+        ctx.restore();
+      }
+
+      drawFin(ctx, node, size, angle, waveOffset) {
+        let wave = Math.sin(this.time * 3 + waveOffset) * 0.2;
+        ctx.save();
+        ctx.translate(node.x, node.y);
+        ctx.rotate(angle + wave);
+        ctx.fillStyle = "rgba(255, 100, 0, 0.6)";
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(size, -size / 2, size, size / 2);
         ctx.closePath();
         ctx.fill();
+        ctx.restore();
       }
 
-      function loop(now) {
-        const t = (now - t0) / 1000;
-        drawBackground();
-        drawFish(t);
-        requestAnimationFrame(loop);
+      drawTailFin(ctx, node, size) {
+        let wave = Math.sin(this.time * 4) * 0.4;
+        ctx.save();
+        ctx.translate(node.x, node.y);
+        ctx.rotate(node.angle + Math.PI + wave);
+        ctx.fillStyle = "rgba(255, 77, 0, 0.8)";
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(size, -size);
+        ctx.lineTo(size * 0.7, 0);
+        ctx.lineTo(size, size);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
       }
+    }
 
-      requestAnimationFrame(loop);
-    })();
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let fish;
+    const mouse = { x: 0, y: 0 };
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      mouse.x = width / 2;
+      mouse.y = height / 2;
+    }
+
+    function init() {
+      resize();
+      fish = new Fish();
+      window.addEventListener('resize', resize);
+      window.addEventListener('mousemove', e => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+      window.addEventListener('touchstart', e => {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+      });
+      window.addEventListener('touchmove', e => {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+      });
+
+      // 自动游动气泡背景
+      const bubbles = [];
+      for (let i = 0; i < 30; i++) bubbles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        r: Math.random() * 5 + 2,
+        s: Math.random() * 1 + 0.5
+      });
+
+      function animate() {
+        // 背景渐变
+        let bgGrad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, width);
+        bgGrad.addColorStop(0, '#001d3d');
+        bgGrad.addColorStop(1, '#000814');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // 气泡
+        ctx.fillStyle = "rgba(255,255,255,0.1)";
+        bubbles.forEach(b => {
+          b.y -= b.s;
+          if (b.y < -10) b.y = height + 10;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        fish.update(mouse);
+        fish.draw(ctx);
+
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    init();
   </script>
 </body>
-</html>
 
+</html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精彩的杂技表演</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.css'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #FF5252;
+            --text-primary: #880E4F;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFF9C4;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #AD1457;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #C2185B;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: var(--theme-color);
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(255, 82, 82, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #D32F2F;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">🎪 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故事情节 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="guideBirds" class="btn-action">指引小鸟飞出美丽的弧线 🕊️</button>
+            <button v-else-if="step === 3" @click="balanceStack" class="btn-action">稳住！帮它们完成三层叠罗汉 🐘</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">去听掌声和欢呼</button>
+            <button v-else @click="reset" class="btn-action !bg-slate-500 !text-white">在月光马戏团入梦</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isBirdGuided = ref(false);
+                const isStackBalanced = ref(false);
+
+                const stages = [
+                    { title: '森林马戏团的早晨', content: '阳光洒进了巨大的露天广场，森林马戏团的首场表演就要开始了。大家都穿上了亮闪闪的丝绒衣服。小熊正扶着一个大红皮球，小心翼翼地练习着平衡。' },
+                    { title: '高空的华尔兹', content: '音乐响起，一群五彩小鸟扇起翅膀，拉着细长的丝带在空中盘旋。它们需要配合得天衣无缝，才能在湛蓝的天空中‘织’出一朵美丽的动态云彩。' },
+                    { title: '叠加的小奇迹', content: '最惊险的节目到了！大象稳稳站定，小猴纵身一跳站上了象背，紧接着，小松鼠又稳稳地落在了小猴的肩膀上。‘一、二、三，稳住！’大伙儿屏住了呼吸。' },
+                    { title: '谢幕的掌声', content: '呼——成功啦！所有的节目都完成得完美极了。每一个小动物都付出了汗水，也分享了快乐。原来，在一起努力照亮世界的力量，才是最大的魔法。' },
+                    { title: '星光下的庆功宴', content: '喧嚣和欢笑渐渐远去，星光洒满了马戏团的草坪。动物们互相依偎着，枕着月光的低语入睡了。晚安，懂得合作的每一个孩子。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你瞧，大家都在为表演做准备呢。如果你是马戏团的导演，你会给哪些小动物安排节目？",
+                    "嘘——飞翔也是需要默契的。咱们用意念帮小鸟们牵上线，看它们怎么在云朵间跳舞。",
+                    "哇！这就像在搭一个巨大的‘积木人塔’。平衡力需要全身心的投入，咱们也屏住呼吸帮帮它们吧。",
+                    "合作让不可能变成了可能。宝贝，你平时和小伙伴一起玩玩具的时候，是不是也觉得更开心？",
+                    "故事讲完啦。大家都进入了没有吵闹、只有甜味的梦乡。咱们也盖好被子，一起做个香甜的梦. 晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawElephant = (x, y, scale, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const bounce = Math.sin(t * 2) * 2;
+                    // Body
+                    rc.circle(0, bounce, 150, { fill: '#BDBDBD', fillStyle: 'hachure', roughness: 1.5 });
+                    // Carpet on back
+                    rc.rectangle(-60, -70 + bounce, 120, 20, { fill: '#FFD54F', fillStyle: 'solid' });
+                    // Head
+                    rc.circle(120, -50 + bounce, 80, { fill: '#BDBDBD', fillStyle: 'solid' });
+                    // Ears
+                    rc.ellipse(100, -70 + bounce, 70, 100, { fill: '#E0E0E0', fillStyle: 'solid', roughness: 0.5 });
+                    // Trunk
+                    rc.curve([[160, -20 + bounce], [200, 20 + bounce], [180, 70 + bounce]], { stroke: '#BDBDBD', strokeWidth: 15 });
+                    // Eye
+                    rc.circle(140, -60 + bounce, 6, { fill: '#333' });
+                    // Tusks
+                    rc.curve([[170, -30 + bounce], [190, -40 + bounce]], { stroke: '#FFF', strokeWidth: 8 });
+                    ctx.restore();
+                };
+
+                const drawMonkey = (x, y, scale, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const wobble = Math.sin(t * 8) * 3;
+                    // Body
+                    rc.circle(wobble, 0, 85, { fill: '#A1887F', fillStyle: 'solid', roughness: 1.2 });
+                    // Face
+                    rc.ellipse(wobble, -10, 60, 50, { fill: '#D7CCC8', fillStyle: 'solid' });
+                    // Eyes
+                    rc.circle(wobble - 20, -15, 6, { fill: '#333' });
+                    rc.circle(wobble + 20, -15, 6, { fill: '#333' });
+                    // Ears
+                    rc.circle(wobble - 45, -10, 20, { fill: '#A1887F' });
+                    rc.circle(wobble + 45, -10, 20, { fill: '#A1887F' });
+                    // Tail
+                    rc.curve([[wobble - 30, 40], [wobble - 70, 60], [wobble - 50, 90]], { stroke: '#8D6E63', strokeWidth: 6 });
+                    ctx.restore();
+                };
+
+                const drawSquirrel = (x, y, scale, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    // Body
+                    rc.circle(0, 0, 45, { fill: '#FFB74D', fillStyle: 'solid' });
+                    // Bushy Tail
+                    rc.ellipse(-40, 0, 50, 70, { fill: '#FB8C00', fillStyle: 'hachure', hachureAngle: -45 });
+                    // Eye
+                    rc.circle(20, -10, 4, { fill: '#333' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.7;
+
+                    // Stage Atmosphere
+                    if (step.value < 5) {
+                        // Spotlights
+                        ctx.globalAlpha = 0.1;
+                        for (let i = 0; i < 2; i++) {
+                            const sx = i === 0 ? 100 : canvas.width - 100;
+                            const target = i === 0 ? centerX - 100 : centerX + 100;
+                            rc.polygon([[sx, 0], [target - 150, canvas.height], [target + 150, canvas.height]], { fill: '#FFF176', stroke: 'none' });
+                        }
+                        ctx.globalAlpha = 1.0;
+                        // Wood floor grain
+                        rc.line(0, centerY + 120, canvas.width, centerY + 120, { stroke: '#8D6E63', strokeWidth: 4 });
+                        for (let i = 0; i < 10; i++) rc.line(i * 200, centerY + 120, i * 200 + 50, centerY + 140, { stroke: '#A1887F', strokeWidth: 1 });
+                    }
+
+                    if (step.value === 1) {
+                        drawElephant(centerX, centerY, 0.85, t);
+                        // Refined Ball
+                        const ballBounce = Math.sin(t * 3) * 10;
+                        rc.circle(centerX + 180, centerY + 100 + ballBounce, 65, { fill: '#FF5252', fillStyle: 'solid' });
+                        rc.circle(centerX + 180, centerY + 100 + ballBounce, 65, { fill: '#FFEBEE', fillStyle: 'hachure', hachureGap: 10 });
+                    } else if (step.value === 2) {
+                        // Birds with ribbons
+                        for (let i = 0; i < 3; i++) {
+                            const bx = centerX + Math.cos(t + i) * 250;
+                            const by = centerY - 220 + Math.sin(t * 2 + i) * 110;
+                            // Bird body
+                            rc.ellipse(bx, by, 30, 20, { fill: '#81D4FA', fillStyle: 'solid' });
+                            rc.line(bx, by, bx - 15, by - 10, { stroke: '#81D4FA', strokeWidth: 5 }); // Wing
+                            rc.curve([[bx, by], [centerX, centerY - 320], [centerX - 150, by]], { stroke: `hsl(${i * 60 + 200}, 70%, 80%)`, strokeWidth: 4 });
+                        }
+                    } else if (step.value === 3) {
+                        drawElephant(centerX, centerY, 0.95, t);
+                        drawMonkey(centerX, centerY - 165, 0.75, t);
+                        drawSquirrel(centerX, centerY - 280, 0.55, t);
+                        if (!isStackBalanced.value) {
+                            // Wobble indicator
+                            const wx = centerX + 120 + Math.sin(t * 10) * 5;
+                            rc.line(wx, centerY - 100, wx + 40, centerY - 140, { stroke: '#FFB300', strokeWidth: 4 });
+                        }
+                    } else if (step.value === 4) {
+                        drawElephant(centerX - 220, centerY + 50, 0.7, t);
+                        drawMonkey(centerX, centerY + 50, 0.9, t);
+                        drawSquirrel(centerX + 220, centerY + 50, 0.7, t);
+                        // Confetti
+                        for (let i = 0; i < 15; i++) {
+                            const cx = (Math.sin(i * 10) * 0.5 + 0.5) * canvas.width;
+                            const cy = (t * 200 + i * 100) % canvas.height;
+                            rc.rectangle(cx, cy, 8, 8, { fill: `hsl(${i * 30}, 80%, 60%)`, stroke: 'none' });
+                        }
+                    } else if (step.value === 5) {
+                        document.body.style.background = '#1A237E';
+                        drawElephant(centerX - 100, centerY + 120, 0.55, 0);
+                        // Twinkling stars
+                        for (let i = 0; i < 10; i++) {
+                            const sx = (Math.sin(i * 99) * 0.5 + 0.5) * canvas.width;
+                            const sy = (Math.cos(i * 99) * 0.4 + 0.2) * canvas.height;
+                            ctx.globalAlpha = 0.5 + Math.sin(t * 3 + i) * 0.5;
+                            rc.circle(sx, sy, 3, { fill: '#FFF', stroke: 'none' });
+                        }
+                        ctx.globalAlpha = 1.0;
+                        rc.circle(canvas.width * 0.82, 160, 55, { fill: '#FFF176', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const guideBirds = () => { isBirdGuided.value = true; setTimeout(() => nextStage(), 1500); };
+                const balanceStack = () => { isStackBalanced.value = true; setTimeout(() => nextStage(), 2000); };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isBirdGuided.value = false; isStackBalanced.value = false; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, guideBirds, balanceStack, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

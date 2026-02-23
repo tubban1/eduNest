@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绿油油的神奇草</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-grass: #F1F8E9;
+            --primary-green: #2E7D32;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-grass);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 50px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #558B2F;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .story-body {
+            max-width: 850px;
+            margin: 0 auto 30px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: #1B5E20;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 8px rgba(255, 255, 255, 0.6);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #33691E;
+            line-height: 1.9;
+            padding: 15px 30px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 60px;
+            right: 60px;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #388E3C, #2E7D32);
+            color: white;
+            padding: 18px 50px;
+            border-radius: 60px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.15rem;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(46, 125, 50, 0.2);
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-8px);
+            box-shadow: 0 15px 40px rgba(46, 125, 50, 0.3);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 1.2s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: scale(0.98) translateY(20px);
+        }
+
+        /* 特殊光效 */
+        .glow-effect {
+            filter: drop-shadow(0 0 15px rgba(129, 199, 132, 0.8));
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🌿 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 情节 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 交互 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 4" @click="nextStage" class="btn-action">感受奇迹的时刻</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">继续探访原野</button>
+            <button v-else @click="reset" class="btn-action !from-slate-600 !to-slate-700">回到最初的原野</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isNight = ref(false);
+
+                const stages = [
+                    { title: '最不起眼的小草', content: '在森林的一角，长着一棵普普通通的小草。在大树爷爷的阴影下，它看起来是那么小、那么沉默。它只是静静地，随微风轻轻摇摆。' },
+                    { title: '它能做什么呢？', content: '小草有时候会想：‘大树可以伸进云朵，花朵可以装扮世界。而我，除了绿油油的一片，还能做什么呢？’它轻轻垂下头，有点小遗憾。' },
+                    { title: '晚风庄严的低语', content: '晚风爷爷掠过草尖，苍老而温柔地低语：‘孩子，别小看自己。正是因为有你们，泥土才不会流走，大地才会有家。你脚下的根，比你想象的更坚强。’' },
+                    { title: '月光下的微光', content: '当月亮升到树梢，奇迹发生了。那棵平凡的小草竟然慢慢亮了起来。像碎钻，像萤火。它在夜晚里守护着土地，它是这片原野最暖的一盏灯。' },
+                    { title: '草丛里的摇篮', content: '现在，所有的虫鸣都停了。原野变成了一个巨大的绿色摇篮，小草抱着大地，也抱着所有的梦。原来，平凡就是最美丽的魔法。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看。这棵小草住在大树脚下。它看起来是不是有点安静？",
+                    "小草觉得自己太普通了。你觉得，普通也是一种很棒的事情吗？",
+                    "咱们帮晚风爷爷一起吹吹风。听听大自然在说什么悄悄话。",
+                    "哇！快看！小草在发光呢。这是它努力守护土地的奖励。它真的很了不起。",
+                    "故事讲完啦。小草也累了，正闭着眼睛睡觉。咱们也和它一起，做一个绿油油的美梦吧。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                let grassTilt = 0;
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawGrass = (x, y, scale, t, glow = false) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+
+                    const windEffect = Math.sin(t * 1.5) * 0.15;
+                    const color = glow ? '#A5D6A7' : '#4CAF50';
+                    const strokeColor = glow ? '#81C784' : '#2E7D32';
+
+                    // Draw 3 blades
+                    for (let i = -1; i <= 1; i++) {
+                        ctx.save();
+                        ctx.rotate(i * 0.2 + windEffect);
+                        rc.curve([[0, 0], [10, -80], [-20, -180], [10, -250]], {
+                            stroke: strokeColor, strokeWidth: 4,
+                            fill: color, fillStyle: glow ? 'solid' : 'hachure',
+                            roughness: 1.8
+                        });
+                        ctx.restore();
+                    }
+
+                    if (glow) {
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = 'rgba(129, 199, 132, 0.8)';
+                        rc.circle(0, -260, 10, { fill: '#FFF9C4', fillStyle: 'solid' });
+                    }
+                    ctx.restore();
+                };
+
+                const drawBigTree = (x, y) => {
+                    rc.curve([[x, y], [x - 20, y - 300], [x + 20, y - 600]], { stroke: '#5D4037', strokeWidth: 15 });
+                    rc.circle(x - 50, y - 550, 200, { fill: '#2E7D32', fillStyle: 'hachure', opacity: 0.3 });
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    if (step.value >= 4) {
+                        document.body.style.background = '#1A237E';
+                        isNight.value = true;
+                    } else {
+                        document.body.style.background = '#F1F8E9';
+                        isNight.value = false;
+                    }
+
+                    const centerX = canvas.width / 2;
+                    const groundY = canvas.height * 0.85;
+
+                    // Background ground
+                    rc.line(0, groundY, canvas.width, groundY, { stroke: '#795548', strokeWidth: 5 });
+
+                    if (step.value === 1) {
+                        drawBigTree(centerX - 150, groundY);
+                        drawGrass(centerX + 80, groundY, 0.8, t);
+                    } else if (step.value === 2) {
+                        drawGrass(centerX, groundY + 30, 1.2, t);
+                    } else if (step.value === 3) {
+                        // Wind particles
+                        ctx.strokeStyle = 'rgba(121, 85, 72, 0.2)';
+                        for (let i = 0; i < 5; i++) {
+                            const wx = (t * 300 + i * 200) % canvas.width;
+                            rc.line(wx, groundY - 100 - i * 50, wx + 50, groundY - 100 - i * 50);
+                        }
+                        drawGrass(centerX, groundY + 30, 1.3, t);
+                    } else if (step.value === 4) {
+                        // Moon
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                        drawGrass(centerX, groundY + 30, 1.4, t, true);
+                    } else if (step.value === 5) {
+                        drawGrass(centerX, groundY + 30, 1.5, t, true);
+                        // Sleeping particles
+                        const zX = centerX + 100;
+                        const zY = groundY - 200 - (t % 2) * 50;
+                        ctx.fillStyle = '#FFF';
+                        ctx.font = '20px serif';
+                        ctx.fillText('Zzz', zX, zY);
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    isNight.value = false;
+                };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, reset, isNight };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

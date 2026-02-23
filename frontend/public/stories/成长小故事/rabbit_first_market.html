@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小兔第一次买菜</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-market: #FFF3E0;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-market);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #EF6C00;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #E65100;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #BF360C;
+            line-height: 1.8;
+            padding: 12px 25px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(230, 81, 0, 0.9);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: #E65100;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 1s, transform 1s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 指导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🥕 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 正文 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 互动 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="pickVeggie" class="btn-action">帮小小兔挑最圆的萝卜 🧺</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">继续奇妙的集市之旅</button>
+            <button v-else @click="reset" class="btn-action !bg-orange-800">回到温暖的家台阶上</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const basketItems = ref(0);
+
+                const stages = [
+                    { title: '家门口的嘱托', content: '小小兔提着菜篮子，正站在家门口。心跳得有一点点快。妈妈说：‘宝贝，别害怕，大家都很温柔。记住要买最红的番茄和最圆的萝卜。’' },
+                    { title: '热闹的萝卜集市', content: '集市里真热闹呀！高大的南瓜像个金色的大沙发。小小兔缩了缩脖子，看见了正在乐呵呵分果子的河马大叔和忙着算账的松鼠伯伯。' },
+                    { title: '松鼠伯伯的秤', content: '‘你好，松鼠伯伯。’小小兔鼓起勇气轻轻说。松鼠伯伯笑眯眯地在秤上放了一颗大萝卜：‘真能干，这是今年最甜的一颗。’ 瞧，萝卜入篮啦！' },
+                    { title: '满载而归的自豪', content: '小小兔发现，只要开口说话，世界就会变得非常温暖。大家都在给它加油。篮子沉甸甸的，装满了勇气，也装满了今晚的晚餐。' },
+                    { title: '平安到家的梦', content: '晚风轻轻吹，夕阳像橘子软糖。小小兔靠在妈妈怀里，闻着泥土的香气睡着了。每一个勇敢的孩子，都有最甜的梦。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看。小小兔第一次离家去买菜。你觉得它现在在想什么？",
+                    "嘘——集市虽然热闹，但也容易让小兔子害羞。咱们拉着它的手一起往前走。",
+                    "来，咱们和松鼠伯伯打个招呼。看看哪个萝卜最高、最漂亮。把它放进篮子里。",
+                    "哇！小小兔独立完成任务啦！宝贝，你将来也一定能像小小兔一样勇敢地探索世界。",
+                    "好啦。月亮姐姐出来查岗了。小小兔正抱着它的篮子在梦里数星星呢。咱们也休息吧。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                let veggies = [];
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawRabbit = (x, y, scale, t, emotion = 'neutral') => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+
+                    // Ears
+                    const earWag = Math.sin(t * 3) * 0.1;
+                    ctx.save(); ctx.rotate(-0.1 + earWag); rc.ellipse(-20, -120, 30, 100, { fill: '#FCE4EC', fillStyle: 'solid' }); ctx.restore();
+                    ctx.save(); ctx.rotate(0.1 - earWag); rc.ellipse(20, -120, 30, 100, { fill: '#FCE4EC', fillStyle: 'solid' }); ctx.restore();
+                    // Face
+                    rc.circle(0, -40, 90, { fill: '#FFF', fillStyle: 'solid' });
+                    rc.circle(-25, -50, 6, { fill: '#333' });
+                    rc.circle(25, -50, 6, { fill: '#333' });
+                    // Mouth
+                    if (emotion === 'happy') {
+                        ctx.beginPath(); ctx.arc(0, -30, 10, 0, Math.PI); ctx.stroke();
+                    } else {
+                        rc.line(-10, -30, 10, -30, { stroke: '#F06292' });
+                    }
+                    // Basket
+                    rc.curve([[-60, 0], [0, 40], [60, 0]], { stroke: '#FB8C00', strokeWidth: 5 });
+                    rc.rectangle(-50, 0, 100, 60, { fill: '#FFE0B2', fillStyle: 'hachure' });
+
+                    // Veggies in basket
+                    if (basketItems.value > 0) {
+                        rc.circle(-10, 20, 30, { fill: '#F44336', fillStyle: 'solid' });
+                        rc.ellipse(15, 10, 25, 50, { fill: '#FF9800', fillStyle: 'solid' });
+                    }
+                    ctx.restore();
+                };
+
+                const drawMarketStall = (x, y) => {
+                    rc.rectangle(x - 150, y - 100, 300, 200, { fill: '#BCAAA4', fillStyle: 'hachure' });
+                    rc.curve([[x - 150, y - 100], [x, y - 180], [x + 150, y - 100]], { fill: '#D32F2F', fillStyle: 'solid' });
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.7;
+
+                    if (step.value === 1) {
+                        drawRabbit(centerX, centerY, 0.9, t);
+                        // Home door
+                        rc.rectangle(centerX - 300, centerY - 200, 150, 250, { stroke: '#8D6E63', strokeWidth: 4 });
+                    } else if (step.value === 2) {
+                        drawMarketStall(centerX + 150, centerY);
+                        for (let i = 0; i < 3; i++) {
+                            rc.circle(centerX + 50 + i * 60, centerY, 30, { fill: i % 2 === 0 ? '#F44336' : '#FF9800', fillStyle: 'solid' });
+                        }
+                        drawRabbit(centerX - 120, centerY + 50, 0.8, t);
+                    } else if (step.value === 3) {
+                        drawMarketStall(centerX, centerY - 100);
+                        drawRabbit(centerX, centerY + 80, 1.1, t, 'happy');
+                    } else if (step.value === 4) {
+                        drawRabbit(centerX, centerY, 1.3, t, 'happy');
+                        basketItems.value = 1;
+                    } else if (step.value === 5) {
+                        drawRabbit(centerX - 120, centerY + 80, 0.7, t);
+                        // Mama rabbit (bigger)
+                        ctx.save(); ctx.translate(centerX + 50, centerY + 50); rc.circle(0, 0, 130, { fill: '#F5F5F5', fillStyle: 'hachure' }); ctx.restore();
+                        // Moon
+                        rc.circle(canvas.width * 0.8, 150, 45, { fill: '#FFE082', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const pickVeggie = () => {
+                    basketItems.value = 1;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const reset = () => { step.value = 1; basketItems.value = 0; };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, pickVeggie, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

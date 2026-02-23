@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天底下最好的礼物</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #A5D6A7;
+            --text-primary: #1B5E20;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #E8F5E9;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #2E7D32;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #388E3C;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: #FF5252;
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(255, 82, 82, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #FF1744;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">🐼 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故事情节 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="touchDew" class="btn-action">伸手碰碰亮晶晶的露珠 ✨</button>
+            <button v-else-if="step === 3" @click="catchWind" class="btn-action">快快！收集花朵的香气 🌸</button>
+            <button v-else-if="step === 4" @click="giveHug" class="btn-action">给妈妈一个最大的拥抱 🫂</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">继续寻找最好的礼物</button>
+            <button v-else @click="reset" class="btn-action !bg-slate-500 !text-white">回想起温暖的家</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isTouching = ref(false);
+                const isCollecting = ref(false);
+
+                const stages = [
+                    { title: '盼盼的小心思', content: '妈妈的生日快到了。小熊猫盼盼走在翠绿的竹林里。‘我要找一个天底下最好的礼物送给妈妈。’盼盼皱着小眉头努力地想着。' },
+                    { title: '亮晶晶的露珠', content: '叶尖上挂着一颗圆圆的露珠，在早晨的阳光下闪着钻石一样的光。盼盼心想：‘这一定是世上最珍贵的珠宝！’可他的小指头才刚碰上去，露珠就悄悄化成水不见了。' },
+                    { title: '五彩的轻风', content: '一阵风吹过，带来了森林深处百合花的香味。盼盼想：‘如果能把这香味装进罐子里，妈妈每天都能闻到了。’他挥着小手抓呀抓，可风儿滑溜溜的，总是从指缝间溜走。' },
+                    { title: '最温暖的抱抱', content: '太阳下山了，盼盼两手空空地回到家。他难过地低下头，一头钻进妈妈怀里。妈妈紧紧抱住他，笑着亲了亲他的小鼻子：‘这就是天底下最好的礼物。’' },
+                    { title: '月光下的摇篮', content: '盼盼这才明白，爱是不用包装的。只要有你在身边，每一天都是最棒的纪念日。竹林在月光下轻轻摇晃，盼盼在妈妈的怀里安稳地睡着了。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你瞧，盼盼多爱妈妈呀。如果你想送礼物给爸爸妈妈，你会想到什么？",
+                    "露珠虽然美丽，但它们是属于土地的。咱们温柔地和它们打个招呼就好，别惊动了它们的美梦。",
+                    "有些东西是抓不住的，但我们可以记在心里。宝贝，快闭上眼睛，闻闻空气里有没有大自然的味道？",
+                    "妈妈的拥抱总是暖烘烘的，像一床被晒过的旧棉被。这就是世界上最无价的宝藏。咱们也抱抱爸爸妈妈吧。",
+                    "故事讲完啦。盼盼正抱着他的‘爱之礼’在梦里笑呢。咱们也盖好被子，进入甜甜的梦。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawPanda = (x, y, scale, t, action = 'idle') => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const bounce = Math.sin(t * 4) * 4;
+                    // Body
+                    rc.circle(0, bounce, 120, { fill: '#FFF', fillStyle: 'solid', stroke: '#333', strokeWidth: 2 });
+                    // Ears
+                    rc.circle(-50, -80 + bounce, 40, { fill: '#333', fillStyle: 'solid' });
+                    rc.circle(50, -80 + bounce, 40, { fill: '#333', fillStyle: 'solid' });
+                    // Eyes (Patches)
+                    rc.ellipse(-30, -20 + bounce, 35, 45, { fill: '#333', fillStyle: 'solid' });
+                    rc.ellipse(30, -20 + bounce, 35, 45, { fill: '#333', fillStyle: 'solid' });
+                    rc.circle(-30, -20 + bounce, 5, { fill: '#FFF' }); rc.circle(30, -20 + bounce, 5, { fill: '#FFF' });
+                    // Nose
+                    rc.circle(0, 15 + bounce, 10, { fill: '#333' });
+                    // Arms (hugging)
+                    if (step.value === 4) {
+                        rc.curve([[-60, 20], [-100, 60], [-60, 100]], { stroke: '#333', strokeWidth: 8 });
+                        rc.curve([[60, 20], [100, 60], [60, 100]], { stroke: '#333', strokeWidth: 8 });
+                    }
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.65;
+
+                    if (step.value === 1) {
+                        drawPanda(centerX, centerY, 1, t);
+                    } else if (step.value === 2) {
+                        drawPanda(centerX - 100, centerY + 50, 0.8, t);
+                        // Dew Drop
+                        const dewY = isTouching.value ? centerY + 100 : centerY - 50;
+                        rc.circle(centerX + 100, dewY, 30, { fill: '#B3E5FC', fillStyle: 'hachure', stroke: '#03A9F4' });
+                    } else if (step.value === 3) {
+                        drawPanda(centerX, centerY, 1.1, t);
+                        // Floating Wind/Petals
+                        for (let i = 0; i < 5; i++) {
+                            const wx = (t * 200 + i * 100) % canvas.width;
+                            rc.curve([[wx, 100 + i * 50], [wx + 50, 80 + i * 50], [wx + 100, 110 + i * 50]], { stroke: '#FFCDD2', strokeWidth: 3 });
+                        }
+                    } else if (step.value === 4) {
+                        // Mama Panda
+                        ctx.save(); ctx.translate(centerX + 50, centerY);
+                        rc.circle(0, 0, 150, { fill: '#F5F5F5', fillStyle: 'hachure' });
+                        ctx.restore();
+                        drawPanda(centerX - 40, centerY + 20, 0.8, t);
+                    } else if (step.value === 5) {
+                        drawPanda(centerX, centerY + 100, 0.7, 0, 'sleep');
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const touchDew = () => { isTouching.value = true; setTimeout(() => nextStage(), 1500); };
+                const catchWind = () => { isCollecting.value = true; setTimeout(() => nextStage(), 1500); };
+                const giveHug = () => { nextStage(); };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isTouching.value = false; isCollecting.value = false; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, touchDew, catchWind, giveHug, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快乐邮递车</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-sky: #E3F2FD;
+            --text-main: #0D47A1;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-sky);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #1E88E5;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #1565C0;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.6);
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: var(--text-main);
+            line-height: 1.8;
+            padding: 12px 25px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(239, 83, 80, 0.9);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: #EF5350;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 1s, transform 1s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 指导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                📮 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 正文 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 v-if="stages[step-1].title" class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p v-if="stages[step-1].description" class="stage-content">{{ stages[step-1].description }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 互动 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 2" @click="loadLetters" class="btn-action">帮小红车装满心意信件 ✉️</button>
+            <button v-else-if="step === 3" @click="driveCar" class="btn-action">加足马力，这就出发 🚩</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">看看大家收信的样子</button>
+            <button v-else @click="reset" class="btn-action !bg-slate-700">明天清晨再出发</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isLoaded = ref(false);
+                const carX = ref(0);
+
+                const stages = [
+                    { title: '亮晶晶的红车', description: '滴滴——红色的邮递小车醒来啦！它的车头洗得亮亮的，车窗映着早晨的云朵。它是森林里最勤劳的信息使者。' },
+                    { title: '满满的信箱', description: '今天有好多好多信件呀。一封是给小兔子生日的祝福，一封是给大象伯伯的感谢信。信件就像蝴蝶，正等着飞进车厢。' },
+                    { title: '林间的小路', description: '小车开动啦！路边的牵牛花在给它吹小喇叭，树上的小雀在给它唱加油歌。小车跑呀跑，轮子转得轻快极了。' },
+                    { title: '最棒的礼物', description: '每一封信送到时，大家都开心得蹦了起来。小车心里甜滋滋的，因为它知道，它运送的不只是纸片，更是满满的快乐和想念。' },
+                    { title: '宁静的车库', description: '月亮爬到了树梢。小车回到了温暖的车库，引擎轻轻滴落几声，就像在打小呼噜。它慢慢地闭上眼睛，也入睡了。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看，小红车的眼睛亮闪闪的。它是不是和你一样准备好开始新的一天了？",
+                    "信箱里装满了悄悄话。咱们帮着小红车把信装好，别漏掉任何一个心意哦。",
+                    "小车在散步呢。一、二、一、二。咱们给它加加油，祝它一路顺风！",
+                    "你看，收到信件的朋友多开心呀。分享这一份小小的幸福，这就是小红车的绝招。",
+                    "小车累了，正盖着宁静的晚风睡觉呢。咱们也轻轻闭上眼，去梦里帮它送信吧。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawCar = (x, y, t) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+
+                    const bounce = Math.sin(t * 10) * 3;
+
+                    // Body
+                    rc.rectangle(-120, -60 + bounce, 240, 100, { fill: '#EF5350', fillStyle: 'solid', roughness: 1.2 });
+                    rc.rectangle(-120, -120 + bounce, 120, 60, { fill: '#EF5350', fillStyle: 'solid' });
+
+                    // Windows
+                    rc.rectangle(-100, -110 + bounce, 80, 40, { fill: '#BBDEFB', fillStyle: 'solid' });
+
+                    // Wheels
+                    const wheelRot = t * 15;
+                    ctx.save(); ctx.translate(-70, 40); ctx.rotate(wheelRot); rc.circle(0, 0, 50, { fill: '#455A64', fillStyle: 'hachure' }); ctx.restore();
+                    ctx.save(); ctx.translate(70, 40); ctx.rotate(wheelRot); rc.circle(0, 0, 50, { fill: '#455A64', fillStyle: 'hachure' }); ctx.restore();
+
+                    // Letters
+                    if (isLoaded.value) {
+                        for (let i = 0; i < 3; i++) {
+                            rc.rectangle(-20 + i * 40, -40 + bounce, 30, 20, { fill: '#FFF', stroke: '#333' });
+                        }
+                    }
+
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    const centerY = canvas.height * 0.75;
+
+                    if (step.value === 5) {
+                        document.body.style.background = '#1A237E';
+                        rc.circle(canvas.width * 0.2, 120, 40, { fill: '#FFF', fillStyle: 'solid' });
+                        drawCar(canvas.width / 2, centerY, 0);
+                    } else if (step.value === 3) {
+                        document.body.style.background = '#E3F2FD';
+                        const moveX = (t * 200) % (canvas.width + 400) - 200;
+                        drawCar(moveX, centerY, t);
+                        // Trees passing by
+                        for (let i = 0; i < 3; i++) {
+                            const tx = (i * 600 - t * 100) % (canvas.width + 200) - 100;
+                            rc.line(tx, centerY + 80, tx, centerY, { stroke: '#4CAF50', strokeWidth: 5 });
+                            rc.circle(tx, centerY - 20, 40, { fill: '#81C784', fillStyle: 'solid' });
+                        }
+                    } else {
+                        document.body.style.background = '#E3F2FD';
+                        drawCar(canvas.width / 2, centerY, t);
+                    }
+
+                    // Road
+                    rc.line(0, centerY + 90, canvas.width, centerY + 90, { stroke: '#90A4AE', strokeWidth: 4 });
+
+                    requestAnimationFrame(animate);
+                };
+
+                const loadLetters = () => {
+                    isLoaded.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const driveCar = () => {
+                    nextStage();
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const reset = () => {
+                    step.value = 1;
+                    isLoaded.value = false;
+                };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, loadLetters, driveCar, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

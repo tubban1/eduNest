@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小熊的新领带</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-bear: #FFF9C4;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-bear);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #795548;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.2rem;
+            color: #5D4037;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);
+        }
+
+        .stage-content {
+            font-size: 1.35rem;
+            color: #4E342E;
+            line-height: 1.8;
+            padding: 12px 25px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(93, 64, 55, 0.9);
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: #5D4037;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 1s, transform 1s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 指导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🧸 {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 正文 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 互动 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="tieKnot" class="btn-action">轻轻帮乐乐系好领带 ✨</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">继续看他的新造型</button>
+            <button v-else @click="reset" class="btn-action !bg-amber-800">回到安静的清晨</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isTied = ref(false);
+
+                const stages = [
+                    { title: '特别的礼物', content: '小熊乐乐收到了一件特别的礼物——一条漂亮的红领带。今晚有森林音乐会，乐乐想把自己打扮得精神一点儿。' },
+                    { title: '笨拙的小爪子', content: '他站在镜子前，左一下，右一下。可是领带就像调皮的蛇，总是不听使唤。乐乐叹了口气：‘哎呀，系领带可真难。’' },
+                    { title: '风姐姐的帮助', content: '就在这时，温顺的风姐姐从窗外吹过。她告诉乐乐：‘别急，慢慢来，把领带尾巴转个圈再钻进小洞里。’ 乐乐闭上眼尝试了一下。' },
+                    { title: '精神的小熊', content: '领带在乐乐的努力下，正正地系在了胸前。他抬头挺胸看镜子，觉得自己像个勇敢的小骑士。原来，只要有耐心，我就能行。' },
+                    { title: '抱着梦入睡', content: '音乐会结束啦。乐乐小心地摘下领带放在枕边，它在月光下显得更漂亮了。乐乐闭上眼睛，进入了甜甜的梦乡。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看。小熊乐乐收到礼物啦！你平时喜欢什么样的颜色呀？",
+                    "乐乐有点小苦恼。咱们鼓励鼓励他：‘没关系的，乐乐，大家第一次尝试都会有点难。’",
+                    "来，咱们和风姐姐一起帮帮他。系领带就像变小魔术一样，咱们试试看。",
+                    "哇！快看镜子里。乐乐多帅气呀！宝贝，你认真做一件事的时候，也和乐乐一样帅气哦。",
+                    "好啦。音乐会落幕了，星星也困了。咱们和乐乐一起，抱着自信睡个好觉吧。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawBear = (x, y, scale, t, tied = false) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+
+                    const bounce = Math.sin(t * 3) * 3;
+
+                    // Body (Fur Texture)
+                    rc.circle(0, bounce, 105, { fill: '#8D6E63', fillStyle: 'hachure', hachureAngle: 60, hachureGap: 4, roughness: 1.8 });
+                    rc.circle(0, bounce, 100, { fill: '#795548', fillStyle: 'hachure', hachureAngle: -30, hachureGap: 5, roughness: 1.5 });
+
+                    // Ears
+                    const earShake = Math.sin(t * 10) * 2;
+                    // Left Ear
+                    rc.circle(-75, -75 + bounce + earShake, 42, { fill: '#8D6E63', fillStyle: 'solid' });
+                    rc.circle(-75, -75 + bounce + earShake, 25, { fill: '#A1887F', fillStyle: 'solid', roughness: 0.5 });
+                    // Right Ear
+                    rc.circle(75, -75 + bounce - earShake, 42, { fill: '#8D6E63', fillStyle: 'solid' });
+                    rc.circle(75, -75 + bounce - earShake, 25, { fill: '#A1887F', fillStyle: 'solid', roughness: 0.5 });
+
+                    // Face Base
+                    rc.circle(0, -20 + bounce, 115, { fill: '#81665A', fillStyle: 'solid', roughness: 1.2 });
+                    rc.circle(0, -20 + bounce, 110, { fill: '#A1887F', fillStyle: 'solid', roughness: 0.8 });
+
+                    // Rosy Cheeks
+                    const cheekOpacity = 0.3 + Math.sin(t * 2) * 0.1;
+                    rc.circle(-65, -15 + bounce, 20, { fill: '#EF9A9A', fillStyle: 'solid', stroke: 'none', roughness: 2 });
+                    rc.circle(65, -15 + bounce, 20, { fill: '#EF9A9A', fillStyle: 'solid', stroke: 'none', roughness: 2 });
+
+                    // Mouth Muzzle
+                    rc.ellipse(0, 15 + bounce, 70, 50, { fill: '#FFF', fillStyle: 'solid', roughness: 0.5 });
+
+                    // Eyes
+                    const blink = Math.sin(t * 0.5) > 0.95 ? 0.1 : 1.0;
+                    rc.ellipse(-40, -45 + bounce, 10, 12 * blink, { fill: '#000', fillStyle: 'solid' });
+                    rc.ellipse(40, -45 + bounce, 10, 12 * blink, { fill: '#000', fillStyle: 'solid' });
+
+                    // Nose
+                    rc.ellipse(0, 5 + bounce, 25, 18, { fill: '#4E342E', stroke: 'none' });
+
+                    // Tie
+                    if (step.value >= 1) {
+                        const tieColor = '#E53935';
+                        if (!tied && step.value < 4) {
+                            // Loose tie with pattern
+                            rc.curve([[0, 60 + bounce], [40, 110 + bounce], [10, 160 + bounce]], {
+                                stroke: tieColor,
+                                strokeWidth: 12,
+                                roughness: 1.5
+                            });
+                            // Dots on loose tie
+                            rc.circle(20, 100 + bounce, 4, { fill: '#FFF', stroke: 'none' });
+                            rc.circle(25, 130 + bounce, 4, { fill: '#FFF', stroke: 'none' });
+                        } else {
+                            // Refined Knot
+                            rc.polygon([[0, 60 + bounce], [28, 85 + bounce], [0, 110 + bounce], [-28, 85 + bounce]], { fill: tieColor, fillStyle: 'solid' });
+                            // The tail part
+                            rc.polygon([[0, 110 + bounce], [45, 190 + bounce], [0, 240 + bounce], [-45, 190 + bounce]], { fill: tieColor, fillStyle: 'solid', roughness: 1.2 });
+                            // Polka dots on the tie tail
+                            rc.circle(10, 140 + bounce, 6, { fill: '#FFF', stroke: 'none' });
+                            rc.circle(-15, 170 + bounce, 6, { fill: '#FFF', stroke: 'none' });
+                            rc.circle(12, 200 + bounce, 6, { fill: '#FFF', stroke: 'none' });
+                        }
+                    }
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.62;
+
+                    // Background Elements
+                    // Twinkling Stars (if evening/night)
+                    if (step.value >= 4) {
+                        for (let i = 0; i < 8; i++) {
+                            const sx = (Math.sin(i * 100) * 0.5 + 0.5) * canvas.width;
+                            const sy = (Math.cos(i * 200) * 0.3 + 0.3) * canvas.height;
+                            const scale = (Math.sin(t * 2 + i) * 0.3 + 0.5);
+                            rc.polygon([[sx, sy - 15 * scale], [sx + 5 * scale, sy - 5 * scale], [sx + 15 * scale, sy], [sx + 5 * scale, sy + 5 * scale], [sx, sy + 15 * scale], [sx - 5 * scale, sy + 5 * scale], [sx - 15 * scale, sy], [sx - 5 * scale, sy - 5 * scale]], { fill: '#FFF9C4', fillStyle: 'solid', stroke: 'none' });
+                        }
+                    }
+
+                    // Floating Music Notes (if story mentions music festival)
+                    if (step.value < 5) {
+                        for (let i = 0; i < 3; i++) {
+                            const nx = (t * 50 + i * 400) % (canvas.width + 100) - 50;
+                            const ny = 100 + Math.sin(t + i) * 50;
+                            rc.circle(nx, ny, 8, { fill: '#795548' });
+                            rc.line(nx + 8, ny, nx + 8, ny - 30, { stroke: '#795548', strokeWidth: 2 });
+                            rc.line(nx + 8, ny - 30, nx + 25, ny - 20, { stroke: '#795548', strokeWidth: 4 });
+                        }
+                    }
+
+                    if (step.value === 1) {
+                        drawBear(centerX, centerY, 0.95, t);
+                        // Refined Gift box
+                        rc.rectangle(centerX + 200, centerY + 80, 110, 90, { fill: '#FFD54F', fillStyle: 'hachure', hachureAngle: 45 });
+                        rc.line(centerX + 200, centerY + 125, centerX + 310, centerY + 125, { stroke: '#E53935', strokeWidth: 10 });
+                        rc.line(centerX + 255, centerY + 80, centerX + 255, centerY + 170, { stroke: '#E53935', strokeWidth: 10 });
+                    } else if (step.value === 2) {
+                        drawBear(centerX, centerY, 1.15, t);
+                        // Mirror reflection - soft fade bear
+                        ctx.globalAlpha = 0.2;
+                        drawBear(centerX, centerY, 1.1, t + 1, false);
+                        ctx.globalAlpha = 1.0;
+                        // Mirror frame effect
+                        rc.rectangle(centerX - 220, centerY - 220, 440, 440, { stroke: '#8D6E63', strokeWidth: 12, roughness: 1.5 });
+                    } else if (step.value === 3) {
+                        drawBear(centerX, centerY, 1.1, t);
+                        // Soft Wind Curves
+                        for (let i = 0; i < 4; i++) {
+                            const wx = (t * 250 + i * 400) % (canvas.width + 300) - 150;
+                            const wy = 150 + i * 120;
+                            rc.curve([[wx, wy], [wx + 150, wy - 40], [wx + 300, wy + 20]], { stroke: '#B3E5FC', strokeWidth: 3, roughness: 2 });
+                        }
+                    } else if (step.value === 4) {
+                        drawBear(centerX, centerY, 1.25, t, true);
+                    } else if (step.value === 5) {
+                        drawBear(centerX - 150, centerY + 50, 0.85, t, true);
+                        // Glowing Moon
+                        rc.circle(canvas.width * 0.85, 150, 55, { fill: '#FFF9C4', fillStyle: 'hachure', hachureGap: 3 });
+                        rc.circle(canvas.width * 0.85, 150, 45, { fill: '#FFFDE7', fillStyle: 'solid' });
+                        // Bed Floor
+                        rc.line(0, centerY + 160, canvas.width, centerY + 160, { stroke: '#795548', strokeWidth: 6, roughness: 0.5 });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 });
+                };
+
+                const tieKnot = () => {
+                    isTied.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const reset = () => { step.value = 1; isTied.value = false; };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = function () {
+                        return { stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title };
+                    };
+                }
+
+                return { step, stages, parentWords, nextStage, tieKnot, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

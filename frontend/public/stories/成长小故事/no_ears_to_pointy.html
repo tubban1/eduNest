@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>“没耳朵”变“尖耳朵”</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #A1887F;
+            --text-primary: #5D4037;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFF3E0;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #795548;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #8D6E63;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: var(--theme-color);
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(161, 136, 127, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #8D6E63;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">👂 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故事情节 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="jumpIntoMud" class="btn-action">扑通！还没听完就跳进了泥潭 💦</button>
+            <button v-else-if="step === 3" @click="listenCarefully" class="btn-action">嘘——静下心来捕捉风的声音 🍃</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">看看灵敏的小耳朵</button>
+            <button v-else @click="reset" class="btn-action !bg-orange-800 !text-white">听着大自然的摇篮曲</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isListening = ref(false);
+                const isMuddy = ref(false);
+
+                const stages = [
+                    { title: '急性子的小熊', content: '森林里住着一只急性子小熊。大家都叫它‘没耳朵’，因为它总是还没听完别人的话，就急急忙忙跑开了。它总觉得自己什么都懂。' },
+                    { title: '闹笑话的午后', content: '‘别走那条小路，那里的泥巴还没……’山羊伯伯话还没说完，小熊就‘嗖’地跑远了。结果，它一脚踩进了深深的泥塘里，变成了一只‘黑泥熊’。' },
+                    { title: '风里的悄悄话', content: '它坐在大树下，委屈地停了下来。世界突然变安静了。它听到风儿在树叶间轻轻说：‘绕过前面的巨石，那里有最甜的红浆果哦。’' },
+                    { title: '灵敏的尖耳朵', content: '小熊开始认真听每一个人说话。它不仅没再掉进泥潭，还找到了好多好吃的。大家发现，它的耳朵好像变得又灵又尖，因为它学会了倾听。' },
+                    { title: '宁静的声音梦', content: '在这个安静的夜晚，连星星落下的声音都能听得见。倾听，让周围变得格外温柔。闭上眼，和小熊一起进入响着摇篮曲的梦乡吧。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你看。小熊的帽子把耳朵遮住啦。你觉得为什么它总是听不到别人的话？",
+                    "哎呀，山羊伯伯还有半句话没说完呢。如果是你，你会耐心地等伯伯说完吗？",
+                    "嘘——安静的时候，你会发现很多平时听不到的神奇声音。咱们也一起捕捉一下风的气息？",
+                    "哇！学会倾听的孩子，眼睛里会闪着智慧的光。宝贝，你的‘尖耳朵’今天听到了什么开心的事？",
+                    "故事讲完啦。大自然正在低声唱着催眠曲。咱们也闭上双眼，在这一片宁静中入睡。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawBear = (x, y, scale, t, action = 'idle') => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const bounce = Math.sin(t * 4) * 4;
+                    // Body
+                    rc.circle(0, bounce, 120, { fill: isMuddy.value ? '#3E2723' : '#A1887F', fillStyle: 'hachure' });
+                    // Ears
+                    if (step.value >= 4) {
+                        rc.polygon([[-60, -80 + bounce], [-80, -140 + bounce], [-30, -110 + bounce]], { fill: '#A1887F', fillStyle: 'solid' });
+                        rc.polygon([[60, -80 + bounce], [80, -140 + bounce], [30, -110 + bounce]], { fill: '#A1887F', fillStyle: 'solid' });
+                    }
+                    // Head
+                    rc.circle(0, -20 + bounce, 100, { fill: isMuddy.value ? '#3E2723' : '#BCAAA4', fillStyle: 'solid' });
+                    // Eyes
+                    rc.circle(-35, -30 + bounce, 8, { fill: '#333' }); rc.circle(35, -30 + bounce, 8, { fill: '#333' });
+                    // Nose
+                    rc.circle(0, 10 + bounce, 15, { fill: '#5D4037', fillStyle: 'solid' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.65;
+
+                    if (step.value === 1) {
+                        drawBear(centerX, centerY, 1, t);
+                    } else if (step.value === 2) {
+                        drawBear(centerX - 100, centerY, 0.9, t);
+                        // Mud Pit
+                        rc.ellipse(centerX + 150, centerY + 80, 200, 50, { fill: '#3E2723', fillStyle: 'solid' });
+                    } else if (step.value === 3) {
+                        drawBear(centerX, centerY, 1.1, t);
+                        // Sound Waves
+                        if (isListening.value) {
+                            for (let i = 0; i < 3; i++) {
+                                rc.arc(centerX, centerY - 100, 100 + i * 40, -1, 1, false, { stroke: '#8D6E63', strokeWidth: 2 });
+                            }
+                        }
+                    } else if (step.value === 4) {
+                        drawBear(centerX, centerY, 1.2, t);
+                        // Berries
+                        for (let i = 0; i < 5; i++) rc.circle(centerX + 150 + i * 20, centerY + 50, 15, { fill: '#D32F2F', fillStyle: 'solid' });
+                    } else if (step.value === 5) {
+                        drawBear(centerX, centerY + 100, 0.7, 0, 'sleep');
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const jumpIntoMud = () => { isMuddy.value = true; setTimeout(() => nextStage(), 1500); };
+                const listenCarefully = () => { isListening.value = true; setTimeout(() => { isListening.value = false; nextStage(); }, 2000); };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isMuddy.value = false; isListening.value = false; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, jumpIntoMud, listenCarefully, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

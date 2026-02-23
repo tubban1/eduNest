@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冰雹要是大得不得了会怎样</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-red: #EF4444;
+            --glass-dark: rgba(15, 23, 42, 0.7);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 3.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .header-box {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .title-fancy {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #F97316, #EF4444);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.8rem;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+        }
+
+        .parent-guide {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.1rem;
+            color: #F1F5F9;
+        }
+
+        .main-story {
+            max-width: 800px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc-p {
+            font-size: 1.45rem;
+            line-height: 1.9;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            font-weight: 300;
+        }
+
+        .fancy-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .fancy-btn:hover {
+            transform: scale(1.08) translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-red);
+        }
+
+        .control-widget {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 480px;
+            background: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            padding: 2.2rem;
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 50;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .range-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            margin: 1.5rem 0;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            border: 4px solid #F97316;
+        }
+
+        .progress-indicator {
+            position: fixed;
+            left: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .indicator-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .indicator-dot.active {
+            background: #F97316;
+            border-color: #F97316;
+            transform: scale(1.5);
+            box-shadow: 0 0 15px #F97316;
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg-canvas"></div>
+
+    <div id="app" class="ui-root" :class="{ shake: isShaking }">
+        <div class="header-box">
+            <h1 class="title-fancy">{{ stages[step-1].title }}</h1>
+            <div class="parent-guide">🧊 {{ stages[step-1].parentWords }}</div>
+        </div>
+
+        <div class="main-story">
+            <p class="desc-p">{{ stages[step-1].description }}</p>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < 5 && step !== 3" @click="next" class="fancy-btn">
+                    {{ step === 2 ? '启动强对流实验室' : '继续探索天气奥秘' }}
+                </button>
+                <button v-else-if="step === 5" @click="reset" class="fancy-btn">回到平静夏天</button>
+            </div>
+        </div>
+
+        <div v-if="step === 3" class="control-widget">
+            <div class="flex justify-between text-xs font-bold text-orange-300">
+                <span>微风温和 🌬️</span>
+                <span>狂暴升力 🌀</span>
+            </div>
+            <input type="range" v-model="airForce" min="0" max="1" step="0.01" class="range-slider pointer-events-auto">
+            <div class="flex justify-center mt-4">
+                <button @click="next" class="fancy-btn !text-sm !py-2 !px-8"
+                    :style="{ opacity: airForce > 0.8 ? 1 : 0.6 }">
+                    释放巨型冰雹
+                </button>
+            </div>
+        </div>
+
+        <div class="progress-indicator">
+            <div v-for="n in 5" :key="n" :class="['indicator-dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const airForce = ref(0);
+                const isShaking = ref(false);
+
+                const stages = [
+                    {
+                        title: "愤怒的积雨云",
+                        parentWords: "宝贝，你看那一朵朵像黑棉花一样的积雨云，它们里面正刮着超级强风呢。",
+                        description: "由于地面太热，大量热空气迅速向上冲去。在这些高达万米的云朵里，极低的气温正把小水滴冻成一个个活蹦乱跳的冰粒。"
+                    },
+                    {
+                        title: "上升气流的博弈",
+                        parentWords: "这些冰粒本来想掉下来，但云里的强风像大手一样把它们又拍回了天上。你觉得它们会变大吗？",
+                        description: "每被拍回高空一次，冰粒就会穿上一层新的‘冰大衣’。只要上升气流够强，这把‘老天爷的雪球’就会越滚越大。"
+                    },
+                    {
+                        title: "制造巨型冰弹",
+                        parentWords: "来！推动能量推杆。看看在这种超级狂风的托举下，冰雹能长到多夸张？",
+                        description: "当你增强升力，冰雹在云中停留的时间变长了。它不断吞噬周围的水汽，直到它重得像个巨大的排球，连飓风也托不动它了..."
+                    },
+                    {
+                        title: "加速的冲击力",
+                        parentWords: "砰！看这撞击！巨大的冰雹落地速度极快，这就是物理学中的‘动能’，威力非常惊人。",
+                        description: "我们发现了一个规律：冰雹越大，它的质量就越大，落地时的冲击力就呈几何倍数增长。这种极端天气是自然界释放能量的一种危险方式。"
+                    },
+                    {
+                        title: "安全第一位",
+                        parentWords: "大自然的魔法虽然壮观，但我们一定要学会躲避危险。看到黑云压顶，要赶紧回家哦。",
+                        description: "敬畏自然，科学避险。差异让地球有趣，但平衡才是我们安全家园的守护神。晚安，勇敢的小探索者。"
+                    }
+                ];
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, cloud, bigHail, impactFlash;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 30, 200);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('bg-canvas').appendChild(renderer.domElement);
+
+                    // Ambient & Sun
+                    scene.add(new THREE.AmbientLight(0x404040));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(50, 100, 50);
+                    scene.add(sun);
+
+                    // Cloud System (A group of distorted spheres)
+                    cloud = new THREE.Group();
+                    for (let i = 0; i < 15; i++) {
+                        const geo = new THREE.SphereGeometry(15 + Math.random() * 20, 16, 16);
+                        const mat = new THREE.MeshLambertMaterial({ color: 0x2c3e50, transparent: true, opacity: 0.8 });
+                        const m = new THREE.Mesh(geo, mat);
+                        m.position.set((Math.random() - 0.5) * 100, 100 + (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 100);
+                        cloud.add(m);
+                    }
+                    scene.add(cloud);
+
+                    // Giant Hail
+                    const hailGeo = new THREE.IcosahedronGeometry(1, 2);
+                    const hailMat = new THREE.MeshPhongMaterial({
+                        color: 0xECEFF1, shininess: 100, transparent: true, opacity: 0.9, flatShading: true
+                    });
+                    bigHail = new THREE.Mesh(hailGeo, hailMat);
+                    bigHail.position.y = 110;
+                    scene.add(bigHail);
+
+                    // Impact Flash
+                    const flashGeo = new THREE.CircleGeometry(40, 32);
+                    const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+                    impactFlash = new THREE.Mesh(flashGeo, flashMat);
+                    impactFlash.rotation.x = -Math.PI / 2;
+                    impactFlash.position.y = -60;
+                    scene.add(impactFlash);
+
+                    // Ground
+                    const gGeo = new THREE.PlaneGeometry(500, 500);
+                    const gMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+                    const ground = new THREE.Mesh(gGeo, gMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    ground.position.y = -61;
+                    scene.add(ground);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const dt = clock.getDelta();
+                    const t = clock.getElapsedTime();
+
+                    if (cloud) {
+                        cloud.children.forEach((c, idx) => {
+                            c.position.y += Math.sin(t + idx) * 0.1;
+                            c.material.opacity = 0.6 + airForce.value * 0.3;
+                        });
+                        cloud.rotation.y += 0.002;
+                    }
+
+                    if (bigHail) {
+                        const size = 2 + airForce.value * 20;
+                        bigHail.scale.set(size, size, size);
+                        bigHail.rotation.x += 0.02;
+                        bigHail.rotation.z += 0.01;
+
+                        if (step.value === 4) {
+                            bigHail.position.y -= 15;
+                            if (bigHail.position.y < -55) {
+                                bigHail.position.y = -55;
+                                if (!isShaking.value) triggerImpact();
+                            }
+                        } else {
+                            // Jitter in cloud based on airForce
+                            bigHail.position.y = 100 + Math.sin(t * 10) * (2 + airForce.value * 5);
+                            bigHail.position.x = Math.cos(t * 10) * airForce.value * 10;
+                        }
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const triggerImpact = () => {
+                    isShaking.value = true;
+                    gsap.fromTo(impactFlash.material, { opacity: 0.8 }, { opacity: 0, duration: 0.5 });
+                    setTimeout(() => isShaking.value = false, 500);
+                };
+
+                const next = () => {
+                    if (step.value < 5) {
+                        step.value++;
+                        if (step.value === 4) gsap.to(airForce, { value: 1, duration: 1.5 });
+                    }
+                };
+                const jump = (n) => {
+                    step.value = n;
+                    if (n < 3) { airForce.value = 0; bigHail.position.y = 110; }
+                    if (n > 3) { airForce.value = 1; bigHail.position.y = -55; }
+                };
+                const reset = () => {
+                    step.value = 1; airForce.value = 0; bigHail.position.y = 110;
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.header-box', { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.main-story', { opacity: 0, scale: 0.95, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 1, delay: 0.3 });
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.header-box', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.main-story', { opacity: 1, y: 0, duration: 1.5, delay: 1 });
+
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.position, { x: x * 30, y: 30 - y * 20, duration: 2 });
+                        camera.lookAt(0, 0, 0);
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, stages, airForce, isShaking, next, jump, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

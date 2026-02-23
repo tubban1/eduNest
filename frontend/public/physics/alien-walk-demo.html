@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外星人走路</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            min-height: 100dvh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at 50% 100%, #1a0a2e 0%, #0d0218 50%, #000 100%);
+            font-family: system-ui, sans-serif;
+            color: #c8b8e0;
+        }
+        h1 {
+            margin: 0 0 0.5em;
+            font-size: 1.5rem;
+            text-shadow: 0 0 12px rgba(100, 255, 180, 0.4);
+        }
+        .walk-area {
+            position: relative;
+            width: 220px;
+            min-height: 360px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 20px;
+            overflow: visible;
+        }
+        .walk-area .hw-walker {
+            filter: drop-shadow(0 0 12px rgba(100, 255, 180, 0.4)) drop-shadow(0 0 24px rgba(80, 220, 160, 0.15));
+        }
+        .walk-area::before, .walk-area::after {
+            content: ""; position: absolute; width: 4px; height: 4px; border-radius: 50%; background: rgba(200, 255, 220, 0.6); box-shadow: 0 0 6px rgba(100, 255, 180, 0.5);
+        }
+        .walk-area::before { left: 15%; top: 20%; animation: twinkle 2s ease-in-out infinite; }
+        .walk-area::after { right: 20%; top: 35%; animation: twinkle 2s ease-in-out 0.8s infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+        .alien-walker .hw-segment {
+            background: linear-gradient(180deg, #8ae0a8 0%, #5ab87a 40%, #3d9460 100%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.2) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 6px rgba(100, 255, 180, 0.2) !important;
+        }
+        .alien-walker .hw-body { background: transparent !important; }
+        .alien-walker [data-segment="neck"] {
+            background: linear-gradient(180deg, #7dd9a0 0%, #4ab87a 100%) !important;
+            border-color: rgba(0, 0, 0, 0.2) !important;
+        }
+        /* 外星人：手掌/指、脚/趾、身材 */
+        .alien-walker [data-segment*="Hand"] {
+            background: linear-gradient(180deg, #6cc990 0%, #4ab87a 50%, #3d9460 100%) !important;
+            border-radius: 45% 45% 50% 50% !important;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1) !important;
+        }
+        .alien-walker [data-segment*="Hand"]::before {
+            content: ""; position: absolute; left: 8%; bottom: 5%; width: 84%; height: 40%; border-radius: 0 0 35% 35%; background: repeating-linear-gradient(90deg, transparent 0, transparent 23%, rgba(0,0,0,0.12) 23%, rgba(0,0,0,0.12) 27%); pointer-events: none;
+        }
+        .alien-walker [data-segment*="Foot"] {
+            background: linear-gradient(180deg, #4ab87a 0%, #2d8f5c 100%) !important;
+            border-radius: 48% 48% 52% 52% !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        }
+        .alien-walker [data-segment*="Toe"] {
+            background: linear-gradient(180deg, #3d9460 0%, #2d8f5c 100%) !important;
+            border-radius: 40% 40% 50% 50% !important;
+        }
+        .alien-walker [data-segment*="Toe"]::before {
+            content: ""; position: absolute; left: 5%; bottom: 8%; width: 90%; height: 50%; border-radius: 0 0 40% 40%; background: repeating-linear-gradient(90deg, transparent 0, transparent 18%, rgba(0,0,0,0.15) 18%, rgba(0,0,0,0.15) 22%); pointer-events: none;
+        }
+        /* 内侧手脚：更深色，与外侧形成层次 */
+        .alien-walker .hw-inner [data-segment*="UpperArm"],
+        .alien-walker .hw-inner [data-segment*="Forearm"] {
+            background: linear-gradient(180deg, #3d9460 0%, #2d8f5c 50%, #257a48 100%) !important;
+        }
+        .alien-walker .hw-inner [data-segment*="Hand"] {
+            background: linear-gradient(180deg, #4ab87a 0%, #2d8f5c 50%, #257a48 100%) !important;
+        }
+        .alien-walker .hw-inner [data-segment*="Thigh"],
+        .alien-walker .hw-inner [data-segment*="Shin"] {
+            background: linear-gradient(180deg, #3d9460 0%, #2d8f5c 50%, #257a48 100%) !important;
+        }
+        .alien-walker .hw-inner [data-segment*="Foot"] {
+            background: linear-gradient(180deg, #2d8f5c 0%, #257a48 100%) !important;
+        }
+        .alien-walker .hw-inner [data-segment*="Toe"] {
+            background: linear-gradient(180deg, #257a48 0%, #1e6b3d 100%) !important;
+        }
+        .alien-walker .hw-joint { display: none !important; }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1em;
+            margin-top: 1.5em;
+            padding: 12px 20px;
+            background: rgba(30, 20, 50, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(100, 255, 180, 0.2);
+        }
+        label { display: inline-flex; align-items: center; gap: 0.5em; cursor: pointer; }
+        input[type="checkbox"] { cursor: pointer; accent-color: #64ffb4; }
+        input[type="range"] { cursor: pointer; accent-color: #64ffb4; }
+    </style>
+</head>
+<body>
+
+    <h1>👽 外星人走路</h1>
+    <div class="walk-area" id="walk-container"></div>
+    <div class="controls">
+        <label><input type="checkbox" id="walk-toggle" checked> 走路</label>
+        <label>速度 <input type="range" name="speed" value="1.8" min="0.5" max="3.5" step="0.1"></label>
+        <label>体型 <input type="range" name="size" value="1" min="0.6" max="1.5" step="0.1"></label>
+    </div>
+
+    <script src="HumanWalk.js"></script>
+    <script>
+        (function () {
+            const container = document.getElementById('walk-container');
+            const walkToggle = document.getElementById('walk-toggle');
+
+            const walker = HumanWalk.createWalker({
+                scale: 1,
+                color: 38,
+                duration: 1.8,
+                playing: true,
+                sizes: {
+                    head: 46,
+                    neck: 12,
+                    upperTorso: 32,
+                    lowerTorso: 28,
+                    upperArm: 48,
+                    forearm: 44,
+                    hand: 24,
+                    thigh: 64,
+                    shin: 64,
+                    foot: 26,
+                    toe: 18,
+                    joint: 20
+                }
+            });
+            HumanWalk.setColor(walker, 38);
+            walker.root.classList.add('alien-walker');
+            container.appendChild(walker.root);
+
+            // 头：大头 + 额纹、大眼、小嘴、触角与触角球、高光
+            const headSlot = walker.slots.head;
+            headSlot.innerHTML = '';
+            headSlot.style.pointerEvents = 'auto';
+            const headWrap = document.createElement('div');
+            headWrap.style.cssText = 'position: relative; width: 100%; height: 100%;';
+
+            const headBg = document.createElement('div');
+            headBg.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(165deg, #8ae0a8 0%, #6cc990 30%, #4ab87a 60%, #2d8f5c 85%, #1e6b44 100%); border: 2px solid rgba(0,0,0,0.2); box-shadow: inset 0 -6px 14px rgba(0,0,0,0.2), inset 2px 2px 6px rgba(255,255,255,0.1);';
+            headWrap.appendChild(headBg);
+            const spot1 = document.createElement('div');
+            spot1.style.cssText = 'position: absolute; left: 32%; top: 48%; width: 6%; height: 6%; border-radius: 50%; background: rgba(0,0,0,0.06);';
+            headWrap.appendChild(spot1);
+            const spot2 = document.createElement('div');
+            spot2.style.cssText = 'position: absolute; right: 28%; top: 62%; width: 5%; height: 5%; border-radius: 50%; background: rgba(0,0,0,0.05);';
+            headWrap.appendChild(spot2);
+            const foreheadLine1 = document.createElement('div');
+            foreheadLine1.style.cssText = 'position: absolute; left: 28%; top: 14%; width: 44%; height: 3%; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.15), transparent);';
+            headWrap.appendChild(foreheadLine1);
+            const foreheadLine2 = document.createElement('div');
+            foreheadLine2.style.cssText = 'position: absolute; left: 30%; top: 20%; width: 40%; height: 2%; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.12), transparent);';
+            headWrap.appendChild(foreheadLine2);
+            const eyeLeft = document.createElement('div');
+            eyeLeft.style.cssText = 'position: absolute; left: 16%; top: 26%; width: 30%; height: 38%; border-radius: 50%; background: radial-gradient(ellipse 70% 80% at 50% 40%, #1a1a1a, #050505); border: 2px solid #0d0d0d; box-shadow: inset 0 -2px 6px rgba(0,0,0,0.6), 0 0 0 3px #1a2a1a, 0 0 12px rgba(100,255,180,0.15);';
+            headWrap.appendChild(eyeLeft);
+            const eyeRight = document.createElement('div');
+            eyeRight.style.cssText = 'position: absolute; right: 16%; top: 26%; width: 30%; height: 38%; border-radius: 50%; background: radial-gradient(ellipse 70% 80% at 50% 40%, #1a1a1a, #050505); border: 2px solid #0d0d0d; box-shadow: inset 0 -2px 6px rgba(0,0,0,0.6), 0 0 0 3px #1a2a1a, 0 0 12px rgba(100,255,180,0.15);';
+            headWrap.appendChild(eyeRight);
+            const eyeShineLeft = document.createElement('div');
+            eyeShineLeft.style.cssText = 'position: absolute; left: 22%; top: 30%; width: 10%; height: 12%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, rgba(220,255,240,0.5));';
+            headWrap.appendChild(eyeShineLeft);
+            const eyeShineRight = document.createElement('div');
+            eyeShineRight.style.cssText = 'position: absolute; right: 22%; top: 30%; width: 10%; height: 12%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, rgba(220,255,240,0.5));';
+            headWrap.appendChild(eyeShineRight);
+            const eyeShine2L = document.createElement('div');
+            eyeShine2L.style.cssText = 'position: absolute; left: 26%; top: 34%; width: 4%; height: 5%; border-radius: 50%; background: rgba(255,255,255,0.5);';
+            headWrap.appendChild(eyeShine2L);
+            const eyeShine2R = document.createElement('div');
+            eyeShine2R.style.cssText = 'position: absolute; right: 26%; top: 34%; width: 4%; height: 5%; border-radius: 50%; background: rgba(255,255,255,0.5);';
+            headWrap.appendChild(eyeShine2R);
+            const mouth = document.createElement('div');
+            mouth.style.cssText = 'position: absolute; left: 40%; top: 70%; width: 20%; height: 8%; border-radius: 0 0 50% 50%; background: linear-gradient(180deg, #1e6b44 0%, #0d3d28 100%); border: 1px solid rgba(0,0,0,0.3); border-top: none; box-shadow: inset 0 -1px 2px rgba(0,0,0,0.2);';
+            headWrap.appendChild(mouth);
+            const mouthSmile = document.createElement('div');
+            mouthSmile.style.cssText = 'position: absolute; left: 38%; top: 72%; width: 24%; height: 4%; border-radius: 0 0 50% 50%; border-bottom: 1px solid rgba(100,255,180,0.3); border-top: none; background: transparent;';
+            headWrap.appendChild(mouthSmile);
+            const antennaLeft = document.createElement('div');
+            antennaLeft.style.cssText = 'position: absolute; left: 20%; top: -22%; width: 7%; height: 32%; border-radius: 3px; background: linear-gradient(90deg, #3d9460, #5ab87a 40%, #7dd9a0); transform-origin: 50% 100%; transform: rotate(-12deg); box-shadow: inset 1px 0 0 rgba(255,255,255,0.2);';
+            headWrap.appendChild(antennaLeft);
+            const antennaRight = document.createElement('div');
+            antennaRight.style.cssText = 'position: absolute; right: 20%; top: -22%; width: 7%; height: 32%; border-radius: 3px; background: linear-gradient(270deg, #3d9460, #5ab87a 40%, #7dd9a0); transform-origin: 50% 100%; transform: rotate(12deg); box-shadow: inset -1px 0 0 rgba(255,255,255,0.2);';
+            headWrap.appendChild(antennaRight);
+            const antennaBulbL = document.createElement('div');
+            antennaBulbL.style.cssText = 'position: absolute; left: 18%; top: -26%; width: 12%; height: 14%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #b8ffd0, #7dd9a0); border: 1px solid rgba(0,0,0,0.2); box-shadow: 0 0 10px rgba(100,255,180,0.6), 0 0 20px rgba(80,255,160,0.25);';
+            headWrap.appendChild(antennaBulbL);
+            const antennaBulbR = document.createElement('div');
+            antennaBulbR.style.cssText = 'position: absolute; right: 18%; top: -26%; width: 12%; height: 14%; border-radius: 50%; background: radial-gradient(circle at 65% 35%, #b8ffd0, #7dd9a0); border: 1px solid rgba(0,0,0,0.2); box-shadow: 0 0 10px rgba(100,255,180,0.6), 0 0 20px rgba(80,255,160,0.25);';
+            headWrap.appendChild(antennaBulbR);
+
+            headSlot.appendChild(headWrap);
+
+            // 上躯干：胸/肩 — 竖纹、胸面高光、肋骨感
+            const upperSlot = walker.slots.upperTorso;
+            upperSlot.innerHTML = '';
+            const upperWrap = document.createElement('div');
+            upperWrap.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 45% 45% 40% 40%; background: linear-gradient(175deg, #7dd9a0 0%, #5ab87a 25%, #3d9460 55%, #2d8f5c 80%, #1e6b44 100%); border: 1px solid rgba(0,0,0,0.25); box-shadow: inset 0 4px 12px rgba(255,255,255,0.08), inset 0 -6px 14px rgba(0,0,0,0.25), 0 0 12px rgba(100,255,180,0.12);';
+            upperSlot.appendChild(upperWrap);
+            const chestGlow = document.createElement('div');
+            chestGlow.style.cssText = 'position: absolute; left: 22%; top: 18%; width: 56%; height: 45%; border-radius: 50%; background: radial-gradient(ellipse 80% 90% at 50% 40%, rgba(150,255,200,0.2), transparent 70%);';
+            upperWrap.appendChild(chestGlow);
+            const stripeLeft = document.createElement('div');
+            stripeLeft.style.cssText = 'position: absolute; left: 26%; top: 6%; width: 14%; height: 88%; border-radius: 3px; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.2) 70%, transparent 100%);';
+            upperWrap.appendChild(stripeLeft);
+            const stripeRight = document.createElement('div');
+            stripeRight.style.cssText = 'position: absolute; right: 26%; top: 6%; width: 14%; height: 88%; border-radius: 3px; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.2) 70%, transparent 100%);';
+            upperWrap.appendChild(stripeRight);
+            const ridgeMid = document.createElement('div');
+            ridgeMid.style.cssText = 'position: absolute; left: 46%; top: 12%; width: 8%; height: 76%; border-radius: 2px; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.12) 50%, transparent 100%);';
+            upperWrap.appendChild(ridgeMid);
+            const shoulderAL = document.createElement('div');
+            shoulderAL.style.cssText = 'position: absolute; left: -10%; top: 2%; width: 32%; height: 36%; border-radius: 50%; background: linear-gradient(135deg, #7dd9a0 0%, #4ab87a 100%); border: 1px solid rgba(0,0,0,0.2); box-shadow: inset 2px 2px 4px rgba(255,255,255,0.08);';
+            upperWrap.appendChild(shoulderAL);
+            const shoulderAR = document.createElement('div');
+            shoulderAR.style.cssText = 'position: absolute; right: -10%; top: 2%; width: 32%; height: 36%; border-radius: 50%; background: linear-gradient(225deg, #7dd9a0 0%, #4ab87a 100%); border: 1px solid rgba(0,0,0,0.2); box-shadow: inset -2px 2px 4px rgba(255,255,255,0.08);';
+            upperWrap.appendChild(shoulderAR);
+
+            // 下躯干：腹部 — 节段感、微光、髋宽
+            const lowerSlot = walker.slots.lowerTorso;
+            lowerSlot.innerHTML = '';
+            const lowerWrap = document.createElement('div');
+            lowerWrap.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 40% 40% 48% 48%; background: linear-gradient(180deg, #4ab87a 0%, #2d8f5c 35%, #1e6b44 70%, #144a32 100%); border: 1px solid rgba(0,0,0,0.25); box-shadow: inset 0 3px 8px rgba(255,255,255,0.06), inset 0 -4px 10px rgba(0,0,0,0.25), 0 0 10px rgba(100,255,180,0.1);';
+            lowerSlot.appendChild(lowerWrap);
+            const bellyGlow = document.createElement('div');
+            bellyGlow.style.cssText = 'position: absolute; left: 28%; top: 35%; width: 44%; height: 35%; border-radius: 50%; background: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(120,255,180,0.25), transparent 75%); pointer-events: none;';
+            lowerWrap.appendChild(bellyGlow);
+            const bellySeg1 = document.createElement('div');
+            bellySeg1.style.cssText = 'position: absolute; left: 18%; top: 22%; width: 64%; height: 22%; border-radius: 45% 45% 50% 50%; border-bottom: 1px solid rgba(0,0,0,0.2); background: linear-gradient(180deg, transparent, rgba(0,0,0,0.06) 100%);';
+            lowerWrap.appendChild(bellySeg1);
+            const bellySeg2 = document.createElement('div');
+            bellySeg2.style.cssText = 'position: absolute; left: 20%; top: 48%; width: 60%; height: 24%; border-radius: 45% 45% 50% 50%; border-bottom: 1px solid rgba(0,0,0,0.2); background: linear-gradient(180deg, transparent, rgba(0,0,0,0.08) 100%);';
+            lowerWrap.appendChild(bellySeg2);
+            const hipAL = document.createElement('div');
+            hipAL.style.cssText = 'position: absolute; left: -8%; bottom: 2%; width: 36%; height: 42%; border-radius: 50%; background: linear-gradient(210deg, #2d8f5c 0%, #1e6b44 100%); border: 1px solid rgba(0,0,0,0.2);';
+            lowerWrap.appendChild(hipAL);
+            const hipAR = document.createElement('div');
+            hipAR.style.cssText = 'position: absolute; right: -8%; bottom: 2%; width: 36%; height: 42%; border-radius: 50%; background: linear-gradient(330deg, #2d8f5c 0%, #1e6b44 100%); border: 1px solid rgba(0,0,0,0.2);';
+            lowerWrap.appendChild(hipAR);
+
+            walkToggle.addEventListener('change', function () {
+                HumanWalk.setPlaying(walker, this.checked);
+            });
+            document.querySelector('input[name="speed"]').addEventListener('input', function () {
+                HumanWalk.setDuration(walker, parseFloat(this.value));
+            });
+            document.querySelector('input[name="size"]').addEventListener('input', function () {
+                HumanWalk.setScale(walker, parseFloat(this.value));
+            });
+        })();
+    </script>
+</body>
+</html>

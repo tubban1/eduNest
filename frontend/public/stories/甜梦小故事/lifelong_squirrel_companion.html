@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>松鼠林里的“稳稳”魔法</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-forest: #FFF8E1;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-forest);
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            transition: background 1.5s ease;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .parent-tip {
+            text-align: center;
+            font-size: 1rem;
+            color: #795548;
+            opacity: 0.8;
+            font-style: italic;
+            max-width: 600px;
+            margin: 0 auto;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
+        }
+
+        .story-body {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3rem;
+            color: #5D4037;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 2px 2px rgba(255, 255, 255, 0.5));
+        }
+
+        .stage-content {
+            font-size: 1.25rem;
+            color: #4E342E;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .action-area {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .btn-action {
+            background: rgba(93, 64, 55, 0.9);
+            color: white;
+            padding: 14px 40px;
+            border-radius: 40px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-3px);
+            background: #5D4037;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="story-container">
+        <!-- 顶部：家长语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-tip">
+                🐿️🐿️ {{ parentWords[step-1] }}
+            </div>
+        </transition>
+
+        <!-- 底部：正文 -->
+        <div class="story-body">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h1 class="stage-title">{{ stages[step-1].title }}</h1>
+                    <p class="stage-content">{{ stages[step-1].content }}</p>
+                </div>
+            </transition>
+        </div>
+
+        <!-- 交互区域 -->
+        <div class="action-area pointer-events-auto">
+            <button v-if="step === 3" @click="handleRest" class="btn-action">轻轻给闪闪盖上落叶被子 🍂</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">继续看比赛</button>
+            <button v-else @click="reset" class="btn-action !bg-stone-500">再次开始森林挑战</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isResting = ref(false);
+
+                const stages = [
+                    { title: '森林的储粮赛', content: '在茂密的森林里，住着两只松鼠。闪闪动作飞快，总喜欢在枝头跳来跳去展示它的轻盈；稳稳则是慢吞吞的，但做事非常严谨。有一天，闪闪发起挑战：‘看谁先填满冬天的树洞？’' },
+                    { title: '闪电般的速度', content: '比赛一宣布，闪闪就跑得没影了。它每次都能捧回一大堆橡果，得意地对稳稳喊：‘你太慢啦，等到下雪你也搬不完！’稳稳不说话，低着头，一颗一颗认真挑选最饱满的种子。' },
+                    { title: '大树下的午餐', content: '闪闪觉得大局已定，心想：‘稳稳还在慢悠悠地爬呢，我先吃个饱，在大橡树下睡一觉。’于是，它舒舒服服地靠着树根，打起了响亮的呼噜。' },
+                    { title: '不停歇的小脚爪', content: '森林的下午静悄悄的。稳稳虽然每次只能搬运一小袋，但它一次也没有停下。它轻手轻脚地经过了熟睡的闪闪，月光照在它的背影上，那是坚持的颜色。' },
+                    { title: '最后的惊喜', content: '当闪闪揉着眼睛醒来时，稳稳的粮仓已经堆成了一座小山。傲慢让闪闪输掉了比赛，而稳稳用踏实赢得了大家的掌声。晚安，努力的小松鼠们。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你觉得是跑得快重要，还是坚持不懈重要呢？",
+                    "你看，闪闪真的很厉害，但它是不是有点太轻视对手了？",
+                    "嘘——闪闪睡着了。咱们轻轻帮它盖上落叶，别让它着凉。也给辛苦工作的稳稳鼓鼓劲吧。",
+                    "就像《龟兔赛跑》里的小乌龟一样。只要不停下，梦想总会一步步实现的。这就是‘持之以恒’。",
+                    "比赛结束啦，闪闪也明白了谦虚的意义。咱们也该踏踏实实入睡了。晚安，宝贝。"
+                ];
+
+                let rc, ctx, canvas;
+
+                const initVisuals = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize();
+                    animate();
+                };
+
+                const resize = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+
+                const drawSquirrel = (x, y, scale = 1, t, color, sleep = false) => {
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+                    if (sleep) ctx.rotate(0.3);
+
+                    const tailWag = sleep ? 0 : Math.sin(t * 4) * 0.15;
+                    ctx.save();
+                    ctx.rotate(tailWag);
+                    rc.curve([[-40, 0], [-100, -80], [-60, -120], [-20, -100], [-30, -50]], {
+                        fill: color, fillStyle: 'hachure', roughness: 1.5
+                    });
+                    ctx.restore();
+                    rc.ellipse(0, 0, 80, 60, { fill: color, fillStyle: 'hachure' });
+                    rc.circle(40, -30, 45, { fill: color, fillStyle: 'solid' });
+                    rc.polygon([[45, -70], [60, -90], [75, -70]], { fill: '#5D4037', fillStyle: 'solid' });
+                    rc.circle(60, -40, 6, { fill: '#000' });
+
+                    if (sleep) {
+                        ctx.font = '24px Arial';
+                        ctx.fillText('Zzz', 50, -100);
+                    }
+                    ctx.restore();
+                };
+
+                const drawTree = (x, y) => {
+                    rc.curve([[x, y], [x - 20, y - 200], [x + 10, y - 400]], { stroke: '#5D4037', strokeWidth: 10 });
+                    for (let i = 0; i < 3; i++) {
+                        rc.circle(x + (i - 1) * 60, y - 420, 130, { fill: '#66BB6A', fillStyle: 'hachure' });
+                    }
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+
+                    if (step.value === 1) {
+                        drawSquirrel(canvas.width * 0.3, canvas.height * 0.7, 0.8, t, '#A1887F'); // 闪闪
+                        drawSquirrel(canvas.width * 0.6, canvas.height * 0.7, 0.75, t, '#8D6E63'); // 稳稳
+                    } else if (step.value === 2) {
+                        const dash = (t * 400) % (canvas.width * 0.6) + canvas.width * 0.2;
+                        drawSquirrel(dash, canvas.height * 0.6, 0.8, t, '#A1887F');
+                        drawSquirrel(canvas.width * 0.15, canvas.height * 0.8, 0.7, t, '#8D6E63');
+                    } else if (step.value === 3) {
+                        drawTree(canvas.width * 0.5, canvas.height * 0.9);
+                        drawSquirrel(canvas.width * 0.55, canvas.height * 0.85, 0.9, t, '#A1887F', true);
+                        drawSquirrel(canvas.width * 0.1, canvas.height * 0.7, 0.5, t, '#8D6E63');
+                        if (isResting.value) {
+                            rc.polygon([[canvas.width * 0.4, canvas.height * 0.8], [canvas.width * 0.7, canvas.height * 0.8], [canvas.width * 0.6, canvas.height * 0.7]], { fill: '#FBC02D', fillStyle: 'solid' });
+                        }
+                    } else if (step.value === 4) {
+                        drawTree(canvas.width * 0.2, canvas.height * 0.9);
+                        drawSquirrel(canvas.width * 0.25, canvas.height * 0.85, 0.5, t, '#A1887F', true);
+                        const slowMove = (t * 60) % (canvas.width * 0.8) + canvas.width * 0.1;
+                        drawSquirrel(slowMove, canvas.height * 0.7, 1.1, t, '#8D6E63');
+                    } else if (step.value === 5) {
+                        drawSquirrel(canvas.width * 0.8, canvas.height * 0.4, 1.3, t, '#8D6E63');
+                        drawSquirrel(canvas.width * 0.2, canvas.height * 0.8, 0.7, t, '#A1887F', true);
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const nextStage = () => {
+                    step.value = Math.min(step.value + 1, 5);
+                };
+
+                const handleRest = () => {
+                    isResting.value = true;
+                    setTimeout(() => nextStage(), 1500);
+                };
+
+                const reset = () => { step.value = 1; isResting.value = false; };
+
+                onMounted(() => {
+                    initVisuals();
+                    window.addEventListener('resize', resize);
+                });
+
+                return { step, stages, parentWords, nextStage, handleRest, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>没有空气会怎样</title>
+    <!-- 依赖库，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --sky-blue: #87CEEB;
+            --space-black: #050505;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--space-black);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #fff;
+        }
+
+        #stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem;
+            pointer-events: none;
+        }
+
+        .ptr-auto {
+            pointer-events: auto;
+        }
+
+        .title-unit {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.2rem;
+            background: linear-gradient(135deg, #fff, #87CEEB);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .parent-hint {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            padding: 0.6rem 2.5rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #87CEEB;
+            font-size: 1.1rem;
+            display: inline-block;
+        }
+
+        .content-unit {
+            max-width: 800px;
+            margin: 0 auto 16rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .desc-text {
+            font-size: 1.6rem;
+            line-height: 2;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            font-weight: 300;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem 4rem;
+            border-radius: 5rem;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: 0.4s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #87CEEB;
+        }
+
+        /* 交互面板 */
+        .interact-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .exp-tool {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .exp-tool.active {
+            background: #87CEEB;
+            border-color: #fff;
+            box-shadow: 0 0 20px #87CEEB;
+        }
+
+        .nav-progress {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: #87CEEB;
+            border-color: #87CEEB;
+            transform: scale(1.5);
+            box-shadow: 0 0 15px #87CEEB;
+        }
+
+        /* 特殊动画 */
+        .vacuum-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(135, 206, 235, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(135, 206, 235, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(135, 206, 235, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+
+    <div id="app" class="ui-layer">
+        <div class="title-unit" ref="header">
+            <h1 class="main-title">{{ current.title }}</h1>
+            <div class="parent-hint">🌬️ {{ current.parentWords }}</div>
+        </div>
+
+        <div class="content-unit" ref="content">
+            <p class="desc-text">{{ current.description }}</p>
+            <div class="flex justify-center ptr-auto">
+                <button v-if="step !== 3 && step < 5" @click="next" class="action-btn">继续探索</button>
+                <button v-if="step === 5" @click="reset" class="action-btn">重新拥抱大气</button>
+            </div>
+        </div>
+
+        <!-- 交互实验区：S3 抽气模拟 -->
+        <div v-if="step === 3" class="interact-panel">
+            <div class="text-sky-200 font-bold mb-2">点击真空泵开始抽气</div>
+            <div class="flex items-center gap-8">
+                <div @click="toggleVacuum" :class="['exp-tool', 'vacuum-pulse', { active: isVacuuming }]">
+                    {{ isVacuuming ? '🛑' : '🔘' }}
+                </div>
+                <button @click="resetExperiment" class="action-btn !py-2 !px-6 !text-sm">重置物体</button>
+                <div @click="dropObjects" class="exp-tool active">🪂</div>
+            </div>
+            <div class="text-xs text-gray-400 mt-2">（尝试在有气/抽气后释放物体）</div>
+            <button v-if="vacuumProgress > 0.8" @click="next"
+                class="action-btn !py-2 !px-8 !text-sm mt-2">发现真空奥秘</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-progress">
+            <div v-for="n in 5" :key="n" :class="['dot', { active: step === n }]" @click="jump(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const isVacuuming = ref(false);
+                const vacuumProgress = ref(0); // 0 (filled) to 1 (pure vacuum)
+                const isDropping = ref(false);
+
+                const stages = [
+                    {
+                        title: "看不见的海洋",
+                        parentWords: "宝贝，深吸一口气！虽然我们看不见空气，但我们就像生活在一片巨大的‘空气海洋’里哦。",
+                        description: "空气给了我们氧气，还像一层温柔的毯子包裹着地球。因为有它，天空才是美丽的蓝色，鸟儿才能自由地滑翔。"
+                    },
+                    {
+                        title: "如果魔法消失...",
+                        parentWords: "假如有个淘气的巨人把地球上的空气全部吸走了，世界会变成什么样？",
+                        description: "没有了空气，不仅我们会无法呼吸，连最普通的小事都会变得极其古怪。你想亲手试试抽走空气的感觉吗？"
+                    },
+                    {
+                        title: "真空实验室",
+                        parentWords: "来，启动这台强大的抽气机！仔细看，天空的蓝色会发生什么变化？",
+                        description: "在没有空气的地方，羽毛和铁球落下的速度会变得一模一样。而且，无论你如何大声喊叫，也不会有任何声音传出去。"
+                    },
+                    {
+                        title: "恐怖的寂静与漆黑",
+                        parentWords: "你看，由于没有了大气层对阳光的散射，即便是在白天，天空也是像深夜一样漆黑。而且这里一点声音也没有。",
+                        description: "空气是声音的搬运工。没有了它，世界就按下了静音键。宇宙中那些美丽的景象，其实大都处在这样致命的寂静中。"
+                    },
+                    {
+                        title: "隐形的守护者",
+                        parentWords: "幸好我们有大气层！它不仅让我们呼吸，还帮我们挡住了外太空的小陨石。我们要好好爱护这层蓝色的保护垫。",
+                        description: "空气是生命连接的纽带。每一次呼吸，都是大自然最珍贵的恩赐。故事讲完啦，让我们回到这个充满生机的世界吧。"
+                    }
+                ];
+
+                const current = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, sky, objects = [], stars;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 20, 80);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('stage').appendChild(renderer.domElement);
+
+                    // Sky Sphere
+                    const skyGeo = new THREE.SphereGeometry(200, 32, 32);
+                    const skyMat = new THREE.MeshBasicMaterial({
+                        color: 0x87CEEB,
+                        side: THREE.BackSide,
+                        transparent: true
+                    });
+                    sky = new THREE.Mesh(skyGeo, skyMat);
+                    scene.add(sky);
+
+                    // Stars (Visible only in vacuum)
+                    const starGeo = new THREE.BufferGeometry();
+                    const starPos = new Float32Array(2000 * 3);
+                    for (let i = 0; i < 2000; i++) {
+                        starPos[i * 3] = (Math.random() - 0.5) * 400;
+                        starPos[i * 3 + 1] = (Math.random() - 0.2) * 400;
+                        starPos[i * 3 + 2] = (Math.random() - 0.5) * 400;
+                    }
+                    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+                    stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, transparent: true, opacity: 0 }));
+                    scene.add(stars);
+
+                    // Ground
+                    const gGeo = new THREE.PlaneGeometry(100, 100);
+                    const gMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+                    const ground = new THREE.Mesh(gGeo, gMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    scene.add(ground);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+                    sun.position.set(10, 50, 20);
+                    scene.add(sun);
+
+                    // Objects for drop test
+                    setupObjects();
+
+                    animate();
+                };
+
+                const setupObjects = () => {
+                    // Ball
+                    const ball = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshStandardMaterial({ color: 0xff4444 }));
+                    ball.position.set(-10, 40, 0);
+                    scene.add(ball);
+
+                    // Feather (Plane with simple shape)
+                    const featherGeo = new THREE.PlaneGeometry(3, 10);
+                    const featherMat = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+                    const feather = new THREE.Mesh(featherGeo, featherMat);
+                    feather.position.set(10, 40, 0);
+                    scene.add(feather);
+
+                    objects = [ball, feather];
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (isVacuuming.value && vacuumProgress.value < 1) {
+                        vacuumProgress.value += 0.005;
+                    }
+
+                    // Sky and Stars interaction
+                    sky.material.color.lerp(new THREE.Color(0x050505), vacuumProgress.value * 0.1);
+                    sky.material.opacity = 1 - vacuumProgress.value * 0.95;
+                    stars.material.opacity = vacuumProgress.value;
+
+                    // Drop physics
+                    if (isDropping.value) {
+                        objects.forEach((obj, idx) => {
+                            if (obj.position.y > 2) {
+                                // Simple mock gravity
+                                let speed = (idx === 1 && vacuumProgress.value < 0.8) ? 0.35 : 1.2;
+                                obj.position.y -= speed;
+                                if (idx === 1 && vacuumProgress.value < 0.8) {
+                                    obj.rotation.z = Math.sin(t * 5) * 0.5; // Fluttering in air
+                                }
+                            }
+                        });
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                // Methods
+                const next = () => {
+                    if (step.value < 5) step.value++;
+                };
+                const jump = (n) => { step.value = n; };
+                const reset = () => {
+                    step.value = 1; vacuumProgress.value = 0;
+                    resetExperiment();
+                };
+
+                const toggleVacuum = () => {
+                    isVacuuming.value = !isVacuuming.value;
+                };
+
+                const dropObjects = () => {
+                    isDropping.value = true;
+                };
+
+                const resetExperiment = () => {
+                    isDropping.value = false;
+                    objects[0].position.y = 40;
+                    objects[1].position.y = 40;
+                    objects[1].rotation.z = 0;
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.title-unit', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.content-unit', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+                    if (newVal === 4) vacuumProgress.value = 1;
+                    if (newVal === 1) vacuumProgress.value = 0;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.title-unit', { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                    gsap.to('.content-unit', { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = () => ({
+                        stageIndex: step.value,
+                        totalStages: 5,
+                        currentStage: stages[step.value - 1].title
+                    });
+                });
+
+                return { step, current, isVacuuming, vacuumProgress, isDropping, next, jump, reset, toggleVacuum, dropObjects, resetExperiment, stages };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

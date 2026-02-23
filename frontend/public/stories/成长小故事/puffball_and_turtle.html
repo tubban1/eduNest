@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>“小绒球”和“大乌龟”</title>
+    <!-- 核心技术栈，包含 fallback -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js'"></script>
+    <script>(function () { var g = "rough", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/rough.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --theme-color: #81C784;
+            --text-primary: #388E3C;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #FFFDE7;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .story-text-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            transition: all 1s ease;
+        }
+
+        .stage-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .stage-content {
+            font-size: 1.4rem;
+            color: #4E342E;
+            line-height: 1.8;
+            padding: 10px 20px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            border-radius: 10px;
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #689F38;
+            font-size: 1.1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+            padding: 10px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .action-area {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn-action {
+            background: var(--theme-color);
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 8px 25px rgba(129, 199, 132, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            background: #66BB6A;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：亲子引导语 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="parent-words">🐢 [[ parentWords[step-1] ]]</div>
+        </transition>
+
+        <!-- 中间：故事情节 -->
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="story-text-container">
+                <h1 v-if="stages[step-1].title" class="stage-title">[[ stages[step-1].title ]]</h1>
+                <p v-if="stages[step-1].content" class="stage-content">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <!-- 底部核心交互 -->
+        <div class="action-area">
+            <button v-if="step === 2" @click="slowDown" class="btn-action">慢一点，等一等乌龟爷爷 🌿</button>
+            <button v-else-if="step === 3" @click="hopOn" class="btn-action">嘿哟！跳上最稳当的乌龟壳 ✨</button>
+            <button v-else-if="step < 5" @click="nextStage" class="btn-action">去看路边的风景</button>
+            <button v-else @click="reset" class="btn-action !bg-teal-700 !text-white">明天再来慢悠悠散步</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const isSlow = ref(false);
+                const isRiding = ref(false);
+
+                const stages = [
+                    { title: '毛茸茸的新朋友', content: '小绒球是一只金黄色的小仓鼠，它总是蹦蹦跳跳，急着看遍整个世界。而乌龟爷爷呢，他总是趴在石头上，慢吞吞地晒着太阳。' },
+                    { title: '不一样的散步', content: '‘爷爷，快来看！河边开花了！’小绒球跑得飞快。可乌龟爷爷走一步，小绒球要跳十步呢。爷爷笑眯眯地说：‘孩子，别急，风景又不会跑。’' },
+                    { title: '最稳当的小汽车', content: '‘上来吧。’乌龟爷爷侧过身。小绒球轻轻一跳，落在了宽宽的、硬硬的龟壳上。这里就像一辆最稳当的小汽车，世界一下子变安静了。' },
+                    { title: '被忽略的风景', content: '坐在爷爷背上，小绒球发现了一朵躲在叶子下的紫色小花，还有正在搬家的小蚂蚁。原来，慢悠悠地看，世界会变得更宽阔。' },
+                    { title: '月亮下的守望', content: '夕阳把草地染成了金色。小绒球在乌龟爷爷的背上睡着了，呼噜声像落叶一样轻。爷爷驮着它，在月光下静静守望。晚安。' }
+                ];
+
+                const parentWords = [
+                    "宝贝，你瞧。小绒球像不像个停不下来的小弹簧？你觉得自己更像它，还是更像乌龟爷爷？",
+                    "着急的时候，眼睛会看漏很多惊喜哦。咱们帮小绒球慢下来，听听爷爷的脚步声。",
+                    "哇！乌龟爷爷变成了小绒球专属的‘森林巴士’。这种陪伴的感觉是不是很温暖？",
+                    "当你慢下来的时候，你会发现以前没见过的小细节。宝贝，我们也一起静下心来看看周围。",
+                    "故事讲完啦。这对好朋友正一起在月光下旅行呢。咱们也闭上眼，滑进甜甜的梦。晚安。"
+                ];
+
+                let rc, ctx, canvas;
+                const init = () => {
+                    canvas = document.getElementById('main-canvas');
+                    ctx = canvas.getContext('2d');
+                    rc = rough.canvas(canvas);
+                    resize(); animate();
+                };
+                const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+                const drawTurtle = (x, y, scale, t) => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const walk = Math.sin(t * 1.5) * 5;
+                    // Shell
+                    rc.ellipse(0, 0, 200, 100, { fill: '#81C784', fillStyle: 'hachure', stroke: '#2E7D32' });
+                    // Head
+                    rc.circle(110, -20, 50, { fill: '#AED581', fillStyle: 'solid' });
+                    // Legs
+                    rc.circle(-70 + walk, 40, 30, { fill: '#AED581' });
+                    rc.circle(70 - walk, 40, 30, { fill: '#AED581' });
+                    ctx.restore();
+                };
+
+                const drawPuffball = (x, y, scale, t, riding = false) => {
+                    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+                    const jump = riding ? 0 : Math.abs(Math.sin(t * 6)) * 20;
+                    // Body
+                    rc.circle(0, -jump, 60, { fill: '#FFF9C4', fillStyle: 'solid', stroke: '#FBC02D' });
+                    // Fur effect
+                    for (let i = 0; i < 8; i++) {
+                        const ang = (i / 8) * Math.PI * 2;
+                        rc.line(Math.cos(ang) * 30, -jump + Math.sin(ang) * 30, Math.cos(ang) * 45, -jump + Math.sin(ang) * 45, { stroke: '#FBC02D' });
+                    }
+                    // Eyes
+                    rc.circle(-15, -jump - 10, 6, { fill: '#333' }); rc.circle(15, -jump - 10, 6, { fill: '#333' });
+                    ctx.restore();
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const t = Date.now() * 0.001;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height * 0.7;
+
+                    if (step.value === 1) {
+                        drawTurtle(centerX + 150, centerY, 1, t);
+                        drawPuffball(centerX - 150, centerY, 0.8, t);
+                    } else if (step.value === 2) {
+                        const moveX = (t * 50) % (canvas.width / 2) + 50;
+                        drawTurtle(moveX + 100, centerY, 0.9, t);
+                        drawPuffball(moveX - 50, centerY, 0.7, t);
+                    } else if (step.value === 3) {
+                        drawTurtle(centerX, centerY, 1.2, t);
+                        const puffY = isRiding.value ? centerY - 60 : centerY - 150;
+                        drawPuffball(centerX, puffY, 0.6, t, isRiding.value);
+                    } else if (step.value === 4) {
+                        drawTurtle(centerX - 100, centerY, 1.3, t * 0.5);
+                        drawPuffball(centerX - 100, centerY - 80, 0.7, t * 0.5, true);
+                        // Flower
+                        rc.circle(centerX + 150, centerY + 20, 30, { fill: '#9C27B0' });
+                    } else if (step.value === 5) {
+                        drawTurtle(centerX - 100, centerY + 50, 0.8, 0);
+                        drawPuffball(centerX - 100, centerY - 10, 0.5, 0, true);
+                        rc.circle(canvas.width * 0.8, 150, 50, { fill: '#FFF176', fillStyle: 'solid' });
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                const slowDown = () => { isSlow.value = true; setTimeout(() => nextStage(), 1500); };
+                const hopOn = () => { isRiding.value = true; setTimeout(() => nextStage(), 1500); };
+                const nextStage = () => { step.value++; window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: step.value, totalStages: 5 }); };
+                const reset = () => { step.value = 1; isSlow.value = false; isRiding.value = false; };
+
+                onMounted(() => { init(); window.addEventListener('resize', resize); });
+
+                if (typeof window !== 'undefined') {
+                    window.__eduNestUIStateProvider = () => ({ stageIndex: step.value, totalStages: 5, currentStage: stages[step.value - 1].title });
+                }
+
+                return { step, stages, parentWords, nextStage, slowDown, hopOn, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
