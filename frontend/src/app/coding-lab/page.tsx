@@ -38,6 +38,7 @@ export default function CodingLabPage() {
   const [chat, setChat] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
     { role: 'assistant', text: '你好！我们先画一个角色吧。你可以在画板里画出来，然后点击“导出 PNG”。' },
   ]);
+  const [chatInput, setChatInput] = useState('');
   const [speaking, setSpeaking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastObjectUrlRef = useRef<string | null>(null);
