@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海陆空全能交通工具</title>
+    <!-- 核心库 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* 标准化 UI 布局 */
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #f472b6;
+            text-shadow: 0 0 20px rgba(244, 114, 182, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(244, 114, 182, 0.3);
+            color: #d1d5db;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(244, 114, 182, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-dot.active {
+            background: #f472b6;
+            box-shadow: 0 0 15px #f472b6;
+            transform: scale(1.3);
+        }
+
+        /* 沉浸式文字层 */
+        .immersive-text-layer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 150px;
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        /* 底部 HUD 交互中心 */
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 10px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(244, 114, 182, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .mode-btn {
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #94a3b8;
+        }
+
+        .mode-btn.active {
+            background: #f472b6;
+            color: #fff;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(244, 114, 182, 0.4);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #db2777 0%, #be185d 100%);
+            color: #fff;
+            padding: 15px 50px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            box-shadow: 0 10px 30px rgba(219, 39, 119, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-next:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 45px rgba(219, 39, 119, 0.4);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <div class="top-title-box">
+            <h1 class="main-title">海陆空全能穿梭机</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">
+                    [[ stages[step-1].parent ]]
+                </div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }"
+                @click="jumpToStage(n)"></div>
+        </div>
+
+        <div class="bottom-container">
+            <div class="immersive-text-layer">
+                <transition name="fade" mode="out-in">
+                    <div :key="step">
+                        <h2 class="text-3xl font-bold text-pink-400 mb-4">[[ stages[step-1].title ]]</h2>
+                        <p class="stage-content" v-html="stages[step-1].content"></p>
+                    </div>
+                </transition>
+            </div>
+
+            <div class="bottom-hud">
+                <!-- 形态切换器 -->
+                <div v-if="step >= 2" class="mode-selector pointer-events-auto">
+                    <button @click="setMode('land')" :class="{ active: mode === 'land' }" class="mode-btn">陆地模式
+                        🏎️</button>
+                    <button @click="setMode('sea')" :class="{ active: mode === 'sea' }" class="mode-btn">航海模式
+                        🚤</button>
+                    <button @click="setMode('sky')" :class="{ active: mode === 'sky' }" class="mode-btn">飞行模式
+                        🚀</button>
+                </div>
+
+                <div class="action-area pointer-events-auto">
+                    <button v-if="step < stages.length" @click="nextStage" class="btn-next">
+                        下一步探索
+                    </button>
+                    <button v-else @click="resetExperiment" class="btn-next">
+                        重新出发 🌍
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const mode = ref('land'); // land, sea, sky
+
+                const stages = [
+                    {
+                        title: "打破边界的想象",
+                        content: "汽车只能跑，轮船只能游，飞机只能飞。能不能有一种超级机器，让这些功能合而为一？这可不仅是变戏法，更是工程学的奇迹。",
+                        parent: "宝贝，如果你有一辆既能跑又能飞的小车，你想带爸爸妈妈去哪儿玩？"
+                    },
+                    {
+                        title: "陆地：风驰电掣",
+                        content: "点击下方的‘陆地模式’。看！轮子优雅地伸出。在平坦的大道上，它就是最酷的跑车。每一个零件都在为抓地力而工作。",
+                        parent: "伸出小轮子，咱们出发啦！嘀嘀嘀——"
+                    },
+                    {
+                        title: "海洋：劈波斩浪",
+                        content: "遇到大海了！切换到‘航海模式’。轮子缩回，变成浮筒。它不再沉重，而是轻盈地浮在水面，像一只漂亮的天鹅。",
+                        parent: "哇！轮子收回去了，下面变成了两条大船，咱们开始划水喽！"
+                    },
+                    {
+                        title: "蓝天：自由翱翔",
+                        content: "前方是高山？启动‘飞行模式’！巨大的机翼缓缓展开，强劲的螺旋桨划破空气。从此，地球再也没有抵达不了的地方。",
+                        parent: "快看！长出翅膀啦！咱们飞得比云朵还要高！"
+                    },
+                    {
+                        title: "全域未来的种子",
+                        content: "海陆空全能工具，凝聚了人类对‘自由移动’的所有梦想。未来的交通不再受限，只有无限的可能。晚安，未来的探险家。",
+                        parent: "宝贝，未来的世界很大，你可以去任何你想去的地方。晚安！"
+                    }
+                ];
+
+                // --- Three.js Morphing Vehicle ---
+                let scene, camera, renderer;
+                let vehicle, chassis, leftWheel, rightWheel, wingL, wingR, fan;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x0f172a);
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    vehicle = new THREE.Group();
+
+                    // 主体
+                    chassis = new THREE.Mesh(new THREE.BoxGeometry(20, 5, 12), new THREE.MeshPhongMaterial({ color: 0xf472b6 }));
+                    vehicle.add(chassis);
+
+                    // 轮子/浮筒
+                    const wheelGeo = new THREE.CylinderGeometry(4, 4, 3, 32);
+                    const wheelMat = new THREE.MeshPhongMaterial({ color: 0x1e293b });
+                    leftWheel = new THREE.Mesh(wheelGeo, wheelMat);
+                    leftWheel.position.set(5, -2, 7);
+                    leftWheel.rotation.x = Math.PI / 2;
+                    vehicle.add(leftWheel);
+
+                    rightWheel = leftWheel.clone();
+                    rightWheel.position.z = -7;
+                    vehicle.add(rightWheel);
+
+                    // 翅膀
+                    const wingGeo = new THREE.BoxGeometry(15, 0.5, 10);
+                    wingL = new THREE.Mesh(wingGeo, new THREE.MeshPhongMaterial({ color: 0xec4899, transparent: true, opacity: 0.8 }));
+                    wingL.position.set(-5, 2, 0);
+                    wingL.scale.set(0.1, 1, 0.1); // 默认收起
+                    vehicle.add(wingL);
+
+                    // 螺旋桨
+                    fan = new THREE.Mesh(new THREE.BoxGeometry(1, 15, 1), new THREE.MeshPhongMaterial({ color: 0xffffff }));
+                    fan.position.set(11, 0, 0);
+                    fan.visible = false;
+                    vehicle.add(fan);
+
+                    scene.add(vehicle);
+
+                    const light = new THREE.PointLight(0xf472b6, 2, 500);
+                    light.position.set(20, 50, 50);
+                    scene.add(light);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+                    camera.position.set(40, 30, 40);
+                    camera.lookAt(0, 0, 0);
+                };
+
+                const setMode = (m) => {
+                    mode.value = m;
+                    if (m === 'land') {
+                        gsap.to(leftWheel.position, { y: -2, z: 7, duration: 1 });
+                        gsap.to(rightWheel.position, { y: -2, z: -7, duration: 1 });
+                        gsap.to(wingL.scale, { x: 0.1, z: 0.1, duration: 1 });
+                        fan.visible = false;
+                        gsap.to(scene.background, { r: 15 / 255, g: 23 / 255, b: 42 / 255, duration: 1 });
+                    } else if (m === 'sea') {
+                        gsap.to(leftWheel.position, { y: -4, z: 9, duration: 1 });
+                        gsap.to(rightWheel.position, { y: -4, z: -9, duration: 1 });
+                        gsap.to(wingL.scale, { x: 0.1, z: 0.1, duration: 1 });
+                        fan.visible = false;
+                        gsap.to(scene.background, { r: 30 / 255, g: 58 / 255, b: 138 / 255, duration: 1 });
+                    } else if (m === 'sky') {
+                        gsap.to(leftWheel.position, { y: 0, z: 0, duration: 1 });
+                        gsap.to(rightWheel.position, { y: 0, z: 0, duration: 1 });
+                        gsap.to(wingL.scale, { x: 1, z: 3, duration: 1 });
+                        fan.visible = true;
+                        gsap.to(scene.background, { r: 56 / 255, g: 189 / 255, b: 248 / 255, duration: 1 });
+                    }
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    vehicle.position.y = Math.sin(t * 2) * 0.5;
+                    if (mode.value === 'sky') fan.rotation.x += 0.5;
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => { if (step.value < stages.length) step.value++; };
+                const jumpToStage = (n) => { step.value = n; };
+                const resetExperiment = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    animate();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, stages, mode, setMode, nextStage, jumpToStage, resetExperiment };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

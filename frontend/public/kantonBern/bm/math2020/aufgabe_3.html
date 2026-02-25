@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 3 - Folgen & Muster | BM Musterprüfung 2020</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '$', right: '$', display: false },
+              { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+          });
+        ">
+        </script>
+    <style>
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .tab-btn:hover {
+            color: #f59e0b;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #f59e0b;
+            color: #f59e0b;
+            font-weight: 700;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 320px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .solution-step {
+            border-left: 3px solid #fef3c7;
+            padding-left: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+        }
+
+        .solution-step:hover {
+            border-left-color: #f59e0b;
+        }
+
+        .math-boxed {
+            border: 2px solid #f59e0b;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 16px;
+            background: #fffbeb;
+            font-weight: bold;
+            color: #92400e;
+        }
+
+        .formula-card {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+
+        /* Tabelle wie im Original (3a) */
+        .bm-seq-table {
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+
+        .bm-seq-table th,
+        .bm-seq-table td {
+            border: 1px solid #475569;
+            padding: 4px 10px;
+            text-align: center;
+        }
+
+        .bm-seq-table thead th {
+            background: #e5e7eb;
+            font-weight: 600;
+        }
+
+        .bm-seq-table tbody td {
+            background: #fef9c3;
+            /* helles Gelb wie Vorlage */
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-slate-800 font-sans leading-relaxed p-4 md:p-10">
+    <div class="max-w-4xl mx-auto">
+        <!-- 1:1 Originalaufgabe -->
+        <div id="static-math" class="card" v-pre>
+            <div class="flex justify-between items-start mb-6">
+                <h1 class="text-3xl font-bold text-slate-900">Aufgabe 3</h1>
+                <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded text-sm font-semibold">6 Punkte</span>
+            </div>
+
+            <div class="space-y-8">
+                <section>
+                    <p class="font-bold mb-3">3a) Zahlenfolgen (3 Punkte)</p>
+                    <p class="mb-3">Von einer Zahlenfolge sind die ersten sechs Glieder gegeben:</p>
+                    <table class="bm-seq-table">
+                        <thead>
+                            <tr>
+                                <th>Glied 1</th>
+                                <th>Glied 2</th>
+                                <th>Glied 3</th>
+                                <th>Glied 4</th>
+                                <th>Glied 5</th>
+                                <th>Glied 6</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>−7</td>
+                                <td>−3</td>
+                                <td>1</td>
+                                <td>5</td>
+                                <td>9</td>
+                                <td>13</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <ul class="list-disc ml-8 space-y-1 mt-4">
+                        <li>Bestimmen Sie das Glied 7.</li>
+                        <li>Bestimmen Sie das Glied 13.</li>
+                        <li>Das Glied $x$ soll bestimmt werden. Geben Sie eine Formel mit der Variablen $x$ an, so dass
+                            sich das Glied $x$ direkt berechnen lässt.</li>
+                    </ul>
+                </section>
+
+                <section class="border-t pt-6">
+                    <p class="font-bold mb-3">3b) Figurenfolgen (3 Punkte)</p>
+                    <p class="mb-4">Von einer Figurenfolge sind die ersten drei Figuren gegeben. Sie bestehen aus gelben
+                        Häuschen und weissen Löchern.</p>
+
+                    <!-- Exact 1:1 Restoration of the Image using SVG for Grid and Figures -->
+                    <div class="flex justify-center mb-6 overflow-x-auto">
+                        <svg width="675" height="250" viewBox="0 0 675 250" xmlns="http://www.w3.org/2000/svg"
+                            class="max-w-full h-auto">
+                            <!-- Definition for a single grid cell pattern -->
+                            <defs>
+                                <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
+                                    <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#ccc" stroke-width="0.5" />
+                                </pattern>
+                            </defs>
+
+                            <!-- Background Grid: 27 columns x 10 rows -->
+                            <rect width="675" height="250" fill="url(#grid)" stroke="#ccc" stroke-width="0.5" />
+
+                            <!-- Figur 1: 3x3 at col 3, row 5 (offset) -->
+                            <g transform="translate(75, 125)">
+                                <rect width="75" height="75" fill="#ffff00" stroke="#000" stroke-width="2" />
+                                <!-- 1 Hole at center cell -->
+                                <rect x="25" y="25" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <text x="37.5" y="105" text-anchor="middle" font-weight="bold" font-size="14"
+                                    fill="#000" font-family="sans-serif">Figur 1</text>
+                            </g>
+
+                            <!-- Figur 2: 5x5 at col 10, row 3 -->
+                            <g transform="translate(250, 75)">
+                                <rect width="125" height="125" fill="#ffff00" stroke="#000" stroke-width="2" />
+                                <!-- 4 Holes at (2,2), (4,2), (2,4), (4,4) indices -->
+                                <rect x="25" y="25" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <rect x="75" y="25" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <rect x="25" y="75" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <rect x="75" y="75" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <text x="62.5" y="155" text-anchor="middle" font-weight="bold" font-size="14"
+                                    fill="#000" font-family="sans-serif">Figur 2</text>
+                            </g>
+
+                            <!-- Figur 3: 7x7 at col 18, row 1 -->
+                            <g transform="translate(475, 25)">
+                                <rect width="175" height="175" fill="#ffff00" stroke="#000" stroke-width="2" />
+                                <!-- 9 Holes -->
+                                <rect x="25" y="25" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <rect x="75" y="25" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <rect x="125" y="25" width="25" height="25" fill="#fff" stroke="#000"
+                                    stroke-width="1" />
+                                <rect x="25" y="75" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <rect x="75" y="75" width="25" height="25" fill="#fff" stroke="#000" stroke-width="1" />
+                                <rect x="125" y="75" width="25" height="25" fill="#fff" stroke="#000"
+                                    stroke-width="1" />
+                                <rect x="25" y="125" width="25" height="25" fill="#fff" stroke="#000"
+                                    stroke-width="1" />
+                                <rect x="75" y="125" width="25" height="25" fill="#fff" stroke="#000"
+                                    stroke-width="1" />
+                                <rect x="125" y="125" width="25" height="25" fill="#fff" stroke="#000"
+                                    stroke-width="1" />
+                                <text x="87.5" y="205" text-anchor="middle" font-weight="bold" font-size="14"
+                                    fill="#000" font-family="sans-serif">Figur 3</text>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <ul class="list-disc ml-8 space-y-1">
+                        <li>Bestimmen Sie die Anzahl gelber Häuschen von Figur 4.</li>
+                        <li>Bestimmen Sie die Anzahl gelber Häuschen von Figur 7.</li>
+                        <li>Die Anzahl gelber Häuschen von Figur $x$ soll bestimmt werden. Geben Sie eine Formel mit der
+                            Variablen $x$ an, mit welcher sich die Anzahl gelber Häuschen von Figur $x$ direkt berechnen
+                            lässt.</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+
+        <!-- App Container -->
+        <div id="app" v-cloak class="card border-t-8 border-amber-500">
+            <!-- Tabs Navigation -->
+            <div class="flex border-b mb-8 overflow-x-auto no-scrollbar">
+                <div v-for="t in tabs" :key="t.id" @click="currentTab = t.id"
+                    :class="['tab-btn whitespace-nowrap', currentTab === t.id ? 'active' : '']">
+                    {{ t.name }}
+                </div>
+            </div>
+
+            <!-- Intro Tab -->
+            <div v-if="currentTab === 'intro'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-amber-800">Detektiv-Training: Folgen</h2>
+                <p class="mb-6">In der Mathematik geht es oft darum, Muster zu erkennen und in eine allgemeingültige
+                    Sprache (Formeln) zu übersetzen.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="p-4 bg-amber-50 rounded shadow-sm border border-amber-100">
+                        <div class="text-amber-600 mb-2">🔍</div>
+                        <h4 class="font-bold mb-1 italic">Beobachten</h4>
+                        <p class="text-xs">Was verändert sich von einem Schritt zum nächsten?</p>
+                    </div>
+                    <div class="p-4 bg-amber-50 rounded shadow-sm border border-amber-100">
+                        <div class="text-amber-600 mb-2">📈</div>
+                        <h4 class="font-bold mb-1 italic">Vorhersagen</h4>
+                        <p class="text-xs">Kannst du den nächsten Wert berechnen, ohne alle Schritte zu gehen?</p>
+                    </div>
+                    <div class="p-4 bg-amber-50 rounded shadow-sm border border-amber-100">
+                        <div class="text-amber-600 mb-2">💡</div>
+                        <h4 class="font-bold mb-1 italic">Abstrahieren</h4>
+                        <p class="text-xs">Kannst du eine Formel für den Wert $x$ finden?</p>
+                    </div>
+                </div>
+
+                <div id="container-intro" class="canvas-container flex items-center justify-center p-4">
+                    <canvas id="canvas-intro"></canvas>
+                </div>
+            </div>
+
+            <!-- Tab 3a -->
+            <div v-if="currentTab === '3a'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Analyse der Zahlenfolge</h2>
+
+                <div class="solution-step">
+                    <p class="text-amber-600 font-bold mb-1">Schritt 1: Differenz bestimmen</p>
+                    <p>Die Differenz zwischen zwei Gliedern ist konstant: $(-3) - (-7) = 4$; $1 - (-3) = 4$.</p>
+                    <p class="text-sm italic">Es handelt sich um eine arithmetische Folge mit $d = 4$.</p>
+                </div>
+
+                <div class="solution-step">
+                    <p class="text-amber-600 font-bold mb-1">Schritt 2: Glied 7 und 13 berechnen</p>
+                    <p>$Glied\ 7 = Glied\ 6 + 4 = 13 + 4 = 17$</p>
+                    <p>$Glied\ 13 = Glied\ 1 + (13 - 1) \cdot 4 = -7 + 12 \cdot 4 = -7 + 48 = 41$</p>
+                </div>
+
+                <div class="solution-step">
+                    <p class="text-amber-600 font-bold mb-1">Schritt 3: Die allgemeine Formel</p>
+                    <p>Gesetzmässigkeit: $f(x) = f(1) + (x-1) \cdot d$</p>
+                    <div class="formula-card mt-2">
+                        $f(x) = -7 + (x-1) \cdot 4$<br>
+                        $f(x) = -7 + 4x - 4$<br>
+                        $f(x) = 4x - 11$
+                    </div>
+                </div>
+
+                <div class="math-boxed">Formel: $4x - 11$</div>
+
+                <div id="container-3a" class="canvas-container">
+                    <canvas id="canvas-3a"></canvas>
+                </div>
+            </div>
+
+            <!-- Tab 3b -->
+            <div v-if="currentTab === '3b'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Strukturanalyse der Figuren</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <div class="space-y-4">
+                        <div class="solution-step">
+                            <p class="text-amber-600 font-bold mb-1">Muster-Tabelle:</p>
+                            <table class="w-full text-sm border-collapse">
+                                <tr class="bg-amber-100">
+                                    <th class="border border-amber-200 p-1">Figur $x$</th>
+                                    <th class="border border-amber-200 p-1">Gesamt (Raster)</th>
+                                    <th class="border border-amber-200 p-1">Loch (weiss)</th>
+                                    <th class="border border-amber-200 p-1">Häuschen (gelb)</th>
+                                </tr>
+                                <tr>
+                                    <td class="border border-amber-200 p-1 text-center">1</td>
+                                    <td class="border border-amber-200 p-1 text-center">$3 \times 3 = 9$</td>
+                                    <td class="border border-amber-200 p-1 text-center">$1^2 = 1$</td>
+                                    <td class="border border-amber-200 p-1 text-center">8</td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-amber-200 p-1 text-center">2</td>
+                                    <td class="border border-amber-200 p-1 text-center">$5 \times 5 = 25$</td>
+                                    <td class="border border-amber-200 p-1 text-center">$2^2 = 4$</td>
+                                    <td class="border border-amber-200 p-1 text-center">21</td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-amber-200 p-1 text-center">3</td>
+                                    <td class="border border-amber-200 p-1 text-center">$7 \times 7 = 49$</td>
+                                    <td class="border border-amber-200 p-1 text-center">$3^2 = 9$</td>
+                                    <td class="border border-amber-200 p-1 text-center">40</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="solution-step">
+                            <p class="text-amber-600 font-bold mb-1">Berechnung 4 & 7:</p>
+                            <p>Figur 4: $(2 \cdot 4 + 1)^2 - 4^2 = 81 - 16 = \mathbf{65}$</p>
+                            <p>Figur 7: $(2 \cdot 7 + 1)^2 - 7^2 = 225 - 49 = \mathbf{176}$</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-amber-900 text-white rounded-xl shadow-inner">
+                        <h4 class="font-bold text-amber-300 mb-2">Die mathematische Sicht</h4>
+                        <p class="text-sm mb-4">Ein Raster mit Seitenlänge $(2x+1)$ hat $x^2$ Löcher:</p>
+                        <div class="text-center py-4 text-xl border-y border-amber-800 my-2">
+                            $y = (2x+1)^2 - x^2$<br>
+                            $= 4x^2 + 4x + 1 - x^2$<br>
+                            $= \mathbf{3x^2 + 4x + 1}$
+                        </div>
+                        <p class="text-xs italic text-amber-200">Test für Figur 1: $3(1)^2 + 4(1) + 1 = 8$. Stimmt!
+                        </p>
+                    </div>
+                </div>
+
+                <p class="math-boxed">Formel: $3x^2 + 4x + 1$</p>
+
+                <div id="container-3b" class="canvas-container">
+                    <canvas id="canvas-3b"></canvas>
+                </div>
+
+                <div class="mt-4 p-4 bg-amber-50 rounded italic text-sm text-center">
+                    Bewege den Schieberegler unten, um höhere Figuren zu visualisieren!
+                    <div class="mt-2">
+                        <input type="range" v-model="xLevel" min="1" max="15"
+                            class="w-full h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                        <p class="mt-2">Figur <span class="font-bold text-lg">{{xLevel}}</span>: <span
+                                class="text-amber-700 font-bold">{{3*xLevel*xLevel + 4*xLevel + 1}}</span> gelbe
+                            Häuschen</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Tab -->
+            <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-amber-800">Master-Zusammenfassung</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div class="p-5 bg-white border border-amber-100 rounded-xl shadow-sm">
+                            <h3 class="font-bold text-amber-700 mb-2">3a Key Takeaway</h3>
+                            <p class="text-sm">Bei arithmetischen Folgen ist die Differenz $d$ die "Steigung" in deiner
+                                Formel: $f(x) = d \cdot x + c$. Denke an eine Treppe!</p>
+                        </div>
+                        <div class="p-5 bg-white border border-amber-100 rounded-xl shadow-sm">
+                            <h3 class="font-bold text-amber-700 mb-2">3b Key Takeaway</h3>
+                            <p class="text-sm">Bei Flächenmustern hilft oft das Prinzip: <strong>"Gesamtfläche minus
+                                    Leerraum"</strong>. Das vereinfacht oft komplexe Figuren.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-slate-800 text-slate-100 rounded-2xl shadow-xl">
+                        <h3 class="font-bold text-amber-400 mb-4">Selbst-Check</h3>
+                        <p class="text-sm mb-4">Was wenn das Loch bei Aufgabe 3b immer nur $1 \times 1$ gross wäre, egal
+                            wie gross das Raster ist?</p>
+                        <div class="p-3 bg-slate-700 rounded text-xs text-slate-300">
+                            <strong>Frage:</strong> Wie lautet die Formel für Figur $x$ (Raster $(x+2) \times (x+2)$)
+                            mit einem $1 \times 1$ Loch?<br>
+                            <details class="mt-2 text-amber-300 cursor-pointer">
+                                <summary>Lösungshilfe</summary>
+                                Formel: $(x+2)^2 - 1$
+                            </details>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="container-summary" class="canvas-container mt-8">
+                    <canvas id="canvas-summary"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script shadow>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const xLevel = ref(4);
+
+                const tabs = [
+                    { id: 'intro', name: 'Einführung' },
+                    { id: '3a', name: '3a) Zahlen' },
+                    { id: '3b', name: '3b) Figuren' },
+                    { id: 'summary', name: 'Zusammenfassung' }
+                ];
+
+                const drawPattern = () => {
+                    const canvas = document.getElementById('canvas-intro');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Decorative abstract pattern
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i < 30; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(canvas.width / 2, canvas.height / 2);
+                        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                        ctx.globalAlpha = 0.2;
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1.0;
+                    ctx.fillStyle = '#92400e';
+                    ctx.font = 'italic 16px serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Suche das Gesetz in der Unordnung...', canvas.width / 2, canvas.height / 2);
+                };
+
+                const renderMath = () => {
+                    if (!window.renderMathInElement) return;
+                    window.renderMathInElement(document.body, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '\\[', right: '\\]', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                };
+
+                const drawLogic = (tab) => {
+                    const canvas = document.getElementById('canvas-' + tab);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (tab === '3a') {
+                        // Plot steps
+                        const steps = [-7, -3, 1, 5, 9, 13, 17];
+                        ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+                        ctx.translate(30, 150);
+                        ctx.beginPath();
+                        ctx.moveTo(0, -steps[0] * 10);
+                        steps.forEach((v, i) => {
+                            const x = i * 60;
+                            const y = -v * 10;
+                            ctx.lineTo(x, y);
+                            ctx.fillStyle = '#92400e';
+                            ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+                            ctx.fillText(v, x - 5, y - 10);
+                        });
+                        ctx.stroke();
+                    } else if (tab === '3b') {
+                        const level = parseInt(xLevel.value);
+                        const n = 2 * level + 1;
+                        const size = Math.min(canvas.width, canvas.height) * 0.9;
+                        const cellSize = size / n;
+                        ctx.translate((canvas.width - size) / 2, (canvas.height - size) / 2);
+
+                        for (let i = 0; i < n; i++) {
+                            for (let j = 0; j < n; j++) {
+                                // Holes are at even indices (1-indexed: 2, 4, 6...)
+                                // In 0-indexed terms, row/col index must be odd (1, 3, 5...)
+                                const isHole = (i % 2 !== 0 && j % 2 !== 0);
+                                ctx.fillStyle = isHole ? '#ffffff' : '#f59e0b';
+                                ctx.strokeStyle = '#92400e';
+                                ctx.lineWidth = Math.max(0.5, 2 / level);
+                                ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                                ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                            }
+                        }
+                    } else if (tab === 'summary') {
+                        ctx.fillStyle = '#f59e0b';
+                        ctx.beginPath(); ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#fff';
+                        ctx.textAlign = 'center'; ctx.font = 'bold 30px sans-serif';
+                        ctx.fillText('f(x)', canvas.width / 2, canvas.height / 2 + 10);
+                    }
+                };
+
+                onMounted(() => {
+                    setTimeout(() => {
+                        renderMath();
+                        drawPattern();
+                    }, 500);
+                });
+
+                watch([currentTab, xLevel], () => {
+                    setTimeout(() => {
+                        renderMath();
+                        if (currentTab.value === 'intro') drawPattern();
+                        else drawLogic(currentTab.value);
+                    }, 50);
+                });
+
+                return { currentTab, tabs, xLevel };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

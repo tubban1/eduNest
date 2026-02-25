@@ -73,6 +73,7 @@ export default function CollectionListPage() {
   const [keyInput, setKeyInput] = useState('');
   const [keyError, setKeyError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
+  const [updatingPreviewId, setUpdatingPreviewId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -138,6 +139,30 @@ export default function CollectionListPage() {
     }
     const listShortId = listData?.list?.short_id ?? params.short_id;
     router.push(`/c/${item.content.short_id}?from=${encodeURIComponent(`/list/${listShortId}`)}`);
+  };
+
+  const handleTogglePreview = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    item: CollectionListData['contents'][0]
+  ) => {
+    e.stopPropagation();
+    if (!listData) return;
+    if (!listData.list?.id) return;
+
+    try {
+      setUpdatingPreviewId(item.id);
+      const newValue = !item.is_free_preview;
+      await api.collectionList.updateItemPreviewFlag(listData.list.id, item.content.id, newValue);
+      // 使缓存失效并重新拉取，确保 free_count / premium_count 等统计准确
+      api.collectionList.invalidateCache(listData.list.short_id);
+      const fresh = await api.collectionList.getByShortId(listData.list.short_id);
+      setListData(fresh);
+    } catch (err) {
+      console.error('切换预览状态失败', err);
+      alert('切换预览状态失败，请稍后重试');
+    } finally {
+      setUpdatingPreviewId(null);
+    }
   };
 
   const handleKeySubmit = async () => {
@@ -469,6 +494,19 @@ export default function CollectionListPage() {
                     : item.content.title
                   }
                 >
+                  {/* 列表创建者：可以直接在卡片上勾选「免费预览」 */}
+                  {user_access?.is_owner && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleTogglePreview(e, item)}
+                      disabled={updatingPreviewId === item.id}
+                      className={`absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full text-[11px] border bg-white/80 hover:bg-white ${
+                        item.is_free_preview ? 'border-secondary text-secondary' : 'border-gray-300 text-gray-500'
+                      }`}
+                    >
+                      {item.is_free_preview ? 'Preview ✓' : 'Preview'}
+                    </button>
+                  )}
                   {/* 锁定图标覆盖层 */}
                   {isDisabled && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900/40 to-gray-800/40 rounded-lg z-10 backdrop-blur-sm">

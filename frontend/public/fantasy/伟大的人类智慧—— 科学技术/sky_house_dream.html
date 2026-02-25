@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我想在空中盖房子</title>
+    <!-- 核心库 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/p5.min.js'"></script>
+    <script>(function () { var g = "p5", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/p5.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #p5-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* 标准化 UI 布局 */
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #38bdf8;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 导航进度 */
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-dot.active {
+            background: #38bdf8;
+            box-shadow: 0 0 15px #38bdf8;
+            transform: scale(1.3);
+        }
+
+        /* 沉浸式文字层 */
+        .immersive-text-layer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 150px;
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        /* 底部 HUD */
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.4);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(2, 132, 199, 0.6);
+        }
+
+        .build-area {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 15px 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            backdrop-filter: blur(10px);
+            display: flex;
+            gap: 15px;
+        }
+
+        .module-item {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #38bdf8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .module-item:hover {
+            background: rgba(56, 189, 248, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+    <div id="p5-overlay"></div>
+
+    <div id="app" class="ui-overlay">
+        <div class="top-title-box">
+            <h1 class="main-title">我想在空中盖房子</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in 5" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)"></div>
+        </div>
+
+        <div class="immersive-text-layer">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-sky-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <!-- 阶段2的交互：搭积木 -->
+            <div v-if="step === 2" class="build-area pointer-events-auto">
+                <div v-for="m in houseModules" :key="m.id" class="module-item" @click="addModule(m.type)">
+                    [[ m.icon ]]
+                </div>
+            </div>
+
+            <!-- 阶段3的交互：调整悬浮高度 -->
+            <div v-if="step === 3" class="w-64 pointer-events-auto">
+                <div class="flex justify-between text-xs text-sky-300 mb-2"><span>能源输出: [[ energyLevel ]]%</span></div>
+                <input type="range" v-model="energyLevel" min="50" max="150" class="w-full accent-sky-500">
+            </div>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < 5" @click="nextStage" class="btn-action">[[ step === 2 ? '完成搭建' : '继续探索'
+                    ]]</button>
+                <button v-else @click="reset" class="btn-action">重返蓝图 🏠</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const energyLevel = ref(100);
+                const houseModules = [
+                    { id: 1, type: 'garden', icon: '🌳' },
+                    { id: 2, type: 'room', icon: '🏠' },
+                    { id: 3, type: 'pool', icon: '💎' }
+                ];
+
+                const stages = [
+                    { title: "摆脱大地的束缚", content: "为什么房子必须盖在地上？重力总想把一切往下拉。但在未来，如果我们能利用强大的磁力或反重力技术，房子就能像云朵一样漂浮。", parent: "宝贝，你看小鸟能在天上飞，气球能飘起来。如果我们的房子也有‘漂浮引擎’，那会是什么样呢？" },
+                    { title: "模块化组装室", content: "在空中盖房子不需要沉重的地基。我们可以用新型轻质材料制作房间模块，然后像搭积木一样把它们组合起来。快点击下方图标开始搭建！", parent: "看！由于重力变小了，这些大房间轻得像棉花糖。帮我把生活舱和空中花园拼在一起吧！" },
+                    { title: "能量与平衡的艺术", content: "悬浮城市需要精密的平衡。每个模块都有姿态感应系统。调节下方的能量滑块，看看房子的高度是如何随之变化的。", parent: "哇，风来了！别担心，房子的‘平衡魔法’启动了，我们坐在里面一点都不会觉得晃动哦。" },
+                    { title: "云端的生态家园", content: "空中建筑也是一个小世界。屋顶收集太阳能，阳台种植森林，甚至还能捕捉云朵里的水滴供我们饮用。这是真正的未来生态家园。", parent: "我们的阳台就在云彩里！我们可以和路过的小云朵打招呼，还能收集露水去浇花呢。" },
+                    { title: "向星空进发的第一步", content: "从地面到空中，人类的足迹在不断扩展。盖在空中的房子，是通往星际城市的练习场。保持好奇心，未来我们或许会住在星辰之间。", parent: "宝贝，天上的房子只是开始，以后说不定我们还能在月亮上盖个小花园呢。晚安，未来的设计师！" }
+                ];
+
+                // --- Three.js ---
+                let scene, camera, renderer, islands = [], islandGroup;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x0f172a);
+                    scene.fog = new THREE.Fog(0x0f172a, 50, 300);
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(30, 40, 100);
+                    camera.lookAt(0, 0, 0);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    islandGroup = new THREE.Group();
+                    scene.add(islandGroup);
+
+                    // 创建主浮岛
+                    const baseGeo = new THREE.CylinderGeometry(20, 10, 8, 8);
+                    const baseMat = new THREE.MeshPhongMaterial({ color: 0x475569 });
+                    const base = new THREE.Mesh(baseGeo, baseMat);
+                    base.position.y = -4;
+                    islandGroup.add(base);
+
+                    const topGeo = new THREE.CircleGeometry(21, 32);
+                    const topMat = new THREE.MeshPhongMaterial({ color: 0x1e293b });
+                    const top = new THREE.Mesh(topGeo, topMat);
+                    top.rotation.x = -Math.PI / 2;
+                    islandGroup.add(top);
+
+                    // 初始建筑
+                    addThreeModule('room', 0, 5, 0);
+
+                    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+                    scene.add(ambient);
+                    const sun = new THREE.DirectionalLight(0x38bdf8, 1);
+                    sun.position.set(50, 100, 50);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const addThreeModule = (type, x, y, z) => {
+                    let geo, color;
+                    if (type === 'room') { geo = new THREE.BoxGeometry(10, 10, 10); color = 0x38bdf8; }
+                    else if (type === 'garden') { geo = new THREE.BoxGeometry(12, 2, 12); color = 0x10b981; }
+                    else { geo = new THREE.TorusGeometry(5, 2, 16, 50); color = 0xf472b6; }
+
+                    const mat = new THREE.MeshPhongMaterial({ color, shininess: 100 });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(x, y, z);
+                    islandGroup.add(mesh);
+                    gsap.from(mesh.scale, { x: 0, y: 0, z: 0, duration: 0.5, ease: "back.out" });
+                };
+
+                const addModule = (type) => {
+                    const x = (Math.random() - 0.5) * 20;
+                    const z = (Math.random() - 0.5) * 20;
+                    addThreeModule(type, x, 10, z);
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    // 浮岛上下漂浮
+                    const h = (energyLevel.value / 100) * 5;
+                    islandGroup.position.y = Math.sin(t) * 2 + h;
+                    islandGroup.rotation.y += 0.002;
+
+                    renderer.render(scene, camera);
+                };
+
+                // --- P5.js 云朵效果 ---
+                let p5Instance;
+                const initP5 = () => {
+                    p5Instance = new p5((p) => {
+                        let clouds = [];
+                        p.setup = () => {
+                            let canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                            canvas.parent('p5-overlay');
+                            for (let i = 0; i < 8; i++) clouds.push({ x: p.random(p.width), y: p.random(p.height), w: p.random(100, 200), s: p.random(0.2, 0.8) });
+                        };
+                        p.draw = () => {
+                            p.clear();
+                            p.noStroke();
+                            p.fill(255, 255, 255, 30);
+                            clouds.forEach(c => {
+                                p.ellipse(c.x, c.y, c.w, c.w * 0.6);
+                                p.ellipse(c.x + c.w * 0.3, c.y + 10, c.w * 0.7, c.w * 0.5);
+                                c.x += c.s;
+                                if (c.x > p.width + 100) c.x = -100;
+                            });
+                        };
+                        p.windowResized = () => p.resizeCanvas(p.windowWidth, p.windowHeight);
+                    });
+                };
+
+                const nextStage = () => { if (step.value < 5) step.value++; };
+                const jumpTo = (n) => { step.value = n; };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    initP5();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, stages, energyLevel, houseModules, nextStage, jumpTo, reset, addModule };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

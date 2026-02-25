@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 2 - Prozentrechnen | BM Musterprüfung 2020</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+        onload="
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '$', right: '$', display: false },
+              { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+          });
+        ">
+    </script>
+    <style>
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .tab-btn:hover {
+            color: #10b981;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #10b981;
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 280px;
+            background: #f0fdf4;
+            border: 1px solid #dcfce7;
+            border-radius: 8px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .solution-step {
+            border-left: 3px solid #d1fae5;
+            padding-left: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+        }
+
+        .solution-step:hover {
+            border-left-color: #10b981;
+        }
+
+        .math-boxed {
+            border: 2px solid #10b981;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 16px;
+            background: #ecfdf5;
+            font-weight: bold;
+            color: #065f46;
+        }
+
+        input[type=range] {
+            accent-color: #10b981;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-slate-800 font-sans leading-relaxed p-4 md:p-10">
+    <div class="max-w-4xl mx-auto">
+        <!-- 1:1 Originalaufgabe -->
+        <div id="static-math" class="card" v-pre>
+            <div class="flex justify-between items-start mb-6">
+                <h1 class="text-3xl font-bold text-slate-900">Aufgabe 2</h1>
+                <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-sm font-semibold">6 Punkte</span>
+            </div>
+
+            <p class="text-lg font-medium mb-4 text-emerald-800">Thema: Prozentrechnen</p>
+            <p class="mb-4">In einem Kleiderladen werden die Preise von diversen Kleidern reduziert.</p>
+
+            <div class="space-y-6">
+                <section>
+                    <p class="font-bold mb-2">2a) (1 Punkt)</p>
+                    <p>Ein T-Shirt kostete ursprünglich CHF 39.—. Dieser Preis wurde um 20% reduziert. Wie viel kostet
+                        das T-Shirt nach der Preisreduktion?</p>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">2b) (1 Punkt)</p>
+                    <p>Nach einer Preisreduktion von 15% kostet eine Bluse nur noch CHF 48.45. Wie viel kostete die
+                        Bluse vor der Preisreduktion?</p>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">2c) (1 Punkt)</p>
+                    <p>Eine Lederjacke kostete ursprünglich CHF 550.—. Nach einer Preisreduktion kostet die Lederjacke
+                        nur noch CHF 308.—. Um wie viel Prozent wurde der Preis reduziert?</p>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">2d) (1 Punkt)</p>
+                    <p>Zu Beginn des ersten Monats kostet ein Anzug CHF 880.—. Am Ende von jedem Monat wird der Preis
+                        von anfangs Monat um 10% reduziert. Wie viel kostet der Anzug am Ende des fünften Monats? Runden
+                        Sie den gesuchten Preis auf zwei Nachkommastellen.</p>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">2e) (2 Punkte)</p>
+                    <p>Zu Beginn des ersten Monats kostet ein Abendkleid CHF 1400.—. Am Ende von jedem Monat wird der
+                        Preis von Anfangs Monat um 7% reduziert. Am Ende des wievielten Monats fällt der Preis des
+                        Abendkleides erstmals unter CHF 1000.—?</p>
+                </section>
+            </div>
+        </div>
+
+        <!-- App Container -->
+        <div id="app" v-cloak class="card border-t-8 border-emerald-500">
+            <!-- Tabs Navigation -->
+            <div class="flex border-b mb-8 overflow-x-auto no-scrollbar">
+                <div v-for="t in tabs" :key="t.id" @click="currentTab = t.id"
+                    :class="['tab-btn whitespace-nowrap', currentTab === t.id ? 'active' : '']">
+                    {{ t.name }}
+                </div>
+            </div>
+
+            <!-- Intro Tab -->
+            <div v-if="currentTab === 'intro'" class="animate-slideIn">
+                <h2 class="text-2xl font-bold mb-4 text-emerald-800">Prozent-Kompass</h2>
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="flex-1 space-y-4">
+                        <p>Hier lernst du, wie man Rabatte berechnet – sowohl einfache als auch Zinseszins-ähnliche
+                            Reduktionen über mehrere Zeiträume.</p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3">
+                                <span
+                                    class="bg-emerald-100 text-emerald-600 rounded-full w-6 h-6 flex items-center justify-center text-xs shrink-0 mt-1">✓</span>
+                                <div><strong>Vorwärts</strong>: Wie viel bleibt übrig? ($100\% - \text{Rabatt}$)</div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span
+                                    class="bg-emerald-100 text-emerald-600 rounded-full w-6 h-6 flex items-center justify-center text-xs shrink-0 mt-1">✓</span>
+                                <div><strong>Rückwärts</strong>: Was war der alte Preis? ($\text{Neuer Preis} /
+                                    \text{Prozentsatz}$)</div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span
+                                    class="bg-emerald-100 text-emerald-600 rounded-full w-6 h-6 flex items-center justify-center text-xs shrink-0 mt-1">✓</span>
+                                <div><strong>Wiederholung</strong>: Reduktion auf Reduktion ($\text{Kapital} \cdot q^n$)
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div id="container-intro" class="canvas-container md:w-80 h-64 bg-emerald-50 border-emerald-200">
+                        <canvas id="canvas-intro"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs for 2a - 2e -->
+            <!-- Vue 3 note: do NOT combine v-for + v-if on same element -->
+            <template v-for="q in ['2a', '2b', '2c', '2d', '2e']" :key="q">
+              <div v-if="currentTab === q" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Strategie für Aufgabe {{ q }}</h2>
+
+                <div v-if="q === '2a'">
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Analyse:</p>
+                        <p>Wir haben 100% und ziehen 20% ab. Es bleiben 80% des Preises übrig.</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Rechnung:</p>
+                        <p class="text-lg">$39.00 \cdot 0.80 = 31.20$</p>
+                    </div>
+                    <p class="math-boxed">CHF 31.20</p>
+                </div>
+
+                <div v-if="q === '2b'">
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Analyse:</p>
+                        <p>Die CHF 48.45 entsprechen 85% ($100\% - 15\%$) des Originalpreises.</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Rechnung:</p>
+                        <p class="text-lg">$x = \frac{48.45}{0.85} = 57.00$</p>
+                    </div>
+                    <p class="math-boxed">Originalpreis: CHF 57.00</p>
+                </div>
+
+                <div v-if="q === '2c'">
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Analyse:</p>
+                        <p>Berechne zuerst den absoluten Rabatt und dann dessen Anteil am Startpreis.</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Rechnung:</p>
+                        <p>Differenz: $550 - 308 = 242$<br>Prozentsatz: $\frac{242}{550} = 0.44 = 44\%$</p>
+                    </div>
+                    <p class="math-boxed">Rabatt: 44%</p>
+                </div>
+
+                <div v-if="q === '2d'">
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Analyse:</p>
+                        <p>Jeder Monat bedeutet eine Multiplikation mit 0.90 ($100\% - 10\%$). Nach 5 Monaten: $0.90^5$.
+                        </p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Rechnung:</p>
+                        <p class="text-lg">$880 \cdot 0.90^5 = 880 \cdot 0.59049 = 519.6312$</p>
+                    </div>
+                    <p class="math-boxed">Resultat (gerundet): CHF 519.63</p>
+
+                    <div class="mt-8 p-4 bg-emerald-50 rounded-lg">
+                        <label class="block font-bold mb-2">Simuliere die 5 Monate:</label>
+                        <input type="range" v-model="sliderMonths" min="0" max="10" step="1" class="w-full">
+                        <div class="mt-4 text-center">
+                            Monat <span class="text-xl font-bold">{{ sliderMonths }}</span>:
+                            <span class="text-xl font-bold text-emerald-700">CHF {{ calculatePrice(880, 0.9,
+                                sliderMonths) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="q === '2e'">
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Analyse:</p>
+                        <p>Wir suchen $n$, für das gilt: $1400 \cdot 0.93^n < 1000$.</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-emerald-600 font-semibold mb-1">Wert-Tabelle:</p>
+                        <p class="text-sm">
+                            $n=4: 1400 \cdot 0.93^4 \approx 1047$<br>
+                            $n=5: 1400 \cdot 0.93^5 \approx 974$
+                        </p>
+                    </div>
+                    <p class="math-boxed">Antwort: Am Ende des 5. Monats</p>
+
+                    <div class="mt-8 p-4 bg-emerald-50 rounded-lg">
+                        <label class="block font-bold mb-2">Preisverlauf Beobachter:</label>
+                        <input type="range" v-model="sliderMonthsE" min="0" max="10" step="1" class="w-full">
+                        <div class="mt-4 text-center">
+                            Monat <span class="text-xl font-bold">{{ sliderMonthsE }}</span>:
+                            <span
+                                :class="['text-xl font-bold', calculatePriceRaw(1400, 0.93, sliderMonthsE) < 1000 ? 'text-red-600' : 'text-emerald-700']">
+                                CHF {{ calculatePrice(1400, 0.93, sliderMonthsE) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div :id="'container-' + q" class="canvas-container">
+                    <canvas :id="'canvas-' + q"></canvas>
+                </div>
+              </div>
+            </template>
+
+            <!-- Summary Tab -->
+            <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-emerald-800">Meisterschafts-Check</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-5 bg-white border border-emerald-100 rounded-xl shadow-sm">
+                        <h3 class="font-bold text-emerald-700 mb-3 underline">Wichtige Formeln</h3>
+                        <div class="space-y-4 text-sm">
+                            <p><strong>Zunahme/Abnahme</strong>:<br>$W = G \cdot (1 \pm p)$</p>
+                            <p><strong>Zinseszins</strong>:<br>$K_n = K_0 \cdot q^n$</p>
+                        </div>
+                    </div>
+                    <div class="p-5 bg-emerald-900 text-white rounded-xl shadow-lg">
+                        <h3 class="font-bold mb-3 text-emerald-300">🚨 Vorsicht Falle!</h3>
+                        <p class="text-sm">Zwei Mal 10% Rabatt zu geben ist <span
+                                class="text-orange-300 font-bold">NICHT</span> das Gleiche wie ein Mal 20% Rabatt!</p>
+                        <p class="text-xs mt-2 text-emerald-200">Grund: Beim zweiten Mal wird der neue, bereits
+                            reduzierte Preis als Basis (100%) genommen.</p>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="font-bold text-lg mb-4">Training Challenge:</h3>
+                    <div class="p-4 bg-emerald-50 rounded-lg italic">
+                        "Ein Laptop wird von CHF 1200 um 15% reduziert und dann nochmals um 5% (auf den neuen Preis).
+                        Wie hoch ist der Gesamtrabatt in CHF?"
+                        <div class="mt-2 text-xs text-gray-400">Tipp: Rechne $1200 \cdot 0.85 \cdot 0.95$.</div>
+                    </div>
+                </div>
+
+                <div id="container-summary" class="canvas-container mt-8">
+                    <canvas id="canvas-summary"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script shadow>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const sliderMonths = ref(0);
+                const sliderMonthsE = ref(0);
+
+                const tabs = [
+                    { id: 'intro', name: 'Einführung' },
+                    { id: '2a', name: '2a) T-Shirt' },
+                    { id: '2b', name: '2b) Bluse' },
+                    { id: '2c', name: '2c) Jacke' },
+                    { id: '2d', name: '2d) Anzug' },
+                    { id: '2e', name: '2e) Abendkleid' },
+                    { id: 'summary', name: 'Zusammenfassung' }
+                ];
+
+                const calculatePriceRaw = (base, factor, n) => base * Math.pow(factor, n);
+                const calculatePrice = (base, factor, n) => calculatePriceRaw(base, factor, n).toFixed(2);
+
+                const renderMath = () => {
+                    if (!window.renderMathInElement) return;
+                    window.renderMathInElement(document.body, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '\\[', right: '\\]', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                };
+
+                const drawIntro = () => {
+                    const canvas = document.getElementById('canvas-intro');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Pie chart representing 20% off
+                    ctx.beginPath(); ctx.moveTo(canvas.width / 2, canvas.height / 2);
+                    ctx.arc(canvas.width / 2, canvas.height / 2, 60, -Math.PI / 2, Math.PI * 2 * 0.8 - Math.PI / 2);
+                    ctx.fillStyle = '#10b981'; ctx.fill();
+
+                    ctx.beginPath(); ctx.moveTo(canvas.width / 2, canvas.height / 2);
+                    ctx.arc(canvas.width / 2, canvas.height / 2, 60, Math.PI * 2 * 0.8 - Math.PI / 2, -Math.PI / 2);
+                    ctx.fillStyle = '#f87171'; ctx.fill();
+
+                    ctx.fillStyle = '#065f46'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+                    ctx.fillText('80% Rest', canvas.width / 2 + 40, canvas.height / 2);
+                    ctx.fillText('20% Aus', canvas.width / 2 - 40, canvas.height / 2 - 70);
+                };
+
+                const drawChart = (qId) => {
+                    const canvas = document.getElementById('canvas-' + qId);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.strokeStyle = '#34d399';
+                    ctx.beginPath(); ctx.moveTo(50, 230); ctx.lineTo(canvas.width - 50, 230); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(50, 230); ctx.lineTo(50, 50); ctx.stroke();
+
+                    if (qId === '2d' || qId === '2e') {
+                        // Plotting decay curve
+                        ctx.beginPath();
+                        ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3;
+                        const factor = qId === '2d' ? 0.9 : 0.93;
+                        for (let i = 0; i <= 10; i++) {
+                            const x = 50 + i * (canvas.width - 100) / 10;
+                            const y = 230 - Math.pow(factor, i) * 150;
+                            if (i == 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                            ctx.fillStyle = i === parseInt(qId === '2d' ? sliderMonths.value : sliderMonthsE.value) ? '#ef4444' : '#10b981';
+                            ctx.fillRect(x - 3, y - 3, 6, 6);
+                        }
+                        ctx.stroke();
+                    }
+                };
+
+                onMounted(() => {
+                    setTimeout(() => {
+                        renderMath();
+                        drawIntro();
+                    }, 500);
+                });
+
+                watch(currentTab, (val) => {
+                    console.debug('[aufgabe_2] tab changed:', val);
+                    setTimeout(() => {
+                        renderMath();
+                        if (val === 'intro') drawIntro();
+                        else drawChart(val);
+                    }, 100);
+                });
+
+                watch([sliderMonths, sliderMonthsE], () => {
+                    drawChart(currentTab.value);
+                });
+
+                return { currentTab, tabs, sliderMonths, sliderMonthsE, calculatePrice, calculatePriceRaw };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

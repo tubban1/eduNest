@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>没有火的生活会怎样</title>
+    <!-- 核心库 (带 Fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0101;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #f97316;
+            text-shadow: 0 0 20px rgba(249, 115, 22, 0.6);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(30, 10, 5, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            color: #d1d5db;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 120px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #fce7f3;
+        }
+
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .interaction-hint {
+            background: rgba(249, 115, 22, 0.2);
+            border: 1px dashed #f97316;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #fdba74;
+            animation: pulse 2s infinite;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(234, 88, 12, 0.4);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(234, 88, 12, 0.6);
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #f97316;
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(249, 115, 22, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: #f97316;
+            box-shadow: 0 0 15px #f97316;
+            transform: scale(1.3);
+        }
+
+        @keyframes pulse {
+            0% {
+                scale: 1;
+            }
+
+            50% {
+                scale: 1.05;
+            }
+
+            100% {
+                scale: 1;
+            }
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 声音切换 -->
+        <div class="sound-toggle pointer-events-auto" @click="toggleSound">
+            [[ isMuted ? '🔇' : '🔊' ]]
+        </div>
+
+        <div class="top-title-box">
+            <h1 class="main-title">文明的初火</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-orange-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <transition name="fade">
+                <div v-if="step === 1" class="interaction-hint">
+                    [[ heatEnergy < 100 ? '交互提示：快速滑动屏幕，帮祖先‘摩擦取火’！' : '大火燃起！进入下一关吧！' ]] </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-action">
+                    [[ step === 1 ? '开启探索之路' : '继续寻找智慧' ]]
+                </button>
+                <button v-else @click="reset" class="btn-action">重燃人类火种 ♻️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const heatEnergy = ref(0);
+                const isMuted = ref(false);
+
+                const stages = [
+                    { title: "大地的火花", content: "火不是物质，而是剧烈的能量释放。当木纤维在高速摩擦中达到燃点，文明的序幕就拉开了。请试着快速划动屏幕！", parent: "宝贝，快看！我们要帮祖先磨一磨木头，只要划得够快，火苗就能跳出来哦！" },
+                    { title: "分子的律动", content: "温度的本质是微观分子的狂放舞蹈。能量的积聚让它们冲破束缚，转化为吞噬黑暗的火焰。感受这种向上的力量吧。", parent: "哇！火真的点着了，由于你的努力，这些亮晶晶的能量现在都在跳舞呢！" },
+                    { title: "寒夜的威胁", content: "失去火，不仅是失去了熟食和光明。人类文明的引擎将彻底冷却。没有了热能的驱动，世界将在寂静中走向终结。", parent: "如果我们要保持温暖，就必须维持这股能量。火是人类最忠诚的朋友。" },
+                    { title: "跨越时空的引擎", content: "从原始的篝火到轰鸣的活塞发动机，火的形态在变，但核心的能量转化逻辑始终如一。它是我们跨越荒野的阶梯。", parent: "宝贝，你看，哪怕是现在的火箭升空，也是靠类似的‘火’产生的力量飞向宇宙的哦！" },
+                    { title: "守护文明的暖意", content: "火是人类掌握的第一种自然伟力。珍惜这些能量，就是珍惜我们进化的历程。愿你心中总有一团永不熄灭的智慧之火。晚安。", parent: "只要我们聪明地使用它，它就能一直温暖我们。盖好被子，晚安！" }
+                ];
+
+                // --- Sound Context ---
+                const noise = new Tone.NoiseSynth({ noise: { type: "pink" }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.1, release: 0.2 } }).toDestination();
+                const fireSound = new Tone.NoiseSynth({ noise: { type: "white" } }).toDestination();
+
+                const playFriction = () => {
+                    if (isMuted.value) return;
+                    Tone.start();
+                    noise.triggerAttackRelease("32n");
+                };
+
+                const playFireCrack = () => {
+                    if (isMuted.value || step.value === 1) return;
+                    Tone.start();
+                    const filter = new Tone.Filter(400, "lowpass").toDestination();
+                    fireSound.connect(filter);
+                    if (Math.random() < 0.1) fireSound.triggerAttackRelease("16n", undefined, 0.05);
+                };
+
+                // --- Three.js ---
+                let scene, camera, renderer, flameParticles, glow, controls;
+                const clock = new THREE.Clock();
+
+                // 动态生成圆形渐变纹理，让粒子看起来更像火焰
+                const createFireTexture = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 64;
+                    canvas.height = 64;
+                    const ctx = canvas.getContext('2d');
+                    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                    gradient.addColorStop(0.2, 'rgba(255, 200, 0, 0.8)');
+                    gradient.addColorStop(0.4, 'rgba(255, 100, 0, 0.5)');
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, 64, 64);
+                    const tex = new THREE.CanvasTexture(canvas);
+                    return tex;
+                };
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x0a0101);
+                    camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 5, 80);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = false; // 既然是等离子体，我们让用户手动观察
+
+                    // Plasma Particles
+                    const pCount = 1200; // 增加粒子数量以增强流体感
+                    const bGeo = new THREE.BufferGeometry();
+                    const bPos = new Float32Array(pCount * 3);
+                    const bColors = new Float32Array(pCount * 3);
+                    const bSize = new Float32Array(pCount);
+                    const bSeed = new Float32Array(pCount); // 随机扰动种子
+
+                    for (let i = 0; i < pCount; i++) {
+                        resetParticle(i, bPos, bSize, bSeed);
+                    }
+
+                    bGeo.setAttribute('position', new THREE.BufferAttribute(bPos, 3));
+                    bGeo.setAttribute('color', new THREE.BufferAttribute(bColors, 3));
+                    bGeo.setAttribute('size', new THREE.BufferAttribute(bSize, 1));
+                    bGeo.setAttribute('seed', new THREE.BufferAttribute(bSeed, 1));
+
+                    const pMat = new THREE.PointsMaterial({
+                        size: 3,
+                        transparent: true,
+                        opacity: 0.9,
+                        vertexColors: true,
+                        blending: THREE.AdditiveBlending,
+                        map: createFireTexture(),
+                        depthWrite: false
+                    });
+                    flameParticles = new THREE.Points(bGeo, pMat);
+                    scene.add(flameParticles);
+
+                    glow = new THREE.PointLight(0xf97316, 0, 200);
+                    scene.add(glow);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+
+                    animate();
+                };
+
+                const resetParticle = (i, pos, size, seed) => {
+                    // 更宽的底部基座
+                    pos[i * 3] = (Math.random() - 0.5) * 12;
+                    pos[i * 3 + 1] = -35;
+                    pos[i * 3 + 2] = (Math.random() - 0.5) * 12;
+                    size[i] = 2.0 + Math.random() * 4;
+                    seed[i] = Math.random() * 100;
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    controls.update();
+
+                    const energy = (step.value === 1 ? heatEnergy.value / 100 : 0.8 + Math.sin(t * 2) * 0.1);
+
+                    const pos = flameParticles.geometry.attributes.position.array;
+                    const colors = flameParticles.geometry.attributes.color.array;
+                    const sizes = flameParticles.geometry.attributes.size.array;
+                    const seeds = flameParticles.geometry.attributes.seed.array;
+
+                    for (let i = 0; i < 1200; i++) {
+                        const s = seeds[i];
+
+                        // 不规则等离子体运动逻辑
+                        // 1. 基础上升
+                        pos[i * 3 + 1] += (0.3 + energy * 1.5) * (1 + Math.sin(t * 1.5 + s) * 0.5);
+
+                        // 2. 混沌平移 (多层叠加产生不规则感)
+                        const driftX = Math.sin(t * 2.1 + s) * 0.4 + Math.sin(t * 5.7 + s * 2) * 0.2;
+                        const driftZ = Math.cos(t * 2.3 + s) * 0.4 + Math.cos(t * 4.9 + s * 3) * 0.2;
+
+                        pos[i * 3] += driftX * (1 + energy);
+                        pos[i * 3 + 2] += driftZ * (1 + energy);
+
+                        // 3. 螺旋/卷吸感
+                        const distFromCenter = Math.sqrt(pos[i * 3] * pos[i * 3] + pos[i * 3 + 2] * pos[i * 3 + 2]);
+                        pos[i * 3] -= pos[i * 3 + 2] * 0.05 * energy; // 简单的旋转力
+                        pos[i * 3 + 2] += pos[i * 3] * 0.05 * energy;
+
+                        // 生命周期比例
+                        const hRatio = (pos[i * 3 + 1] + 35) / 70;
+
+                        // 4. 闪烁缩放
+                        const flicker = 0.8 + Math.sin(t * 10 + s) * 0.2;
+                        sizes[i] = (1.0 - Math.pow(hRatio, 1.5)) * (4 + energy * 8) * flicker;
+
+                        // 5. 颜色：从炽热核心向外缘冷却
+                        const color = new THREE.Color();
+                        const hue = 0.0 + (1 - hRatio) * 0.15; // 从底部黄(0.15)到顶部红(0.0)
+                        const saturation = 0.9;
+                        const lightness = (1.0 - hRatio) * (0.4 + energy * 0.4);
+
+                        color.setHSL(hue, saturation, lightness);
+                        colors[i * 3] = color.r;
+                        colors[i * 3 + 1] = color.g;
+                        colors[i * 3 + 2] = color.b;
+
+                        // 混沌重置：模拟等离子体突然消散或爆发
+                        if (pos[i * 3 + 1] > 30 + energy * 50 * (0.8 + Math.random() * 0.4) || sizes[i] < 0.2) {
+                            resetParticle(i, pos, sizes, seeds);
+                        }
+                    }
+
+                    flameParticles.geometry.attributes.position.needsUpdate = true;
+                    flameParticles.geometry.attributes.color.needsUpdate = true;
+                    flameParticles.geometry.attributes.size.needsUpdate = true;
+
+                    flameParticles.material.opacity = 0.5 + energy * 0.5;
+                    glow.intensity = energy * 25;
+                    glow.color.setHSL(0.05 + Math.sin(t * 5) * 0.02, 1.0, 0.5);
+
+                    playFireCrack();
+                    renderer.render(scene, camera);
+                };
+
+                const handleFriction = (e) => {
+                    if (step.value !== 1) return;
+                    const movement = Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0);
+                    if (movement > 10) {
+                        heatEnergy.value = Math.min(100, heatEnergy.value + 1);
+                        playFriction();
+                    } else {
+                        heatEnergy.value = Math.max(0, heatEnergy.value - 0.2);
+                    }
+                    if (heatEnergy.value >= 100) {
+                        gsap.to(camera.position, { z: 80, duration: 1 });
+                    }
+                };
+
+                const toggleSound = () => {
+                    isMuted.value = !isMuted.value;
+                    Tone.Destination.mute = isMuted.value;
+                };
+
+                const nextStage = () => { if (step.value < stages.length) step.value++; };
+                const jumpTo = (n) => { step.value = n; };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('mousemove', handleFriction);
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, stages, heatEnergy, isMuted, nextStage, jumpTo, reset, toggleSound };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

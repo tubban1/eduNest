@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 4 - Geometrie (Pavillons) | BM Musterprüfung 2020</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '$', right: '$', display: false },
+              { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+          });
+        ">
+        </script>
+    <style>
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .tab-btn:hover {
+            color: #6366f1;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #6366f1;
+            color: #6366f1;
+            font-weight: 700;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 320px;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 8px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .solution-step {
+            border-left: 3px solid #e0e7ff;
+            padding-left: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+        }
+
+        .solution-step:hover {
+            border-left-color: #6366f1;
+        }
+
+        .math-boxed {
+            border: 2px solid #6366f1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 16px;
+            background: #eef2ff;
+            font-weight: bold;
+            color: #3730a3;
+        }
+
+        .spec-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-slate-800 font-sans leading-relaxed p-4 md:p-10">
+    <div class="max-w-4xl mx-auto">
+        <!-- 1:1 Originalaufgabe -->
+        <div id="static-math" class="card" v-pre>
+            <div class="flex justify-between items-start mb-6">
+                <h1 class="text-3xl font-bold text-slate-900">Aufgabe 4</h1>
+                <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-sm font-semibold">6 Punkte</span>
+            </div>
+
+            <p class="mb-4">Die zu betrachtenden Gartenpavillons setzen sich aus vier in einem Rechteck aufgestellten
+                Alubeinen (grau) und einer Dachkonstruktion zusammen, welche mit einer Blache (grün) abgedeckt ist.</p>
+
+            <div class="space-y-8">
+                <section>
+                    <p class="font-bold mb-2">4a) (1 Punkt)</p>
+                    <div class="flex flex-col md:flex-row gap-4 items-start">
+                        <div class="flex-1">
+                            <p>Bestimmen Sie das <strong>Volumen</strong> der Dachkonstruktion des abgebildeten
+                                Gartenpavillons.</p>
+                        </div>
+                        <div class="w-64 shrink-0 bg-white border rounded p-3 shadow-sm">
+                            <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Legs -->
+                                <line x1="30" y1="50" x2="30" y2="95" stroke="#94a3b8" stroke-width="1.5" />
+                                <line x1="80" y1="50" x2="80" y2="95" stroke="#94a3b8" stroke-width="1.5" />
+                                <line x1="55" y1="35" x2="55" y2="80" stroke="#cbd5e1" stroke-width="1" />
+                                <line x1="105" y1="35" x2="105" y2="80" stroke="#cbd5e1" stroke-width="1" />
+                                <!-- Roof -->
+                                <path d="M 30 50 L 80 50 L 55 10 Z" fill="#4ade80" stroke="#166534"
+                                    stroke-width="1.5" />
+                                <path d="M 80 50 L 130 35 L 105 0 L 55 10 Z" fill="#22c55e" stroke="#166534"
+                                    stroke-width="1" />
+                                <!-- Dimentions -->
+                                <g font-size="10" font-family="sans-serif" fill="#1e293b">
+                                    <line x1="30" y1="60" x2="80" y2="60" stroke="#1e293b" stroke-width="0.8" />
+                                    <line x1="30" y1="58" x2="30" y2="62" stroke="#1e293b" />
+                                    <line x1="80" y1="58" x2="80" y2="62" stroke="#1e293b" />
+                                    <text x="55" y="72" text-anchor="middle">3 m</text> <!-- Fixed: 3m width -->
+
+                                    <line x1="85" y1="55" x2="135" y2="40" stroke="#1e293b" stroke-width="0.8" />
+                                    <line x1="85" y1="52" x2="85" y2="58" stroke="#1e293b"
+                                        transform="rotate(-15, 85, 55)" />
+                                    <line x1="135" y1="37" x2="135" y2="43" stroke="#1e293b"
+                                        transform="rotate(-15, 135, 40)" />
+                                    <text x="110" y="60" transform="rotate(-15, 110, 60)">4 m</text>
+
+                                    <line x1="55" y1="10" x2="55" y2="50" stroke="#1e293b" stroke-width="0.8"
+                                        stroke-dasharray="3,3" />
+                                    <text x="60" y="35">2 m</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">4b) (1 Punkt)</p>
+                    <div class="flex flex-col md:flex-row gap-4 items-start">
+                        <div class="flex-1">
+                            <p>Bestimmen Sie den <strong>Flächeninhalt</strong> der Dachblache (halber Zylinder).</p>
+                        </div>
+                        <div class="w-64 shrink-0 bg-white border rounded p-3 shadow-sm">
+                            <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Legs -->
+                                <line x1="30" y1="60" x2="30" y2="100" stroke="#94a3b8" stroke-width="1.5" />
+                                <line x1="80" y1="60" x2="80" y2="100" stroke="#94a3b8" stroke-width="1.5" />
+                                <line x1="55" y1="50" x2="55" y2="90" stroke="#cbd5e1" stroke-width="1" />
+                                <line x1="105" y1="50" x2="105" y2="90" stroke="#cbd5e1" stroke-width="1" />
+                                <!-- Roof (Barrel) -->
+                                <path d="M 30 60 A 40 40 0 0 1 110 60 L 140 50 A 40 40 0 0 0 60 50 Z" fill="#22c55e"
+                                    stroke="#166534" stroke-width="1" />
+                                <path d="M 30 60 A 40 40 0 0 1 110 60 L 110 60 Z" fill="#4ade80" stroke="#166534"
+                                    stroke-width="1.5" /> <!-- Front semi-circle green -->
+                                <!-- Dimensions -->
+                                <g font-size="10" font-family="sans-serif" fill="#1e293b">
+                                    <line x1="30" y1="70" x2="110" y2="70" stroke="#1e293b" stroke-width="0.8" />
+                                    <line x1="30" y1="68" x2="30" y2="72" stroke="#1e293b" />
+                                    <line x1="110" y1="68" x2="110" y2="72" stroke="#1e293b" />
+                                    <text x="70" y="82" text-anchor="middle">d = 3 m</text>
+
+                                    <line x1="115" y1="65" x2="145" y2="55" stroke="#1e293b" stroke-width="0.8" />
+                                    <text x="130" y="70" transform="rotate(-18, 130, 70)">4 m</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">4c) (1 Punkt)</p>
+                    <div class="flex flex-col md:flex-row gap-4 items-start">
+                        <div class="flex-1">
+                            <p>Bestimmen Sie das <strong>Volumen</strong> der Dachkonstruktion des abgebildeten
+                                Gartenpavillons.</p>
+                        </div>
+                        <div class="w-64 shrink-0 bg-white border rounded p-3 shadow-sm">
+                            <svg viewBox="0 0 160 140" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Legs -->
+                                <line x1="30" y1="50" x2="30" y2="90" stroke="#94a3b8" stroke-width="1.5" />
+                                <line x1="110" y1="50" x2="110" y2="90" stroke="#94a3b8" stroke-width="1.5" />
+                                <line x1="60" y1="40" x2="60" y2="80" stroke="#cbd5e1" stroke-width="1" />
+                                <line x1="140" y1="40" x2="140" y2="80" stroke="#cbd5e1" stroke-width="1" />
+
+                                <!-- Roof Arc (Surface - ONLY SEGMENT) -->
+                                <path d="M 30 50 A 80 80 0 0 1 110 50 L 140 40 A 80 80 0 0 0 60 40 Z" fill="#22c55e"
+                                    stroke="#166534" stroke-width="1" />
+                                <path d="M 30 50 A 80 80 0 0 1 110 50 Z" fill="#4ade80" stroke="#166534"
+                                    stroke-width="1.2" /> <!-- Segment face -->
+
+                                <!-- Sector Geometry (Point below) -->
+                                <g stroke="#1e293b" fill="none" opacity="0.4">
+                                    <line x1="30" y1="50" x2="70" y2="119" stroke-width="1" /> <!-- Left radius -->
+                                    <line x1="110" y1="50" x2="70" y2="119" stroke-width="1" /> <!-- Right radius -->
+                                    <line x1="30" y1="50" x2="110" y2="50" stroke-dasharray="3,3" stroke-width="0.8" />
+                                    <!-- Chord -->
+                                </g>
+                                <path d="M 60 102 A 20 20 0 0 1 80 102" stroke="#1e293b" stroke-width="1" fill="none" />
+                                <text x="70" y="118" text-anchor="middle" font-size="10" fill="#1e293b">60°</text>
+
+                                <!-- Dimensions -->
+                                <g font-size="10" font-family="sans-serif" fill="#1e293b">
+                                    <line x1="30" y1="130" x2="110" y2="130" stroke="#1e293b" stroke-width="0.8" />
+                                    <line x1="30" y1="128" x2="30" y2="132" stroke="#1e293b" />
+                                    <line x1="110" y1="128" x2="110" y2="132" stroke="#1e293b" />
+                                    <text x="70" y="127" text-anchor="middle">3 m</text>
+
+                                    <line x1="115" y1="50" x2="145" y2="40" stroke="#1e293b" stroke-width="0.8" />
+                                    <text x="135" y="55" transform="rotate(-18, 135, 55)">4 m</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">4d) (1 Punkt)</p>
+                    <div class="flex flex-col md:flex-row gap-4 items-start">
+                        <div class="flex-1">
+                            <p>Die Dachkonstruktion des abgebildeten Gartenpavillons ist
+                                <strong>pyramidenförmig</strong>. Bestimmen Sie das <strong>Volumen</strong> der
+                                Dachkonstruktion.
+                            </p>
+                        </div>
+                        <div class="w-64 shrink-0 bg-white border rounded p-3 shadow-sm">
+                            <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Legs -->
+                                <line x1="30" y1="70" x2="30" y2="105" stroke="#94a3b8" stroke-width="1.5" />
+                                <line x1="100" y1="70" x2="100" y2="105" stroke="#94a3b8" stroke-width="1.5" />
+                                <line x1="55" y1="55" x2="55" y2="90" stroke="#cbd5e1" stroke-width="1" />
+                                <line x1="125" y1="55" x2="125" y2="90" stroke="#cbd5e1" stroke-width="1" />
+                                <!-- Roof (Pyramid) -->
+                                <path d="M 30 70 L 100 70 L 75 30 Z" fill="#4ade80" stroke="#166534"
+                                    stroke-width="1.5" />
+                                <path d="M 100 70 L 125 55 L 75 30 Z" fill="#22c55e" stroke="#166534"
+                                    stroke-width="1.2" />
+                                <!-- Dimensions (3m and 4m swapped as requested) -->
+                                <g font-size="10" font-family="sans-serif" fill="#1e293b">
+                                    <line x1="30" y1="80" x2="100" y2="80" stroke="#1e293b" stroke-width="0.8" />
+                                    <text x="65" y="92" text-anchor="middle">3 m</text> <!-- Swapped -->
+
+                                    <line x1="105" y1="75" x2="130" y2="60" stroke="#1e293b" stroke-width="0.8" />
+                                    <text x="115" y="80">4 m</text> <!-- Swapped -->
+
+                                    <line x1="75" y1="30" x2="75" y2="65" stroke="#ef4444" stroke-width="1"
+                                        stroke-dasharray="3,3" />
+                                    <text x="80" y="50" fill="#ef4444">1.2 m</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">4e) (1 Punkt)</p>
+                    <p>Bei einem Gartenpavillon werden sämtliche Längen um den Faktor 1.5 vergrössert.</p>
+                    <ul class="list-disc ml-8 mt-2">
+                        <li>Um welchen Faktor wird der Flächeninhalt der Dachblache vergrössert?</li>
+                        <li>Um welchen Faktor wird das Volumen vergrössert?</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">4f) (1 Punkt)</p>
+                    <div class="flex flex-col md:flex-row gap-6 items-center">
+                        <div class="flex-1">
+                            <p>Nebenstehend sind die Ansichten von vorne und von der Seite von einem Gartenpavillon
+                                abgebildet. Skizzieren Sie eine <strong>Abwicklung</strong> der Dachblache.</p>
+                        </div>
+                        <div class="flex gap-4 shrink-0">
+                            <div class="text-center">
+                                <p class="text-[10px] text-slate-400 mb-1">von vorne</p>
+                                <svg width="60" height="40" viewBox="0 0 60 40">
+                                    <path d="M 5 35 L 55 35 L 30 5 Z" fill="none" stroke="#1e293b" stroke-width="1.2" />
+                                </svg>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-[10px] text-slate-400 mb-1">von der Seite</p>
+                                <svg width="80" height="40" viewBox="0 0 80 40">
+                                    <path d="M 5 35 L 75 35 L 60 5 L 20 5 Z" fill="none" stroke="#1e293b"
+                                        stroke-width="1.2" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- App Container -->
+        <div id="app" v-cloak class="card border-t-8 border-indigo-500">
+            <!-- Tabs Navigation -->
+            <div class="flex border-b mb-8 overflow-x-auto no-scrollbar">
+                <div v-for="t in tabs" :key="t.id" @click="currentTab = t.id"
+                    :class="['tab-btn whitespace-nowrap', currentTab === t.id ? 'active' : '']">
+                    {{ t.name }}
+                </div>
+            </div>
+
+            <!-- Intro -->
+            <div v-if="currentTab === 'intro'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-indigo-800">Raumvorstellung & Berechnung</h2>
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <p class="mb-4">Willkommen im Pavillon-Architekturbüro! Wir zerlegen komplexe Dächer in einfache
+                            geometrische Grundkörper.</p>
+                        <ul class="space-y-2 text-sm">
+                            <li class="p-3 bg-indigo-50 rounded">🔷 <strong>Prismen</strong>: Grundfläche $\times$ Höhe
+                            </li>
+                            <li class="p-3 bg-indigo-50 rounded">⭕ <strong>Zylinder</strong>: $\pi \cdot r^2 \cdot h$
+                                (anteilig)</li>
+                            <li class="p-3 bg-indigo-50 rounded">🔺 <strong>Pyramiden</strong>: $\frac{1}{3} \cdot A_G
+                                \cdot h$</li>
+                        </ul>
+                    </div>
+                    <div id="container-intro" class="canvas-container md:w-80">
+                        <canvas id="canvas-intro"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4a -->
+            <div v-if="currentTab === '4a'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800">4a) Dreiecks-Prisma</h2>
+                <div class="solution-step">
+                    <p class="font-bold text-indigo-600">Analyse:</p>
+                    <p>Gegeben sind die Breite $g=3\text{m}$, die Länge $L=4\text{m}$ und die
+                        <strong>Dachschräge</strong> $s=2\text{m}$.
+                    </p>
+                    <p>Zuerst berechnen wir die Giebelhöhe $h$ mit Pythagoras:</p>
+                    <p>$h = \sqrt{s^2 - (\frac{g}{2})^2} = \sqrt{2^2 - 1.5^2} = \sqrt{1.75} \approx 1.323 \text{ m}$</p>
+                </div>
+                <div class="solution-step">
+                    <p class="font-bold text-indigo-600">Rechnung:</p>
+                    <p>$A_{Giebel} = \frac{g \cdot h}{2} = \frac{3 \cdot \sqrt{1.75}}{2} \approx 1.984 \text{ m}^2$</p>
+                    <p>$V = A_{Giebel} \cdot L = 1.984 \cdot 4 \approx 7.94 \text{ m}^3$</p>
+                </div>
+                <p class="math-boxed">Resultat: $7.94 \text{ m}^3$</p>
+                <div id="container-4a" class="canvas-container">
+                    <canvas id="canvas-4a"></canvas>
+                </div>
+            </div>
+
+            <!-- Tab 4b -->
+            <div v-if="currentTab === '4b'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800">4b) Tonnendach (Flächeninhalt)</h2>
+                <div class="solution-step">
+                    <p class="font-bold text-indigo-600">Gegeben:</p>
+                    <p>Durchmesser $d = 3\text{ m} \Rightarrow$ Radius $r = 1.5\text{ m}$. Länge $L = 4\text{ m}$.</p>
+                </div>
+                <div class="solution-step">
+                    <p class="font-bold text-indigo-600">Rechnung:</p>
+                    <p>Die Blache bedeckt die Mantelfläche UND die Stirnseiten (Halbkreise).</p>
+                    <p>Mantel: $A_M = \pi \cdot r \cdot L = \pi \cdot 1.5 \cdot 4 \approx 18.850 \text{ m}^2$</p>
+                    <p>Stirnseiten: $A_S = 2 \cdot (\frac{1}{2} \cdot \pi \cdot r^2) = \pi \cdot 1.5^2 \approx 7.069
+                        \text{ m}^2$</p>
+                    <p>Gesamt: $A = 18.850 + 7.069 = 25.919 \text{ m}^2$</p>
+                </div>
+                <p class="math-boxed">Resultat: $25.919 \text{ m}^2$</p>
+                <div id="container-4b" class="canvas-container">
+                    <canvas id="canvas-4b"></canvas>
+                </div>
+            </div>
+
+            <!-- Tab 4c -->
+            <div v-if="currentTab === '4c'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800">4c) Zylindersektor (Volumen)</h2>
+                <div class="solution-step">
+                    <p class="font-bold text-indigo-600">Analyse:</p>
+                    <p>Die Konstruktion ist ein <strong>Kreissegment</strong> (der Teil oberhalb der Sehne).</p>
+                    <p>$A_{Segment} = A_{Sektor} - A_{Dreieck}$</p>
+                    <p>$A_{Sektor} = \frac{60}{360} \cdot \pi \cdot 3^2 \approx 4.712 \text{ m}^2$</p>
+                    <p>$A_{Dreieck} = \frac{\sqrt{3}}{4} \cdot 3^2 \approx 3.897 \text{ m}^2$</p>
+                </div>
+                <div class="solution-step">
+                    <p class="font-bold text-indigo-600">Rechnung:</p>
+                    <p>$V = (A_{Sektor} - A_{Dreieck}) \cdot L$</p>
+                    <p>$V = (4.712 - 3.897) \cdot 4 = 0.815 \cdot 4 = 3.261 \text{ m}^3$</p>
+                </div>
+                <p class="math-boxed">Resultat: $3.261 \text{ m}^3$</p>
+                <div id="container-4c" class="canvas-container">
+                    <canvas id="canvas-4c"></canvas>
+                </div>
+            </div>
+
+            <!-- Tab 4d -->
+            <div v-if="currentTab === '4d'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800">4d) Pyramide</h2>
+                <div class="solution-step">
+                    <p class="font-bold text-indigo-600">Formel:</p>
+                    <p>$V = \frac{1}{3} \cdot \text{Grundfläche} \cdot \text{Höhe}$</p>
+                </div>
+                <div class="solution-step">
+                    <p class="font-bold text-indigo-600">Rechnung:</p>
+                    <p>$A_G = 3 \cdot 4 = 12 \text{ m}^2$</p>
+                    <p>$V = \frac{1}{3} \cdot 12 \cdot 1.2 = 4 \cdot 1.2 = 4.8 \text{ m}^3$</p>
+                </div>
+                <p class="math-boxed">Resultat: $4.8 \text{ m}^3$</p>
+                <div id="container-4d" class="canvas-container">
+                    <canvas id="canvas-4d"></canvas>
+                </div>
+            </div>
+
+            <!-- Tab 4e -->
+            <div v-if="currentTab === '4e'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800">4e) Ähnlichkeit & Skalierung</h2>
+                <p class="mb-4 font-bold text-indigo-600 underline">Wichtige Erkenntnis:</p>
+                <p class="mb-6 italic">Vergrössern sich alle Längen um den Faktor $k$, so wachsen Flächen quadratisch
+                    ($k^2$) und Volumina kubisch ($k^3$).</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-indigo-900 text-white p-6 rounded-xl">
+                        <h4 class="font-bold mb-2">Flächeninhalt</h4>
+                        <p class="text-sm text-indigo-300 mb-2">Faktor: $1.5^2$</p>
+                        <p class="text-3xl font-bold">2.25</p>
+                    </div>
+                    <div class="bg-indigo-700 text-white p-6 rounded-xl">
+                        <h4 class="font-bold mb-2">Volumen</h4>
+                        <p class="text-sm text-indigo-300 mb-2">Faktor: $1.5^3$</p>
+                        <p class="text-3xl font-bold">3.375</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4f -->
+            <div v-if="currentTab === '4f'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800">4f) Abwicklung (Netz)</h2>
+
+                <div class="flex flex-wrap gap-8 justify-center mb-8">
+                    <!-- Front view -->
+                    <div class="text-center">
+                        <p class="text-xs text-slate-500 mb-1 italic">von vorne</p>
+                        <svg width="80" height="60" viewBox="0 0 80 60">
+                            <path d="M 10 50 L 40 10 L 70 50 Z" fill="#4ade80" stroke="#166534" />
+                            <line x1="10" y1="50" x2="10" y2="60" stroke="#cbd5e1" />
+                            <line x1="70" y1="50" x2="70" y2="60" stroke="#cbd5e1" />
+                        </svg>
+                    </div>
+                    <!-- Side view -->
+                    <div class="text-center">
+                        <p class="text-xs text-slate-500 mb-1 italic">von der Seite</p>
+                        <svg width="100" height="60" viewBox="0 0 100 60">
+                            <path d="M 10 50 L 30 10 L 70 10 L 90 50 Z" fill="#4ade80" stroke="#166534" />
+                            <line x1="10" y1="50" x2="10" y2="60" stroke="#cbd5e1" />
+                            <line x1="90" y1="50" x2="90" y2="60" stroke="#cbd5e1" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="solution-step bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p class="font-bold text-indigo-700 mb-2">3 Beispiele für korrekte Abwicklungen:</p>
+                    <div class="flex flex-wrap gap-4 justify-center">
+                        <button @click="netVariant = 1" :class="netVariant === 1 ? 'bg-indigo-600' : 'bg-slate-400'"
+                            class="px-3 py-1 text-white text-xs rounded transition shadow hover:bg-indigo-500">Variante
+                            1</button>
+                        <button @click="netVariant = 2" :class="netVariant === 2 ? 'bg-indigo-600' : 'bg-slate-400'"
+                            class="px-3 py-1 text-white text-xs rounded transition shadow hover:bg-indigo-500">Variante
+                            2</button>
+                        <button @click="netVariant = 3" :class="netVariant === 3 ? 'bg-indigo-600' : 'bg-slate-400'"
+                            class="px-3 py-1 text-white text-xs rounded transition shadow hover:bg-indigo-500">Variante
+                            3</button>
+                    </div>
+
+                    <div class="mt-6 flex justify-center">
+                        <div id="container-4f"
+                            class="canvas-container max-w-sm h-64 bg-white border-2 border-indigo-100 rounded-lg">
+                            <canvas id="canvas-4f"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Summary -->
+            <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800 border-b-2 border-indigo-200 pb-2">Zusammenfassung
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Box 1: Volumen -->
+                    <div class="bg-white p-5 rounded-xl border-l-4 border-indigo-500 shadow-sm">
+                        <h3 class="font-bold text-indigo-900 mb-3 flex items-center">
+                            <span
+                                class="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-xs mr-2">1</span>
+                            Volumenberechnung
+                        </h3>
+                        <p class="text-sm space-y-2">
+                            - <strong>Prisma (4a):</strong> $V = G \cdot h \rightarrow$ Achte auf die korrekte Höhe
+                            (Pythagoras!).<br>
+                            - <strong>Segment (4c):</strong> $V = (A_{Sektor} - A_{Dreieck}) \cdot L$. Nur das Segment
+                            zählt!
+                        </p>
+                    </div>
+
+                    <!-- Box 2: Flaechen -->
+                    <div class="bg-white p-5 rounded-xl border-l-4 border-emerald-500 shadow-sm">
+                        <h3 class="font-bold text-emerald-900 mb-3 flex items-center">
+                            <span
+                                class="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center text-xs mr-2">2</span>
+                            Flächeninhalte
+                        </h3>
+                        <p class="text-sm space-y-2">
+                            - <strong>Gesamt-Blache (4b):</strong> Vergiss die Stirnseiten (Halbkreise) nicht!<br>
+                            - <strong>Formel:</strong> $A_{tot} = A_{Mantel} + 2 \cdot A_{Front}$.
+                        </p>
+                    </div>
+
+                    <!-- Box 3: Skalierung -->
+                    <div class="bg-white p-5 rounded-xl border-l-4 border-amber-500 shadow-sm">
+                        <h3 class="font-bold text-amber-900 mb-3 flex items-center">
+                            <span
+                                class="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center text-xs mr-2">3</span>
+                            Ähnlichkeit (4e)
+                        </h3>
+                        <p class="text-sm">
+                            Faktor $k=1.5$.<br>
+                            - Flächen wachsen um $k^2 = 2.25$.<br>
+                            - Volumina wachsen um $k^3 = 3.375$.
+                        </p>
+                    </div>
+
+                    <!-- Box 4: Abwicklung -->
+                    <div class="bg-white p-5 rounded-xl border-l-4 border-rose-500 shadow-sm">
+                        <h3 class="font-bold text-rose-900 mb-3 flex items-center">
+                            <span
+                                class="w-6 h-6 bg-rose-100 rounded-full flex items-center justify-center text-xs mr-2">4</span>
+                            Netzsskizze (4f)
+                        </h3>
+                        <p class="text-sm">
+                            Ein Walmdach besteht aus:<br>
+                            - 2 gleichen Dreiecken.<br>
+                            - 2 gleichen Trapezen.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-6 bg-indigo-50 rounded-2xl text-center">
+                    <p class="text-indigo-900 font-medium italic">"Geometrie ist die Kunst, mit ungenauen Figuren exakte
+                        Bestimmungen vorzunehmen."</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script shadow>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const tabs = [
+                    { id: 'intro', name: 'Einführung' },
+                    { id: '4a', name: '4a) Prisma' },
+                    { id: '4b', name: '4b) Bogen' },
+                    { id: '4c', name: '4c) Sektor' },
+                    { id: '4d', name: '4d) Pyramide' },
+                    { id: '4e', name: '4e) Skalierung' },
+                    { id: '4f', name: '4f) Abwicklung' },
+                    { id: 'summary', name: 'Zusammenfassung' }
+                ];
+
+                const netVariant = ref(1);
+
+                const renderMath = () => {
+                    if (!window.renderMathInElement) return;
+                    window.renderMathInElement(document.body, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '\\[', right: '\\]', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                };
+
+                const drawShape = (tab) => {
+                    const canvas = document.getElementById('canvas-' + tab);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.strokeStyle = '#6366f1';
+                    ctx.fillStyle = 'rgba(99, 102, 241, 0.1)';
+                    ctx.lineWidth = 2;
+                    ctx.lineJoin = 'round';
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+
+                    if (tab === '4a') {
+                        // 3D-ish Prism
+                        ctx.beginPath();
+                        ctx.moveTo(centerX - 80, centerY + 20); ctx.lineTo(centerX + 80, centerY + 20);
+                        ctx.lineTo(centerX, centerY - 60); ctx.closePath();
+                        ctx.stroke(); ctx.fill();
+
+                        ctx.beginPath();
+                        ctx.moveTo(centerX, centerY - 60); ctx.lineTo(centerX + 60, centerY - 80);
+                        ctx.lineTo(centerX + 140, centerY); ctx.lineTo(centerX + 80, centerY + 20);
+                        ctx.stroke();
+                    } else if (tab === '4b') {
+                        // Half cylinder
+                        ctx.beginPath();
+                        ctx.arc(centerX - 40, centerY + 40, 60, Math.PI, 0);
+                        ctx.lineTo(centerX + 60, centerY + 10);
+                        ctx.arc(centerX + 60, centerY + 10, 60, 0, Math.PI, true);
+                        ctx.closePath();
+                        ctx.stroke(); ctx.fill();
+                    } else if (tab === '4d') {
+                        // Pyramid
+                        ctx.beginPath();
+                        ctx.moveTo(centerX - 80, centerY + 40); ctx.lineTo(centerX + 60, centerY + 40);
+                        ctx.lineTo(centerX + 120, centerY); ctx.lineTo(centerX - 20, centerY);
+                        ctx.closePath(); ctx.stroke(); ctx.fill();
+
+                        ctx.beginPath();
+                        ctx.moveTo(centerX, centerY - 80);
+                        const basePoints = [[-80, 40], [60, 40], [120, 0], [-20, 0]];
+                        basePoints.forEach(p => {
+                            ctx.moveTo(centerX, centerY - 80);
+                            ctx.lineTo(centerX + p[0], centerY + p[1]);
+                        });
+                        ctx.stroke();
+                    } else if (tab === '4f') {
+                        // Pixel-traced copies of the three reference nets.
+                        ctx.fillStyle = '#dcdcdc';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        ctx.translate(centerX, centerY + 6);
+                        ctx.fillStyle = '#43ff00';
+                        ctx.strokeStyle = '#2b8b2c';
+                        ctx.lineWidth = 2;
+
+                        const drawPoly = (pts) => {
+                            if (!pts.length) return;
+                            ctx.beginPath();
+                            ctx.moveTo(pts[0][0], pts[0][1]);
+                            for (let i = 1; i < pts.length; i++) {
+                                ctx.lineTo(pts[i][0], pts[i][1]);
+                            }
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                        };
+
+                        if (netVariant.value === 1) {
+                            // Left image
+                            drawPoly([[-58, -24], [50, -24], [10, 0], [-34, 0]]);
+                            drawPoly([[-72, 42], [48, 42], [10, 0], [-34, 0]]);
+                            drawPoly([[-72, 42], [-34, 0], [-86, -2]]);
+                            drawPoly([[10, 0], [50, -24], [64, 22]]);
+                        } else if (netVariant.value === 2) {
+                            // Middle image
+                            drawPoly([[-32, -24], [48, -24], [28, 0], [-2, 0]]);
+                            drawPoly([[-64, 42], [84, 42], [28, 0], [-2, 0]]);
+                            drawPoly([[-64, 42], [-2, 0], [-82, -2]]);
+                            drawPoly([[28, 0], [62, -22], [84, 42]]);
+                        } else {
+                            // Right image
+                            drawPoly([[-84, -12], [-8, -52], [34, -6], [-18, 0]]);
+                            drawPoly([[-66, 42], [62, 42], [20, 0], [-18, 0]]);
+                            drawPoly([[-66, 42], [-18, 0], [-84, -12]]);
+                            drawPoly([[-18, 0], [34, -6], [92, -14]]);
+                        }
+                    }
+                };
+
+                onMounted(() => {
+                    setTimeout(() => {
+                        renderMath();
+                        drawShape('intro');
+                    }, 500);
+                });
+
+                watch(currentTab, (val) => {
+                    setTimeout(() => {
+                        renderMath();
+                        drawShape(val);
+                    }, 100);
+                });
+
+                watch(netVariant, () => {
+                    if (currentTab.value !== '4f') return;
+                    setTimeout(() => drawShape('4f'), 50);
+                });
+
+                return { currentTab, tabs, netVariant };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

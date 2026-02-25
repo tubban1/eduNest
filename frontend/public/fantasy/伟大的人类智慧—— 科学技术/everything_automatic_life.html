@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如果什么都是自动的该多好</title>
+    <!-- 核心库加载 (带 Fallback 机制) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #38bdf8;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 垂直居中布局 */
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 120px;
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .automation-panel {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 1px solid #38bdf8;
+            display: flex;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .mode-btn {
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-size: 0.9rem;
+            transition: 0.3s;
+            cursor: pointer;
+            color: #94a3b8;
+        }
+
+        .mode-btn.active {
+            background: #38bdf8;
+            color: #000;
+            box-shadow: 0 0 15px #38bdf8;
+            border-color: #38bdf8;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(3, 105, 161, 0.4);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(3, 105, 161, 0.6);
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: #38bdf8;
+            box-shadow: 0 0 15px #38bdf8;
+            transform: scale(1.3);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <div class="top-title-box">
+            <h1 class="main-title">全自动未来的梦</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-sky-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <transition name="fade">
+                <div v-if="step <= 3" class="automation-panel pointer-events-auto">
+                    <button v-for="m in modes" :key="m.id" @click="setMode(m.id)"
+                        :class="['mode-btn', { active: activeMode === m.id }]">
+                        [[ m.name ]]
+                    </button>
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-action">继续探索科技未来</button>
+                <button v-else @click="reset" class="btn-action">重返温馨生活 🏠</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const activeMode = ref('day');
+                const modes = [
+                    { id: 'day', name: '日间模式 ☀️' },
+                    { id: 'night', name: '温馨模式 🌙' },
+                    { id: 'turbo', name: '工作模式 🚀' }
+                ];
+
+                const stages = [
+                    { title: "家里的‘隐形保姆’", content: "窗帘自动开启，空调精确控温。这不是魔法，而是传感器在悄悄听你的心声。它们就像是房屋的眼睛和敏锐的耳朵。", parent: "宝贝，如果房子长了眼睛，它就能知道你什么时候回家。这就是‘自动生活’的奇妙起点。" },
+                    { title: "万物相连的工厂", content: "只需一键指令，云端的工厂就会自动为你缝制新衣。机器人们比最细心的员工还要不知疲倦。试着切换下方模式看环境变化！", parent: "快看，小机器人们开动了。切换模式看看房子的‘心情’会怎么变化？" },
+                    { title: "解放双手的时间", content: "扫地机器人忙着巡逻，智能厨具正精准计算着大餐的成熟时刻。‘自动化军团’承包了琐碎，留给你更多的创造空间。", parent: "哇，如果你再也不用写重复的作业（我是说杂活），你最想用节省的时间去哪里玩？" },
+                    { title: "劳动的温度", content: "如果一切都被安排得完美无缺，生活是否会失去起伏的色彩？亲手绘制的草图、妈妈亲手做的饭菜，拥有着芯片无法计算的温情。", parent: "虽然机器人很能干，但它们不会像你一样画画，像妈妈一样拥抱，爱是代码写不出来的。" },
+                    { title: "智慧是爱的延伸", content: "自动化是为了让人类从繁琐中解放，去拥抱星辰大海和身边的亲人。用科技优化生活，用创造表达热爱。晚安。", parent: "科技让生活变简单，是希望我们能腾出手来拥抱爱的人。晚安，未来的发明家！" }
+                ];
+
+                // --- Sound Context ---
+                const synth = new Tone.MetalSynth().toDestination();
+                const playBeep = (m) => {
+                    Tone.start();
+                    const freqs = { day: "C5", night: "G4", turbo: "C6" };
+                    synth.triggerAttackRelease(freqs[m] || "C4", "8n", undefined, 0.1);
+                };
+
+                // --- Three.js ---
+                let scene, camera, renderer, room, mainBot, controls;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x0f172a);
+                    camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(25, 25, 50);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 0.3;
+
+                    // Sci-fi Room
+                    const roomGeo = new THREE.BoxGeometry(50, 40, 50);
+                    const roomMat = new THREE.MeshPhongMaterial({ color: 0x1e293b, side: THREE.BackSide, wireframe: true });
+                    room = new THREE.Mesh(roomGeo, roomMat);
+                    scene.add(room);
+
+                    // Hero Robot
+                    const botGroup = new THREE.Group();
+                    const head = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), new THREE.MeshPhongMaterial({ color: 0x38bdf8 }));
+                    head.position.y = 8;
+                    botGroup.add(head);
+
+                    const eye = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 5, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                    eye.rotation.z = Math.PI / 2;
+                    eye.position.set(0, 8.5, 3.5);
+                    botGroup.add(eye);
+
+                    const body = new THREE.Mesh(new THREE.CylinderGeometry(5, 4, 10, 32), new THREE.MeshPhongMaterial({ color: 0x64748b }));
+                    botGroup.add(body);
+                    mainBot = botGroup;
+                    scene.add(mainBot);
+
+                    // Dynamic Lights
+                    const pl = new THREE.PointLight(0x38bdf8, 3, 100);
+                    pl.position.set(0, 15, 10);
+                    pl.name = "MainLight";
+                    scene.add(pl);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    controls.update();
+
+                    mainBot.position.y = Math.sin(t * 2) * 2;
+                    mainBot.rotation.y = Math.sin(t * 0.5) * 0.5;
+
+                    renderer.render(scene, camera);
+                };
+
+                const setMode = (m) => {
+                    activeMode.value = m;
+                    playBeep(m);
+                    const light = scene.getObjectByName("MainLight");
+                    if (m === 'night') {
+                        gsap.to(scene.background, { r: 0.01, g: 0.02, b: 0.09 });
+                        gsap.to(light.color, { r: 0.98, g: 0.75, b: 0.14 });
+                    } else if (m === 'turbo') {
+                        gsap.to(scene.background, { r: 0.12, g: 0.11, b: 0.29 });
+                        gsap.to(light.color, { r: 0.51, g: 0.55, b: 0.97 });
+                    } else {
+                        gsap.to(scene.background, { r: 0.06, g: 0.09, b: 0.16 });
+                        gsap.to(light.color, { r: 0.22, g: 0.74, b: 0.97 });
+                    }
+                };
+
+                const nextStage = () => { if (step.value < 5) step.value++; };
+                const jumpTo = (n) => { step.value = n; };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, activeMode, modes, stages, nextStage, jumpTo, reset, setMode };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

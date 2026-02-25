@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 6 - Angewandte Mathematik (Butter) | BM Musterprüfung 2020</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '$', right: '$', display: false },
+              { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+          });
+        ">
+        </script>
+    <style>
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .tab-btn:hover {
+            color: #f97316;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #f97316;
+            color: #f97316;
+            font-weight: 700;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 300px;
+            background: #fff7ed;
+            border: 1px solid #ffedd5;
+            border-radius: 8px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .solution-step {
+            border-left: 4px solid #ffedd5;
+            padding-left: 16px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .solution-step:hover {
+            border-left-color: #f97316;
+        }
+
+        .math-boxed {
+            border: 2px solid #f97316;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 16px;
+            background: #fff7ed;
+            font-weight: bold;
+            color: #9a3412;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #fed7aa;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .data-table th {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-slate-800 font-sans leading-relaxed p-4 md:p-10">
+    <div class="max-w-4xl mx-auto">
+        <!-- 1:1 Originalaufgabe -->
+        <div id="static-math" class="card" v-pre>
+            <div class="flex justify-between items-start mb-6">
+                <h1 class="text-3xl font-bold text-slate-900">Aufgabe 6</h1>
+                <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded text-sm font-semibold">12 Punkte</span>
+            </div>
+
+            <p class="mb-6 italic text-slate-600">Thema: Angewandte Mathematik am Beispiel eines Butterblocks.</p>
+
+            <div class="space-y-8">
+                <section>
+                    <p class="font-bold mb-2">6a) Dichte & Masse (2 Punkte)</p>
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex-1">
+                            <p>Die Dichte von Butter beträgt $0.96 \text{ g/cm}^3$.</p>
+                            <ul class="list-disc ml-8 text-sm mt-2">
+                                <li>Finde das Volumen eines $250 \text{ g}$ Butterblocks.</li>
+                                <li>Berechne die Masse des Fetts in $250 \text{ cm}^3$ Butter ($82\%$ Fettgehalt).</li>
+                            </ul>
+                        </div>
+                        <div class="w-48 shrink-0 bg-white border rounded p-4 shadow-sm">
+                            <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Isometric Butter Block -->
+                                <path d="M 20 40 L 80 20 L 105 40 L 45 60 Z" fill="#fef08a" stroke="#eab308"
+                                    stroke-width="1.5" />
+                                <path d="M 20 40 L 20 70 L 45 90 L 45 60 Z" fill="#fde047" stroke="#eab308"
+                                    stroke-width="1.5" />
+                                <path d="M 45 60 L 45 90 L 105 70 L 105 40 Z" fill="#facc15" stroke="#eab308"
+                                    stroke-width="1.5" />
+                                <!-- Dimension Labels -->
+                                <text x="10" y="60" font-size="8" fill="#854d0e">4cm</text>
+                                <text x="50" y="10" font-size="8" fill="#854d0e">12cm</text>
+                                <text x="80" y="85" font-size="8" fill="#854d0e">5cm</text>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">6b) Aluminiumverpackung (2 Punkte)</p>
+                    <p>Fläche $A = 320 \text{ cm}^2$, Dicke $d = 0.01 \text{ mm}$, Dichte $\rho_{Al} = 2.7 \text{
+                        g/cm}^3$.</p>
+                    <ul class="list-disc ml-8 text-sm mt-2">
+                        <li>Berechne die Masse der Folie für einen Block.</li>
+                        <li>Berechne die Gesamtmasse der Folie für $10'000$ Blöcke in $\text{kg}$.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">6c) Einheitenumwandlung (2 Punkte)</p>
+                    <table class="data-table mt-2">
+                        <thead>
+                            <tr>
+                                <th>Von</th>
+                                <th>Nach</th>
+                                <th>Resultat (Wissenschaftlich)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>$0.96 \text{ g/cm}^3$</td>
+                                <td>$\text{kg/m}^3$</td>
+                                <td>?</td>
+                            </tr>
+                            <tr>
+                                <td>$45 \text{ cm}$</td>
+                                <td>$\text{km}$</td>
+                                <td>?</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">6d) Preisreduktion (2 Punkte)</p>
+                    <p>Preis pro $250 \text{ g}$ Packung von CHF $3.20$ auf CHF $2.80$ gesenkt. Berechne den Prozentsatz
+                        und den neuen Kilopreis.</p>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">6f) & 6g) Restvolumen-Funktion (4 Punkte)</p>
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex-1">
+                            <p>Butterblock: $12 \text{ cm}$ lang, $5 \text{ cm}$ breit, $4 \text{ cm}$ hoch. Ein Stück
+                                der Länge $x$ wird abgeschnitten.</p>
+                            <ul class="list-disc ml-8 text-sm mt-2">
+                                <li>Stelle die Funktionsgleichung $y = f(x)$ auf.</li>
+                                <li>Geben Sie den Definitionsbereich $D$ an.</li>
+                                <li>Zeichnen Sie den Graphen.</li>
+                            </ul>
+                        </div>
+                        <div class="w-56 shrink-0 bg-white border rounded p-2 shadow-sm">
+                            <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Axes -->
+                                <line x1="20" y1="140" x2="155" y2="140" stroke="#64748b" stroke-width="1.5" />
+                                <!-- x -->
+                                <line x1="20" y1="5" x2="20" y2="140" stroke="#64748b" stroke-width="1.5" /> <!-- y -->
+                                <!-- Tick marks -->
+                                <text x="10" y="145" font-size="8">0</text>
+                                <text x="150" y="150" font-size="8">x</text>
+                                <text x="5" y="15" font-size="8">y</text>
+                                <!-- Function Graph: y = 240 - 20x -->
+                                <line x1="20" y1="20" x2="140" y2="140" stroke="#f97316" stroke-width="2" />
+                                <!-- Points -->
+                                <circle cx="20" cy="20" r="2" fill="#f97316" />
+                                <circle cx="140" cy="140" r="2" fill="#f97316" />
+                                <text x="25" y="18" font-size="8" fill="#9a3412">240</text>
+                                <text x="135" y="150" font-size="8" fill="#9a3412">12</text>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- App Container -->
+        <div id="app" v-cloak class="card border-t-8 border-orange-500">
+            <!-- Tabs Navigation -->
+            <div class="flex border-b mb-8 overflow-x-auto no-scrollbar">
+                <div v-for="t in tabs" :key="t.id" @click="currentTab = t.id"
+                    :class="['tab-btn whitespace-nowrap', currentTab === t.id ? 'active' : '']">
+                    {{ t.name }}
+                </div>
+            </div>
+
+            <!-- Intro -->
+            <div v-if="currentTab === 'intro'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-orange-800">Mathematik im Alltag</h2>
+                <div class="bg-orange-50 p-6 rounded-2xl flex flex-col md:flex-row gap-8">
+                    <div class="flex-1 space-y-4">
+                        <p>Herzlich willkommen zur "Butter-Analyse"! Hier wenden wir Mathematik auf reale physikalische
+                            Grössen an.</p>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="p-2 bg-white rounded border border-orange-200">🚩 Einheiten-Umrechnung</div>
+                            <div class="p-2 bg-white rounded border border-orange-200">🎯 Prozentrechnung</div>
+                            <div class="p-2 bg-white rounded border border-orange-200">📐 Geometrische Dichte</div>
+                            <div class="p-2 bg-white rounded border border-orange-200">📈 Lineare Abnahme</div>
+                        </div>
+                    </div>
+                    <div id="container-intro" class="w-full md:w-64 h-48 flex items-center justify-center">
+                        <canvas id="canvas-intro"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 6a -->
+            <div v-if="currentTab === '6a'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">6a) Dichte, Masse & Volumen</h2>
+                <div class="solution-step">
+                    <p class="font-bold text-orange-600 mb-1">Volumen-Berechnung:</p>
+                    <p>$\rho = \frac{m}{V} \Rightarrow V = \frac{m}{\rho}$</p>
+                    <p>$V = \frac{250 \text{ g}}{0.96 \text{ g/cm}^3} = \mathbf{260.42 \text{ cm}^3}$</p>
+                </div>
+                <div class="solution-step">
+                    <p class="font-bold text-orange-600 mb-1">Fett-Masse:</p>
+                    <p>Masse Butter: $250 \text{ cm}^3 \cdot 0.96 \text{ g/cm}^3 = 240 \text{ g}$</p>
+                    <p>Fett: $240 \text{ g} \cdot 0.82 = \mathbf{196.8 \text{ g}}$</p>
+                </div>
+                <p class="math-boxed">Resultate: $260.42 \text{ cm}^3$ / $196.8 \text{ g}$</p>
+            </div>
+
+            <!-- Tab 6b -->
+            <div v-if="currentTab === '6b'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">6b) Die Aluminium-Verpackung</h2>
+                <div class="solution-step">
+                    <p class="font-bold text-orange-600 mb-1">Volumen der Folie:</p>
+                    <p>Dicke $0.01 \text{ mm} = 0.001 \text{ cm}$</p>
+                    <p>$V_{Folie} = A \cdot d = 320 \text{ cm}^2 \cdot 0.001 \text{ cm} = 0.32 \text{ cm}^3$</p>
+                </div>
+                <div class="solution-step">
+                    <p class="font-bold text-orange-600 mb-1">Masse der Folie:</p>
+                    <p>$m = V \cdot \rho = 0.32 \text{ cm}^3 \cdot 2.7 \text{ g/cm}^3 = \mathbf{0.864 \text{ g}}$</p>
+                </div>
+                <div class="solution-step">
+                    <p class="font-bold text-orange-600 mb-1">Hochrechnung 10'000 Stück:</p>
+                    <p>$10'000 \cdot 0.864 \text{ g} = 8'640 \text{ g} = \mathbf{8.64 \text{ kg}}$</p>
+                </div>
+                <p class="math-boxed">Masse pro Block: $0.864 \text{ g}$ | Gesamt: $8.64 \text{ kg}$</p>
+            </div>
+
+            <!-- Tab 6f/g -->
+            <div v-if="currentTab === '6fg'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">6f) & 6g) Lineare Abnahme</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div class="solution-step">
+                            <p class="font-bold text-orange-600 mb-1">Funktionsgleichung:</p>
+                            <p>Startvolumen $V_0 = 12 \cdot 5 \cdot 4 = 240 \text{ cm}^3$.</p>
+                            <p>Pro cm abgeschnittener Länge $x$ verliert der Block $1 \cdot 5 \cdot 4 = 20 \text{
+                                cm}^3$.</p>
+                            <div class="bg-orange-50 p-4 border rounded font-mono text-center my-2 text-xl">
+                                $y = 240 - 20x$
+                            </div>
+                        </div>
+                        <div class="solution-step">
+                            <p class="font-bold text-orange-600 mb-1">Definitionsbereich:</p>
+                            <p>Man kann maximal $12\text{ cm}$ abschneiden.</p>
+                            <p>$D = \{ x \in \mathbb{R} \mid 0 \le x \le 12 \}$</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="p-4 bg-slate-50 border rounded-xl">
+                            <label class="block font-bold mb-2">Simuliere den Schnitt:</label>
+                            <input type="range" v-model="cutX" min="0" max="12" step="0.5"
+                                class="w-full accent-orange-500">
+                            <div class="mt-4 flex justify-between text-sm">
+                                <span>Schnitt $x = {{cutX}} \text{ cm}$</span>
+                                <span class="font-bold text-orange-700">Rest $y = {{240 - 20*cutX}} \text{ cm}^3$</span>
+                            </div>
+                            <div id="container-6fg" class="canvas-container h-48 bg-white mt-4 border-slate-200">
+                                <canvas id="canvas-6fg"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Tab -->
+            <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-orange-800">Transfer & Wissen</h2>
+                <div class="space-y-6">
+                    <div class="p-6 bg-slate-900 text-white rounded-2xl shadow-xl">
+                        <h3 class="font-bold text-orange-400 mb-4 items-center flex gap-2">🔄 Einheiten-Mastery</h3>
+                        <p class="text-sm mb-4">Ein ganz wichtiger Trick für die Prüfung:</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                            <div class="p-3 bg-slate-800 rounded">
+                                $1 \text{ g/cm}^3 = 1000 \text{ kg/m}^3$<br>
+                                (Dichte von Wasser)
+                            </div>
+                            <div class="p-3 bg-slate-800 rounded">
+                                $1 \text{ mm} = 10^{-1} \text{ cm} = 10^{-3} \text{ m}$<br>
+                                (Schreibweise $10^x$ nutzen!)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 border-2 border-orange-200 rounded-2xl bg-white">
+                        <h4 class="font-bold text-orange-600 mb-3 underline">举一反三 (Challenge)</h4>
+                        <p class="text-sm">Wenn der Butterblock doppelt so hoch wäre ($8\text{ cm}$ statt $4\text{
+                            cm}$), wie würde sich die Funktionsgleichung für das Restvolumen ändern?</p>
+                        <details class="cursor-pointer text-orange-400 font-bold mt-2">
+                            <summary>Check die Lösung</summary>
+                            <p class="mt-2 text-slate-700 font-normal">Startvolumen wäre 480. Abnahme pro cm wäre 40 ($5
+                                \cdot 8$).<br>$\Rightarrow y = 480 - 40x$</p>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script shadow>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const cutX = ref(0);
+
+                const tabs = [
+                    { id: 'intro', name: 'Einführung' },
+                    { id: '6a', name: '6a) Butter' },
+                    { id: '6b', name: '6b) Folie' },
+                    { id: '6fg', name: '6f/g) Schnitt' },
+                    { id: 'summary', name: 'Zusammenfassung' }
+                ];
+
+                const renderMath = () => {
+                    if (!window.renderMathInElement) return;
+                    window.renderMathInElement(document.body, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '\\[', right: '\\]', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                };
+
+                const drawIntro = () => {
+                    const canvas = document.getElementById('canvas-intro');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Drawing a butter block in isometric
+                    ctx.strokeStyle = '#f97316'; ctx.lineWidth = 2;
+                    ctx.fillStyle = '#fde68a';
+                    const x = 60, y = 60;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y); ctx.lineTo(x + 80, y - 20); ctx.lineTo(x + 110, y + 10); ctx.lineTo(x + 30, y + 40); ctx.closePath();
+                    ctx.fill(); ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y); ctx.lineTo(x, y + 40); ctx.lineTo(x + 30, y + 80); ctx.lineTo(x + 30, y + 40); ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x + 30, y + 80); ctx.lineTo(x + 110, y + 50); ctx.lineTo(x + 110, y + 10); ctx.stroke();
+                };
+
+                const drawLogic = (tab) => {
+                    const canvas = document.getElementById('canvas-' + tab);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (tab === '6fg') {
+                        // Plot y = 240 - 20x
+                        const ox = 40, oy = canvas.height - 40;
+                        const w = canvas.width - 80, h = canvas.height - 80;
+
+                        ctx.strokeStyle = '#94a3b8'; ctx.beginPath();
+                        ctx.moveTo(ox, oy); ctx.lineTo(ox + w, oy); // x axis
+                        ctx.moveTo(ox, oy); ctx.lineTo(ox, oy - h); // y axis
+                        ctx.stroke();
+
+                        ctx.strokeStyle = '#f97316'; ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(ox, oy - h);
+                        ctx.lineTo(ox + w, oy);
+                        ctx.stroke();
+
+                        // Current point
+                        const px = ox + (cutX.value / 12) * w;
+                        const py = oy - ((240 - 20 * cutX.value) / 240) * h;
+                        ctx.fillStyle = '#ef4444';
+                        ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+
+                        ctx.fillStyle = '#000'; ctx.font = '10px sans-serif';
+                        ctx.fillText(`(${cutX.value} / ${240 - 20 * cutX.value})`, px + 10, py);
+                    }
+                };
+
+                onMounted(() => {
+                    setTimeout(() => {
+                        renderMath();
+                        drawIntro();
+                    }, 500);
+                });
+
+                watch([currentTab, cutX], () => {
+                    setTimeout(() => {
+                        renderMath();
+                        if (currentTab.value === 'intro') drawIntro();
+                        else drawLogic(currentTab.value);
+                    }, 50);
+                });
+
+                return { currentTab, tabs, cutX };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能实现天地对话该多好</title>
+    <!-- 核心库 (带 Fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/renderers/CSS2DRenderer.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/CSS2DRenderer.js'"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #css-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #38bdf8;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 120px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .interactive-panel {
+            background: rgba(15, 23, 42, 0.85);
+            padding: 20px 30px;
+            border-radius: 20px;
+            border: 1px solid #38bdf8;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-fancy {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-fancy:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(2, 132, 199, 0.5);
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #38bdf8;
+            z-index: 100;
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: #38bdf8;
+            box-shadow: 0 0 15px #38bdf8;
+            transform: scale(1.3);
+        }
+
+        .label-3d {
+            color: #38bdf8;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #38bdf8;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+    <div id="css-layer"></div>
+
+    <div id="app" class="ui-overlay">
+        <!-- 声音切换 -->
+        <div class="sound-toggle pointer-events-auto" @click="toggleSound">
+            [[ isMuted ? '🔇' : '🔊' ]]
+        </div>
+
+        <div class="top-title-box">
+            <h1 class="main-title">天地对话的秘密</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step" :style="{ opacity: isEmitting ? 0.3 : 1 }">
+                    <h2 class="text-3xl font-bold text-sky-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <!-- 阶段2的交互：发射信号 -->
+            <transition name="fade">
+                <div v-if="step === 2" class="interactive-panel pointer-events-auto">
+                    <p class="text-xs text-sky-300 mb-2">交互：对准飞船发送信号</p>
+                    <button @click="emitSignal" class="btn-fancy" :disabled="isEmitting">
+                        [[ isEmitting ? '信号传输中...' : '发送“你好”到太空 📡' ]]
+                    </button>
+                </div>
+                <!-- 阶段3的交互：模拟延迟 -->
+                <div v-else-if="step === 3" class="interactive-panel pointer-events-auto">
+                    <div class="text-xs text-sky-300 mb-1">物理法则：信号以光速前进</div>
+                    <div class="font-mono text-2xl text-blue-400">[[ delayTimer.toFixed(2) ]]s</div>
+                    <p class="text-[10px] mt-1 text-gray-500">模拟：地球 ↔ 火星 实际需要约20分钟</p>
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-fancy">
+                    继续下一步探索
+                </button>
+                <button v-else @click="reset" class="btn-fancy">重返地球 🌍</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const delayTimer = ref(0);
+                const isEmitting = ref(false);
+                const isMuted = ref(false);
+
+                const stages = [
+                    { title: "跨越虚空的隐形线", content: "在太空中没有空气流传声音，但有一种‘隐形线’能穿梭自如——电磁波。它们以光速在星球间飞奔，连接着家与远方。", parent: "宝贝，你看画面中的光波就是电波，它能带着我们的声音和图像飞向月亮和火星哦！" },
+                    { title: "卫星中转站", content: "地球是圆的，信号没法穿过地心。于是我们把‘信号弹跳点’——通信卫星送入轨道。它们像接力赛一样，把地面消息传向深空。", parent: "这些闪闪发光的大家伙就是卫星。试着点一下发送按钮，看它们是如何‘弹跳’消息的！" },
+                    { title: "光速的‘局限’", content: "虽然电波跑得快，但宇宙太宏伟了。从地球到火星的‘你好’需要跑20分钟。这就是我们要克服的时间魔术。", parent: "即使跑得跟光一样快，去一趟外星球也要花好长时间。这就是宇宙的距离感。" },
+                    { title: "耳朵里的星辰", content: "我们在地面建造了巨大的射电望远镜，这些庞大的‘锅盖’能捕捉几十亿公里外微弱的电磁回声，像耳朵一样倾听全宇宙。", parent: "你看那个巨大的‘锅盖’，它是人类伸向宇宙的超级顺风耳。哪怕卫星的声音再小，它也能听清。" },
+                    { title: "连接万物的桥梁", content: "从天地对话，到跨越光年的星际互联网。无论宇航员走多远，只要有信号，爱与牵挂就不曾断绝。晚安，未来的探星者。", parent: "只要心连着心，无论多远都像在身边。宝贝，在梦里去火星探险吧。晚安！" }
+                ];
+
+                // --- Sound Context ---
+                const synth = new Tone.PolySynth().toDestination();
+                const ping = new Tone.MembraneSynth().toDestination();
+                const pulse = new Tone.Oscillator(440, "sine").toDestination();
+
+                const playSignalSound = () => {
+                    if (isMuted.value) return;
+                    Tone.start();
+                    const now = Tone.now();
+                    ping.triggerAttackRelease("C5", "8n", now);
+                    ping.triggerAttackRelease("G5", "8n", now + 0.5);
+                };
+
+                const playAmbience = () => {
+                    if (isMuted.value) return;
+                    pulse.start();
+                    gsap.to(pulse.volume, { value: -20, duration: 2 });
+                };
+
+                // --- Three.js ---
+                let scene, camera, renderer, labelRenderer, earth, orbitGroup, starField, signals = [], controls;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x020617);
+
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 30, 80);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    // 初始化 CSS2D 渲染器
+                    if (window.THREE && THREE.CSS2DRenderer) {
+                        labelRenderer = new THREE.CSS2DRenderer();
+                        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+                        labelRenderer.domElement.style.position = 'absolute';
+                        labelRenderer.domElement.style.top = '0';
+                        labelRenderer.domElement.style.zIndex = '5';
+                        labelRenderer.domElement.style.pointerEvents = 'none';
+                        document.getElementById('css-layer').appendChild(labelRenderer.domElement);
+                    }
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 0.5;
+
+                    // Earth
+                    const earthGeo = new THREE.SphereGeometry(20, 48, 48);
+                    const earthMat = new THREE.MeshPhongMaterial({ color: 0x0ea5e9, emissive: 0x075985, shininess: 15 });
+                    earth = new THREE.Mesh(earthGeo, earthMat);
+                    scene.add(earth);
+
+                    // Atmosphere glow
+                    const atmosphericGeo = new THREE.SphereGeometry(21, 48, 48);
+                    const atmosphericMat = new THREE.MeshPhongMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.2 });
+                    const atmosphere = new THREE.Mesh(atmosphericGeo, atmosphericMat);
+                    scene.add(atmosphere);
+
+                    // Orbiting Satellites
+                    orbitGroup = new THREE.Group();
+                    for (let i = 0; i < 3; i++) {
+                        const sGroup = new THREE.Group();
+                        const sat = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 3), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 }));
+                        const wingL = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), new THREE.MeshStandardMaterial({ color: 0x38bdf8, side: THREE.DoubleSide }));
+                        const wingR = wingL.clone();
+                        wingL.position.x = 3; wingR.position.x = -3;
+                        sGroup.add(sat, wingL, wingR);
+
+                        const angle = (i / 3) * Math.PI * 2;
+                        sGroup.position.set(Math.cos(angle) * 35, 0, Math.sin(angle) * 35);
+                        sGroup.lookAt(0, 0, 0);
+
+                        // Label
+                        const div = document.createElement('div');
+                        div.className = 'label-3d';
+                        div.textContent = `卫星 #${i + 1}`;
+                        const label = new THREE.CSS2DObject(div);
+                        label.position.set(0, 3, 0);
+                        sGroup.add(label);
+
+                        orbitGroup.add(sGroup);
+                    }
+                    scene.add(orbitGroup);
+
+                    // Starfield
+                    const sGeo = new THREE.BufferGeometry();
+                    const sPos = [];
+                    for (let i = 0; i < 5000; i++) sPos.push((Math.random() - 0.5) * 500, (Math.random() - 0.5) * 500, (Math.random() - 0.5) * 500);
+                    sGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPos, 3));
+                    starField = new THREE.Points(sGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, transparent: true }));
+                    scene.add(starField);
+
+                    // Lights
+                    const light = new THREE.DirectionalLight(0xffffff, 1.2);
+                    light.position.set(50, 50, 50);
+                    scene.add(light);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    controls.update();
+
+                    earth.rotation.y += 0.002;
+                    orbitGroup.rotation.y += 0.005;
+
+                    // Update Signal Bullets
+                    signals.forEach((sig, idx) => {
+                        sig.mesh.position.add(sig.vel);
+                        sig.life -= 0.01;
+                        if (sig.life <= 0) {
+                            scene.remove(sig.mesh);
+                            signals.splice(idx, 1);
+                        }
+                    });
+
+                    renderer.render(scene, camera);
+                    if (labelRenderer) labelRenderer.render(scene, camera);
+                };
+
+                const emitSignal = () => {
+                    if (isEmitting.value) return;
+
+                    // 确保音频上下文开启
+                    if (!isMuted.value) Tone.start();
+
+                    isEmitting.value = true;
+                    playSignalSound();
+
+                    const currentTime = clock.getElapsedTime();
+
+                    // 创建 3D 空间倒计时标签
+                    const countdownDiv = document.createElement('div');
+                    countdownDiv.className = 'label-3d-countdown';
+                    countdownDiv.style.color = '#38bdf8';
+                    countdownDiv.style.padding = '10px 20px';
+                    countdownDiv.style.background = 'rgba(15, 23, 42, 0.95)';
+                    countdownDiv.style.border = '2px solid #38bdf8';
+                    countdownDiv.style.borderRadius = '50px';
+                    countdownDiv.style.fontWeight = 'bold';
+                    countdownDiv.style.fontFamily = 'monospace';
+                    countdownDiv.style.fontSize = '1.4rem';
+                    countdownDiv.style.boxShadow = '0 0 25px rgba(56, 189, 248, 0.8)';
+                    countdownDiv.style.whiteSpace = 'nowrap';
+                    countdownDiv.style.textShadow = '0 0 10px #38bdf8';
+
+                    const countdownLabel = new THREE.CSS2DObject(countdownDiv);
+                    countdownLabel.position.set(0, 15, 20);
+                    scene.add(countdownLabel);
+
+                    // 创建视觉信号粒子流
+                    for (let i = 0; i < 8; i++) {
+                        const sGeo = new THREE.SphereGeometry(0.5, 8, 8);
+                        const sMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                        const sMesh = new THREE.Mesh(sGeo, sMat);
+                        const angle = (i / 8) * Math.PI * 2;
+                        const velocity = new THREE.Vector3(
+                            Math.cos(angle) * 1.5,
+                            Math.sin(currentTime * 0.5) * 0.5,
+                            Math.sin(angle) * 1.5
+                        );
+                        signals.push({ mesh: sMesh, vel: velocity, life: 1.0 });
+                        scene.add(sMesh);
+                    }
+
+                    // 启动倒计时，并在 onUpdate 中更新 3D 标签
+                    if (window.gsap) {
+                        gsap.to(delayTimer, { value: 10, duration: 0.1 });
+                        gsap.to(delayTimer, {
+                            value: 0,
+                            duration: 10,
+                            ease: "none",
+                            onUpdate: () => {
+                                countdownDiv.textContent = `⚡ 传输中: ${delayTimer.value.toFixed(2)}s`;
+                                // CSS2D 轨迹：控制在可视范围内，向上且微微偏移
+                                const progress = (10 - delayTimer.value) / 10;
+                                countdownLabel.position.z = 20 + progress * 40; // 限制飞行深度
+                                countdownLabel.position.x = Math.sin(progress * 2) * 15;
+                                countdownLabel.position.y = 15 + progress * 10;
+                            },
+                            onComplete: () => {
+                                isEmitting.value = false;
+                                scene.remove(countdownLabel);
+                                if (!isMuted.value) synth.triggerAttackRelease(["E5", "B5"], "2n");
+                            }
+                        });
+                    } else {
+                        setTimeout(() => {
+                            isEmitting.value = false;
+                            delayTimer.value = 0;
+                            scene.remove(countdownLabel);
+                        }, 10000);
+                    }
+                };
+
+                const toggleSound = () => {
+                    isMuted.value = !isMuted.value;
+                    Tone.Destination.mute = isMuted.value;
+                    if (!isMuted.value) playAmbience();
+                };
+
+                const nextStage = () => {
+                    step.value++;
+                    if (!isMuted.value) ping.triggerAttackRelease("C4", "16n");
+                    if (step.value === 4) gsap.to(camera.position, { x: 50, y: 50, z: 100, duration: 3 });
+                };
+                const jumpTo = (n) => { step.value = n; };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, delayTimer, isEmitting, isMuted, stages, nextStage, jumpTo, reset, emitSignal, toggleSound };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

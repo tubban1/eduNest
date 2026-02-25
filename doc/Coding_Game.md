@@ -291,41 +291,44 @@ Content-Type: application/json
 
 #### 14.1 基础架构与入口
 
-- [ ] 在 EduNest 前端新增入口路由 `/coding-lab`（或 `/game-studio`），接入现有导航与 `useAuth`。  
-- [ ] 设计 Coding Lab 页面整体布局（左规则树 / 中游戏画布 / 右 AI 对话区）的线框图与组件划分。  
-- [ ] 在后端创建 `game_projects` 表（`id, user_id, title, rules_json, engine_preset, created_at, updated_at, age_level, tags...`）。  
-- [ ] 实现基础 API：
-  - [ ] `POST /api/coding-game/projects`（创建 / 更新项目）  
-  - [ ] `GET /api/coding-game/projects/:id`（获取项目）  
-  - [ ] `GET /api/coding-game/projects`（列出当前用户的项目简要信息）
+- [x] 在 EduNest 前端新增入口路由 `/coding-lab`（或 `/game-studio`），接入现有导航与 `useAuth`。  
+- [x] 设计 Coding Lab 页面整体布局（左规则树 / 中游戏画布 / 右 AI 对话区）的线框图与组件划分（已落地为页面结构 + 右侧抽屉「我的游戏项目」面板）。  
+- [x] 在后端创建 `game_projects` 表（`id, user_id, title, rules_json, engine_preset, created_at, updated_at, age_level, tags...`）。  
+- [x] 实现基础 API：
+  - [x] `POST /api/coding-game/projects`（创建 / 更新项目）  
+  - [x] `GET /api/coding-game/projects/:id`（获取项目）  
+  - [x] `GET /api/coding-game/projects`（列出当前用户的项目简要信息）
 
 #### 14.2 规则树与数据结构
 
-- [ ] 定义 `rules_json` 的正式 Schema（命令 / 条件 / 循环 / 变量 / 事件）并写入文档。  
-- [ ] 实现前端规则树组件：
-  - [ ] 支持增删规则卡片；  
-  - [ ] 支持按类别（命令/条件/循环/变量/事件）分组展示；  
-- [ ] 实现规则卡片的参数编辑（下拉、滑块、数字输入等），直接修改 `rules_json`。
+- [x] 定义 `rules_json` 的正式 Schema（命令 / 条件 / 循环 / 变量 / 事件）并写入文档。  
+- [x] 实现前端规则树组件：
+  - [x] 支持增删规则卡片（目前支持命令 / 变量，两类为 MVP）；  
+  - [x] 支持按类别（命令 / 变量 / 其余只读统计）分组展示；  
+- [x] 实现规则卡片的参数编辑（下拉、滑块、数字输入等），直接修改 `rules_json`（目前支持命令速度 `speed` / 跳跃高度 `height`、变量初始值 `initial`）。
 
 #### 14.3 极简游戏引擎与调试视图
 
-- [ ] 选定一个 MVP 模板（如「横版收集跑酷」）并固定基础资源（角色、怪物、道具）。  
-- [ ] 在前端实现一个极简 2D 引擎或基于现有库（如 Canvas / Pixi.js，库选择基于 `edu/backend/config/supported-libraries.json`，失败时回退到 `edu/backend/config/libraries_cn.json` 的安全兼容方案）：
-  - [ ] 支持玩家移动与跳跃；  
-  - [ ] 支持怪物 / 道具生成与简单碰撞检测；  
-- [ ] 实现 `rules_json → 运行逻辑` 的解释层（不暴露给儿童）。  
+- [x] 选定一个 MVP 模板（如「横版收集跑酷」）并固定基础资源（角色、怪物、道具）——当前实现为横版 Runner + 简单方块障碍。  
+- [x] 在前端实现一个极简 2D 引擎（基于 Canvas，纯前端）：
+  - [x] 支持玩家移动与跳跃（自动向右跑，←/→ 微调速度，Space 跳跃）；  
+  - [x] 支持简单障碍物与碰撞检测（撞到障碍物 / 冲过终点给出不同提示）；  
+- [x] 实现 `rules_json → 运行逻辑` 的解释层（不暴露给儿童）：
+  - [x] 依据 `commands` 中的 `move.speed` / `jump.height` 参数动态调整移动速度与跳跃高度；  
+  - [x] 依据 `conditions` 中的简单表达式（如 `touch(monster)` / `touch(gem)` / `fallInto(hole)`）在碰撞时自动执行 `then` 中的变量更新与 `gameOver()`；  
+  - [x] 将变量（如 `score` / `health` / `gemCount`）与最近一次触发的规则描述在画面 UI 中以调试信息形式展示。  
 - [ ] 实现调试视图：
-  - [ ] 每帧记录被触发的规则 ID 和变量变化；  
-  - [ ] 在左侧规则树中高亮当前帧触发规则；  
-  - [ ] 在下方显示关键变量的时间轴（简单折线或日志）。
+  - [x] 记录最近触发的规则描述与关键变量（score / health / gemCount）的快照，在画布下方以列表形式展示调试日志（最近若干条）；  
+  - [x] 在左侧规则树中高亮当前帧触发规则（MVP：高亮最近一次触发的条件规则）；  
+  - [x] 在下方显示关键变量的时间轴（MVP：右侧以“变量时间线（最近变化）”列表展示变化记录）。
 
 #### 14.4 AI 引导与提示系统
 
 - [ ] 设计面向 6–12 岁的提问文案库（按阶段：目标 / 命令 / 条件 / 循环 / 变量 / 事件 / 调试）。  
-- [ ] 为大模型封装统一的「引导接口」：
-  - [ ] `POST /api/coding-game/ai/guide`：根据当前阶段、孩子语音转文本、已有 `rules_json`，返回规则 diff + 面向孩子的简短说明。  
-  - [ ] `POST /api/coding-game/ai/debug`：根据运行日志与现有规则，返回调试提问与修改建议。  
-- [ ] 在 `ai_usage_logs` 中新增 `action_type = 'coding-game'`，记录每轮引导 / 调试调用。
+- [x] 为大模型封装统一的「引导接口」：
+  - [x] `POST /api/coding-game/ai/guide`：根据当前阶段、孩子语音转文本、已有 `rules_json`，返回规则 diff + 面向孩子的简短说明（当前为启发式规则，后续可替换为真正大模型）。  
+  - [x] `POST /api/coding-game/ai/debug`：根据运行日志与现有规则，返回调试提问与修改建议（当前先返回简单建议文案）。  
+- [x] 在 `ai_usage_logs` 中新增 `action_type = 'coding-game'`，记录每轮引导 / 调试调用（复用 `logAIUsage`，已落盘日志）。
 
 #### 14.5 语音链路（ASR + TTS）
 
@@ -333,13 +336,14 @@ Content-Type: application/json
   - [ ] `VECTORENGINE_URL=https://api.vectorengine.ai`  
   - [ ] `VECTORENGINE_API_KEY`  
   - [ ] `VECTORENGINE_MODEL=gpt-4o-audio-preview-2024-10-01`  
-- [ ] 封装后端 VectorEngine 客户端：
-  - [ ] 统一方法 `chatWithAudio(messages)` 调用 `/v1/chat/completions`，返回文本 + 音频（wav）。  
-- [ ] 实现前端 TTS 播放器：
+- [x] 封装后端 VectorEngine 客户端：
+  - [x] 统一方法 `chatWithAudio(messages)` 调用 `/v1/chat/completions`，返回文本 + 音频（wav），被 TTS / ASR 路由复用。  
+  - [x] 支持通过环境变量 `DISABLE_VECTOR_TTS=1` 在开发环境下关闭真实 TTS 调用，仅回传文本，避免外部额度不足导致体验中断。
+- [x] 实现前端 TTS 播放器：
   - [ ] 调用自家 API，拿到音频 Blob/URL；  
   - [ ] 用 `<audio>` 或 Web Audio 自动播放，同时展示字幕。  
 - [ ] 实现前端语音输入组件：
-  - [ ] 大号「按住说话」按钮；  
+  - [x] 大号「按住说话」按钮（优先 WebSpeech，回退录音上传）；  
   - [ ] 使用 `getUserMedia` 采集音频并发送到后端 ASR 接口（或 VectorEngine 的文本能力）；  
   - [ ] 实时显示 ASR 字幕，可一键「再说一遍」。
 
@@ -349,6 +353,14 @@ Content-Type: application/json
 - [ ] 实现「选择年龄段 / 难度」的入口，以便控制提问方式与规则复杂度。  
 - [ ] 实现「我的作品」列表页，展示每个游戏项目的缩略图和基础信息。  
 - [ ] 为教师 / 家长增加一个简化报告视图：展示每个孩子在一次游戏设计中使用了哪些抽象（条件 / 循环 / 变量等）。
+
+#### 14.8 已打通的开发里程碑（持续勾选）
+
+- [x] `/coding-lab` 页面：项目列表 + 新建项目 + 选择项目。  
+- [x] 内置画板：导出 PNG → 后端上传 freeimage.host → 保存到 `game_drawings`。  
+- [x] 最小 TTS 链路：`POST /api/coding-game/voice/tts` → 前端播放 wav。  
+- [x] 最小 ASR 链路：WebSpeech 语音转文字；不支持时回退到 `POST /api/coding-game/voice/asr`。  
+- [x] 下一步：把对话内容接入 AI guide，生成规则卡片并更新规则树。  
 
 #### 14.7 进阶与后续迭代（非 MVP）
 
@@ -427,7 +439,7 @@ CREATE INDEX IF NOT EXISTS idx_game_run_logs_project_id
 
 ---
 
-### 十五、绘画交互与图像托管方案
+### 十六、绘画交互与图像托管方案
 
 目标：**孩子可以一边画图一边和 AI 对话，用画出来的角色 / 场景直接进入游戏。**
 
@@ -487,3 +499,150 @@ VALUES (..., 'character', '小龙龙', 'https://i.freeimage.host/xxx.png', '{"pa
   - 多次使用同一角色时直接复用 URL，不重复上传。
 
 > 总体原则：绘画是儿童表达想象力的主要入口，AI 负责「读懂画」并把它转成可玩的规则和对象。
+
+---
+
+### 十七、规则 JSON Schema（`rules_json`）
+
+> 作为 `game_projects.rules_json` 的数据结构规范，前后端与 AI guide 都以此为准。
+
+#### 17.1 总体结构
+
+```json
+{
+  "commands": [ /* CommandRule[] */ ],
+  "conditions": [ /* ConditionRule[] */ ],
+  "loops": [ /* LoopRule[] */ ],
+  "variables": [ /* VariableRule[] */ ],
+  "events": [ /* EventRule[] */ ]
+}
+```
+
+#### 17.2 命令（CommandRule）
+
+```ts
+{
+  id: string;          // 规则ID，例如 "cmd_move"
+  name: string;        // 内部名称，例如 "move" / "jump"
+  displayName: string; // 给孩子看的名称，例如 "移动" / "跳跃"
+  category: 'movement' | 'attack' | 'interaction' | 'other';
+  params?: {
+    [key: string]: number | string | boolean; // 如 speed: 1, height: 2 等
+  };
+}
+```
+
+示例：
+
+```json
+{
+  "id": "cmd_jump",
+  "name": "jump",
+  "displayName": "跳跃",
+  "category": "movement",
+  "params": { "height": 1.5 }
+}
+```
+
+#### 17.3 条件（ConditionRule）
+
+```ts
+{
+  id: string;          // 规则ID，例如 "cond_hitMonster"
+  description: string; // 自然语言说明，例如 "碰到怪物就扣一滴血"
+  if: string;          // 简单条件表达式，例如 "touch(monster)"
+  then: string[];      // 动作表达式数组，例如 ["health -= 1", "shakeScreen()"]
+}
+```
+
+示例：
+
+```json
+{
+  "id": "cond_collectGem",
+  "description": "吃到宝石得分",
+  "if": "touch(gem)",
+  "then": ["gemCount += 1", "score += 10"]
+}
+```
+
+#### 17.4 循环（LoopRule）
+
+```ts
+{
+  id: string;           // 规则ID，例如 "loop_spawnMonster"
+  description: string;  // 自然语言说明
+  everySeconds: number; // 间隔秒数，大于 0
+  actions: string[];    // 每次触发时执行的动作，例如 ["spawnMonster()"]
+}
+```
+
+示例：
+
+```json
+{
+  "id": "loop_spawnMonster",
+  "description": "每 5 秒生成一只怪物",
+  "everySeconds": 5,
+  "actions": ["spawnMonster()"]
+}
+```
+
+#### 17.5 变量（VariableRule）
+
+```ts
+{
+  name: string;                 // 变量名，例如 "score" / "health"
+  type: 'int' | 'float' | 'bool';
+  initial: number | boolean;    // 初始值
+  description?: string;         // 可选说明，例如 "得分" / "生命值"
+}
+```
+
+示例：
+
+```json
+{
+  "name": "health",
+  "type": "int",
+  "initial": 3,
+  "description": "生命值"
+}
+```
+
+#### 17.6 事件（EventRule）
+
+```ts
+{
+  id: string;              // 规则ID，例如 "evt_spaceJump"
+  description: string;     // 说明，例如 "按空格键跳跃"
+  on:
+    | { type: 'key_press'; key: string }
+    | { type: 'pointer_tap' }
+    | { type: 'collision'; with: 'monster' | 'item' | 'ground' | string };
+  actions: string[];       // 动作表达式，例如 ["jump()"]
+}
+```
+
+示例：
+
+```json
+{
+  "id": "evt_spaceJump",
+  "description": "按空格键跳跃",
+  "on": { "type": "key_press", "key": "Space" },
+  "actions": ["jump()"]
+}
+```
+
+#### 17.7 默认规则模板（runner 模板）
+
+前端使用一个默认模板 `createDefaultRunnerRules()` 初始化新建项目的 `rules_json`，包含：
+
+- 命令：`move`（移动）、`jump`（跳跃）；
+- 变量：`score`、`health`、`gemCount`；
+- 条件：碰到怪物扣血、掉坑游戏结束、吃宝石得分；
+- 循环：每 5 秒生成一个怪物；
+- 事件：按空格键跳跃。
+
+AI guide 可以在此基础上增删规则或调整参数，从而让孩子在熟悉的基础模板上迭代自己的游戏规则。

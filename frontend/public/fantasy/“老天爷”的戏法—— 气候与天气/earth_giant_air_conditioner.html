@@ -5,27 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>怎么不给地球装一个大空调</title>
-    <!-- 依赖库 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 依赖库，包含 fallback -->
-    <script src="https://cdn.tailwindcss.com"
-        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
-    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
-
+    <!-- 依赖库加载 (带 Fallback 机制) -->
     <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
         onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
     <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
-
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
-        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
-    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
 
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
         onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
     <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
 
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script>(function () { var g = "tailwind", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
 
         body,
         html {
@@ -35,11 +37,11 @@
             height: 100%;
             overflow: hidden;
             background: #000408;
-            font-family: 'Noto Sans SC', sans-serif;
+            font-family: 'PingFang SC', sans-serif;
             color: #fff;
         }
 
-        #canvas-ui {
+        #main-canvas {
             position: fixed;
             top: 0;
             left: 0;
@@ -48,195 +50,245 @@
             z-index: 1;
         }
 
-        .overlay {
-            position: relative;
+        /* 标准化 UI 布局 */
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
             z-index: 10;
-            width: 100%;
-            height: 100%;
+            pointer-events: none;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 3.5rem;
-            pointer-events: none;
+            padding: 20px;
         }
 
         .pointer-events-auto {
             pointer-events: auto;
         }
 
-        .title-area {
+        .top-title-box {
+            padding: 20px;
             text-align: center;
-            opacity: 0;
-            transform: translateY(-30px);
         }
 
-        .hero-title {
-            font-family: 'ZCOOL XiaoWei', serif;
-            font-size: 3.8rem;
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
             background: linear-gradient(to right, #60A5FA, #34D399, #F87171);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.3));
+            margin-bottom: 10px;
         }
 
-        .guide-box {
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
             display: inline-block;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px);
-            padding: 0.6rem 2.5rem;
-            border-radius: 4rem;
+            padding: 6px 25px;
+            border-radius: 50px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 1.1rem;
-        }
-
-        .content-area {
-            max-width: 800px;
-            margin: 0 auto 15rem auto;
-            /* 避让底部的调节器面板 */
-            text-align: center;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        .main-desc {
-            font-size: 1.5rem;
-            line-height: 1.8;
-            margin-bottom: 2rem;
-            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
-            font-weight: 300;
-        }
-
-        .primary-btn {
-            background: rgba(255, 255, 255, 0.1);
+            color: #d1d5db;
+            font-style: italic;
+            font-size: 1rem;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 1rem 3rem;
-            border-radius: 4rem;
-            font-size: 1.25rem;
-            color: #fff;
-            cursor: pointer;
-            transition: 0.4s;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
-        .primary-btn:hover {
-            transform: scale(1.05) translateY(-3px);
-            background: rgba(255, 255, 255, 0.2);
-            border-color: #60A5FA;
+        /* 沉浸式文字层：居中平衡 */
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 150px;
+            /* 为底部按钮留出视觉平衡空间 */
         }
 
-        .ac-controller {
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #f1f5f9;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+        }
+
+        /* 底部 HUD 交互中心 */
+        .bottom-hud {
             position: fixed;
-            bottom: 4rem;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
-            max-width: 480px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-3px);
+            box-shadow: 0 15px 35px rgba(37, 99, 235, 0.6);
+        }
+
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+
+        /* 特有组件：空调控制器 */
+        .ac-controller {
             background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(25px);
-            padding: 2rem;
-            border-radius: 2.5rem;
+            padding: 1.5rem 2rem;
+            border-radius: 2rem;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            pointer-events: auto;
-            z-index: 50;
+            width: 320px;
+            text-align: center;
         }
 
         .thermostat-display {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             color: #38BDF8;
             text-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
-            margin-bottom: 1rem;
-            text-align: center;
+            margin-bottom: 0.5rem;
         }
 
         .ac-slider {
             width: 100%;
-            -webkit-appearance: none;
             appearance: none;
-            height: 10px;
-            border-radius: 5px;
+            height: 8px;
+            border-radius: 4px;
             background: linear-gradient(to right, #3B82F6, #F87171);
             outline: none;
-            margin-bottom: 1rem;
+            margin: 1rem 0;
         }
 
         .ac-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 30px;
-            height: 30px;
+            appearance: none;
+            width: 24px;
+            height: 24px;
             background: #fff;
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
         }
 
-        .ac-badges {
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.6s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+
+        /* 导航进度点 */
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
             display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            margin-top: 1rem;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
         }
 
-        .ac-badge {
-            font-size: 0.8rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            color: #94A3B8;
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
-        .ac-badge.active {
-            background: #3B82F6;
-            color: #fff;
+        .nav-dot.active {
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8;
+            transform: scale(1.3);
         }
     </style>
 </head>
 
 <body>
-    <div id="canvas-ui"></div>
+    <div id="main-canvas"></div>
 
-    <div id="app" class="overlay">
-        <div class="title-area">
-            <h1 class="hero-title">{{ stages[step-1].title }}</h1>
-            <div class="guide-box">
-                🕹️ {{ stages[step-1].parentWords }}
+    <div id="app" class="ui-overlay">
+        <!-- 顶部：标题与家长引导 -->
+        <div class="top-title-box">
+            <transition name="fade" mode="out-in">
+                <h1 :key="step" class="main-title">[[ stages[step-1].title ]]</h1>
+            </transition>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">
+                    🕹️ [[ stages[step-1].parentWords ]]
+                </div>
+            </transition>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" :class="['nav-dot', { active: step === n }]" @click="jumpTo(n)">
             </div>
         </div>
 
-        <div class="content-area">
-            <p class="main-desc">{{ stages[step-1].description }}</p>
-            <div class="flex justify-center pointer-events-auto">
-                <button v-if="step < 5 && step !== 3" @click="nextStep" class="primary-btn">
-                    {{ step === 2 ? '启动安装计划' : '继续探索' }}
-                </button>
-                <button v-else-if="step === 5" @click="reset" class="primary-btn">回归自然平衡</button>
-            </div>
+        <!-- 沉浸式文字层 -->
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <p class="stage-content" v-html="stages[step-1].description"></p>
+                </div>
+            </transition>
         </div>
 
-        <!-- 只有在第三步显示空调控制器 -->
-        <div v-if="step === 3" class="ac-controller pointer-events-auto">
-            <div class="thermostat-display">{{ targetTemp.toFixed(1) }}°C</div>
-            <input type="range" v-model.number="targetTemp" min="0" max="50" step="0.5" class="ac-slider">
-            <div class="ac-badges">
-                <span :class="['ac-badge', { active: targetTemp < 20 }]">制冷模式</span>
-                <span :class="['ac-badge', { active: targetTemp >= 20 && targetTemp <= 30 }]">恒温模式</span>
-                <span :class="['ac-badge', { active: targetTemp > 30 }]">强热模式</span>
-            </div>
-            <div class="flex justify-center mt-6">
-                <button @click="nextStep" class="primary-btn !text-sm !py-2 !px-8"
-                    :style="{ opacity: targetTemp === 25 ? 1 : 0.6 }">
-                    完成设定
+        <!-- 底部交互中心 -->
+        <div class="bottom-hud">
+            <!-- 第三阶段：空调调节器 -->
+            <transition name="fade">
+                <div v-if="step === 3" class="ac-controller pointer-events-auto">
+                    <div class="thermostat-display">[[ targetTemp.toFixed(1) ]]°C</div>
+                    <input type="range" v-model.number="targetTemp" min="0" max="50" step="0.5" class="ac-slider">
+                    <div class="text-xs text-sky-300 opacity-60">滑动滑块，寻找完美的 25.0°C</div>
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length && step !== 3" @click="nextStep" class="btn-action">
+                    [[ step === 2 ? '启动安装计划' : '继续探索' ]]
                 </button>
+                <button v-else-if="step === 3" @click="nextStep" class="btn-action"
+                    :disabled="Math.abs(targetTemp - 25) > 1"
+                    :style="{ opacity: Math.abs(targetTemp - 25) <= 1 ? 1 : 0.4 }">
+                    设定温度并启动
+                </button>
+                <button v-else-if="step === stages.length" @click="reset" class="btn-action">重新认识自然 🌿</button>
             </div>
         </div>
     </div>
 
     <script>
-        const { createApp, ref, onMounted, computed, watch } = Vue;
+        const { createApp, ref, onMounted, watch } = Vue;
 
         createApp({
+            delimiters: ['[[', ']]'],
             setup() {
                 const step = ref(1);
                 const targetTemp = ref(15);
@@ -248,29 +300,29 @@
                     },
                     {
                         title: "超级空调狂想曲",
-                        parentWords: "想象一下，我们能在太空装几个巨大的长风扇，就像家里空调的出风口一样对着地球吹。",
-                        description: "要把地球调到宜人的 25.0°C。热的地方吹冷气，冷的地方吹暖气，听起来是不是很棒？"
+                        parentWords: "想象一下，我们能在太空装几个巨大的风扇，就像家里空调的出风口一样对着地球吹。",
+                        description: "如果我们要把全地球都调到宜人的 25.0°C。热的地方吹冷气，冷的地方吹暖气，听起来是不是很完美？"
                     },
                     {
                         title: "安装‘巨型外机’",
-                        parentWords: "来，握住遥控器！滑动滑块，试着把那个蓝色的地球调成温柔的绿色。",
-                        description: "当你接近 25 度，你会发现地球表面的极端色调消失了。那些巨大的风扇正在全力工作，改变星球的热量分布。"
+                        parentWords: "来，握住遥控器！滑动下方的滑块，试着把那个冷热不均的地球调成温柔的绿色吧。",
+                        description: "当你接近 25 度，地球表面的极端色调就会慢慢消失。那些巨大的风扇正在全力工作，强行拉平星球的温度。"
                     },
                     {
                         title: "罢工的季风",
-                        parentWords: "看！风停了。因为没有冷热不均，空气懒得动了。要是真的装了空调，地球的降雨也会混乱呢。",
-                        description: "我们发现了一个矛盾：当温度变得完美统一，地球大气的‘传送带’也随之断裂。没有温差，也就没有了循环呼吸。"
+                        parentWords: "看！由于没有冷热不均，风停了。要是真的装了空调，地球的气候循环就会彻底断开呢。",
+                        description: "我们发现了一个深奥的秘密：当温度变得完美统一，地球大气的‘传送带’也随之断裂。没有温差，就没有了生机盎然的呼吸。"
                     },
                     {
-                        title: "大自然的‘智能’调节",
-                        parentWords: "故事讲完啦。其实，森林和海洋就是地球自带的空调，虽然不常显示数字，但它们比机器更懂平衡。",
-                        description: "自然的力量在于差异与循环。保护好我们的森林和海洋，就是给地球维护最好的空调系统。晚安。"
+                        title: "大自然的‘智能’系统",
+                        parentWords: "其实，森林和海洋就是地球自带的空调组件。它们不需要电费，只要我们小心呵护就能工作得很好。",
+                        description: "自然的力量在于差异与循环。保护好我们的森林和水源，就是给地球维护最完美的空气调节系统。晚安，未来的地球管家。"
                     }
                 ];
 
-                // --- Three.js Implementation ---
+                // --- Three.js ---
                 let scene, camera, renderer, globe, fans = [], globeShader;
-                let clock = new THREE.Clock();
+                const clock = new THREE.Clock();
 
                 const initThree = () => {
                     scene = new THREE.Scene();
@@ -279,7 +331,7 @@
 
                     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                     renderer.setSize(window.innerWidth, window.innerHeight);
-                    document.getElementById('canvas-ui').appendChild(renderer.domElement);
+                    document.getElementById('main-canvas').appendChild(renderer.domElement);
 
                     // Stars
                     const starGeo = new THREE.BufferGeometry();
@@ -294,8 +346,8 @@
                     const globeGeo = new THREE.SphereGeometry(80, 64, 64);
                     globeShader = {
                         uniforms: {
-                            targetTemp: { value: 15 }, // Current real global consistency
-                            influence: { value: 0 }    // 0 to 1
+                            targetTemp: { value: 15 },
+                            influence: { value: 0 }
                         },
                         vertexShader: `
                             varying vec2 vUv;
@@ -311,18 +363,13 @@
                             varying vec3 vNormal;
                             uniform float targetTemp;
                             uniform float influence;
-                            
                             void main() {
                                 float lat = abs(vUv.y - 0.5) * 2.0;
-                                // Nature: Hot(red) at 0, Cold(blue) at 1
                                 vec3 nature = mix(vec3(0.9, 0.2, 0.1), vec3(0.1, 0.4, 0.9), lat);
-                                
-                                // AC Target (25C is green/safe)
                                 float tNorm = clamp(targetTemp / 50.0, 0.0, 1.0);
-                                vec3 ac = mix(vec3(0.0, 0.8, 1.0), vec3(1.0, 0.6, 0.0), tNorm);
-                                
+                                vec3 ac = mix(vec3(0.1, 0.6, 1.0), vec3(0.1, 0.9, 0.4), tNorm);
+                                if(targetTemp > 30.0) ac = mix(ac, vec3(1.0, 0.4, 0.0), (targetTemp - 30.0)/20.0);
                                 vec3 finalColor = mix(nature, ac, influence);
-                                
                                 float light = max(0.2, dot(vNormal, vec3(1,1,1)));
                                 gl_FragColor = vec4(finalColor * light, 1.0);
                             }
@@ -331,11 +378,11 @@
                     globe = new THREE.Mesh(globeGeo, new THREE.ShaderMaterial(globeShader));
                     scene.add(globe);
 
-                    // AC Fans (3 markers)
+                    // Fans
                     for (let i = 0; i < 3; i++) {
                         const fan = createFan();
-                        const phi = (i / 3) * Math.PI * 2;
-                        fan.position.set(Math.cos(phi) * 120, Math.sin(phi) * 120, 0);
+                        const angle = (i / 3) * Math.PI * 2;
+                        fan.position.set(Math.cos(angle) * 110, Math.sin(angle) * 110, 0);
                         fan.visible = false;
                         fans.push(fan);
                         scene.add(fan);
@@ -346,17 +393,16 @@
 
                 const createFan = () => {
                     const group = new THREE.Group();
-                    const hub = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 10), new THREE.MeshBasicMaterial({ color: 0xcccccc }));
+                    const hub = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 8), new THREE.MeshBasicMaterial({ color: 0x64748b }));
                     hub.rotation.x = Math.PI / 2;
                     group.add(hub);
-                    for (let i = 0; i < 4; i++) {
-                        const blade = new THREE.Mesh(new THREE.BoxGeometry(40, 10, 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 }));
-                        blade.rotation.z = (i / 4) * Math.PI * 2;
-                        blade.position.x = 25;
+                    for (let i = 0; i < 3; i++) {
+                        const blade = new THREE.Mesh(new THREE.BoxGeometry(30, 8, 1), new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.6 }));
+                        blade.position.x = 18;
                         const bladePivot = new THREE.Group();
                         bladePivot.add(blade);
-                        bladePivot.rotation.z = (i / 4) * Math.PI * 2;
-                        group.add(blade);
+                        bladePivot.rotation.z = (i / 3) * Math.PI * 2;
+                        group.add(bladePivot);
                     }
                     return group;
                 };
@@ -364,65 +410,43 @@
                 const animate = () => {
                     requestAnimationFrame(animate);
                     const t = clock.getElapsedTime();
-
                     if (globe) globe.rotation.y += 0.003;
-
-                    fans.forEach((f, idx) => {
-                        f.rotation.z += 0.1;
-                        f.children.forEach(b => b.rotation.z += 0.05); // simple spin
+                    fans.forEach(f => {
+                        f.rotation.z += 0.05;
+                        f.children.forEach(c => { if (c.rotation) c.rotation.z += 0.1; });
                     });
-
                     if (globeShader) {
-                        // Smoothly approach targetTemp
                         globeShader.uniforms.targetTemp.value = targetTemp.value;
-                        const inf = (step.value === 3 || step.value === 4) ? 0.9 : (step.value >= 5 ? 1.0 : 0.0);
-                        globeShader.uniforms.influence.value = THREE.MathUtils.lerp(globeShader.unforms?.influence?.value || 0, inf, 0.05);
+                        const targetInf = (step.value === 3 || step.value === 4) ? 0.9 : (step.value === 5 ? 0.0 : 0.0); // Reset at end
+                        globeShader.uniforms.influence.value = THREE.MathUtils.lerp(globeShader.uniforms.influence.value, targetInf, 0.05);
                     }
-
                     renderer.render(scene, camera);
                 };
 
-                const next = () => {
-                    if (step.value < 5) {
-                        step.value++;
-                    }
-                };
+                const nextStep = () => { if (step.value < stages.length) step.value++; };
+                const jumpTo = (n) => { step.value = n; };
+                const reset = () => { step.value = 1; targetTemp.value = 15; fans.forEach(f => f.visible = false); };
 
-                const reset = () => {
-                    step.value = 1;
-                    targetTemp.value = 15;
-                    fans.forEach(f => f.visible = false);
-                };
-
-                watch(step, (newVal) => {
-                    gsap.fromTo('.title-area', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1 });
-                    gsap.fromTo('.content-area', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
-                    if (newVal === 3) fans.forEach(f => f.visible = true);
-                    if (newVal === 4) targetTemp.value = 25.0; // Perfect AC
-                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: newVal, totalStages: 5 });
+                watch(step, (val) => {
+                    fans.forEach(f => f.visible = (val === 3 || val === 4));
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: val, totalStages: stages.length });
                 });
 
                 onMounted(() => {
                     initThree();
-                    gsap.fromTo('.title-area', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
-                    gsap.fromTo('.content-area', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.5, delay: 0.8 });
-
-                    window.addEventListener('mousemove', (e) => {
-                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
-                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
-                        gsap.to(camera.position, { x: x * 20, y: -y * 20, duration: 2 });
-                        camera.lookAt(0, 0, 0);
-                        gsap.to('.overlay', { x: -x * 10, y: -y * 10, duration: 1.5 });
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
                     });
-
                     window.__eduNestUIStateProvider = () => ({
                         stageIndex: step.value,
-                        totalStages: 5,
+                        totalStages: stages.length,
                         currentStage: stages[step.value - 1].title
                     });
                 });
 
-                return { step, stages, targetTemp, nextStep, reset };
+                return { step, stages, targetTemp, nextStep, jumpTo, reset };
             }
         }).mount('#app');
     </script>

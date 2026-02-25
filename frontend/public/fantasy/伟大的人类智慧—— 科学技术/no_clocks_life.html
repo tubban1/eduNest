@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>没有钟表的生活会怎样</title>
+    <!-- 核心库加载 (带 Fallback 机制) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/renderers/CSS2DRenderer.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/CSS2DRenderer.js'"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #css-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #38bdf8;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 垂直居中布局 */
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 150px;
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        .label-3d {
+            color: #38bdf8;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid #38bdf8;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .hud-panel {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 15px 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            backdrop-filter: blur(15px);
+            min-width: 320px;
+        }
+
+        .magic-slider {
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #1e293b;
+            outline: none;
+        }
+
+        .magic-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            border: 3px solid #fff;
+            box-shadow: 0 0 10px #38bdf8;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(3, 105, 161, 0.4);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(3, 105, 161, 0.6);
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: #38bdf8;
+            box-shadow: 0 0 15px #38bdf8;
+            transform: scale(1.3);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+    <div id="css-layer"></div>
+
+    <div id="app" class="ui-overlay">
+        <div class="top-title-box">
+            <h1 class="main-title">没有钟表的生活</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-sky-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <transition name="fade">
+                <div v-if="step === 3" class="hud-panel pointer-events-auto">
+                    <div class="flex justify-between text-sky-300 text-xs mb-2 font-bold">
+                        <span>机械能输出 (ENERGY OUTPUT)</span>
+                        <span>[[ (mechanismPower * 100).toFixed(0) ]]%</span>
+                    </div>
+                    <input type="range" v-model="mechanismPower" min="0" max="1" step="0.01" class="magic-slider">
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-action">
+                    [[ step === 1 ? '开启时间机器' : '继续探索' ]]
+                </button>
+                <button v-else @click="reset" class="btn-action">重归自然秩序 ♻️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const mechanismPower = ref(0.2);
+
+                const stages = [
+                    { title: "机械能的秩序", content: "时钟的本质并非数字，而是‘位移’的累积。每一个齿轮的精确咬合，都是机械能的传递。这种秩序，让全世界的节奏整齐划一。", parent: "宝贝，快看！这些齿轮正通过‘互相推拉’，帮我们数着时间呢。" },
+                    { title: "摆动的节律", content: "摆钟利用了‘等时性’原理。无论摆动的幅度多大，每次来回的时间几乎相同。这就像心脏的跳动，是时间的节拍器。", parent: "试着旋转屏幕，这些齿轮会敏锐地感知到你的微小操作哦！" },
+                    { title: "当秩序瓦解（熵增）", content: "如果机械能失去了锁定，‘时间’这个概念在物理层面就瓦解了。社会的精密运转将陷入前所未有的混乱。", parent: "哇！如果动力太强，齿轮就会飞出去！我们要学会控制力量哦，拖动滑块试试？" },
+                    { title: "回归自然流体", content: "在没有钟表的世界，人类回归了‘流体时间’。我们通过光影的倾角和生理的节奏来感知生存，那是另一种自由。", parent: "虽然零件散了，但你看，它们像星星一样漂流，是不是也很美？" },
+                    { title: "定义你的频率", content: "钟表是帮我们同步文明的工具。理解了它的物理构造，你会发现，只有你才是决定生活节奏的指挥家。珍惜当下。", parent: "宝贝，我们要学会管理时间，也要学会享受不受时间追赶的自在！晚安。" }
+                ];
+
+                // --- Sound Context ---
+                const synth = new Tone.MembraneSynth().toDestination();
+                const playTick = () => {
+                    Tone.start();
+                    synth.triggerAttackRelease("C3", "32n", undefined, 0.2);
+                };
+
+                // --- Three.js ---
+                let scene, camera, renderer, labelRenderer, gearGroup, controls;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x020617);
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 100);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    labelRenderer = new THREE.CSS2DRenderer();
+                    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+                    labelRenderer.domElement.style.position = 'absolute';
+                    labelRenderer.domElement.style.top = '0';
+                    labelRenderer.domElement.style.pointerEvents = 'none';
+                    document.getElementById('css-layer').appendChild(labelRenderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 0.5;
+
+                    gearGroup = new THREE.Group();
+                    const gearMat = new THREE.MeshStandardMaterial({
+                        color: 0x38bdf8, metalness: 0.9, roughness: 0.1, transparent: true, opacity: 0.8
+                    });
+
+                    const createGear = (r, x, y, name) => {
+                        const g = new THREE.Group();
+                        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 2, 32), gearMat);
+                        cylinder.rotation.x = Math.PI / 2;
+                        g.add(cylinder);
+
+                        for (let i = 0; i < 12; i++) {
+                            const tooth = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), gearMat);
+                            const angle = (i / 12) * Math.PI * 2;
+                            tooth.position.set(Math.cos(angle) * r, Math.sin(angle) * r, 0);
+                            tooth.rotation.z = angle;
+                            g.add(tooth);
+                        }
+
+                        const div = document.createElement('div');
+                        div.className = 'label-3d';
+                        div.textContent = name;
+                        const label = new THREE.CSS2DObject(div);
+                        label.position.set(0, r + 5, 0);
+                        g.add(label);
+
+                        g.position.set(x, y, 0);
+                        gearGroup.add(g);
+                        return g;
+                    };
+
+                    createGear(20, 0, 0, "核心传动轮");
+                    createGear(12, 28, 10, "分针齿轮");
+                    createGear(15, -25, -15, "动力发条箱");
+
+                    scene.add(gearGroup);
+                    scene.add(new THREE.PointLight(0x38bdf8, 3, 200));
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    controls.update();
+
+                    const power = mechanismPower.value;
+                    const isBreaking = step.value >= 4;
+
+                    gearGroup.children.forEach((g, i) => {
+                        if (!isBreaking) {
+                            g.rotation.z += (i % 2 === 0 ? 1 : -1) * (0.01 + power * 0.1);
+                            if (Math.floor(t * 2) % 2 === 0 && Math.random() < 0.05) playTick();
+                        } else {
+                            g.position.x += Math.sin(t + i) * 0.1;
+                            g.position.y += Math.cos(t + i) * 0.1;
+                            g.rotation.x += 0.01;
+                        }
+                    });
+
+                    renderer.render(scene, camera);
+                    labelRenderer.render(scene, camera);
+                };
+
+                const nextStage = () => { if (step.value < stages.length) step.value++; };
+                const jumpTo = (n) => { step.value = n; };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, stages, mechanismPower, nextStage, jumpTo, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

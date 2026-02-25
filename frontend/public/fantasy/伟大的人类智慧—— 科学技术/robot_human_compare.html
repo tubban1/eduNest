@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机器人能和真人一样吗</title>
+    <!-- 核心库 (带 Fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #05070a;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #818cf8;
+            text-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 120px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .interaction-panel {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 15px 25px;
+            border-radius: 20px;
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            display: flex;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .chip {
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            background: #1e293b;
+            color: #94a3b8;
+        }
+
+        .chip.active-logic {
+            border-color: #818cf8;
+            color: #818cf8;
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.3);
+        }
+
+        .chip.active-emotion {
+            border-color: #f472b6;
+            color: #f472b6;
+            box-shadow: 0 0 10px rgba(244, 114, 182, 0.3);
+        }
+
+        .btn-fancy {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-fancy:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.5);
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #818cf8;
+            z-index: 100;
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(129, 140, 248, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: #818cf8;
+            box-shadow: 0 0 15px #818cf8;
+            transform: scale(1.3);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 声音切换 -->
+        <div class="sound-toggle pointer-events-auto" @click="toggleSound">
+            [[ isMuted ? '🔇' : '🔊' ]]
+        </div>
+
+        <div class="top-title-box">
+            <h1 class="main-title">机器人与真人的秘密</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-indigo-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <transition name="fade">
+                <div v-if="step >= 2" class="interaction-panel pointer-events-auto">
+                    <button @click="setMode('logic')" :class="{'active-logic': mode === 'logic'}" class="chip">逻辑内核
+                        🧠</button>
+                    <button @click="setMode('emotion')" :class="{'active-emotion': mode === 'emotion'}"
+                        class="chip">情感芯片 ❤️</button>
+                    <button @click="toggleSkin" class="chip">切换：[[ isSkeleton ? '装甲' : '结构' ]]</button>
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-fancy">下一步探索</button>
+                <button v-else @click="reset" class="btn-fancy">与智械告别 🤖</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const mode = ref('logic'); // logic, emotion
+                const isSkeleton = ref(false);
+                const isMuted = ref(false);
+
+                const stages = [
+                    { title: "精密的力量", content: "机器人是人类创造出的最智能的助手。它们有着坚硬的金属外壳和不知疲倦的电子心脏。在这里，你可以360度观察这个精密的小家伙！", parent: "宝贝，快看！这个机器人看起来是不是很酷？你可以用手指转动它来观察它的背面哦。" },
+                    { title: "逻辑的神经网络", content: "当激活‘逻辑内核’时，机器人的大脑里会流过高速的蓝色电流。它能在一秒钟内完成100万道算术题，是极致的运算大师。", parent: "点击下方的逻辑内核，看它是不是亮起了智慧的蓝光？" },
+                    { title: "情感的微光", content: "机器人会有心情吗？试着切换到‘情感芯片’。虽然它没有真正的生命，但它可以学习微笑和关心。粉色的光代表它正在尝试理解爱。", parent: "哇，它变成粉色了！如果机器人也有了感情，它会是你最好的朋友吗？" },
+                    { title: "钢铁的内源", content: "切换‘结构’模式，你会发现坚固的皮肤下隐藏着复杂的支架和电缆。这种从骨骼到皮肤的模仿，正是科技对生命的致敬。", parent: "宝贝，快看！原来机器人的皮肤下面藏着这么多有趣的线条和零件呢！" },
+                    { title: "未来的生命伙伴", content: "也许在未来，机器人会成为我们的家人。学会温柔地对待这些智慧生命，就是学会拥抱无限可能的未来。晚安，小工程师。", parent: "无论机器人多聪明，我们都要做一个善良的小主人。给它一个鼓励，然后去睡觉吧。晚安！" }
+                ];
+
+                // --- Sound Context ---
+                const synth = new Tone.PolySynth().toDestination();
+                const clickSound = new Tone.MembraneSynth().toDestination();
+
+                const playModeSound = (m) => {
+                    if (isMuted.value) return;
+                    Tone.start();
+                    if (m === 'logic') synth.triggerAttackRelease(["C4", "E4", "G4"], "8n");
+                    else synth.triggerAttackRelease(["F4", "A4", "C5"], "8n");
+                };
+
+                // --- Three.js ---
+                let scene, camera, renderer, robotGroup, skeletonGroup, skinGroup, eyeL, eyeR, controls;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x05070a);
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 10, 60);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 1;
+
+                    robotGroup = new THREE.Group();
+                    scene.add(robotGroup);
+
+                    // --- Materials ---
+                    const metalMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.2 });
+                    const skeletonMat = new THREE.MeshPhongMaterial({ color: 0x818cf8, wireframe: true, transparent: true, opacity: 0.5 });
+                    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, roughness: 0.1 });
+                    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x818cf8 });
+
+                    // --- Skeleton Construction ---
+                    skeletonGroup = new THREE.Group();
+                    const sHead = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 8), skeletonMat);
+                    const sBody = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 15, 8), skeletonMat);
+                    sBody.position.y = -12;
+                    skeletonGroup.add(sHead, sBody);
+
+                    // Limbs
+                    for (let i = 0; i < 4; i++) {
+                        const limb = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1, 12, 6), skeletonMat);
+                        if (i < 2) { // Arms
+                            limb.position.set(i === 0 ? 8 : -8, -10, 0);
+                            limb.rotation.z = i === 0 ? 0.5 : -0.5;
+                        } else { // Legs
+                            limb.position.set(i === 2 ? 4 : -4, -25, 0);
+                        }
+                        skeletonGroup.add(limb);
+                    }
+                    robotGroup.add(skeletonGroup);
+
+                    // --- Skin / Armor Construction ---
+                    skinGroup = new THREE.Group();
+
+                    // Head Armor
+                    const headArmor = new THREE.Mesh(new THREE.BoxGeometry(11, 9, 9), skinMat);
+                    // Eyes
+                    eyeL = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 1), eyeMat);
+                    eyeR = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 1), eyeMat);
+                    eyeL.position.set(-2, 1, 4.5);
+                    eyeR.position.set(2, 1, 4.5);
+                    headArmor.add(eyeL, eyeR);
+
+                    // Chest Armor
+                    const chestArmor = new THREE.Mesh(new THREE.BoxGeometry(14, 16, 10), skinMat);
+                    chestArmor.position.y = -12;
+
+                    // Shoulder Pads
+                    const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 16), metalMat);
+                    const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 16), metalMat);
+                    shoulderL.position.set(-8, -5, 0);
+                    shoulderR.position.set(8, -5, 0);
+
+                    skinGroup.add(headArmor, chestArmor, shoulderL, shoulderR);
+                    robotGroup.add(skinGroup);
+
+                    // Lights
+                    const hLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+                    scene.add(hLight);
+                    const pLight = new THREE.PointLight(0x818cf8, 2, 100);
+                    pLight.position.set(20, 20, 20);
+                    scene.add(pLight);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    controls.update();
+
+                    robotGroup.position.y = Math.sin(t) * 1.5;
+
+                    if (mode.value === 'emotion') {
+                        eyeL.material.color.set(0xf472b6);
+                        eyeR.material.color.set(0xf472b6);
+                    } else {
+                        eyeL.material.color.set(0x818cf8);
+                        eyeR.material.color.set(0x818cf8);
+                    }
+
+                    skinGroup.visible = !isSkeleton.value;
+                    skeletonGroup.visible = true; // Keep visible underneath
+
+                    renderer.render(scene, camera);
+                };
+
+                const setMode = (m) => {
+                    mode.value = m;
+                    playModeSound(m);
+                };
+
+                const toggleSkin = () => {
+                    isSkeleton.value = !isSkeleton.value;
+                    if (!isMuted.value) clickSound.triggerAttackRelease("G2", "16n");
+                };
+
+                const toggleSound = () => {
+                    isMuted.value = !isMuted.value;
+                    Tone.Destination.mute = isMuted.value;
+                };
+
+                const nextStage = () => { if (step.value < stages.length) step.value++; };
+                const jumpTo = (n) => { step.value = n; };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, stages, mode, isSkeleton, isMuted, nextStage, jumpTo, reset, setMode, toggleSkin, toggleSound };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

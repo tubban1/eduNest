@@ -35,6 +35,7 @@ const testSharpThumbnailRoutes = require('./api/test-sharp-thumbnail');
 const earlyUserBonusRoutes = require('./api/early_user_bonus');
 const rendererTestRoutes = require('./api/renderer-test');
 const kbRoutes = require('./api/kb');
+const codingGameRoutes = require('./api/coding_game');
 const { errorHandler } = require('./utils/errorHandler');
 const logger = require('./utils/logger');
 const { supabase } = require('./services/database');
@@ -172,6 +173,7 @@ app.use("/api/test-sharp-thumbnail", testSharpThumbnailRoutes);
 app.use("/api/early-user-bonus", earlyUserBonusRoutes);
 app.use("/api/renderer-test", rendererTestRoutes);
 app.use("/api/kb", kbRoutes);
+app.use("/api/coding-game", codingGameRoutes);
 // 404 处理
 app.use('*', (req, res) => {
   res.status(404).json({ 

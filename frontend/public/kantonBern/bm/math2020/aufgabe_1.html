@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 1 - Algebra | BM Musterprüfung 2020</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+        onload="
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '$', right: '$', display: false },
+              { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+          });
+        ">
+    </script>
+    <style>
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .tab-btn:hover {
+            color: #3b82f6;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 700;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 260px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .solution-step {
+            border-left: 3px solid #e2e8f0;
+            padding-left: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+        }
+
+        .solution-step:hover {
+            border-left-color: #3b82f6;
+        }
+
+        .math-boxed {
+            border: 2px solid #3b82f6;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 16px;
+            background: #eff6ff;
+            font-weight: bold;
+            color: #1e40af;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-slate-800 font-sans leading-relaxed p-4 md:p-10">
+    <div class="max-w-4xl mx-auto">
+        <!-- 1:1 Originalaufgabe -->
+        <div id="static-math" class="card" v-pre>
+            <div class="flex justify-between items-start mb-6">
+                <h1 class="text-3xl font-bold text-slate-900">Aufgabe 1</h1>
+                <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded text-sm font-semibold">6 Punkte</span>
+            </div>
+
+            <div class="space-y-6">
+                <section>
+                    <p class="font-bold mb-2">1a) (1 Punkt)</p>
+                    <p class="mb-3">Schreiben Sie das Resultat als gewöhnlichen und vollständig gekürzten Bruch. Ein
+                        schrittweiser Lösungsweg muss ersichtlich sein.</p>
+                    <div class="text-xl py-2 px-4 bg-slate-50 rounded inline-block">
+                        $\frac{1}{4} \cdot \frac{10}{3} - \frac{1}{3} =$
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">1b) (1 Punkt)</p>
+                    <p class="mb-3">Multiplizieren Sie aus und vereinfachen Sie.</p>
+                    <div class="text-xl py-2 px-4 bg-slate-50 rounded inline-block">
+                        $(3b - 4)(2b + 3) =$
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">1c) (1 Punkt)</p>
+                    <p class="mb-3">Kürzen Sie.</p>
+                    <div class="text-xl py-2 px-4 bg-slate-50 rounded inline-block">
+                        $\frac{a^2 - 2ab + b^2}{a - b} =$
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">1d) (1 Punkt)</p>
+                    <p class="mb-3">Zerlegen Sie in ein Produkt.</p>
+                    <div class="text-xl py-2 px-4 bg-slate-50 rounded inline-block">
+                        $x^2 - 7x - 8 =$
+                    </div>
+                </section>
+
+                <section>
+                    <p class="font-bold mb-2">1e) (2 Punkte)</p>
+                    <p class="mb-3">Bestimmen Sie die Lösungsmenge in der Grundmenge $G = \mathbb{R}$.</p>
+                    <div class="text-xl py-2 px-4 bg-slate-50 rounded inline-block">
+                        $6x - 3(x - 2) = 9 - 2(5 - 3x)$
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- App Container -->
+        <div id="app" v-cloak class="card">
+            <!-- Tabs Navigation -->
+            <div class="flex border-b mb-8 overflow-x-auto no-scrollbar">
+                <div v-for="t in tabs" :key="t.id" @click="currentTab = t.id"
+                    :class="['tab-btn whitespace-nowrap', currentTab === t.id ? 'active' : '']">
+                    {{ t.name }}
+                </div>
+            </div>
+
+            <!-- Intro Tab -->
+            <div v-if="currentTab === 'intro'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-4 text-blue-800">Inspirierender Leitfaden</h2>
+                <p class="mb-6">Diese Aufgabe prüft dein Fundament in der Algebra. Es geht um Präzision beim Rechnen mit
+                    Brüchen, das Beherrschen von Termumformungen und das systematische Lösen von Gleichungen.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 p-5 rounded-xl">
+                        <h3 class="font-bold text-blue-700 mb-2">Kernkonzepte</h3>
+                        <ul class="list-disc ml-5 space-y-1 text-sm">
+                            <li><strong>Punkt vor Strich</strong>: Brüche erst multiplizieren, dann subtrahieren.</li>
+                            <li><strong>Distribution</strong>: Jedes Glied der ersten Klammer mit jedem der zweiten
+                                multiplizieren.</li>
+                            <li><strong>Binome</strong>: Muster erkennen spart Zeit beim Kürzen.</li>
+                            <li><strong>Gleichungswaage</strong>: Was du links tust, musst du auch rechts tun.</li>
+                        </ul>
+                    </div>
+                    <div id="container-intro"
+                        class="canvas-container bg-white border-2 border-dashed border-blue-100 flex items-center justify-center">
+                        <canvas id="canvas-intro"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs for 1a - 1e -->
+            <!-- Vue 3 note: do NOT combine v-for + v-if on same element -->
+            <template v-for="q in ['1a', '1b', '1c', '1d', '1e']" :key="q">
+              <div v-if="currentTab === q" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Lösungsweg zu Aufgabe {{ q }}</h2>
+
+                <!-- Step-by-step logic -->
+                <div v-if="q === '1a'">
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 1: Multiplikation der Brüche</p>
+                        <p class="text-lg">$\frac{1}{4} \cdot \frac{10}{3} = \frac{10}{12}$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 2: Kürzen des ersten Terms</p>
+                        <p class="text-lg">$\frac{10}{12} = \frac{5}{6}$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 3: Hauptnenner finden und Subtraktion</p>
+                        <p class="text-lg">$\frac{5}{6} - \frac{1}{3} = \frac{5}{6} - \frac{2}{6} = \frac{3}{6}$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 4: Finales Kürzen</p>
+                        <p class="text-lg">$\frac{3}{6} = \frac{1}{2}$</p>
+                    </div>
+                    <p class="math-boxed">$\text{Resultat: } \frac{1}{2}$</p>
+                </div>
+
+                <div v-if="q === '1b'">
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 1: Ausmultiplizieren (FOIL-Methode)</p>
+                        <p class="text-lg">$(3b - 4)(2b + 3) = 6b^2 + 9b - 8b - 12$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 2: Zusammenfassen der b-Terme</p>
+                        <p class="text-lg">$6b^2 + (9b - 8b) - 12 = 6b^2 + b - 12$</p>
+                    </div>
+                    <p class="math-boxed">$6b^2 + b - 12$</p>
+                </div>
+
+                <div v-if="q === '1c'">
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 1: Zähler faktorisieren (2. Binomische Formel)
+                        </p>
+                        <p class="text-lg">$a^2 - 2ab + b^2 = (a - b)^2$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 2: Kürzen mit dem Nenner</p>
+                        <p class="text-lg">$\frac{(a - b)^2}{a - b} = a - b$</p>
+                    </div>
+                    <p class="math-boxed">$a - b$</p>
+                </div>
+
+                <div v-if="q === '1d'">
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 1: Zwei Zahlen finden, deren Produkt -8 und deren
+                            Summe -7 ist.</p>
+                        <p class="text-lg">Zahlen: $-8$ und $+1$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 2: Als Produkt hinschreiben</p>
+                        <p class="text-lg">$(x - 8)(x + 1)$</p>
+                    </div>
+                    <p class="math-boxed">$(x - 8)(x + 1)$</p>
+                </div>
+
+                <div v-if="q === '1e'">
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 1: Klammern auflösen (Achtung beim Minuszeichen!)
+                        </p>
+                        <p class="text-lg">$6x - 3x + 6 = 9 - 10 + 6x$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 2: Zusammenfassen</p>
+                        <p class="text-lg">$3x + 6 = -1 + 6x$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 3: x auf eine Seite bringen ($-3x$)</p>
+                        <p class="text-lg">$6 = -1 + 3x$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 4: Konstante isolieren ($+1$)</p>
+                        <p class="text-lg">$7 = 3x$</p>
+                    </div>
+                    <div class="solution-step">
+                        <p class="text-slate-500 text-sm mb-1">Schritt 5: Dividieren durch 3</p>
+                        <p class="text-lg">$x = \frac{7}{3}$</p>
+                    </div>
+                    <p class="math-boxed">$L = \left\{ \frac{7}{3} \right\}$</p>
+                </div>
+
+                <!-- Visual container for each question -->
+                <div :id="'container-' + q" class="canvas-container">
+                    <canvas :id="'canvas-' + q"></canvas>
+                </div>
+              </div>
+            </template>
+
+            <!-- Summary Tab -->
+            <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+                <h2 class="text-2xl font-bold mb-6 text-green-800">Zusammenfassung & Tipps</h2>
+
+                <div class="space-y-4">
+                    <div class="p-4 bg-green-50 rounded-lg border border-green-100">
+                        <h3 class="font-bold text-green-700 mb-2">Checkliste zur Prüfung</h3>
+                        <ul class="list-check ml-5 space-y-2">
+                            <li><span class="font-bold">1a:</span> Immer so weit wie möglich kürzen!</li>
+                            <li><span class="font-bold">1b:</span> Vorsicht bei negativen Vorzeichen ($-4 \cdot 3 =
+                                -12$).</li>
+                            <li><span class="font-bold">1c & 1d:</span> Binomische Formeln sind deine besten Freunde.
+                            </li>
+                            <li><span class="font-bold">1e:</span> Mache am Ende eine Probe, wenn Zeit bleibt.</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-6 border-2 border-dashed border-slate-200 rounded-xl">
+                        <h3 class="font-bold mb-4">Training: Teste dich selbst!</h3>
+                        <p class="text-sm mb-4">Hier ist eine ähnliche Gleichung wie in 1e:</p>
+                        <p class="text-lg bg-white p-3 border rounded mb-4">$4(x + 2) - 2x = 22$</p>
+                        <details class="cursor-pointer text-blue-600 font-semibold">
+                            <summary>Lösung anzeigen</summary>
+                            <div class="mt-2 p-3 bg-slate-50 rounded text-slate-700">
+                                $4x + 8 - 2x = 22 \Rightarrow 2x + 8 = 22 \Rightarrow 2x = 14 \Rightarrow x = 7$
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <div id="container-summary" class="canvas-container mt-8">
+                    <canvas id="canvas-summary"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script shadow>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const tabs = [
+                    { id: 'intro', name: 'Einführung' },
+                    { id: '1a', name: '1a) Bruch' },
+                    { id: '1b', name: '1b) Term' },
+                    { id: '1c', name: '1c) Kürzen' },
+                    { id: '1d', name: '1d) Produkt' },
+                    { id: '1e', name: '1e) Gleichung' },
+                    { id: 'summary', name: 'Zusammenfassung' }
+                ];
+
+                const renderMath = () => {
+                    if (!window.renderMathInElement) return;
+                    window.renderMathInElement(document.body, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '\\[', right: '\\]', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                };
+
+                const drawIntro = () => {
+                    const canvas = document.getElementById('canvas-intro');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Simple Waage als visuelle Metapher (ohne Text)
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+
+                    // Base
+                    ctx.beginPath(); ctx.moveTo(canvas.width / 2 - 40, canvas.height - 40); ctx.lineTo(canvas.width / 2 + 40, canvas.height - 40); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(canvas.width / 2, canvas.height - 40); ctx.lineTo(canvas.width / 2, canvas.height / 2); ctx.stroke();
+
+                    // Beam
+                    ctx.beginPath(); ctx.moveTo(canvas.width / 4, canvas.height / 2); ctx.lineTo(3 * canvas.width / 4, canvas.height / 2); ctx.stroke();
+
+                    // Skalen
+                    ctx.fillStyle = '#60a5fa';
+                    ctx.beginPath(); ctx.arc(canvas.width / 4, canvas.height / 2 + 30, 25, 0, Math.PI, false); ctx.fill();
+                    ctx.beginPath(); ctx.arc(3 * canvas.width / 4, canvas.height / 2 + 30, 25, 0, Math.PI, false); ctx.fill();
+                };
+
+                const drawLogic = (qId) => {
+                    const canvas = document.getElementById('canvas-' + qId);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (qId === '1a') {
+                        // Visualisiere Bruch: Kreis, obere Hälfte eingefärbt
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.beginPath(); ctx.arc(canvas.width / 2, canvas.height / 2, 60, 0, Math.PI * 2); ctx.stroke();
+                        ctx.fillStyle = '#60a5fa';
+                        ctx.beginPath(); ctx.moveTo(canvas.width / 2, canvas.height / 2); ctx.arc(canvas.width / 2, canvas.height / 2, 60, 0, Math.PI); ctx.fill();
+                    } else if (qId === '1c') {
+                        // Rechteck als Schemaskizze für (a-b)^2
+                        ctx.strokeStyle = '#3b82f6';
+                        ctx.lineWidth = 2;
+                        const w = 140, h = 80;
+                        const x0 = canvas.width / 2 - w / 2;
+                        const y0 = canvas.height / 2 - h / 2;
+                        ctx.strokeRect(x0, y0, w, h);
+                        ctx.setLineDash([6, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(x0, y0 + h / 2);
+                        ctx.lineTo(x0 + w, y0 + h / 2);
+                        ctx.moveTo(x0 + w / 2, y0);
+                        ctx.lineTo(x0 + w / 2, y0 + h);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    } else {
+                        // Simple placeholder pattern
+                        ctx.fillStyle = '#f1f5f9';
+                        for (let i = 0; i < 5; i++) {
+                            ctx.fillRect(20 + i * 60, 40, 40, 40);
+                        }
+                    }
+                };
+
+                const drawSummary = () => {
+                    const canvas = document.getElementById('canvas-summary');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Ein einfaches Häkchen als Erfolgs-Symbol
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+                    ctx.strokeStyle = '#22c55e';
+                    ctx.lineWidth = 6;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 40, cy);
+                    ctx.lineTo(cx - 10, cy + 30);
+                    ctx.lineTo(cx + 45, cy - 25);
+                    ctx.stroke();
+                };
+
+                onMounted(() => {
+                    setTimeout(() => {
+                        renderMath();
+                        drawIntro();
+                    }, 500);
+                });
+
+                watch(currentTab, (newTab) => {
+                    console.debug('[aufgabe_1] tab changed:', newTab);
+                    setTimeout(() => {
+                        renderMath();
+                        if (newTab === 'intro') drawIntro();
+                        else if (newTab === 'summary') drawSummary();
+                        else drawLogic(newTab);
+                    }, 50);
+                });
+
+                return { currentTab, tabs };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

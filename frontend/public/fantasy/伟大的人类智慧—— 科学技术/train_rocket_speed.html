@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火车要和火箭一样快该多好</title>
+    <!-- 核心库 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/p5.min.js'"></script>
+    <script>(function () { var g = "p5", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/p5.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #010409;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #p5-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* 标准化 UI 布局 */
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #38bdf8;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 导航进度 (左侧点状) */
+        .nav-progress {
+            position: fixed;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-dot.active {
+            background: #38bdf8;
+            box-shadow: 0 0 15px #38bdf8;
+            transform: scale(1.3);
+        }
+
+        /* 沉浸式文字层 */
+        .immersive-text-layer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 150px;
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        /* 底部 HUD 交互中心 */
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .vacuum-meter {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-vacuum {
+            background: #38bdf8;
+            color: #000;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s;
+        }
+
+        .btn-vacuum:active {
+            transform: scale(0.9);
+        }
+
+        .speed-display {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            color: #38bdf8;
+            text-shadow: 0 0 10px #38bdf8;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #fff;
+            padding: 15px 50px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            box-shadow: 0 10px 30px rgba(3, 105, 161, 0.4);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-next:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 45px rgba(3, 105, 161, 0.6);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+    <div id="p5-overlay"></div>
+
+    <div id="app" class="ui-overlay">
+        <div class="top-title-box">
+            <h1 class="main-title">火车要和火箭一样快</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">
+                    [[ stages[step-1].parent ]]
+                </div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }"
+                @click="jumpToStage(n)"></div>
+        </div>
+
+        <div class="bottom-container">
+            <div class="immersive-text-layer">
+                <transition name="fade" mode="out-in">
+                    <div :key="step">
+                        <h2 class="text-3xl font-bold text-sky-400 mb-4">[[ stages[step-1].title ]]</h2>
+                        <p class="stage-content" v-html="stages[step-1].content"></p>
+                    </div>
+                </transition>
+            </div>
+
+            <div class="bottom-hud">
+                <!-- 交互任务 -->
+                <div v-if="step === 2" class="vacuum-meter pointer-events-auto">
+                    <div class="text-xs text-slate-400 mb-2 uppercase tracking-widest">抽真空进度 (PUMPING AIR)</div>
+                    <button @click="pumpAir" class="btn-vacuum">PUMP</button>
+                    <div class="mt-4 text-sky-500 font-bold">管道内空气密度: [[ airDensity.toFixed(1) ]]%</div>
+                </div>
+
+                <div class="speed-box text-center" v-if="step >= 2">
+                    <div class="text-xs text-slate-500 uppercase">当前飞行速度 (CURRENT VELOCITY)</div>
+                    <div class="speed-display">[[ trainSpeed.toFixed(0) ]] KM/H</div>
+                </div>
+
+                <div class="action-area pointer-events-auto">
+                    <button v-if="step < stages.length" @click="nextStage" class="btn-next">
+                        [[ getBtnText() ]]
+                    </button>
+                    <button v-else @click="resetExperiment" class="btn-next">
+                        重回陆地 🚄
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const airDensity = ref(100);
+                const trainSpeed = ref(300);
+
+                const stages = [
+                    {
+                        title: "风的阻碍",
+                        content: "为什么火车不能无限加速？因为空气也是有‘重量’的！当火车跑得飞快，前面的空气就像一堵无形的墙，把火车挡住了。",
+                        parent: "宝贝，你试过在水里跑步吗？是不是觉得很沉？空气对飞快的火车来说，也像水一样粘稠哦！"
+                    },
+                    {
+                        title: "抽走无形的墙",
+                        content: "如果我们造一个长长的管子，把里面的空气都抽走，火车会怎样？请伸出手指点击按钮，帮我把管子里的‘空气精灵’抽走吧！",
+                        parent: "快！点一点那个蓝按钮，咱们把管子里的气儿都抽光，让火车飞起来！"
+                    },
+                    {
+                        title: "像火箭一样穿梭",
+                        content: "看！没有了空气阻力，火车轻盈得像鱼儿在星空中滑行。它的速度已经超过了音速，瞬间就能跨越千里。",
+                        parent: "哇！你看仪表盘！我们的火车已经跑得比火箭还要快啦！太了不起了！"
+                    },
+                    {
+                        title: "磁悬浮的力量",
+                        content: "除了减小阻力，我们还要让火车‘漂’起来。磁铁的互相排斥，让轮子不再摩擦轨道。这才是未来的飞行列车！",
+                        parent: "磁铁同性相斥，火车就像坐在云朵上一样，完全不碰地板哦！"
+                    },
+                    {
+                        title: "勇敢者的工程师梦",
+                        content: "从绿皮车到超级高铁，人类一直在追求速度的极限。未来的交通工具长什么样？也许就藏在你的小脑袋瓜里。晚安，未来的工程师。",
+                        parent: "宝贝，以后也许你真的能造出这种‘飞上海陆’的超级火车。晚安！"
+                    }
+                ];
+
+                const getBtnText = () => {
+                    if (step.value === 1) return "进入真空调速";
+                    if (step.value === 2) return airDensity.value < 10 ? "全速前进！" : "继续抽气";
+                    return "下一步探索";
+                };
+
+                const pumpAir = () => {
+                    if (airDensity.value > 0.1) {
+                        airDensity.value -= 5;
+                        trainSpeed.value += 150;
+                        gsap.to(camera.position, { z: camera.position.z - 2, duration: 0.5 });
+                    }
+                };
+
+                // --- P5.js Air Particles ---
+                let p5Instance;
+                const initP5 = () => {
+                    p5Instance = new p5((p) => {
+                        let particles = [];
+                        p.setup = () => {
+                            let canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                            canvas.parent('p5-overlay');
+                            for (let i = 0; i < 150; i++) particles.push({ x: p.random(p.width), y: p.random(p.height), sz: p.random(2, 5), spd: p.random(1, 3) });
+                        };
+                        p.draw = () => {
+                            p.clear();
+                            const count = (airDensity.value / 100) * particles.length;
+                            p.noStroke();
+                            p.fill(200, 230, 255, 100);
+                            for (let i = 0; i < count; i++) {
+                                let pt = particles[i];
+                                pt.x -= (trainSpeed.value / 100) * pt.spd;
+                                if (pt.x < 0) pt.x = p.width;
+                                p.ellipse(pt.x, pt.y, pt.sz);
+                            }
+                        };
+                        p.windowResized = () => p.resizeCanvas(p.windowWidth, p.windowHeight);
+                    });
+                };
+
+                // --- Three.js Scene ---
+                let scene, camera, renderer, train, tube;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x010409);
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    // 管子
+                    const tubeGeo = new THREE.CylinderGeometry(20, 20, 1000, 32, 1, true);
+                    const tubeMat = new THREE.MeshPhongMaterial({ color: 0x1e293b, side: THREE.BackSide, transparent: true, opacity: 0.5 });
+                    tube = new THREE.Mesh(tubeGeo, tubeMat);
+                    tube.rotation.x = Math.PI / 2;
+                    scene.add(tube);
+
+                    // 火车
+                    const trainGroup = new THREE.Group();
+                    const body = new THREE.Mesh(new THREE.CapsuleGeometry(5, 20, 10, 20), new THREE.MeshPhongMaterial({ color: 0x38bdf8, shininess: 100 }));
+                    body.rotation.x = Math.PI / 2;
+                    trainGroup.add(body);
+
+                    // 发光条
+                    const glowLines = new THREE.Mesh(new THREE.BoxGeometry(0.5, 15, 0.5), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+                    glowLines.position.y = 5.2;
+                    trainGroup.add(glowLines);
+
+                    train = trainGroup;
+                    scene.add(train);
+
+                    const light = new THREE.PointLight(0x38bdf8, 2, 500);
+                    light.position.set(0, 20, 50);
+                    scene.add(light);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+
+                    camera.position.set(0, 30, 120);
+                    camera.lookAt(0, 0, 0);
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    // 背景平移模拟运动
+                    tube.position.z += trainSpeed.value / 100;
+                    if (tube.position.z > 500) tube.position.z = 0;
+
+                    // 火车微颤
+                    if (airDensity.value > 10) {
+                        train.position.y = Math.sin(t * 20) * 0.1;
+                        train.position.x = Math.cos(t * 20) * 0.1;
+                    } else {
+                        train.position.y = Math.sin(t * 2) * 0.05;
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < stages.length) {
+                        step.value++;
+                        if (step.value === 3) {
+                            gsap.to(trainSpeed, { value: 3500, duration: 3 });
+                            gsap.to(camera.position, { z: 200, y: 10, duration: 4 });
+                        }
+                    }
+                };
+
+                const jumpToStage = (n) => {
+                    step.value = n;
+                    if (n === 1) { airDensity.value = 100; trainSpeed.value = 300; }
+                };
+
+                const resetExperiment = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    initP5();
+                    animate();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, stages, airDensity, trainSpeed, nextStage, jumpToStage, resetExperiment, pumpAir, getBtnText };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

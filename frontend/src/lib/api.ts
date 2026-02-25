@@ -826,6 +826,13 @@ class ApiClient {
       return res;
     },
 
+    /** 更新单个内容的免费预览标记（仅列表创建者） */
+    updateItemPreviewFlag: async (listId: string, contentId: string, isFreePreview: boolean) => {
+      return this.put(`/collection_lists/${listId}/items/${contentId}/preview`, {
+        is_free_preview: isFreePreview,
+      });
+    },
+
     /** 使列表缓存失效（密钥解锁/设置变更后调用），同时清除 :auth / :anon 两种 key */
     invalidateCache: (shortId: string) => {
       cache.deletePattern(`collection_list:short:${shortId}*`);
@@ -846,9 +853,33 @@ class ApiClient {
         language_code?: string;
         content_type?: string;
         svg_thumbnail?: string;
+        knowledge_points?: string[];
+        metadata_json?: any;
+        tech_stack?: string[];
       }>
     ) => {
       return this.post(`/collection_lists/${listId}/import`, { items });
+    },
+
+    /**
+     * 临时：按 title + language_code 在“当前列表”内 upsert 更新字段（仅列表创建者）
+     */
+    importUpsertItems: async (
+      listId: string,
+      items: Array<{
+        full_html: string;
+        title?: string;
+        description?: string;
+        tags?: string[];
+        language_code?: string;
+        content_type?: string;
+        svg_thumbnail?: string;
+        knowledge_points?: string[];
+        metadata_json?: any;
+        tech_stack?: string[];
+      }>
+    ) => {
+      return this.post(`/collection_lists/${listId}/import-upsert`, { items });
     },
   };
 
@@ -1098,6 +1129,42 @@ class ApiClient {
       // 静默处理日志发送失败
     }
   }
+
+  // Coding Lab / 游戏规则工坊 API
+  codingGame = {
+    listProjects: async () => {
+      return this.get('/coding-game/projects');
+    },
+    getProject: async (id: string) => {
+      return this.get(`/coding-game/projects/${id}`);
+    },
+    saveProject: async (payload: any & { id?: string }) => {
+      return this.post('/coding-game/projects', payload);
+    },
+    addDrawing: async (
+      projectId: string,
+      payload: { kind: string; image_url: string; label?: string; meta?: any }
+    ) => {
+      return this.post(`/coding-game/projects/${projectId}/drawings`, payload);
+    },
+    aiGuide: async (payload: {
+      projectId: string;
+      rules_json: any;
+      user_text: string;
+      stage?: string;
+      last_drawing?: any;
+    }) => {
+      return this.post('/coding-game/ai/guide', payload);
+    },
+    aiDebug: async (payload: {
+      projectId: string;
+      rules_json: any;
+      run_log?: any;
+      user_text?: string;
+    }) => {
+      return this.post('/coding-game/ai/debug', payload);
+    },
+  };
 }
 
 // 创建并导出 API 实例

@@ -373,7 +373,18 @@ function generateShortId() {
 
 const createContent = async (contentData, userId) => {
   try {
-    const { title, full_html, tags, description, content_type, language_code, svg_thumbnail } = contentData;
+    const {
+      title,
+      full_html,
+      tags,
+      description,
+      content_type,
+      language_code,
+      svg_thumbnail,
+      knowledge_points,
+      metadata_json,
+      tech_stack,
+    } = contentData;
     
     // 只接受 full_html，不再使用代码块字段
     if (!full_html || typeof full_html !== 'string' || full_html.trim().length === 0) {
@@ -390,15 +401,22 @@ const createContent = async (contentData, userId) => {
       title,
       full_html,
       tags: tags || [],
+      knowledge_points: Array.isArray(knowledge_points) ? knowledge_points : undefined,
       description: description || '',
-      content_type: content_type || 'vue',
+      content_type: content_type || 'interactive',
       language_code: language_code || 'zh-CN',
+      metadata_json: metadata_json != null ? metadata_json : undefined,
+      tech_stack: tech_stack != null ? tech_stack : undefined,
       created_by: actualUserId, // 如果是 visitor_id，则设置为 NULL
       visitor_id: visitorId, // 如果是 visitor_id，则存储在这里
       short_id: generateShortId(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
+    if (insertPayload.metadata_json !== undefined) {
+      insertPayload.metadata_created_at = new Date().toISOString();
+      insertPayload.metadata_updated_at = new Date().toISOString();
+    }
     if (svg_thumbnail != null && typeof svg_thumbnail === 'string' && svg_thumbnail.trim()) {
       insertPayload.svg_thumbnail = svg_thumbnail.trim();
       insertPayload.thumbnail_status = 'ready';
@@ -1340,6 +1358,133 @@ const addContentToList = async (userId, contentId, listId) => {
   }
 };
 
+// ===== Coding Lab: Game Projects & Drawings =====
+
+const createGameProject = async (userId, payload) => {
+  try {
+    const insertData = {
+      user_id: userId,
+      title: payload.title,
+      description: payload.description || '',
+      age_level: payload.age_level || null,
+      engine_preset: payload.engine_preset || 'runner',
+      rules_json: payload.rules_json || {},
+      display_code: payload.display_code || null,
+      thumbnail_url: payload.thumbnail_url || null
+    };
+
+    const { data, error } = await supabase
+      .from('game_projects')
+      .insert(insertData)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const updateGameProject = async (userId, projectId, payload) => {
+  try {
+    const updateData = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (payload.title !== undefined) updateData.title = payload.title;
+    if (payload.description !== undefined) updateData.description = payload.description;
+    if (payload.age_level !== undefined) updateData.age_level = payload.age_level;
+    if (payload.engine_preset !== undefined) updateData.engine_preset = payload.engine_preset;
+    if (payload.rules_json !== undefined) updateData.rules_json = payload.rules_json;
+    if (payload.display_code !== undefined) updateData.display_code = payload.display_code;
+    if (payload.thumbnail_url !== undefined) updateData.thumbnail_url = payload.thumbnail_url;
+
+    const { data, error } = await supabase
+      .from('game_projects')
+      .update(updateData)
+      .eq('id', projectId)
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const getGameProjectById = async (userId, projectId) => {
+  try {
+    const { data, error } = await supabase
+      .from('game_projects')
+      .select('*')
+      .eq('id', projectId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const listGameProjectsByUser = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('game_projects')
+      .select('id, title, description, age_level, engine_preset, thumbnail_url, created_at, updated_at')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+const addGameDrawing = async (userId, projectId, payload) => {
+  try {
+    const insertData = {
+      project_id: projectId,
+      user_id: userId,
+      kind: payload.kind,
+      label: payload.label || null,
+      image_url: payload.image_url,
+      meta: payload.meta || null
+    };
+
+    const { data, error } = await supabase
+      .from('game_drawings')
+      .insert(insertData)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
 const removeContentFromList = async (userId, contentId, listId) => {
   try {
     const { error } = await supabase
@@ -1628,8 +1773,6 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
     }
     
     // 4. 判断访问权限
-    const FREE_PREVIEW_COUNT = 3;  // 免费预览数量
-
     // 4.1 检查设备是否已通过密钥解锁此列表
     let hasKeyUnlock = false;
     if (deviceId && (list.pricing_mode === 'premium' || list.pricing_mode === 'free_preview')) {
@@ -1660,6 +1803,7 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
       .select(`
         id,
         added_at,
+        is_free_preview,
         content_id,
         content:content_id (
           id,
@@ -1681,13 +1825,22 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
     
     // 6. 处理内容访问权限
     const processedContents = (collections || []).map((item, index) => {
-      const isFreePreview = index < FREE_PREVIEW_COUNT;
+      const isFreePreview = !!item.is_free_preview;
       
       // 判断是否需要付费：
       // - 免费列表：不需要付费
-      // - 付费/预览列表：前3条免费，其余需付费
-      const requiresPayment = list.pricing_mode !== 'free' && !isFreePreview;
-      const isAccessible = canAccessAll || isFreePreview;
+      // - 付费列表：全部需要付费
+      // - 预览列表：标记为免费预览的条目免费，其他需付费
+      let requiresPayment = false;
+      if (list.pricing_mode === 'free') {
+        requiresPayment = false;
+      } else if (list.pricing_mode === 'premium') {
+        requiresPayment = true;
+      } else if (list.pricing_mode === 'free_preview') {
+        requiresPayment = !isFreePreview;
+      }
+
+      const isAccessible = canAccessAll || (list.pricing_mode === 'free_preview' ? isFreePreview : !requiresPayment);
       
       return {
         ...item,
@@ -1706,10 +1859,14 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
       // 免费列表：全部免费
       freeCount = processedContents.length;
       premiumCount = 0;
+    } else if (list.pricing_mode === 'free_preview') {
+      // 预览列表：按标记统计免费预览数量
+      freeCount = processedContents.filter(item => item.is_free_preview).length;
+      premiumCount = Math.max(0, processedContents.length - freeCount);
     } else {
-      // 付费/预览列表：前3条免费，其余付费
-      freeCount = Math.min(FREE_PREVIEW_COUNT, processedContents.length);
-      premiumCount = Math.max(0, processedContents.length - FREE_PREVIEW_COUNT);
+      // 付费列表：全部为付费内容
+      freeCount = 0;
+      premiumCount = processedContents.length;
     }
     
     // 8. 格式化价格
@@ -1744,6 +1901,36 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
     };
   } catch (error) {
     return { data: null, error };
+  }
+};
+
+const updateListItemPreviewFlag = async (userId, listId, contentId, isFreePreview) => {
+  try {
+    // 验证列表是否存在且属于当前用户
+    const { data: list, error: listError } = await supabase
+      .from('collection_lists')
+      .select('id, user_id')
+      .eq('id', listId)
+      .single();
+
+    if (listError || !list || list.user_id !== userId) {
+      return { success: false, error: new Error('无权限修改此列表') };
+    }
+
+    const { error: updateError } = await supabase
+      .from('user_collections')
+      .update({ is_free_preview: !!isFreePreview })
+      .eq('list_id', listId)
+      .eq('content_id', contentId)
+      .eq('user_id', userId);
+
+    if (updateError) {
+      return { success: false, error: updateError };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error };
   }
 };
 
@@ -2090,6 +2277,7 @@ module.exports = {
   getCollectionListByShortId,
   addContentToList,
   removeContentFromList,
+  updateListItemPreviewFlag,
   getContentCollections,
   getUserCollectionGroups,
   getUserCollectionsByGroup,
@@ -2101,6 +2289,12 @@ module.exports = {
   checkDatabaseStatus,
   logAIUsage,
   getPublicCollectionListContent,
+  // coding lab
+  createGameProject,
+  updateGameProject,
+  getGameProjectById,
+  listGameProjectsByUser,
+  addGameDrawing,
   // credits & subscription
   getCreditsBalance,
   getCreditsHistory,

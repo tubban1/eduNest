@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>和平的种子 - 核战争的反思</title>
+    <!-- 核心库 (带 Fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>(function () { var g = "THREE.OrbitControls", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js"; setTimeout(function () { if (window.THREE && window.THREE.OrbitControls === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script>(function () { var g = "gsap", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script>(function () { var g = "Tone", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0c0a09;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #facc15;
+            text-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(44, 40, 30, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            color: #fde68a;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 120px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #fdf4ff;
+        }
+
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* 深度交互组件样式 */
+        .interactive-panel {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 20px 30px;
+            border-radius: 24px;
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            backdrop-filter: blur(15px);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            color: #000;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(217, 119, 6, 0.4);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(217, 119, 6, 0.6);
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #facc15;
+            z-index: 100;
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(250, 204, 21, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: #facc15;
+            box-shadow: 0 0 15px #facc15;
+            transform: scale(1.3);
+        }
+
+        /* 特殊进度条 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            margin: 15px 0;
+        }
+
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #facc15;
+            cursor: pointer;
+            box-shadow: 0 0 10px #facc15;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <!-- 声音切换 -->
+        <div class="sound-toggle pointer-events-auto" @click="toggleSound">
+            [[ isMuted ? '🔇' : '🔊' ]]
+        </div>
+
+        <div class="top-title-box">
+            <h1 class="main-title">和平的种子</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-yellow-500 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <!-- 深度交互面板 -->
+            <transition name="fade">
+                <div v-if="step === 1" class="interactive-panel pointer-events-auto">
+                    <p class="text-sm mb-2 text-yellow-200">交互：尝试稳定原子核能量</p>
+                    <input type="range" min="0" max="100" v-model="atomStability" class="custom-slider">
+                    <p class="text-xs text-gray-400">[[ atomStability > 70 ? '⚠️ 注意：能量连锁反应临界点' : '当前能量：受控科研状态' ]]</p>
+                </div>
+                <div v-else-if="step === 2" class="interactive-panel pointer-events-auto">
+                    <p class="text-sm mb-2 text-blue-200">交互：观察大气尘埃遮蔽率</p>
+                    <input type="range" min="0" max="100" v-model="dustThickness" class="custom-slider">
+                    <p class="text-xs" :style="{color: dustThickness > 50 ? '#ff4757' : '#2ed573'}">
+                        [[ dustThickness > 50 ? '极寒核冬天模式' : '正常大气循环模式' ]]
+                    </p>
+                </div>
+                <div v-else-if="step === 4" class="interactive-panel pointer-events-auto">
+                    <p class="text-sm mb-2 text-green-200" v-if="cleanupProgress < 100">交互：点击地球受损区域修复环境 [[
+                        cleanupProgress ]]%</p>
+                    <p class="text-sm mb-2 text-green-400" v-else>环境已通过“和平条约”完成修复！</p>
+                    <button @click="handleCleanup" class="btn-action mt-2" v-if="cleanupProgress < 100">注入治愈能量</button>
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-action">
+                    继续思考未来
+                </button>
+                <button v-else @click="reset" class="btn-action">重返和谐地球 🕊️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const atomStability = ref(30);
+                const dustThickness = ref(20);
+                const cleanupProgress = ref(0);
+                const isMuted = ref(false);
+
+                const stages = [
+                    { title: "原子里的智慧火种", content: "微小的原子核里锁着宇宙最初的能量。如果我们学会宽容与克制，这能量能照亮全人类；如果任由仇恨点燃它，它就是毁灭万物的怪物。", parent: "宝贝，你看小小的原子里藏着个‘能量小巨人’。如果咱们好好用它，它能帮咱们发亮发光；但如果用来吵架，威力可是非常巨大的。" },
+                    { title: "被阴影遮蔽的地球", content: "核爆炸升起的巨量尘埃会像厚厚的毯子，遮住所有阳光。我们将迎来没有春天的‘核冬天’，地球会迅速降温，变成一个冰冷的囚室。", parent: "哎呀，你看！如果天空被黑色的烟尘蒙住了，小草就晒不到太阳，世界会变得好冷好冷。咱们一定要守护好天空的蓝色。" },
+                    { title: "隐形的破坏者", content: "辐射是看不见的‘干扰波’，它不仅破坏当下的生命，还会影响土地成千上万年。它是人类科技最沉重、最危险的回旋镖。", parent: "这些看不见的彩色灰尘会让泥土和河水生病，很久都没法恢复。我们要把和平的种子种得更深一些。" },
+                    { title: "治愈母亲的裂痕", content: "每一个和平协议，每一次国际协作，都像一场清新的春雨。人类终于学会用智慧清理污染，在大地的伤口上种回森林。", parent: "快，咱们一起来点一点受灾的地方！通过咱们的努力，把森林和阳光找回来，让地球妈妈重新笑出来吧！" },
+                    { title: "守护永恒的星河", content: "科技是点亮文明的灯，而不应是毁灭世界的火。愿你这一代人能用更温柔的力量去探索群星。晚安，和平的守护者。", parent: "好孩子，以后你要用聪明的脑袋去发明让大家更安全、更幸福的东西。盖好被子，晚安。" }
+                ];
+
+                // --- Sound Context ---
+                const synth = new Tone.MembraneSynth().toDestination();
+                const ambience = new Tone.NoiseSynth({ noise: { type: "white" } }).toDestination();
+                const filter = new Tone.Filter(200, "lowpass").toDestination();
+                ambience.connect(filter);
+
+                const playBeep = (freq = "C2") => { if (!isMuted.value) synth.triggerAttackRelease(freq, "8n"); };
+                const playSwoosh = () => { if (!isMuted.value) ambience.triggerAttackRelease("4n", undefined, 0.2); };
+
+                // --- Three.js ---
+                let scene, camera, renderer, earth, clouds, atomGroup, controls;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x0c0a09);
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 100);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+
+                    // 1. Atom Visualization (Stage 1)
+                    atomGroup = new THREE.Group();
+                    const nucleus = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), new THREE.MeshPhongMaterial({ color: 0xff4757, emissive: 0x330000 }));
+                    atomGroup.add(nucleus);
+                    for (let i = 0; i < 3; i++) {
+                        const ring = new THREE.Mesh(new THREE.TorusGeometry(12, 0.2, 16, 100), new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.5 }));
+                        ring.rotation.x = Math.random() * Math.PI;
+                        ring.rotation.y = Math.random() * Math.PI;
+                        atomGroup.add(ring);
+                    }
+                    scene.add(atomGroup);
+
+                    // 2. Earth (Stages 2-4)
+                    const earthMat = new THREE.MeshPhongMaterial({ color: 0x4d7c0f, emissive: 0x14532d, shininess: 5 });
+                    earth = new THREE.Mesh(new THREE.SphereGeometry(25, 32, 32), earthMat);
+                    scene.add(earth);
+
+                    // 3. Atmosphere/Cloud Layer
+                    clouds = new THREE.Mesh(
+                        new THREE.SphereGeometry(26, 32, 32),
+                        new THREE.MeshPhongMaterial({ color: 0x222222, transparent: true, opacity: 0.1 })
+                    );
+                    scene.add(clouds);
+
+                    const l = new THREE.DirectionalLight(0xfacc15, 1.5);
+                    l.position.set(50, 50, 50);
+                    scene.add(l);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    controls.update();
+
+                    // Stage Logic
+                    if (step.value === 1) {
+                        atomGroup.visible = true;
+                        earth.visible = clouds.visible = false;
+                        atomGroup.rotation.y += 0.01;
+                        const pulse = 1 + (atomStability.value / 100) * Math.sin(t * (atomStability.value * 0.1));
+                        atomGroup.scale.set(pulse, pulse, pulse);
+                        atomGroup.children[0].material.color.setHSL(0, 1, 0.5 + Math.sin(t * 10) * 0.1);
+                    } else {
+                        atomGroup.visible = false;
+                        earth.visible = clouds.visible = true;
+                        earth.rotation.y += 0.002;
+                        clouds.rotation.y += 0.003;
+
+                        if (step.value === 2) {
+                            clouds.material.opacity = 0.1 + (dustThickness.value / 100) * 0.85;
+                            const coldFactor = (dustThickness.value / 100);
+                            earth.material.color.lerp(new THREE.Color(0x34495e), 0.05); // 逐渐变冷
+                        } else if (step.value === 4) {
+                            clouds.material.opacity = 0.85 - (cleanupProgress.value / 100) * 0.8;
+                            earth.material.color.lerp(new THREE.Color(0x4d7c0f), 0.05); // 逐渐恢复
+                        }
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const handleCleanup = () => {
+                    if (cleanupProgress.value < 100) {
+                        cleanupProgress.value += 20;
+                        playBeep("G3");
+                        gsap.fromTo(camera.position, { z: 80 }, { z: 75, duration: 0.2, yoyo: true, repeat: 1 });
+                        if (cleanupProgress.value >= 100) {
+                            gsap.to(earth.scale, { x: 1.1, y: 1.1, z: 1.1, duration: 2, yoyo: true, repeat: 1 });
+                        }
+                    }
+                };
+
+                const toggleSound = () => {
+                    isMuted.value = !isMuted.value;
+                    Tone.Destination.mute = isMuted.value;
+                };
+
+                const nextStage = () => {
+                    step.value++;
+                    playBeep();
+                    if (step.value === 2) gsap.to(camera.position, { x: 0, y: 0, z: 80, duration: 2 });
+                };
+
+                const jumpTo = (n) => { step.value = n; playBeep(); };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, atomStability, dustThickness, cleanupProgress, stages, isMuted, nextStage, jumpTo, reset, handleCleanup, toggleSound };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

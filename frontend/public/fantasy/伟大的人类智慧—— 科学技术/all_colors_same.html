@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>当所有颜色都一样会怎样</title>
+    <!-- 核心库加载 (带 Fallback 机制) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/renderers/CSS2DRenderer.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/CSS2DRenderer.js'"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #css-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #f43f5e, #fbbf24, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+        }
+
+        .parent-words-box {
+            background: rgba(255, 255, 255, 0.1);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #d1d5db;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 垂直居中布局 */
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 150px;
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #f1f5f9;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+        }
+
+        .label-3d {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 0.8rem;
+            backdrop-filter: blur(5px);
+            pointer-events: none;
+        }
+
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .hud-panel {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            min-width: 320px;
+        }
+
+        .magic-slider {
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+        }
+
+        .magic-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 4px solid #f43f5e;
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.5);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(244, 63, 94, 0.4);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(244, 63, 94, 0.6);
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: #fff;
+            box-shadow: 0 0 15px #fff;
+            transform: scale(1.3);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+    <div id="css-layer"></div>
+
+    <div id="app" class="ui-overlay">
+        <div class="top-title-box">
+            <h1 class="main-title">当所有颜色都一样会怎样</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-rose-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <transition name="fade">
+                <div v-if="step === 2" class="hud-panel pointer-events-auto">
+                    <div class="flex justify-between text-rose-200 text-xs mb-2 font-bold">
+                        <span>视觉饱和度 (SATURATION)</span>
+                        <span>[[ (saturation * 100).toFixed(0) ]]%</span>
+                    </div>
+                    <input type="range" v-model="saturation" min="0" max="1" step="0.01" class="magic-slider">
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-action">
+                    [[ step === 1 ? '启动光谱观测器' : '继续探索' ]]
+                </button>
+                <button v-else @click="reset" class="btn-action">重启全彩世界 🌈</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const saturation = ref(1);
+
+                const stages = [
+                    { title: "彩虹的语言", content: "颜色是大自然最精妙的信号系统。红色的警示、绿色的蓬勃、蓝色的深邃。每一个波长的光，都在向生命传递着关键的生存密码。", parent: "宝贝，你看，世界就像一个巨大的调色盘，每种颜色都在悄悄和我们说话哦！" },
+                    { title: "消失的光谱", content: "如果世界失去了色彩。你试着拉动下方的滑块，看！当所有的饱和度消失，信息的辨识度也将随之瓦解。美，源于差异。", parent: "快试着拉动滑杆！看，当你把颜色变淡，世界是不是变得冷冰冰、分不清楚了？" },
+                    { title: "信号失能的困惑", content: "失去颜色，不仅是失去了美。你会分不清熟透的果实，也看不清红绿灯的警示。颜色，是生物进化数亿年换来的指南针。", parent: "草莓变灰后就分不清它甜不甜了，交通灯变白了车子就会乱撞。颜色真的太重要啦！" },
+                    { title: "微观视界工厂", content: "视网膜上的视锥细胞，正忙碌地捕捉不同的光波。正是这些微小的‘天线’，将物理波动转化为了你脑海中绚烂的梦境。", parent: "我们要好好保护眼睛，这些彩色的小零件正努力帮你抓住全世界的光亮呢！" },
+                    { title: "守护缤纷未来", content: "色彩是宇宙送给人类的精密视觉协议。学会感恩和欣赏这个五彩斑斓的世界。愿你的梦里也充满彩虹。", parent: "以后我们要多去大自然寻找漂亮的颜色。让这种视觉的魔法永远陪着你。晚安，宝贝！" }
+                ];
+
+                // --- Sound Context ---
+                const synth = new Tone.Synth().toDestination();
+                const playBeep = (freq) => {
+                    Tone.start();
+                    synth.triggerAttackRelease(freq, "16n", undefined, 0.1);
+                };
+
+                // --- Three.js ---
+                let scene, camera, renderer, labelRenderer, crystalGroup, controls;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x000000);
+                    camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 100);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    labelRenderer = new THREE.CSS2DRenderer();
+                    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+                    labelRenderer.domElement.style.position = 'absolute';
+                    labelRenderer.domElement.style.top = '0';
+                    labelRenderer.domElement.style.pointerEvents = 'none';
+                    document.getElementById('css-layer').appendChild(labelRenderer.domElement);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = true;
+
+                    crystalGroup = new THREE.Group();
+                    const colors = [0xf43f5e, 0xfbbf24, 0x10b981, 0x3b82f6, 0x8b5cf6];
+                    const names = ["预警红", "明亮黄", "生机绿", "深邃蓝", "高贵紫"];
+
+                    for (let i = 0; i < 40; i++) {
+                        const hue = colors[i % colors.length];
+                        const geo = i % 2 === 0 ? new THREE.IcosahedronGeometry(Math.random() * 8 + 4) : new THREE.TorusGeometry(6, 1.5, 12, 36);
+                        const mat = new THREE.MeshPhongMaterial({ color: hue, shininess: 100, transparent: true, opacity: 0.8 });
+                        const mesh = new THREE.Mesh(geo, mat);
+
+                        mesh.position.set((Math.random() - 0.5) * 120, (Math.random() - 0.5) * 100, (Math.random() - 0.5) * 80);
+                        mesh.userData = { originalColor: new THREE.Color(hue), rotS: (Math.random() - 0.5) * 0.01 };
+
+                        if (i < names.length) {
+                            const div = document.createElement('div');
+                            div.className = 'label-3d';
+                            div.textContent = names[i];
+                            const label = new THREE.CSS2DObject(div);
+                            label.position.set(0, 10, 0);
+                            mesh.add(label);
+                        }
+
+                        crystalGroup.add(mesh);
+                    }
+                    scene.add(crystalGroup);
+                    scene.add(new THREE.PointLight(0xffffff, 2, 200));
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    controls.update();
+
+                    const s = saturation.value;
+                    crystalGroup.children.forEach(c => {
+                        c.rotation.x += c.userData.rotS;
+                        c.rotation.y += c.userData.rotS;
+
+                        const hsl = { h: 0, s: 0, l: 0 };
+                        c.userData.originalColor.getHSL(hsl);
+                        const newColor = new THREE.Color().setHSL(hsl.h, hsl.s * s, hsl.l);
+                        c.material.color.copy(newColor);
+                    });
+
+                    renderer.render(scene, camera);
+                    labelRenderer.render(scene, camera);
+                };
+
+                watch(saturation, (val) => {
+                    const freq = 200 + val * 600;
+                    if (Math.random() < 0.2) playBeep(freq);
+                });
+
+                const nextStage = () => {
+                    if (step.value < stages.length) {
+                        step.value++;
+                        if (step.value === 4) gsap.to(camera.position, { z: 40, duration: 2 });
+                    }
+                };
+                const jumpTo = (n) => {
+                    step.value = n;
+                    gsap.to(camera.position, { z: n === 4 ? 40 : 100, duration: 2 });
+                };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, stages, saturation, nextStage, jumpTo, reset };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

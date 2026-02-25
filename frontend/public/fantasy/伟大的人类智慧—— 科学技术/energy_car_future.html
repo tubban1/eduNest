@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汽车不加油也能跑该多好</title>
+    <!-- 核心库加载 (带 Fallback 机制) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #010409;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #10b981;
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #d1d5db;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 垂直居中布局 */
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 150px;
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .energy-selector {
+            display: flex;
+            gap: 20px;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 60px;
+            border: 1px solid #10b981;
+            backdrop-filter: blur(10px);
+        }
+
+        .energy-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            transition: 0.3s;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .energy-btn.active {
+            transform: scale(1.1);
+            border-color: #10b981;
+            box-shadow: 0 0 20px #10b981;
+            color: #10b981;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(5, 150, 105, 0.4);
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: #10b981;
+            box-shadow: 0 0 15px #10b981;
+            transform: scale(1.3);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+
+    <div id="app" class="ui-overlay">
+        <div class="top-title-box">
+            <h1 class="main-title">汽车不加油也能跑</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-emerald-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <transition name="fade">
+                <div v-if="step >= 2" class="energy-selector pointer-events-auto">
+                    <button v-for="e in energySources" :key="e.id" @click="setEnergy(e.id)"
+                        :class="['energy-btn', { active: source === e.id }]">
+                        <span class="text-xl">[[ e.icon ]]</span>
+                        <span>[[ e.name ]]</span>
+                    </button>
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-action">下一步探索</button>
+                <button v-else @click="reset" class="btn-action">开启绿色旅程 🌍</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const source = ref('solar');
+                const energySources = [
+                    { id: 'solar', name: '太阳能', icon: '☀️' },
+                    { id: 'hydrogen', name: '氢能源', icon: '💧' },
+                    { id: 'electric', name: '纯电力', icon: '⚡' }
+                ];
+
+                const stages = [
+                    { title: "告别黑烟袋", content: "传统的汽车燃烧汽油会排放有害黑烟。科学家们一直在寻找能够替代汽油的‘绿色零食’。让我们看看未来的动力吧！", parent: "宝贝，你看现在的汽车尾巴经常冒烟，会让地球妈妈咳嗽。咱们来帮汽车找找新能量？" },
+                    { title: "免费的礼物：太阳能", content: "点击下方的‘太阳能’。看！车顶铺满了光伏模块。只要有阳光洒下，能量就会源源不断地转化为动力。这就是宇宙的馈赠。", parent: "只要晒晒太阳就能跑得飞快，这简直太神奇了！就像小草喝阳光一样充满力量。" },
+                    { title: "纯净的呼吸：氢能", content: "切换到‘氢能源’。这台引擎唯一的排放物不是废气，而是晶莹的水滴。它让城市街道像森林一样清新自然。", parent: "这种车跑完路还能‘吐’出纯净水呢！是不是世界上最讲卫生的汽车？" },
+                    { title: "闪电的力量：纯电", content: "电能是最敏捷的精灵。它藏在底盘的电池组中，让电机能瞬间爆发极速。没有轰鸣，只有未来科技的呼啸声。", parent: "就像你的遥控小赛车一样，大车也可以充电跑全城啦。而且它跑起来静悄悄的。" },
+                    { title: "守护湛蓝的天空", content: "不加油的汽车正在改变世界。每一个绿色图标的亮起，都是在为湛蓝的天空献上一份心意。晚安，未来的绿色地球守护者。", parent: "宝贝，以后你要开着环保车带全家出去旅行哦。盖好被子，晚安！" }
+                ];
+
+                // --- Sound Context ---
+                const synth = new Tone.NoiseSynth().toDestination();
+                const motor = new Tone.Oscillator(100, "sine").toDestination();
+                const playSwitch = (s) => {
+                    Tone.start();
+                    synth.triggerAttackRelease("16n");
+                    const freqs = { solar: 220, hydrogen: 330, electric: 440 };
+                    motor.frequency.rampTo(freqs[s], 0.5);
+                    if (motor.state !== 'started') motor.start();
+                };
+
+                // --- Three.js ---
+                let scene, camera, renderer, car, wheels = [], controls;
+                const clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x010409);
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(40, 30, 60);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = true;
+
+                    // Futuer Car Group
+                    const group = new THREE.Group();
+                    const chassis = new THREE.Mesh(new THREE.BoxGeometry(40, 5, 20), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 }));
+                    group.add(chassis);
+
+                    const cabin = new THREE.Mesh(new THREE.BoxGeometry(30, 8, 16), new THREE.MeshStandardMaterial({ color: 0x334155, transparent: true, opacity: 0.5, metalness: 0.9 }));
+                    cabin.position.y = 5;
+                    group.add(cabin);
+
+                    const wheelGeo = new THREE.CylinderGeometry(5, 5, 4, 32);
+                    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+                    [[15, 0, 11], [15, 0, -11], [-15, 0, 11], [-15, 0, -11]].forEach(p => {
+                        const w = new THREE.Mesh(wheelGeo, wheelMat);
+                        w.position.set(...p);
+                        w.rotation.x = Math.PI / 2;
+                        wheels.push(w);
+                        group.add(w);
+                    });
+
+                    car = group;
+                    scene.add(car);
+
+                    const pl = new THREE.PointLight(0x10b981, 4, 150);
+                    pl.position.set(0, 30, 0);
+                    pl.name = "EnergyLight";
+                    scene.add(pl);
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    controls.update();
+
+                    wheels.forEach(w => w.rotation.y += 0.2);
+                    car.position.y = Math.sin(t * 3) * 0.5;
+
+                    renderer.render(scene, camera);
+                };
+
+                const setEnergy = (id) => {
+                    source.value = id;
+                    playSwitch(id);
+                    const light = scene.getObjectByName("EnergyLight");
+                    const colors = { solar: 0xfbbf24, hydrogen: 0x22d3ee, electric: 0x10b981 };
+                    gsap.to(light.color, { ...new THREE.Color(colors[id]), duration: 0.5 });
+                };
+
+                const nextStage = () => { if (step.value < 5) step.value++; };
+                const jumpTo = (n) => { step.value = n; };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, source, energySources, stages, nextStage, jumpTo, reset, setEnergy };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

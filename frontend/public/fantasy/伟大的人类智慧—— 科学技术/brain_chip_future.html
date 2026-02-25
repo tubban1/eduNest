@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人脑中要是能装块电脑芯片该多好</title>
+    <!-- 核心库加载 (带 Fallback 机制) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script>(function () { var g = "Vue", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>(function () { var g = "THREE", u = "https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js"; setTimeout(function () { if (window[g] === void 0) { var s = document.createElement("script"); s.src = u; document.head.appendChild(s); } }, 5000); })();</script>
+
+    <!-- Three.js 子库 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/renderers/CSS2DRenderer.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/CSS2DRenderer.js'"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.2.12/build/Tone.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/Tone.min.js'"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            color: #fff;
+            font-family: 'PingFang SC', sans-serif;
+        }
+
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #css2d-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* 标准化 UI 布局容器 */
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .top-title-box {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-title {
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 3rem;
+            color: #c084fc;
+            text-shadow: 0 0 20px rgba(192, 132, 252, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .parent-words-box {
+            background: rgba(15, 23, 42, 0.6);
+            display: inline-block;
+            padding: 6px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            color: #d8b4fe;
+            font-style: italic;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 沉浸式文字层：垂直居中平衡 */
+        .story-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-bottom: 150px;
+        }
+
+        .stage-content {
+            font-size: 1.6rem;
+            line-height: 1.6;
+            color: #e9d5ff;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+        }
+
+        /* 3D 浮动标签 */
+        .label-3d {
+            color: #c084fc;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid #c084fc;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            box-shadow: 0 0 10px rgba(192, 132, 252, 0.3);
+            transform: scale(1);
+            transition: transform 0.3s;
+        }
+
+        .label-3d:hover {
+            transform: scale(1.1);
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* 底部 HUD */
+        .bottom-hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(126, 34, 206, 0.4);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(126, 34, 206, 0.6);
+        }
+
+        .chip-panel {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 15px 25px;
+            border-radius: 20px;
+            border: 1px solid #c084fc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 280px;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+
+        .nav-progress {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(192, 132, 252, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-dot.active {
+            background: #c084fc;
+            box-shadow: 0 0 15px #c084fc;
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="main-canvas"></canvas>
+    <div id="css2d-layer"></div>
+
+    <div id="app" class="ui-overlay">
+        <div class="top-title-box">
+            <h1 class="main-title">思想的魔法芯片</h1>
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="parent-words-box">[[ stages[step-1].parent ]]</div>
+            </transition>
+        </div>
+
+        <div class="nav-progress pointer-events-auto">
+            <div v-for="n in stages.length" :key="n" class="nav-dot" :class="{ active: step === n }" @click="jumpTo(n)">
+            </div>
+        </div>
+
+        <div class="story-text-container">
+            <transition name="fade" mode="out-in">
+                <div :key="step">
+                    <h2 class="text-3xl font-bold text-purple-400 mb-4">[[ stages[step-1].title ]]</h2>
+                    <p class="stage-content" v-html="stages[step-1].content"></p>
+                </div>
+            </transition>
+        </div>
+
+        <div class="bottom-hud">
+            <transition name="fade">
+                <div v-if="step === 2" class="chip-panel pointer-events-auto">
+                    <div class="text-sm font-bold text-purple-300">[[ boostMode ? '⚡ 神经全速超频' : '🛡️ 稳定连接中' ]]</div>
+                    <button @click="toggleBoost" class="btn-action !py-2 !px-8 !text-sm">
+                        [[ boostMode ? '降低功耗' : '激活超频' ]]
+                    </button>
+                    <div class="text-[10px] text-purple-400 opacity-60">点击下方按钮可拖拽旋转 3D 大脑</div>
+                </div>
+            </transition>
+
+            <div class="action-area pointer-events-auto">
+                <button v-if="step < stages.length" @click="nextStage" class="btn-action">继续人工智能之旅</button>
+                <button v-else @click="reset" class="btn-action">重返自然 🧠</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const boostMode = ref(false);
+
+                const stages = [
+                    { title: "身体里的‘指挥部’", content: "我们的脑袋里住着几百亿个神经元。它们像跳舞的小精灵，发出微弱的电脉冲。这是我们思考、快乐和发现未来的源动力。", parent: "宝贝，你的脑袋里有一个超级忙碌的‘指挥部’哦！每当你想出一个好主意，里面的小灯泡就会亮起来。" },
+                    { title: "神经元的翻译官", content: "如果我们装上一块名为‘脑机接口’的小芯片，它就能听懂神经元的悄悄话，并帮我们用‘意念’去控制玩具汽车。", parent: "如果你想让赛车快跑，只需在心里大喊一声‘冲啊’。芯片会帮你把想的话传给小车车，这就是科技的魔法！" },
+                    { title: "记忆的超级云盘", content: "有了芯片，大脑就像多了一个‘云端图书馆’。当你背古诗太累时，芯片能帮你把知识分类存好。需要时，它们会像流星一样闪现。", parent: "哇，那你就不就变成了一本会走路的百科全书吗？遇到难题点一点大脑，答案就自动跳出来啦！" },
+                    { title: "温暖的技术纽带", content: "这些神奇的芯片不仅仅是为了变聪明。它们正在帮助失明的孩子重启光明，助残疾的爷爷重获行走的力量。这是科技送给世界最温柔的礼物。", parent: "这些小科技其实非常有爱心。它们在努力修补那些坏掉的‘指挥路径’，真了不起！" },
+                    { title: "智慧与爱的合奏", content: "无论科技如何进化，人类的情感与创意永远是芯片无法触及的宝藏。让芯片守护智慧，让爱引导航向。晚安，未来的创造家。", parent: "芯片能让你变强，但你要用这份力量去拥抱和照顾家人。睡个好觉，我的小英雄！" }
+                ];
+
+                // --- Sound Context (Tone.js) ---
+                const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                const playBeep = (freq = "C5", dur = "8n") => {
+                    Tone.start();
+                    synth.triggerAttackRelease(freq, dur);
+                };
+
+                // --- Three.js Implementation ---
+                let scene, camera, renderer, labelRenderer, brain, particles = [], controls;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x020617);
+
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 10, 80);
+
+                    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('main-canvas'), antialias: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    labelRenderer = new THREE.CSS2DRenderer();
+                    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+                    labelRenderer.domElement.style.position = 'absolute';
+                    labelRenderer.domElement.style.top = '0px';
+                    labelRenderer.domElement.style.pointerEvents = 'none';
+                    document.getElementById('css2d-layer').appendChild(labelRenderer.domElement);
+
+                    // Orbit Controls
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 0.5;
+                    controls.enabled = true;
+
+                    // Brain Model
+                    const brainGroup = new THREE.Group();
+                    const bMat = new THREE.MeshStandardMaterial({
+                        color: 0xc084fc, wireframe: true, emissive: 0x4a148c, emissiveIntensity: 0.5
+                    });
+
+                    [{ x: -8, l: "左半脑" }, { x: 8, l: "右半脑" }].forEach(info => {
+                        const lobe = new THREE.Mesh(new THREE.SphereGeometry(15, 24, 24), bMat);
+                        lobe.position.x = info.x;
+                        lobe.scale.set(1.1, 0.7, 1);
+                        brainGroup.add(lobe);
+
+                        // Add 2D Label
+                        const div = document.createElement('div');
+                        div.className = 'label-3d';
+                        div.textContent = info.l;
+                        const label = new THREE.CSS2DObject(div);
+                        label.position.set(0, 15, 0);
+                        lobe.add(label);
+                    });
+
+                    // Dynamic Chip Component (Add in stage 2+)
+                    const chipGeo = new THREE.BoxGeometry(6, 1, 6);
+                    const chipMat = new THREE.MeshPhongMaterial({ color: 0x00f2ff, emissive: 0x00f2ff, emissiveIntensity: 0.8 });
+                    const chip = new THREE.Mesh(chipGeo, chipMat);
+                    chip.position.y = -18;
+                    chip.name = "MagicChip";
+                    brainGroup.add(chip);
+
+                    brain = brainGroup;
+                    scene.add(brain);
+
+                    // Neural Particles
+                    const pGeo = new THREE.SphereGeometry(0.5, 8, 8);
+                    for (let i = 0; i < 40; i++) {
+                        const pMat = new THREE.MeshBasicMaterial({ color: 0xd8b4fe });
+                        const p = new THREE.Mesh(pGeo, pMat);
+                        p.position.set((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 30);
+                        p.userData = { angle: Math.random() * Math.PI * 2, radius: 25 + Math.random() * 10 };
+                        particles.push(p);
+                        scene.add(p);
+                    }
+
+                    scene.add(new THREE.PointLight(0xc084fc, 3, 150));
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    controls.update();
+
+                    const pulse = 1 + Math.sin(t * 1.5) * 0.05;
+                    brain.scale.setScalar(pulse);
+
+                    const speed = boostMode.value ? 4 : 1;
+                    particles.forEach((p, i) => {
+                        p.userData.angle += 0.01 * speed;
+                        p.position.x = Math.cos(p.userData.angle) * p.userData.radius;
+                        p.position.z = Math.sin(p.userData.angle) * p.userData.radius;
+                        p.position.y += Math.sin(t + i) * 0.05;
+                    });
+
+                    renderer.render(scene, camera);
+                    labelRenderer.render(scene, camera);
+                };
+
+                const toggleBoost = () => {
+                    boostMode.value = !boostMode.value;
+                    if (boostMode.value) {
+                        playBeep("E6", "16n");
+                        gsap.to(brain.rotation, { x: Math.PI * 2, duration: 1 });
+                    } else {
+                        playBeep("A4", "16n");
+                    }
+                };
+
+                const nextStage = () => {
+                    if (step.value < stages.length) {
+                        step.value++;
+                        playBeep("G5", "32n");
+                    }
+                };
+                const jumpTo = (n) => { step.value = n; playBeep("C5", "32n"); };
+                const reset = () => { window.location.reload(); };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, boostMode, stages, nextStage, jumpTo, reset, toggleBoost };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

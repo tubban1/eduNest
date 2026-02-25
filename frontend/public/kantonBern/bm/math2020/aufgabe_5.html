@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 5 - Koordinatengeometrie | BM Musterprüfung 2020</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '$', right: '$', display: false },
+              { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+          });
+        ">
+        </script>
+    <style>
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .tab-btn:hover {
+            color: #ec4899;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #ec4899;
+            color: #ec4899;
+            font-weight: 700;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 350px;
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            border-radius: 8px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .solution-step {
+            border-left: 4px solid #fce7f3;
+            padding-left: 16px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .solution-step:hover {
+            border-left-color: #ec4899;
+        }
+
+        .math-boxed {
+            border: 2px solid #ec4899;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 16px;
+            background: #fff1f2;
+            font-weight: bold;
+            color: #9d174d;
+        }
+
+        .coordinate-label {
+            font-family: 'Courier New', Courier, monospace;
+            background: #fdf2f8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #fbcfe8;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-slate-800 font-sans leading-relaxed p-4 md:p-10">
+    <div class="max-w-4xl mx-auto">
+        <!-- 1:1 Originalaufgabe -->
+        <div id="static-math" class="card" v-pre>
+            <div class="flex justify-between items-start mb-6">
+                <h1 class="text-3xl font-bold text-slate-900">Aufgabe 5</h1>
+                <span class="bg-pink-100 text-pink-700 px-3 py-1 rounded text-sm font-semibold">6 Punkte</span>
+            </div>
+
+            <div class="space-y-10">
+                <section>
+                    <p class="font-bold mb-4">5a) Geometrische Figur (2 Punkte)</p>
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex-1">
+                            <p class="mb-4">Gegeben ist die abgebildete Figur mit einem rechtwinkligen Dreieck (Katheten
+                                $10\text{ cm}$ und $10\text{ cm}$). Bestimmen Sie den <strong>Flächeninhalt</strong> des
+                                rot eingefügten Rechtecks, dessen einer Eckpunkt auf der Hypotenuse liegt (Punkt $P$ bei
+                                $x=5$).</p>
+                        </div>
+                        <div class="w-64 shrink-0 bg-white border rounded p-4 shadow-sm">
+                            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Axes/Base Triangle -->
+                                <path d="M 10 10 L 10 110 L 110 110 Z" fill="none" stroke="#64748b" stroke-width="2" />
+                                <!-- Inscribed Rectangle at x=50 (scaled) -->
+                                <rect x="10" y="60" width="50" height="50" fill="rgba(239, 68, 68, 0.2)"
+                                    stroke="#ef4444" stroke-width="2" />
+                                <!-- Point P -->
+                                <circle cx="60" cy="60" r="3" fill="#ef4444" />
+                                <text x="65" y="55" font-size="10" font-weight="bold" fill="#ef4444">P</text>
+                                <!-- Labels -->
+                                <text x="0" y="60" font-size="8" fill="#64748b">10</text>
+                                <text x="55" y="118" font-size="8" fill="#64748b">10</text>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="border-t pt-8">
+                    <p class="font-bold mb-4">5b) & 5c) Koordinatensystem (4 Punkte)</p>
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex-1">
+                            <p class="mb-4">Im abgebildeten Koordinatensystem (Einheit: cm) ist das Dreieck ABC gegeben.
+                            </p>
+                            <ul class="list-disc ml-8 space-y-2">
+                                <li><strong>5b)</strong> Bestimmen Sie die Koordinaten der Eckpunkte A, B und C.</li>
+                                <li><strong>5c)</strong> Bestimmen Sie den <strong>Flächeninhalt</strong> des Dreiecks
+                                    ABC.</li>
+                            </ul>
+                        </div>
+                        <div class="w-72 shrink-0 bg-white border rounded p-2 shadow-sm">
+                            <svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Grid -->
+                                <defs>
+                                    <pattern id="coordGrid" width="15" height="15" patternUnits="userSpaceOnUse">
+                                        <path d="M 15 0 L 0 0 0 15" fill="none" stroke="#e2e8f0" stroke-width="0.5" />
+                                    </pattern>
+                                </defs>
+                                <rect width="240" height="200" fill="url(#coordGrid)" />
+                                <!-- Axes (Origin at 105, 90) -->
+                                <line x1="0" y1="90" x2="240" y2="90" stroke="#64748b" stroke-width="1.5" />
+                                <!-- x axis -->
+                                <line x1="105" y1="0" x2="105" y2="200" stroke="#64748b" stroke-width="1.5" />
+                                <!-- y axis -->
+                                <!-- Triangle ABC: A(5,3), B(-6,-1), C(3,-5) -->
+                                <!-- Scaled by 15px per unit -->
+                                <path d="M 180 45 L 15 105 L 150 165 Z" fill="rgba(236, 72, 153, 0.2)" stroke="#ec4899"
+                                    stroke-width="2" />
+                                <!-- Labels -->
+                                <text x="185" y="40" font-size="12" font-weight="bold" fill="#ec4899">A</text>
+                                <text x="5" y="100" font-size="12" font-weight="bold" fill="#ec4899">B</text>
+                                <text x="155" y="180" font-size="12" font-weight="bold" fill="#ec4899">C</text>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" v-cloak class="card border-t-8 border-pink-500">
+        <!-- Tabs Navigation -->
+        <div class="flex border-b mb-8 overflow-x-auto no-scrollbar">
+            <div v-for="t in tabs" :key="t.id" @click="currentTab = t.id"
+                :class="['tab-btn whitespace-nowrap', currentTab === t.id ? 'active' : '']">
+                {{ t.name }}
+            </div>
+        </div>
+
+        <!-- Intro Tab -->
+        <div v-if="currentTab === 'intro'" class="animate-fadeIn">
+            <h2 class="text-2xl font-bold mb-4 text-pink-800">Orientierung im Raum</h2>
+            <div class="p-6 bg-pink-50 rounded-2xl flex flex-col md:flex-row gap-8 items-center">
+                <div class="flex-1">
+                    <p class="leading-relaxed mb-4">Geometrie im Koordinatensystem verbindet Zeichnen mit Rechnen. Wir
+                        nutzen Verhältnisse und Koordinaten-Differenzen, um Längen und Flächen präzise zu bestimmen.</p>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 bg-pink-400 rounded-full"></div> <span>Ähnliche Dreiecke nutzen</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 bg-pink-400 rounded-full"></div> <span>Gitter auslesen</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 bg-pink-400 rounded-full"></div> <span>Flächenformeln anwenden</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="container-intro"
+                    class="w-full md:w-64 h-48 bg-white border border-pink-100 flex items-center justify-center rounded-lg">
+                    <canvas id="canvas-intro"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5a -->
+        <div v-if="currentTab === '5a'" class="animate-fadeIn">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Lösung zu 5a) Inscribed Rectangle</h2>
+
+            <div class="solution-step">
+                <p class="font-bold text-pink-600 mb-1">Strategie: Strahlensatz oder Steigung</p>
+                <p>Da das grosse Dreieck ein gleichschenklig-rechtwinkliges Dreieck ist (Katheten 10 und 10), ist die
+                    Hypotenuse eine Gerade mit der Steigung $-1$ (Funktion: $y = 10 - x$).</p>
+            </div>
+
+            <div class="solution-step">
+                <p class="font-bold text-pink-600 mb-1">Berechnung:</p>
+                <p>Wenn die Breite $x = 5\text{ cm}$ ist, dann liegt der Punkt auf der Hypotenuse bei:<br>
+                    $y = 10 - 5 = 5\text{ cm}$</p>
+                <p>Fläche des Rechtecks: $A = x \cdot y = 5 \cdot 5 = 25 \text{ cm}^2$</p>
+            </div>
+
+            <p class="math-boxed">Fläche: $25 \text{ cm}^2$</p>
+
+            <div class="mt-8 p-4 bg-pink-50 rounded-xl">
+                <label class="block font-bold mb-2">Interaktive Inskription:</label>
+                <input type="range" v-model="rectX" min="0.1" max="9.9" step="0.1" class="w-full accent-pink-500">
+                <p class="text-center mt-2">Breite $x = {{rectX}}$ | Höhe $y = {{(10-rectX).toFixed(1)}}$ | Fläche =
+                    **{{(rectX*(10-rectX)).toFixed(2)}}**</p>
+            </div>
+
+            <div id="container-5a" class="canvas-container">
+                <canvas id="canvas-5a"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab 5b & 5c -->
+        <div v-if="currentTab === 'qBC'" class="animate-fadeIn">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Lösung zu 5b) & 5c) Dreieck im System</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-6">
+                    <section>
+                        <h4 class="font-bold text-pink-700 border-b mb-3">5b) Koordinaten ablesen</h4>
+                        <ul class="space-y-2">
+                            <li>$A = \mathbf{(5 / 3)}$</li>
+                            <li>$B = \mathbf{(-6 / -1)}$</li>
+                            <li>$C = \mathbf{(3 / -5)}$</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h4 class="font-bold text-pink-700 border-b mb-3">5c) Flächeninhalt</h4>
+                        <p class="text-sm mb-2">Methode: Umgebendes Rechteck minus 3 rechtwinklige Dreiecke.</p>
+                        <div class="text-xs space-y-1 bg-pink-50 p-3 rounded border border-pink-100 font-mono">
+                            <div>Rechteck: $11 \times 8 = 88$</div>
+                            <div>$T_1: 0.5 \cdot 11 \cdot 4 = 22$ (AB)</div>
+                            <div>$T_2: 0.5 \cdot 2 \cdot 8 = 8$ (AC)</div>
+                            <div>$T_3: 0.5 \cdot 9 \cdot 4 = 18$ (BC)</div>
+                            <div class="font-bold mt-2 text-pink-800">Gesamt: $88 - 22 - 8 - 18 = 40$</div>
+                        </div>
+                    </section>
+                </div>
+                <div id="container-qBC" class="canvas-container h-full bg-slate-50 border-slate-200">
+                    <canvas id="canvas-qBC"></canvas>
+                </div>
+            </div>
+            <p class="math-boxed mt-4 text-center block">Fläche des Dreiecks: $40 \text{ cm}^2$</p>
+        </div>
+
+        <!-- Summary Tab -->
+        <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+            <h2 class="text-2xl font-bold mb-6 text-pink-800">Strategie-Zusammenfassung</h2>
+            <div class="space-y-6">
+                <div class="p-6 bg-pink-900 text-white rounded-2xl">
+                    <h3 class="font-bold mb-4 flex items-center gap-2"><span class="text-2xl">💡</span> Der Profi-Tipp
+                        für Koordinaten</h3>
+                    <p class="mb-4">Wenn ein Dreieck schräg im Gitter liegt, versuche nicht mühsam Basis und Höhe zu
+                        berechnen. Nutze die <strong>"Box-Methode"</strong>:</p>
+                    <ol class="list-decimal ml-5 space-y-2 text-sm">
+                        <li>Zeichne ein Rechteck um das ganze Dreieck.</li>
+                        <li>Berechne die Fläche des Rechtecks.</li>
+                        <li>Subtrahiere die 3 entstehenden "Abfall-Dreiecke" am Rand.</li>
+                    </ol>
+                </div>
+
+                <div class="p-6 border-2 border-pink-200 rounded-2xl bg-white shadow-sm">
+                    <h4 class="font-bold text-pink-600 mb-3 underline">Training: Verändere die Punkte</h4>
+                    <p class="text-sm text-slate-500 mb-4">Berechne die Fläche eines Dreiecks mit $A(0/0), B(4/0)$ und
+                        $C(2/5)$.</p>
+                    <details class="cursor-pointer">
+                        <summary class="text-pink-500 font-bold">Lösung anzeigen</summary>
+                        <div class="mt-2 p-3 bg-pink-50 rounded">Basis = 4, Höhe = 5. Fläche = $0.5 \cdot 4 \cdot 5 =
+                            10$.</div>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script shadow>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const rectX = ref(5.0);
+
+                const tabs = [
+                    { id: 'intro', name: 'Einführung' },
+                    { id: '5a', name: '5a) Rechteck' },
+                    { id: 'qBC', name: '5b/c) Dreieck' },
+                    { id: 'summary', name: 'Zusammenfassung' }
+                ];
+
+                const renderMath = () => {
+                    if (!window.renderMathInElement) return;
+                    window.renderMathInElement(document.body, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '\\[', right: '\\]', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false }
+                        ],
+                        throwOnError: false
+                    });
+                };
+
+                const drawIntro = () => {
+                    const canvas = document.getElementById('canvas-intro');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.strokeStyle = '#ec4899';
+                    ctx.beginPath(); ctx.moveTo(20, 20); ctx.lineTo(20, 150); ctx.lineTo(150, 150); ctx.stroke();
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(20, 80, 70, 70);
+                };
+
+                const drawLogic = (tab) => {
+                    const canvas = document.getElementById('canvas-' + tab);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (tab === '5a') {
+                        const scale = 25;
+                        const ox = 50, oy = canvas.height - 50;
+                        const x = parseFloat(rectX.value);
+
+                        // Triangle
+                        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + 10 * scale, oy); ctx.lineTo(ox, oy - 10 * scale); ctx.closePath(); ctx.stroke();
+
+                        // Rect
+                        ctx.fillStyle = 'rgba(236, 72, 153, 0.4)';
+                        ctx.fillRect(ox, oy - (10 - x) * scale, x * scale, (10 - x) * scale);
+                        ctx.strokeStyle = '#ec4899'; ctx.strokeRect(ox, oy - (10 - x) * scale, x * scale, (10 - x) * scale);
+                    } else if (tab === 'qBC') {
+                        const scale = 25;
+                        const cx = canvas.width / 2 + 25;
+                        const cy = canvas.height / 2 - 25;
+
+                        // Grid
+                        ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+                        for (let i = -6; i <= 6; i++) {
+                            ctx.beginPath(); ctx.moveTo(cx + i * scale, 0); ctx.lineTo(cx + i * scale, canvas.height); ctx.stroke();
+                            ctx.beginPath(); ctx.moveTo(0, cy - i * scale); ctx.lineTo(canvas.width, cy - i * scale); ctx.stroke();
+                        }
+
+                        // Axes
+                        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy); ctx.stroke();
+
+                        // Triangle ABC
+                        const points = [[5, 3], [-6, -1], [3, -5]];
+                        ctx.fillStyle = 'rgba(236, 72, 153, 0.2)';
+                        ctx.strokeStyle = '#ec4899'; ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(cx + points[0][0] * scale, cy - points[0][1] * scale);
+                        ctx.lineTo(cx + points[1][0] * scale, cy - points[1][1] * scale);
+                        ctx.lineTo(cx + points[2][0] * scale, cy - points[2][1] * scale);
+                        ctx.closePath();
+                        ctx.fill(); ctx.stroke();
+
+                        // Label points
+                        ctx.fillStyle = '#000'; ctx.font = 'bold 12px sans-serif';
+                        ctx.fillText('A(5/3)', cx + 5 * scale + 5, cy - 3 * scale - 5);
+                        ctx.fillText('B(-6/-1)', cx - 6 * scale - 50, cy + 1 * scale + 15);
+                        ctx.fillText('C(3/-5)', cx + 3 * scale + 5, cy + 5 * scale + 15);
+                    }
+                };
+
+                onMounted(() => {
+                    setTimeout(() => {
+                        renderMath();
+                        drawIntro();
+                    }, 500);
+                });
+
+                watch([currentTab, rectX], () => {
+                    setTimeout(() => {
+                        renderMath();
+                        if (currentTab.value === 'intro') drawIntro();
+                        else drawLogic(currentTab.value);
+                    }, 50);
+                });
+
+                return { currentTab, tabs, rectX };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

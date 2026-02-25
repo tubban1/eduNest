@@ -21,9 +21,23 @@ export default function ListImportPage() {
   const [listData, setListData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ created: number; failed: number; results?: any[]; errors?: any[] } | null>(null);
+  const [result, setResult] = useState<{ created: number; updated?: number; failed: number; results?: any[]; errors?: any[] } | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [pairedItems, setPairedItems] = useState<Array<{ baseName: string; full_html: string; title?: string; description?: string; tags?: string[]; language_code?: string; content_type?: string; svg_thumbnail?: string }>>([]);
+  const [pairedItems, setPairedItems] = useState<
+    Array<{
+      baseName: string;
+      full_html: string;
+      title?: string;
+      description?: string;
+      tags?: string[];
+      language_code?: string;
+      content_type?: string;
+      svg_thumbnail?: string;
+      knowledge_points?: string[];
+      metadata_json?: any;
+      tech_stack?: string[];
+    }>
+  >([]);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,7 +92,19 @@ export default function ListImportPage() {
         }
       }
     }
-    const paired: Array<{ baseName: string; full_html: string; title?: string; description?: string; tags?: string[]; language_code?: string; content_type?: string; svg_thumbnail?: string }> = [];
+    const paired: Array<{
+      baseName: string;
+      full_html: string;
+      title?: string;
+      description?: string;
+      tags?: string[];
+      language_code?: string;
+      content_type?: string;
+      svg_thumbnail?: string;
+      knowledge_points?: string[];
+      metadata_json?: any;
+      tech_stack?: string[];
+    }> = [];
     for (const [baseName, v] of Object.entries(byBase)) {
       if (!v.html?.trim()) continue;
       const j = v.json || {};
@@ -89,8 +115,19 @@ export default function ListImportPage() {
         description: typeof j.description === 'string' ? j.description : undefined,
         tags: Array.isArray(j.tags) ? j.tags.map(String) : undefined,
         language_code: typeof j.language_code === 'string' ? j.language_code : undefined,
-        content_type: typeof j.content_type === 'string' ? j.content_type : undefined,
+        content_type:
+          typeof j.content_type === 'string' && j.content_type.trim()
+            ? j.content_type.trim()
+            : 'interactive',
         svg_thumbnail: typeof j.svg_thumbnail === 'string' ? j.svg_thumbnail : undefined,
+        knowledge_points: Array.isArray((j as any).knowledge_points)
+          ? (j as any).knowledge_points.map(String)
+          : undefined,
+        metadata_json:
+          j && typeof (j as any).metadata_json === 'object' ? (j as any).metadata_json : undefined,
+        tech_stack: Array.isArray((j as any).tech_stack)
+          ? (j as any).tech_stack.map(String)
+          : undefined,
       });
     }
     paired.sort((a, b) => a.baseName.localeCompare(b.baseName));
@@ -127,6 +164,37 @@ export default function ListImportPage() {
       const res = await api.collectionList.importItems(listData.list.id, items);
       setResult({
         created: res?.created ?? 0,
+        failed: res?.failed ?? 0,
+        results: res?.results,
+        errors: res?.errors,
+      });
+      api.collectionList.invalidateCache(listData.list.short_id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Import failed');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleUpsertImport = async () => {
+    if (!listData?.list?.id) return;
+    if (pairedItems.length === 0) {
+      setError('请先选择文件夹或选择多个 .html/.json 文件');
+      return;
+    }
+    if (pairedItems.length > 100) {
+      setError('单次最多 100 条');
+      return;
+    }
+    const items = pairedItems.map(({ baseName: _, ...rest }) => rest);
+    try {
+      setImporting(true);
+      setError(null);
+      setResult(null);
+      const res = await api.collectionList.importUpsertItems(listData.list.id, items);
+      setResult({
+        created: res?.created ?? 0,
+        updated: res?.updated ?? 0,
         failed: res?.failed ?? 0,
         results: res?.results,
         errors: res?.errors,
@@ -196,7 +264,9 @@ export default function ListImportPage() {
           )}
           {result && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
-              成功 {result.created} 条，失败 {result.failed} 条
+              成功创建 {result.created} 条
+              {typeof result.updated === 'number' ? `，已更新 ${result.updated} 条` : ''}
+              ，失败 {result.failed} 条
               {result.errors?.length ? (
                 <pre className="mt-2 text-xs overflow-auto max-h-24">{JSON.stringify(result.errors, null, 2)}</pre>
               ) : null}
@@ -253,6 +323,15 @@ export default function ListImportPage() {
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50"
             >
               {importing ? '导入中...' : '导入'}
+            </button>
+            <button
+              type="button"
+              onClick={handleUpsertImport}
+              disabled={importing || pairedItems.length === 0}
+              className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 disabled:opacity-50"
+              title="按 title + language_code 匹配当前列表内已有内容，覆盖更新缺失字段；找不到则创建新内容"
+            >
+              {importing ? '更新中...' : '重新批量更新 JSON'}
             </button>
             <Link
               href={`/list/${params.short_id}`}
