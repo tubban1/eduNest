@@ -796,15 +796,18 @@ class ApiClient {
     /**
      * 更新列表设置（仅创建者）
      */
-    updateSettings: async (listId: string, settings: {
-      name?: string;
-      description?: string;
-      visibility?: 'public' | 'private';
-      pricing_mode?: 'free' | 'premium' | 'free_preview';
-      price?: number;
-      currency?: string;
-      language_code?: string | null;
-    }) => {
+    updateSettings: async (
+      listId: string,
+      settings: {
+        name?: string;
+        description?: string;
+        visibility?: 'public' | 'private';
+        pricing_mode?: 'free' | 'one_time' | 'subscription';
+        price?: number;
+        currency?: string;
+        language_code?: string | null;
+      }
+    ) => {
       return this.put(`/collection_lists/${listId}/settings`, settings);
     },
 

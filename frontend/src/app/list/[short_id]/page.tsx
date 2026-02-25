@@ -189,13 +189,9 @@ export default function CollectionListPage() {
   };
 
   const handlePurchaseClick = () => {
-    if (listData?.pricing?.mode === 'premium') {
-      alert(`${mounted ? t('collections:content.purchaseNotAvailable') : 'Purchase not available'}\n${mounted ? t('collections:content.price') : 'Price'}：${listData.pricing?.formatted_price || (mounted ? t('collections:content.pricePending') : 'Pending')}`);
-      // router.push(`/purchase/list/${listData?.list?.short_id}`);
-    } else if (listData?.pricing?.mode === 'free_preview') {
-      alert(mounted ? t('collections:content.subscribeNotAvailable') : 'Subscribe not available');
-      // router.push(`/subscription?source=list&list_id=${listData?.list?.short_id}`);
-    }
+    const listShortId = listData?.list?.short_id ?? params.short_id;
+    // 统一跳转到订阅页面，由 Pro 订阅解锁 public 列表
+    router.push(`/subscription?source=list&list_id=${listShortId}`);
   };
 
   if (loading) {
@@ -405,7 +401,7 @@ export default function CollectionListPage() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">💎</span>
                 <div>
-                  {pricing?.mode === 'premium' ? (
+                  {pricing?.mode === 'one_time' || pricing?.mode === 'premium' ? (
                     <>
                       <p className="font-semibold text-foreground">
                         {mounted ? t('collections:purchase.purchaseList', { count: premium_count || 0 }) : `Purchase ${premium_count || 0} items`}
@@ -428,12 +424,12 @@ export default function CollectionListPage() {
                 >
                   🔑 {t('collections:content.enterAccessKey')}
                 </button>
-                <button
-                  onClick={handlePurchaseClick}
-                  className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-medium whitespace-nowrap"
-                >
-                  {pricing?.mode === 'premium' ? (mounted ? t('collections:purchase.buyNow') : 'Buy Now') : (mounted ? t('collections:purchase.upgradeNow') : 'Upgrade Now')}
-                </button>
+                  <button
+                    onClick={handlePurchaseClick}
+                    className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-medium whitespace-nowrap"
+                  >
+                    {mounted ? t('collections:purchase.upgradeNow') : 'Upgrade Now'}
+                  </button>
               </div>
             </div>
           </div>
@@ -491,7 +487,7 @@ export default function CollectionListPage() {
                 <div
                   key={item.id}
                   onClick={() => handleContentClick(item)}
-                    className={`
+                  className={`
                     relative bg-card rounded-lg shadow-sm border border-border p-4
                     transition-all duration-200
                     ${isDisabled 
@@ -499,9 +495,12 @@ export default function CollectionListPage() {
                       : 'cursor-pointer hover:shadow-md hover:scale-[1.02] hover:border-primary/30'
                     }
                   `}
-                  title={isDisabled 
-                    ? (pricing.mode === 'premium' ? t('collections:content.needPurchase') : t('collections:content.needSubscribe'))
-                    : item.content.title
+                  title={
+                    isDisabled
+                      ? (pricing.mode === 'one_time' || pricing.mode === 'premium'
+                          ? t('collections:content.needPurchase')
+                          : t('collections:content.needSubscribe'))
+                      : item.content.title
                   }
                 >
                   {/* 列表创建者：可以直接在卡片上勾选「免费预览」 */}

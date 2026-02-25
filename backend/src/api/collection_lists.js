@@ -369,8 +369,19 @@ router.put('/:id/settings', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: '无权限修改此列表' });
     }
     
-    // 验证价格（如果设置为付费）
-    if (pricing_mode === 'premium') {
+    // 规范化 pricing_mode，兼容旧值：
+    // - 'premium'       => 'one_time'
+    // - 'free_preview'  => 'subscription'
+    const rawPricingMode = pricing_mode || 'free';
+    const normalizedPricingMode =
+      rawPricingMode === 'premium'
+        ? 'one_time'
+        : rawPricingMode === 'free_preview'
+        ? 'subscription'
+        : rawPricingMode;
+
+    // 验证价格（如果设置为一次性付费）
+    if (normalizedPricingMode === 'one_time') {
       if (!price || price <= 0) {
         return res.status(400).json({ error: '付费列表必须设置有效价格' });
       }
@@ -385,16 +396,16 @@ router.put('/:id/settings', authenticateToken, async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (visibility !== undefined) updateData.visibility = visibility;
     if (pricing_mode !== undefined) {
-      updateData.pricing_mode = pricing_mode || 'free';
-      // 如果设置为付费，必须提供价格；否则清空价格
-      if (pricing_mode === 'premium') {
+      updateData.pricing_mode = normalizedPricingMode || 'free';
+      // 如果设置为一次性付费，必须提供价格；否则清空价格
+      if (normalizedPricingMode === 'one_time') {
         updateData.price = price;
         updateData.currency = currency || 'USD';
       } else {
         updateData.price = null;
       }
     }
-    if (currency !== undefined && pricing_mode === 'premium') {
+    if (currency !== undefined && normalizedPricingMode === 'one_time') {
       updateData.currency = currency;
     }
     if (language_code !== undefined) {

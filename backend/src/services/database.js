@@ -1736,6 +1736,19 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
       return { data: null, error: new Error('无权限访问此列表') };
     }
     
+    // 统一规范 pricing_mode，兼容旧值：
+    // - 'premium'       => 'one_time'      （一次性付费解锁列表）
+    // - 'free_preview'  => 'subscription'  （订阅解锁列表）
+    const rawPricingMode = list.pricing_mode || 'free';
+    const normalizedPricingMode =
+      rawPricingMode === 'premium'
+        ? 'one_time'
+        : rawPricingMode === 'free_preview'
+        ? 'subscription'
+        : rawPricingMode;
+    // 将规范化后的值写回，后续返回给前端的也是统一值
+    list.pricing_mode = normalizedPricingMode;
+
     // 3. 获取用户订阅和购买状态（如果已登录）
     let isPlatformPremium = false;
     let hasPurchasedList = false;
@@ -1753,8 +1766,10 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
       
       isPlatformPremium = !!subscription;
       
-      // 3.2 检查是否已购买该列表（仅当 pricing_mode = 'premium' 时）
-      if (list.pricing_mode === 'premium') {
+      // 3.2 检查是否已购买该列表（仅当 pricing_mode 属于一次性付费模式时）
+      const isOneTimePricing =
+        normalizedPricingMode === 'one_time' || normalizedPricingMode === 'premium'; // 兼容旧值
+      if (isOneTimePricing) {
         const { data: purchase } = await supabase
           .from('list_purchases')
           .select('id, expires_at')
@@ -1775,7 +1790,11 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
     // 4. 判断访问权限
     // 4.1 检查设备是否已通过密钥解锁此列表
     let hasKeyUnlock = false;
-    if (deviceId && (list.pricing_mode === 'premium' || list.pricing_mode === 'free_preview')) {
+    const isSubscriptionPricing =
+      normalizedPricingMode === 'subscription' || normalizedPricingMode === 'free_preview'; // 兼容旧值
+    const isOneTimePricingForKey =
+      normalizedPricingMode === 'one_time' || normalizedPricingMode === 'premium'; // 兼容旧值
+    if (deviceId && (isOneTimePricingForKey || isSubscriptionPricing)) {
       const { data: deviceAccess } = await supabase
         .from('list_device_access')
         .select('device_id')
@@ -1789,13 +1808,13 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
     // 访问权限逻辑：
     // - 创建者：始终可访问全部
     // - 免费列表（pricing_mode = 'free'）：所有人可访问全部
-    // - 付费列表（pricing_mode = 'premium'）：已购买或平台订阅或密钥解锁用户可访问全部，其他用户只能看前3条
-    // - 预览列表（pricing_mode = 'free_preview'）：平台订阅或密钥解锁用户可访问全部，其他用户只能看前3条
+    // - 一次性付费列表（pricing_mode = 'one_time'）：已购买或平台订阅或密钥解锁用户可访问全部；其他用户仅能访问标记为免费试看（is_free_preview）的内容
+    // - 订阅列表（pricing_mode = 'subscription'）：平台订阅或密钥解锁用户可访问全部；其他用户仅能访问标记为免费试看（is_free_preview）的内容
     const canAccessAll = isOwner || 
-                        (list.pricing_mode === 'free') ||
+                        (normalizedPricingMode === 'free') ||
                         hasKeyUnlock ||
-                        (list.pricing_mode === 'premium' && (hasPurchasedList || isPlatformPremium)) ||
-                        (list.pricing_mode === 'free_preview' && isPlatformPremium);
+                        (isOneTimePricing && (hasPurchasedList || isPlatformPremium)) ||
+                        (isSubscriptionPricing && isPlatformPremium);
     
     // 5. 获取列表内容
     const { data: collections, error: collectionsError } = await supabase
@@ -1829,18 +1848,15 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
       
       // 判断是否需要付费：
       // - 免费列表：不需要付费
-      // - 付费列表：全部需要付费
-      // - 预览列表：标记为免费预览的条目免费，其他需付费
+      // - 付费/订阅列表：标记为免费试看（is_free_preview）的条目免费，其他需付费
       let requiresPayment = false;
-      if (list.pricing_mode === 'free') {
+      if (normalizedPricingMode === 'free') {
         requiresPayment = false;
-      } else if (list.pricing_mode === 'premium') {
-        requiresPayment = true;
-      } else if (list.pricing_mode === 'free_preview') {
+      } else {
         requiresPayment = !isFreePreview;
       }
 
-      const isAccessible = canAccessAll || (list.pricing_mode === 'free_preview' ? isFreePreview : !requiresPayment);
+      const isAccessible = canAccessAll || !requiresPayment;
       
       return {
         ...item,
@@ -1855,18 +1871,14 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
     let freeCount = 0;
     let premiumCount = 0;
     
-    if (list.pricing_mode === 'free') {
+    if (normalizedPricingMode === 'free') {
       // 免费列表：全部免费
       freeCount = processedContents.length;
       premiumCount = 0;
-    } else if (list.pricing_mode === 'free_preview') {
-      // 预览列表：按标记统计免费预览数量
+    } else {
+      // 付费 / 预览列表：按标记统计免费预览数量
       freeCount = processedContents.filter(item => item.is_free_preview).length;
       premiumCount = Math.max(0, processedContents.length - freeCount);
-    } else {
-      // 付费列表：全部为付费内容
-      freeCount = 0;
-      premiumCount = processedContents.length;
     }
     
     // 8. 格式化价格

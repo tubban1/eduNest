@@ -16,7 +16,7 @@ interface ListSettings {
   name: string;
   description?: string;
   visibility: 'public' | 'private';
-  pricing_mode: 'free' | 'premium' | 'free_preview';
+  pricing_mode: 'free' | 'one_time' | 'subscription';
   price?: number;
   currency?: string;
   language_code?: string | null;
@@ -79,16 +79,25 @@ export default function ListSettingsPage() {
         }
 
         setListData(data);
+
+        const rawMode = (data.list.pricing_mode as string) || 'free';
+        const normalizedMode: ListSettings['pricing_mode'] =
+          rawMode === 'premium'
+            ? 'one_time'
+            : rawMode === 'free_preview'
+            ? 'subscription'
+            : (rawMode as ListSettings['pricing_mode']);
+
         setSettings({
           name: data.list.name || '',
           description: data.list.description || '',
           visibility: data.list.visibility || 'public',
-          pricing_mode: data.list.pricing_mode || 'free',
+          pricing_mode: normalizedMode,
           price: data.list.price || undefined,
           currency: data.list.currency || 'USD',
           language_code: data.list.language_code ?? null,
         });
-        if (data.list && (data.list.pricing_mode === 'premium' || data.list.pricing_mode === 'free_preview')) {
+        if (data.list && (normalizedMode === 'one_time' || normalizedMode === 'subscription')) {
           fetchAccessKeys(data.list.id);
         }
       } catch (err) {
@@ -542,7 +551,13 @@ export default function ListSettingsPage() {
                   type="radio"
                   value="free"
                   checked={settings.pricing_mode === 'free'}
-                  onChange={(e) => setSettings({ ...settings, pricing_mode: e.target.value as 'free' | 'premium' | 'free_preview', price: undefined })}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    pricing_mode: e.target.value as 'free' | 'one_time' | 'subscription',
+                    price: undefined,
+                  })
+                }
                   className="mt-1 mr-3"
                 />
                 <div>
@@ -554,15 +569,20 @@ export default function ListSettingsPage() {
               <label className="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                 <input
                   type="radio"
-                  value="premium"
-                  checked={settings.pricing_mode === 'premium'}
-                  onChange={(e) => setSettings({ ...settings, pricing_mode: e.target.value as 'free' | 'premium' | 'free_preview' })}
+                  value="one_time"
+                  checked={settings.pricing_mode === 'one_time'}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      pricing_mode: e.target.value as 'free' | 'one_time' | 'subscription',
+                    })
+                  }
                   className="mt-1 mr-3"
                 />
                 <div className="flex-1">
                   <div className="font-medium">{t('collections:settings.premium')}</div>
                   <div className="text-sm text-gray-500">{t('collections:settings.premiumDesc')}</div>
-                  {settings.pricing_mode === 'premium' && (
+                  {settings.pricing_mode === 'one_time' && (
                     <div className="mt-3 flex gap-4">
                       <div className="flex-1">
                         <label className="block text-xs text-gray-600 mb-1">{t('collections:settings.price')}</label>
@@ -574,7 +594,7 @@ export default function ListSettingsPage() {
                           onChange={(e) => setSettings({ ...settings, price: parseFloat(e.target.value) || undefined })}
                           className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                           placeholder="0.00"
-                          required={settings.pricing_mode === 'premium'}
+                          required={settings.pricing_mode === 'one_time'}
                         />
                       </div>
                       <div className="w-32">
@@ -597,14 +617,28 @@ export default function ListSettingsPage() {
               <label className="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                 <input
                   type="radio"
-                  value="free_preview"
-                  checked={settings.pricing_mode === 'free_preview'}
-                  onChange={(e) => setSettings({ ...settings, pricing_mode: e.target.value as 'free' | 'premium' | 'free_preview', price: undefined })}
+                  value="subscription"
+                  checked={settings.pricing_mode === 'subscription'}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      pricing_mode: e.target.value as 'free' | 'one_time' | 'subscription',
+                      price: undefined,
+                    })
+                  }
                   className="mt-1 mr-3"
                 />
                 <div>
-                  <div className="font-medium">{t('collections:settings.preview')}</div>
-                  <div className="text-sm text-gray-500">{t('collections:settings.previewDesc')}</div>
+                  <div className="font-medium">
+                    {t('collections:settings.preview', '订阅模式')}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {t(
+                      'collections:settings.previewDesc',
+                      '订阅 Pro 等会员可解锁整个列表，可为部分内容设置「免费试看」，方便公开分享链接给学生/家长使用。'
+                    )}
+                    <span className="ml-1 text-xs text-gray-400">（订阅模式）</span>
+                  </div>
                 </div>
               </label>
             </div>
