@@ -272,6 +272,16 @@ export default function CollectionListPage() {
   }
 
   const { list, contents, total, free_count, premium_count, user_access, pricing } = listData;
+  // 预览内容排在最前，其余保持原有顺序
+  const sortedContents = [...contents].sort((a, b) => {
+    const aPreview = a.is_free_preview ? 1 : 0;
+    const bPreview = b.is_free_preview ? 1 : 0;
+    if (aPreview !== bPreview) {
+      return bPreview - aPreview; // preview=true 的排前面
+    }
+    // 同一预览状态下，按 index 升序保持原本顺序
+    return a.index - b.index;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -466,7 +476,7 @@ export default function CollectionListPage() {
 
       {/* 内容网格 */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {contents.length === 0 ? (
+        {sortedContents.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📭</div>
             <p className="text-muted-foreground text-lg mb-2">{t('collections:list.emptyList')}</p>
@@ -474,7 +484,7 @@ export default function CollectionListPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {contents.map((item) => {
+            {sortedContents.map((item) => {
               const isDisabled = !item.is_accessible;
               
               return (
