@@ -206,8 +206,8 @@ export default function ListSettingsPage() {
     
     if (!listData) return;
     
-    // 验证价格（如果设置为付费）
-    if (settings.pricing_mode === 'premium') {
+    // 验证价格（如果设置为一次性付费）
+    if (settings.pricing_mode === 'one_time') {
       if (!settings.price || settings.price <= 0) {
         setError(t('collections:settings.priceRequired'));
         return;
@@ -223,8 +223,8 @@ export default function ListSettingsPage() {
         description: settings.description,
         visibility: settings.visibility,
         pricing_mode: settings.pricing_mode,
-        price: settings.pricing_mode === 'premium' ? settings.price : undefined,
-        currency: settings.pricing_mode === 'premium' ? settings.currency : undefined,
+        price: settings.pricing_mode === 'one_time' ? settings.price : undefined,
+        currency: settings.pricing_mode === 'one_time' ? settings.currency : undefined,
         language_code: settings.language_code === '' ? null : settings.language_code,
       });
       
@@ -353,8 +353,8 @@ export default function ListSettingsPage() {
             </div>
           )}
 
-          {/* 访问密钥（仅付费/预览模式显示，放在最上方便于频繁配置） */}
-          {(settings.pricing_mode === 'premium' || settings.pricing_mode === 'free_preview') && listData?.list?.id && (
+          {/* 访问密钥（仅一次性付费 / 订阅模式显示，放在最上方便于频繁配置） */}
+          {(settings.pricing_mode === 'one_time' || settings.pricing_mode === 'subscription') && listData?.list?.id && (
             <div className="mb-6 pt-6 border-t">
               <h3 className="text-base font-semibold text-gray-800 mb-2">{t('collections:settings.accessKeys')}</h3>
               <p className="text-sm text-gray-500 mb-4">{t('collections:settings.accessKeysDesc')}</p>
