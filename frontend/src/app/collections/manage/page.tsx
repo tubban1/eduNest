@@ -226,11 +226,14 @@ export default function CollectionListsManagementPage() {
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                     {list.pricing_mode && (
                       <span className="px-2 py-0.5 bg-primary/10 text-primary rounded">
-                        {list.pricing_mode === 'free' ? t('collections:management.free') : 
-                         list.pricing_mode === 'premium' ? t('collections:management.premium') : t('collections:management.preview')}
+                        {list.pricing_mode === 'free'
+                          ? t('collections:management.free')
+                          : list.pricing_mode === 'one_time' || list.pricing_mode === 'premium'
+                          ? t('collections:management.premium')
+                          : t('collections:management.preview')}
                       </span>
                     )}
-                    {list.pricing_mode === 'premium' && list.price && (
+                    {(list.pricing_mode === 'one_time' || list.pricing_mode === 'premium') && list.price && (
                       <span>
                         {new Intl.NumberFormat('en-US', {
                           style: 'currency',
