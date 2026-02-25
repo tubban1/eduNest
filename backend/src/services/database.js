@@ -1752,6 +1752,9 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
     // 3. 获取用户订阅和购买状态（如果已登录）
     let isPlatformPremium = false;
     let hasPurchasedList = false;
+    // 标记一次性付费模式（需在后续 canAccessAll 逻辑中使用）
+    let isOneTimePricing =
+      normalizedPricingMode === 'one_time' || normalizedPricingMode === 'premium'; // 兼容旧值
     
     if (userId) {
       // 3.1 检查平台订阅状态
@@ -1767,8 +1770,6 @@ const getCollectionListByShortId = async (shortId, userId = null, deviceId = nul
       isPlatformPremium = !!subscription;
       
       // 3.2 检查是否已购买该列表（仅当 pricing_mode 属于一次性付费模式时）
-      const isOneTimePricing =
-        normalizedPricingMode === 'one_time' || normalizedPricingMode === 'premium'; // 兼容旧值
       if (isOneTimePricing) {
         const { data: purchase } = await supabase
           .from('list_purchases')
