@@ -28,10 +28,16 @@ const SubscriptionManager: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+
     if (user) {
       fetchSubscriptionStatus();
+    } else {
+      // 未登录：视为免费用户，直接结束 loading，展示升级 CTA
+      setSubscription(null);
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, mounted]);
 
   const fetchSubscriptionStatus = async () => {
     try {
