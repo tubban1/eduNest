@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import MathText from '@/components/MathText';
+import LanguageSelector from '@/components/LanguageSelector';
 import { getVisitorId } from '@/utils/visitorId';
 
 interface CollectionListData {
@@ -362,6 +363,11 @@ export default function CollectionListPage() {
               )}
             </div>
             
+            {/* 语言切换按钮（靠近 logo，统一全站样式） */}
+            <div className="ml-2">
+              <LanguageSelector />
+            </div>
+
             <Link href="/" className="ml-3">
               <Image
                 src="/favicon.png"

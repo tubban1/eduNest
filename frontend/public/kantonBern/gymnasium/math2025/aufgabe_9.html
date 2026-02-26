@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 9 - Terme & Gleichungen | AMS Aufnahme 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            color: #8b5cf6;
+            background-color: #f5f3ff;
+        }
+
+        .tab-btn.active {
+            color: #8b5cf6;
+            border-bottom-color: #8b5cf6;
+        }
+
+        .math-box {
+            background: #f5f3ff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #8b5cf6;
+            margin: 1rem 0;
+        }
+
+        .solution-step {
+            margin-bottom: 1rem;
+            padding-left: 1rem;
+            border-left: 2px solid #ddd6fe;
+        }
+
+        .result-box {
+            border: 2px solid #8b5cf6;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            font-weight: bold;
+            color: #4c1d95;
+            background: #f5f3ff;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8 max-w-5xl mx-auto">
+
+    <!-- 1:1 Originalaufgabe -->
+    <div id="static-math" class="card" v-pre>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-900">Aufgabe 9</h1>
+            <span class="bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-sm font-bold">3 Punkte</span>
+        </div>
+
+        <div class="space-y-8 text-slate-700">
+            <div>
+                <p class="mb-4"><strong>a)</strong> Vereinfache so weit wie möglich:</p>
+                <div class="bg-slate-50 p-6 rounded-xl text-xl font-mono text-center">
+                    $x^2 + 4x^3 + 5x \cdot x - x \cdot x \cdot x$
+                </div>
+            </div>
+
+            <div class="border-t pt-8">
+                <p class="mb-4"><strong>b)</strong> Bestimme $x$:</p>
+                <div class="bg-slate-50 p-6 rounded-xl text-xl font-mono text-center">
+                    $5x - 12 = 27$
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interaktive Lösung -->
+    <div id="app" v-cloak class="card border-t-4 border-violet-500">
+        <div class="flex border-b mb-8 overflow-x-auto">
+            <button v-for="tab in tabs" :key="tab.id" @click="currentTab = tab.id"
+                :class="['tab-btn whitespace-nowrap', currentTab === tab.id ? 'active' : '']">
+                {{ tab.label }}
+            </button>
+        </div>
+
+        <!-- Tab: intro -->
+        <div v-if="currentTab === 'intro'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-violet-800">Algebraische Grundlagen</h2>
+            <p class="text-slate-600 mb-6">
+                Termumformungen und Gleichungen sind das "Alphabet" der Mathematik. Hier lernst du, Gleiches mit
+                Gleichem zusammenzufassen und Unbekannte zu isolieren.
+            </p>
+            <div class="math-box">
+                <h3 class="font-bold mb-2">💡 Wichtige Konzepte</h3>
+                <ul class="list-disc list-inside text-sm space-y-1">
+                    <li>$x \cdot x = x^2$</li>
+                    <li>$x \cdot x \cdot x = x^3$</li>
+                    <li>Man darf nur Terme mit der gleichen Potenz zusammenfassen (z.B. $x^2$ mit $x^2$).</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab: a -->
+        <div v-if="currentTab === 'a'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-violet-800">Lösungsteil a): Termvereinfachung</h2>
+            <div class="math-box">
+                <div class="solution-step">
+                    <strong>1. Multiplikationen auflösen:</strong><br>
+                    $5x \cdot x = 5x^2$<br>
+                    $x \cdot x \cdot x = x^3$
+                </div>
+                <div class="solution-step">
+                    <strong>2. In den Term einsetzen:</strong><br>
+                    $x^2 + 4x^3 + 5x^2 - x^3$
+                </div>
+                <div class="solution-step">
+                    <strong>3. Gleichartige Terme gruppieren:</strong><br>
+                    $Q^3: (4x^3 - x^3) = 3x^3$<br>
+                    $Q^2: (x^2 + 5x^2) = 6x^2$
+                </div>
+                <div class="solution-step">
+                    <strong>4. Endergebnis:</strong><br>
+                    $3x^3 + 6x^2$
+                </div>
+            </div>
+            <p class="font-bold">Antwort:</p>
+            <div class="result-box">$3x^3 + 6x^2$</div>
+        </div>
+
+        <!-- Tab: b -->
+        <div v-if="currentTab === 'b'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-violet-800">Lösungsteil b): Gleichung lösen</h2>
+            <div class="math-box">
+                <div class="solution-step">
+                    <strong>Gleichung:</strong> $5x - 12 = 27$
+                </div>
+                <div class="solution-step">
+                    <strong>1. $+ 12$ auf beiden Seiten:</strong><br>
+                    $5x = 27 + 12$<br>
+                    $5x = 39$
+                </div>
+                <div class="solution-step">
+                    <strong>2. $: 5$ auf beiden Seiten:</strong><br>
+                    $x = 39 : 5$
+                </div>
+                <div class="solution-step">
+                    <strong>3. Ergebnis:</strong><br>
+                    $x = 7.8$
+                </div>
+            </div>
+            <p class="font-bold">Antwort:</p>
+            <div class="result-box">$x = 7.8$</div>
+        </div>
+
+        <!-- Tab: Summary -->
+        <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-violet-800">Zusammenfassung</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 bg-violet-50 border border-violet-200 rounded-lg">
+                    <h3 class="font-bold mb-2">Terme</h3>
+                    <p class="text-sm">Potenzen regieren! $x^2$ und $x^3$ sind wie Äpfel und Birnen - man kann sie nicht
+                        addieren, nur nebeneinander stehen lassen.</p>
+                </div>
+                <div class="p-4 bg-violet-50 border border-violet-200 rounded-lg">
+                    <h3 class="font-bold mb-2">Gleichungen</h3>
+                    <p class="text-sm">Gerechtigkeit! Was du links tust, musst du auch rechts tun. Isoliere das $x$
+                        Schritt für Schritt.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const tabs = [
+                    { id: 'intro', label: 'Einführung' },
+                    { id: 'a', label: 'a) Terme' },
+                    { id: 'b', label: 'b) Gleichung' },
+                    { id: 'summary', label: 'Zusammenfassung' }
+                ];
+
+                const triggerMath = () => {
+                    if (window.renderMathInElement) {
+                        try {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '\\[', right: '\\]', display: true },
+                                    { left: '$', right: '$', display: false },
+                                    { left: '\\(', right: '\\)', display: false }
+                                ],
+                                throwOnError: false
+                            });
+                        } catch (e) { console.error("KaTeX failed", e); }
+                    } else {
+                        setTimeout(triggerMath, 100);
+                    }
+                };
+
+                onMounted(() => { triggerMath(); });
+                watch(currentTab, () => { setTimeout(triggerMath, 50); });
+
+                return { currentTab, tabs };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

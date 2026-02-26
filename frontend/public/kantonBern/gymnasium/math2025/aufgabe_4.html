@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 4 - Gleichungen | AMS Aufnahme 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            color: #10b981;
+            background-color: #f0fdf4;
+        }
+
+        .tab-btn.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 350px;
+            background: #ffffff;
+            border: 1px solid #d1fae5;
+            border-radius: 0.75rem;
+            margin-top: 1.5rem;
+            position: relative;
+        }
+
+        .math-box {
+            background: #f0fdf4;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #10b981;
+            margin: 1rem 0;
+        }
+
+        .solution-step {
+            margin-bottom: 1rem;
+            padding-left: 1rem;
+            border-left: 2px solid #d1fae5;
+        }
+
+        .result-box {
+            border: 2px solid #10b981;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            font-weight: bold;
+            color: #064e3b;
+            background: #f0fdf4;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8 max-w-5xl mx-auto">
+
+    <!-- 1:1 Originalaufgabe -->
+    <div id="static-math" class="card" v-pre>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-900">Aufgabe 4</h1>
+            <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">2 Punkte</span>
+        </div>
+        <div class="text-slate-700 leading-relaxed text-lg">
+            <p>
+                Wird zu einer Zahl $5$ addiert und das Resultat dann mit $8$ multipliziert, erhält man dasselbe
+                Ergebnis, wie wenn man die Zahl mit $20$ multipliziert und $20$ subtrahiert. Um welche Zahl handelt es
+                sich? Erstelle eine Gleichung und löse diese.
+            </p>
+        </div>
+    </div>
+
+    <!-- Interaktive Lösung -->
+    <div id="app" v-cloak class="card border-t-4 border-emerald-500">
+        <div class="flex border-b mb-8 overflow-x-auto">
+            <button v-for="tab in tabs" :key="tab.id" @click="currentTab = tab.id"
+                :class="['tab-btn whitespace-nowrap', currentTab === tab.id ? 'active' : '']">
+                {{ tab.label }}
+            </button>
+        </div>
+
+        <!-- Tab: Intro -->
+        <div v-if="currentTab === 'intro'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-emerald-800">Von Text zu Mathematik</h2>
+            <p class="text-slate-600 mb-6">
+                Bei Gleichungsaufgaben ist das "Übersetzen" des Textes in eine Formel der wichtigste Schritt. Wir suchen
+                eine unbekannte Zahl, die wir $x$ nennen.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
+                    <h3 class="font-bold text-emerald-800 mb-2">🎯 Lernziele</h3>
+                    <ul class="list-disc list-inside text-sm text-emerald-700 space-y-2">
+                        <li>Textbausteine in mathematische Symbole übersetzen</li>
+                        <li>Gleichungen mit Klammern aufstellen</li>
+                        <li>Äquivalenzumformungen sicher anwenden</li>
+                        <li>Die Probe als Kontrollinstrument nutzen</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-2">💡 Strategie</h3>
+                    <p class="text-sm text-slate-600">
+                        Achte auf Formulierungen wie "das Resultat dann mit...". Dies signalisiert fast immer, dass eine
+                        Klammer gesetzt werden muss, um die Punkt-vor-Strich Regel korrekt zu steuern.
+                    </p>
+                </div>
+            </div>
+            <div class="canvas-container flex flex-col items-center justify-center space-y-4 p-8">
+                <div class="w-full max-w-md bg-slate-50 p-6 rounded-xl border">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Interaktives Waagemodell: $x$
+                        verändern</label>
+                    <input type="range" v-model="xVal" min="0" max="10" step="0.5" class="w-full accent-emerald-600">
+                    <div class="flex justify-between text-xs mt-2 text-slate-500">
+                        <span>0</span><span>5</span><span>10</span>
+                    </div>
+                </div>
+                <canvas id="canvas-intro" class="w-full flex-1"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab: Solution -->
+        <div v-if="currentTab === 'solution'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-emerald-800">Schrittweise Lösung</h2>
+
+            <div class="math-box">
+                <div class="solution-step">
+                    <strong>1. Schritt: Gleichung aufstellen</strong><br>
+                    Linke Seite: $(x + 5) \cdot 8$<br>
+                    Rechte Seite: $20x - 20$<br>
+                    $\Rightarrow (x + 5) \cdot 8 = 20x - 20$
+                </div>
+                <div class="solution-step">
+                    <strong>2. Schritt: Klammer auflösen (Distributivgesetz)</strong><br>
+                    $8x + 40 = 20x - 20$
+                </div>
+                <div class="solution-step">
+                    <strong>3. Schritt: Variablen auf eine Seite bringen</strong><br>
+                    $40 + 20 = 20x - 8x$ (durch $+20$ und $-8x$)<br>
+                    $60 = 12x$
+                </div>
+                <div class="solution-step">
+                    <strong>4. Schritt: Nach $x$ auflösen</strong><br>
+                    $x = 60 \div 12 = 5$
+                </div>
+                <div class="solution-step italic text-slate-500">
+                    <strong>Probe:</strong><br>
+                    Links: $(5+5) \cdot 8 = 10 \cdot 8 = 80$<br>
+                    Rechts: $20 \cdot 5 - 20 = 100 - 20 = 80 \quad \checkmark$
+                </div>
+            </div>
+
+            <p class="font-bold">Antwort:</p>
+            <div class="result-box">Die gesuchte Zahl ist $5$.</div>
+
+            <div class="canvas-container">
+                <canvas id="canvas-solution"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab: Summary -->
+        <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-emerald-800">Zusammenfassung</h2>
+            <div class="space-y-4">
+                <div class="p-6 bg-slate-900 text-white rounded-xl">
+                    <h3 class="font-bold text-emerald-400 mb-2 underline">Vokabular der Mathematik</h3>
+                    <table class="w-full text-sm text-slate-300">
+                        <tr class="border-b border-slate-700">
+                            <td class="py-2">"addiert 5"</td>
+                            <td>$+ 5$</td>
+                        </tr>
+                        <tr class="border-b border-slate-700">
+                            <td class="py-2">"das Resultat dann..."</td>
+                            <td>Klammer setzen (...)</td>
+                        </tr>
+                        <tr class="border-b border-slate-700">
+                            <td class="py-2">"multipliziert mit 20"</td>
+                            <td>$\cdot 20$</td>
+                        </tr>
+                        <tr class="border-b border-slate-700">
+                            <td class="py-2">"subtrahiert 20"</td>
+                            <td>$- 20$</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2">"dasselbe Ergebnis"</td>
+                            <td>$=$</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="p-4 border-2 border-emerald-100 rounded-xl bg-white text-slate-600 italic">
+                    Training: "Wird vom 3-fachen einer Zahl 4 subtrahiert, erhält man 17. Wie lautet die Zahl?"
+                </div>
+            </div>
+            <div class="canvas-container mt-6">
+                <canvas id="canvas-summary"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const xVal = ref(0);
+                const tabs = [
+                    { id: 'intro', label: 'Einführung' },
+                    { id: 'solution', label: 'Lösungsweg' },
+                    { id: 'summary', label: 'Zusammenfassung' }
+                ];
+
+                const triggerMath = () => {
+                    if (window.renderMathInElement) {
+                        try {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '\\[', right: '\\]', display: true },
+                                    { left: '$', right: '$', display: false },
+                                    { left: '\\(', right: '\\)', display: false }
+                                ],
+                                throwOnError: false
+                            });
+                        } catch (e) { console.error("KaTeX failed", e); }
+                    } else {
+                        setTimeout(triggerMath, 100);
+                    }
+                };
+
+                const drawIntro = (ctx, w, h) => {
+                    ctx.clearRect(0, 0, w, h);
+                    const leftVal = (Number(xVal.value) + 5) * 8;
+                    const rightVal = 20 * Number(xVal.value) - 20;
+
+                    // Waage
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 4;
+                    const cx = w / 2, base = h - 50;
+
+                    // Tilt calculation
+                    const tilt = (rightVal - leftVal) / 200;
+                    const angle = Math.max(-0.2, Math.min(0.2, tilt));
+
+                    ctx.save();
+                    ctx.translate(cx, base - 100);
+                    ctx.rotate(angle);
+
+                    // Beam
+                    ctx.beginPath();
+                    ctx.moveTo(-150, 0); ctx.lineTo(150, 0);
+                    ctx.stroke();
+
+                    // Pans
+                    ctx.strokeRect(-180, 0, 60, 10);
+                    ctx.strokeRect(120, 0, 60, 10);
+
+                    // Values
+                    ctx.rotate(-angle);
+                    ctx.textAlign = 'center';
+                    ctx.font = '14px Inter';
+                    ctx.fillStyle = '#064e3b';
+                    ctx.fillText(`L: ${leftVal.toFixed(1)}`, -150, 40);
+                    ctx.fillText(`R: ${rightVal.toFixed(1)}`, 150, 40);
+
+                    if (Math.abs(leftVal - rightVal) < 0.1) {
+                        ctx.fillStyle = '#10b981';
+                        ctx.font = 'bold 16px Inter';
+                        ctx.fillText('GLEICHGEWICHT! x = 5', 0, -50);
+                    }
+
+                    ctx.restore();
+
+                    // Stand
+                    ctx.beginPath();
+                    ctx.moveTo(cx, base); ctx.lineTo(cx, base - 100);
+                    ctx.stroke();
+                };
+
+                const render = () => {
+                    const canvasId = `canvas-${currentTab.value}`;
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+
+                    if (currentTab.value === 'intro') drawIntro(ctx, canvas.width, canvas.height);
+                };
+
+                onMounted(() => {
+                    setTimeout(render, 100);
+                    triggerMath();
+                });
+
+                watch([currentTab, xVal], () => {
+                    setTimeout(render, 30);
+                    setTimeout(triggerMath, 100);
+                });
+
+                return { currentTab, tabs, xVal };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

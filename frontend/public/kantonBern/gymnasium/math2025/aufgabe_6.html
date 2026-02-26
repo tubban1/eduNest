@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 6 - Koordinatensystem | AMS Gymiprüfung 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: #64748b;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+            background: #f5f3ff;
+        }
+
+        .math-box {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border-left: 5px solid #4f46e5;
+            margin: 1.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .solution-step {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+            border-left: 2px solid #cbd5e1;
+        }
+
+        .result-box {
+            border: 2px solid #4f46e5;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            font-weight: 700;
+            color: #1e1b4b;
+            background: #f5f3ff;
+            font-family: monospace;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .grid-line {
+            stroke: #e2e8f0;
+            stroke-width: 1;
+        }
+
+        .axis-line {
+            stroke: #475569;
+            stroke-width: 1.5;
+        }
+
+        .point-dot {
+            fill: #1e293b;
+        }
+    </style>
+</head>
+
+<body class="p-6 md:p-12 max-w-6xl mx-auto">
+
+    <!-- STATIC PROBLEM AREA (v-pre for KaTeX) -->
+    <div id="static-math" class="card" v-pre>
+        <div class="flex justify-between items-start mb-8 border-b pb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">Aufgabe 6</h1>
+                <p class="mt-4 text-lg text-slate-600">Gegeben sind die Punkte A und B, welche im Koordinatensystem
+                    bereits eingezeichnet sind.</p>
+            </div>
+            <span class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-bold">6 Punkte</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            <!-- SVG Coordinate System faithfully reconstructed from PDF -->
+            <div
+                class="flex justify-center bg-white p-2 rounded-xl shadow-inner border border-slate-100 overflow-hidden">
+                <svg viewBox="0 0 540 400" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Origin offset: x=180 (dist from -7 to 0 is 7*20=140px, but total width 22 units = 440px. Let's center it better.) -->
+                    <!-- Grid: x from -7 to 15, y from -6 to 8. Total 22 units wide, 14 units high. -->
+                    <g transform="translate(180, 180)">
+                        <!-- Grid Lines -->
+                        <line v-for="i in Array.from({length: 23}, (_, k) => k - 7)" :x1="i*20" y1="-140" :x2="i*20"
+                            y2="140" class="grid-line" />
+                        <!-- Manual rendering for static v-pre -->
+                        <path
+                            d="M -140 -120 L 300 -120 M -140 -100 L 300 -100 M -140 -80 L 300 -80 M -140 -60 L 300 -60 M -140 -40 L 300 -40 M -140 -20 L 300 -20 M -140 0 L 300 0 M -140 20 L 300 20 M -140 40 L 300 40 M -140 60 L 300 60 M -140 80 L 300 80 M -140 100 L 300 100 M -140 120 L 300 120"
+                            stroke="#e2e8f0" stroke-width="0.5" />
+                        <path
+                            d="M -140 -140 L -140 140 M -120 -140 L -120 140 M -100 -140 L -100 140 M -80 -140 L -80 140 M -60 -140 L -60 140 M -40 -140 L -40 140 M -20 -140 L -20 140 M 0 -140 L 0 140 M 20 -140 L 20 140 M 40 -140 L 40 140 M 60 -140 L 60 140 M 80 -140 L 80 140 M 100 -140 L 100 140 M 120 -140 L 120 140 M 140 -140 L 140 140 M 160 -140 L 160 140 M 180 -140 L 180 140 M 200 -140 L 200 140 M 220 -140 L 220 140 M 240 -140 L 240 140 M 260 -140 L 260 140 M 280 -140 L 280 140 M 300 -140 L 300 140"
+                            stroke="#e2e8f0" stroke-width="0.5" />
+
+                        <!-- Axes -->
+                        <line x1="-150" y1="0" x2="310" y2="0" class="axis-line" />
+                        <polygon points="310,0 305,-3 305,3" fill="#475569" /> <!-- x arrow -->
+                        <line x1="0" y1="130" x2="0" y2="-170" class="axis-line" />
+                        <polygon points="0,-170 -3,-165 3,-165" fill="#475569" /> <!-- y arrow -->
+
+                        <!-- X Labels from PDF -->
+                        <text x="-140" y="15" font-size="10" text-anchor="middle">-7</text>
+                        <text x="-120" y="15" font-size="10" text-anchor="middle">-6</text>
+                        <text x="-100" y="15" font-size="10" text-anchor="middle">-5</text>
+                        <text x="-80" y="15" font-size="10" text-anchor="middle">-4</text>
+                        <text x="-60" y="15" font-size="10" text-anchor="middle">-3</text>
+                        <text x="-40" y="15" font-size="10" text-anchor="middle">-2</text>
+                        <text x="-20" y="15" font-size="10" text-anchor="middle">-1</text>
+                        <text x="-5" y="15" font-size="10" text-anchor="end">0</text>
+                        <text x="20" y="15" font-size="10" text-anchor="middle">1</text>
+                        <text x="40" y="15" font-size="10" text-anchor="middle">2</text>
+                        <text x="60" y="15" font-size="10" text-anchor="middle">3</text>
+                        <text x="80" y="15" font-size="10" text-anchor="middle">4</text>
+                        <text x="100" y="15" font-size="10" text-anchor="middle">5</text>
+                        <text x="120" y="15" font-size="10" text-anchor="middle">6</text>
+                        <text x="140" y="15" font-size="10" text-anchor="middle">7</text>
+                        <text x="160" y="15" font-size="10" text-anchor="middle">8</text>
+                        <text x="180" y="15" font-size="10" text-anchor="middle">9</text>
+                        <text x="200" y="15" font-size="10" text-anchor="middle">10</text>
+                        <text x="220" y="15" font-size="10" text-anchor="middle">11</text>
+                        <text x="240" y="15" font-size="10" text-anchor="middle">12</text>
+                        <text x="260" y="15" font-size="10" text-anchor="middle">13</text>
+                        <text x="280" y="15" font-size="10" text-anchor="middle">14</text>
+                        <text x="300" y="15" font-size="10" text-anchor="middle">15</text>
+
+                        <!-- Y Labels -->
+                        <text x="-15" y="123" font-size="10" text-anchor="end">-6</text>
+                        <text x="-15" y="103" font-size="10" text-anchor="end">-5</text>
+                        <text x="-15" y="83" font-size="10" text-anchor="end">-4</text>
+                        <text x="-15" y="63" font-size="10" text-anchor="end">-3</text>
+                        <text x="-15" y="43" font-size="10" text-anchor="end">-2</text>
+                        <text x="-15" y="23" font-size="10" text-anchor="end">-1</text>
+                        <text x="-15" y="-17" font-size="10" text-anchor="end">1</text>
+                        <text x="-15" y="-37" font-size="10" text-anchor="end">2</text>
+                        <text x="-15" y="-57" font-size="10" text-anchor="end">3</text>
+                        <text x="-15" y="-77" font-size="10" text-anchor="end">4</text>
+                        <text x="-15" y="-97" font-size="10" text-anchor="end">5</text>
+                        <text x="-15" y="-117" font-size="10" text-anchor="end">6</text>
+                        <text x="-15" y="-137" font-size="10" text-anchor="end">7</text>
+                        <text x="-15" y="-157" font-size="10" text-anchor="end">8</text>
+
+                        <!-- Input Points A and B -->
+                        <circle cx="60" cy="-80" r="3" class="point-dot" /> <!-- A(3, 4) -->
+                        <text x="65" y="-85" font-size="12" font-weight="bold">A</text>
+                        <circle cx="100" cy="40" r="3" class="point-dot" /> <!-- B(5, -2) -->
+                        <text x="105" y="35" font-size="12" font-weight="bold">B</text>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="space-y-12">
+                <div class="flex items-start gap-4">
+                    <span class="font-bold text-indigo-600 text-xl font-mono">a)</span>
+                    <p class="text-xl pt-0.5 leading-relaxed">
+                        Ergänze zwei Punkte $C$ und $D$ so, dass diese mit den Punkten $A$ und $B$ zusammen ein Quadrat
+                        bilden. Welche Koordinaten haben $C$ und $D$? Finde alle Lösungen und zeichne sie ein.
+                    </p>
+                </div>
+                <div class="flex items-start gap-4">
+                    <span class="font-bold text-indigo-600 text-xl font-mono">b)</span>
+                    <p class="text-xl pt-0.5 leading-relaxed">
+                        Der Punkt $E(-1 \mid 4)$ bildet mit $A$ und $B$ ein Dreieck. Zeichne $E$ ins Koordinatensystem
+                        ein und berechne den Flächeninhalt des Dreiecks $ABE$.
+                    </p>
+                </div>
+                <div class="flex items-start gap-4">
+                    <span class="font-bold text-indigo-600 text-xl font-mono">c)</span>
+                    <p class="text-xl pt-0.5 leading-relaxed">
+                        Gib die Koordinaten von zwei Punkten an, welche jeweils gleich weit von $A$ wie von $B$ entfernt
+                        liegen.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTERACTIVE SOLUTION SECTION -->
+    <div id="app" v-cloak class="card border-t-8 border-indigo-600">
+        <div class="flex border-b mb-10 overflow-x-auto">
+            <button v-for="tab in tabs" :key="tab.id" @click="currentTab = tab.id"
+                :class="['tab-btn whitespace-nowrap text-lg px-8', currentTab === tab.id ? 'active' : '']">
+                {{ tab.label }}
+            </button>
+        </div>
+
+        <!-- Intro -->
+        <div v-if="currentTab === 'intro'" class="animate-fadeIn space-y-6">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">Heuristik & Analyse</h2>
+            <div class="text-lg leading-relaxed flex flex-col md:flex-row gap-8">
+                <div class="flex-1 space-y-4">
+                    <p>Die Aufgabe prüft grundlegende Fertigkeiten im Koordinatensystem:</p>
+                    <ul class="list-disc pl-8 space-y-2">
+                        <li><strong>Vektoren:</strong> Um Punkte in einem Quadrat zu finden, nutzen wir die "Drehung"
+                            von Vektoren (Senkrechte).</li>
+                        <li><strong>Dreiecksfläche:</strong> Wir nutzen die Zerlegung oder die Formel $A = \frac{1}{2}
+                            \cdot \text{Grundseite} \cdot \text{Höhe}$.</li>
+                        <li><strong>Symmetrie:</strong> Punkte mit gleichen Abständen liegen auf der Mittelsenkrechten.
+                        </li>
+                    </ul>
+                </div>
+                <div id="container-intro"
+                    class="w-full md:w-64 h-48 bg-slate-50 border rounded-xl flex items-center justify-center italic text-slate-400">
+                    [Vektor-Animation: Senkrechten finden]
+                </div>
+            </div>
+        </div>
+
+        <!-- Part a -->
+        <div v-if="currentTab === 'q1'" class="animate-fadeIn space-y-6">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">a) Das Quadrat ABCD</h2>
+            <div class="math-box">
+                <div class="solution-step">
+                    <strong>1. Schritt: Seitenvektor AB bestimmen</strong><br>
+                    Von $A(3 \mid 4)$ zu $B(5 \mid -2)$ gehen wir 2 Einheiten nach rechts und 6 nach unten.<br>
+                    $\vec{AB} = \begin{pmatrix} 5-3 \\ -2-4 \end{pmatrix} = \begin{pmatrix} 2 \\ -6 \end{pmatrix}$.
+                </div>
+                <div class="solution-step">
+                    <strong>2. Schritt: Orthogonale Vektoren (90°-Drehung)</strong><br>
+                    Um ein Quadrat zu bilden, kippen wir den Vektor $\begin{pmatrix} 2 \\ -6 \end{pmatrix}$ auf
+                    $\begin{pmatrix} 6 \\ 2 \end{pmatrix}$ oder $\begin{pmatrix} -6 \\ -2 \end{pmatrix}$.
+                </div>
+                <div class="solution-step">
+                    <strong>3. Schritt: Alle Lösungen berechnen</strong><br>
+                    <strong>Lösung 1 (rechts oberhalb):</strong><br>
+                    $C_1 = B + (6 \mid 2) = (11 \mid 0)$<br>
+                    $D_1 = A + (6 \mid 2) = (9 \mid 6)$<br>
+                    <strong>Lösung 2 (links unterhalb):</strong><br>
+                    $C_2 = B + (-6 \mid -2) = (-1 \mid -4)$<br>
+                    $D_2 = A + (-6 \mid -2) = (-3 \mid 2)$
+                </div>
+            </div>
+            <p class="font-bold">Resultat a):</p>
+            <div class="flex flex-wrap gap-4">
+                <div class="result-box">L1: C(11|0), D(9|6)</div>
+                <div class="result-box">L2: C(-1|-4), D(-3|2)</div>
+            </div>
+            <div id="container-q1" class="mt-8 flex justify-center">
+                <div class="w-full max-w-md bg-white p-4 rounded-2xl shadow-inner border border-slate-100">
+                    <svg viewBox="0 0 320 280" class="w-full h-auto">
+                        <g transform="translate(100, 140) scale(15, -15)">
+                            <!-- Grid -->
+                            <path d="M-5 -4 L 10 -4 M-5 -2 L 10 -2 M-5 0 L 10 0 M-5 2 L 10 2 M-5 4 L 10 4 M-5 6 L 10 6"
+                                stroke="#f1f5f9" stroke-width="0.1" />
+                            <line x1="0" y1="-5" x2="0" y2="8" stroke="#cbd5e1" stroke-width="0.1" />
+                            <!-- Square 1 -->
+                            <polygon points="3,4 5,-2 11,0 9,6" fill="#f5f3ff" stroke="#4f46e5" stroke-width="0.15" />
+                            <!-- Square 2 (dashed) -->
+                            <polygon points="3,4 5,-2 -1,-4 -3,2" fill="none" stroke="#94a3b8" stroke-width="0.1"
+                                stroke-dasharray="0.3,0.3" />
+                            <!-- Points -->
+                            <circle cx="3" cy="4" r="0.3" fill="#1e293b" /> <text x="3.5" y="4.5" font-size="0.8"
+                                transform="scale(1,-1)">A</text>
+                            <circle cx="5" cy="-2" r="0.3" fill="#1e293b" /> <text x="5.5" y="-1.5" font-size="0.8"
+                                transform="scale(1,-1)">B</text>
+                            <circle cx="11" cy="0" r="0.3" fill="#4f46e5" /> <text x="11.5" y="0.5" font-size="0.8"
+                                transform="scale(1,-1)">C1</text>
+                            <circle cx="9" cy="6" r="0.3" fill="#4f46e5" /> <text x="9.5" y="6.5" font-size="0.8"
+                                transform="scale(1,-1)">D1</text>
+                        </g>
+                    </svg>
+                    <p class="text-center text-xs text-slate-400 mt-2 font-medium">Visualisierung: Die zwei möglichen
+                        Quadrate (Konstruktion via Vektor-Drehung)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part b -->
+        <div v-if="currentTab === 'q2'" class="animate-fadeIn space-y-6">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">b) Fläche des Dreiecks ABE</h2>
+            <div class="math-box">
+                <div class="solution-step">
+                    <strong>1. Schritt: Punkte definieren</strong><br>
+                    $A(3 \mid 4)$, $B(5 \mid -2)$, $E(-1 \mid 4)$.
+                </div>
+                <div class="solution-step">
+                    <strong>2. Schritt: Grundseite $AE$ wählen</strong><br>
+                    Da $A$ und $E$ beide den $y$-Wert $4$ haben, ist die Strecke $AE$ waagrecht.<br>
+                    Länge $g = |3 - (-1)| = \mathbf{4}$ Einheiten.
+                </div>
+                <div class="solution-step">
+                    <strong>3. Schritt: Höhe $h$ bestimmen</strong><br>
+                    Der vertikale Abstand von $B(5 \mid -2)$ zur Linie $y=4$ ist:<br>
+                    $h = |4 - (-2)| = \mathbf{6}$ Einheiten.
+                </div>
+                <div class="solution-step border-none">
+                    <strong>4. Schritt: Ausrechnen</strong><br>
+                    $A = \frac{1}{2} \cdot g \cdot h = \frac{1}{2} \cdot 4 \cdot 6 = \mathbf{12}$
+                </div>
+            </div>
+            <p class="font-bold">Resultat b):</p>
+            <div class="result-box">12</div>
+
+            <div id="container-q2" class="mt-8 flex justify-center text-center">
+                <div class="w-full max-w-md bg-white p-4 rounded-2xl shadow-inner border border-slate-100">
+                    <svg viewBox="0 0 320 240" class="w-full h-auto">
+                        <g transform="translate(100, 100) scale(18, -18)">
+                            <!-- Axis -->
+                            <line x1="-3" y1="4" x2="7" y2="4" stroke="#94a3b8" stroke-width="0.05"
+                                stroke-dasharray="0.2,0.2" />
+                            <!-- Triangle -->
+                            <polygon points="3,4 5,-2 -1,4" fill="#e0e7ff" stroke="#4338ca" stroke-width="0.15" />
+                            <!-- Base label -->
+                            <line x1="-1" y1="4.5" x2="3" y2="4.5" stroke="#4338ca" stroke-width="0.05" />
+                            <!-- Height label -->
+                            <line x1="5" y1="4" x2="5" y2="-2" stroke="#ef4444" stroke-width="0.1"
+                                stroke-dasharray="0.2,0.2" />
+                            <!-- Points -->
+                            <circle cx="3" cy="4" r="0.3" fill="#1e293b" /> <text x="3.2" y="4.5" font-size="0.8"
+                                transform="scale(1,-1)">A</text>
+                            <circle cx="-1" cy="4" r="0.3" fill="#1e293b" /> <text x="-2" y="4.5" font-size="0.8"
+                                transform="scale(1,-1)">E</text>
+                            <circle cx="5" cy="-2" r="0.3" fill="#1e293b" /> <text x="5.2" y="-1.5" font-size="0.8"
+                                transform="scale(1,-1)">B</text>
+                            <text x="5.2" y="2" font-size="0.8" fill="#ef4444" transform="scale(1,-1)">h=6</text>
+                            <text x="0.5" y="5.5" font-size="0.8" fill="#4338ca" transform="scale(1,-1)">g=4</text>
+                        </g>
+                    </svg>
+                    <p class="text-xs text-slate-400 mt-2">Geometrische Zerlegung: Grundseite auf y=4, Höhe via
+                        y-Differenz.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part c -->
+        <div v-if="currentTab === 'q3'" class="animate-fadeIn space-y-6">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">c) Gleiche Abstände</h2>
+            <div class="math-box">
+                <div class="solution-step">
+                    <strong>Theorie:</strong> Alle Punkte, die von $A$ und $B$ gleich weit entfernt sind, liegen auf der
+                    **Mittelsenkrechten** der Strecke $AB$.
+                </div>
+                <div class="solution-step">
+                    <strong>Punkt 1: Der Mittelpunkt (M)</strong><br>
+                    $M_{AB} = \left( \frac{3+5}{2} \mid \frac{4+(-2)}{2} \right) = \mathbf{(4 \mid 1)}$.
+                </div>
+                <div class="solution-step">
+                    <strong>Punkt 2: Ein weiterer beliebiger Punkt</strong><br>
+                    Da wir bei (a) bereits orthogonale Verschiebungen hatten: Mitten auf der Senkrechten liegt z.B. $M +
+                    \text{Verschiebung}$.<br>
+                    Nutzen wir $M(4 \mid 1) + (3 \mid 1) = \mathbf{(7 \mid 2)}$ oder $M(4 \mid 1) - (3 \mid 1) =
+                    \mathbf{(1 \mid 0)}$.
+                </div>
+            </div>
+            <p class="font-bold">Mögliche Lösungen (Wähle zwei):</p>
+            <div class="flex gap-4">
+                <div class="result-box">(4 | 1)</div>
+                <div class="result-box">(7 | 2)</div>
+                <div class="result-box">(1 | 0)</div>
+            </div>
+
+            <div id="container-q3" class="mt-8 flex justify-center">
+                <div class="w-full max-w-md bg-white p-4 rounded-2xl shadow-inner border border-slate-100 text-center">
+                    <svg viewBox="0 0 320 220" class="w-full h-auto">
+                        <g transform="translate(140, 110) scale(18, -18)">
+                            <!-- Strecke AB -->
+                            <line x1="3" y1="4" x2="5" y2="-2" stroke="#cbd5e1" stroke-width="0.05" />
+                            <!-- Mittelsenkrechte -->
+                            <line x1="-2" y1="-1" x2="10" y2="3" stroke="#10b981" stroke-width="0.12" />
+                            <!-- Points -->
+                            <circle cx="3" cy="4" r="0.3" fill="#94a3b8" />
+                            <circle cx="5" cy="-2" r="0.3" fill="#94a3b8" />
+                            <!-- Midpoint and other solutions -->
+                            <circle cx="4" cy="1" r="0.35" fill="#10b981" /> <text x="4.4" y="0.8" font-size="0.8"
+                                transform="scale(1,-1)" fill="#047857">M(4|1)</text>
+                            <circle cx="7" cy="2" r="0.35" fill="#10b981" /> <text x="7.4" y="1.8" font-size="0.8"
+                                transform="scale(1,-1)" fill="#047857">(7|2)</text>
+                            <circle cx="1" cy="0" r="0.35" fill="#10b981" /> <text x="1.4" y="-0.2" font-size="0.8"
+                                transform="scale(1,-1)" fill="#047857">(1|0)</text>
+                        </g>
+                    </svg>
+                    <p class="text-xs text-slate-400 mt-2">Die Mittelsenkrechte (grün) enthält alle Punkte mit gleichem
+                        Abstand zu A und B.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div v-if="currentTab === 'summary'" class="animate-fadeIn space-y-8">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">Zusammenfassung & Training</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-slate-800">💡 Wichtigste Methoden</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 font-bold">✔</span>
+                            <span><strong>Orthogonalität:</strong> Ein Vektor $(x, y)$ gedreht um 90° wird zu $(-y, x)$
+                                oder $(y, -x)$.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 font-bold">✔</span>
+                            <span><strong>Dreiecksfläche:</strong> Nutze horizontale/vertikale Grundseiten für
+                                einfachste Berechnung ($A = \frac{g \cdot h}{2}$).</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-xl">
+                    <h3 class="text-xl font-semibold mb-2 text-indigo-300">🚩 Endergebnisse</h3>
+                    <div class="space-y-1 font-mono">
+                        <p>a) C(11|0), D(9|6)</p>
+                        <p>b) Fläche = 12</p>
+                        <p>c) M(4|1), P(7|2), ...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="container-summary"
+                class="h-40 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center p-4">
+                <svg viewBox="0 0 400 120" class="w-full h-full">
+                    <!-- Concept icons -->
+                    <rect x="50" y="30" width="40" height="40" fill="none" stroke="#4f46e5" stroke-width="2"
+                        transform="rotate(15, 70, 50)" />
+                    <text x="70" y="95" text-anchor="middle" font-size="12" fill="#4f46e5"
+                        font-weight="bold">Quadrat</text>
+
+                    <polygon points="180,30 220,70 160,70" fill="none" stroke="#4f46e5" stroke-width="2" />
+                    <text x="190" y="95" text-anchor="middle" font-size="12" fill="#4f46e5"
+                        font-weight="bold">Dreieck</text>
+
+                    <line x1="280" y1="30" x2="340" y2="70" stroke="#94a3b8" stroke-width="1" />
+                    <line x1="290" y1="70" x2="330" y2="30" stroke="#10b981" stroke-width="2" />
+                    <text x="310" y="95" text-anchor="middle" font-size="12" fill="#10b981"
+                        font-weight="bold">Abstand</text>
+                </svg>
+            </div>
+
+            <!-- Practice -->
+            <div class="bg-white border-2 border-indigo-100 rounded-3xl p-8">
+                <h3 class="text-2xl font-bold text-indigo-900 mb-6 flex items-center gap-2"><span>🥋</span>Übe den
+                    Transfer</h3>
+                <div class="bg-slate-50 p-6 rounded-xl border">
+                    <p class="font-bold mb-2 text-lg">Selbsttest:</p>
+                    <p>Gegeben sind $P(0 \mid 0)$ und $Q(6 \mid 0)$. Finde einen Punkt $R$ auf der **y-Achse**, der von
+                        $P$ und $Q$ gleich weit entfernt ist.</p>
+                    <details class="mt-4">
+                        <summary class="cursor-pointer text-indigo-600 font-bold">Lösung anzeigen</summary>
+                        <div class="mt-4 p-4 bg-white rounded border-l-4 border-green-500">
+                            Punkte mit gleichen Abständen liegen auf $x = 3$. Schnitt mit y-Achse ($x=0$) ist hier nicht
+                            möglich! Keine Lösung auf der y-Achse.
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <div id="container-summary"
+                class="h-24 bg-slate-100 rounded-xl flex items-center justify-center italic text-slate-500">
+                Visualisierung der Zusammenfassung
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const tabs = [
+                    { id: 'intro', label: 'Analyse' },
+                    { id: 'q1', label: 'a) Quadrat' },
+                    { id: 'q2', label: 'b) Dreieck' },
+                    { id: 'q3', label: 'c) Abstände' },
+                    { id: 'summary', label: 'Zusammenfassung' }
+                ];
+
+                const triggerMath = () => {
+                    nextTick(() => {
+                        if (window.renderMathInElement) {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '$', right: '$', display: false }
+                                ]
+                            });
+                        }
+                    });
+                };
+
+                onMounted(() => {
+                    triggerMath();
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: 1, totalStages: 5 });
+                });
+
+                watch(currentTab, (newVal) => {
+                    const idx = tabs.findIndex(t => t.id === newVal) + 1;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: 5 });
+                    triggerMath();
+                });
+
+                window.__eduNestUIStateProvider = () => {
+                    const idx = tabs.findIndex(t => t.id === currentTab.value) + 1;
+                    return {
+                        stageIndex: idx,
+                        totalStages: tabs.length,
+                        currentStage: tabs[idx - 1].label
+                    };
+                };
+
+                return { currentTab, tabs };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 2 - Bruchrechnen | AMS Aufnahme 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            color: #d946ef;
+            background-color: #fdf4ff;
+        }
+
+        .tab-btn.active {
+            color: #d946ef;
+            border-bottom-color: #d946ef;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 300px;
+            background: #ffffff;
+            border: 1px solid #f5d0fe;
+            border-radius: 0.75rem;
+            margin-top: 1.5rem;
+            position: relative;
+        }
+
+        .math-box {
+            background: #fdf4ff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #d946ef;
+            margin: 1rem 0;
+        }
+
+        .solution-step {
+            margin-bottom: 0.75rem;
+            padding-left: 1rem;
+            border-left: 2px solid #f5d0fe;
+        }
+
+        .result-box {
+            border: 2px solid #d946ef;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            font-weight: bold;
+            color: #701a75;
+            background: #fdf4ff;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8 max-w-5xl mx-auto">
+
+    <!-- 1:1 Originalaufgabe -->
+    <div id="static-math" class="card" v-pre>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-900">Aufgabe 2</h1>
+            <span class="bg-fuchsia-100 text-fuchsia-700 px-3 py-1 rounded-full text-sm font-bold">4 Punkte</span>
+        </div>
+        <p class="mb-6 text-slate-700 font-medium">Berechne und gib das Ergebnis als vollständig gekürzten Bruch an.</p>
+
+        <div class="space-y-12">
+            <div class="flex items-start gap-4">
+                <span class="font-bold text-fuchsia-600">a)</span>
+                <div class="flex-1 text-lg">
+                    $\left( \frac{3}{2} + \frac{1}{3} \right) \cdot \left( \frac{3}{2} - \frac{1}{3} \right)$
+                </div>
+                <span class="text-slate-400 text-sm">(2)</span>
+            </div>
+
+            <div class="flex items-start gap-4 border-t pt-8">
+                <span class="font-bold text-fuchsia-600">b)</span>
+                <div class="flex-1 text-lg">
+                    $\left( \frac{66}{11} + \frac{1}{4} \right) : \frac{5}{2}$
+                </div>
+                <span class="text-slate-400 text-sm">(2)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interaktive Lösung -->
+    <div id="app" v-cloak class="card border-t-4 border-fuchsia-500">
+        <div class="flex border-b mb-8 overflow-x-auto">
+            <button v-for="tab in tabs" :key="tab.id" @click="currentTab = tab.id"
+                :class="['tab-btn whitespace-nowrap', currentTab === tab.id ? 'active' : '']">
+                {{ tab.label }}
+            </button>
+        </div>
+
+        <!-- Tab: Intro -->
+        <div v-if="currentTab === 'intro'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-fuchsia-800">Bruchrechnen mit System</h2>
+            <p class="text-slate-600 mb-6">
+                In dieser Aufgabe geht es um die geschickte Anwendung von Rechenregeln. Wir sehen Klammern, Produkte und
+                Divisionen von Brüchen.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-fuchsia-50 p-6 rounded-xl border border-fuchsia-100">
+                    <h3 class="font-bold text-fuchsia-800 mb-2">🎯 Lernziele</h3>
+                    <ul class="list-disc list-inside text-sm text-fuchsia-700 space-y-2">
+                        <li>Brüche auf den Hauptnenner bringen</li>
+                        <li>Anwendung der 3. Binomischen Formel (optional aber effizient)</li>
+                        <li>Division durch Kehrwert-Multiplikation</li>
+                        <li>Erkennen von kürzbaren Brüchen (66/11)</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-2">💡 Strategie</h3>
+                    <p class="text-sm text-slate-600">
+                        Bevor du rechnest: Prüfe, ob Brüche gekürzt werden können! $66/11$ ist eine ganze Zahl – das
+                        vereinfacht die Rechnung enorm.
+                    </p>
+                </div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="canvas-intro"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab: a -->
+        <div v-if="currentTab === 'a'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-fuchsia-800">Lösungsteil a): Produkt von Summe und Differenz</h2>
+            <p class="mb-4">Es gibt zwei Wege: Den direkten Weg über die Klammern oder den eleganten Weg über die
+                binomische Formel.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="math-box">
+                    <h4 class="font-bold text-fuchsia-700 mb-2">Weg 1: Klammern zuerst</h4>
+                    <div class="solution-step">1. Klammer: $\frac{3}{2} + \frac{1}{3} = \frac{9}{6} + \frac{2}{6} =
+                        \frac{11}{6}$</div>
+                    <div class="solution-step">2. Klammer: $\frac{3}{2} - \frac{1}{3} = \frac{9}{6} - \frac{2}{6} =
+                        \frac{7}{6}$</div>
+                    <div class="solution-step">Multiplikation: $\frac{11}{6} \cdot \frac{7}{6} = \frac{77}{36}$</div>
+                </div>
+                <div class="math-box bg-slate-50 border-slate-300">
+                    <h4 class="font-bold text-slate-700 mb-2">Weg 2: Binomische Formel</h4>
+                    <div class="solution-step">$(a+b)(a-b) = a^2 - b^2$</div>
+                    <div class="solution-step">$\left(\frac{3}{2}\right)^2 - \left(\frac{1}{3}\right)^2 = \frac{9}{4} -
+                        \frac{1}{9}$</div>
+                    <div class="solution-step">Hauptnenner 36: $\frac{81}{36} - \frac{4}{36} = \frac{77}{36}$</div>
+                </div>
+            </div>
+
+            <p class="font-bold mt-4">Antwort:</p>
+            <div class="result-box">$\frac{77}{36}$</div>
+
+            <div class="canvas-container">
+                <canvas id="canvas-a"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab: b -->
+        <div v-if="currentTab === 'b'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-fuchsia-800">Lösungsteil b): Division von Brüchen</h2>
+            <p class="mb-4">Hier ist das Erkennen der Ganzzahl der Schlüssel zum Erfolg.</p>
+
+            <div class="math-box">
+                <div class="solution-step">1. Vereinfachen: $\frac{66}{11} = 6$</div>
+                <div class="solution-step">2. Klammerinhalt: $6 + \frac{1}{4} = \frac{24}{4} + \frac{1}{4} =
+                    \frac{25}{4}$</div>
+                <div class="solution-step">3. Division durch $\frac{5}{2}$: $\frac{25}{4} : \frac{5}{2}$</div>
+                <div class="solution-step">Multiplikation mit Kehrwert: $\frac{25}{4} \cdot \frac{2}{5}$</div>
+                <div class="solution-step">Kürzen während der Rechnung: $\frac{5}{2} \cdot \frac{1}{1} = \frac{5}{2}$
+                </div>
+            </div>
+
+            <p class="font-bold">Antwort:</p>
+            <div class="result-box">$\frac{5}{2}$ <span class="text-slate-500 font-normal">(oder $2 \frac{1}{2}$)</span>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="canvas-b"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab: Summary -->
+        <div v-if="currentTab === 'summary'" class="animate-fadeIn">
+            <h2 class="text-xl font-bold mb-4 text-fuchsia-800">Zusammenfassung & Training</h2>
+            <div class="space-y-4">
+                <div class="p-6 bg-slate-900 text-white rounded-xl shadow-lg border-l-4 border-fuchsia-500">
+                    <h3 class="font-bold text-fuchsia-400 mb-4 flex items-center gap-2">
+                        <span>💡</span> Wichtige Erkenntnisse
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="bg-slate-800 p-3 rounded">
+                            <h4 class="text-fuchsia-200 font-bold mb-1">Kürzen spart Arbeit</h4>
+                            <p class="text-slate-400">Erkenne Verhältnisse wie $66/11=6$ sofort, um grosse Zahlen zu
+                                vermeiden.</p>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded">
+                            <h4 class="text-fuchsia-200 font-bold mb-1">Kehrwert bei Division</h4>
+                            <p class="text-slate-400">Vergiss nie: Bruch durch Bruch bedeutet "mal den Kehrwert".</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border-2 border-fuchsia-100 rounded-xl bg-white">
+                    <h4 class="font-bold text-fuchsia-800 mb-2">🔄 Übung macht den Meister</h4>
+                    <p class="text-slate-600 text-sm italic">
+                        Berechne: $\left( \frac{1}{2} + \frac{1}{4} \right) \cdot \frac{8}{3}$
+                    </p>
+                </div>
+            </div>
+            <div class="canvas-container mt-6">
+                <canvas id="canvas-summary"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const tabs = [
+                    { id: 'intro', label: 'Einführung' },
+                    { id: 'a', label: 'a) Differenz-Produkt' },
+                    { id: 'b', label: 'b) Division' },
+                    { id: 'summary', label: 'Zusammenfassung' }
+                ];
+
+                const triggerMath = () => {
+                    if (window.renderMathInElement) {
+                        try {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '\\[', right: '\\]', display: true },
+                                    { left: '$', right: '$', display: false },
+                                    { left: '\\(', right: '\\)', display: false }
+                                ],
+                                throwOnError: false
+                            });
+                        } catch (e) { console.error("KaTeX failed", e); }
+                    } else {
+                        setTimeout(triggerMath, 100);
+                    }
+                };
+
+                const drawIntro = (ctx, w, h) => {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.textAlign = 'center';
+                    ctx.font = 'bold 24px Inter';
+                    ctx.fillStyle = '#701a75';
+                    ctx.fillText('Bruch-Operationen', w / 2, h / 2 - 20);
+                    ctx.font = '16px Inter';
+                    ctx.fillStyle = '#64748b';
+                    ctx.fillText('Punkt-vor-Strich & Klammern', w / 2, h / 2 + 10);
+                };
+
+                const drawA = (ctx, w, h) => {
+                    ctx.clearRect(0, 0, w, h);
+                    // Geometric representation of (a+b)(a-b)
+                    const cx = w / 2, cy = h / 2;
+                    const a = 100, b = 30;
+
+                    // Large square a^2
+                    ctx.strokeStyle = '#d946ef';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(cx - a / 2, cy - a / 2, a, a);
+
+                    // Subtract small square b^2
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = '#fdf4ff';
+                    ctx.fillRect(cx - a / 2, cy - a / 2, a - b, a + b);
+                    ctx.strokeRect(cx - a / 2, cy - a / 2, a - b, a + b);
+
+                    ctx.fillStyle = '#701a75';
+                    ctx.font = '14px Inter';
+                    ctx.fillText('a² - b²', cx, cy + a / 2 + 30);
+                };
+
+                const drawB = (ctx, w, h) => {
+                    ctx.clearRect(0, 0, w, h);
+                    // Bars representation for 25/4 : 5/2
+                    const barW = 300, barH = 30;
+                    const x = (w - barW) / 2;
+
+                    // Bar 1: 25/4 (approx 6.25 units)
+                    ctx.fillStyle = '#f0abfc';
+                    ctx.fillRect(x, h / 2 - 40, barW, barH);
+                    ctx.strokeRect(x, h / 2 - 40, barW, barH);
+                    ctx.fillStyle = '#000';
+                    ctx.fillText('25/4', x - 40, h / 2 - 20);
+
+                    // Bar 2: 5/2 (dividing segments)
+                    const segmentW = barW / 2.5; // Since (25/4) / (5/2) = 2.5
+                    ctx.fillStyle = '#d946ef';
+                    ctx.fillRect(x, h / 2 + 10, segmentW, barH);
+                    ctx.strokeRect(x, h / 2 + 10, segmentW, barH);
+                    ctx.fillRect(x + segmentW, h / 2 + 10, segmentW, barH);
+                    ctx.strokeRect(x + segmentW, h / 2 + 10, segmentW, barH);
+                    ctx.fillRect(x + 2 * segmentW, h / 2 + 10, segmentW / 2, barH);
+                    ctx.strokeRect(x + 2 * segmentW, h / 2 + 10, segmentW / 2, barH);
+
+                    ctx.fillText('5/2', x - 40, h / 2 + 30);
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Ergebnis: 2.5 mal enthalten', w / 2, h / 2 + 70);
+                };
+
+                const render = () => {
+                    const canvasId = `canvas-${currentTab.value}`;
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+
+                    if (currentTab.value === 'intro') drawIntro(ctx, canvas.width, canvas.height);
+                    if (currentTab.value === 'a') drawA(ctx, canvas.width, canvas.height);
+                    if (currentTab.value === 'b') drawB(ctx, canvas.width, canvas.height);
+                };
+
+                onMounted(() => {
+                    setTimeout(render, 100);
+                    triggerMath();
+                });
+
+                watch(currentTab, () => {
+                    setTimeout(render, 50);
+                    setTimeout(triggerMath, 100);
+                });
+
+                return { currentTab, tabs };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

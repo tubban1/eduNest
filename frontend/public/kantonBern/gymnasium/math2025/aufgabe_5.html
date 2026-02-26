@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufgabe 5 - Sechseck-Gitter | AMS Gymiprüfung 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: #64748b;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+            background: #f5f3ff;
+        }
+
+        .math-box {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border-left: 5px solid #4f46e5;
+            margin: 1.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .solution-step {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+            border-left: 2px solid #cbd5e1;
+        }
+
+        .result-box {
+            border: 2px solid #4f46e5;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            font-weight: 700;
+            color: #1e1b4b;
+            background: #f5f3ff;
+            font-family: monospace;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        .hex-bg {
+            fill: #f8fafc;
+            stroke: #3f3f46;
+            stroke-width: 1;
+        }
+
+        .hex-shaded {
+            fill: #94a3b8;
+            stroke: #1e293b;
+            stroke-width: 1;
+        }
+
+        .hex-outline {
+            fill: none;
+            stroke: #0f172a;
+            stroke-width: 2.5;
+            stroke-linejoin: round;
+        }
+
+        .inner-line {
+            stroke: #64748b;
+            stroke-width: 0.5;
+            stroke-dasharray: 2, 1;
+        }
+    </style>
+</head>
+
+<body class="p-6 md:p-12 max-w-6xl mx-auto">
+
+    <!-- STATIC PROBLEM AREA -->
+    <div id="static-math" class="card" v-pre>
+        <div class="flex justify-between items-start mb-8 border-b pb-6">
+            <h1 class="text-3xl font-bold text-slate-900">Aufgabe 5</h1>
+            <span class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-bold shadow-sm">4
+                Punkte</span>
+        </div>
+
+        <div class="text-lg leading-relaxed space-y-4 mb-10">
+            <p>Ein reguläres Sechseck besteht aus 6 gleich grossen, gleichseitigen Dreiecken. Jedes dieser Dreiecke hat
+                einen Flächeninhalt von $1$. Ein Sechseck hat somit einen Flächeninhalt von $6$.</p>
+        </div>
+
+        <div
+            class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-slate-50 p-8 rounded-3xl border border-slate-200">
+            <div class="space-y-8">
+                <div class="flex items-start gap-4">
+                    <span class="font-bold text-indigo-600 text-xl font-mono">a)</span>
+                    <p class="text-xl font-medium pt-0.5">Berechne den Inhalt der grau gefärbten Fläche.</p>
+                </div>
+                <div class="flex items-start gap-4">
+                    <span class="font-bold text-indigo-600 text-xl font-mono">b)</span>
+                    <p class="text-xl font-medium pt-0.5">Wie viel Prozent der gesamten Figur sind grau gefärbt? Gib das
+                        Resultat auf eine Dezimalstelle genau an.</p>
+                </div>
+            </div>
+
+            <!-- Problem Diagram -->
+            <div class="flex justify-center">
+                <div class="w-full max-w-[360px] bg-white p-6 rounded-2xl shadow-inner border border-slate-100">
+                    <svg viewBox="0 0 320 320" class="w-full h-auto">
+                        <defs>
+                            <!-- Flat-top hex with R=22, Height=38.1 (22*sqrt(3)) -->
+                            <polygon id="h" points="22,0 11,-19.05 -11,-19.05 -22,0 -11,19.05 11,19.05" />
+                        </defs>
+                        <g transform="translate(160, 160)">
+                            <!-- 19-cell honeycomb grid (R=22, steps 33/19.05) -->
+                            <g class="hex-grid">
+                                <!-- Core -->
+                                <use href="#h" x="0" y="0" class="hex-bg" />
+                                <!-- Inner Ring (6) -->
+                                <use href="#h" x="33" y="19.05" class="hex-bg" />
+                                <use href="#h" x="33" y="-19.05" class="hex-bg" />
+                                <use href="#h" x="-33" y="19.05" class="hex-bg" />
+                                <use href="#h" x="-33" y="-19.05" class="hex-bg" />
+                                <use href="#h" x="0" y="38.1" class="hex-bg" />
+                                <use href="#h" x="0" y="-38.1" class="hex-bg" />
+                                <!-- Outer Ring (12) -->
+                                <use href="#h" x="66" y="0" class="hex-bg" />
+                                <use href="#h" x="-66" y="0" class="hex-bg" />
+                                <use href="#h" x="66" y="38.1" class="hex-bg" /> <!-- P4 Center -->
+                                <use href="#h" x="66" y="-38.1" class="hex-bg" />
+                                <use href="#h" x="-66" y="38.1" class="hex-bg" /> <!-- P5 Center -->
+                                <use href="#h" x="-66" y="-38.1" class="hex-bg" />
+                                <use href="#h" x="33" y="57.15" class="hex-bg" />
+                                <use href="#h" x="33" y="-57.15" class="hex-bg" />
+                                <use href="#h" x="-33" y="57.15" class="hex-bg" />
+                                <use href="#h" x="-33" y="-57.15" class="hex-bg" />
+                                <use href="#h" x="0" y="76.2" class="hex-bg" />
+                                <use href="#h" x="0" y="-76.2" class="hex-bg" /> <!-- P1 Center -->
+                            </g>
+
+                            <!-- Shaded Path: P1 -> P2 -> P6 -> P3 -> P4 -> P5 -> P1 -->
+                            <path class="hex-shaded" d="
+                                    M 0, -76.2
+                                    L 44, -76.2
+                                    L 0, 0
+                                    L 88, 0
+                                    L 66, 38.1
+                                    L -66, 38.1
+                                    Z"
+                                style="fill: #94a3b8; fill-opacity: 0.7; stroke: #0f172a; stroke-width: 2.5; stroke-linejoin: round;" />
+
+                            <!-- Vertex Markers for alignment check (P1-P6) -->
+                            <g id="markers" font-size="9" font-weight="bold">
+                                <circle cx="0" cy="-76.2" r="3" fill="#ef4444" /> <text x="4" y="-78"
+                                    fill="#ef4444">P1</text>
+                                <circle cx="44" cy="-76.2" r="3" fill="#ef4444" /> <text x="48" y="-78"
+                                    fill="#ef4444">P2</text>
+                                <circle cx="0" cy="0" r="3" fill="#ef4444" /> <text x="4" y="12"
+                                    fill="#ef4444">P6</text>
+                                <circle cx="88" cy="0" r="3" fill="#ef4444" /> <text x="92" y="4"
+                                    fill="#ef4444">P3</text>
+                                <circle cx="66" cy="38.1" r="3" fill="#ef4444" /> <text x="70" y="48"
+                                    fill="#ef4444">P4</text>
+                                <circle cx="-66" cy="38.1" r="3" fill="#ef4444" /> <text x="-80" y="48"
+                                    fill="#ef4444">P5</text>
+                            </g>
+
+                            <!-- Internal grid/seam lines -->
+                            <g stroke="#475569" stroke-width="0.5" stroke-dasharray="2,1">
+                                <line x1="22" y1="-38.1" x2="66" y2="-38.1" />
+                                <line x1="44" y1="0" x2="66" y2="38.1" />
+                                <line x1="0" y1="0" x2="-22" y2="38.1" />
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTERACTIVE SOLUTION AREA -->
+    <div id="app" v-cloak class="card border-t-8 border-indigo-600">
+        <div class="flex border-b mb-10 overflow-x-auto">
+            <button v-for="tab in tabs" :key="tab.id" @click="currentTab = tab.id"
+                :class="['tab-btn whitespace-nowrap text-lg px-8', currentTab === tab.id ? 'active' : '']">
+                {{ tab.label }}
+            </button>
+        </div>
+
+        <!-- Tab: Intro -->
+        <div v-if="currentTab === 'intro'" class="animate-fadeIn space-y-6">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">Heuristik & Analyse</h2>
+            <div class="text-lg leading-relaxed space-y-4">
+                <p>Die Aufgabe basiert auf der Zerlegung von Flächen in einem regelmässigen Sechseck-Gitter
+                    (Honeycomb-Grid). Wir nutzen die kleinste Einheit:</p>
+                <div class="math-box">
+                    <strong>Einheit:</strong> 1 gleichseitiges Dreieck = Flächeninhalt $1$.<br>
+                    <strong>Ganzes Sechseck:</strong> 6 Dreiecke = Flächeninhalt $6$.
+                </div>
+                <p><strong>Die Strategie:</strong></p>
+                <ul class="list-disc pl-8 space-y-2">
+                    <li>Wir zerlegen die graue Figur in ganze Sechsecke und Teilsegmente.</li>
+                    <li>Für den Prozentanteil bestimmen wir die Fläche der gesamten Figur (alle 19 Sechsecke).</li>
+                </ul>
+            </div>
+            <div class="flex justify-center mt-8">
+                <div id="container-intro"
+                    class="w-full max-w-sm h-48 border rounded-xl bg-slate-50 flex items-center justify-center">
+                    <!-- Intro Visual: Unit breakdown -->
+                    <svg viewBox="0 0 100 100" class="h-full">
+                        <polygon points="50,10 84.6,30 84.6,70 50,90 15.4,70 15.4,30" fill="#f1f5f9" stroke="#1e293b" />
+                        <line x1="50" y1="50" x2="50" y2="10" stroke="#1e293b" stroke-width="0.5" />
+                        <line x1="50" y1="50" x2="84.6" y2="30" stroke="#1e293b" stroke-width="0.5" />
+                        <line x1="50" y1="50" x2="84.6" y2="70" stroke="#1e293b" stroke-width="0.5" />
+                        <line x1="50" y1="50" x2="50" y2="90" stroke="#1e293b" stroke-width="0.5" />
+                        <line x1="50" y1="50" x2="15.4" y2="70" stroke="#1e293b" stroke-width="0.5" />
+                        <line x1="50" y1="50" x2="15.4" y2="30" stroke="#1e293b" stroke-width="0.5" />
+                        <text x="50" y="55" text-anchor="middle" font-size="8" fill="#4f46e5">6 × △</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: a) Gray Area -->
+        <div v-if="currentTab === 'q1'" class="animate-fadeIn space-y-6">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">a) Inhalt der grauen Fläche</h2>
+            <div class="math-box">
+                <div class="solution-step">
+                    <strong>1. Schritt: Ganze Sechsecke zählen</strong><br>
+                    Die graue Figur umschliesst insgesamt 6 volle Sechsecke in ihrem Pfad.<br>
+                    $A_{voll} = 6 \text{ Sechsecke} \cdot 6 \text{ (Inhalt/Sechseck)} = 36$
+                </div>
+                <div class="solution-step">
+                    <strong>2. Schritt: Teilstücke (Dreiecke) zählen</strong><br>
+                    An den beiden Enden (Spitzen) der Figur ragen jeweils 2 Dreiecke über die Sechseck-Zentren
+                    hinaus.<br>
+                    $A_{Teil} = 2 \text{ Segmente} \cdot 2 \text{ Dreiecke} = 4$
+                </div>
+                <div class="solution-step border-none">
+                    <strong>3. Schritt: Gesamtsumme</strong><br>
+                    $A_{grau} = 36 + 4 = 40$
+                </div>
+            </div>
+            <p class="font-bold">Endresultat a):</p>
+            <div class="result-box">40</div>
+
+            <div id="container-q1" class="mt-8 flex justify-center">
+                <div class="p-4 bg-white rounded-xl shadow-inner border border-slate-200">
+                    <p class="text-xs text-center text-slate-500 mb-2">Zerlegung der grauen Fläche</p>
+                    <svg viewBox="0 0 200 120" class="w-64 h-auto">
+                        <!-- Simplified representation of the 40 unit area -->
+                        <rect x="20" y="20" width="120" height="40" fill="#94a3b8" stroke="#0f172a" />
+                        <path d="M 140,20 L 160,40 L 140,60 Z" fill="#94a3b8" stroke="#0f172a" />
+                        <text x="80" y="45" text-anchor="middle" fill="#fff" font-weight="bold">36 + 4</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: b) Percentage -->
+        <div v-if="currentTab === 'q2'" class="animate-fadeIn space-y-6">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">b) Prozentualer Anteil</h2>
+            <div class="math-box">
+                <div class="solution-step">
+                    <strong>1. Schritt: Gesamtfläche berechnen</strong><br>
+                    Die Figur ist in ein Gitter aus 19 Sechsecken eingebettet.<br>
+                    $A_{gesamt} = 19 \text{ Sechsecke} \cdot 6 = 114$ Dreieckseinheiten.
+                </div>
+                <div class="solution-step">
+                    <strong>2. Schritt: Anteil bestimmen</strong><br>
+                    Anteil $p = \frac{A_{grau}}{A_{gesamt}} \cdot 100$
+                </div>
+                <div class="solution-step">
+                    <strong>3. Schritt: Rechnung & Rundung</strong><br>
+                    $p = \frac{40}{114} \approx 0.350877...$<br>
+                    In Prozent: $35.0877... \%$
+                </div>
+                <div class="solution-step border-none">
+                    <strong>4. Schritt: Auf eine Dezimalstelle runden</strong><br>
+                    $35.087 \% \rightarrow \mathbf{35.1\%}$
+                </div>
+            </div>
+            <p class="font-bold">Endresultat b):</p>
+            <div class="result-box">35.1%</div>
+
+            <div id="container-q2" class="mt-8 flex justify-center">
+                <div class="p-6 bg-indigo-50 rounded-2xl border-2 border-dashed border-indigo-200 text-center">
+                    <p class="text-indigo-900 font-bold mb-2">Verhältnisansicht</p>
+                    <div class="w-64 h-6 bg-slate-200 rounded-full overflow-hidden flex">
+                        <div class="h-full bg-indigo-500" style="width: 35.1%"></div>
+                    </div>
+                    <p class="mt-2 text-sm text-indigo-700">Grau (40) / Gesamt (114)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Summary & Practice -->
+        <div v-if="currentTab === 'summary'" class="animate-fadeIn space-y-8">
+            <h2 class="text-2xl font-bold text-indigo-900 border-b pb-2">Zusammfasssung & Training</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-slate-800">💡 Schlüsselerkenntnisse</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 font-bold">✔</span>
+                            <span><strong>Einheiten-Check:</strong> Immer alles auf die kleinste Einheit (Dreieck = 1)
+                                bringen.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 font-bold">✔</span>
+                            <span><strong>Geometrische Zerlegung:</strong> Unregelmässige Formen im Gitter lassen sich
+                                fast immer in regelmässige Teilstücke zerlegen.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-500 font-bold">!</span>
+                            <span><strong>Rundungsregel:</strong> Achte genau auf die Aufgabenstellung (hier: 1
+                                Dezimalstelle).</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-indigo-900 text-white p-6 rounded-2xl shadow-xl">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-200">🚩 Ergebnisse im Überblick</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between border-b border-indigo-800 pb-2">
+                            <span>Graue Fläche (a)</span>
+                            <span class="font-mono text-xl">40</span>
+                        </div>
+                        <div class="flex justify-between border-b border-indigo-800 pb-2">
+                            <span>Gesamtfläche Gitter</span>
+                            <span class="font-mono text-xl">114</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-yellow-400">
+                            <span>Prozentanteil (b)</span>
+                            <span class="font-mono text-2xl">35.1%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Practice Section -->
+            <div class="bg-white border-2 border-indigo-100 rounded-3xl p-8 mt-12">
+                <h3 class="text-2xl font-bold text-indigo-900 mb-6 flex items-center gap-2">
+                    <span>🥋</span>Practice
+                </h3>
+                <div class="space-y-6">
+                    <div class="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                        <p class="font-bold mb-4">Übungsaufgabe:</p>
+                        <p class="text-lg">Stell dir vor, die graue Figur würde um **2 weitere ganze Sechsecke**
+                            vergrössert. Wie hoch wäre dann der prozentuale Anteil an der gesamten 114er-Figur?</p>
+                        <details class="mt-4 group">
+                            <summary class="cursor-pointer text-indigo-600 font-bold group-open:hidden">Lösungshinweis
+                                anzeigen</summary>
+                            <div class="mt-4 p-4 bg-white rounded-lg border-l-4 border-green-500 animate-fadeIn">
+                                <p><strong>Lösungsschritt:</strong></p>
+                                <ol class="list-decimal pl-6 space-y-2 mt-2">
+                                    <li>Neue Fläche: Current (40) + 2 × 6 (12) = 52.</li>
+                                    <li>Rechnung: $\frac{52}{114} \approx 0.45614...$</li>
+                                    <li>Ergebnis: **45.6%**</li>
+                                </ol>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+
+            <div id="container-summary"
+                class="h-32 bg-slate-100 rounded-xl flex items-center justify-center italic text-slate-500">
+                Visualisierung der Zusammenfassung (Mathematische Reduktion)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, watch, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const currentTab = ref('intro');
+                const tabs = [
+                    { id: 'intro', label: 'Einführung' },
+                    { id: 'q1', label: 'a) Graue Fläche' },
+                    { id: 'q2', label: 'b) Prozentsatz' },
+                    { id: 'summary', label: 'Zusammenfassung' }
+                ];
+
+                const triggerMath = () => {
+                    nextTick(() => {
+                        if (window.renderMathInElement) {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '$', right: '$', display: false }
+                                ]
+                            });
+                        }
+                    });
+                };
+
+                onMounted(() => {
+                    triggerMath();
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: 1, totalStages: 4 });
+                });
+
+                watch(currentTab, (newVal) => {
+                    const idx = tabs.findIndex(t => t.id === newVal) + 1;
+                    window.eduNestRuntime?.dispatchLearningEvent('stage_change', { stageIndex: idx, totalStages: 4 });
+                    triggerMath();
+                });
+
+                // REQUIRED: Runtime UI State Integration
+                window.__eduNestUIStateProvider = () => {
+                    const idx = tabs.findIndex(t => t.id === currentTab.value) + 1;
+                    return {
+                        stageIndex: idx,
+                        totalStages: tabs.length,
+                        currentStage: tabs[idx - 1].label
+                    };
+                };
+
+                return { currentTab, tabs };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
