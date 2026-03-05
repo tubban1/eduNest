@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人没有痛感会怎样</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-red: #ef4444;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #ef4444, #f97316);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #fecaca;
+            background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-red);
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.5rem;
+            border-radius: 3.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .btn-switch {
+            background: #222;
+            padding: 1.5rem 3.5rem;
+            border-radius: 2rem;
+            color: #ddd;
+            font-weight: bold;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            border: 2px solid transparent;
+        }
+
+        .btn-switch.active {
+            background: #ef4444;
+            border-color: white;
+            color: white;
+            box-shadow: 0 0 20px #ef4444;
+        }
+
+        .injury-stats {
+            position: fixed;
+            left: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ef4444;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 2;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-red);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-red);
+        }
+
+        .discovery-tag {
+            background: #b91c1c;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 侧边伤害流 -->
+        <div class="injury-stats" v-if="step >= 2">
+            <div class="text-xs uppercase opacity-60 mb-2">Sensor Readout</div>
+            <div v-if="isSensorOn" class="text-green-400">🛡️ SYSTEM: NOMINAL</div>
+            <div v-else class="text-red-500">🚨 SENSOR: OFFLINE</div>
+            <div class="mt-4">SURFACE_TEMP: {{ surfaceTemp }}°C</div>
+            <div class="mt-1">INTEGRITY: {{ integrity }}%</div>
+            <div v-if="integrity < 70" class="mt-4 text-xs animate-pulse">(! CRITICAL_DAMAGE_DETECTED !)</div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🚑 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">大揭秘!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '试图停用痛觉' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-slate-800 !text-white">
+                    回归守护本能
+                </button>
+            </div>
+        </div>
+
+        <!-- 交互开关面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div @click="toggleSensor" class="btn-switch" :class="{ active: isSensorOn }">
+                {{ isSensorOn ? '痛觉卫兵: 守护中' : '痛觉卫兵: 已撤离' }}
+            </div>
+            <button v-if="!isSensorOn" @click="nextStage" class="next-btn !text-sm !py-3 !px-12 ml-4">开始高温测试</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const isSensorOn = ref(true);
+                const integrity = ref(100);
+                const surfaceTemp = ref(36.5);
+
+                const stages = [
+                    {
+                        title: "不怕疼的世界",
+                        parentWords: "宝贝，是不是觉得如果跌倒、打针、被开水烫都一点感觉没有，世界就像超级马里奥一样，可以无限次‘重开’？",
+                        description: "在这间安全实验室里，住着一个灵敏的‘机器触手’。它能感觉到最细小的热度。观察它的状态。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "静悄悄的毁坏",
+                        parentWords: "疼痛感其实是身体派来的保镖。如果不舒服的感觉消失了，虽然‘心情好’了，但危险是不是也随之而来了？",
+                        description: "现在实验室环境正在变为高温模式。由于有‘痛觉卫兵’，机器手会自动缩回。让我们尝试关掉它。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "撤离‘痛觉卫兵’",
+                        parentWords: "来，点击那个红色按钮！现在卫兵下班了，无论多烫机器手都不会缩回来。这看起来很勇敢。但仔细观察……",
+                        description: "感知被中断。机器手现在毫无畏惧地接触高温。你会发现，虽然它不由于‘疼’而惊叫，但它的零件正在被烧得通红、发生形变。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "发现身体的大救星",
+                        parentWords: "快看！由于撤走了痛感，机器手的完整度（Integrity）掉得太快了！如果它有痛感，刚才那一下它早就躲开了。原来，痛是另一种深沉的爱。",
+                        description: "新发现：疼痛感是大自然给你最严厉、也是最及时的‘救命信号’。它虽然让你哭出来，但成功地阻止了更严重的伤残。你是被‘疼’这种感觉，保护了一辈子的小英雄。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "感谢身体的‘尖叫声’",
+                        parentWords: "以后感到疼的时候，记得对这位‘严厉的保镖’说声谢谢。它是由于爱护你，才在那一刻放开嗓门大喊：‘危险！快跑！’",
+                        description: "这种保护本能，是我们生存的护身法宝。让我们重新连通卫兵。以后要做个懂得保护自己、敬畏痛苦的聪明孩子哦！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Sensor Magic ---
+                let scene, camera, renderer, scanner, sensorHand, hotObject;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 10, 100);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Stars
+                    const sGeo = new THREE.BufferGeometry();
+                    const sPos = [];
+                    for (let i = 0; i < 2000; i++) {
+                        sPos.push((Math.random() - 0.5) * 800, (Math.random() - 0.5) * 800, (Math.random() - 0.5) * 800);
+                    }
+                    sGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPos, 3));
+                    scene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({ color: 0xef4444, size: 0.8, transparent: true, opacity: 0.3 })));
+
+                    // 1. Hot Object (The Danger)
+                    const hotGeo = new THREE.IcosahedronGeometry(15, 1);
+                    const hotMat = new THREE.MeshStandardMaterial({ color: 0x333333, emissive: 0xff0000, emissiveIntensity: 0.1 });
+                    hotObject = new THREE.Mesh(hotGeo, hotMat);
+                    hotObject.position.set(40, -10, 0);
+                    scene.add(hotObject);
+
+                    // 2. Sensor Hand (Prototypical Object)
+                    sensorHand = new THREE.Group();
+                    const armMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.2 });
+                    const arm = new THREE.Mesh(new THREE.CylinderGeometry(4, 6, 40), armMat);
+                    arm.rotation.z = Math.PI / 2;
+                    arm.position.x = -20;
+                    sensorHand.add(arm);
+
+                    const head = new THREE.Mesh(new THREE.SphereGeometry(8, 32, 32), armMat.clone());
+                    sensorHand.add(head);
+                    scene.add(sensorHand);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                    directionalLight.position.set(20, 50, 50);
+                    scene.add(directionalLight);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (hotObject) {
+                        hotObject.rotation.x += 0.01;
+                        hotObject.material.emissiveIntensity = step.value >= 2 ? 1 + Math.sin(t * 10) * 0.5 : 0.1;
+                    }
+
+                    if (sensorHand) {
+                        // Hand logic
+                        if (step.value === 3 || step.value === 4) {
+                            // Approach DANGER
+                            if (!isSensorOn.value) {
+                                sensorHand.position.x = Math.max(sensorHand.position.x + 0.5, 30);
+                            } else {
+                                // Default safe distance
+                                sensorHand.position.x = 0;
+                            }
+                        } else {
+                            sensorHand.position.x = Math.sin(t) * 5;
+                        }
+
+                        // Integrity visual
+                        if (integrity.value < 100) {
+                            sensorHand.children[1].material.color.lerp(new THREE.Color(0xff0000), 0.02);
+                            sensorHand.children[1].material.emissiveIntensity = (100 - integrity.value) * 0.05;
+                            sensorHand.children[1].scale.set(1.1, 1.1, 1.1);
+                        }
+                    }
+
+                    // Simulation Variables
+                    if (step.value === 4) {
+                        surfaceTemp.value = Math.min(surfaceTemp.value + 5, 800);
+                        integrity.value = Math.max(10, integrity.value - 0.5);
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const toggleSensor = () => {
+                    isSensorOn.value = !isSensorOn.value;
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 4) {
+                        gsap.to(camera.position, { z: 70, x: 20, duration: 2 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, isSensorOn, integrity, surfaceTemp, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, toggleSensor
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

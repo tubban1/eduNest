@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我能听懂动物的语言该多好</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script src="https://unpkg.com/zdog@1.1.3/dist/zdog.dist.min.js"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = {
+                    'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js',
+                    'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js',
+                    'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'Zdog': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/zdog.dist.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'
+                };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-yellow: #facc15;
+            --accent-sky: #38bdf8;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0c4a6e;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #world,
+        #bee-canvas,
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #bee-canvas {
+            z-index: 2;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #facc15, #38bdf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #e0f2fe;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 12rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.2rem 4rem;
+            border-radius: 4rem;
+            font-weight: 700;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-8px);
+            border-color: var(--accent-yellow);
+        }
+
+        /* 蜜蜂控制按钮 */
+        .controls {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1.5rem;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .btn {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-radius: 1.5rem;
+            color: #facc15;
+            font-weight: 900;
+            cursor: pointer;
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #facc15;
+            color: #0c4a6e;
+            transform: translateY(-5px);
+        }
+
+        .btn.active {
+            background: #facc15;
+            color: #0c4a6e;
+            box-shadow: 0 0 20px #facc15;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-yellow);
+            transform: scale(1.5);
+        }
+
+        .discovery-tag {
+            background: #ca8a04;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="world"></div>
+    <canvas id="bee-canvas" class="scene" width="800" height="600"></canvas>
+
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title" v-if="currentStageData">{{ currentStageData.title }}</h1>
+            <div class="parent-words" v-if="currentStageData">
+                🐾 🐝 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text" v-if="currentStageData">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">真相大白!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启同声传译' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-yellow-900 !text-white">
+                    回归无声的默契
+                </button>
+            </div>
+        </div>
+
+        <!-- 蜜蜂控制按钮 -->
+        <div v-if="step === 3" class="controls">
+            <div class="btn" :class="{active: activeBtn==='bankLeft'}" @click="beeAction('bankLeft')">左倾</div>
+            <div class="btn" :class="{active: activeBtn==='bankRight'}" @click="beeAction('bankRight')">右倾</div>
+            <div class="btn" :class="{active: activeBtn==='rollLeft'}" @click="beeAction('rollLeft')">左旋翻滚</div>
+            <div class="btn" :class="{active: activeBtn==='rollRight'}" @click="beeAction('rollRight')">右旋翻滚</div>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const activeBtn = ref('');
+
+                const stages = [
+                    {
+                        title: "我能听懂动物的语言该多好",
+                        parentWords: "宝贝，你看由于勤劳的小蜜蜂由于飞舞，小猫在由于专注地由于玩球。它们是不是正在由于忙着由于传递情报呀？要是能像由于语言专家一样由于解读它们，世界会由于变成什么样？",
+                        description: "由于生命由于充满信号。蜜蜂的‘由于8字舞’，小猫的‘由于尾巴语言’。你想由于解开这些自然的由于加密电报吗？",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：翻译机的奇迹",
+                        parentWords: "如果我们真的能对话。预测一下，当你告诉蜜蜂由于由于‘前方由于有由于花朵’，它会由于去由于带路吗？当你问小猫‘你在想由于什么’，它会觉得你太吵了吗？",
+                        description: "预测中：沟通不仅仅是辞藻。动物的语言往往与由于生存和由于情感紧密相连。听懂它们，意味着由于听懂了由于生命的逻辑。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：蜜蜂的空中舞蹈",
+                        parentWords: "快！点击下方按钮。控制由于小蜜蜂的由于飞行姿态。蜜蜂就是通过这种由于由于由于复杂的由于空中动作，告诉由于伙伴由于蜜源的方向和距离的！",
+                        description: "由于蜜蜂传译场。使用由于控制按钮，模拟蜜蜂的由于导航舞蹈。观察它在由于不同旋转下是如何由于传递由于空间信息的。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：小猫的情绪毛线球",
+                        parentWords: "现在，由于移动你的鼠标。看！小猫正由于盯着由于由于毛线球。你移动得由于越快，它的尾巴和由于由于注意力由于就越由于集中。这就是它的由于肢体语言！",
+                        description: "由于猫咪沟通场。由于由于由于移动鼠标。观察小猫如何通过由于眼神和由于由于由于尾巴频率，表达它的由于捕猎欲望和由于兴奋度。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "致敬生命的智慧",
+                        parentWords: "让我们感恩这份由于万物的默契。虽然没有由于由于由于字库，但只要我们用心由于感受。就能和由于每一种由于生命共鸣。你今天完成了由于伟大的翻译发现！",
+                        description: "由于心意不需要翻译。今天你不仅‘听懂’了蜜蜂与小猫。更由于领悟了由于由于跨物种的由于尊重。你真是个善良的由于小小翻译官！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1] || null);
+
+                // --- Zdog Bee Logic ---
+                let BEE_OBJ = null;
+                const initBee = () => {
+                    if (typeof Zdog === 'undefined') return;
+                    const TAU = Zdog.TAU;
+                    const BLACK = "#3D3D3D";
+                    const YELLOW = "#F2EA00";
+                    const WHITE = "#FEFEFE";
+
+                    let scene = new Zdog.Illustration({
+                        element: ".scene",
+                        dragRotate: false
+                    });
+
+                    BEE_OBJ = new Zdog.Anchor({ addTo: scene });
+
+                    let head = new Zdog.Shape({ addTo: BEE_OBJ, stroke: 80, color: BLACK });
+                    let eyeGroup = new Zdog.Group({ addTo: head, translate: { x: -35, z: 20 }, rotate: { y: TAU / 8 } });
+                    new Zdog.Ellipse({ addTo: eyeGroup, diameter: 35, fill: true, color: WHITE });
+                    new Zdog.Ellipse({ addTo: eyeGroup, diameter: 20, fill: true, color: BLACK });
+                    eyeGroup.copyGraph({ translate: { x: 35, z: 20 }, rotate: { y: -TAU / 8 } });
+
+                    let antlerAnchor = new Zdog.Anchor({ addTo: head, translate: { y: -40 } });
+                    new Zdog.Shape({ addTo: antlerAnchor, path: [{ y: 0, x: -10, z: 0 }, { y: -30, x: -18, z: -12 }], stroke: 10, color: BLACK });
+                    new Zdog.Shape({ addTo: antlerAnchor, path: [{ y: 0, x: 10, z: 0 }, { y: -30, x: 18, z: -12 }], stroke: 10, color: BLACK });
+
+                    let bodyAnchor = new Zdog.Anchor({ addTo: BEE_OBJ, translate: { z: -30 } });
+                    let p1 = new Zdog.Shape({ addTo: bodyAnchor, stroke: 90, color: YELLOW });
+                    p1.copy({ stroke: 100, color: BLACK, translate: { z: -20 } });
+                    p1.copy({ stroke: 110, color: YELLOW, translate: { z: -40 } });
+                    p1.copy({ stroke: 100, color: BLACK, translate: { z: -50 } });
+                    p1.copy({ stroke: 80, color: YELLOW, translate: { z: -65 } });
+                    new Zdog.Cone({ addTo: bodyAnchor, diameter: 50, length: 30, color: BLACK, translate: { z: -70 }, rotate: { x: TAU / 2 } });
+
+                    let rWingAnchor = new Zdog.Anchor({ addTo: bodyAnchor, translate: { z: -40, y: -30 } });
+                    let lWingAnchor = rWingAnchor.copy();
+                    let wings = new Zdog.Ellipse({ addTo: rWingAnchor, width: 50, height: 100, color: WHITE, fill: true, rotate: { x: TAU / 6, z: -TAU / 4 }, translate: { x: 70 } });
+                    wings.copy({ addTo: lWingAnchor, rotate: { x: TAU / 6, z: -TAU / 4 }, translate: { x: 70 } });
+
+                    let n = 0;
+                    const beeLoop = () => {
+                        if (step.value === 3) {
+                            rWingAnchor.rotate.z = (TAU / 8) * Math.sin(n / 2);
+                            lWingAnchor.rotate.z = TAU / 2 - (TAU / 8) * Math.sin(n / 2);
+                            antlerAnchor.rotate.x = (TAU / 32) * Math.sin(n / 12);
+                            BEE_OBJ.translate.y = TAU / 2 - (TAU / 2) * Math.sin(n / 16);
+                            scene.rotate.y = TAU / 16;
+                            scene.updateRenderGraph();
+                            n++;
+                        }
+                        requestAnimationFrame(beeLoop);
+                    };
+                    beeLoop();
+                };
+
+                const beeAction = (type) => {
+                    if (!BEE_OBJ) return;
+                    activeBtn.value = type;
+                    const TAU = Zdog.TAU;
+                    let xPos = BEE_OBJ.translate.x;
+
+                    if (type === 'bankLeft') {
+                        gsap.to(BEE_OBJ.translate, { x: xPos - 150, duration: 1.5 });
+                        gsap.fromTo(BEE_OBJ.rotate, { z: -0.5 }, { z: 0, duration: 1.5 });
+                    } else if (type === 'bankRight') {
+                        gsap.to(BEE_OBJ.translate, { x: xPos + 150, duration: 1.5 });
+                        gsap.fromTo(BEE_OBJ.rotate, { z: 0.5 }, { z: 0, duration: 1.5 });
+                    } else if (type === 'rollRight') {
+                        gsap.fromTo(BEE_OBJ.translate, { x: xPos, y: -40 }, { x: xPos + 150, y: 0, duration: 1.5 });
+                        gsap.fromTo(BEE_OBJ.rotate, { z: -TAU }, { z: 0, duration: 1.5 });
+                    } else if (type === 'rollLeft') {
+                        gsap.fromTo(BEE_OBJ.translate, { x: xPos, y: 40 }, { x: xPos - 150, y: 0, duration: 1.5 });
+                        gsap.fromTo(BEE_OBJ.rotate, { z: TAU }, { z: 0, duration: 1.5 });
+                    }
+                };
+
+                // --- Three.js Cat Logic ---
+                class Cat {
+                    constructor() {
+                        this.threeGroup = new THREE.Group();
+                        this.transferPower = { x: 0, y: 0 };
+                        const skinMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+
+                        const body = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 80), skinMat);
+                        body.position.y = 20;
+                        this.threeGroup.add(body);
+
+                        this.head = new THREE.Group();
+                        const headMesh = new THREE.Mesh(new THREE.BoxGeometry(50, 50, 50), skinMat);
+                        headMesh.position.y = 50;
+                        headMesh.position.z = 40;
+                        this.head.add(headMesh);
+
+                        const ear = new THREE.Mesh(new THREE.CylinderGeometry(0, 10, 20, 4), skinMat);
+                        ear.position.set(-15, 75, 40); ear.rotation.z = 0.5; this.head.add(ear);
+                        const ear2 = ear.clone(); ear2.position.x = 15; ear2.rotation.z = -0.5; this.head.add(ear2);
+                        this.threeGroup.add(this.head);
+
+                        this.tail = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 40), skinMat);
+                        this.tail.position.set(0, 30, -50);
+                        this.threeGroup.add(this.tail);
+                    }
+                    updateTail(t) {
+                        this.tail.rotation.y = Math.sin(t) * 0.5;
+                        this.tail.rotation.x = Math.cos(t) * 0.2;
+                    }
+                    interactWithBall(pos) {
+                        this.head.lookAt(pos);
+                    }
+                }
+
+                const initThree = () => {
+                    const scene3d = new THREE.Scene();
+                    const camera3d = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
+                    camera3d.position.set(0, 250, 400);
+                    camera3d.lookAt(0, 60, 0);
+
+                    const renderer3d = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                    renderer3d.setSize(window.innerWidth, window.innerHeight);
+                    renderer3d.shadowMap.enabled = true;
+                    const worldEl = document.getElementById('world');
+                    if (worldEl) worldEl.appendChild(renderer3d.domElement);
+
+                    scene3d.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const l = new THREE.DirectionalLight(0xffffff, 0.9); l.position.set(200, 200, 200); l.castShadow = true; scene3d.add(l);
+
+                    const hero = new Cat(); scene3d.add(hero.threeGroup);
+
+                    const Ball = function () {
+                        this.threeGroup = new THREE.Group();
+                        this.body = new THREE.Mesh(new THREE.SphereGeometry(15, 10, 10), new THREE.MeshLambertMaterial({ color: 0x630d15 }));
+                        this.threeGroup.add(this.body);
+                        this.update = (px, py, pz) => { this.body.position.set(px, py, pz); };
+                    };
+                    const ball = new Ball(); scene3d.add(ball.threeGroup);
+
+                    let mousePos = { x: 0, y: 0 };
+                    window.addEventListener('mousemove', (e) => {
+                        mousePos.x = (e.clientX / window.innerWidth) * 2 - 1;
+                        mousePos.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    });
+
+                    const clock = new THREE.Clock();
+                    const loop = () => {
+                        if (step.value === 4) {
+                            const t = clock.getElapsedTime();
+                            hero.updateTail(t * 5);
+
+                            const vector = new THREE.Vector3(mousePos.x, mousePos.y, 0.5);
+                            vector.unproject(camera3d);
+                            const dir = vector.sub(camera3d.position).normalize();
+                            const dist = (0 - camera3d.position.z) / dir.z;
+                            const pos = camera3d.position.clone().add(dir.multiplyScalar(dist));
+
+                            ball.update(pos.x, pos.y, pos.z);
+                            hero.interactWithBall(pos);
+                            renderer3d.render(scene3d, camera3d);
+                        }
+                        requestAnimationFrame(loop);
+                    };
+                    loop();
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) step.value++;
+                };
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                onMounted(() => {
+                    initBee();
+                    initThree();
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2, delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2, delay: 1 });
+                });
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1 });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1, delay: 0.3 });
+
+                    const beeEl = document.getElementById('bee-canvas');
+                    if (beeEl) beeEl.style.visibility = (newVal === 3) ? 'visible' : 'hidden';
+                    const worldEl = document.getElementById('world');
+                    if (worldEl) worldEl.style.visibility = (newVal === 4) ? 'visible' : 'hidden';
+                });
+
+                return { step, totalStages, currentStageData, nextStage, goToStage, resetSimulation, beeAction, activeBtn };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

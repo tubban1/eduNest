@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我怎么不能跑得像鸵鸟一样快</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = {
+                    'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js',
+                    'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js',
+                    'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'
+                };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #451a03;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #ffedd5;
+            background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
+        }
+
+        .speed-hud {
+            position: fixed;
+            left: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2.5rem;
+            border-radius: 2.5rem;
+            border: 2px solid var(--accent-orange);
+            text-align: center;
+        }
+
+        .speed-value {
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--accent-orange);
+            font-style: italic;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-orange);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-orange);
+        }
+
+        .discovery-tag {
+            background: #9a3412;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .race-hint {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 1rem 3rem;
+            border-radius: 3rem;
+            color: white;
+            font-weight: bold;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🦵 💨 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 速度显示 -->
+        <div v-if="step >= 2" class="speed-hud">
+            <div class="text-xs uppercase opacity-60">实时车速</div>
+            <div class="speed-value">{{ currentSpeed }}</div>
+            <div class="text-xs">鸵鸟极速: 70.0 km/h</div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">极限发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启竞速挑战' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-orange-900 !text-white">
+                    致敬卓越的进化
+                </button>
+            </div>
+        </div>
+
+        <!-- 竞速提示 -->
+        <div v-if="step === 3" class="race-hint">连续快速点击屏幕来提升人类跑速</div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const currentSpeed = ref(0.0);
+
+                const stages = [
+                    {
+                        title: "我怎么不能跑得像鸵鸟一样快",
+                        parentWords: "宝贝，你看那只大鸟，虽然它不会由于飞，但它在草原上由于飞奔的样子简直像一阵风。要是你也能由于长出一双由于强壮的‘鸵鸟大长腿’，你是不是由于能跑赢公共汽车了？",
+                        description: "这是一场跨越物种的‘陆地赛跑’。我们习惯了作为由于双足由于行走的人类。假如由于我们的由于身体由于结构由于专为竞速由于优化，世界会呈现出由于什么样的由于动态？",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：肌肉的极限",
+                        parentWords: "如果我们真的去竞速。预测一下，当我们由于全力冲刺，由于膝盖由于会由于由于发热吗？如果我们要由于保持由于每小时70公里的速度。我们的心脏由于受得了由于这种剧烈的由于跳动吗？",
+                        description: "预测中：速度依赖于解剖学。由于鸵鸟的质量中心极其由于平衡，而且它们的由于肌腱就像由于超级弹簧。人类的由于由于由于散乱的重心是由于速度的巨大障碍。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：点击加速挑战",
+                        parentWords: "快！连续点击屏幕。由于看！即使你按得再快，人类的速度由于似乎也只能达到 25km/h。而远处的由于鸵鸟正由于轻松地由于绝尘而去。这就是由于硬件的差异！",
+                        description: "由于生物由于竞技场。在这里，你可以体验由于不同肢体比例下的由于爆发力。你会发现，无论由于你多么努力，由于由于由于生理结构的‘天花板’始终存在。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：能量回收系统",
+                        parentWords: "你看！原来鸵鸟跑得快是因为它们有‘弹簧腿’。新发现：它们的由于肌腱能在落地时由于由于存储由于由于能量，并在起跳时由于全部释放。这让它们跑起来由于极省力！",
+                        description: "震撼揭秘：由于生物力学奇迹。新发现：人类由于为了长距离由于行走，牺牲了巨大的由于瞬间由于弹性。鸵鸟的两个脚趾能由于减少由于地面摩擦。由于这就是专业的‘竞速进化’！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "致敬耐力的冠军",
+                        parentWords: "让我们感恩这份由于自然的礼物。虽然跑不赢鸵鸟。但人类是由于世界上由于由于由于最持久的长跑选手！我们赢在由于由于由于耐心。你今天完成了一个由于伟大的由于生物竞速发现！",
+                        description: "天生我材由于必有用。今天你不仅参与了由于模拟竞速。更由于读懂了由于功能的折中。你是由于最懂进化的由于小小运动员！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Savanna ---
+                let scene, camera, renderer, ostrich, grass = [];
+                let speedFactor = 0;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0xd97706);
+                    scene.fog = new THREE.Fog(0xd97706, 50, 500);
+
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(20, 10, 50);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(100, 100, 50);
+                    scene.add(sun);
+
+                    // Ground
+                    const plane = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ color: 0x92400e }));
+                    plane.rotation.x = -Math.PI / 2;
+                    scene.add(plane);
+
+                    // Add Detailed Ostrich
+                    ostrich = new THREE.Group();
+                    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+                    const skinMat = new THREE.MeshStandardMaterial({ color: 0xfca5a5 });
+
+                    // Body
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 16), bodyMat);
+                    body.scale.z = 1.6;
+                    ostrich.add(body);
+
+                    // Neck
+                    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 8), skinMat);
+                    neck.position.set(0, 5, 4);
+                    neck.rotation.x = -0.3;
+                    ostrich.add(neck);
+
+                    // Head
+                    const head = new THREE.Mesh(new THREE.SphereGeometry(1.2, 12, 12), skinMat);
+                    head.position.set(0, 8.5, 5.5);
+                    ostrich.add(head);
+
+                    // Eyes
+                    const eyeGeo = new THREE.SphereGeometry(0.3, 8, 8);
+                    const pupilGeo = new THREE.SphereGeometry(0.15, 8, 8);
+                    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+                    for (let i = 0; i < 2; i++) {
+                        const eye = new THREE.Mesh(eyeGeo, eyeMat);
+                        const pupil = new THREE.Mesh(pupilGeo, pupilMat);
+                        const side = i === 0 ? 1 : -1;
+                        eye.position.set(side * 0.7, 0.3, 0.7);
+                        pupil.position.set(side * 0.85, 0.35, 0.9);
+                        head.add(eye);
+                        head.add(pupil);
+                    }
+
+                    // Beak
+                    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.5, 8), new THREE.MeshStandardMaterial({ color: 0xfacc15 }));
+                    beak.position.set(0, 8.3, 6.8);
+                    beak.rotation.x = -Math.PI / 2;
+                    ostrich.add(beak);
+
+                    // Legs
+                    ostrich.legs = [];
+                    for (let i = 0; i < 2; i++) {
+                        const legGroup = new THREE.Group();
+                        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.3, 5), skinMat);
+                        thigh.position.y = -2.5;
+                        legGroup.add(thigh);
+
+                        const foot = new THREE.Mesh(new THREE.BoxGeometry(1, 0.2, 2), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+                        foot.position.set(0, -5, 0.5);
+                        legGroup.add(foot);
+
+                        legGroup.position.set(i === 0 ? -1.2 : 1.2, -1, 0);
+                        ostrich.add(legGroup);
+                        ostrich.legs.push(legGroup);
+                    }
+
+                    ostrich.position.set(-15, 10, -50);
+                    scene.add(ostrich);
+
+                    // Grass/Props
+                    for (let i = 0; i < 200; i++) {
+                        const g = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2, 0.5), new THREE.MeshStandardMaterial({ color: 0xfde047 }));
+                        g.position.set((Math.random() - 0.5) * 400, 0, (Math.random() - 0.5) * 1000);
+                        scene.add(g);
+                        grass.push(g);
+                    }
+
+                    animate();
+                    window.addEventListener('click', onBoost);
+                };
+
+                const onBoost = () => {
+                    if (step.value === 3) {
+                        speedFactor = Math.min(1.5, speedFactor + 0.1);
+                    }
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const time = Date.now() * 0.001;
+
+                    // Move environment relative to speed
+                    const currentActualSpeed = (speedFactor * 25).toFixed(1);
+                    currentSpeed.value = currentActualSpeed;
+
+                    grass.forEach(g => {
+                        g.position.z += speedFactor * 10 + 2;
+                        if (g.position.z > 100) g.position.z = -900;
+                    });
+
+                    // Ostrich logic
+                    if (step.value >= 2) {
+                        const bobIntensity = 0.2 + (speedFactor * 0.5);
+                        ostrich.position.y = 10 + Math.sin(time * 15) * bobIntensity; // Bobbing height
+
+                        // Leg Swing Animation
+                        if (ostrich.legs) {
+                            const swingAngle = Math.sin(time * 15);
+                            ostrich.legs[0].rotation.x = swingAngle * 0.8;
+                            ostrich.legs[1].rotation.x = -swingAngle * 0.8;
+                        }
+
+                        if (step.value === 3) {
+                            ostrich.position.z = -50 - (speedFactor * 40); // Relative distance
+                        }
+                    }
+
+                    speedFactor = Math.max(0, speedFactor - 0.01);
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1.5 });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, delay: 1 });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, currentSpeed, currentStageData,
+                    nextStage, goToStage, resetSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

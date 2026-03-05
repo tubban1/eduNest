@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猴子都变成了人该怎么办</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-jungle: #2D5A27;
+            --accent-lime: #A3E635;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #064E3B;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 20;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #A3E635, #10B981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(163, 230, 53, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #ECFCCB;
+            background: linear-gradient(90deg, transparent, rgba(163, 230, 53, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-lime);
+            box-shadow: 0 0 30px rgba(163, 230, 53, 0.3);
+        }
+
+        .hud-status {
+            position: fixed;
+            left: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            color: var(--accent-lime);
+            font-weight: 700;
+        }
+
+        .niche-meter {
+            width: 15px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse;
+            border: 2px solid rgba(163, 230, 53, 0.4);
+        }
+
+        .meter-fill {
+            width: 100%;
+            background: linear-gradient(0deg, #166534, #A3E635);
+            transition: height 0.6s ease;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-lime);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-lime);
+        }
+
+        .discovery-tag {
+            background: #166534;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .evolve-spark {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #A3E635;
+            rotate: 45deg;
+            pointer-events: auto;
+            cursor: pointer;
+            box-shadow: 0 0 15px #A3E635;
+        }
+
+        .evolve-spark:hover {
+            transform: scale(1.5) rotate(45deg);
+            box-shadow: 0 0 25px #A3E635;
+        }
+
+        #overlay-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 15;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div id="overlay-ui"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 森林分工 HUD -->
+        <div class="hud-status" v-if="step >= 2">
+            <div class="text-xs uppercase opacity-60">Ecological Niche</div>
+            <div class="niche-meter">
+                <div class="meter-fill" :style="{ height: forestHealth + '%' }"></div>
+            </div>
+            <div class="text-xl">Health: {{ forestHealth }}%</div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🐒 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">丛林秘密!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '启动丛林演化' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-emerald-900 !text-white">
+                    回归自然律动
+                </button>
+                <button v-if="step === 3 && forestHealth < 40" @click="nextStage" class="next-btn !bg-lime-500 ml-4">
+                    见证生态剧变
+                </button>
+            </div>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const forestHealth = ref(100);
+                const transformedCount = ref(0);
+
+                const stages = [
+                    {
+                        title: "繁忙的森林剧场",
+                        parentWords: "宝贝，你看那些猴子在树中间晃来晃去，比体操运动员还厉害。它们在那里快乐地生活着。",
+                        description: "这是一片原始而生机勃勃的‘翡翠森林’。猴子们作为空中的守护者，正在维护这里的食物链平衡。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：消失的‘体操员’",
+                        parentWords: "如果有一天，猴子们由于看了电视而想去穿西装、学走路。预测一下，森林里的高处果实谁去采？谁来由于玩耍而由于播种？",
+                        description: "预测中：森林的垂直分层会由于主人的离开而崩塌。一旦所有的‘空中王者’都下到地面，这里的由于生态将面临空洞。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：点燃演化之火",
+                        parentWords: "快！点击那些在树上跳跃的发光火种，让猴子们‘由于跨越式由于进化’。看看随着由于人的增加，森林的健康度会怎么掉下来？",
+                        description: "由于演化的发生，原本在由于树冠穿行的小黑影变成了直立的西装身影。由于失去了主人，那些挂在高处的由于香蕉也开始落下来腐烂了。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：分工的奥秘",
+                        parentWords: "快看！由于森林没了猴子，果实由于烂在树上。原来进化不是比赛，而是每个人都要由于去最适合自己的‘岗位’！",
+                        description: "震撼揭秘：人类适合思考和建设，猴子适合攀爬和守护。进化赋予每个物种独一无二的‘生态位’。如果所有由于物种都长得一样，地球将会由于单调而脆弱！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "尊重每一种生命形态",
+                        parentWords: "我们要保护每一只灵活的猴子，不仅由于它们有趣，更由于它们由于守护了那片森林。自然由于多元而美丽。你是今天最棒的自然小老师！",
+                        description: "从深海到林梢，每种生命由于其独特性而闪光。让我们感恩这份多样性的馈赠。今天你完成了一个伟大的由于发现之旅！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Forest Life ---
+                let scene, camera, renderer, treesGroup, monkeyGroup, humanGroup;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.fog = new THREE.FogExp2(0x064E3B, 0.002);
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.set(0, 50, 400);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 1. Lush Trees
+                    treesGroup = new THREE.Group();
+                    for (let i = 0; i < 40; i++) {
+                        const h = 80 + Math.random() * 200;
+                        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(5, 8, h), new THREE.MeshStandardMaterial({ color: 0x3f2a14 }));
+                        const canopy = new THREE.Mesh(new THREE.IcosahedronGeometry(Math.random() * 20 + 15), new THREE.MeshStandardMaterial({ color: 0x064e3b, transparent: true, opacity: 0.9 }));
+                        canopy.position.y = h / 2;
+                        const tree = new THREE.Group();
+                        tree.add(trunk); tree.add(canopy);
+                        tree.position.set((Math.random() - 0.5) * 1000, 0, (Math.random() - 0.5) * 1000);
+                        treesGroup.add(tree);
+                    }
+                    scene.add(treesGroup);
+
+                    // 2. Monkey & Human Entities
+                    monkeyGroup = new THREE.Group();
+                    humanGroup = new THREE.Group();
+                    scene.add(monkeyGroup);
+                    scene.add(humanGroup);
+
+                    for (let i = 0; i < 12; i++) {
+                        const m = new THREE.Mesh(new THREE.SphereGeometry(4), new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 1 }));
+                        m.position.set((Math.random() - 0.5) * 600, 80 + Math.random() * 100, (Math.random() - 0.5) * 600);
+                        m.userData = { id: i, transformed: false };
+                        monkeyGroup.add(m);
+
+                        // Corresponding UI sparks for interaction
+                        const spark = document.createElement('div');
+                        spark.className = 'evolve-spark';
+                        spark.id = `spark-${i}`;
+                        spark.onclick = () => transformMonkey(i);
+                        document.getElementById('overlay-ui').appendChild(spark);
+                    }
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const sun = new THREE.DirectionalLight(0xa3e635, 1);
+                    sun.position.set(50, 300, 50);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (treesGroup) treesGroup.rotation.y += 0.0002;
+
+                    // Update UI spark positions (Projection)
+                    monkeyGroup.children.forEach(m => {
+                        const vector = m.position.clone().project(camera);
+                        const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                        const y = (-(vector.y * 0.5 - 0.5) * window.innerHeight);
+                        const spark = document.getElementById(`spark-${m.userData.id}`);
+                        if (spark) {
+                            spark.style.left = `${x}px`;
+                            spark.style.top = `${y}px`;
+                            spark.style.display = (step.value === 3 && !m.userData.transformed) ? 'block' : 'none';
+                        }
+
+                        if (!m.userData.transformed) {
+                            m.position.y += Math.sin(t * 2 + m.userData.id) * 0.2;
+                        }
+                    });
+
+                    renderer.render(scene, camera);
+                };
+
+                const transformMonkey = (id) => {
+                    const m = monkeyGroup.children.find(m => m.userData.id === id);
+                    if (m && !m.userData.transformed) {
+                        m.userData.transformed = true;
+                        transformedCount.value++;
+                        forestHealth.value = Math.max(0, forestHealth.value - 15);
+
+                        // Visual transform: shrink and drop to floor as human
+                        gsap.to(m.position, { y: 5, x: m.position.x + 20, duration: 2, ease: "power2.in" });
+                        gsap.to(m.scale, { x: 1.5, y: 3, z: 1, duration: 1 });
+                        gsap.to(m.material.color, { r: 1, g: 1, b: 1, duration: 1 });
+                        gsap.to(m.material, { emissiveIntensity: 5, duration: 0.1, yoyo: true, repeat: 1 });
+
+                        // Forest response
+                        gsap.to(scene.fog, { density: 0.002 + (1 - forestHealth.value / 100) * 0.01, duration: 2 });
+                    }
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 4) {
+                        gsap.to(camera.position, { z: 600, y: 150, duration: 4, ease: "power2.inOut" });
+                    }
+                    if (newVal === 5) {
+                        gsap.to(camera.position, { z: 1200, duration: 5, ease: "slow" });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, forestHealth, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10秒判完英语作文：AI 导师实测</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f8fafc;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        .app-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
+        }
+
+        .ui-root {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .essay-paper {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 60%;
+            background: white;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            padding: 40px;
+            font-family: 'Georgia', serif;
+            font-size: 1.2rem;
+            line-height: 2;
+            color: #334155;
+            transform-origin: center;
+            pointer-events: auto;
+        }
+
+        .highlight-err {
+            background: #fee2e2;
+            border-bottom: 2px solid #ef4444;
+            color: #b91c1c;
+            position: relative;
+        }
+
+        .highlight-fix {
+            background: #dcfce7;
+            border-bottom: 2px solid #22c55e;
+            color: #15803d;
+        }
+
+        .magic-line {
+            position: absolute;
+            height: 3px;
+            background: #3b82f6;
+            width: 0;
+            left: 0;
+            box-shadow: 0 0 10px #3b82f6;
+        }
+
+        .title-area {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .main-t {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3rem;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+
+        .btn-magic {
+            pointer-events: auto;
+            background: #2563eb;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-magic:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.5s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-bg"></div>
+    <div id="app" class="ui-root">
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="title-area">
+                <div class="text-blue-600 font-bold mb-2">💡 亲子引导: [[ parentWords[step-1] ]]</div>
+                <h1 class="main-t">[[ stages[step-1].title ]]</h1>
+                <p class="text-slate-500 text-lg">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <div class="essay-paper" id="paper">
+            <div class="magic-line" id="scanner"></div>
+            <div v-if="step === 1 || step === 2">
+                I <span :class="{'highlight-err': step >= 2}">goes</span> to school yesturday. I <span
+                    :class="{'highlight-err': step >= 2}">am</span> very happy because the weather <span
+                    :class="{'highlight-err': step >= 2}">is</span> good.
+            </div>
+            <div v-if="step === 3">
+                I <span class="highlight-fix">went</span> to school yesterday. <span
+                    class="highlight-fix">Furthermore</span>, I was extremely joyful because the weather was pleasant.
+            </div>
+            <div v-if="step >= 4">
+                Reflecting on my journey to school yesterday, I was struck by a sense of profound joy, primarily
+                attributed to the exceptionally pleasant weather conditions that graced the morning.
+            </div>
+        </div>
+
+        <div class="flex justify-center mb-10">
+            <button @click="nextStep" class="btn-magic">[[ actionText ]]</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const stages = [
+                    { title: '初稿导入', content: '这是一篇普通的学生作文，充满了典型的语法错误。' },
+                    { title: 'AI 啄木鸟', content: '看！AI 瞬间找出了 3 处时态错误。这种反馈是实时的。' },
+                    { title: '逻辑优化', content: '不仅仅是纠错，AI 建议增加连接词，表达瞬间变高级。' },
+                    { title: '满分范文', content: '通过 eduNest 的润色，同样的意图，表达变得极具说服力。' },
+                    { title: '你的 AI 助教', content: '想体验同款作文“大手术”吗？点击链接开启你的提分之旅。' }
+                ];
+                const parentWords = [
+                    "宝贝，咱们先看看这张稿纸，阿罗好像有点粗心哦。",
+                    "哇！AI 像个小神探，把调皮的语法错误都抓出来啦。",
+                    "你看，加了一个词，整个句子是不是读起来更有力气了？",
+                    "这就是知识的力量，换个表达方式，世界都亮了。",
+                    "学会和 AI 做朋友，它能帮你写出最棒的故事。"
+                ];
+
+                const actionText = computed(() => {
+                    const texts = ["开始扫描", "逻辑优化", "生成范文", "再次体验", "立即开始"];
+                    return texts[step.value - 1] || "下一步";
+                });
+
+                const nextStep = () => {
+                    if (step.value === 1) {
+                        gsap.to("#scanner", { top: "100%", duration: 2, ease: "none", onComplete: () => { step.value = 2; gsap.set("#scanner", { top: 0 }); } });
+                    } else if (step.value === 5) {
+                        step.value = 1;
+                    } else {
+                        step.value++;
+                    }
+                };
+
+                return { step, stages, parentWords, actionText, nextStep };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

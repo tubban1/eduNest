@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我是哪里来的</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-warm: #ff758c;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 117, 140, 0.1);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1a0b1a;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #ff7eb3, #ff758c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 15px rgba(255, 126, 179, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #FFC0CB;
+            background: linear-gradient(90deg, transparent, rgba(255, 117, 140, 0.15), transparent);
+            padding: 0.9rem 3.5rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.7rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 117, 140, 0.15);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.33, 1);
+            border: 2px solid rgba(255, 117, 140, 0.3);
+            color: white;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .next-btn:hover {
+            background: #ff758c;
+            transform: scale(1.1) translateY(-12px);
+            border-color: #ff758c;
+            box-shadow: 0 12px 40px rgba(255, 117, 140, 0.5);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 480px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.5rem;
+            border-radius: 3.5rem;
+            border: 1.5px solid rgba(255, 117, 140, 0.2);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.8rem;
+            font-weight: 700;
+            color: #ffb6c1;
+            font-size: 1rem;
+            letter-spacing: 0.1rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--accent-warm);
+            cursor: pointer;
+        }
+
+        .discovery-tag {
+            background: #D53F8C;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 117, 140, 0.2);
+            border: 2px solid rgba(255, 117, 140, 0.4);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-warm);
+            transform: scale(1.5);
+            box-shadow: 0 0 20px var(--accent-warm);
+        }
+
+        /* 脉动动效 */
+        @keyframes pulse-heart {
+            0% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+        }
+
+        .pulse-soft {
+            animation: pulse-heart 4s infinite ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🧸 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">新奇遇!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn pulse-soft">
+                    {{ step === 2 ? '开始生命之旅' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-pink-600 !text-white">
+                    再次回味起源
+                </button>
+            </div>
+        </div>
+
+        <!-- 交互面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div class="slider-label">
+                <span>时空流转 (Life Bridge)</span>
+                <span>归于宁静 (Womb Peace)</span>
+            </div>
+            <input type="range" v-model="lifeFlowFactor" min="0" max="1" step="0.005" class="pointer-events-auto mb-6">
+            <div class="flex justify-center">
+                <button @click="nextStage" class="next-btn !text-sm !py-4 !px-14"
+                    :style="{ opacity: lifeFlowFactor > 0.9 ? 1 : 0.6 }">
+                    引导着陆
+                </button>
+            </div>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const lifeFlowFactor = ref(0);
+
+                const stages = [
+                    {
+                        title: "一颗神奇的种子",
+                        parentWords: "宝贝，闭上眼睛想象一下，在爸爸妈妈认识很久很久以前，你还没出现。那时候，你就像一颗装着爱意和光芒的神奇种子，正在宇宙中寻找航向。",
+                        description: "在这个阶段，你会看到周围充满了星云般流动的光。这就是生命的初始状态，轻盈、纯净，充满了无限可能。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "寻找最温暖的家",
+                        parentWords: "这颗种子飞呀飞，它需要一个任何风雨都吹不到的地方，一个像五星级饭店一样舒服的大房子。它找到了——那就是妈妈的肚子里！",
+                        description: "现在，光点正在向中心汇聚。那里有一片温柔的暖意。我们需要引导这股‘生命之光’，让它平安着陆。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "建立生命的联结",
+                        parentWords: "来，握住施法条！轻轻滑动。当你把光引导进那个圆圆的小球里，生命就开始‘生根发芽’啦。你会听到小微弱的跳动声吗？",
+                        description: "通过操作滑块，你可以模拟种子寻找并根植于子宫的过程。随着它的深入，周围的颜色会从幽暗的紫变成温暖的红，生命开始萌发。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "爱的‘超级航天舱’",
+                        parentWords: "快看！你在这个圆滚滚的小球里长出了小尾巴，又长出了手脚。这里有最恒定的温度，最安全的浮力。你就像住在高级航天舱里的宇航员。",
+                        description: "重要大发现：子宫内的羊水就像天然的减震器。它能保护你所有幼嫩的器官，让你在妈妈肚子里翻跟斗也不会受伤。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "欢迎来到这个世界",
+                        parentWords: "终于有一天，这个‘航天舱’住不下你这个大力士啦。你张开双手，大声哭着告诉全世界：‘我是最勇敢的探险家，我来啦！’",
+                        description: "生命是一个奇迹，而你就是奇迹本身。这份跨越星际和母爱的旅程，造就了今天独一无二的你。欢迎你，小探险家！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, embryo, lightTunnel, ambientStars;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 160);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Ambient Background (Soft Stars)
+                    const sGeo = new THREE.BufferGeometry();
+                    const sPos = [];
+                    for (let i = 0; i < 3000; i++) {
+                        sPos.push((Math.random() - 0.5) * 800, (Math.random() - 0.5) * 800, (Math.random() - 0.5) * 600);
+                    }
+                    sGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPos, 3));
+                    ambientStars = new THREE.Points(sGeo, new THREE.PointsMaterial({ color: 0xFFC0CB, size: 0.6, transparent: true, opacity: 0.4 }));
+                    scene.add(ambientStars);
+
+                    // Stage 1-2: Light Tunnel (Flowing toward center)
+                    const tunnelGeo = new THREE.TorusGeometry(80, 20, 16, 100);
+                    const tunnelMat = new THREE.MeshStandardMaterial({
+                        color: 0xff7eb3,
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.3
+                    });
+                    lightTunnel = new THREE.Mesh(tunnelGeo, tunnelMat);
+                    lightTunnel.rotation.x = Math.PI / 2;
+                    scene.add(lightTunnel);
+
+                    // Stage 3-4: Embryo (Warm glowing sphere)
+                    const eGeo = new THREE.SphereGeometry(25, 64, 64);
+                    const eMat = new THREE.MeshStandardMaterial({
+                        color: 0xff758c,
+                        emissive: 0xff4d6d,
+                        emissiveIntensity: 0.5,
+                        roughness: 0,
+                        metalness: 0.2,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    embryo = new THREE.Mesh(eGeo, eMat);
+                    embryo.scale.set(0, 0, 0);
+                    scene.add(embryo);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const pointLight = new THREE.PointLight(0xff758c, 2, 300);
+                    pointLight.position.set(20, 20, 100);
+                    scene.add(pointLight);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (ambientStars) {
+                        ambientStars.rotation.z += 0.0001;
+                    }
+
+                    if (lightTunnel) {
+                        lightTunnel.rotation.z += 0.005;
+                        lightTunnel.position.z = Math.sin(t) * 10;
+                        // Fade out in later stages
+                        lightTunnel.material.opacity = Math.max(0, 0.3 - lifeFlowFactor.value * 0.3);
+                    }
+
+                    if (embryo && step.value >= 3) {
+                        const pulse = 1 + Math.sin(t * 1.5) * 0.05;
+                        embryo.scale.set(pulse, pulse, pulse);
+                        embryo.rotation.y += 0.005;
+
+                        // Internal details (flicker)
+                        embryo.material.emissiveIntensity = 0.5 + Math.sin(t * 3) * 0.2;
+                    }
+
+                    // Respond to lifeFlowFactor
+                    if (step.value === 3) {
+                        embryo.scale.set(lifeFlowFactor.value, lifeFlowFactor.value, lifeFlowFactor.value);
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                    if (n < 3) lifeFlowFactor.value = 0;
+                    if (n > 3) lifeFlowFactor.value = 1;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    // UI Reveal
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.8, y: -50 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 1) {
+                        gsap.to(camera.position, { z: 160, duration: 3 });
+                    } else if (newVal === 3) {
+                        gsap.to(camera.position, { z: 120, duration: 3, ease: "power2.inOut" });
+                    } else if (newVal === 4) {
+                        gsap.to(camera.position, { z: 100, x: 20, duration: 2, ease: "elastic.out(1, 0.75)" });
+                        gsap.to(lifeFlowFactor, { value: 1, duration: 2 });
+                    } else if (newVal === 5) {
+                        gsap.to(camera.position, { z: 180, x: 0, y: 30, duration: 4, ease: "power3.inOut" });
+                        gsap.to(embryo.position, { y: -20, duration: 4 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    // Initial Reveal
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    // Parallax
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.position, { x: x * 15, y: -y * 15 + (step.value === 5 ? 30 : 0), duration: 2.5 });
+                        camera.lookAt(0, (step.value === 5 ? 20 : 0), 0);
+                    });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, lifeFlowFactor, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

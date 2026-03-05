@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 时代的学习力：建立个人知识图谱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0a1a;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 6vh 6vw;
+            background: radial-gradient(circle at center, transparent 0%, rgba(10, 10, 26, 0.4) 100%);
+        }
+
+        .text-box {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .title-main {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 3.5rem;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.8);
+            margin-bottom: 2vh;
+        }
+
+        .content-sub {
+            font-size: 1.3rem;
+            color: #b0b0d0;
+            line-height: 1.6;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+        }
+
+        .parent-tips {
+            font-size: 1.1rem;
+            color: #00f2ff;
+            font-style: italic;
+            text-align: center;
+            padding: 15px;
+            border-top: 1px solid rgba(0, 242, 255, 0.1);
+            margin-top: 2vh;
+            opacity: 0.8;
+        }
+
+        .btn-action {
+            pointer-events: auto;
+            background: linear-gradient(135deg, #00f2ff 0%, #0072ff 100%);
+            color: white;
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.4s;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.4);
+            border: none;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.6);
+        }
+
+        .stages-nav {
+            position: fixed;
+            bottom: 20vh;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stage-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: 0.3s;
+        }
+
+        .stage-dot.active {
+            background: #00f2ff;
+            box-shadow: 0 0 10px #00f2ff;
+            width: 30px;
+            border-radius: 5px;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: all 0.8s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div id="app" class="ui-root">
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="text-box">
+                <div class="parent-tips">💡 亲子时刻: [[ parentWords[step-1] ]]</div>
+                <h1 class="title-main">[[ stages[step-1].title ]]</h1>
+                <p class="content-sub">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <div class="flex justify-center mb-10">
+            <button @click="handleAction" class="btn-action">
+                [[ step === 5 ? '重新点亮' : (step === 1 ? '开始归类' : (step === 2 ? '一键连线' : '进入下一步')) ]]
+            </button>
+        </div>
+
+        <div class="stages-nav">
+            <div v-for="i in 5" :key="i" class="stage-dot" :class="{active: step === i}"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const stages = [
+                    { title: '信息的海洋', content: '在 AI 时代，我们每天被无数碎片信息包围。这些发光的圆点就像散落在你大脑里的知识片段。' },
+                    { title: 'AI 辅助分类', content: 'AI 可以帮我们把相似的信息归类。看！数学、艺术和科学正被自动分聚在一起。' },
+                    { title: '建立深层连接', content: '分类只是第一步，真正的智慧来自连接。当你连通不同学科，你会发现知识开始产生火花。' },
+                    { title: '点亮知识网', content: '你的大脑网络开始跳动了。这种网状结构让你在思考问题时，能瞬间联想到所有相关领域。' },
+                    { title: '学习者的护城河', content: '这就是深度学习：不求记住所有，但求连通全局。eduNest 助你建立自己的知识堡垒。' }
+                ];
+                const parentWords = [
+                    "宝贝，你觉得这些光点像不像你今天听到的新故事？现在它们还没排好队呢。",
+                    "哇，AI 好像一个超级勤快的管家，帮咱们把‘兴趣柜子’理得整整齐齐。",
+                    "你看，数学和音乐连在一起啦，旋律里其实藏着好玩的数字秘密哦。",
+                    "闭上眼，想象你的大脑里有一棵会发光的智慧树，它正变得越来越强壮。",
+                    "今天咱们又点亮了一片知识森林。以后遇到不懂的，咱们先想想它在哪里？"
+                ];
+
+                let scene, camera, renderer, nodes = [], lines = [];
+                const groups = [[], [], []];
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+                    for (let i = 0; i < 60; i++) {
+                        const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.6 });
+                        const node = new THREE.Mesh(geometry, mat);
+                        node.position.set((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 30, (Math.random() - 0.5) * 20);
+                        scene.add(node);
+                        nodes.push(node);
+                        groups[i % 3].push(node);
+                    }
+                    camera.position.z = 40;
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    nodes.forEach((n, i) => {
+                        n.rotation.y += 0.01;
+                        if (step.value === 1) {
+                            n.position.x += Math.sin(Date.now() * 0.001 + i) * 0.02;
+                            n.position.y += Math.cos(Date.now() * 0.001 + i) * 0.02;
+                        }
+                    });
+                    renderer.render(scene, camera);
+                };
+
+                const handleAction = () => {
+                    if (step.value === 1) {
+                        gsap.to(groups[0].map(n => n.position), { x: -10, y: 5, z: 0, duration: 2, stagger: 0.02, ease: "power2.inOut" });
+                        gsap.to(groups[1].map(n => n.position), { x: 10, y: 5, z: 0, duration: 2, stagger: 0.02, ease: "power2.inOut" });
+                        gsap.to(groups[2].map(n => n.position), { x: 0, y: -10, z: 0, duration: 2, stagger: 0.02, ease: "power2.inOut" });
+                    } else if (step.value === 2) {
+                        const lineMat = new THREE.LineBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.3 });
+                        for (let i = 0; i < 15; i++) {
+                            const points = [groups[0][i].position, groups[1][i].position, groups[2][i].position, groups[0][i].position];
+                            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+                            const line = new THREE.Line(lineGeo, lineMat);
+                            scene.add(line);
+                            lines.push(line);
+                            gsap.from(lineMat, { opacity: 0, duration: 1, delay: i * 0.1 });
+                        }
+                    } else if (step.value === 3) {
+                        nodes.forEach(n => {
+                            gsap.to(n.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 0.5, yoyo: true, repeat: -1 });
+                        });
+                    } else if (step.value === 5) {
+                        location.reload(); return;
+                    }
+                    step.value = (step.value % 5) + 1;
+                };
+
+                onMounted(initThree);
+                return { step, stages, parentWords, handleAction };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

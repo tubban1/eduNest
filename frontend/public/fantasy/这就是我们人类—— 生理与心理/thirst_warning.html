@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人不知道渴该多好</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-blue: #3a86ff;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #00f2fe, #4FACFE);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(79, 172, 254, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #A5F3FC;
+            background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 30px rgba(79, 172, 254, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.5rem;
+            border-radius: 3.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .btn-switch {
+            background: #222;
+            padding: 1.3rem 3rem;
+            border-radius: 3rem;
+            color: #ddd;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s;
+            border: 2px solid transparent;
+        }
+
+        .btn-switch.active {
+            background: #3a86ff;
+            border-color: white;
+            color: white;
+            box-shadow: 0 0 20px #3a86ff;
+        }
+
+        .water-hud {
+            position: fixed;
+            left: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 300px;
+            width: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .water-fill {
+            width: 100%;
+            background: linear-gradient(0deg, #3a86ff, #00f2fe);
+            transition: height 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-blue);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-blue);
+        }
+
+        .discovery-tag {
+            background: #00b4d8;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 侧边水分计 -->
+        <div class="water-hud" v-if="step >= 2">
+            <div class="water-fill" :style="{ height: waterLevel + '%' }"></div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                💧 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">新奇遇!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '试图移除口渴信号' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-blue-600 !text-white">
+                    重新感受清凉
+                </button>
+            </div>
+        </div>
+
+        <!-- 交互面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div @click="toggleSensor" class="btn-switch" :class="{ active: isSensorOn }">
+                {{ isSensorOn ? '口渴感应器: 监测中' : '口渴感应器: 已关闭' }}
+            </div>
+            <button v-if="!isSensorOn" @click="nextStage" class="next-btn !text-sm !py-3 !px-12">观察变化</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const isSensorOn = ref(true);
+                const waterLevel = ref(100);
+
+                const stages = [
+                    {
+                        title: "如果从此不知道什么是口渴",
+                        parentWords: "嘿，宝贝，想象一下，我们在沙漠里跑一整天，嗓子都不觉得冒烟。不用停下来喝水，生活似乎变容易多了？",
+                        description: "在这间数字实验室里，住着一朵美丽的‘生命之花’。它是由纯净的水分和能量组成的。观察它晶莹剔透的样子。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "枯竭的信号灯",
+                        parentWords: "口渴的感觉就像嗓子里有个小卫兵在大喊：‘警报！我们需要水！’虽然这种感觉不舒服，但却在救命哦。如果不舒服的感觉消失了……？",
+                        description: "现在环境温度正在升高（模拟运动）。你看，‘生命之花’正在慢慢消耗它的水分储备。水分计正在下降。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "切断‘口渴’感知回路",
+                        parentWords: "来，点击那个蓝色按钮！关掉感应器。这样一来，大脑就再也收不到‘渴得受不了’的尖叫声了。花园看起来安静多了，但……？",
+                        description: "感知被成功屏蔽。由于失去了‘补水行为’的驱动，生命之花正在经历静默的自耗。观察它的颜色，它正在失去光泽。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "震撼大发现：水是生命之源",
+                        parentWords: "快看！即使不觉得渴，花朵由于极度缺水，它的‘生命晶体’正在崩塌，颜色也变成了灰蒙蒙的。直到它最后一片叶子垂下。",
+                        description: "大发现：口渴的感觉其实是身体最温柔的勒令。正是由于‘渴’的感觉，你才会记得灌满水杯。没有这份驱动力，生命就会在无声无息中枯萎。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "听懂身体的‘请求’",
+                        parentWords: "原来，那种嗓子干干的感觉是在说：‘主人，快给我生命的力量吧！’我们要感谢这种小小的‘不舒服’，它保卫了我们的整片森林。",
+                        description: "生命需要滋润，更需要感应。让我们重新打开感应器，给花朵倾注新鲜的补给！记得做一个爱喝水的、水灵灵的好孩子哦！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Flower Magic ---
+                let scene, camera, renderer, flowerGroup, ground;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 20, 100);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const pointLight = new THREE.PointLight(0x00f2fe, 1.5, 300);
+                    pointLight.position.set(20, 50, 50);
+                    scene.add(pointLight);
+
+                    // Flowing background stars
+                    const starGeo = new THREE.BufferGeometry();
+                    const starPos = [];
+                    for (let i = 0; i < 1500; i++) {
+                        starPos.push((Math.random() - 0.5) * 800, (Math.random() - 0.5) * 800, (Math.random() - 0.5) * 800);
+                    }
+                    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+                    const starMat = new THREE.PointsMaterial({ color: 0x4FACFE, size: 0.8, transparent: true, opacity: 0.5 });
+                    scene.add(new THREE.Points(starGeo, starMat));
+
+                    // 3D Glass Flower
+                    flowerGroup = new THREE.Group();
+                    const stemMat = new THREE.MeshStandardMaterial({ color: 0x00f2fe, roughness: 0.1, metalness: 0.5 });
+                    const stem = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.5, 30), stemMat);
+                    stem.position.y = 15;
+                    flowerGroup.add(stem);
+
+                    // Petals (Glassy)
+                    const petalMat = new THREE.MeshPhysicalMaterial({
+                        color: 0x3a86ff,
+                        transmission: 0.9,
+                        thickness: 2,
+                        roughness: 0.2,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    for (let i = 0; i < 6; i++) {
+                        const petal = new THREE.Mesh(new THREE.TorusGeometry(8, 2, 16, 100), petalMat);
+                        petal.position.y = 35;
+                        petal.rotation.x = Math.PI / 2;
+                        petal.rotation.y = (Math.PI * 2 / 6) * i;
+                        petal.scale.set(1, 1.5, 1);
+                        flowerGroup.add(petal);
+                    }
+
+                    scene.add(flowerGroup);
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (flowerGroup) {
+                        flowerGroup.rotation.y += 0.005;
+
+                        // Lifecycle animation based on water level
+                        const health = waterLevel.value / 100;
+                        flowerGroup.scale.set(health * 1.2, health * 1.2, health * 1.2);
+
+                        // Color fading
+                        flowerGroup.children.forEach(child => {
+                            if (child.material) {
+                                child.material.color.lerp(new THREE.Color(health > 0.3 ? 0x3a86ff : 0x666666), 0.02);
+                                if (child.material.emissive) child.material.emissiveIntensity = health;
+                            }
+                        });
+
+                        // Wilting drop (position)
+                        flowerGroup.position.y = -10 + (health * 10);
+                    }
+
+                    // Water Depletion HUD logic
+                    if (step.value === 1) waterLevel.value = 100;
+                    if (step.value === 2) waterLevel.value = 30 + Math.sin(t) * 10;
+                    if (step.value === 4) {
+                        waterLevel.value = Math.max(5, waterLevel.value - 0.3);
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const toggleSensor = () => {
+                    isSensorOn.value = !isSensorOn.value;
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 4) {
+                        gsap.to(camera.position, { z: 70, duration: 2 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.position, { x: x * 15, y: -y * 15 + 20, duration: 2.5 });
+                    });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, isSensorOn, waterLevel, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, toggleSensor
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

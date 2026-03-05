@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我想像植物一样光呼吸不吃饭</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = {
+                    'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js',
+                    'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js',
+                    'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'
+                };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-green: #22c55e;
+            --accent-sun: #fde047;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #064e3b;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #fde047, #22c55e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(253, 224, 71, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #ecfdf5;
+            background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-green);
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+        }
+
+        .energy-dash {
+            position: fixed;
+            left: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .energy-bar {
+            width: 15px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(253, 224, 71, 0.5);
+        }
+
+        .energy-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(to top, #22c55e, #fde047);
+            box-shadow: 0 0 20px #fde047;
+            transition: height 0.5s;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-green);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-green);
+        }
+
+        .discovery-tag {
+            background: #14532d;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .light-zone {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: auto;
+        }
+
+        .sun-btn {
+            background: #fde047;
+            color: #451a03;
+            padding: 1.5rem 4rem;
+            border-radius: 4rem;
+            font-weight: 900;
+            font-size: 1.4rem;
+            box-shadow: 0 0 40px #fde047;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                ☀️ 🍃 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 能量仪表 -->
+        <div v-if="step >= 2" class="energy-dash">
+            <div class="text-xs text-yellow-300 font-bold text-center">细胞能量</div>
+            <div class="energy-bar">
+                <div class="energy-fill" :style="{ height: energyLevel + '%' }"></div>
+            </div>
+            <div class="text-[10px] text-white opacity-40">每日消耗: 2000 kcal</div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">能量真相!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启光合作用' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-emerald-900 !text-white">
+                    致敬高效的胃部
+                </button>
+            </div>
+        </div>
+
+        <!-- 晒太阳按钮 -->
+        <div v-if="step === 3" class="light-zone">
+            <button @click="absorbSun" class="sun-btn">沐浴阳光 ☀️</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const energyLevel = ref(20);
+
+                const stages = [
+                    {
+                        title: "我想像植物一样光呼吸不吃饭",
+                        parentWords: "宝贝，你看大树只要站在那里晒晒太阳、喝喝水，就能长得又高又壮。要是你也能由于‘光合作用’，每天只要由于在操场草地上由于趴一会就饱了，由于你想把省下来的由于吃饭时间由于拿来做什么？",
+                        description: "这是一场关于‘绿色能源’的奇遇。我们的大地充满了能量，假如由于人类由于拥有了叶绿体，由于生存将由由于掠夺由于转为由于自给自足。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：安静的午餐",
+                        parentWords: "如果我们真的像植物一样。预测一下，当我们由于跑跳由于玩耍时，阳光提供的由于能量由于够用吗？如果连着下了一星期的由于大雨，由于我们的肚子由于会由于咕咕叫吗？",
+                        description: "预测中：能量密度差异。植物生活得极其由于缓慢，所以阳光够用。但人类是由于极其活跃的由于消耗者，单纯靠由于皮肤表面积的由于采集，由于可能连动动手指都由于极其由于由于困难。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：光合作用模拟",
+                        parentWords: "快！点击‘沐浴阳光’。看！即使阳光由于由于极其由于由于灿烂，由于能量条也由于增长得非常缓慢。而你由于呼吸和跳动所由于消耗的速度，可能比由于由于由于产生由于还要快！",
+                        description: "由于生命由于能量库。在这里，你可以体验由于由于光合作用的由于生产率。你会发现，对于由于高能耗的人类由于由于大脑来说，阳光实在是由于太由于杯水车薪了。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：表面积的限制",
+                        parentWords: "你看！原来我们需要由于每天吃那么多东西。新发现：如果要靠阳光活下去，人类可能需要由于长出由于由于由于几百平米的由于大叶子！而且还要由于一直一动不动地由于待在由于大草场上！",
+                        description: "震撼揭秘：由于热力学定律。新发现：动物的‘动’是由于以巨大的能量消费由于为前提的。植物选择了由于静止与微能，而我们选择了由于由于由于奔跑与由于由于由于进食。这就是由于生命由于两条完全不同的路径！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "致敬伟大的美食家",
+                        parentWords: "让我们感恩这份由于胃部的功劳。虽然要由于准时吃饭。但正是由于由于由于食物。我们才能由于拥有由于思考和探索的力量。你今天完成了一个由于了不起的由于能量代谢发现！",
+                        description: "由于万物由于各尽其用。今天你不仅体验了由于绿色生命。更由于读懂了由于能量的权重。你是由于世界由于最博学的由于小科学家！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Scene Setup ---
+                let scene, camera, renderer, petals = [];
+                let sunParticles = [];
+                let oxygenBubbles = [];
+                const receptor = new THREE.Mesh(
+                    new THREE.IcosahedronGeometry(3, 1),
+                    new THREE.MeshStandardMaterial({ color: 0x22c55e, wireframe: true, emissive: 0x22c55e, emissiveIntensity: 0.5 })
+                );
+
+                const createSunParticle = () => {
+                    const geo = new THREE.SphereGeometry(0.1, 8, 8);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
+                    const p = new THREE.Mesh(geo, mat);
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = 30 + Math.random() * 10;
+                    p.position.set(Math.cos(angle) * radius, 15 + Math.random() * 10, Math.sin(angle) * radius);
+                    p.userData = { target: receptor.position, speed: 0.2 + Math.random() * 0.3 };
+                    scene.add(p);
+                    sunParticles.push(p);
+                };
+
+                const createOxygenBubble = (pos) => {
+                    const geo = new THREE.SphereGeometry(Math.random() * 0.3 + 0.1, 8, 8);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x4ade80, transparent: true, opacity: 0.6 });
+                    const b = new THREE.Mesh(geo, mat);
+                    b.position.copy(pos);
+                    b.userData = { speedV: 0.05 + Math.random() * 0.1, speedH: (Math.random() - 0.5) * 0.02 };
+                    scene.add(b);
+                    oxygenBubbles.push(b);
+                };
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x064e3b);
+                    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 5, 35);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const sun = new THREE.DirectionalLight(0xfde047, 1.5);
+                    sun.position.set(10, 20, 10);
+                    scene.add(sun);
+
+                    // Add Receptor
+                    scene.add(receptor);
+
+                    // Add Floating Petals
+                    for (let i = 0; i < 30; i++) {
+                        const p = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ color: 0x14532d, side: THREE.DoubleSide }));
+                        p.position.set((Math.random() - 0.5) * 60, Math.random() * 40, (Math.random() - 0.5) * 60);
+                        p.userData = { speed: 0.02 + Math.random() * 0.05 };
+                        scene.add(p);
+                        petals.push(p);
+                    }
+
+                    animate();
+                    window.addEventListener('resize', onResize);
+                };
+
+                const absorbSun = () => {
+                    energyLevel.value = Math.min(100, energyLevel.value + 5);
+                    gsap.to(receptor.scale, { x: 1.3, y: 1.3, z: 1.3, duration: 0.2, yoyo: true, repeat: 1 });
+                    gsap.to(receptor.material, { emissiveIntensity: 2, duration: 0.2, yoyo: true, repeat: 1 });
+
+                    // Burst of oxygen bubbles
+                    for (let i = 0; i < 5; i++) createOxygenBubble(receptor.position);
+                    // Rain of sun particles
+                    for (let i = 0; i < 15; i++) createSunParticle();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const time = Date.now() * 0.001;
+
+                    petals.forEach(p => {
+                        p.position.y -= p.userData.speed;
+                        p.rotation.x += 0.01;
+                        if (p.position.y < -15) p.position.y = 45;
+                    });
+
+                    // Update Sun Particles (moving towards receptor)
+                    for (let i = sunParticles.length - 1; i >= 0; i--) {
+                        const p = sunParticles[i];
+                        const dir = new THREE.Vector3().subVectors(receptor.position, p.position).normalize();
+                        p.position.add(dir.multiplyScalar(p.userData.speed));
+                        if (p.position.distanceTo(receptor.position) < 0.5) {
+                            scene.remove(p);
+                            sunParticles.splice(i, 1);
+                        }
+                    }
+
+                    // Update Oxygen Bubbles (rising)
+                    for (let i = oxygenBubbles.length - 1; i >= 0; i--) {
+                        const b = oxygenBubbles[i];
+                        b.position.y += b.userData.speedV;
+                        b.position.x += b.userData.speedH;
+                        b.material.opacity -= 0.005;
+                        if (b.material.opacity <= 0) {
+                            scene.remove(b);
+                            oxygenBubbles.splice(i, 1);
+                        }
+                    }
+
+                    receptor.rotation.y += 0.01;
+                    receptor.rotation.z += 0.005;
+
+                    if (step.value === 3) {
+                        energyLevel.value = Math.max(5, energyLevel.value - 0.05);
+                        // Natural slow influx of sun particles
+                        if (Math.random() < 0.1) createSunParticle();
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const onResize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 1.5 });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 1.5, delay: 0.5 });
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, delay: 1 });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, energyLevel, currentStageData,
+                    nextStage, goToStage, resetSimulation, absorbSun
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

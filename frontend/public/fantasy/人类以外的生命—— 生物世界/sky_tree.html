@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>树长得像天一样高会怎样</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-sky: #38bdf8;
+            --accent-green: #059669;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #38bdf8, #059669);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #bae6fd;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-sky);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+        }
+
+        .altitude-hud {
+            position: fixed;
+            left: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            color: var(--accent-sky);
+            font-weight: 700;
+            opacity: 0;
+        }
+
+        .alt-panel {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            border: 2px solid rgba(56, 189, 248, 0.4);
+            text-align: center;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-sky);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-sky);
+        }
+
+        .discovery-tag {
+            background: #0c4a6e;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .grow-clicker {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: auto;
+            z-index: 30;
+        }
+
+        .grow-btn {
+            background: var(--accent-sky);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 1);
+            border: 5px solid white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 高度 HUD -->
+        <div class="altitude-hud" ref="altHud">
+            <div class="text-xs uppercase opacity-60">Vertical Probe</div>
+            <div class="alt-panel">
+                <div class="text-xs">当前树木高度</div>
+                <div class="text-4xl font-bold">{{ treeHeight }}m</div>
+            </div>
+            <div v-if="treeHeight > 100" class="text-xs text-center text-red-400 font-bold mt-2">
+                ⚠️ 水分输送压力临界!
+            </div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                ☁️ 🌳 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">真相揭秘!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启街道模拟' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-sky-900 !text-white">
+                    致敬自然的界限
+                </button>
+                <button v-if="step === 3 && treeHeight >= 120" @click="nextStage"
+                    class="next-btn !bg-sky-500 ml-4">理解液压极限</button>
+            </div>
+        </div>
+
+        <!-- 拔高按钮 -->
+        <div v-if="step === 3" class="grow-clicker">
+            <button @click="growTree" class="grow-btn">🌱</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const treeHeight = ref(10);
+
+                const stages = [
+                    {
+                        title: "参天大树的起跑线",
+                        parentWords: "宝贝，你看，大树由于想通过云朵去和星星拉手。它的梦想由于能实现吗？它地下的由于生命能量由于够用吗？",
+                        description: "这是一片引力试验场。这里有一棵正在由于向上由于努力、渴望由于亲吻天空的小树苗。请帮助它开启由于生命之旅。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：天空的极限",
+                        parentWords: "如果树可以无限长。预测一下，它地下的由于根系能由于把水泵到比珠穆朗玛峰还由于高的地方吗？那是由于什么样的工程奇迹？",
+                        description: "预测中：树木的输水管道由于物理由于极限。当高度由于超出了由于引力和液压的承受，树顶就会由于因为由于脱水而凋亡。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：直冲云霄",
+                        parentWords: "快！疯狂点击 🌱。看！当树木由于长高时，由于上面的叶子怎么变干了？是不是由于你的拔高能量把大自然由于给难住了？",
+                        description: "观测中：树木由于在由于惊人地生长。高度正在由于突破由于物理由于临界。看！由于树梢由于已经由于脱离了由于水分的补给线。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：高度的黄金比例",
+                        parentWords: "你看！树由于长不高不是因为由于懒，而是为了不被由于渴死。新发现：在地球引力和由于厚重气压下，树的最高由于记录只有由于120多米。这是由于为了保护每一片叶子都由于获得由于滋润！",
+                        description: "震撼揭秘：由于为了‘喝到水’。树木生长的极限在于由于重力与液压。新发现：如果长得太高，由于水分由于还没到顶层就由于蒸发完了。大自然通过这个由于限度，保护了每棵树的由于健康平衡！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "致敬自然的守护者",
+                        parentWords: "让我们感恩这份由于适中的由于智慧。大自然的每一个由于限制其实都是一种由于温柔的保护。你今天又由于读懂了由于生命的秘密！",
+                        description: "無論由於由於高矮，每棵樹都有它由於由於最舒服的高度。讓我們由于這份由於適中的由於智慧由于而讚美。你是今天最由於由于穩健的生態架構師！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Sky Tree ---
+                let scene, camera, renderer, trunk, leavesGroup, cloudsGroup;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 5000);
+                    camera.position.set(0, 50, 200);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 1. Trunk
+                    const trunkGeo = new THREE.CylinderGeometry(2, 4, 1, 16);
+                    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x451a03 });
+                    trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                    trunk.position.y = 0;
+                    scene.add(trunk);
+
+                    // 2. Leaves
+                    leavesGroup = new THREE.Group();
+                    scene.add(leavesGroup);
+                    for (let i = 0; i < 30; i++) {
+                        const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(Math.random() * 2 + 3), new THREE.MeshStandardMaterial({ color: 0x059669 }));
+                        leaf.position.set((Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 10);
+                        leavesGroup.add(leaf);
+                    }
+
+                    // 3. Clouds
+                    cloudsGroup = new THREE.Group();
+                    for (let i = 0; i < 15; i++) {
+                        const cloud = new THREE.Mesh(new THREE.SphereGeometry(15, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 }));
+                        cloud.position.set((Math.random() - 0.5) * 400, 150 + i * 100, (Math.random() - 0.5) * 400);
+                        cloudsGroup.add(cloud);
+                    }
+                    scene.add(cloudsGroup);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const sun = new THREE.PointLight(0x38bdf8, 2, 800);
+                    sun.position.set(20, 300, 100);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const growTree = () => {
+                    treeHeight.value += 5;
+                    updateTree();
+                    if (treeHeight.value > 100) {
+                        leavesGroup.children.forEach(l => {
+                            l.material.color.lerp(new THREE.Color(0x92400e), 0.1); // Drying
+                        });
+                    }
+                };
+
+                const updateTree = () => {
+                    const h = treeHeight.value;
+                    gsap.to(trunk.scale, { y: h, duration: 0.5 });
+                    gsap.to(trunk.position, { y: h / 2, duration: 0.5 });
+                    gsap.to(leavesGroup.position, { y: h, duration: 0.5 });
+                    gsap.to(camera.position, { y: h + 50, duration: 0.8 });
+                    camera.lookAt(0, h, 0);
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    cloudsGroup.children.forEach((c, idx) => {
+                        c.position.x += Math.sin(t + idx) * 0.1;
+                    });
+
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal >= 2) gsap.to('.altitude-hud', { opacity: 1, duration: 1 });
+                    if (newVal === 4) {
+                        gsap.to(camera.position, { z: 400, x: 200, duration: 4 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+                    updateTree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, treeHeight, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, growTree
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

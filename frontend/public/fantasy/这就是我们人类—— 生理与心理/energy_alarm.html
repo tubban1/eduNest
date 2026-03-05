@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>吃饱了总也不饿该多好</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-red: #ff4d4d;
+            --accent-green: #00ff00;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(15px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.5rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #ff4d4d, #f9cb28);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 10px rgba(255, 77, 77, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #ffcccc;
+            background: linear-gradient(90deg, transparent, rgba(255, 77, 77, 0.1), transparent);
+            padding: 0.9rem 3.5rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 16rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-red);
+            box-shadow: 0 0 30px rgba(255, 77, 77, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.5rem;
+            border-radius: 3.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .btn-switch {
+            background: #444;
+            padding: 1.5rem 3.5rem;
+            border-radius: 2rem;
+            color: white;
+            font-weight: bold;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            border: 2px solid transparent;
+        }
+
+        .btn-switch.active {
+            background: #ff4d4d;
+            border-color: white;
+            box-shadow: 0 0 20px #ff4d4d;
+        }
+
+        .energy-hud {
+            position: fixed;
+            left: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .energy-meter {
+            width: 30px;
+            height: 250px;
+            background: #333;
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse;
+            border: 2px solid #555;
+        }
+
+        .energy-fill {
+            width: 100%;
+            background: linear-gradient(0deg, #ff4d4d, #f9cb28, #00ff00);
+            transition: height 0.5s ease;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-red);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-red);
+        }
+
+        .discovery-tag {
+            background: #b91c1c;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 侧边 HUD -->
+        <div class="energy-hud" v-if="step >= 2">
+            <div class="text-xs uppercase opacity-60">Energy Status</div>
+            <div class="energy-meter">
+                <div class="energy-fill" :style="{ height: energyPercent + '%' }"></div>
+            </div>
+            <div class="text-xl font-bold" :style="{ color: energyPercent < 20 ? '#ff4d4d' : '#fff' }">
+                {{ energyPercent.toFixed(0) }}%
+            </div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🍽️ {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">新发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '试图停用报警器' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-slate-700 !text-white">
+                    重启能量循环
+                </button>
+            </div>
+        </div>
+
+        <!-- 机器人的警报开关 -->
+        <div v-if="step === 3" class="control-panel">
+            <div @click="toggleAlarm" class="btn-switch" :class="{ active: isAlarmOn }">
+                {{ isAlarmOn ? '饥饿警报核心: 已开启' : '饥饿警报核心: 已断开' }}
+            </div>
+            <button v-if="!isAlarmOn" @click="nextStage" class="next-btn !text-sm !py-3 !px-12">见证停机</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const isAlarmOn = ref(true);
+                const energyPercent = ref(100);
+
+                const stages = [
+                    {
+                        title: "如果人总也不觉得饿",
+                        parentWords: "嘿，大餐吃完后，如果肚子永远不会报错‘没油了’。我们是不是就能像超级英雄一样，二十四小时都不停工啦？",
+                        description: "在这间实验室里，有一只充满活力的 3D 机器人。它每做一个动作都会消耗一点能量。观察它的‘能量电池’。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "消失的‘警报铃’",
+                        parentWords: "可是，如果你把身体里的那个‘提醒你要吃饭’的闹钟拆了。结果会是什么样呢？",
+                        description: "饥饿感就是人体的内置警报器。现在，小机器人的电池快用完了，它的胸口正在闪红灯。让我们试试把这个警报声关掉。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "切断‘饥饿感’信号",
+                        parentWords: "来，点击那个红色的核心。把它关掉以后，机器人就不会再因为‘饿’而吵着要吃电池燃料啦。让它继续工作吧！",
+                        description: "当警报器被断开，机器人虽然‘不吵了’，但能量并没有凭空产生。它在透支自己最后的火花。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "惊人的发现：静默停机",
+                        parentWords: "你看！由于收不到‘饿’的消息，它一直傻傻地跳舞，直到最后一克煤炭烧完。这种毫无预兆的‘突然断电’，是不是更可怕？",
+                        description: "新发现：饥饿感其实是身体对你的‘终极保护词’。它为了不让你突然倒在路上，提前几个小时就开始‘咕咕咕’地催你加油。由于有它，你才永远活力满满！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "爱护你的‘指示灯’",
+                        parentWords: "原来饿的感觉并不可怕，那是身体在温柔地撒娇呢。我们要感谢每一次饥饿，由于它让我们知道：生命是需要爱的能量来充填的。",
+                        description: "按时吃饭，快乐成长。听懂身体发出的每一个信号。让我们给小机器人和我们自己，都重新灌满爱的能量，出发！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Robot Magic ---
+                let scene, camera, renderer, robot, batteryLight;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 10, 80);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                    directionalLight.position.set(50, 100, 50);
+                    scene.add(directionalLight);
+
+                    // Simplified Robot
+                    robot = new THREE.Group();
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9, roughness: 0.2 });
+
+                    const head = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), mat);
+                    head.position.y = 12;
+                    const body = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 15, 8), mat);
+
+                    // The "Alarm Light" Core
+                    const lightGeo = new THREE.SphereGeometry(2.5, 32, 32);
+                    batteryLight = new THREE.Mesh(lightGeo, new THREE.MeshStandardMaterial({
+                        color: 0x00ff00,
+                        emissive: 0x00ff00,
+                        emissiveIntensity: 1
+                    }));
+                    batteryLight.position.set(0, 2, 6);
+                    body.add(batteryLight);
+
+                    robot.add(head, body);
+                    scene.add(robot);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (robot) {
+                        if (energyPercent.value > 0) {
+                            robot.rotation.y = Math.sin(t * 2) * 0.3;
+                            robot.position.y = Math.abs(Math.sin(t * 4)) * 2;
+                        } else {
+                            // Decaying/Falling down
+                            robot.rotation.z = Math.PI / 2.5;
+                            robot.position.y = -5;
+                        }
+                    }
+
+                    // Simulated Energy Decay
+                    if (step.value === 1) energyPercent.value = 100;
+                    if (step.value === 2) energyPercent.value = 15 + Math.sin(t) * 5;
+                    if (step.value === 4) {
+                        energyPercent.value = Math.max(0, energyPercent.value - 0.2);
+                        if (energyPercent.value < 5) {
+                            batteryLight.material.emissiveIntensity = 0;
+                            batteryLight.material.color.set(0x000000);
+                        }
+                    }
+
+                    // Light Color
+                    if (isAlarmOn.value) {
+                        if (energyPercent.value < 20) {
+                            batteryLight.material.color.set(0xff0000);
+                            batteryLight.material.emissive.set(0xff0000);
+                            batteryLight.material.emissiveIntensity = Math.abs(Math.sin(t * 8)) * 2;
+                        } else {
+                            batteryLight.material.color.set(0x00ff00);
+                            batteryLight.material.emissive.set(0x00ff00);
+                        }
+                    } else {
+                        batteryLight.material.emissiveIntensity = 0.1;
+                        batteryLight.material.color.set(0x333333);
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const toggleAlarm = () => {
+                    isAlarmOn.value = !isAlarmOn.value;
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 4) {
+                        // Disaster sequence
+                        gsap.to(camera.position, { z: 60, duration: 2, ease: "power2.inOut" });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, isAlarmOn, energyPercent, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, toggleAlarm
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

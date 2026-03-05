@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream with AI: Interactive Bedtime Stories</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a2e;
+            font-family: 'Quicksand', sans-serif;
+            color: #e94560;
+        }
+
+        .story-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 6vh 6vw;
+            background: radial-gradient(circle at center, rgba(26, 26, 46, 0.4), #0f3460);
+        }
+
+        .magic-book {
+            position: relative;
+            width: 85%;
+            height: 55%;
+            background: #fee2e2;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(233, 69, 96, 0.4);
+            margin: 0 auto;
+            overflow: hidden;
+            border: 10px solid #533483;
+        }
+
+        .page-content {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .h-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.8rem;
+            color: #533483;
+            margin-bottom: 2vh;
+        }
+
+        .p-text {
+            color: #16213e;
+            font-size: 1.4rem;
+            line-height: 1.6;
+        }
+
+        .btn-choice {
+            pointer-events: auto;
+            background: #e94560;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            margin: 10px;
+        }
+
+        .btn-choice:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(233, 69, 96, 0.3);
+        }
+
+        .parent-words {
+            font-style: italic;
+            color: #a29bfe;
+            font-size: 1.1rem;
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .star-field {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="star-field" id="stars"></div>
+    <div id="app" class="story-container">
+        <div class="parent-words">🌟 Parent's Guide: [[ parentWords[step-1] ]]</div>
+
+        <div class="magic-book">
+            <transition name="fade" mode="out-in">
+                <div :key="step" class="page-content">
+                    <h2 class="h-title">[[ stages[step-1].title ]]</h2>
+                    <p class="p-text">[[ stages[step-1].content ]]</p>
+
+                    <div class="mt-12 flex justify-center flex-wrap" v-if="step < 5">
+                        <button @click="nextStep" class="btn-choice">
+                            [[ step === 1 ? 'Unlock Secret Gate 🗝️' : (step === 2 ? 'Sing for Dragon 🎶' : 'Enter Dream
+                            Land ✨') ]]
+                        </button>
+                    </div>
+                    <button v-else @click="resetStory" class="btn-choice">New Adventure 📖</button>
+                </div>
+            </transition>
+        </div>
+
+        <div class="text-center text-slate-400 text-sm">[[ stages[step-1].interaction ]]</div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const stages = [
+                    { title: "Once Upon a Time", content: "Deep in the Whispering Woods, a little owl named Ollie found a glowing key. What should he do next?" },
+                    { title: "The Golden Gate", content: "A huge gate appeared with three riddles. Logic and patience always win the day!" },
+                    { title: "A Friendly Dragon", content: "Ollie met a dragon made of clouds! Instead of fire, it breathed colorful bubbles." },
+                    { title: "The Starry Reward", content: "Because you were brave and kind, the forest turned into a sea of stars!" },
+                    { title: "Personal Adventure", content: "With eduNest, every bedtime is a unique world shaped by your child's choices." }
+                ];
+                const parentWords = [
+                    "Honey, if you were Ollie, would you open the door or search for a friend?",
+                    "Can you think of a riddle for Ollie? Something round but can't bounce?",
+                    "Look at the dragon! Shall we sing a song together to make him happy?",
+                    "You helped Ollie be so brave. See the stars? They're shining just for you.",
+                    "Sweet dreams, my little explorer. Every story tonight was about you."
+                ];
+
+                const nextStep = () => { if (step.value < 5) step.value++; else step.value = 1; };
+                const resetStory = () => { step.value = 1; location.reload(); };
+
+                onMounted(() => {
+                    const starsContainer = document.getElementById('stars');
+                    for (let i = 0; i < 100; i++) {
+                        const star = document.createElement('div');
+                        star.style.position = 'absolute';
+                        star.style.width = Math.random() * 3 + 'px';
+                        star.style.height = star.style.width;
+                        star.style.backgroundColor = '#fff';
+                        star.style.borderRadius = '50%';
+                        star.style.left = Math.random() * 100 + '%';
+                        star.style.top = Math.random() * 100 + '%';
+                        star.style.opacity = Math.random();
+                        starsContainer.appendChild(star);
+                        gsap.to(star, { opacity: 0.1, duration: Math.random() * 2 + 1, repeat: -1, yoyo: true });
+                    }
+                });
+
+                return { step, stages, parentWords, nextStep, resetStory };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人总也不长大该多好</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-pink: #FF6B9D;
+            --text-main: #2D3748;
+            --glass-bg: rgba(255, 255, 255, 0.2);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #fffafa;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        /* 艺术背景：基于 AI 绘画的成长群像氛围 */
+        #art-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            filter: grayscale(20%) brightness(1.1);
+            z-index: 0;
+            transition: opacity 2s ease;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.5rem;
+            letter-spacing: 0.2rem;
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 2px 5px rgba(255, 107, 157, 0.2));
+        }
+
+        .parent-words {
+            font-size: 1.2rem;
+            color: #D53F8C;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 157, 0.1), transparent);
+            padding: 0.8rem 3rem;
+            border-radius: 2rem;
+            font-weight: 400;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 15rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.6;
+            color: #4A5568;
+            text-shadow: 0 1px 1px white;
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 107, 157, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 5rem;
+            border-radius: 5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 2px solid rgba(255, 107, 157, 0.4);
+            color: #D53F8C;
+            box-shadow: 0 15px 35px rgba(255, 107, 157, 0.1);
+        }
+
+        .next-btn:hover {
+            background: #FF6B9D;
+            transform: scale(1.1) translateY(-10px);
+            border-color: #FF6B9D;
+            color: white;
+            box-shadow: 0 20px 50px rgba(255, 107, 157, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(20px);
+            padding: 2.2rem;
+            border-radius: 3rem;
+            border: 1px solid rgba(255, 107, 157, 0.3);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 25px 60px rgba(255, 107, 157, 0.15);
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            color: #D53F8C;
+            font-size: 1rem;
+            letter-spacing: 0.1rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--accent-pink);
+            cursor: pointer;
+        }
+
+        .discovery-tag {
+            background: #38B2AC;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 107, 157, 0.2);
+            border: 2px solid rgba(255, 107, 157, 0.4);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: #FF6B9D;
+            transform: scale(1.5);
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.5);
+        }
+
+        /* 引导性微动效 */
+        @keyframes pulse-soft {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        .animate-pulse-slow {
+            animation: pulse-soft 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- AI 绘画生成的成长意境背景图 -->
+    <div id="art-background" style="background-image: url('child_growth_stages_premium_1772300836258.png')"></div>
+
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🧸 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">成长奇迹!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn animate-pulse-slow">
+                    {{ step === 2 ? '开启生长能量' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-pink-500 !text-white">
+                    让生命再次飞跃
+                </button>
+            </div>
+        </div>
+
+        <!-- 3D 核心交互面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div class="slider-label">
+                <span>稚嫩期</span>
+                <span>跃变期</span>
+                <span>英拔期</span>
+            </div>
+            <input type="range" v-model="growthFactor" min="0" max="1" step="0.005" class="pointer-events-auto mb-6">
+            <div class="flex justify-center">
+                <button @click="nextStage" class="next-btn !text-sm !py-3 !px-12"
+                    :style="{ opacity: growthFactor > 0.9 ? 1 : 0.6 }">
+                    完成蜕变
+                </button>
+            </div>
+        </div>
+
+        <!-- 侧边进度导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const growthFactor = ref(0);
+
+                const stages = [
+                    {
+                        title: "梦幻岛的愿望",
+                        parentWords: "亲爱的孩子，如果把生命定格在最单纯的时候，就像在玻璃瓶里保存一朵永不凋谢的花。",
+                        description: "在这个阶段，你是一个承载着无限梦想的‘光之晶格’。长大的愿望还没到来，但在你心里，好奇的种子已经开始发芽。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "生命的小闹钟",
+                        parentWords: "你知道吗？你身体里的‘生长激素’就像小闹钟，正在敲打着你的骨骼：‘该变高啦，该去探索更远的世界啦！’",
+                        description: "虽然我们看不见，但微观世界里充满了韵律。晶格开始重组，成长的旋律正像星火一样在你的身体里扩散。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "不可阻挡的变身",
+                        parentWords: "来，握住生命滑块！用力向右滑动，见证身体比例的神奇变化。看你的肩膀是不是变得宽厚有力了？",
+                        description: "通过交互操作，你会发现成长不只是变快，更是比例的优化——从大脑袋的幼儿到一个挺拔的少年，这是基因最伟大的几何学。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "心智的新高度",
+                        parentWords: "快看！当个头拔高的时候，你的心脏也在发生‘奇效’——它开始懂得理解他人，装下了爱与责任。",
+                        description: "震撼大发现：生理的成长往往伴随着心理的扩张。你的‘心之核心’开始发光，意味着你已经拥有了守护家人的力量。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "永恒的少年心",
+                        parentWords: "长大的身体可以帮你翻山越岭，而一颗不凋谢的童心，是你永远的引擎。带上这股力量出发吧！",
+                        description: "最终形态：一个充满智慧、健硕有力却依然对世界充满惊喜的生命。成长不是告别过去，而是带着童年的光，去更有力地拥抱未来。",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- 精英级 3D 场景逻辑 (Three.js) ---
+                let scene, camera, renderer, humanoid, heartCore, fieldStars;
+                let clock = new THREE.Clock();
+
+                // 3D 人体比例控制
+                const parts = { head: null, torso: null, arms: [], legs: [] };
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 10, 120);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 柔和光影
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const spot = new THREE.SpotLight(0xff6b9d, 1.5);
+                    spot.position.set(50, 100, 50);
+                    scene.add(spot);
+
+                    // 1. 构建一个“光之几何”人形 (Humanoid Placeholder)
+                    const group = new THREE.Group();
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: 0xFFB6C1,
+                        emissive: 0xFF6B9D,
+                        emissiveIntensity: 0.2,
+                        metalness: 0.5,
+                        roughness: 0.2,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+
+                    // 躯干
+                    parts.torso = new THREE.Mesh(new THREE.CapsuleGeometry(5, 12, 4, 16), mat);
+                    group.add(parts.torso);
+
+                    // 头部
+                    parts.head = new THREE.Mesh(new THREE.SphereGeometry(6, 32, 32), mat);
+                    parts.head.position.y = 12;
+                    group.add(parts.head);
+
+                    // 四肢 (简化表达)
+                    for (let i = 0; i < 4; i++) {
+                        const limb = new THREE.Mesh(new THREE.CapsuleGeometry(2, 10, 4, 8), mat);
+                        if (i < 2) { // 腿
+                            limb.position.set(i === 0 ? -3.5 : 3.5, -12, 0);
+                        } else { // 手
+                            limb.position.set(i === 2 ? -7 : 7, 5, 0);
+                        }
+                        group.add(limb);
+                        i < 2 ? parts.legs.push(limb) : parts.arms.push(limb);
+                    }
+
+                    humanoid = group;
+                    scene.add(humanoid);
+
+                    // 2. 环境星火 (Growth Hormone Metaphor)
+                    const sGeo = new THREE.BufferGeometry();
+                    const sPos = [];
+                    for (let i = 0; i < 1500; i++) {
+                        sPos.push((Math.random() - 0.5) * 600, (Math.random() - 0.5) * 600, (Math.random() - 0.5) * 600);
+                    }
+                    sGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPos, 3));
+                    fieldStars = new THREE.Points(sGeo, new THREE.PointsMaterial({ color: 0xffd700, size: 0.8, transparent: true, opacity: 0.5 }));
+                    scene.add(fieldStars);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (humanoid) {
+                        humanoid.rotation.y = Math.sin(t * 0.3) * 0.2;
+                        // 呼吸动态
+                        parts.torso.scale.x = 1 + Math.sin(t * 2) * 0.05;
+                    }
+
+                    if (fieldStars) {
+                        fieldStars.rotation.y += 0.0003;
+                        fieldStars.position.y = Math.cos(t * 0.5) * 10;
+                    }
+
+                    // 核心逻辑：成长变身 (Proportion Control)
+                    if (step.value >= 3) {
+                        const factor = growthFactor.value;
+                        // 婴儿 -> 青少年的比例变化细节
+                        // 婴儿头身比大，四肢短
+                        const headScale = 1.3 - (factor * 0.4); // 头部变小（相对于身体）
+                        parts.head.scale.set(headScale, headScale, headScale);
+                        parts.head.position.y = 12 + (factor * 10);
+
+                        parts.torso.scale.y = 1 + (factor * 0.8);
+                        parts.legs.forEach(l => {
+                            l.scale.y = 0.8 + (factor * 1.5);
+                            l.position.y = -10 - (factor * 15);
+                        });
+                        parts.arms.forEach(a => {
+                            a.scale.y = 0.8 + (factor * 1.2);
+                            a.position.y = 5 + (factor * 5);
+                        });
+                    }
+
+                    if (heartCore && step.value >= 4) {
+                        const beat = 1 + Math.sin(t * 6) * 0.15;
+                        heartCore.scale.set(beat, beat, beat);
+                        heartCore.material.opacity = 0.8 + Math.sin(t * 6) * 0.2;
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                    if (n < 3) growthFactor.value = 0;
+                    if (n > 3) growthFactor.value = 1;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newStep) => {
+                    // 全局 UI 切换动效
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newStep === 1) {
+                        gsap.to(camera.position, { z: 120, duration: 3 });
+                    } else if (newStep === 2) {
+                        gsap.to(camera.position, { z: 100, x: -20, duration: 3, ease: "sine.inOut" });
+                    } else if (newStep === 4) {
+                        // 魔法入场：发光的心
+                        const heartGeo = new THREE.IcosahedronGeometry(6, 1);
+                        const heartMat = new THREE.MeshStandardMaterial({
+                            color: 0xff0000,
+                            emissive: 0xff0000,
+                            emissiveIntensity: 1.5,
+                            transparent: true,
+                            opacity: 0.8
+                        });
+                        heartCore = new THREE.Mesh(heartGeo, heartMat);
+                        heartCore.position.y = 5;
+                        heartCore.scale.set(0, 0, 0);
+                        parts.torso.add(heartCore);
+                        gsap.to(heartCore.scale, { x: 1, y: 1, z: 1, duration: 2, ease: "elastic.out(1, 0.4)" });
+                        gsap.to(camera.position, { z: 80, x: 0, y: 10, duration: 2 });
+                    } else if (newStep === 5) {
+                        gsap.to(camera.position, { z: 140, y: 30, duration: 4, ease: "power2.inOut" });
+                        gsap.to(humanoid.rotation, { y: Math.PI * 2, duration: 5 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    // 初始呈现
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    // 视差动效
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.position, { x: x * 20, y: -y * 20 + (step.value === 5 ? 30 : 10), duration: 3 });
+                        camera.lookAt(0, (step.value === 5 ? 20 : 0), 0);
+
+                        // 背景图片深度偏移
+                        gsap.to('#art-background', { x: -x * 30, y: -y * 30, scale: 1.05 + Math.abs(x) * 0.05, duration: 4 });
+                    });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    // 注册 Runtime 数据提供
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, growthFactor, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记住的东西永远也不忘该多好</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-amber: #fbbf24;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #fef3c7;
+            background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-amber);
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.5rem;
+            border-radius: 3.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .btn-switch {
+            background: #222;
+            padding: 1.5rem 3.5rem;
+            border-radius: 2rem;
+            color: #ddd;
+            font-weight: bold;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.4s;
+            border: 2px solid transparent;
+        }
+
+        .btn-switch.active {
+            background: #fbbf24;
+            border-color: white;
+            color: #1e293b;
+            box-shadow: 0 0 20px #fbbf24;
+        }
+
+        /* Memory HUD */
+        .memory-hud {
+            position: fixed;
+            left: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            color: #fbbf24;
+            font-family: monospace;
+        }
+
+        .vault-status {
+            font-size: 0.8rem;
+            letter-spacing: 0.1rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        .filling-bar {
+            width: 15px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .bar-inner {
+            width: 100%;
+            background: #fbbf24;
+            transition: height 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-amber);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-amber);
+        }
+
+        .discovery-tag {
+            background: #d97706;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        #overlay-confusion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(0px);
+            pointer-events: none;
+            z-index: 5;
+            transition: backdrop-filter 1s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div id="overlay-confusion"></div>
+
+    <div id="app" class="ui-root">
+        <!-- Memory HUD -->
+        <div class="memory-hud" v-if="step >= 2">
+            <div class="vault-status">Memory Load</div>
+            <div class="filling-bar">
+                <div class="bar-inner" :style="{ height: memoryPercent + '%' }"></div>
+            </div>
+            <div class="text-xl font-bold">{{ memoryPercent.toFixed(0) }}%</div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                📦 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">大发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '试图停止清扫' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-amber-600 !text-white">
+                    回归自净智慧
+                </button>
+            </div>
+        </div>
+
+        <!-- 控制开关 -->
+        <div v-if="step === 3" class="control-panel">
+            <div @click="toggleSweep" class="btn-switch" :class="{ active: isSweepOn }">
+                {{ isSweepOn ? '遗忘清道夫: 扫描中' : '遗忘清道夫: 已停机' }}
+            </div>
+            <button v-if="!isSweepOn" @click="nextStage" class="next-btn !text-sm !py-3 !px-12 ml-4">无法处理信息！</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const isSweepOn = ref(true);
+                const memoryPercent = ref(20);
+
+                const stages = [
+                    {
+                        title: "如果人永远也不忘",
+                        parentWords: "嘿，宝贝，想象一下，你能记住今天马路上看到的每一块小石头的纹路，听到每一声鸟叫的细节。这生活是不是像一直在录电影？",
+                        description: "在这间‘数字大脑实验室’里，有一个高度有序的记忆之库。大部分‘废纸’（无用信息）都会被自动清扫。观察花园的空旷与宁静。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "装满的‘仓库’",
+                        parentWords: "可是，如果你想把每天路过所有的车牌号、甚至连昨晚做的梦都永远记住，不出三天，你的‘大脑书房’就会塞满杂物。预测一下，如果你想在这堆废纸里找本作业，还得着吗？",
+                        description: "现在我们正在模拟‘无休止记忆’模式。你看，各种形状的小粒子（琐碎记忆）正在疯狂填满实验室的空间。你的系统负载正在急剧上升。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "关掉‘清道夫’进程",
+                        parentWords: "来，点击那个按钮！现在，你的大脑再也不肯‘扔垃圾’了。每一秒钟的新信息都会像沙子一样堆满你的视线。看！当你想找寻那本金色的‘核心智慧书’时，你是不是被杂物挡住了？",
+                        description: "由于记忆负荷过载，你的视野变得模糊（Blur）。由于缺乏筛选，有价值的‘核心目标’正在被废品淹没。这种满载状态会让你无法处理哪怕最简单的思考。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：‘忘掉’是给智慧让路",
+                        parentWords: "你看！当你把那个按钮按回来，清道夫瞬间我们就清爽了！原来‘忘记’才是大脑最顶级的能力！正是舍弃了那些没用的，我们才能空出位置来爱我们最亲近的人呀。",
+                        description: "新发现：遗忘不是由于大脑‘坏了’，而是由于大脑在‘爱护你’。由于它帮你扔掉了昨天的广告词，你才有空间记住妈妈的生日。学会忘记，是人类最了不起的收纳术。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "保护你的‘精神书房’",
+                        parentWords: "以后没关系忘掉一些小事啦。只要最重要的人、最美的梦想还没忘掉，你就是这个宇宙里最幸福、最聪明的小国王！",
+                        description: "记忆要有侧重，生活要有减法。让我们带着这间整洁的实验室，去创造更多值得深深刻在心里的回忆吧！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Overload Magic ---
+                let scene, camera, renderer, particles, targetBook;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 10, 120);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 1. Final Target: Golden Book
+                    const bookGeo = new THREE.BoxGeometry(10, 15, 2);
+                    targetBook = new THREE.Mesh(bookGeo, new THREE.MeshStandardMaterial({
+                        color: 0xfbbf24,
+                        emissive: 0xfbbf24,
+                        emissiveIntensity: 0.5
+                    }));
+                    targetBook.position.set(0, 0, 0);
+                    scene.add(targetBook);
+
+                    // 2. Junk Particles
+                    particles = new THREE.Group();
+                    scene.add(particles);
+                    for (let i = 0; i < 4000; i++) {
+                        addJunk(true);
+                    }
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const pointLight = new THREE.PointLight(0xfbbf24, 2);
+                    pointLight.position.set(0, 20, 20);
+                    scene.add(pointLight);
+
+                    animate();
+                };
+
+                const addJunk = (initVisible = false) => {
+                    const geo = new THREE.BoxGeometry(1.5, 1.5, 0.2);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.8 });
+                    const p = new THREE.Mesh(geo, mat);
+                    const r = 80 + Math.random() * 40;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    p.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+                    p.userData = {
+                        originalPos: p.position.clone(),
+                        isMoving: false
+                    };
+                    p.visible = initVisible;
+                    particles.add(p);
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (targetBook) {
+                        targetBook.rotation.y += 0.01;
+                    }
+
+                    // Junk Logic
+                    if (particles) {
+                        const threshold = isSweepOn.value ? 200 : 4000;
+                        particles.children.forEach((p, idx) => {
+                            if (idx < threshold) {
+                                p.visible = true;
+                                if (!isSweepOn.value) {
+                                    // Move random junk inward to crowd
+                                    p.position.lerp(new THREE.Vector3(0, 0, 10), 0.005);
+                                } else {
+                                    p.position.lerp(p.userData.originalPos, 0.02);
+                                }
+                            } else {
+                                p.visible = false;
+                            }
+                        });
+                    }
+
+                    // Memory HUD logic
+                    if (step.value === 1) memoryPercent.value = 15;
+                    if (step.value === 2) memoryPercent.value = 45 + Math.sin(t) * 10;
+                    if (step.value === 4) memoryPercent.value = 20;
+
+                    renderer.render(scene, camera);
+                };
+
+                const toggleSweep = () => {
+                    isSweepOn.value = !isSweepOn.value;
+                    const overlay = document.getElementById('overlay-confusion');
+                    if (!isSweepOn.value) {
+                        overlay.style.backdropFilter = "blur(15px)";
+                        gsap.to(camera.position, { z: 80, duration: 1 });
+                        memoryPercent.value = 99;
+                    } else {
+                        overlay.style.backdropFilter = "blur(0px)";
+                    }
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 4) {
+                        isSweepOn.value = true;
+                        gsap.to(camera.position, { z: 120, duration: 2 });
+                        document.getElementById('overlay-confusion').style.backdropFilter = "blur(0px)";
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, isSweepOn, memoryPercent, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, toggleSweep
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

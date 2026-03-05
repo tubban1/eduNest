@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>看得见的几何：AI 拆解 3D 世界</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f0f4f8;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        #canvas-holder {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5vh 5vw;
+        }
+
+        .glass-card {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .m-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 2.8rem;
+            color: #2c3e50;
+            margin-bottom: 1vh;
+        }
+
+        .p-guide {
+            color: #64748b;
+            font-size: 1.1rem;
+            border-bottom: 2px dashed #cbd5e1;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .action-btn {
+            pointer-events: auto;
+            background: #3b82f6;
+            color: white;
+            padding: 16px 45px;
+            border-radius: 50px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            background: #2563eb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 99px;
+            background: #dbeafe;
+            color: #1e40af;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-holder"></div>
+    <div id="app" class="ui-overlay">
+        <transition name="fade" mode="out-in">
+            <div :key="step" class="glass-card">
+                <div class="badge">MATH VIZ [[ step ]]/5</div>
+                <div class="p-guide">👪 亲子时刻: [[ parentWords[step-1] ]]</div>
+                <h1 class="m-title">[[ stages[step-1].title ]]</h1>
+                <p class="text-slate-600">[[ stages[step-1].content ]]</p>
+            </div>
+        </transition>
+
+        <div class="flex justify-center mb-10">
+            <button @click="nextStep" class="action-btn">
+                [[ step === 1 ? '一键展开' : (step === 2 ? '切换正视图' : (step === 3 ? '水平切割' : '下一步')) ]]
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const stages = [
+                    { title: "空间立方体", content: "几何体不是纸上的线条。它是全方位的、立体的。试着感受它的空间占位。" },
+                    { title: "神奇的展开", content: "公式背不下来？看！3D 几何体瞬间变成平面的“纸版”，面积计算直观清晰。" },
+                    { title: "三视图转化", content: "这是正视图。从单一角度观察，它就是一个正方形。这是空间想象力的基础。" },
+                    { title: "截切观察", content: "通过内部切割，我们能看到几何体的‘心’。注意切面形状的变化。" },
+                    { title: "eduNest 模型", content: "让数学变得可以触摸。想让孩子拥有过人的空间想象力吗？快来体验！" }
+                ];
+                const parentWords = [
+                    "宝贝，咱们把这个方块转一下，看看它每个面都有几个点？",
+                    "哇！它开花啦！这六个小正方形就是它的外衣，咱们数数看？",
+                    "你看，如果我们正对着看它，它是不是变回了一个普通的长方形？",
+                    "咱们把它切开看看，中间这一块像不像咱们吃的切片面包？",
+                    "数学不难，只要能看见。咱们在 eduNest 里继续探索好不好？"
+                ];
+
+                let scene, camera, renderer, cube, planes = [];
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('canvas-holder').appendChild(renderer.domElement);
+
+                    // Ambient & Light
+                    scene.add(new THREE.AmbientLight(0xffffff, 1));
+                    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                    directionalLight.position.set(5, 5, 5);
+                    scene.add(directionalLight);
+
+                    // Cube Mesh
+                    const geometry = new THREE.BoxGeometry(10, 10, 10);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: 0x3b82f6,
+                        shininess: 100,
+                        specular: 0x111111,
+                        transparent: true,
+                        opacity: 0.8,
+                        side: THREE.DoubleSide
+                    });
+                    cube = new THREE.Mesh(geometry, material);
+                    scene.add(cube);
+
+                    const edges = new THREE.EdgesGeometry(geometry);
+                    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+                    cube.add(line);
+
+                    camera.position.set(15, 15, 15);
+                    camera.lookAt(0, 0, 0);
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    if (step.value === 1) {
+                        cube.rotation.y += 0.01;
+                        cube.rotation.x += 0.005;
+                    }
+                    renderer.render(scene, camera);
+                };
+
+                const nextStep = () => {
+                    if (step.value === 1) { // 展开动画模拟
+                        gsap.to(camera.position, { x: 0, y: 0, z: 30, duration: 2 });
+                        gsap.to(cube.rotation, { x: 0, y: 0, z: 0, duration: 1 });
+                        step.value = 2;
+                    } else if (step.value === 2) { // 视角切换
+                        gsap.to(camera.position, { x: 0, y: 0, z: 20, duration: 1 });
+                        step.value = 3;
+                    } else if (step.value === 3) { // 切割效果
+                        gsap.to(cube.scale, { y: 0.1, duration: 1, ease: "elastic.out(1, 0.3)" });
+                        step.value = 4;
+                    } else if (step.value === 4) {
+                        step.value = 5;
+                    } else {
+                        location.reload();
+                    }
+                };
+
+                onMounted(initThree);
+                return { step, stages, parentWords, nextStep };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Explorer - eduNest</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #020205;
+            font-family: 'Inter', sans-serif;
+            color: white;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 30, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1a1a1a;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="relative w-full h-screen overflow-hidden">
+        <div id="canvas-holder" class="absolute inset-0"></div>
+
+        <div class="absolute inset-4 sm:inset-8 flex flex-col pointer-events-none p-4 justify-between">
+            <div class="flex justify-between items-start pointer-events-auto">
+                <div class="glass-panel p-4 px-6">
+                    <h1
+                        class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500 italic">
+                        eduNest: SPACE
+                    </h1>
+                </div>
+            </div>
+
+            <div class="flex justify-center items-end">
+                <div class="glass-panel p-8 max-w-lg w-full pointer-events-auto mb-8">
+                    <h2 class="text-xl font-bold mb-3 text-yellow-500">{{ stages[currentStage].title }}</h2>
+                    <p class="text-gray-200 leading-relaxed mb-6">{{ stages[currentStage].text }}</p>
+
+                    <div class="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-xl mb-6">
+                        <p class="text-sm text-yellow-400">🔭 Interaction: {{ stages[currentStage].interaction }}</p>
+                    </div>
+
+                    <button @click="nextStage"
+                        class="w-full nav-btn p-4 rounded-xl font-bold uppercase tracking-widest text-sm">
+                        {{ currentStage === stages.length - 1 ? 'Restart Journey' : 'Next Discovery' }}
+                    </button>
+
+                    <div class="mt-4 flex gap-2 justify-center">
+                        <div v-for="(_, i) in stages" :key="i" class="h-1 rounded-full transition-all duration-300"
+                            :class="currentStage === i ? 'w-10 bg-yellow-500' : 'w-2 bg-gray-700'">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, onMounted, ref } = Vue;
+
+        createApp({
+            setup() {
+                const currentStage = ref(0);
+                const stages = [
+                    {
+                        title: "The Golden Sun",
+                        text: "In the center of our neighborhood lies the Sun, a massive star that holds 99.8% of the total mass of the solar system.",
+                        interaction: "The core is glowing intensely."
+                    },
+                    {
+                        title: "The Gas Giants",
+                        text: "Moving outward, we meet Jupiter and Saturn. These giants are mostly hydrogen and helium, rotating so fast they bulge at the equator.",
+                        interaction: "The planets are expanding to their true scale."
+                    },
+                    {
+                        title: "Join the Exploration",
+                        text: "Astronomy is the study of the infinite. At eduNest, we believe curiosity should have no limits. Explore our full space curriculum today.",
+                        interaction: "Final planetary alignment."
+                    }
+                ];
+
+                const nextStage = () => {
+                    currentStage.value = (currentStage.value + 1) % stages.length;
+                    window.updateSpace(currentStage.value);
+                };
+
+                onMounted(() => {
+                    initSpace();
+                });
+
+                function initSpace() {
+                    const scene = new THREE.Scene();
+                    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setClearColor(0x020205, 1);
+                    document.getElementById('canvas-holder').appendChild(renderer.domElement);
+
+                    // Sun
+                    const sunGeom = new THREE.SphereGeometry(3, 32, 32);
+                    const sunMat = new THREE.MeshBasicMaterial({ color: 0xffcc33 });
+                    const sun = new THREE.Mesh(sunGeom, sunMat);
+                    scene.add(sun);
+
+                    // Planets
+                    const planets = [];
+                    const colors = [0x999999, 0xffaa66, 0x3366ff, 0xff4422, 0xffcc66, 0xffaa00];
+                    for (let i = 0; i < 6; i++) {
+                        const geom = new THREE.SphereGeometry(0.3 + i * 0.2, 32, 32);
+                        const mat = new THREE.MeshPhongMaterial({ color: colors[i] });
+                        const planet = new THREE.Mesh(geom, mat);
+                        planet.position.x = 5 + i * 2.5;
+                        scene.add(planet);
+                        planets.push(planet);
+                    }
+
+                    // Particles (Stars)
+                    const starGeom = new THREE.BufferGeometry();
+                    const starPos = [];
+                    for (let i = 0; i < 2000; i++) {
+                        starPos.push((Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100);
+                    }
+                    starGeom.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+                    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+                    const stars = new THREE.Points(starGeom, starMat);
+                    scene.add(stars);
+
+                    const light = new THREE.PointLight(0xffffff, 1.5, 100);
+                    light.position.set(0, 0, 0);
+                    scene.add(light);
+                    scene.add(new THREE.AmbientLight(0x222222));
+
+                    camera.position.z = 15;
+                    camera.position.y = 5;
+                    camera.lookAt(0, 0, 0);
+
+                    function animate() {
+                        requestAnimationFrame(animate);
+                        sun.rotation.y += 0.005;
+                        planets.forEach((p, i) => {
+                            p.rotation.y += 0.01;
+                            const time = Date.now() * 0.0005 * (1 / (i + 1));
+                            p.position.x = Math.cos(time) * (5 + i * 2.5);
+                            p.position.z = Math.sin(time) * (5 + i * 2.5);
+                        });
+                        renderer.render(scene, camera);
+                    }
+                    animate();
+
+                    window.updateSpace = (stage) => {
+                        if (stage === 1) {
+                            gsap.to(camera.position, { z: 25, y: 10, duration: 2 });
+                            planets.slice(4).forEach(p => gsap.to(p.scale, { x: 2, y: 2, z: 2, duration: 1.5 }));
+                        } else if (stage === 2) {
+                            gsap.to(sun.scale, { x: 1.2, y: 1.2, z: 1.2, duration: 1, repeat: -1, yoyo: true });
+                            gsap.to(camera.position, { x: 10, z: 10, duration: 3 });
+                        } else {
+                            gsap.to(camera.position, { x: 0, y: 5, z: 15, duration: 2 });
+                            planets.forEach(p => gsap.to(p.scale, { x: 1, y: 1, z: 1, duration: 1 }));
+                        }
+                    };
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                }
+
+                return {
+                    currentStage,
+                    stages,
+                    nextStage
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

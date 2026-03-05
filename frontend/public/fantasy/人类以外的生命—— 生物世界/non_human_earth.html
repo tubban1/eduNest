@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如果地球不是由人来统治会怎样</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-wild: #84cc16;
+            --accent-ruin: #475569;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #84cc16, #4d7c0f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(132, 204, 22, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #ecfccb;
+            background: linear-gradient(90deg, transparent, rgba(132, 204, 22, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-wild);
+            box-shadow: 0 0 30px rgba(132, 204, 22, 0.3);
+        }
+
+        .time-hud {
+            position: fixed;
+            left: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            color: var(--accent-wild);
+            font-weight: 700;
+            opacity: 0;
+        }
+
+        .time-card {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            border: 2px solid rgba(132, 204, 22, 0.4);
+            text-align: center;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-wild);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-wild);
+        }
+
+        .discovery-tag {
+            background: #3f6212;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .evolve-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 1.5rem 4rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .evolve-btn {
+            background: #84cc16;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 25px rgba(132, 204, 22, 0.6);
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 时间线 HUD -->
+        <div class="time-hud" ref="timeHud">
+            <div class="text-xs uppercase opacity-60">Era Tracker</div>
+            <div class="time-card">
+                <div class="text-xs">距离人类离去</div>
+                <div class="text-3xl font-bold">{{ yearsPast }} 年</div>
+            </div>
+            <div class="text-xs mt-2 text-center text-lime-400 font-bold">
+                {{ statusMessage }}
+            </div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🦒 🌿 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">大发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex flex-col items-center gap-6 justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启时间加速' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-lime-900 !text-white">
+                    回归和谐地球
+                </button>
+                <div v-if="step === 3" class="evolve-panel">
+                    <button @click="accelerateTime" class="evolve-btn">⏩</button>
+                    <div class="text-sm font-bold">加速自然回归</div>
+                    <button v-if="yearsPast > 500" @click="nextStage"
+                        class="next-btn !text-sm !py-3 !px-12 ml-4">理解生命的韧性</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const yearsPast = ref(0);
+
+                const stages = [
+                    {
+                        title: "繁华的终章",
+                        parentWords: "宝贝，如果没有了我们人类，现在的城市、马路和公园由于会变成什么样呢？是可爱的由于小由于动物由于会由于出来吗？",
+                        description: "这是一间‘由于未来由于空幻之境’。每一座摩天楼由于都在陷入沉睡。由于没有了由于灯火，繁星开始由于降临城市中心。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：自然的由于重由于塑",
+                        parentWords: "如果一千年由于过去了。预测一下，我们的由于街道还会被由于小汽车占领吗？还是由于绿色由于藤蔓由于成了由于新主人？",
+                        description: "预测中：自然具有强大的由于修复能力。由于失去了频繁的由于维护，钢筋水泥由于会被由于根系瓦解。多样性由于即将回归。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：绿色的由于逆袭",
+                        parentWords: "快！按住⏩ 键，让由于时间飞快地前进。看！由于蔓藤爬上了由于高楼。由于麋鹿由于在市中心由于草坪上由于奔跑。曾经的城市由于变成了一个由于绿色的乐园！",
+                        description: "观测中：你由于驱动了由于自然由于加速。生态演替由于正在疯狂进行。由于钢筋在大地的怀抱中由于变软了，由于生命之花在那边由于绽放！",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：地球的自由于愈力",
+                        parentWords: "你看！地球不是由于由谁统治的，它是由于属于所有由于生命的。新发现：自然系统由于能自我由于修复，而且由于会进化出由于更由于多彩的由于平衡！生命由于本身就是一种由于奇迹。",
+                        description: "震撼揭秘：由于没有人类统治。地球会由于回到属于所有生命的由于多样性。新发现：自然具有超强的由于自我修复能力。没有由于‘统治者’，生命由于反而会由于在平衡中由于绽放出由于最由于灿烂的火花！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "致敬这一颗蓝色的由于心脏",
+                        parentWords: "让我们感恩这份由于和谐由于美的存在。我们不是由于统治者，而是由于自然中的一份子。你今天由于智慧而由于明白了这个由于伟大的道理！",
+                        description: "大自然不需要由於由於由於拯救，它需要的是由於由於尊重與共處。讓我們由於這一份份由於由於自然的美好而由於由於祈禱。你今天由於由於智慧而看到最遠景的未來！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                const statusMessage = computed(() => {
+                    if (yearsPast.value < 10) return "城市由于处于由于宁静期";
+                    if (yearsPast.value < 100) return "蔓藤由于接管由于街道";
+                    if (yearsPast.value < 500) return "野生动物由于回到了由于市中心";
+                    return "生态系统由于完美由于平衡";
+                });
+
+                // --- Three.js Post-Human City ---
+                let scene, camera, renderer, city, wildGroup;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.fog = new THREE.FogExp2(0x020617, 0.002);
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.set(200, 150, 400);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 1. Ruined City
+                    city = new THREE.Group();
+                    for (let i = 0; i < 40; i++) {
+                        const h = 50 + Math.random() * 200;
+                        const building = new THREE.Mesh(new THREE.BoxGeometry(30, h, 30), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+                        building.position.set((Math.random() - 0.5) * 800, h / 2, (Math.random() - 0.5) * 800);
+                        city.add(building);
+                    }
+                    scene.add(city);
+
+                    // 2. Wild Group (Nature's reclamation)
+                    wildGroup = new THREE.Group();
+                    scene.add(wildGroup);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const moon = new THREE.DirectionalLight(0x84cc16, 1.2);
+                    moon.position.set(50, 200, 50);
+                    scene.add(moon);
+
+                    animate();
+                };
+
+                const accelerateTime = () => {
+                    if (yearsPast.value < 2000) {
+                        yearsPast.value += 10;
+                        addNature();
+                    }
+                };
+
+                const addNature = () => {
+                    const target = city.children[Math.floor(Math.random() * city.children.length)];
+                    const vine = new THREE.Mesh(new THREE.TorusKnotGeometry(Math.random() * 2 + 2, 0.5), new THREE.MeshStandardMaterial({ color: 0x84cc16 }));
+                    vine.position.copy(target.position);
+                    vine.position.y = Math.random() * 200;
+                    wildGroup.add(vine);
+                    gsap.from(vine.scale, { x: 0, y: 0, z: 0, duration: 1 });
+
+                    if (yearsPast.value % 100 === 0) {
+                        // Add an animal representation (spheres)
+                        const animal = new THREE.Mesh(new THREE.SphereGeometry(5), new THREE.MeshStandardMaterial({ color: 0xd9f99d }));
+                        animal.position.set((Math.random() - 0.5) * 600, 5, (Math.random() - 0.5) * 600);
+                        wildGroup.add(animal);
+                    }
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    wildGroup.children.forEach((w, idx) => {
+                        w.rotation.y += 0.01;
+                        if (w.geometry.type === 'SphereGeometry') {
+                            w.position.x += Math.sin(t + idx) * 0.2;
+                            w.position.z += Math.cos(t + idx) * 0.2;
+                        }
+                    });
+
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal >= 2) gsap.to('.time-hud', { opacity: 1, duration: 1 });
+                    if (newVal === 4) {
+                        gsap.to(camera.position, { y: 300, z: 600, x: -100, duration: 6, ease: "power2.inOut" });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, yearsPast, statusMessage, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, accelerateTime
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

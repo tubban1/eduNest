@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Hidden Giant: Lab Plastic Crisis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;700&family=Space+Grotesk:wght@300;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Outfit', sans-serif;
+            color: #f8fafc;
+        }
+
+        #canvas-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .interactive-layer {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 6vh 6vw;
+            background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(2, 6, 23, 0.7) 100%);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .title-accent {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        .stat-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 99px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .btn-next {
+            pointer-events: auto;
+            background: #38bdf8;
+            color: #020617;
+            padding: 16px 48px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-next:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.4);
+        }
+
+        .indicator {
+            width: 12px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 99px;
+            transition: 0.3s;
+        }
+
+        .indicator.active {
+            width: 32px;
+            background: #38bdf8;
+        }
+
+        .fade-move-enter-active,
+        .fade-move-leave-active {
+            transition: all 0.6s ease;
+        }
+
+        .fade-move-enter-from,
+        .fade-move-leave-to {
+            opacity: 0;
+            transform: translateX(20px);
+            filter: blur(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="webgl-container" style="position:fixed;top:0;left:0;width:100%;height:100%;"></div>
+    <div id="app" class="interactive-layer">
+        <!-- TOP GUIDANCE -->
+        <div class="w-full flex justify-center">
+            <div
+                class="px-6 py-3 rounded-full bg-slate-900/50 border border-slate-700/50 backdrop-blur-md text-slate-400 italic text-sm">
+                👪 Parent's Tip: [[ parentWords[step-1] ]]
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <transition name="fade-move" mode="out-in">
+            <div :key="step" class="glass-panel text-center">
+                <span class="stat-badge">[[ stepPrefix[step-1] ]]</span>
+                <h1 class="title-accent">[[ stages[step-1].title ]]</h1>
+                <p class="text-slate-300 text-lg leading-relaxed mb-8">[[ stages[step-1].content ]]</p>
+                <div class="text-xs text-slate-500 uppercase tracking-widest font-bold">[[ stages[step-1].interaction ]]
+                </div>
+            </div>
+        </transition>
+
+        <!-- FOOTER ACTIONS -->
+        <div class="flex flex-col items-center gap-8">
+            <div class="flex gap-2">
+                <div v-for="i in 5" :key="i" class="indicator" :class="{active: step === i}"></div>
+            </div>
+            <button @click="nextStep" class="btn-next">
+                [[ step === 5 ? 'RESTART JOURNEY' : 'NEXT STAGE' ]]
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const step = ref(1);
+                const stepPrefix = ["CHAPTER 01", "THE SCALE", "THE IMPACT", "THE JOURNEY", "THE FUTURE"];
+                const stages = [
+                    { title: "The Bench Reality", content: "A typical research lab bench looks clean, but it's the hidden source of a massive plastic stream. Pipette tips, tubes, and dishes—almost all single-use for sterility.", interaction: "Initializing visual environmental scan..." },
+                    { title: "5.5 Million Tons", content: "Globally, research labs generate 5.5 million metric tons of plastic annually. That's about 2% of the world's total—from just one sector.", interaction: "Calculating global accumulation mass..." },
+                    { title: "100kg Per Person", content: "One single scientist can generate up to 100kg of plastic waste per year. That's 12 times the intensity of an average office worker.", interaction: "Comparing sectoral waste density..." },
+                    { title: "Into the Ocean", content: "Most lab plastics are landfilled or incinerated due to contamination risk, eventually leaking microplastics into our delicate ecosystems.", interaction: "Simulating microscopic fragmentation..." },
+                    { title: "Sustainable Science", content: "Knowledge doesn't have to cost the Earth. Join eduNest in supporting the Green Lab movement for a smarter, cleaner future.", interaction: "Finalizing sustainable action report..." }
+                ];
+                const parentWords = [
+                    "Honey, look at these small plastic tips. Thousands of these are used every day just to measure drops!",
+                    "That's like a whole city of plastic! Imagine the space it takes up.",
+                    "Even our brilliant heroes—scientists—need to find a better way to clean up after their work.",
+                    "The plastic never really goes away; it just gets smaller and smaller until it's like dust in the water.",
+                    "Let's think together: how can we use less plastic in our own lab—the kitchen—today?"
+                ];
+
+                let scene, camera, renderer, particles, mountain;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('webgl-container').appendChild(renderer.domElement);
+
+                    // Particle System for background
+                    const pGeo = new THREE.BufferGeometry();
+                    const pCount = 2000;
+                    const posArray = new Float32Array(pCount * 3);
+                    for (let i = 0; i < pCount * 3; i++) posArray[i] = (Math.random() - 0.5) * 60;
+                    pGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+                    const pMat = new THREE.PointsMaterial({ size: 0.1, color: 0x38bdf8, transparent: true, opacity: 0.4 });
+                    particles = new THREE.Points(pGeo, pMat);
+                    scene.add(particles);
+
+                    // Cube forest (representing lab bins)
+                    mountain = new THREE.Group();
+                    scene.add(mountain);
+                    const binGeo = new THREE.BoxGeometry(1, 1, 1);
+                    for (let i = 0; i < 100; i++) {
+                        const binMat = new THREE.MeshBasicMaterial({ color: 0x334155, wireframe: true });
+                        const bin = new THREE.Mesh(binGeo, binMat);
+                        bin.position.set((Math.random() - 0.5) * 20, -10 + (Math.random() * 10), (Math.random() - 0.5) * 20);
+                        bin.scale.set(0.5, 0.5, 0.5);
+                        mountain.add(bin);
+                    }
+
+                    camera.position.z = 30;
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    particles.rotation.y += 0.001;
+                    mountain.rotation.y += 0.005;
+                    renderer.render(scene, camera);
+                };
+
+                const nextStep = () => {
+                    if (step.value === 5) {
+                        step.value = 1;
+                        resetVisuals();
+                    } else {
+                        step.value++;
+                        updateVisuals();
+                    }
+                };
+
+                const updateVisuals = () => {
+                    if (step.value === 2) {
+                        gsap.to(mountain.scale, { x: 3, y: 3, z: 3, duration: 2, ease: "elastic.out(1, 0.5)" });
+                        particles.material.color.set(0xf87171);
+                    } else if (step.value === 4) {
+                        gsap.to(camera.position, { z: 10, duration: 1.5, ease: "power2.inOut" });
+                        mountain.children.forEach(child => {
+                            gsap.to(child.scale, { x: 0.05, y: 0.05, z: 0.05, duration: 2 });
+                            gsap.to(child.position, { x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50, duration: 3 });
+                        });
+                    }
+                };
+
+                const resetVisuals = () => {
+                    gsap.to(camera.position, { z: 30, duration: 1 });
+                    gsap.to(mountain.scale, { x: 1, y: 1, z: 1, duration: 1 });
+                };
+
+                onMounted(() => {
+                    initThree();
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                });
+
+                return { step, stages, parentWords, stepPrefix, nextStep };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

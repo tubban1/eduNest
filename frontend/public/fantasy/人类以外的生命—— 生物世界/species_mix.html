@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>要是猫妈妈能生出小狗多有趣</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-pink: #f472b6;
+            --accent-blue: #60a5fa;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+
+            /* Pet Colors */
+            --peach: #FFCA95;
+            --grape: #7C85AB;
+            --darkpurple: #475881;
+            --navy: #20314E;
+            --pink: #FFA5C0;
+            --cream: #FBF1D8;
+            --orange: #FFA852;
+            --darkorange: #F07E42;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #f472b6, #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(244, 114, 182, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #fce7f3;
+            background: linear-gradient(90deg, transparent, rgba(244, 114, 182, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+            padding-bottom: 3rem;
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 1);
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-pink);
+            box-shadow: 0 0 30px rgba(244, 114, 182, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 1.8rem 3rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            width: 85%;
+            max-width: 450px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            color: #f472b6;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: #f472b6;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-pink);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-pink);
+        }
+
+        .discovery-tag {
+            background: #db2777;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .danger-alert {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(239, 68, 68, 0.2);
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            border: 1px solid #ef4444;
+            color: #f87171;
+            font-weight: 700;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* --- CSS PETS --- */
+        .pet-stage {
+            position: fixed;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.75);
+            width: 800px;
+            height: 400px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .pet-box {
+            position: relative;
+            width: 300px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* CAT CLASSES */
+        .cat {
+            height: 182px;
+            width: 200px;
+            position: relative;
+        }
+
+        .cat .ears1 {
+            height: 0;
+            width: 0;
+            position: relative;
+            left: 90px;
+            border-bottom: 27px solid var(--darkpurple);
+            border-left: 10px solid transparent;
+            border-right: 23px solid transparent;
+        }
+
+        .cat .ears1::before {
+            display: block;
+            content: "";
+            height: 0;
+            width: 0;
+            position: relative;
+            left: 24px;
+            border-bottom: 27px solid var(--darkpurple);
+            border-left: 10px solid transparent;
+            border-right: 23px solid transparent;
+        }
+
+        .cat .head1 {
+            height: 74px;
+            width: 135px;
+            position: relative;
+            left: 65px;
+            z-index: 2;
+            box-shadow: -8px 0 0 var(--darkpurple);
+            border-radius: 37px;
+            background: var(--grape);
+        }
+
+        .cat .eyes1 {
+            height: 12px;
+            width: 12px;
+            position: relative;
+            top: 37px;
+            left: 64px;
+            border-radius: 100%;
+            animation: 9s catRead infinite;
+            background: black;
+        }
+
+        .cat .eyes1::before {
+            display: block;
+            content: "";
+            height: 12px;
+            width: 12px;
+            position: relative;
+            left: 18px;
+            border-radius: 100%;
+            background: black;
+        }
+
+        .cat .nose1 {
+            height: 22px;
+            width: 22px;
+            position: relative;
+            top: 40px;
+            left: 60px;
+            border-radius: 20px;
+            background: var(--cream);
+        }
+
+        .cat .nose1::before {
+            display: block;
+            content: "";
+            height: 22px;
+            width: 22px;
+            position: relative;
+            left: 22px;
+            border-radius: 20px;
+            background: var(--cream);
+        }
+
+        .cat .nose1::after {
+            display: block;
+            content: "";
+            height: 0;
+            width: 0;
+            position: relative;
+            top: -22px;
+            left: 12px;
+            border-radius: 10px;
+            border-top: 10px solid var(--pink);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+        }
+
+        .cat .body1 {
+            height: 110px;
+            width: 200px;
+            position: relative;
+            top: -30px;
+            z-index: 1;
+            border-radius: 55px;
+            background: var(--grape);
+        }
+
+        .cat .left-paw1 {
+            height: 25px;
+            width: 37px;
+            position: relative;
+            top: 70px;
+            left: 95px;
+            border-radius: 12px;
+            animation: 9s catLeftType infinite;
+            background: var(--cream);
+        }
+
+        .cat .right-paw1 {
+            height: 25px;
+            width: 37px;
+            position: relative;
+            top: 45px;
+            left: 142px;
+            border-radius: 12px;
+            animation: 9s catRightType infinite;
+            background: var(--cream);
+        }
+
+        .cat .tail1 {
+            height: 24px;
+            width: 80px;
+            position: relative;
+            top: -54px;
+            left: -31px;
+            z-index: 0;
+            border-radius: 17px 0 0 17px;
+            background: var(--darkpurple);
+        }
+
+        /* DOG CLASSES */
+        .dog {
+            height: 182px;
+            position: relative;
+        }
+
+        .dog .ears2 {
+            height: 0;
+            width: 0;
+            position: relative;
+            left: 30px;
+            border-bottom: 27px solid var(--darkorange);
+            border-left: 23px solid transparent;
+            border-right: 10px solid transparent;
+        }
+
+        .dog .ears2::before {
+            display: block;
+            content: "";
+            height: 0;
+            width: 0;
+            position: relative;
+            left: 33px;
+            border-bottom: 27px solid var(--darkorange);
+            border-left: 10px solid transparent;
+            border-right: 23px solid transparent;
+        }
+
+        .dog .head2 {
+            height: 74px;
+            width: 140px;
+            position: relative;
+            z-index: 2;
+            box-shadow: 8px 0 0 var(--darkorange);
+            border-radius: 35px;
+            background: var(--orange);
+        }
+
+        .dog .eyes2 {
+            height: 12px;
+            width: 12px;
+            position: relative;
+            top: 37px;
+            left: 50px;
+            border-radius: 100%;
+            animation: 9s dogRead infinite;
+            background: black;
+        }
+
+        .dog .eyes2::before {
+            display: block;
+            content: "";
+            height: 12px;
+            width: 12px;
+            position: relative;
+            left: 18px;
+            border-radius: 100%;
+            background: black;
+        }
+
+        .dog .nose2 {
+            height: 30px;
+            width: 48px;
+            position: relative;
+            top: 40px;
+            left: 37px;
+            border-radius: 20px;
+            background: var(--cream);
+        }
+
+        .dog .nose2::before {
+            display: block;
+            content: "";
+            height: 0;
+            width: 0;
+            position: relative;
+            top: 3px;
+            left: 9px;
+            border-radius: 15px;
+            border-top: 12px solid black;
+            border-left: 12px solid transparent;
+            border-right: 10px solid transparent;
+        }
+
+        .dog .body2 {
+            height: 110px;
+            width: 200px;
+            position: relative;
+            top: -30px;
+            z-index: 1;
+            border-radius: 55px;
+            background: var(--orange);
+        }
+
+        .dog .left-paw2 {
+            height: 25px;
+            width: 37px;
+            position: relative;
+            top: 70px;
+            left: 15px;
+            border-radius: 12px;
+            animation: 9s dogLeftType infinite;
+            background: var(--cream);
+        }
+
+        .dog .right-paw2 {
+            height: 25px;
+            width: 37px;
+            position: relative;
+            top: 45px;
+            left: 60px;
+            border-radius: 12px;
+            animation: 9s dogRightType infinite;
+            background: var(--cream);
+        }
+
+        .dog .tail2 {
+            height: 34px;
+            width: 70px;
+            position: relative;
+            top: -64px;
+            left: 150px;
+            z-index: 0;
+            border-radius: 0 17px 17px 0;
+            background: var(--darkorange);
+        }
+
+        /* KEYFRAMES */
+        @keyframes catLeftType {
+            2% {
+                transform: translateY(-8px)
+            }
+
+            6% {
+                transform: none
+            }
+
+            8% {
+                transform: translateY(-8px)
+            }
+
+            10% {
+                transform: none
+            }
+
+            14% {
+                transform: translateY(-8px)
+            }
+
+            16% {
+                transform: none
+            }
+
+            18% {
+                transform: translateY(-8px)
+            }
+
+            20% {
+                transform: none
+            }
+
+            22% {
+                transform: translateY(-8px)
+            }
+
+            26% {
+                transform: none
+            }
+        }
+
+        @keyframes catRightType {
+            6% {
+                transform: translateY(-8px)
+            }
+
+            8% {
+                transform: none
+            }
+
+            10% {
+                transform: translateY(-8px)
+            }
+
+            12% {
+                transform: none
+            }
+
+            16% {
+                transform: translateY(-8px)
+            }
+
+            18% {
+                transform: none
+            }
+
+            20% {
+                transform: translateY(-8px)
+            }
+
+            22% {
+                transform: none
+            }
+
+            24% {
+                transform: translateY(-8px)
+            }
+
+            28% {
+                transform: none
+            }
+        }
+
+        @keyframes catRead {
+            55% {
+                transform: none
+            }
+
+            62% {
+                transform: translateX(-2px)
+            }
+
+            70% {
+                transition-timing-function: ease-out;
+                transform: translateX(3px)
+            }
+
+            82% {
+                transform: translateX(-2px)
+            }
+
+            90% {
+                transition-timing-function: ease-out;
+                transform: translateX(3px)
+            }
+
+            100% {
+                transform: none
+            }
+        }
+
+        @keyframes dogLeftType {
+            50% {
+                transform: none
+            }
+
+            52% {
+                transform: translateY(-8px)
+            }
+
+            56% {
+                transform: none
+            }
+
+            58% {
+                transform: translateY(-8px)
+            }
+
+            60% {
+                transform: none
+            }
+
+            64% {
+                transform: translateY(-8px)
+            }
+
+            66% {
+                transform: none
+            }
+
+            68% {
+                transform: translateY(-8px)
+            }
+
+            70% {
+                transform: none
+            }
+
+            72% {
+                transform: translateY(-8px)
+            }
+
+            76% {
+                transform: none
+            }
+        }
+
+        @keyframes dogRightType {
+            54% {
+                transform: none
+            }
+
+            56% {
+                transform: translateY(-8px)
+            }
+
+            58% {
+                transform: none
+            }
+
+            60% {
+                transform: translateY(-8px)
+            }
+
+            62% {
+                transform: none
+            }
+
+            66% {
+                transform: translateY(-8px)
+            }
+
+            68% {
+                transform: none
+            }
+
+            70% {
+                transform: translateY(-8px)
+            }
+
+            72% {
+                transform: none
+            }
+
+            74% {
+                transform: translateY(-8px)
+            }
+
+            78% {
+                transform: none
+            }
+        }
+
+        @keyframes dogRead {
+            5% {
+                transform: none
+            }
+
+            17% {
+                transition-timing-function: ease-out;
+                transform: translateX(-5px)
+            }
+
+            25% {
+                transform: none
+            }
+
+            37% {
+                transition-timing-function: ease-out;
+                transform: translateX(-5px)
+            }
+
+            45% {
+                transform: none
+            }
+        }
+
+        .logic-conflict {
+            animation: shake 0.2s infinite;
+            outline: 5px solid rgba(239, 68, 68, 0.5);
+            border-radius: 50%;
+        }
+
+        .genetic-stripes {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .genetic-stripes::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(255, 255, 255, 0.1) 12px,
+                    rgba(255, 255, 255, 0.1) 18px,
+                    transparent 20px);
+            animation: stripeMove 2s linear infinite;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        @keyframes stripeMove {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(20px);
+            }
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translate(1px, 1px) rotate(0deg);
+            }
+
+            10% {
+                transform: translate(-1px, -2px) rotate(-1deg);
+            }
+
+            20% {
+                transform: translate(-3px, 0px) rotate(1deg);
+            }
+
+            30% {
+                transform: translate(3px, 2px) rotate(0deg);
+            }
+
+            40% {
+                transform: translate(1px, -1px) rotate(1deg);
+            }
+
+            50% {
+                transform: translate(-1px, 2px) rotate(-1deg);
+            }
+
+            60% {
+                transform: translate(-3px, 1px) rotate(0deg);
+            }
+
+            70% {
+                transform: translate(3px, 1px) rotate(-1deg);
+            }
+
+            80% {
+                transform: translate(-1px, -1px) rotate(1deg);
+            }
+
+            90% {
+                transform: translate(1px, 2px) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(1px, -2px) rotate(-1deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <div class="danger-alert" :style="{ opacity: mixVal > 0.8 || mixVal < 0.2 ? 1 : 0 }">
+            ⚠️ DNA 逻辑冲突 (天性不匹配)
+        </div>
+
+        <!-- PET STAGE -->
+        <div class="pet-stage">
+            <div class="pet-box cat-box" :style="catStyle">
+                <div class="cat" :class="{ 'logic-conflict': mixVal > 0.8, 'genetic-stripes': mixVal > 0.6 }">
+                    <div class="ears1"></div>
+                    <div class="head1">
+                        <div class="eyes1"></div>
+                        <div class="nose1"></div>
+                    </div>
+                    <div class="body1">
+                        <div class="left-paw1"></div>
+                        <div class="right-paw1"></div>
+                    </div>
+                    <div class="tail1"></div>
+                </div>
+            </div>
+            <div class="pet-box dog-box" :style="dogStyle">
+                <div class="dog" :class="{ 'logic-conflict': mixVal < 0.2, 'genetic-stripes': mixVal < 0.4 }">
+                    <div class="ears2"></div>
+                    <div class="head2">
+                        <div class="eyes2"></div>
+                        <div class="nose2"></div>
+                    </div>
+                    <div class="body2">
+                        <div class="left-paw2"></div>
+                        <div class="right-paw2"></div>
+                    </div>
+                    <div class="tail2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🐈 🐕 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">大揭秘!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启混合模拟' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-pink-700 !text-white">
+                    回归生命本色
+                </button>
+            </div>
+        </div>
+
+        <!-- DNA 混合面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div class="slider-header">
+                <span>小花猫 (Cat)</span>
+                <span>二哈 (Dog)</span>
+            </div>
+            <input type="range" v-model="mixVal" min="0" max="1" step="0.01">
+            <div class="text-xs text-center opacity-60">滑动混合物种蓝图</div>
+            <button @click="nextStage" v-if="mixVal > 0.4 && mixVal < 0.6"
+                class="next-btn !text-sm !py-3 !px-12 mt-4">已达成微妙平衡</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const mixVal = ref(0.5);
+
+                const stages = [
+                    {
+                        title: "‘生命之窗’的宁静",
+                        parentWords: "宝贝，你看，这是一只在阳光下伸懒腰的猫咪，那是只在公园里追球的小狗。它们原本的样子是不是最和谐的？",
+                        description: "在这个微观实验室里，我们模拟了猫和狗的生命蓝图。它们有着完全不同的语言和习惯。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：错位的语言",
+                        parentWords: "如果让猫妈妈也学会摇尾巴求关注，小狗学会爬到柜子顶上抓小鸟。预测一下，这种‘身份交换’会出乱子吗？",
+                        description: "预测中：猫的爪子是用来攀爬的，狗的骨骼是为了长跑的。逻辑的冲突由于强行融合而产生。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：拨动‘生命旋钮’",
+                        parentWords: "来！滑动下方的混合条，看看当猫和狗的特征叠加在一起时，形态会如何变幻。中间那个平衡点，真的是我们要的吗？",
+                        description: "观察模型的形变：你可以看到猫和狗的遗传信息在互相拉扯。由于天性的不同，它们看起来似乎不太舒服。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：精准的蓝图",
+                        parentWords: "你看！当你拨得太左或太右，逻辑就会由于过于‘混搭’而报错。原来每个生命生来就有一套最适合它们的‘生命密码’！",
+                        description: "核心真相：DNA不只是样子的设计，更是行为的脚本。猫喜欢独处是由于它们是伏击型猎手；狗喜欢集群是由于它们是围猎者。混在一起会导致由于天性矛盾而产生的‘逻辑混乱’。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "珍惜每一种独特的生命",
+                        parentWords: "让猫咪当好猫，让小狗当好狗。它们的每个动作、每声叫唤，都是大自然最独特的礼物。我们要继续爱这些独一无二的朋友哦！",
+                        description: "多样性是生命最伟大的宝藏。尊重差异、爱惜本位，就是学习生命科学最重要的一课。你今天表现得很出色！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                const catStyle = computed(() => {
+                    const val = mixVal.value;
+                    const baseOpacity = 0.85; // Base transparency for readability
+                    return {
+                        transform: `translateX(${(0.5 - val) * 200}px) scale(${1 + (1 - val) * 0.2})`,
+                        opacity: baseOpacity - (val > 0.8 ? (val - 0.8) * 4 : 0),
+                        filter: `hue-rotate(${val * 50}deg)`
+                    }
+                });
+
+                const dogStyle = computed(() => {
+                    const val = mixVal.value;
+                    const baseOpacity = 0.85; // Base transparency for readability
+                    return {
+                        transform: `translateX(${(0.5 - val) * 200}px) scale(${1 + val * 0.2})`,
+                        opacity: baseOpacity - (val < 0.2 ? (0.2 - val) * 4 : 0),
+                        filter: `hue-rotate(${(1 - val) * 50}deg)`
+                    }
+                });
+
+                // --- Three.js Background Glow ---
+                let scene, camera, renderer, particles;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 100);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // DNA like particles
+                    const geo = new THREE.BufferGeometry();
+                    const positions = [];
+                    for (let i = 0; i < 1000; i++) {
+                        positions.push((Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
+                    }
+                    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                    const mat = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.5 });
+                    particles = new THREE.Points(geo, mat);
+                    scene.add(particles);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    if (particles) {
+                        particles.rotation.y = t * 0.1;
+                        particles.material.color.setHSL((Math.sin(t * 0.2) + 1) / 2, 0.5, 0.5);
+                    }
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 5) {
+                        gsap.to(mixVal, { value: 0.5, duration: 2 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, mixVal, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, catStyle, dogStyle
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

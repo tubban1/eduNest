@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人可不可以不生病</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-gold: #fbbf24;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #fef3c7;
+            background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.2rem;
+            border-radius: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .resource-btn {
+            background: #1e293b;
+            padding: 1.2rem 2.5rem;
+            border-radius: 2rem;
+            color: #fbbf24;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .resource-btn:hover {
+            background: #334155;
+            transform: translateY(-5px);
+        }
+
+        .resource-btn:active {
+            transform: scale(0.95);
+        }
+
+        .battle-hud {
+            position: fixed;
+            left: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            color: #fbbf24;
+            font-weight: 700;
+        }
+
+        .shield-meter {
+            width: 25px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse;
+            border: 2px solid rgba(251, 191, 36, 0.4);
+        }
+
+        .shield-fill {
+            width: 100%;
+            background: linear-gradient(0deg, #d97706, #fbbf24);
+            transition: height 0.6s ease;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-gold);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-gold);
+        }
+
+        .discovery-tag {
+            background: #d97706;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 战斗 HUD -->
+        <div class="battle-hud" v-if="step >= 2">
+            <div class="text-xs uppercase opacity-60">Immune Defense</div>
+            <div class="shield-meter">
+                <div class="shield-fill" :style="{ height: shieldLevel + '%' }"></div>
+            </div>
+            <div class="text-xl">LV.{{ defenseLevel }}</div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🛡️ {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">大发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启城堡升级' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-amber-700 !text-white">
+                    回归自愈平衡
+                </button>
+            </div>
+        </div>
+
+        <!-- 资源补给面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div @click="addDefense('sleep')" class="resource-btn">提供‘深度睡眠’能量</div>
+            <div @click="addDefense('fruit')" class="resource-btn">分发‘维生素’弹药</div>
+            <div @click="addDefense('sport')" class="resource-btn">发起‘城堡大跃迁’</div>
+            <button @click="nextStage" v-if="shieldLevel >= 80" class="next-btn !text-sm !py-3 !px-12 ml-4">
+                消灭入侵者！
+            </button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const shieldLevel = ref(40);
+                const defenseLevel = ref(1);
+
+                const stages = [
+                    {
+                        title: "可不可以不生病",
+                        parentWords: "宝贝，是不是觉得生病很难受？如果世界上有一套永远不会坏掉的‘城堡皮肤’，是不是生活就没烦恼啦？",
+                        description: "在这微观世界的深处，矗立着一座闪光的‘免疫城堡’。它正在释放金色的光盾来保护我们。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "肉眼看不见的入侵者",
+                        parentWords: "其实空气里到处都有这种乱蹦的小怪兽（细菌）。它们虽然小，但总想钻进城堡大门。你看，它们来了！",
+                        description: "大量的紫色病原体正在集结！我们的城堡护盾由于长期‘缺乏锻炼’，现在的能量只剩 40% 了。我们需要紧急支援！",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "全副武装，反击开始！",
+                        parentWords: "快！我们要帮‘白细胞士兵’训练一下。多吃蔬果、好好睡觉、多去跑步吧！看，你的每一次操作都在加强盾牌！",
+                        description: "点击下方按钮分发资源。随着盾牌充能（超过 80%），金色的白细胞卫士会出现并吞掉那些紫色的怪兽。把护盾充满吧！",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：你是自己的国王",
+                        parentWords: "你看！当你吃好睡好，那些紫色的怪兽瞬间就被消灭了！虽然偶尔会有点‘发热’（那是战斗的火花），但你就是城堡最棒的指挥官。",
+                        description: "新发现：生病不是城堡塌了，而是身体正在为了让你变得更强而进行‘演习’或‘清扫’。只要保护好你的自愈盾牌，你就能战胜绝大多数挑战！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "做个勇敢的小卫士",
+                        parentWords: "我们要爱护我们的‘城堡士兵’。不挑食、爱洗手、准时关灯，就是对他们最好的奖赏。让我们带着最强的盾牌出发吧！",
+                        description: "免疫系统是你一生最忠实的保镖。让我们感谢这些看不见的英雄。现在，你就是这片生命领地的守护国王！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Defense Magic ---
+                let scene, camera, renderer, castle, shieldMesh, virusGroup, guards;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 20, 150);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Stars (Background cells)
+                    const starGeo = new THREE.BufferGeometry();
+                    const starPos = [];
+                    for (let i = 0; i < 2000; i++) {
+                        starPos.push((Math.random() - 0.5) * 800, (Math.random() - 0.5) * 800, (Math.random() - 0.5) * 800);
+                    }
+                    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+                    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xfbbf24, size: 0.6, transparent: true, opacity: 0.2 })));
+
+                    // 1. Castle Shield
+                    const guardGroup = new THREE.Group();
+                    scene.add(guardGroup);
+
+                    const shieldGeo = new THREE.SphereGeometry(30, 32, 32);
+                    const shieldMat = new THREE.MeshStandardMaterial({
+                        color: 0xf59e0b,
+                        transparent: true,
+                        opacity: 0.2,
+                        emissive: 0xf59e0b,
+                        emissiveIntensity: 0.5,
+                        wireframe: true
+                    });
+                    shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+                    scene.add(shieldMesh);
+
+                    // 2. The Core Castle (Abstract)
+                    const castleGeo = new THREE.OctahedronGeometry(15, 1);
+                    const castleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 });
+                    castle = new THREE.Mesh(castleGeo, castleMat);
+                    scene.add(castle);
+
+                    // 3. Virus Enemies
+                    virusGroup = new THREE.Group();
+                    scene.add(virusGroup);
+                    for (let i = 0; i < 50; i++) {
+                        addVirus();
+                    }
+
+                    // 4. Guards (Inactive at start)
+                    guards = new THREE.Group();
+                    scene.add(guards);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                    directionalLight.position.set(20, 50, 50);
+                    scene.add(directionalLight);
+
+                    animate();
+                };
+
+                const addVirus = () => {
+                    const geo = new THREE.IcosahedronGeometry(Math.random() * 2 + 1, 0);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xa855f7 });
+                    const v = new THREE.Mesh(geo, mat);
+                    const r = 100 + Math.random() * 50;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    v.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+                    v.userData = { speed: 0.1 + Math.random() * 0.2 };
+                    virusGroup.add(v);
+                };
+
+                const addGuard = () => {
+                    const geo = new THREE.SphereGeometry(2, 16, 16);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1 });
+                    const g = new THREE.Mesh(geo, mat);
+                    g.position.set((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
+                    guards.add(g);
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (castle) {
+                        castle.rotation.y += 0.01;
+                        castle.scale.setScalar(1 + Math.sin(t) * 0.1);
+                    }
+
+                    if (shieldMesh) {
+                        shieldMesh.rotation.z -= 0.005;
+                        shieldMesh.material.opacity = (shieldLevel.value / 100) * 0.4;
+                        shieldMesh.scale.setScalar(0.8 + (shieldLevel.value / 100) * 0.5);
+                    }
+
+                    // Viruses moving towards castle
+                    virusGroup.children.forEach(v => {
+                        const dist = v.position.length();
+                        if (dist > 32) {
+                            v.position.lerp(new THREE.Vector3(0, 0, 0), v.userData.speed * 0.002);
+                        } else {
+                            // Damage shield or deflect if shield is strong
+                            if (shieldLevel.value < 50) {
+                                shieldLevel.value = Math.max(0, shieldLevel.value - 0.01);
+                            } else {
+                                v.position.multiplyScalar(1.2); // Deflect
+                            }
+                        }
+                    });
+
+                    // Guards Orbiting
+                    guards.children.forEach((g, idx) => {
+                        const r = 35;
+                        const angle = t * 2 + idx;
+                        g.position.set(Math.cos(angle) * r, Math.sin(angle * 0.5) * r, Math.sin(angle) * r);
+
+                        // Kill nearby viruses
+                        virusGroup.children.forEach(v => {
+                            if (v.position.distanceTo(g.position) < 8) {
+                                v.position.set((Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200);
+                            }
+                        });
+                    });
+
+                    renderer.render(scene, camera);
+                };
+
+                const addDefense = (type) => {
+                    shieldLevel.value = Math.min(100, shieldLevel.value + 15);
+                    defenseLevel.value++;
+                    if (defenseLevel.value % 2 === 0) addGuard();
+
+                    gsap.to(castle.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 0.3, yoyo: true, repeat: 1 });
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                    if (n >= 4) {
+                        shieldLevel.value = 100;
+                        while (guards.children.length < 10) addGuard();
+                    }
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 1) gsap.to(camera.position, { z: 150, y: 20, duration: 3 });
+                    if (newVal === 4) gsap.to(camera.position, { z: 100, duration: 2 });
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, shieldLevel, defenseLevel, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, addDefense
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

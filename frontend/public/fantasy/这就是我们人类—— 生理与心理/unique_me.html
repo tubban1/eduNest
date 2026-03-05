@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>有没有和我一模一样的人</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-blue: #4facfe;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-blur: blur(15px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.5rem;
+            letter-spacing: 0.2rem;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 15px rgba(79, 172, 254, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.2rem;
+            color: #A5F3FC;
+            background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.1), transparent);
+            padding: 0.8rem 3rem;
+            border-radius: 2rem;
+            font-weight: 300;
+            font-style: italic;
+        }
+
+        .content-box {
+            max-width: 800px;
+            margin: 0 auto 16rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.7rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 1.4rem 5rem;
+            border-radius: 5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-10px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 30px rgba(79, 172, 254, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 450px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2rem;
+            border-radius: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            color: #00f2fe;
+            font-size: 0.9rem;
+            letter-spacing: 0.1rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--accent-blue);
+            cursor: pointer;
+        }
+
+        .discovery-tag {
+            background: #F59E0B;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 0.6rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-right: 0.8rem;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.4s;
+        }
+
+        .dot.active {
+            background: var(--accent-blue);
+            transform: scale(1.4);
+            box-shadow: 0 0 15px var(--accent-blue);
+        }
+
+        .identity-stats {
+            position: fixed;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #00f2fe;
+            font-family: monospace;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            line-height: 2;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 侧边身份流 -->
+        <div class="identity-stats" v-if="step >= 3">
+            <div>FINGERPRINT_ID: {{ (dnaFactor * 99999).toFixed(0) }}</div>
+            <div>GENOME_VARIANCE: {{ (dnaFactor * 100).toFixed(2) }}%</div>
+            <div>PROBABILITY_MATCH: 0.000000000001%</div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                👩‍👧‍👦 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">新奇迹!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开始身份扫描' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-cyan-600 !text-white">
+                    让生命再次绽放
+                </button>
+            </div>
+        </div>
+
+        <!-- 交互面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div class="slider-label">
+                <span>初始模板 (Basic)</span>
+                <span>独一无二 (Unique)</span>
+            </div>
+            <input type="range" v-model="dnaFactor" min="0" max="1" step="0.005" class="pointer-events-auto mb-6">
+            <div class="flex justify-center">
+                <button @click="nextStage" class="next-btn !text-sm !py-3 !px-12"
+                    :style="{ opacity: dnaFactor > 0.9 ? 1 : 0.6 }">
+                    锁定唯一样本
+                </button>
+            </div>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const dnaFactor = ref(0);
+
+                const stages = [
+                    {
+                        title: "茫茫人海的搜寻",
+                        parentWords: "宝贝，你看现在的地球，有几十亿人。他们中有的人和你有一样的眼睛，有的人和你一样爱笑。但是，你觉得会有一个和你完全一样的人吗？",
+                        description: "在这个阶段，你会看到无数闪烁的‘生命模块’。它们虽然相似，但每一刻都在发生微小的偏移。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "身份的终极密码",
+                        parentWords: "伸出你的小手，看看指尖上那些细细的螺纹。那就是你的指纹，全世界只有你一个人拥有这一款图案哦！",
+                        description: "指纹是天生的秘密。现在，我们的‘生命扫描器’正在全速运转，准备为你寻找独一无二的基因图谱。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "定制你的微观蓝图",
+                        parentWords: "来，握住基因旋钮！慢慢向右滑动。当你改变这些色彩和角度，你的生命代码就在发生千万种变化。",
+                        description: "通过操作滑块，你可以亲手模拟基因的‘千万亿种组合’。你会看到，只要改变一个微小的粒子，整个双螺旋结构就会截然不同。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "亿万分之一的奇迹",
+                        parentWords: "你看！匹配出来的概率竟然是 0！即使是双胞胎，他们的思索、心情和梦想也是不一样的。",
+                        description: "科学大发现：在人类漫长的历史中，从未出现过完全相同的两个人。你是这串跨越千年的生命代码中，唯一的一次精彩绽放。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "珍藏这份独特",
+                        parentWords: "原来，你就是宇宙中绝无仅有的珍宝。不需要模仿别人，因为你已经是最好的自己啦。",
+                        description: "差异即魅力。正是因为每个人的不同，世界才变得这样精彩。让我们挺起胸膛，做那个全世界唯一的、自信的小勇士吧！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Logic ---
+                let scene, camera, renderer, helixGroup, particles, stars;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 150);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Stars
+                    const sGeo = new THREE.BufferGeometry();
+                    const sPos = [];
+                    for (let i = 0; i < 2000; i++) {
+                        sPos.push((Math.random() - 0.5) * 600, (Math.random() - 0.5) * 600, (Math.random() - 0.5) * 600);
+                    }
+                    sGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPos, 3));
+                    stars = new THREE.Points(sGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, transparent: true, opacity: 0.5 }));
+                    scene.add(stars);
+
+                    // DNA Helix Group
+                    helixGroup = new THREE.Group();
+                    scene.add(helixGroup);
+
+                    const tubeGeo = new THREE.SphereGeometry(1.5, 12, 12);
+                    const pairMat = new THREE.MeshStandardMaterial({
+                        color: 0x4facfe,
+                        emissive: 0x4facfe,
+                        emissiveIntensity: 0.2,
+                        metalness: 0.9,
+                        roughness: 0.1
+                    });
+
+                    // Build Helix structure
+                    for (let i = 0; i < 50; i++) {
+                        const angle = i * 0.4;
+                        const y = (i - 25) * 3;
+
+                        // Side A
+                        const sphereA = new THREE.Mesh(tubeGeo, pairMat);
+                        sphereA.position.set(Math.cos(angle) * 15, y, Math.sin(angle) * 15);
+                        helixGroup.add(sphereA);
+
+                        // Side B
+                        const sphereB = new THREE.Mesh(tubeGeo, pairMat.clone());
+                        sphereB.material.color.set(0x00f2fe);
+                        sphereB.position.set(Math.cos(angle + Math.PI) * 15, y, Math.sin(angle + Math.PI) * 15);
+                        helixGroup.add(sphereB);
+
+                        // Bridge
+                        const lineGeo = new THREE.CylinderGeometry(0.3, 0.3, 30);
+                        const line = new THREE.Mesh(lineGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }));
+                        line.rotation.z = Math.PI / 2;
+                        line.rotation.y = -angle;
+                        line.position.y = y;
+                        helixGroup.add(line);
+                    }
+
+                    // Floating Data Particles
+                    const pGeo = new THREE.BufferGeometry();
+                    const pPos = [];
+                    for (let i = 0; i < 800; i++) {
+                        pPos.push((Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100);
+                    }
+                    pGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos, 3));
+                    particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0x00f2fe, size: 1, transparent: true, opacity: 0.7 }));
+                    scene.add(particles);
+
+                    // Add lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const light = new THREE.DirectionalLight(0xffffff, 1);
+                    light.position.set(50, 50, 50);
+                    scene.add(light);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (helixGroup) {
+                        helixGroup.rotation.y += 0.005;
+                        helixGroup.position.y = Math.sin(t * 0.5) * 5;
+                    }
+
+                    if (stars) {
+                        stars.rotation.y += 0.0002;
+                    }
+
+                    if (particles) {
+                        const pos = particles.geometry.attributes.position;
+                        for (let i = 0; i < pos.count; i++) {
+                            const y = pos.getY(i);
+                            pos.setY(i, y + Math.sin(t + i) * 0.05);
+                        }
+                        pos.needsUpdate = true;
+
+                        // Respond to dnaFactor
+                        particles.material.size = 1 + dnaFactor.value * 2;
+                        particles.rotation.y += 0.01 * (1 + dnaFactor.value);
+                    }
+
+                    // Helix morphing
+                    if (step.value >= 3) {
+                        helixGroup.children.forEach((child, idx) => {
+                            if (child.type === "Mesh") {
+                                const offset = Math.sin(t + idx * 0.1) * dnaFactor.value * 5;
+                                child.position.x += (Math.random() - 0.5) * dnaFactor.value * 0.5;
+                            }
+                        });
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                    if (n < 3) dnaFactor.value = 0;
+                    if (n > 3) dnaFactor.value = 1;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    // UI Reveal
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 1) {
+                        gsap.to(camera.position, { z: 150, duration: 3 });
+                    } else if (newVal === 2) {
+                        gsap.to(camera.position, { z: 120, x: -30, duration: 3, ease: "sine.inOut" });
+                    } else if (newVal === 4) {
+                        gsap.to(camera.position, { z: 80, x: 0, duration: 2, ease: "elastic.out(1, 0.5)" });
+                        gsap.to(dnaFactor, { value: 1, duration: 3 });
+                    } else if (newVal === 5) {
+                        gsap.to(camera.position, { z: 150, y: 50, duration: 4, ease: "power2.inOut" });
+                        gsap.to(helixGroup.rotation, { z: Math.PI / 4, duration: 4 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    // Initial Reveal
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2, ease: "expo.out", delay: 1 });
+
+                    // Parallax
+                    window.addEventListener('mousemove', (e) => {
+                        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+                        gsap.to(camera.position, { x: x * 20, y: -y * 20 + (step.value === 5 ? 50 : 0), duration: 2.5 });
+                        camera.lookAt(0, (step.value === 5 ? 30 : 0), 0);
+                    });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, dnaFactor, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

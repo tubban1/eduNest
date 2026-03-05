@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如果地球上没有动物和植物会怎样</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-green: #10b981;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #10b981, #d9f99d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #d1fae5;
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 5rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+            z-index: 20;
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 1);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-green);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.2rem 4rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .seed-btn {
+            background: #10b981;
+            padding: 1rem 2.5rem;
+            border-radius: 2rem;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.5);
+        }
+
+        .seed-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.7);
+        }
+
+        .hud-meter {
+            position: fixed;
+            left: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .meter-bar {
+            width: 15px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse;
+            border: 2px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .meter-fill {
+            width: 100%;
+            background: linear-gradient(0deg, #059669, #10b981);
+            transition: height 0.6s ease;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-green);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-green);
+        }
+
+        .discovery-tag {
+            background: #047857;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 生命含量 HUD -->
+        <div class="hud-meter" v-if="step >= 2">
+            <div class="text-xs uppercase opacity-60">Oxygen & Life</div>
+            <div class="meter-bar">
+                <div class="meter-fill" :style="{ height: lifeLevel + '%' }"></div>
+            </div>
+            <div class="text-xl">{{ lifeLevel }}%</div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🧭 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">震撼发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启重建生命期' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-emerald-700 !text-white">
+                    回归自愈平衡
+                </button>
+            </div>
+        </div>
+
+        <!-- 种子播撒面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <button @click="spawnLife('tree')" class="seed-btn">播种小苗苗</button>
+            <button @click="spawnLife('creature')" class="seed-btn">唤醒小虫虫</button>
+            <button @click="nextStage" v-if="lifeLevel >= 60" class="next-btn !text-sm !py-3 !px-12 ml-4">开启新世界</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const lifeLevel = ref(5);
+
+                const stages = [
+                    {
+                        title: "寂静的‘灰星’",
+                        parentWords: "宝贝，如果没有翠绿的树林，没有会唱歌的小鸟和会撒娇的小狗，这个世界是不是冷冰冰的？",
+                        description: "这是一片毫无生机的岩石荒原。现在，由于没有大气层，所有的天空都是死寂的灰色。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "氧气的断链",
+                        parentWords: "如果没有植物，我们可没法畅快地呼吸。预测一下，这个由于缺氧而凝固的世界，该怎么变回彩色？",
+                        description: "预测中：没有了‘大地之手’，土壤会沙化，狂风会带走最后一丝温和。我们需要生命的火种！",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：点亮生命绿洲",
+                        parentWords: "快！点击‘播种’按钮，看看一颗种子如何改变整个大地！你要努力把生命能量推到 60% 以上！",
+                        description: "哇！看！由于你的每一次播种，大地正在变色，氧气正在回归。你就是这个世界的‘创作者’！",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：地球是一个整体",
+                        parentWords: "你看！当树长大以后，小虫子由于有了家也出现了。由于有了它们，空气变香甜了，天空也变蓝了！",
+                        description: "核心大揭秘：地球不是死物，它是由所有生灵共同编制的‘生命之网’。没有动物和植物，地球由于失去平衡，将无法支持人类生存。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "爱惜这个活生生的星球",
+                        parentWords: "保护好这里的每一棵小树、每一只小虫，就是保护我们的呼吸和未来。我们去做最棒的地球小卫兵吧！",
+                        description: "生命是地球最华丽的外衣。让我们带着感恩的心，去拥抱这个生机勃勃的系统。今天你也做得非常棒！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Life Earth Simulation ---
+                let scene, camera, renderer, globe, terrain, lifeGroup;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 50, 150);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 1. Terrain Base (Grayish-rocky)
+                    const terrainGeo = new THREE.SphereGeometry(60, 64, 64);
+                    const terrainMat = new THREE.MeshStandardMaterial({
+                        color: 0x4B5563,
+                        roughness: 0.9,
+                        metalness: 0.1,
+                        flatShading: true
+                    });
+                    terrain = new THREE.Mesh(terrainGeo, terrainMat);
+                    scene.add(terrain);
+
+                    // 2. Life Group (Plants & Animals)
+                    lifeGroup = new THREE.Group();
+                    scene.add(lifeGroup);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+                    sun.position.set(10, 100, 50);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (terrain) terrain.rotation.y += 0.001;
+                    if (lifeGroup) lifeGroup.rotation.y += 0.001;
+
+                    // Pulsing atmosphere effect based on life level
+                    if (scene.background) {
+                        const hue = (lifeLevel.value / 100) * 0.4 + 0.6; // Sky turns from grey to blue
+                    }
+
+                    camera.lookAt(0, 0, 0); // Center the view!
+                    renderer.render(scene, camera);
+                };
+
+                const spawnLife = (type) => {
+                    lifeLevel.value = Math.min(100, lifeLevel.value + 15);
+                    const color = type === 'tree' ? 0x10b981 : 0xf97316;
+                    const geo = type === 'tree' ? new THREE.ConeGeometry(3, 10) : new THREE.IcosahedronGeometry(2);
+                    const mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.5 });
+                    const life = new THREE.Mesh(geo, mat);
+
+                    const r = 62;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    life.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+                    life.lookAt(0, 0, 0);
+                    life.rotateX(Math.PI / 2);
+
+                    lifeGroup.add(life);
+                    gsap.from(life.scale, { x: 0, y: 0, z: 0, duration: 1, ease: "elastic.out" });
+
+                    // Terrain color update
+                    gsap.to(terrain.material.color, {
+                        r: 0.29 - (lifeLevel.value / 100) * 0.2,
+                        g: 0.33 + (lifeLevel.value / 100) * 0.2,
+                        b: 0.38 - (lifeLevel.value / 100) * 0.2,
+                        duration: 1
+                    });
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 4) {
+                        gsap.to(camera.position, { z: 200, duration: 3 });
+                    }
+                    if (newVal === 5) {
+                        gsap.to(lifeLevel, { value: 100, duration: 2 });
+                        gsap.to(camera.position, { x: 50, y: 80, duration: 5, ease: "slow" });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, lifeLevel, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, spawnLife
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

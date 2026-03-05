@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的大脑和爱因斯坦一样聪明该多好</title>
+    <!-- ELITE DEPENDENCIES -->
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-indigo: #6366f1;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #c7d2fe;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+            padding: 0.8rem 3.5rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-indigo);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 550px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.5rem;
+            border-radius: 3.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .intelligence-slider {
+            margin-bottom: 2rem;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            color: #818cf8;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.8rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: #818cf8;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-indigo);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-indigo);
+        }
+
+        .discovery-tag {
+            background: #4f46e5;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🎓 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">大揭秘!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启智力调教' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-indigo-700 !text-white">
+                    一键觉醒潜能
+                </button>
+            </div>
+        </div>
+
+        <!-- 调音台面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div class="intelligence-slider">
+                <div class="slider-header"><span>逻辑算术 (Logic)</span><span>{{ logicVal }}%</span></div>
+                <input type="range" v-model="logicVal" min="0" max="100">
+            </div>
+            <div class="intelligence-slider">
+                <div class="slider-header"><span>艺术创造 (Creativity)</span><span>{{ artVal }}%</span></div>
+                <input type="range" v-model="artVal" min="0" max="100">
+            </div>
+            <div class="intelligence-slider">
+                <div class="slider-header"><span>同情交往 (Empathy)</span><span>{{ empathyVal }}%</span></div>
+                <input type="range" v-model="empathyVal" min="0" max="100">
+            </div>
+            <button @click="nextStage" class="next-btn !text-sm !py-3 !px-12 w-full mt-2">融合全脑智慧</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const logicVal = ref(50);
+                const artVal = ref(50);
+                const empathyVal = ref(50);
+
+                const stages = [
+                    {
+                        title: "拥有爱因斯坦的大脑",
+                        parentWords: "宝贝，是不是觉得如果脑袋能瞬间记住全世界的百科全书，瞬间解开最难的奥数题。那就是最幸福的事啦？",
+                        description: "在这片‘思维星云’里，所有的灵感都在闪烁。现在，一切都是平衡的。请观察大脑最中央的那颗‘智慧核心’。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：偏向的代价",
+                        parentWords: "可是一个人如果所有的精力都去思考引力，可能就没空记得由于由于肚子饿而吃饭，或者不知道该怎么对朋友笑啦。你想试试把智力拨向极端吗？",
+                        description: "大脑的资源是有限的。当你把某一方面变得超级强悍，其它地方也会发生微妙的变化。预测一下，这种不平衡的世界会好看吗？",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：拨动‘智力天平’",
+                        parentWords: "来，滑动调音台！把逻辑、艺术和同情心拨向你喜欢的比例。看看思维星云的颜色和形状会如何由于你的决定而变幻。",
+                        description: "你可以通过滑动来重新分配大脑的分工。星云中心的颜色会由于你的比例而改变：蓝色代表逻辑，彩色代表艺术，暖色代表同情。看！这种‘失衡’带来的视觉冲击力。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：多元的才是最好的",
+                        parentWords: "你看！当你把所有的颜色融合在一起，星云变成了最璀璨、最均匀的金紫色。原来不一定要成为谁，由于你本来就拥有一切。你就是自己大脑的‘总指挥’！",
+                        description: "新发现：真正的智慧不是‘比别人强’，而是‘比昨天更了解自己’。每个人都是自己世界的爱因斯坦。当你自信地生活，你的思维网络就会由于连接更多新知识而变得更亮！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "做最棒的自己",
+                        parentWords: "只要你肯学习、肯思考，你的大脑每天都在悄悄‘进化’。做个爱思考、爱画画、也爱关怀朋友的全能小天才吧！",
+                        description: "智慧在指尖，更在心里。让我们带着这间充满无限潜能的实验室，去开启属于你自己的未来吧！你是独一无二的！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Neural Nebula Magic ---
+                let scene, camera, renderer, nebulaGroup, neuralLines, coreBall;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 0, 150);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 1. Core Brain Ball
+                    const coreGeo = new THREE.IcosahedronGeometry(15, 2);
+                    coreBall = new THREE.Mesh(coreGeo, new THREE.MeshStandardMaterial({
+                        color: 0x818cf8,
+                        emissive: 0x818cf8,
+                        emissiveIntensity: 0.5,
+                        wireframe: true
+                    }));
+                    scene.add(coreBall);
+
+                    // 2. Neural Swarm
+                    nebulaGroup = new THREE.Group();
+                    scene.add(nebulaGroup);
+                    for (let i = 0; i < 600; i++) {
+                        const p = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.8, 8, 8),
+                            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 })
+                        );
+                        const r = 50 + Math.random() * 30;
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.random() * Math.PI;
+                        p.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+                        p.userData = { originalR: r, speed: Math.random() * 0.01 };
+                        nebulaGroup.add(p);
+                    }
+
+                    // 3. Neural Lines
+                    const lineMat = new THREE.LineBasicMaterial({ color: 0x818cf8, transparent: true, opacity: 0.2 });
+                    const lineGeo = new THREE.BufferGeometry();
+                    const linePos = [];
+                    for (let i = 0; i < 100; i++) {
+                        linePos.push((Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100);
+                    }
+                    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
+                    neuralLines = new THREE.LineSegments(lineGeo, lineMat);
+                    scene.add(neuralLines);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+                    const pointLight = new THREE.PointLight(0xffffff, 1.5);
+                    pointLight.position.set(0, 50, 50);
+                    scene.add(pointLight);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (coreBall) {
+                        coreBall.rotation.y += 0.005;
+                        // Color blending based on sliders
+                        const r = logicVal.value * 0.01;
+                        const g = artVal.value * 0.01;
+                        const b = empathyVal.value * 0.01;
+                        coreBall.material.color.setRGB(r * 2, g * 2, b * 2);
+                        coreBall.material.emissiveIntensity = 0.5 + Math.sin(t * 2) * 0.2;
+                    }
+
+                    if (nebulaGroup) {
+                        nebulaGroup.rotation.y += 0.002;
+                        nebulaGroup.children.forEach((p, idx) => {
+                            p.position.y += Math.sin(t + idx) * 0.05;
+                            // Pull towards center if logic is high, expand if art is high
+                            const factor = (logicVal.value - artVal.value) * 0.02;
+                            p.position.multiplyScalar(1 - factor * 0.001);
+                        });
+                    }
+
+                    if (neuralLines) {
+                        neuralLines.rotation.z += 0.001;
+                        neuralLines.material.opacity = empathyVal.value * 0.005;
+                    }
+
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 4) {
+                        gsap.to(logicVal, { value: 60, duration: 2 });
+                        gsap.to(artVal, { value: 70, duration: 2 });
+                        gsap.to(empathyVal, { value: 80, duration: 2 });
+                        gsap.to(camera.position, { z: 120, duration: 2 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, logicVal, artVal, empathyVal, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

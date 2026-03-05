@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如果恐龙就在我们身边该怎么办</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-orange: #f97316;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #ffedd5;
+            background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 5rem auto;
+            /* Adjusted margin to push text down but keep it clean */
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+            z-index: 20;
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 1);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 30px rgba(249, 115, 22, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.2rem 4rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .spawn-btn {
+            background: #f97316;
+            padding: 1rem 2.5rem;
+            border-radius: 2rem;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            box-shadow: 0 5px 15px rgba(249, 115, 22, 0.5);
+        }
+
+        .spawn-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(249, 115, 22, 0.7);
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-orange);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-orange);
+        }
+
+        .discovery-tag {
+            background: #ea580c;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🦖 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">大发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启街道模拟' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-orange-700 !text-white">
+                    回归大自然平衡
+                </button>
+            </div>
+        </div>
+
+        <!-- 恐龙召唤面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <button @click="spawnDino('rex')" class="spawn-btn">召唤霸王龙</button>
+            <button @click="spawnDino('neck')" class="spawn-btn">召唤长颈龙</button>
+            <button @click="nextStage" v-if="dinoCount >= 2" class="next-btn !text-sm !py-3 !px-12 ml-4">揭开秘密</button>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const dinoCount = ref(0);
+
+                const stages = [
+                    {
+                        title: "平行时空的街头",
+                        parentWords: "宝贝，如果我们出门散步，看到一只比红绿灯还高的雷龙在吃路边的行道树，你会不会觉得很酷？",
+                        description: "这是一座安静的模拟城市。现在的路很宽，楼很高。一切都井井有条地在运转着。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "庞然大物的困惑",
+                        parentWords: "如果三角龙想在人行道上走过，它会挡住多少辆车？预测一下，由于巨型邻居的加入，街道会塞满吗？",
+                        description: "预测中：巨大的身躯意味着巨大的脚印和食量。我们的城市似乎还没准备好迎接这些‘大食客’。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：恐龙进城啦！",
+                        parentWords: "快！点击‘召唤’按钮，看看霸王龙和长颈龙在城市里的真实大小。你可以看到它们和楼房的对比！",
+                        description: "哇！看！由于长颈龙的脖子太长了，它差点撞到了正在飞行的交通警察机器。这可真是个不小的麻烦。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：变小的智慧",
+                        parentWords: "你看！原本笨重的恐龙模型正在消失，变成了天空中灵活的小鸟。由于城市太拥挤，它们用这种方式继续和我们生活在一起！",
+                        description: "真相揭晓：其实恐龙从未灭绝！所有的鸟类——哪怕是你书桌外那只麻雀——都是恐龙由于数亿年进化缩小的样子。它们找到了新的自由！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "生命一直在改变",
+                        parentWords: "从巨龙到飞鸟，生命总能找到最适合的姿态。让我们继续爱这些活泼的小邻居，它们可是‘活化石’哦！",
+                        description: "地球的每一寸土地都见证了生命的奇迹。无论是远古的咆哮还是现在的啼鸣，都是生命最美的音响。你今天学到了最棒的知识！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Dino City (Voxel Style) ---
+                let scene, camera, renderer, cityGroup, dinoGroup, birdGroup;
+                let clock = new THREE.Clock();
+                let dinoColorH = ref(0);
+
+                const createVoxelDino = (type = 'rex') => {
+                    const dino = new THREE.Group();
+                    const mats = (h) => {
+                        const hVal = (h + (type === 'neck' ? 40 : 0)) % 360; // Slightly different color for neck
+                        const c1 = `hsl(${hVal}, 100%, 50%)`;
+                        const c2 = `hsl(${hVal}, 100%, 35%)`;
+                        const c3 = `hsl(${hVal}, 100%, 15%)`;
+                        const c4 = `hsl(${hVal}, 10%, 75%)`;
+                        return [
+                            new THREE.MeshStandardMaterial({ color: c2, flatShading: true }),
+                            new THREE.MeshStandardMaterial({ color: c1, flatShading: true }),
+                            new THREE.MeshStandardMaterial({ color: c3, flatShading: true }),
+                            new THREE.MeshStandardMaterial({ color: c4, flatShading: true }),
+                            new THREE.MeshStandardMaterial({ color: c1, flatShading: true }),
+                            new THREE.MeshStandardMaterial({ color: c1, flatShading: true })
+                        ];
+                    };
+
+                    const currentMats = mats(dinoColorH.value);
+                    const addBox = (parent, w, h, d, x, y, z) => {
+                        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), currentMats);
+                        mesh.position.set(x, y, z);
+                        parent.add(mesh);
+                        return mesh;
+                    };
+
+                    const torso = new THREE.Group();
+                    torso.position.set(type === 'neck' ? 0 : 22, 0, 0);
+                    dino.add(torso);
+
+                    if (type === 'rex') {
+                        addBox(torso, 70, 90, 100, 0, 0, 0);
+                        const headAnchor = new THREE.Group();
+                        torso.add(headAnchor);
+                        addBox(headAnchor, 30, 98, 100, -8, -90, 0);    // Neck
+                        addBox(headAnchor, 110, 24, 100, 48, -140, 0);  // Scalp
+                        addBox(headAnchor, 94, 62, 100, 72, -108, 0);   // Snout
+                        addBox(headAnchor, 72, 66, 100, 13, -77, 0);    // Jaw
+                        addBox(headAnchor, 114, 16, 100, 36, -52, 0);   // Bottom Jaw
+                    } else {
+                        // LONG NECK (Brachiosaurus)
+                        addBox(torso, 80, 100, 150, 0, 0, 0); // Sturdy body
+                        const headAnchor = new THREE.Group();
+                        torso.add(headAnchor);
+                        // SIGNIFICANTLY LONGER NECK AS REQUESTED
+                        addBox(headAnchor, 40, 400, 90, -10, -220, 0);  // Vertical tall neck
+                        addBox(headAnchor, 80, 50, 120, 30, -420, 0);   // Distinct head
+                    }
+
+                    // Tail (Common)
+                    addBox(torso, 80, 80, 100, -20, 30, 0);
+                    addBox(torso, 30, 60, 40, -140, 0, 0);
+
+                    // Arms (Only for Rex)
+                    if (type === 'rex') {
+                        const armL = new THREE.Group();
+                        armL.position.set(30, -10, -35);
+                        torso.add(armL);
+                        addBox(armL, 15, 15, 20, 0, 0, 0);
+                        const armR = armL.clone();
+                        armR.position.z = 35;
+                        torso.add(armR);
+                    }
+
+                    // Legs
+                    const legL = new THREE.Group();
+                    legL.position.set(-50, 80, 50);
+                    torso.add(legL);
+                    addBox(legL, 40, 20, 40, 0, 0, 0);
+                    const bottomLegL = new THREE.Group();
+                    legL.add(bottomLegL);
+                    addBox(bottomLegL, 20, 50, 40, 0, 30, 0);
+
+                    const legR = new THREE.Group();
+                    legR.position.set(-50, 80, -50);
+                    torso.add(legR);
+                    addBox(legR, 40, 20, 40, 0, 0, 0);
+                    const bottomLegR = new THREE.Group();
+                    legR.add(bottomLegR);
+                    addBox(bottomLegR, 20, 50, 40, 0, 30, 0);
+
+                    dino.scale.set(0.18, 0.18, 0.18);
+                    dino.rotation.x = Math.PI;
+
+                    gsap.timeline({ repeat: -1, yoyo: true })
+                        .to(bottomLegL.position, { y: -20, duration: 0.1, ease: "steps(2)" }, 0)
+                        .to(bottomLegR.position, { y: 20, duration: 0.1, ease: "steps(2)" }, 0);
+
+                    return dino;
+                };
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.set(300, 150, 500); // Adjusted position for better angle
+                    camera.lookAt(0, 50, 0); // Center the view!
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 1. City Base
+                    cityGroup = new THREE.Group();
+                    for (let i = 0; i < 40; i++) {
+                        const h = 40 + Math.random() * 150;
+                        const geo = new THREE.BoxGeometry(30, h, 30);
+                        const mat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.2, roughness: 0.1 });
+                        const building = new THREE.Mesh(geo, mat);
+                        building.position.set((Math.random() - 0.5) * 600, h / 2, (Math.random() - 0.5) * 600);
+                        cityGroup.add(building);
+                    }
+                    scene.add(cityGroup);
+
+                    // 2. Dinosaur Group
+                    dinoGroup = new THREE.Group();
+                    scene.add(dinoGroup);
+
+                    // 3. Bird Group
+                    birdGroup = new THREE.Group();
+                    scene.add(birdGroup);
+                    for (let i = 0; i < 60; i++) {
+                        const b = new THREE.Mesh(new THREE.ConeGeometry(1, 4, 8), new THREE.MeshStandardMaterial({ color: 0xf97316 }));
+                        b.position.set((Math.random() - 0.5) * 500, 180 + Math.random() * 200, (Math.random() - 0.5) * 500);
+                        b.rotation.x = Math.PI / 2;
+                        b.visible = false;
+                        birdGroup.add(b);
+                    }
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+                    directionalLight.position.set(100, 200, 150);
+                    scene.add(directionalLight);
+
+                    animate();
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    // Color cycle
+                    dinoColorH.value = (dinoColorH.value + 0.5) % 360;
+
+                    if (cityGroup) cityGroup.rotation.y += 0.0003;
+
+                    if (dinoGroup) {
+                        dinoGroup.children.forEach(d => {
+                            d.rotation.y = t * 0.3;
+                            d.position.y = Math.sin(t * 2) * 5 + 20;
+
+                            // Update colors of all boxes in dino
+                            d.traverse(node => {
+                                if (node.isMesh && node.material.length === 6) {
+                                    const h = dinoColorH.value;
+                                    const c1 = new THREE.Color(`hsl(${h}, 80%, 50%)`);
+                                    const c2 = new THREE.Color(`hsl(${h}, 80%, 35%)`);
+                                    const c3 = new THREE.Color(`hsl(${h}, 80%, 15%)`);
+                                    const c4 = new THREE.Color(`hsl(${h}, 10%, 75%)`);
+
+                                    node.material[0].color = c2;
+                                    node.material[1].color = c1;
+                                    node.material[2].color = c3;
+                                    node.material[3].color = c4;
+                                    node.material[4].color = c1;
+                                    node.material[5].color = c1;
+                                }
+                            });
+                        });
+                    }
+
+                    if (birdGroup && birdGroup.visible) {
+                        birdGroup.children.forEach((b, idx) => {
+                            b.position.x += Math.sin(t + idx) * 0.8;
+                            b.position.y += Math.cos(t * 1.5 + idx) * 0.5;
+                        });
+                    }
+
+                    camera.lookAt(0, 50, 0); // Force look at center on every frame
+                    renderer.render(scene, camera);
+                };
+
+                const spawnDino = (type) => {
+                    const dino = createVoxelDino(type);
+                    dino.position.set((Math.random() - 0.5) * 400, 20, (Math.random() - 0.5) * 400);
+                    dinoGroup.add(dino);
+                    dinoCount.value++;
+                    gsap.from(dino.scale, { x: 0, y: 0, z: 0, duration: 1.5, ease: "elastic.out(1, 0.3)" });
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+
+                    if (newVal === 4) {
+                        gsap.to(dinoGroup.scale, { x: 0, y: 0, z: 0, duration: 1.5, ease: "power2.in" });
+                        birdGroup.visible = true;
+                        birdGroup.children.forEach(b => {
+                            b.visible = true;
+                            gsap.from(b.scale, { x: 0, y: 0, z: 0, duration: 2, delay: Math.random() });
+                        });
+                    }
+                    if (newVal === 5) {
+                        gsap.to(camera.position, { x: 400, z: 800, y: 300, duration: 6, ease: "slow" });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, dinoCount, stages, currentStageData,
+                    nextStage, goToStage, resetSimulation, spawnDino
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

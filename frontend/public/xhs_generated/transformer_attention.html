@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformer Attention Visualization - eduNest</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050505;
+            font-family: 'Inter', sans-serif;
+            color: white;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .token-tag {
+            padding: 4px 12px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="relative w-full h-screen overflow-hidden">
+        <!-- Three.js Canvas Container -->
+        <div id="canvas-holder" class="absolute inset-0"></div>
+
+        <!-- UI Overlay -->
+        <div class="absolute inset-0 flex flex-col pointer-events-none p-8 justify-between">
+            <!-- Header -->
+            <div class="flex justify-between items-start pointer-events-auto">
+                <div class="glass-panel p-4 px-6">
+                    <h1
+                        class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                        eduNest: Attention Engine
+                    </h1>
+                    <p class="text-gray-400 text-sm">Visualizing the Transformers Architecture</p>
+                </div>
+                <div class="glass-panel p-4 flex gap-2">
+                    <span class="token-tag">Multi-Head</span>
+                    <span class="token-tag">Self-Attention</span>
+                </div>
+            </div>
+
+            <!-- Content Card -->
+            <div class="flex justify-center items-end h-full mt-auto">
+                <div class="glass-panel p-8 max-w-lg w-full pointer-events-auto mb-12">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-bold mb-2">{{ stages[currentStage].title }}</h2>
+                        <p class="text-gray-300 leading-relaxed">{{ stages[currentStage].text }}</p>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-black/30 p-4 rounded-xl mb-6">
+                        <span class="text-sm text-indigo-300">💡 Interaction: {{ stages[currentStage].interaction
+                            }}</span>
+                    </div>
+
+                    <button @click="nextStage" class="w-full nav-btn p-4 rounded-xl font-bold uppercase tracking-wider">
+                        {{ currentStage === stages.length - 1 ? 'Start Again' : 'Move Forward' }}
+                    </button>
+
+                    <div class="mt-4 flex gap-2 justify-center">
+                        <div v-for="(_, i) in stages" :key="i" class="h-1.5 rounded-full transition-all duration-300"
+                            :class="currentStage === i ? 'w-8 bg-indigo-500' : 'w-2 bg-gray-700'">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, onMounted, ref } = Vue;
+
+        createApp({
+            setup() {
+                const currentStage = ref(0);
+                const stages = [
+                    {
+                        title: "The Context Problem",
+                        text: "Early AI forgot the start of a sentence by the time it reached the end. The Transformer's 'Attention' mechanism solved this by connecting every word to every other word simultaneously.",
+                        interaction: "Explore the neural word cloud."
+                    },
+                    {
+                        title: "Mapping Weights",
+                        text: "Look at the glowing lines. Each connection has a 'weight'—representing how much importance word A gives to word B. This is how 'Bank' knows it means a river bank in a nature story.",
+                        interaction: "Connections grow stronger where context matters most."
+                    },
+                    {
+                        title: "Dynamic Intelligence",
+                        text: "This architecture is what makes ChatGPT so fluent. By processing everything at once, it understands nuance, tone, and logic far better than any previous tech.",
+                        interaction: "Ready to build the future of AI education?"
+                    }
+                ];
+
+                const nextStage = () => {
+                    currentStage.value = (currentStage.value + 1) % stages.length;
+                    // Trigger animation in Three.js when stage changes
+                    window.updateVisuals(currentStage.value);
+                };
+
+                onMounted(() => {
+                    initThree();
+                });
+
+                function initThree() {
+                    const scene = new THREE.Scene();
+                    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+                    renderer.setClearColor(0x050505, 1);
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    document.getElementById('canvas-holder').appendChild(renderer.domElement);
+
+                    // Create Word Nodes
+                    const nodes = [];
+                    const connections = [];
+                    const count = 15;
+                    const group = new THREE.Group();
+                    scene.add(group);
+
+                    for (let i = 0; i < count; i++) {
+                        const geometry = new THREE.IcosahedronGeometry(0.5, 0);
+                        const material = new THREE.MeshPhongMaterial({
+                            color: 0x6366f1,
+                            emissive: 0x6366f1,
+                            emissiveIntensity: 0.5,
+                            transparent: true,
+                            opacity: 0.8
+                        });
+                        const mesh = new THREE.Mesh(geometry, material);
+                        mesh.position.set(
+                            (Math.random() - 0.5) * 15,
+                            (Math.random() - 0.5) * 15,
+                            (Math.random() - 0.5) * 10
+                        );
+                        group.add(mesh);
+                        nodes.push(mesh);
+                    }
+
+                    // Lines
+                    const lineMaterial = new THREE.LineBasicMaterial({
+                        color: 0x8b5cf6,
+                        transparent: true,
+                        opacity: 0.2
+                    });
+
+                    nodes.forEach((n1, i) => {
+                        nodes.forEach((n2, j) => {
+                            if (i < j && Math.random() > 0.7) {
+                                const points = [n1.position, n2.position];
+                                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                                const line = new THREE.Line(geometry, lineMaterial.clone());
+                                group.add(line);
+                                connections.push(line);
+                            }
+                        });
+                    });
+
+                    // Lighting
+                    const ambientLight = new THREE.AmbientLight(0x404040);
+                    scene.add(ambientLight);
+                    const pointLight = new THREE.PointLight(0xffffff, 1);
+                    pointLight.position.set(10, 10, 10);
+                    scene.add(pointLight);
+
+                    camera.position.z = 15;
+
+                    // Animation Loop
+                    function animate() {
+                        requestAnimationFrame(animate);
+                        group.rotation.y += 0.002;
+                        group.rotation.x += 0.001;
+                        renderer.render(scene, camera);
+                    }
+                    animate();
+
+                    // External controller for stage changes
+                    window.updateVisuals = (stage) => {
+                        if (stage === 1) {
+                            gsap.to(lineMaterial, { opacity: 0.8, duration: 2 });
+                            nodes.forEach(m => gsap.to(m.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 1 }));
+                        } else if (stage === 2) {
+                            gsap.to(group.rotation, { y: group.rotation.y + Math.PI * 2, duration: 3, ease: "power2.inOut" });
+                            nodes.forEach(m => gsap.to(m.material.color, { r: 1, g: 0.2, b: 0.4, duration: 1 }));
+                        } else {
+                            gsap.to(lineMaterial, { opacity: 0.2, duration: 1 });
+                            nodes.forEach(m => gsap.to(m.scale, { x: 1, y: 1, z: 1, duration: 1 }));
+                            nodes.forEach(m => gsap.to(m.material.color, { r: 0.38, g: 0.4, b: 0.94, duration: 1 }));
+                        }
+                    };
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

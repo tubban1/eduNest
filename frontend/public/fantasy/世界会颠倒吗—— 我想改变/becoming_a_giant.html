@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成为一个巨人会怎样</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = {
+                    'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js',
+                    'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js',
+                    'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'
+                };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-green: #10b981;
+            --accent-gold: #f59e0b;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020617;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #10b981, #f59e0b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #d1fae5;
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-green);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.5s;
+        }
+
+        .dot.active {
+            background: var(--accent-green);
+            transform: scale(1.5);
+            box-shadow: 0 0 15px var(--accent-green);
+        }
+
+        .discovery-tag {
+            background: #064e3b;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .scale-control {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 3rem;
+            border-radius: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            pointer-events: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        input[type=range] {
+            width: 300px;
+            accent-color: var(--accent-green);
+        }
+
+        .scale-label {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-green);
+            min-width: 80px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🦒 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">视角发现!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启变大体验' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-emerald-900 !text-white">
+                    致敬平衡的尺寸
+                </button>
+                <button v-if="step === 3 && giantScale >= 10" @click="nextStage"
+                    class="next-btn !bg-emerald-500 ml-4">理解重量代价</button>
+            </div>
+        </div>
+
+        <!-- 变大控制 -->
+        <div v-if="step === 3" class="scale-control">
+            <span class="text-white">身高指数:</span>
+            <input type="range" min="1" max="20" step="0.1" v-model="giantScale" @input="updateScale">
+            <span class="scale-label">{{ (giantScale * 1.5).toFixed(1) }}米</span>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const giantScale = ref(1);
+
+                const stages = [
+                    {
+                        title: "成为一个巨人会怎样",
+                        parentWords: "宝贝，你看，小树、小花都在你的脚下。要是你现在突然‘嘭’的一声，长得比所有的房子还要高。你会觉得天空变近了吗？云朵会不会撞到你的鼻子？",
+                        description: "这是一个神奇的‘比例世界’。我们习惯了作为普通人的尺寸。假如由于魔法，我们的身高翻了十倍，世界会由于视角的改变而由于改观。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：巨人的世界",
+                        parentWords: "如果你真的变成了巨人。预测一下，当你轻轻走一步，大地会由于由于由于摇晃吗？你的衣服还能由于找得到合适的布料吗？更重要的是，你还能由于和小伙伴玩捉迷藏吗？",
+                        description: "预测中：尺寸决定了物理平衡。长高不仅仅是看更远，还意味着骨骼要承受更由于沉由于重的压力。巨人的生活可能充满了‘不方便’。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：身高加速生长",
+                        parentWords: "快！滑动下方的滑杆。看！当你变高时，大树是不是变成了小草？小汽车是不是变成了小甲虫？这种俯瞰的感觉是不是酷毙了？",
+                        description: "模拟场：手动调节由于生长指数。随着你不断的拔高，由于视野会不断由于由于由于开阔。你可以尝试寻找由于云层背后的秘密。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：平方三次方定律",
+                        parentWords: "你看！巨人走起路来由于好由于慢。新发现：如果身高增加两倍，体积由于和重量会增加八倍！由于为了撑住这么由于重的由于身体。巨人的腿由于必须变得像大象一样由于粗！",
+                        description: "震撼揭秘：由于生物的规模由于限制。新发现：骨骼的强度由于赶不上重量的增长速度。如果真的由于存在由于几十米的由于巨人。由于他们可能根本无法站立，大自然由于为我们选择了由于最完美的由于比例！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "致敬恰到好处的自己",
+                        parentWords: "让我们抱抱由于适当身高的自己。不用跑得由于像风。也不用由于踩坏由于花草。你是这个世界上由于最完美的由于‘小朋友比例’。你今天完成了一个由于伟大的物理发现！",
+                        description: "合适由于才是最好的。今天你不仅体验了由于巨人的视觉。更由于读懂了由于生命的工程学智慧。你是由于世界由于最均衡的由于探索者！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Giant World ---
+                let scene, camera, renderer, ground, objects = [];
+                let playerMesh;
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x020617);
+                    scene.fog = new THREE.Fog(0x020617, 10, 500);
+
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+                    camera.position.set(0, 5, 20);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const directionalLight = new THREE.DirectionalLight(0x10b981, 1);
+                    directionalLight.position.set(10, 20, 10);
+                    scene.add(directionalLight);
+
+                    // Ground with grid
+                    const planeGeo = new THREE.PlaneGeometry(1000, 1000);
+                    const planeMat = new THREE.MeshStandardMaterial({ color: 0x064e3b });
+                    ground = new THREE.Mesh(planeGeo, planeMat);
+                    ground.rotation.x = -Math.PI / 2;
+                    scene.add(ground);
+
+                    const grid = new THREE.GridHelper(1000, 100, 0x10b981, 0x10b981);
+                    grid.position.y = 0.01;
+                    scene.add(grid);
+
+                    // Add Reference Objects (Trees & Houses)
+                    for (let i = 0; i < 60; i++) {
+                        const type = Math.random() > 0.5 ? 'tree' : 'house';
+                        let mesh;
+                        if (type === 'tree') {
+                            mesh = new THREE.Group();
+                            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1), new THREE.MeshStandardMaterial({ color: 0x4d2c00 }));
+                            const leaves = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshStandardMaterial({ color: 0x059669 }));
+                            leaves.position.y = 1.5;
+                            mesh.add(trunk, leaves);
+                        } else {
+                            mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
+                            const roof = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1, 4), new THREE.MeshStandardMaterial({ color: 0x991b1b }));
+                            roof.position.y = 1.5;
+                            roof.rotation.y = Math.PI / 4;
+                            mesh.add(roof);
+                        }
+                        mesh.position.set((Math.random() - 0.5) * 200, 0, (Math.random() - 0.5) * 200);
+                        scene.add(mesh);
+                        objects.push(mesh);
+                    }
+
+                    animate();
+                    window.addEventListener('resize', onResize);
+                };
+
+                const updateScale = () => {
+                    const s = giantScale.value;
+                    gsap.to(camera.position, {
+                        y: 5 * s,
+                        z: 20 * s,
+                        duration: 0.5,
+                        ease: "power2.out"
+                    });
+                    if (s > 10) {
+                        // Shake screen to simulate heavy steps
+                        gsap.to(camera.position, {
+                            x: 0.5, duration: 0.1, yoyo: true, repeat: 5
+                        });
+                    }
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    renderer.render(scene, camera);
+                };
+
+                const onResize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out", delay: 0.5 });
+
+                    if (newVal === 1) {
+                        gsap.to(camera.position, { y: 5, z: 20, duration: 3 });
+                    } else if (newVal === 4) {
+                        gsap.to(camera.position, { x: 100, y: 150, z: 200, duration: 4 });
+                        camera.lookAt(0, 0, 0);
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, giantScale, currentStageData,
+                    nextStage, goToStage, resetSimulation, updateScale
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

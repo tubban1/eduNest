@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫和老鼠变成朋友该多好</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = { 'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js', 'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js', 'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js' };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-orange: #fb923c;
+            --accent-blue: #3b82f6;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #fb923c, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(251, 146, 60, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #ffedd5;
+            background: linear-gradient(90deg, transparent, rgba(251, 146, 60, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 5rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+            z-index: 20;
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 1);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 30px rgba(251, 146, 60, 0.3);
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 2.2rem 4rem;
+            border-radius: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .friend-btn {
+            background: #fb923c;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(251, 146, 60, 0.6);
+            border: none;
+        }
+
+        .friend-btn:hover {
+            transform: scale(1.2);
+            filter: brightness(1.2);
+        }
+
+        .hud-stat {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            color: var(--accent-orange);
+            font-weight: 700;
+        }
+
+        .pop-card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(251, 146, 60, 0.4);
+            text-align: right;
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .discovery-tag {
+            background: #9a3412;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="app" class="ui-root">
+        <!-- 统计 HUD -->
+        <div class="hud-stat" v-if="step >= 2">
+            <div class="pop-card">
+                <div class="text-xs opacity-60">粮仓剩余</div>
+                <div class="text-2xl">{{ foodRemaining }}%</div>
+            </div>
+            <div class="pop-card">
+                <div class="text-xs opacity-60">老鼠数量</div>
+                <div class="text-2xl">{{ mouseCount }}</div>
+            </div>
+        </div>
+
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🐈 🤝 🐁 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">大揭秘!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages && step !== 3" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启友谊实验室' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-orange-700 !text-white">
+                    致敬自然天性
+                </button>
+            </div>
+        </div>
+
+        <!-- 友谊粒子面板 -->
+        <div v-if="step === 3" class="control-panel">
+            <div class="flex flex-col gap-2">
+                <div class="text-xs uppercase text-orange-400">Friendship Pulse</div>
+                <div class="text-xl font-bold">天性调节：{{ isFriendly ? '已和谐' : '竞争中' }}</div>
+            </div>
+            <button @click="toggleFriendship" class="friend-btn">🤝</button>
+            <button @click="nextStage" v-if="isFriendly" class="next-btn !text-sm !py-3 !px-12 ml-4">理解平衡点</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const isFriendly = ref(false);
+                const mouseCount = ref(1);
+                const foodRemaining = ref(100);
+
+                const stages = [
+                    {
+                        title: "厨房里的‘追逐战’",
+                        parentWords: "宝贝，你看，猫咪悄悄地靠近小耗子，小耗子刺溜一下钻进了洞里。这是由于捕食者本能在指引它们。",
+                        description: "这是一间充满了‘竞争’气息的微观环境。在这里，由于天敌的存在，老鼠始终不敢走出阴影。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：消失的‘平衡’",
+                        parentWords: "如果有一天，猫咪不再抓耗子了，而是招呼它出来由于吃饼干。预测一下，我们的由于粮仓会堆满耗子屎吗？",
+                        description: "预测中：当天敌消失，由于过度繁殖将无法被抑制。由于消耗巨大的谷物，家园的平衡将被打破。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：握手言和",
+                        parentWords: "快！点击‘和平按钮’。看看当追逐停止后，小老鼠由于不再害怕而生更多的宝宝。看！粮食是不是掉得飞快？",
+                        description: "观测中：猫和老鼠正在握手言和。由于没有了危机，老鼠数量由于呈几何倍数增长。由于食物量正在由于迅速枯竭。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：‘敌人’也是‘合伙人’",
+                        parentWords: "核心大揭秘：自然界中的捕食不是由于残忍，而是由于整个生态的‘自我修正’。天敌的存在由于能保护更广泛的资源不被耗尽。原来，它们是相互依存的对手！",
+                        description: "真相：每一对天敌都是天平的两端。没有了猫的威慑，老鼠会由于过度发展而摧毁它们居住的由于粮食系统。竞争其实是由于生命进化的引擎。",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "尊重生命的每一面",
+                        parentWords: "学习像由于大自然一样看问题。不论是追逐还是共同生活，每种关系由于都有其存在的意义。今天你也由于完成了一次伟大的由于智慧攀升！",
+                        description: "从微观厨房到由于宏观地球，每条生命链接由于都由于其精妙而有力。让我们带着由于尊重去观察每一个生灵。今天你做得非常棒！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Kitchen & Entities ---
+                let scene, camera, renderer, cat, mice = [];
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 50, 150);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // 1. Kitchen Floor
+                    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+                    floor.rotation.x = -Math.PI / 2;
+                    scene.add(floor);
+
+                    // 2. The Cat (Big block)
+                    cat = new THREE.Mesh(new THREE.BoxGeometry(15, 12, 20), new THREE.MeshStandardMaterial({ color: 0xfb923c }));
+                    cat.position.y = 6;
+                    scene.add(cat);
+
+                    // 3. Initial Mouse
+                    addMouse();
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+                    const sun = new THREE.DirectionalLight(0xffffff, 1);
+                    sun.position.set(50, 100, 50);
+                    scene.add(sun);
+
+                    animate();
+                };
+
+                const addMouse = () => {
+                    const m = new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                    m.position.set((Math.random() - 0.5) * 150, 2, (Math.random() - 0.5) * 150);
+                    scene.add(m);
+                    mice.push(m);
+                    mouseCount.value = mice.length;
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+
+                    if (!isFriendly.value) {
+                        // Chase logic
+                        cat.position.x = Math.sin(t) * 40;
+                        cat.position.z = Math.cos(t) * 40;
+                        cat.lookAt(mice[0].position);
+
+                        mice.forEach(m => {
+                            m.position.x += (m.position.x - cat.position.x) * 0.01;
+                            m.position.z += (m.position.z - cat.position.z) * 0.01;
+                        });
+                    } else {
+                        // Friendly logic: Mice swarm
+                        if (t % 2 < 0.02 && mice.length < 50) addMouse();
+                        foodRemaining.value = Math.max(0, foodRemaining.value - (mice.length * 0.01));
+
+                        cat.position.set(0, 6, 0);
+                        mice.forEach((m, idx) => {
+                            m.position.x = Math.sin(t + idx) * (15 + idx);
+                            m.position.z = Math.cos(t + idx) * (15 + idx);
+                        });
+                    }
+
+                    camera.lookAt(0, 20, 0); // Center the view!
+                    renderer.render(scene, camera);
+                };
+
+                const toggleFriendship = () => {
+                    isFriendly.value = !isFriendly.value;
+                    gsap.to(cat.material.color, { r: isFriendly.value ? 1 : 0.98, g: isFriendly.value ? 1 : 0.57, b: isFriendly.value ? 1 : 0.23, duration: 1 });
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out" }, "-=1.5");
+                });
+
+                onMounted(() => {
+                    initThree();
+
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, isFriendly, mouseCount, foodRemaining, stages, currentStageData,
+                    nextStage, resetSimulation, toggleFriendship
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

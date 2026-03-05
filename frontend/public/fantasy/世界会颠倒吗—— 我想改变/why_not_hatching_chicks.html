@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人为什么不能孵小鸡</title>
+    <!-- ELITE DEPENDENCIES WITH ROBUST FALLBACK (ONERROR + TIMEOUT) -->
+    <script src="https://cdn.tailwindcss.com"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.20/dist/vue.global.prod.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+        onerror="this.onerror=null; this.src='https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js'"></script>
+    <script>
+        (function () {
+            const check = () => {
+                const map = {
+                    'Vue': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/vue.global.prod.js',
+                    'gsap': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/gsap.min.js',
+                    'THREE': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/three.min.js',
+                    'OrbitControls': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/OrbitControls.js',
+                    'tailwind': 'https://tubban1.oss-cn-beijing.aliyuncs.com/static/lib/tailwind.min.js'
+                };
+                Object.keys(map).forEach(id => { if (!window[id]) { const s = document.createElement('script'); s.src = map[id]; s.async = false; document.head.appendChild(s); } });
+            };
+            setTimeout(check, 5000);
+        })();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+        :root {
+            --accent-egg: #fef3c7;
+            --accent-warm: #f87171;
+            --text-main: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-blur: blur(20px);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #451a03;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            padding: 4.5rem;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .stage-title-container {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+
+        .main-title {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 4.6rem;
+            letter-spacing: 0.15rem;
+            background: linear-gradient(135deg, #fef3c7, #fbbf24);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.2rem;
+            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4));
+        }
+
+        .parent-words {
+            font-size: 1.25rem;
+            color: #fef3c7;
+            background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+            padding: 1rem 4rem;
+            border-radius: 2rem;
+            font-weight: 300;
+        }
+
+        .content-box {
+            max-width: 850px;
+            margin: 0 auto 18rem auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .description-text {
+            font-size: 1.8rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 3.5rem;
+            font-weight: 300;
+        }
+
+        .next-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem 5.5rem;
+            border-radius: 5.5rem;
+            font-weight: 700;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) translateY(-12px);
+            border-color: #fbbf24;
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+        }
+
+        .temp-hud {
+            position: fixed;
+            left: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2rem;
+            border-radius: 2rem;
+            border: 2px solid #fbbf24;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            pointer-events: none;
+        }
+
+        .temp-value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .interaction-hint {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 2.5rem;
+            border-radius: 3rem;
+            color: white;
+            font-size: 1rem;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-dots {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            pointer-events: auto;
+        }
+
+        .discovery-tag {
+            background: #92400e;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+    <div id="app" class="ui-root">
+        <!-- 顶部标题与亲子引导 -->
+        <div class="stage-title-container" ref="titleContainer">
+            <h1 class="main-title">{{ currentStageData.title }}</h1>
+            <div class="parent-words">
+                🥚 🐣 {{ currentStageData.parentWords }}
+            </div>
+        </div>
+
+        <!-- 温度计 -->
+        <div v-if="step >= 3 && step <= 4" class="temp-hud">
+            <div class="text-xs uppercase opacity-60">环境温度</div>
+            <div class="temp-value">{{ currentTemp }}°C</div>
+            <div class="text-xs text-yellow-500 font-bold">孵化标准：37.8°C</div>
+        </div>
+
+        <!-- 交互提示 -->
+        <div v-if="step === 3" class="interaction-hint">
+            拖拽旋转或滚轮缩放，点击鸡蛋尝试翻动
+        </div>
+
+        <!-- 中间内容盒子 -->
+        <div class="content-box" ref="contentBox">
+            <div class="description-text">
+                <span v-if="currentStageData.isDiscovery" class="discovery-tag">生命奥秘!</span>
+                {{ currentStageData.description }}
+            </div>
+            <div class="flex justify-center pointer-events-auto">
+                <button v-if="step < totalStages" @click="nextStage" class="next-btn">
+                    {{ step === 2 ? '开启孵化实验' : '继续探索' }}
+                </button>
+                <button v-else-if="step === totalStages" @click="resetSimulation"
+                    class="next-btn bg-amber-900 !text-white">
+                    致敬自然的严谨
+                </button>
+            </div>
+        </div>
+
+        <!-- 侧边导航 -->
+        <div class="nav-dots">
+            <div v-for="n in totalStages" :key="n" :class="['dot', { active: step === n }]" @click="goToStage(n)"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const step = ref(1);
+                const totalStages = 5;
+                const currentTemp = ref(36.5); // 人体体温附近
+
+                const stages = [
+                    {
+                        title: "人为什么不能孵小鸡",
+                        parentWords: "宝贝，你看这些圆滚滚的鸡蛋，里面住着还没出生的小鸡。鸡妈妈会一直趴在上面。要是你每天也抱着鸡蛋，由于给它讲故事，由于给它温暖，它能孵出小鸡吗？",
+                        description: "这是一间温暖的‘生命育婴室’。孵化是一个由于极其由于精密的过程。每一个极其微小的因素由于都决定了新生命能否安全破壳。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "预测：温差的挑战",
+                        parentWords: "如果我们真的去孵蛋。预测一下，我们的由于肚皮由于够热吗？如果我们由于睡觉时翻个身，由于鸡蛋由于会由于被由于压碎吗？",
+                        description: "预测中：孵化需要极其稳定的高温。鸡妈妈的体温比人类高出不少，而且由于它们由于懂得由于有节奏地‘翻蛋’。这些都是人类难以模拟的。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "操作：温度与转动模拟",
+                        parentWords: "快！点击并转动 3D 鸡蛋。看！如果温度只是由于由于停留在我们的由于体温（约37度），由于进度条由于几乎不动。小鸡需要的是由于‘恒定且更热’的环境。",
+                        description: "由于生命由于孵化场。在这里，你需要维持由于精确的热量输出。你会发现，仅仅靠人类的体温，由于孵化速度是极其由于由于缓慢的。",
+                        isDiscovery: false
+                    },
+                    {
+                        title: "大发现：基因的精密时钟",
+                        parentWords: "你看！原来不仅要热，还要由于37.8度的黄金温度。新发现：如果温差由于超过0.5度，小鸡可能就会由于停止生长。由于而且如果没有羽毛的包裹，由于热量很快就由于散失了！",
+                        description: "震撼揭秘：由于鸟类的极致保护。新发现：鸡妈妈由于由于由于拥有特化的‘孵化斑’（掉毛的皮肤），能直接把热量传给蛋。人类由于由于穿着衣服或皮肤由于散热太快，根本无法由于胜任这份工作！",
+                        isDiscovery: true
+                    },
+                    {
+                        title: "致敬伟大的母性智慧",
+                        parentWords: "让我们感恩这份由于自然的安排。每个物种都有由于照顾宝宝的由于独特绝招。你今天完成了一个由于非常由于由于深度的生物发现！",
+                        description: "由于生命由于自其序。今天你不仅参与了由于模拟。更由于读懂了由于进化选择的严谨。你是由于世界由于最细心的由于实验室助理！",
+                        isDiscovery: false
+                    }
+                ];
+
+                const currentStageData = computed(() => stages[step.value - 1]);
+
+                // --- Three.js Egg Scene ---
+                let scene, camera, renderer, egg, controls;
+                let clock = new THREE.Clock();
+
+                const initThree = () => {
+                    scene = new THREE.Scene();
+                    scene.background = new THREE.Color(0x451a03);
+                    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    camera.position.set(0, 5, 20);
+
+                    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio);
+                    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+                    // OrbitControls
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.dampingFactor = 0.05;
+                    controls.minDistance = 5;
+                    controls.maxDistance = 50;
+
+                    // Lights
+                    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                    const sun = new THREE.PointLight(0xfbbf24, 2, 50);
+                    sun.position.set(5, 10, 5);
+                    scene.add(sun);
+
+                    // Egg Shape (Lathe)
+                    const points = [];
+                    for (let i = 0; i < 20; i++) {
+                        const deg = (i / 19) * Math.PI;
+                        points.push(new THREE.Vector2(Math.sin(deg) * (2 + Math.cos(deg) * 0.5), i * 0.4));
+                    }
+                    const geo = new THREE.LatheGeometry(points, 32);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.5 });
+                    egg = new THREE.Mesh(geo, mat);
+                    egg.position.y = -4;
+                    scene.add(egg);
+
+                    const nestGeo = new THREE.TorusGeometry(5, 0.5, 16, 100);
+                    const nestMat = new THREE.MeshStandardMaterial({ color: 0x713f12 });
+                    const nest = new THREE.Mesh(nestGeo, nestMat);
+                    nest.rotation.x = Math.PI / 2;
+                    nest.position.y = -3.8;
+                    scene.add(nest);
+
+                    animate();
+                    window.addEventListener('click', rotateEgg);
+                    window.addEventListener('resize', onResize);
+                };
+
+                const onResize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+
+                const rotateEgg = (event) => {
+                    // Prevent rotation trigger when clicking buttons or dots
+                    if (event.target.closest('button') || event.target.closest('.dot')) return;
+
+                    if (step.value === 3) {
+                        gsap.to(egg.rotation, { y: egg.rotation.y + Math.PI, duration: 1, ease: "power2.inOut" });
+                        currentTemp.value = (37 + Math.random() * 1).toFixed(1);
+                    }
+                };
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    if (controls) controls.update();
+                    renderer.render(scene, camera);
+                };
+
+                const nextStage = () => {
+                    if (step.value < totalStages) {
+                        step.value++;
+                    }
+                };
+
+                const goToStage = (n) => {
+                    step.value = n;
+                };
+
+                const resetSimulation = () => {
+                    location.reload();
+                };
+
+                watch(step, (newVal) => {
+                    gsap.fromTo('.stage-title-container', { opacity: 0, scale: 0.9, y: -40 }, { opacity: 1, scale: 1, y: 0, duration: 2, ease: "expo.out" });
+                    gsap.fromTo('.content-box', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 2, ease: "expo.out", delay: 0.5 });
+
+                    if (newVal === 4) {
+                        gsap.to(egg.material.emissive, { r: 1, g: 0.5, b: 0, duration: 2 });
+                    }
+                });
+
+                onMounted(() => {
+                    initThree();
+                    gsap.to('.stage-title-container', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 0.5 });
+                    gsap.to('.content-box', { opacity: 1, y: 0, duration: 2.5, ease: "expo.out", delay: 1 });
+
+                    window.__eduNestUIStateProvider = function () {
+                        return {
+                            stageIndex: step.value,
+                            totalStages: totalStages,
+                            currentStage: stages[step.value - 1].title
+                        };
+                    };
+                });
+
+                return {
+                    step, totalStages, currentTemp, currentStageData,
+                    nextStage, goToStage, resetSimulation
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
