@@ -11,6 +11,7 @@ const DEBUG_DIR = path.join(ROOT, 'logs', 'xhs-debug');
 const MANUAL_SWITCH = process.env.XHS_MANUAL_SWITCH === '1';
 const REQUIRE_TITLE = process.env.XHS_REQUIRE_TITLE === '1';
 const SAVE_DRAFT = process.env.XHS_SAVE_DRAFT === '1';
+const STRICT_VERIFY = process.env.XHS_STRICT_VERIFY !== '0'; // default on for automation
 
 function parseArgs(argv) {
   const args = { login: false, file: '' };
@@ -45,6 +46,10 @@ function parseDraft(file) {
     title = `AI教育分享 ${new Date().toISOString().slice(0, 10)}`;
   }
   return { title, content: body.join('\n').trim() };
+}
+
+function isoTsSafe() {
+  return new Date().toISOString().replace(/[:.]/g, '-');
 }
 
 async function waitEnter(promptText) {
@@ -312,13 +317,93 @@ async function fallbackFillEditors(page, title, content) {
 
 async function dumpDebug(page) {
   fs.mkdirSync(DEBUG_DIR, { recursive: true });
-  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  const ts = isoTsSafe();
   const shot = path.join(DEBUG_DIR, `xhs-${ts}.png`);
   const html = path.join(DEBUG_DIR, `xhs-${ts}.html`);
   await page.screenshot({ path: shot, fullPage: true }).catch(() => {});
   fs.writeFileSync(html, await page.content(), 'utf8');
   console.log(`debug saved: ${shot}`);
   console.log(`debug saved: ${html}`);
+}
+
+async function recordIncident(page, stage, extra = {}) {
+  fs.mkdirSync(DEBUG_DIR, { recursive: true });
+  const ts = isoTsSafe();
+  const shot = path.join(DEBUG_DIR, `incident-${stage}-${ts}.png`);
+  const html = path.join(DEBUG_DIR, `incident-${stage}-${ts}.html`);
+  const json = path.join(DEBUG_DIR, `incident-${stage}-${ts}.json`);
+
+  await page.screenshot({ path: shot, fullPage: true }).catch(() => {});
+  fs.writeFileSync(html, await page.content().catch(() => ''), 'utf8');
+  fs.writeFileSync(
+    json,
+    JSON.stringify(
+      {
+        ts: new Date().toISOString(),
+        stage,
+        url: page.url(),
+        extra,
+        artifacts: { screenshot: shot, html }
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
+  console.log(`incident saved: ${shot}`);
+  console.log(`incident saved: ${html}`);
+  console.log(`incident saved: ${json}`);
+  return { shot, html, json };
+}
+
+async function waitForToastOrStateChange(page, opts) {
+  const { saveDraft, timeoutMs = 20000 } = opts;
+
+  // Prefer deterministic UI/DOM signals. These are heuristics; extend as needed.
+  const okTexts = saveDraft
+    ? ['保存成功', '已保存', '草稿已保存', '已存入草稿', '保存到草稿']
+    : ['发布成功', '已发布', '发布完成', '发布成功啦', '发布成功啦', '发布成功！', '发布成功!'];
+
+  const toastCandidates = [
+    '[role="alert"]',
+    '[aria-live="polite"]',
+    '[aria-live="assertive"]',
+    '.Toast',
+    '.toast',
+    '.snackbar',
+  ];
+
+  const startUrl = page.url();
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    // URL change sometimes indicates navigation/submit success.
+    if (page.url() !== startUrl) return { ok: true, signal: 'url_changed' };
+
+    // Look for any success text on page.
+    for (const t of okTexts) {
+      const loc = page.locator(`text=${t}`).first();
+      if (await loc.count()) {
+        const visible = await loc.isVisible().catch(() => false);
+        if (visible) return { ok: true, signal: `text:${t}` };
+      }
+    }
+
+    // Look for toast containers containing success text.
+    for (const sel of toastCandidates) {
+      const toast = page.locator(sel).first();
+      if (await toast.count()) {
+        const txt = (await toast.innerText().catch(() => '')).trim();
+        if (txt) {
+          if (okTexts.some((t) => txt.includes(t))) return { ok: true, signal: `toast:${sel}` };
+        }
+      }
+    }
+
+    await page.waitForTimeout(500);
+  }
+
+  return { ok: false, signal: 'timeout_no_success_signal' };
 }
 
 async function publishWithState(file) {
@@ -430,9 +515,36 @@ async function publishWithState(file) {
       ? page.locator('button:has-text("保存草稿"), button:has-text("存草稿"), button:has-text("草稿")').first()
       : page.locator('button:has-text("发布"), button:has-text("立即发布"), button:has-text("发布笔记")').first();
     if (await actionBtn.count()) {
-      await actionBtn.click();
-      await page.waitForTimeout(3000);
-      console.log(SAVE_DRAFT ? '已尝试自动点击“保存草稿”。' : '已尝试自动点击发布按钮。');
+      // Reduce "element is outside of the viewport" and overlay flakiness.
+      await actionBtn.scrollIntoViewIfNeeded().catch(() => {});
+      await recordIncident(page, SAVE_DRAFT ? 'before_save_draft' : 'before_publish', {
+        strict_verify: STRICT_VERIFY,
+      });
+
+      await actionBtn.click({ timeout: 8000 }).catch(async (e) => {
+        await recordIncident(page, SAVE_DRAFT ? 'click_save_draft_failed' : 'click_publish_failed', {
+          error: String(e?.message || e),
+        });
+        throw e;
+      });
+
+      // Post-check: wait for deterministic signals that submit actually happened.
+      const verify = await waitForToastOrStateChange(page, { saveDraft: SAVE_DRAFT, timeoutMs: 25000 });
+      if (!verify.ok) {
+        await recordIncident(page, SAVE_DRAFT ? 'verify_save_draft_failed' : 'verify_publish_failed', {
+          verify,
+          strict_verify: STRICT_VERIFY,
+        });
+        const msg = SAVE_DRAFT
+          ? '已点击“保存草稿”，但未观察到保存成功信号（toast/跳转）。'
+          : '已点击发布，但未观察到发布成功信号（toast/跳转）。';
+        if (STRICT_VERIFY) throw new Error(msg);
+        console.log(`WARN: ${msg}`);
+      } else {
+        console.log(`postcheck ok: ${verify.signal}`);
+      }
+
+      console.log(SAVE_DRAFT ? '已自动执行“保存草稿”。' : '已自动执行发布按钮点击。');
     } else {
       console.log(SAVE_DRAFT ? '未找到“保存草稿”按钮，请手动点保存草稿。' : '未找到发布按钮，请手动点击发布。');
       await waitEnter(SAVE_DRAFT ? '保存草稿后按回车退出。' : '发布后按回车退出。');

@@ -35,6 +35,7 @@ Publish channels (choose one):
      Optional env:
        XHS_AUTO_CONFIRM=1    # auto click publish button
        XHS_IMAGE_PATHS=a.png,b.png
+       XHS_STRICT_VERIFY=0  # disable strict post-check (default: strict)
 EOF
 }
 
@@ -99,5 +100,10 @@ else
   publish_via_playwright
 fi
 
-echo "status=published" >> "${STATUS_FILE}"
-echo "Published successfully: ${DRAFT_FILE}"
+if [[ "${XHS_SAVE_DRAFT:-1}" == "1" ]]; then
+  echo "status=drafted" >> "${STATUS_FILE}"
+  echo "Draft saved successfully: ${DRAFT_FILE}"
+else
+  echo "status=published" >> "${STATUS_FILE}"
+  echo "Published successfully: ${DRAFT_FILE}"
+fi
