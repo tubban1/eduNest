@@ -1,132 +1,133 @@
-# AI 互动教育平台
+<div align="center">
 
-基于 AI 生成的互动教学内容平台，支持创建、编辑、收藏和分享教育内容。
-
-## 🚀 快速部署
-
-### 部署到 Vercel
-
-1. **克隆项目**
-```bash
-git clone <your-repo-url>
-cd edu
+```text
+ ███████╗██████╗ ██╗███╗   ██╗███████╗███████╗████████╗
+ ██╔════╝██╔══██╗██║████╗  ██║██╔════╝██╔════╝╚══██╔══╝
+ █████╗  ██║  ██║██║██╔██╗ ██║█████╗  ███████╗   ██║   
+ ██╔══╝  ██║  ██║██║██║╚██╗██║██╔══╝  ╚════██║   ██║   
+ ███████╗██████╔╝██║██║ ╚████║███████╗███████║   ██║   
+ ╚══════╝╚═════╝ ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝   ╚═╝   
 ```
 
-2. **配置环境变量**
-```bash
-cp .env.example .env
-# 编辑 .env 文件，填入你的配置
+# eduNest — AI-Powered Interactive Education & Content Monorepo Platform
+
+**Interactive Learning Platform Built with Next.js 14, Express, Kimi K2 / OpenAI Realtime, & Supabase**
+
+[ 🇺🇸 **English** ](./README.md) • [ 🇨🇳 **中文文档** ](./README_CN.md)
+
+---
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge&logo=mit)](https://opensource.org/licenses/MIT)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Express](https://img.shields.io/badge/Express-Backend-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
+[![Supabase](https://img.shields.io/badge/Database-Supabase-00C7B7?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github-actions)](https://github.com/tubban1/eduNest)
+
+</div>
+
+---
+
+## 💡 What is eduNest?
+
+**eduNest** is an industrial-grade AI-powered interactive education monorepo platform. Combining **Next.js 14**, **Express**, **Kimi K2 LLM**, and **OpenAI Realtime Voice APIs**, eduNest transforms conventional learning materials into interactive H5 courseware, animated quizzes, and real-time voice-guided AI tutoring.
+
+---
+
+## ⚡ Key Features
+
+<table width="100%">
+<tr>
+<td width="50%" valign="top">
+
+### 🎓 1. AI Interactive Courseware & Exam Engine
+* **H5 Dynamic Visualizations**: Solar system explorers, geometry labs, and physics simulations.
+* **Kanton Bern Exam Archive**: Full solution walkthroughs for Swiss BM & Gymnasium entrance exams.
+
+</td>
+<td width="50%" valign="top">
+
+### 🎙️ 2. Realtime Voice & RAG Knowledge Base
+* **OpenAI Realtime Audio**: Low-latency bidirectional voice tutoring & speech Q&A.
+* **Vector Embedding (RAG)**: Precise knowledge retrieval with `text-embedding-3-small`.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 💳 3. Multi-Tenant & Stripe Subscriptions
+* **Paywall & Quota Control**: Integrated Stripe webhooks for Free and Pro tiers.
+* **JWT & Supabase RLS**: Row Level Security protecting private test papers & learning logs.
+
+</td>
+<td width="50%" valign="top">
+
+### 📱 4. Monorepo & Automated Social Pipeline
+* **Monorepo Architecture**: Shared packages powering Next.js Web and Flutter Mobile.
+* **Playwright Automation**: Automated courseware poster generation & social publishing.
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🛠️ Architecture & Workflow
+
+```mermaid
+graph TD
+    A[🎓 Teacher / Student (Web / Mobile App)] <-->|WebSocket Realtime Voice| B(⚡ Express.js API Gateway)
+    B -->|RAG Embedding & Kimi/OpenAI Prompts| C(🤖 LLM Courseware Synthesizer)
+    C -->|Generate Interactive H5 / Quiz JSON| D(📱 Dynamic React / H5 Renderer)
+    B -->|Persistence & Subscriptions| E[(🗄️ Supabase PostgreSQL)]
+    C -->|Courseware Visual Posters| F(🚀 Playwright Social Automation)
+    F -->|Automated Publishing| G[📱 Xiaohongshu / Social Channels]
 ```
 
-3. **部署**
-```bash
-# 安装 Vercel CLI
-npm i -g vercel
+---
 
-# 部署
-vercel --prod
-```
-
-### 环境变量配置
-
-在 Vercel 项目设置中配置以下环境变量：
-
-#### 必需变量
-- `NEXT_PUBLIC_API_BASE_URL`: 后端API地址
-- `SUPABASE_URL`: Supabase 项目URL
-- `SUPABASE_SERVICE_KEY`: Supabase 服务密钥
-- `SUPABASE_ANON_KEY`: Supabase 匿名密钥
-- `JWT_SECRET`: JWT 密钥
-
-#### 可选变量
-- `KIMI_API_KEY`: KIMI AI API 密钥
-- `KIMI_MODEL`: KIMI 模型名称
-- `ALLOWED_ORIGINS`: CORS 允许的域名
-
-## 🛠️ 本地开发
-
-### 环境要求
-- Node.js >= 18.0.0
-- npm >= 8.0.0
-
-### 安装依赖
-```bash
-# 安装后端依赖
-cd backend
-npm install
-
-# 安装前端依赖
-cd ../frontend
-npm install
-```
-
-### 启动服务
-```bash
-# 启动后端 (端口 3001)
-cd backend
-npm start
-
-# 启动前端 (端口 3000)
-cd frontend
-npm run dev
-```
-
-## 📁 项目结构
+## 📁 Directory Structure
 
 ```
 edu/
-├── backend/          # 后端服务 (Express.js)
-├── frontend/         # 前端应用 (Next.js)
-├── doc/             # 项目文档
-├── .env             # 环境变量
-├── .env.example     # 环境变量示例
-├── vercel.json      # Vercel 配置
-└── deploy.sh        # 部署脚本
+├── backend/             # Express.js API service (JWT, Stripe, Realtime, Kimi K2)
+├── frontend/            # Next.js 14 full-stack app (H5 courseware & quizzes)
+├── apps/                # Mobile applications (Flutter)
+├── packages/            # Shared Monorepo modules
+├── scripts/             # Playwright social automation & data scrapers
+├── doc/                 # Architecture & API specifications
+├── LICENSE              # MIT Open-Source License
+└── package.json         # Monorepo root config
 ```
 
-## 🔧 主要功能
+---
 
-- **内容管理**: 创建、编辑、删除教育内容
-- **AI 生成**: 基于知识点和学习阶段生成互动内容
-- **收藏系统**: 收藏和管理喜欢的内容
-- **用户认证**: JWT 认证系统
-- **响应式设计**: 支持移动端和桌面端
+## ⚡ Quick Start
 
-## 📚 API 文档
+```bash
+# 1. Install dependencies across Monorepo
+npm install
 
-### 认证 API
-- `POST /api/auth/login` - 用户登录
-- `POST /api/auth/register` - 用户注册
-- `GET /api/auth/me` - 获取当前用户信息
+# 2. Configure environment variables in .env
+cp env.example .env
 
-### 内容 API
-- `GET /api/content` - 获取内容列表
-- `POST /api/content` - 创建内容
-- `PUT /api/content/:id` - 更新内容
-- `DELETE /api/content/:id` - 删除内容
+# 3. Start development servers (Frontend :3000, Backend :3001)
+npm run dev
+```
 
-### 用户内容互动 API
-- `POST /api/user_content/:contentId/like` - 喜欢内容
-- `DELETE /api/user_content/:contentId/like` - 取消喜欢
-- `GET /api/user_content/liked` - 获取喜欢的内容
+---
 
-### 收藏 API
-- `GET /api/user_collections/group/:groupId` - 获取收藏内容
-- `POST /api/user_collections` - 添加到收藏
-- `DELETE /api/user_collections/:contentId/:listId` - 从收藏移除
+## 🛡️ Open-Source Compliance Checklist
 
-## 🚀 部署检查清单
+- [x] **License**: Officially licensed under the **MIT License**.
+- [x] **Secret Protection**: `.env` and `.xhs.storage.json` ignored via `.gitignore`; zero hardcoded API keys.
+- [x] **Environment Isolation**: Complete `env.example` template provided.
+- [x] **Monorepo Integrity**: Automated `deploy.sh` and `init-db.sh` scripts verified.
 
-- [ ] 环境变量配置完成
-- [ ] 数据库连接正常
-- [ ] API 端点可访问
-- [ ] 前端构建成功
-- [ ] CORS 配置正确
-- [ ] 域名配置完成
+---
 
-## 📞 支持
+## 🤝 License
 
-如有问题，请查看：
-- [项目文档](./doc/)
-- [架构说明](./doc/ARCHITECTURE.md)
-- [环境配置](./doc/ENVIRONMENT_SETUP.md) 
+Released under the **MIT License**.
