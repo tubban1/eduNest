@@ -1,0 +1,168 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Education Innovation Radar Ingestion API",
+    "description": "Secure ingestion endpoint for logging newly detected global educational innovation signals into the BeLEARN / PHBern AI Education Innovation Radar.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://radar.edunest.app"
+    }
+  ],
+  "paths": {
+    "/api/ingest": {
+      "post": {
+        "operationId": "ingestSignals",
+        "summary": "Ingest one or more curated educational innovation signals into the Radar database",
+        "description": "Takes verified innovation signals from global research, university pilots, and educational initiatives. Stores them with decoupled novelty, maturity, evidence level and exploratory Swiss translation hypotheses.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "signals": {
+                    "type": "array",
+                    "description": "List of innovation signals to ingest",
+                    "items": {
+                      "$ref": "#/components/schemas/SignalItem"
+                    }
+                  }
+                },
+                "required": ["signals"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signals successfully ingested or updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "ingestedCount": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer token."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "SignalItem": {
+        "type": "object",
+        "required": ["title", "summary", "source_url", "country_code", "innovation_type", "maturity", "evidence_level"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Clear, informative title of the educational innovation"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Concise 1-2 sentence description of what the innovation does and how it operates"
+          },
+          "source_url": {
+            "type": "string",
+            "description": "Verifiable URL of the primary publication, report, or institution pilot page"
+          },
+          "source_name": {
+            "type": "string",
+            "description": "Originating organization or journal (e.g. EDUCAUSE, OECD, EPFL, UNESCO)"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country name where the pilot/innovation originated"
+          },
+          "country_code": {
+            "type": "string",
+            "description": "2-letter ISO country code (e.g. CH, US, SG, FI, DE, EE)"
+          },
+          "city": {
+            "type": "string",
+            "description": "Originating municipality/city if known"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "Approximate latitude of the origin city"
+          },
+          "longitude": {
+            "type": "number",
+            "description": "Approximate longitude of the origin city"
+          },
+          "innovation_type": {
+            "type": "string",
+            "description": "Category: Pedagogy, Learning Environment, Assessment, Teacher Support, Literacy, etc."
+          },
+          "educational_problem": {
+            "type": "string",
+            "description": "Specific structural or didactical challenge being addressed"
+          },
+          "target_groups": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Applicable learner cohorts: Primary, Sekundarstufe I, Sekundarstufe II, Higher Education, Vocational Education, Teacher Education"
+          },
+          "novelty": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "1 (incremental) to 5 (paradigm shift). Kept strictly decoupled from maturity and evidence."
+          },
+          "maturity": {
+            "type": "string",
+            "enum": ["early_signal", "experiment", "pilot", "scaling", "established"],
+            "description": "Development lifecycle stage"
+          },
+          "evidence_level": {
+            "type": "string",
+            "enum": ["none", "anecdotal", "case", "emerging", "moderate", "strong"],
+            "description": "Strict empirical evidence category"
+          },
+          "evidence_summary": {
+            "type": "string",
+            "description": "Concise summary of verified empirical findings without exaggerated claims"
+          },
+          "swiss_relevance": {
+            "type": "string",
+            "description": "Analysis of relevance to Swiss education (Lehrplan 21 / dual VET / cantonal autonomy)"
+          },
+          "swiss_application_hypothesis": {
+            "type": "string",
+            "description": "Exploratory application hypothesis for testing in Swiss schools or PHBern"
+          },
+          "limitations": {
+            "type": "string",
+            "description": "Known risks, operational bottlenecks, or context dependencies"
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Keywords and thematic tags"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}
