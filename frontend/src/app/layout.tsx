@@ -2,9 +2,11 @@ import './globals.css'
 import 'katex/dist/katex.min.css';
 import AppClientProviders from '../components/AppClientProviders';
 import ErrorBoundary from '../components/ErrorBoundary';
+import type { Metadata } from 'next';
 
-// 如需多语言SEO，建议采用 next-intl 或 next-i18next 路由方案实现动态meta
-export const metadata = {
+// Canonical URLs for public routes are set by their own route layouts.
+export const metadata: Metadata = {
+  metadataBase: new URL('https://www.edunest.app'),
   title: 'AI Education Platform',
   description: 'Explore interactive AI-generated educational content and make learning more engaging.',
 };
