@@ -115,6 +115,45 @@ function buildNewConversationIframeHtml(t: (key: string) => string, role: LearnR
   return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
 }
 
+// Keep meaningful, crawlable information available before client hydration.
+// The same introduction stays visible to guests; signed-in users retain the
+// existing full-screen learning workspace.
+function LearnWorkspaceIntro({ compact = false }: { compact?: boolean }) {
+  return (
+    <section
+      aria-labelledby="learn-workspace-title"
+      className={compact
+        ? "shrink-0 border-b border-white/10 bg-slate-950 px-4 py-2 text-slate-100"
+        : "mx-auto w-full max-w-3xl px-6 py-14 text-slate-100"}
+    >
+      <h1
+        id="learn-workspace-title"
+        className={compact ? "text-sm font-semibold" : "text-3xl font-bold tracking-tight"}
+      >
+        AI Learning Workspace
+      </h1>
+      <p className={compact ? "mt-1 text-xs text-slate-300" : "mt-4 text-base leading-7 text-slate-300"}>
+        Create interactive learning activities, explore visual explanations,
+        and ask an AI guide follow-up questions as you study with eduNest.
+      </p>
+      {!compact && (
+        <>
+          <h2 className="mt-8 text-xl font-semibold">Learn by creating and exploring</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-6 text-slate-300">
+            <li>Turn a study topic into an interactive lesson or activity.</li>
+            <li>Explore concepts through visual explanations and examples.</li>
+            <li>Ask questions and continue learning in the AI-guided workspace.</li>
+          </ul>
+          <p className="mt-6 text-slate-300">
+            New to eduNest? Visit the <Link href="/help" className="underline underline-offset-4">learning help center</Link>
+            {' '}for guidance and examples.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function LearnPage() {
   const { t } = useTranslation(['aiGuide', 'onboard', 'content', 'common', 'auth']);
   const { user, loading: authLoading } = useAuth();
@@ -1021,7 +1060,9 @@ export default function LearnPage() {
   if (!mounted) {
     return (
       <div className="flex min-h-screen bg-background" suppressHydrationWarning>
-        <main className="flex-1 flex flex-col min-h-screen bg-slate-950" />
+        <main className="flex-1 min-h-screen bg-slate-950">
+          <LearnWorkspaceIntro />
+        </main>
       </div>
     );
   }
@@ -1035,6 +1076,7 @@ export default function LearnPage() {
       <Sidebar variant="mobile" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className={`flex-1 flex flex-col min-h-screen bg-slate-950 transition-[margin] duration-200 ease-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         <MobileHeader onMenuClick={() => setSidebarOpen(true)} className="shrink-0" />
+        {!authLoading && !user && <LearnWorkspaceIntro compact />}
         <div className="flex-1 flex flex-col min-h-0 relative">
             <div
               ref={workspaceRef}
